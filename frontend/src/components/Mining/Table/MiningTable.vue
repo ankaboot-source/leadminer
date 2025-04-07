@@ -145,12 +145,12 @@
                 />
               </li>
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_fullname_tooltip')">
-                  {{ t('toggle_fullname_label') }}
+                <div v-tooltip.left="t('toggle_name_tooltip')">
+                  {{ t('toggle_name_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.fullnameToggle"
-                  @update:model-value="filtersStore.onFullnameToggle"
+                  v-model="filtersStore.nameToggle"
+                  @update:model-value="filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -1119,8 +1119,8 @@ table.p-datatable-table {
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
     "toggle_replies_label": "At least one reply",
-    "toggle_fullname_label": "Only with fullname",
-    "toggle_fullname_tooltip": "Named contacts engage more",
+    "toggle_name_label": "Only with name",
+    "toggle_name_tooltip": "Named contacts engage more",
     "toggle_recent_tooltip": "- Less than {recentYearsAgo} years \n- GDPR Proof",
     "toggle_recent_label": "Recent contacts",
     "visible_columns": "{n} Visible field | {n} Visible fields",
@@ -1167,8 +1167,8 @@ table.p-datatable-table {
     "toggle_valid_label": "Seulement les contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
-    "toggle_fullname_label": "Seulement avec un nom",
-    "toggle_fullname_tooltip": "Les contacts connus par leur nom répondent davantage",
+    "toggle_name_label": "Seulement avec un nom complet",
+    "toggle_name_tooltip": "Les contacts connus par leur nom complet répondent davantage",
     "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
     "toggle_recent_label": "Contacts récents",
     "visible_columns": "{n} Champ visible | {n} Champs visibles",
