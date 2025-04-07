@@ -30,6 +30,24 @@ function debounce<T extends (...args: any[]) => any>(
   };
 }
 
+const searchContactModel = ref('');
+const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
+const fullnameToggle = ref(false);
+const validToggle = ref(false);
+const repliesToggle = ref(false);
+const recentToggle = ref(false);
+
+const isDefaultFilters = computed(
+  () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
+);
+const areToggledFilters = computed(
+  () =>
+    Number(validToggle.value) +
+    Number(recentToggle.value) +
+    Number(fullnameToggle.value) +
+    Number(repliesToggle.value),
+);
+
 function checkValidStatus() {
   return Boolean(
     filters.value.status.value.length === 1 &&
@@ -138,6 +156,23 @@ function watchRecencyToggle() {
     },
     { deep: true },
   );
+}
+
+function registerFiltersAndStartWatchers() {
+  // Filter registration
+  FilterService.register(ANY_SELECTED, (value, filter) =>
+    !filter ? true : filter.some((item: string) => value.includes(item)),
+  );
+  FilterService.register(NOT_EMPTY, (value) =>
+    fullnameToggle.value
+      ? !(value === undefined || value === null || value === '')
+      : true,
+  );
+
+  watchSearchModel();
+  watchStatusToggle();
+  watchRepliesToggle();
+  watchRecencyToggle();
 }
 
 function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
