@@ -23,7 +23,7 @@ export const MAX_YEARS_AGO_TO_FILTER = 3;
 export const DEFAULT_TOGGLES = {
   valid: true,
   recent: false,
-  fullname: false,
+  name: false,
   replies: false,
 };
 

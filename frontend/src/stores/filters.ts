@@ -11,7 +11,7 @@ import {
 type TogglesType = {
   valid: boolean;
   recent: boolean;
-  fullname: boolean;
+  name: boolean;
   replies: boolean;
 };
 
@@ -32,7 +32,7 @@ function debounce<T extends (...args: any[]) => any>(
 
 const searchContactModel = ref('');
 const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
-const fullnameToggle = ref(false);
+const nameToggle = ref(false);
 const validToggle = ref(false);
 const repliesToggle = ref(false);
 const recentToggle = ref(false);
@@ -44,7 +44,7 @@ const areToggledFilters = computed(
   () =>
     Number(validToggle.value) +
     Number(recentToggle.value) +
-    Number(fullnameToggle.value) +
+    Number(nameToggle.value) +
     Number(repliesToggle.value),
 );
 
@@ -103,9 +103,9 @@ function onRecentToggle(toggle?: boolean) {
     : null;
 }
 
-function onFullnameToggle(toggle?: boolean) {
+function onNameToggle(toggle?: boolean) {
   if (toggle !== undefined) {
-    fullnameToggle.value = toggle;
+    nameToggle.value = toggle;
     filters.value.name.value = toggle || null;
   }
 }
@@ -164,7 +164,7 @@ function registerFiltersAndStartWatchers() {
     !filter ? true : filter.some((item: string) => value.includes(item)),
   );
   FilterService.register(NOT_EMPTY, (value) =>
-    fullnameToggle.value
+    nameToggle.value
       ? !(value === undefined || value === null || value === '')
       : true,
   );
@@ -180,12 +180,12 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
     toggles = {
       valid: toggles,
       recent: toggles,
-      fullname: toggles,
+      name: toggles,
       replies: toggles,
     };
   }
 
-  onFullnameToggle(toggles.fullname);
+  onNameToggle(toggles.name);
   onValidToggle(toggles.valid);
   onRecentToggle(toggles.recent);
   onRepliesToggle(toggles.replies);
@@ -208,7 +208,7 @@ export const useFiltersStore = defineStore('filters', () => {
 
     filters,
     searchContactModel,
-    fullnameToggle,
+    nameToggle,
     validToggle,
     repliesToggle,
     recentToggle,
@@ -219,7 +219,7 @@ export const useFiltersStore = defineStore('filters', () => {
     onValidToggle,
     onRepliesToggle,
     onRecentToggle,
-    onFullnameToggle,
+    onNameToggle,
 
     toggleFilters,
     clearFilter,
