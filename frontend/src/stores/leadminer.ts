@@ -10,6 +10,9 @@ import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
+  const { t } = useI18n();
+  const $toast = useToast();
+  const $stepper = useMiningStepper();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -56,6 +59,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     Boolean(miningStartedAt.value && cleaningFinished.value),
   );
 
+  const miningInterrupted = ref(false);
   const errors = ref({});
 
   function $resetMining() {
@@ -82,6 +86,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     cleaningFinished.value = true;
 
     activeEnrichment.value = false;
+
+    miningInterrupted.value = false;
 
     errors.value = {};
   }
@@ -171,6 +177,20 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningTask.value = undefined;
         sse.closeConnection();
       },
+      onError: () => {
+        miningInterrupted.value = true;
+        setTimeout(() => {
+          $resetMining();
+          $toast.add({
+            severity: 'warn',
+            summary: t('mining.mining_interrupted'),
+            detail: t('mining.mining_interrupted_detail'),
+            life: 5000,
+          });
+          $stepper.go(1);
+        }, 0);
+      },
+
       onFetchingDone: (totalFetched) => {
         scannedEmails.value = totalFetched;
         fetchingFinished.value = true;
@@ -373,6 +393,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     miningStartedAndFinished,
+    miningInterrupted,
     errors,
   };
 });

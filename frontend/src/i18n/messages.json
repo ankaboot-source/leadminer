@@ -116,6 +116,10 @@
         "chat": "Chat",
         "role": "Role"
       }
+    },
+    "mining": {
+      "mining_interrupted": "Mining canceled",
+      "mining_interrupted_detail": "Your mining was interrupted due to an internet connection issue."
     }
   },
   "fr": {
@@ -235,6 +239,10 @@
         "chat": "Chat",
         "role": "Role"
       }
+    },
+    "mining": {
+      "mining_interrupted": "Extraction annulée",
+      "mining_interrupted_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
     }
   }
 }
