@@ -118,8 +118,8 @@
       }
     },
     "mining": {
-      "mining_interrupted": "Mining canceled",
-      "mining_interrupted_detail": "Your mining was interrupted due to an internet connection issue."
+      "toast_canceled_title": "Mining canceled",
+      "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue."
     }
   },
   "fr": {
@@ -241,8 +241,8 @@
       }
     },
     "mining": {
-      "mining_interrupted": "Extraction annulée",
-      "mining_interrupted_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
+      "toast_canceled_title": "Extraction annulée",
+      "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
     }
   }
 }

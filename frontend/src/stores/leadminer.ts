@@ -183,8 +183,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           $resetMining();
           $toast.add({
             severity: 'warn',
-            summary: t('mining.mining_interrupted'),
-            detail: t('mining.mining_interrupted_detail'),
+            summary: t('mining.toast_canceled_title'),
+            detail: t('mining.toast_canceled_by_connection_detail'),
             life: 5000,
           });
           $stepper.go(1);
