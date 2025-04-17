@@ -492,6 +492,7 @@ export default class TasksManagerFile {
       this.notifyChanges(miningId, 'extracted', 'extracting-finished');
     }
   }
+
   private async handleCleaningFinished(
     miningId: string,
     progress: TaskProcessProgress,
@@ -507,6 +508,7 @@ export default class TasksManagerFile {
       this.notifyChanges(miningId, 'verifiedContacts', 'cleaning-finished');
     }
   }
+
   private async getCompletionStatus(
     miningId: string,
     extract: TaskExtract,
