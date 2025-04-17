@@ -402,7 +402,7 @@ export default class TasksManagerFile {
     if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
     const { progressHandlerSSE } = task;
 
-    const progress = this.getTaskProcessProgress(task);
+    const progress = TasksManagerFile.getTaskProcessProgress(task);
 
     const value = progress[`${progressType}`];
     const eventName = event ?? `${progressType}-${miningId}`;
@@ -462,7 +462,7 @@ export default class TasksManagerFile {
     if (!task) return undefined;
 
     const { extract, clean } = task.process;
-    const progress = this.getTaskProcessProgress(task);
+    const progress = TasksManagerFile.getTaskProcessProgress(task);
 
     logger.debug('Task progress update', {
       ...progress
@@ -528,7 +528,7 @@ export default class TasksManagerFile {
     return status;
   }
 
-  private getTaskProcessProgress(task: MiningTask): TaskProcessProgress {
+  private static getTaskProcessProgress(task: MiningTask): TaskProcessProgress {
     const { extract, clean } = task.process;
     const progress = {
       ...extract.details.progress,
