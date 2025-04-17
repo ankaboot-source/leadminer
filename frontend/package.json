@@ -58,7 +58,7 @@
     "@sentry/nuxt": "^9.8.0",
     "@vueuse/core": "^13.0.0",
     "@vueuse/nuxt": "^13.0.0",
-    "posthog-js": "^1.232.4",
+    "posthog-js": "^1.233.1",
     "read-excel-file": "^5.8.7"
   }
 }
