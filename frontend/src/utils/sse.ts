@@ -20,6 +20,7 @@ class SSE {
       onFetchedUpdate,
       onExtractedUpdate,
       onClose,
+      onError,
       onFetchingDone,
       onExtractionDone,
       onCleaningDone,
@@ -29,6 +30,7 @@ class SSE {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
       onClose: () => void;
+      onError: () => void;
       onFetchingDone: (totalFetched: number) => void;
       onExtractionDone: (totalExtracted: number) => void;
       onCleaningDone: (totalExtracted: number) => void;
@@ -68,6 +70,7 @@ class SSE {
           }
         },
         onerror: (err: unknown) => {
+          onError();
           throw err;
         },
         signal: this.ctrl.signal,

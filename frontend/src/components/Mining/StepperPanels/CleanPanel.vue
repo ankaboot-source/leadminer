@@ -44,7 +44,9 @@ const $leadminerStore = useLeadminerStore();
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
-const verificationFinished = computed(() => $leadminerStore.cleaningFinished);
+const verificationFinished = computed(
+  () => !$leadminerStore.miningInterrupted && $leadminerStore.cleaningFinished,
+);
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
 );

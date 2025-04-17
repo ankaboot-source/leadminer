@@ -116,6 +116,10 @@
         "chat": "Chat",
         "role": "Role"
       }
+    },
+    "mining": {
+      "toast_canceled_title": "Mining canceled",
+      "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue."
     }
   },
   "fr": {
@@ -235,6 +239,10 @@
         "chat": "Chat",
         "role": "Role"
       }
+    },
+    "mining": {
+      "toast_canceled_title": "Extraction annulée",
+      "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
     }
   }
 }
