@@ -11,8 +11,11 @@ import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 
-type TaskProgressType = 'extracted' | 'createdContacts' | 'verifiedContacts';
-
+interface TaskProcessProgress {
+  verifiedContacts: number;
+  createdContacts: number;
+  extracted: number;
+}
 interface TaskProgress {
   totalImported: number;
   extracted: number;
@@ -391,20 +394,15 @@ export default class TasksManagerFile {
    */
   private notifyChanges(
     miningId: string,
-    progressType: TaskProgressType,
+    progressType: keyof TaskProcessProgress,
     event: string | null = null
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
+    const { progressHandlerSSE } = task;
 
-    const { progressHandlerSSE, process } = task;
-    const { extract, clean } = process;
-
-    const progress = {
-      ...extract.details.progress,
-      ...clean.details.progress
-    };
+    const progress = this.getTaskProcessProgress(task);
 
     const value = progress[`${progressType}`];
     const eventName = event ?? `${progressType}-${miningId}`;
@@ -423,7 +421,7 @@ export default class TasksManagerFile {
    */
   private updateProgress(
     miningId: string,
-    progressType: TaskProgressType,
+    progressType: keyof TaskProcessProgress,
     incrementBy = 1
   ): TaskProgress | undefined {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
@@ -431,7 +429,7 @@ export default class TasksManagerFile {
 
     const { progress, process } = task;
     const progressMappings: Partial<
-      Record<TaskProgressType, keyof typeof process>
+      Record<keyof TaskProcessProgress, keyof typeof process>
     > = {
       extracted: 'extract',
       createdContacts: 'clean',
@@ -464,36 +462,56 @@ export default class TasksManagerFile {
     if (!task) return undefined;
 
     const { extract, clean } = task.process;
-    const progress = {
-      ...extract.details.progress,
-      ...clean.details.progress
-    };
+    const progress = this.getTaskProcessProgress(task);
 
     logger.debug('Task progress update', {
       ...progress
     });
 
-    if (
-      !extract.stoppedAt &&
-      progress.extracted >= task.progress.totalImported
-    ) {
-      await this.stopTask([extract]);
-      this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
-    }
+    await this.handleExtactionFinished(
+      miningId,
+      progress,
+      extract,
+      task.progress.totalImported
+    );
 
+    await this.handleCleaningFinished(miningId, progress, extract, clean);
+
+    const status = await this.getCompletionStatus(miningId, extract, clean);
+    return status;
+  }
+
+  private async handleExtactionFinished(
+    miningId: string,
+    progress: TaskProcessProgress,
+    extract: TaskExtract,
+    totalImported: number
+  ) {
+    if (!extract.stoppedAt && progress.extracted >= totalImported) {
+      await this.stopTask([extract]);
+      this.notifyChanges(miningId, 'extracted', 'extracting-finished');
+    }
+  }
+  private async handleCleaningFinished(
+    miningId: string,
+    progress: TaskProcessProgress,
+    extract: TaskExtract,
+    clean: TaskClean
+  ) {
     if (
       !clean.stoppedAt &&
       extract.stoppedAt &&
       progress.verifiedContacts >= progress.createdContacts
     ) {
       await this.stopTask([clean]);
-      this.notifyChanges(
-        task.miningId,
-        'verifiedContacts',
-        'cleaning-finished'
-      );
+      this.notifyChanges(miningId, 'verifiedContacts', 'cleaning-finished');
     }
-
+  }
+  private async getCompletionStatus(
+    miningId: string,
+    extract: TaskExtract,
+    clean: TaskClean
+  ) {
     const status =
       extract.stoppedAt !== undefined && clean.stoppedAt !== undefined;
 
@@ -506,6 +524,15 @@ export default class TasksManagerFile {
     }
 
     return status;
+  }
+
+  private getTaskProcessProgress(task: MiningTask): TaskProcessProgress {
+    const { extract, clean } = task.process;
+    const progress = {
+      ...extract.details.progress,
+      ...clean.details.progress
+    };
+    return progress;
   }
 
   private async pubsubStreamDestroy(streamName: string, consumerGroup: string) {
