@@ -6,12 +6,13 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import { ContactFormat } from '../services/extractors/engines/FileImport';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
-import { validateType } from '../utils/helpers/validation';
+import validateType from '../utils/helpers/validation';
 import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
@@ -24,7 +25,6 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
-import { ContactFormat } from '../services/extractors/engines/FileImport';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
