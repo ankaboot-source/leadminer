@@ -1,18 +1,3 @@
-export default function validateType(key: string, value: any, type: string) {
-  if (value === undefined || value === null) return `${key} is required.`;
-
-  switch (type) {
-    case 'number':
-      return validateNumber(key, value);
-    case 'boolean':
-      return validateBoolean(key, value);
-    case 'string[]':
-      return validateStringArray(key, value);
-    default:
-      return null;
-  }
-}
-
 function validateNumber(key: string, value: any) {
   return Number.isNaN(value) || value <= 0
     ? `${key} must be a valid positive number.`
@@ -30,4 +15,19 @@ function validateStringArray(key: string, value: any) {
     value.some((v) => typeof v !== 'string' || v.trim() === '')
     ? `${key} must be an array of non-empty strings.`
     : null;
+}
+
+export default function validateType(key: string, value: any, type: string) {
+  if (value === undefined || value === null) return `${key} is required.`;
+
+  switch (type) {
+    case 'number':
+      return validateNumber(key, value);
+    case 'boolean':
+      return validateBoolean(key, value);
+    case 'string[]':
+      return validateStringArray(key, value);
+    default:
+      return null;
+  }
 }
