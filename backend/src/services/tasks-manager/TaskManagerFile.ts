@@ -6,10 +6,10 @@ import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import ENV from '../../config';
 import SupabaseTasks from '../../db/supabase/tasks';
+import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
-import RealtimeSSE from '../../utils/helpers/sseHelpers';
 
 type TaskProgressType = 'extracted' | 'createdContacts' | 'verifiedContacts';
 
@@ -303,31 +303,41 @@ export default class TasksManagerFile {
     miningId: string,
     processIds: string[] | null
   ): Promise<RedactedTask> {
-    if (processIds && !Array.isArray(processIds)) {
+    if (!Array.isArray(processIds)) {
       throw new Error('processIds must be an array of strings');
     }
     const task = this.getTaskOrThrow(miningId);
-    const { progressHandlerSSE, startedAt, progress, process } = task;
+    const { startedAt, progress } = task;
     try {
-      const endEntireTask = !processIds || processIds.length === 0;
-      const processesToStop = Object.values(process).filter((p) =>
-        endEntireTask
-          ? !p.stoppedAt
-          : !p.stoppedAt && p.id && processIds?.includes(p.id)
-      );
-
-      if (endEntireTask) {
-        this.ACTIVE_MINING_TASKS.delete(miningId);
-        progressHandlerSSE.stop();
-      }
-
-      await this.stopTask(processesToStop, true);
+      this.handleTaskDeletion(miningId, processIds, task);
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
 
     TasksManagerFile.logTaskCompletion(startedAt, progress);
     return redactSensitiveData(task);
+  }
+
+  private async handleTaskDeletion(
+    miningId: string,
+    processIds: string[],
+    task: MiningTask
+  ) {
+    const { progressHandlerSSE, process } = task;
+
+    const endEntireTask = !processIds || processIds.length === 0;
+    const processesToStop = Object.values(process).filter((p) =>
+      endEntireTask
+        ? !p.stoppedAt
+        : !p.stoppedAt && p.id && processIds?.includes(p.id)
+    );
+
+    if (endEntireTask) {
+      this.ACTIVE_MINING_TASKS.delete(miningId);
+      progressHandlerSSE.stop();
+    }
+
+    await this.stopTask(processesToStop, true);
   }
 
   private static calculateTaskDuration(
