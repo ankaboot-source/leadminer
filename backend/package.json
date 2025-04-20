@@ -43,7 +43,7 @@
     "express-sse": "github:omgimalexis/express-sse",
     "generic-pool": "^3.9.0",
     "google-auth-library": "^9.15.1",
-    "html-entities": "^2.5.3",
+    "html-entities": "^2.5.5",
     "imap": "^0.8.19",
     "ioredis": "^5.6.0",
     "jsonwebtoken": "^9.0.2",
