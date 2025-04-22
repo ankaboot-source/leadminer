@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
 import { IRateLimiter } from '../../rate-limiter/RateLimiter';
@@ -95,6 +95,34 @@ interface SMTPConfig {
 
 interface ValidationOptions {
   fromEmail: string;
+}
+
+function extractWaitTime(errorMessage?: string): number {
+  const DEFAULT_WAIT_TIME = 10000; // 10 sec
+  const match = /(\d+(?:\.\d+)?)\s*s/.exec(errorMessage ?? '');
+  return match ? Math.ceil(parseFloat(match[1]) * 1000) : DEFAULT_WAIT_TIME;
+}
+
+async function reacherRequestWithRetry<T>(callback: () => Promise<T>) {
+  try {
+    return await callback();
+  } catch (error) {
+    const err = error as AxiosError;
+    const status = err.response?.status;
+    const message = (err.response?.data as { error?: string })?.error ?? '';
+    const shouldRetry = status === 429 && message.includes('wait');
+    if (!shouldRetry) throw err;
+
+    const waitTime = extractWaitTime(message);
+    console.info(
+      `[ReacherClient.reacherRequestWithRetry]: Rate limited. Waiting ${waitTime}ms before retrying`
+    );
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(true), waitTime);
+    });
+
+    return await callback();
+  }
 }
 
 export default class ReacherClient {
@@ -194,17 +222,19 @@ export default class ReacherClient {
   ): Promise<EmailCheckOutput> {
     try {
       const { data } = await this.rateLimiter.throttleRequests(() =>
-        this.api.post<EmailCheckOutput>(
-          ReacherClient.SINGLE_VERIFICATION_PATH,
-          {
-            to_email: email,
-            ...this.additionalSettings,
-            ...this.smtpConfig,
-            from_email: validationOptions
-              ? validationOptions.fromEmail
-              : this.smtpConfig.from_email
-          },
-          { signal: abortSignal }
+        reacherRequestWithRetry(() =>
+          this.api.post<EmailCheckOutput>(
+            ReacherClient.SINGLE_VERIFICATION_PATH,
+            {
+              to_email: email,
+              ...this.additionalSettings,
+              ...this.smtpConfig,
+              from_email: validationOptions
+                ? validationOptions.fromEmail
+                : this.smtpConfig.from_email
+            },
+            { signal: abortSignal }
+          )
         )
       );
       return { ...data, input: email };

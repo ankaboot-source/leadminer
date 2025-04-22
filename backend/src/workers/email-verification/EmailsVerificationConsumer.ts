@@ -21,7 +21,8 @@ export default class EmailVerificationConsumer {
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailVerificationData>,
     private readonly batchSize: number,
     private readonly emailProcessor: (
-      data: EmailVerificationData[]
+      data: EmailVerificationData[],
+      progressCallback: (verified: number) => Promise<void>
     ) => Promise<void>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
@@ -64,28 +65,26 @@ export default class EmailVerificationConsumer {
       await Promise.allSettled(
         result.map(async ({ streamName, data }) => {
           try {
-            const processed = await this.emailProcessor(data);
+            const progressCallback = async (verified: number) => {
+              await this.redisClient.publish(
+                streamName.split('-')[1],
+                JSON.stringify({
+                  miningId: streamName.split('-')[1],
+                  progressType: 'verifiedContacts',
+                  count: verified
+                })
+              );
+            };
+            const processed = await this.emailProcessor(data, progressCallback);
 
             if (!this.activeStreams.has(streamName)) {
               return null;
             }
 
-            const miningId = streamName.split('-')[1];
-            const extractionProgress = {
-              miningId,
-              progressType: 'verifiedContacts',
-              count: data.length
-            };
-
-            this.redisClient.publish(
-              miningId,
-              JSON.stringify(extractionProgress)
-            );
-
             return processed;
           } catch (err) {
             this.logger.error('Extraction error', err);
-            return Promise.reject(err);
+            return Promise.reject(new Error((err as Error).message));
           }
         })
       );
