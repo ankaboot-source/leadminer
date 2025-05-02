@@ -11,6 +11,7 @@
     "dev:mock-external-services": "nodemon src/mocks/enrichment/server.ts",
     "dev:worker": "nodemon src/messageWorker.ts",
     "dev:email-worker": "nodemon src/emailVerificationWorker.ts",
+    "dev:email-signature-worker": "nodemon src/emailSignatureWorker.ts",
     "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",
     "dev:inspect": "node --inspect -r ts-node/register src/server.ts",
     "lint": "eslint src test",
