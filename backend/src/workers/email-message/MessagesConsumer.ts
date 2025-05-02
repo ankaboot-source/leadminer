@@ -8,6 +8,8 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
+import { EmailSignatureData } from '../email-signature/handler';
+import ENV from '../../config';
 
 export interface PubSubMessage {
   miningId: string;
@@ -15,10 +17,12 @@ export interface PubSubMessage {
   messagesStream: string;
   messagesConsumerGroup: string;
   emailsVerificationStream: string;
+  emailsSignatureStream: string;
 }
 
 interface StreamEntry {
   emailsStreamProducer: StreamProducer<EmailVerificationData>;
+  emailsSignatureProducer: StreamProducer<EmailSignatureData>;
   queuedEmailsCache: QueuedEmailsCache;
 }
 
@@ -34,6 +38,7 @@ export default class MessagesConsumer {
     private readonly messageProcessor: (
       data: EmailMessageData,
       emailsStreamProducer: StreamProducer<EmailVerificationData>,
+      emailsSignatureProducer: StreamProducer<EmailSignatureData>,
       queuedEmailsCache: QueuedEmailsCache
     ) => void,
     private readonly redisClient: Redis,
@@ -48,23 +53,43 @@ export default class MessagesConsumer {
         messagesStream,
         emailsVerificationStream
       }) => {
+        const signatureStream = `signature_stream-${miningId}`;
         if (messagesStream && emailMessagesStreamsConsumer) {
           if (command === 'REGISTER') {
+            await this.pubsubStreamCreate(
+              signatureStream,
+              ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
+            );
+
+            const emailsSignatureProducer =
+              new RedisStreamProducer<EmailSignatureData>(
+                redisClient,
+                signatureStream,
+                this.logger
+              );
+
             const queuedEmailsCache = new RedisQueuedEmailsCache(
               redisClient,
               miningId
             );
+
             const emailsStreamProducer =
               new RedisStreamProducer<EmailVerificationData>(
                 redisClient,
                 emailsVerificationStream,
                 this.logger
               );
+
             this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
+              emailsSignatureProducer,
               queuedEmailsCache
             });
           } else {
+            await this.pubsubStreamDestroy(
+              signatureStream,
+              ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
+            );
             const streamEntry = this.activeStreams.get(messagesStream);
             if (streamEntry) {
               await streamEntry.queuedEmailsCache.destroy();
@@ -82,6 +107,21 @@ export default class MessagesConsumer {
           }
         });
       }
+    );
+  }
+
+  private async pubsubStreamDestroy(streamName: string, consumerGroup: string) {
+    await this.redisClient.xgroup('DESTROY', streamName, consumerGroup);
+    await this.redisClient.del(streamName);
+  }
+
+  private async pubsubStreamCreate(streamName: string, consumerGroup: string) {
+    await this.redisClient.xgroup(
+      'CREATE',
+      streamName,
+      consumerGroup,
+      '$',
+      'MKSTREAM'
     );
   }
 
@@ -110,6 +150,7 @@ export default class MessagesConsumer {
                 this.messageProcessor(
                   message,
                   streamEntry.emailsStreamProducer,
+                  streamEntry.emailsSignatureProducer,
                   streamEntry.queuedEmailsCache
                 )
               )

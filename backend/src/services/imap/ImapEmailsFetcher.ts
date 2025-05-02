@@ -7,6 +7,8 @@ import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
 
+import { getSignature } from '../../utils/helpers/emailBodyHelpers';
+
 const redisClient = redis.getClient();
 
 /**
@@ -275,6 +277,9 @@ export default class ImapEmailsFetcher {
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header);
           const parsedBody = this.fetchEmailBody ? body : '';
+          const lines = parsedBody.split('\n');
+          const parsedSignature =
+            lines.length > 1000 ? lines.slice(-30).join('\n') : body;
 
           const messageId = getMessageId(parsedHeader);
 
@@ -301,11 +306,14 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
+          const emailSignature = getSignature(parsedSignature) ?? undefined;
+
           await publishEmailMessage(this.streamName, {
             type: 'email',
             data: {
               header: parsedHeader,
-              body: parsedBody,
+              body: '',
+              signature: emailSignature,
               seqNumber,
               folderPath,
               isLast: isLastMessageInFolder
