@@ -21,33 +21,10 @@ export interface EmailSignatureData {
   isLastEmail: boolean;
 }
 
-function logRejectedAndReturnResolved<T>(
-  results: PromiseSettledResult<T>[],
-  context: string
-): T[] {
-  results
-    .filter(
-      (result): result is PromiseRejectedResult => result.status === 'rejected'
-    )
-    .forEach((result) => {
-      logger.error(`${context}: Promise rejected`, {
-        error: result.reason,
-        timestamp: new Date().toISOString()
-      });
-    });
-
-  return results
-    .filter(
-      (result): result is PromiseFulfilledResult<T> =>
-        result.status === 'fulfilled'
-    )
-    .map((result) => result.value);
-}
-
 class EmailSignatureProcessor {
   constructor(
-    private contacts: Contacts,
-    private signatureCache: EmailSignatureCache
+    private readonly contacts: Contacts,
+    private readonly signatureCache: EmailSignatureCache
   ) {}
 
   /**
@@ -106,7 +83,7 @@ class EmailSignatureProcessor {
   private async processSingleSignature(
     data: EmailSignatureData
   ): Promise<void> {
-    const { userId, miningId, emailData } = data;
+    const { miningId, emailData } = data;
 
     try {
       const existingSignature = await this.signatureCache.getMostRecent(

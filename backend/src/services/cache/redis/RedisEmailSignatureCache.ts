@@ -7,6 +7,7 @@ import logger from '../../../utils/logger';
 
 export default class RedisEmailSignatureCache implements EmailSignatureCache {
   private readonly signatureKeyPrefix = 'email:signature'; // For storing signatures
+
   private readonly miningKeyPrefix = 'mining:signature'; // For mining session tracking
 
   constructor(private readonly redisClient: Redis) {}

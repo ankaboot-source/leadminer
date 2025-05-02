@@ -1,4 +1,7 @@
-import { EmailSignature } from '../../workers/email-signature/handler';
+export interface EmailSignature {
+  date: string;
+  signature: string;
+}
 
 export interface EmailSignatureWithMetadata extends EmailSignature {
   email: string; // The email address this signature belongs to

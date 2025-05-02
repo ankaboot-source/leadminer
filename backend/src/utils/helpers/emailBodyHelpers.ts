@@ -20,9 +20,9 @@ export function getSignature(body: string): string | null {
 
   // Get all signature fragments and join them
   const signatures = fragments
-    .filter(fragment => fragment.isSignature())
-    .map(fragment => fragment.getContent().trim())
-    .filter(content => content.length > 0);
+    .filter((fragment) => fragment.isSignature())
+    .map((fragment) => fragment.getContent().trim())
+    .filter((content) => content.length > 0);
 
   return signatures.length > 0 ? signatures.join('\n') : null;
 }

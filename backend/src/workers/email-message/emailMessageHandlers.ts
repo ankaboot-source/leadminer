@@ -106,9 +106,9 @@ async function emailMessageHandler(
         })
       );
 
-      console.log(data.data)
+      console.log(data.data);
       const { message } = extractedContacts as ExtractedContacts;
-      const signature = (data.data as EmailFormat).signature;
+      const { signature } = data.data as EmailFormat;
       const emailFrom = (extractedContacts as ExtractedContacts).persons
         .filter((p) => p.pointOfContact && p.pointOfContact.from === true)
         .map((p) => p.person.email)[0];
