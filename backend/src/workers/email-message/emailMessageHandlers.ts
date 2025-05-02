@@ -3,7 +3,10 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
-import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
+import {
+  EmailFormat,
+  ExtractedContacts
+} from '../../services/extractors/engines/EmailMessage';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
@@ -13,6 +16,7 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { createExtractor } from '../../services/extractors/Extractor';
 import { FileFormat } from '../../services/extractors/engines/FileImport';
+import { EmailSignatureData } from '../email-signature/handler';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -39,6 +43,7 @@ async function emailMessageHandler(
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
   emailsStreamProducer: StreamProducer<EmailVerificationData>,
+  emailsSignatureProducer: StreamProducer<EmailSignatureData>,
   queuedEmailsCache: QueuedEmailsCache,
   catchAllDomainsCache: CatchAllDomainsCache
 ) {
@@ -100,6 +105,29 @@ async function emailMessageHandler(
           count: input.length
         })
       );
+
+      console.log(data.data)
+      const { message } = extractedContacts as ExtractedContacts;
+      const signature = (data.data as EmailFormat).signature;
+      const emailFrom = (extractedContacts as ExtractedContacts).persons
+        .filter((p) => p.pointOfContact && p.pointOfContact.from === true)
+        .map((p) => p.person.email)[0];
+
+      if (signature && emailFrom && message) {
+        emailsSignatureProducer.produce([
+          {
+            userId,
+            miningId,
+            emailData: {
+              signature,
+              from: emailFrom,
+              messageDate: message.date ?? '',
+              messageId: message.messageId
+            },
+            isLastEmail: false
+          }
+        ]);
+      }
     }
   } catch (error) {
     logger.error(
@@ -122,6 +150,7 @@ export default function initializeMessageProcessor(
     processStreamData: (
       message: EmailMessageData,
       emailsStreamProducer: StreamProducer<EmailVerificationData>,
+      emailsSignatureProducer: StreamProducer<EmailSignatureData>,
       queuedEmailsCache: QueuedEmailsCache
     ) =>
       emailMessageHandler(
@@ -129,6 +158,7 @@ export default function initializeMessageProcessor(
         contacts,
         emailStatusCache,
         emailsStreamProducer,
+        emailsSignatureProducer,
         queuedEmailsCache,
         catchAllDomainsCache
       )

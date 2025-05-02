@@ -90,6 +90,7 @@ export default class TasksManager {
       stream: {
         messagesStream: `messages_stream-${miningId}`,
         emailsStream: `emails_stream-${miningId}`,
+        signatureStream: `signature_stream-${miningId}`,
         messagesConsumerGroup: ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP,
         emailsConsumerGroup: ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
       }
@@ -117,7 +118,8 @@ export default class TasksManager {
         messagesStream,
         messagesConsumerGroup,
         emailsStream,
-        emailsConsumerGroup
+        emailsConsumerGroup,
+        signatureStream
       } = stream;
 
       const fetcher = this.emailFetcherFactory.create({
@@ -165,7 +167,8 @@ export default class TasksManager {
               stream: {
                 messagesStream,
                 messagesConsumerGroup,
-                emailsVerificationStream: emailsStream
+                emailsVerificationStream: emailsStream,
+                signatureStream
               },
               progress: {
                 extracted: 0

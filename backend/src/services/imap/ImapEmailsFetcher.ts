@@ -1,39 +1,40 @@
 import Connection, { Box, parseHeader } from 'imap';
-import replyParser from 'node-email-reply-parser';
-import {
-  EXCLUDED_IMAP_FOLDERS,
-  SIGNATURE_EXTRACTION_STREAM
-} from '../../utils/constants';
+import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
-import isHTMLBody from '../../utils/helpers/emailBodyHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
 
+import { isHTMLBody, getSignature } from '../../utils/helpers/emailBodyHelpers';
+
 const redisClient = redis.getClient();
 
-type StreamPublication = {
-  streamName: string;
-  message: EmailMessage;
-};
-
 /**
- * Publishes multiple messages to Redis streams using pipelining for better performance.
- * @param publications - Array of stream publications, each containing streamName and message
- * @returns Promise that resolves when all messages are published
+ * Publishes an email message to a Redis stream.
+ * @param streamName - The name of the Redis stream to publish to.
+ * @param emailMessage - The email message to publish.
+ * @returns A promise that resolves when the message is successfully published.
  */
-async function publishToStreamsPipeline(
-  publications: StreamPublication[]
-): Promise<void> {
-  const pipeline = redisClient.multi();
-
-  for (const { streamName, message } of publications) {
-    pipeline.xadd(streamName, '*', 'message', JSON.stringify(message));
+async function publishEmailMessage(
+  streamName: string,
+  emailMessage: EmailMessage
+) {
+  try {
+    await redisClient.xadd(
+      streamName,
+      '*',
+      'message',
+      JSON.stringify(emailMessage)
+    );
+  } catch (error) {
+    logger.error(
+      `Error when publishing email message to stream ${streamName}`,
+      error
+    );
+    throw error;
   }
-
-  await pipeline.exec();
 }
 
 /**
@@ -238,128 +239,6 @@ export default class ImapEmailsFetcher {
     logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
 
-  private async processSignature(
-    messageId: string,
-    signature: string,
-    parsedHeader: any,
-    seqNumber: number,
-    folderPath: string,
-    isLastMessageInFolder: boolean
-  ) {
-    logger.debug(
-      `Signature detected in email ${messageId} using email-reply-parser`,
-      {
-        miningId: this.miningId,
-        signatureLength: signature.length,
-        userEmail: this.userEmail,
-        folderPath
-      }
-    );
-
-    await publishToStreamsPipeline([
-      {
-        streamName: SIGNATURE_EXTRACTION_STREAM,
-        message: {
-          type: 'email',
-          data: {
-            header: null,
-            body: signature,
-            seqNumber,
-            folderPath,
-            isLast: isLastMessageInFolder
-          },
-          userId: this.userId,
-          userEmail: this.userEmail,
-          userIdentifier: this.userIdentifier,
-          miningId: this.miningId
-        }
-      },
-      {
-        streamName: this.streamName,
-        message: {
-          type: 'email',
-          data: {
-            header: parsedHeader,
-            body: '',
-            seqNumber,
-            folderPath,
-            isLast: isLastMessageInFolder
-          },
-          userId: this.userId,
-          userEmail: this.userEmail,
-          userIdentifier: this.userIdentifier,
-          miningId: this.miningId
-        }
-      }
-    ]);
-
-    logger.debug(`Signature sent to stream for email ${messageId}`, {
-      miningId: this.miningId,
-      stream: SIGNATURE_EXTRACTION_STREAM,
-      userEmail: this.userEmail,
-      folderPath
-    });
-  }
-
-  private async handleEmailBody(
-    messageId: string,
-    emailBodyForSignature: string,
-    parsedHeader: any,
-    seqNumber: number,
-    folderPath: string,
-    isLastMessageInFolder: boolean
-  ) {
-    try {
-      const parsedEmail = replyParser(emailBodyForSignature);
-      const fragments = parsedEmail.getFragments();
-      const signatureFragments = fragments.filter(
-        (fragment) => fragment.isSignature() && !fragment.isEmpty()
-      );
-
-      const signaturePromises = signatureFragments.map((fragment) => {
-        const signature = fragment.getContent().trim();
-        if (signature.length > 0) {
-          return this.processSignature(
-            messageId,
-            signature,
-            parsedHeader,
-            seqNumber,
-            folderPath,
-            isLastMessageInFolder
-          );
-        }
-        return Promise.resolve(false);
-      });
-
-      const results = await Promise.all(signaturePromises);
-      const hasSignature = results.some((result) => result !== false);
-
-      if (!hasSignature) {
-        logger.debug(
-          `No signature detected in email ${messageId} using email-reply-parser`,
-          {
-            miningId: this.miningId,
-            userEmail: this.userEmail,
-            folderPath
-          }
-        );
-      }
-
-      return hasSignature;
-    } catch (error) {
-      logger.error(
-        `Error parsing email signature with node-email-reply-parser for email ${messageId}`,
-        {
-          miningId: this.miningId,
-          userEmail: this.userEmail,
-          folderPath,
-          error
-        }
-      );
-      return false;
-    }
-  }
-
   /**
    *
    * @param connection - Open IMAP connection.
@@ -380,11 +259,8 @@ export default class ImapEmailsFetcher {
         let body = '';
 
         if (this.isCanceled === true) {
-          reject(
-            new Error(
-              `Canceled process on folder ${folderPath} with ID ${this.miningId}`
-            )
-          );
+          const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
+          reject(new Error(message));
           return;
         }
 
@@ -400,19 +276,19 @@ export default class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header);
-          let parsedBody = this.fetchEmailBody ? body : '';
-
-          // Trim body to last 25 lines to optimize memory usage and signature extraction
-          if (parsedBody && parsedBody.length > 3000) {
-            const lines = parsedBody.split('\n');
-            parsedBody = lines.slice(Math.max(0, lines.length - 25)).join('\n');
-          }
+          const parsedBody = this.fetchEmailBody ? body : '';
+          const lines = parsedBody.split('\n');
+          const parsedSignature= lines.length > 1000 
+            ? lines.slice(-30).join('\n')
+            : body;
 
           const messageId = getMessageId(parsedHeader);
+
           parsedHeader['message-id'] = [messageId];
 
           const isLastMessageInFolder = seqNumber === totalInFolder;
 
+          // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
           if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
             return;
           }
@@ -424,41 +300,30 @@ export default class ImapEmailsFetcher {
           const shouldPublishProgress =
             reachedBatchSize || isLastMessageInFolder;
           const progressToSend = messageCounter + 1;
+          // Increment the message counter or reset it to 0 if batch size has been reached.
           messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
 
           if (shouldPublishProgress) {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
-          const emailBodyForSignature =
-            this.fetchEmailBody && !isHTMLBody(parsedBody) ? parsedBody : null;
-
-          if (emailBodyForSignature) {
-            const hasSignature = await this.handleEmailBody(
-              messageId,
-              emailBodyForSignature,
-              parsedHeader,
+          const emailSignature = getSignature(parsedSignature) ?? undefined;
+          
+          await publishEmailMessage(this.streamName, {
+            type: 'email',
+            data: {
+              header: parsedHeader,
+              body: '',
+              signature: emailSignature,
               seqNumber,
               folderPath,
-              isLastMessageInFolder
-            );
-
-            if (!hasSignature) {
-              await this.publishEmailMessage(
-                parsedHeader,
-                seqNumber,
-                folderPath,
-                isLastMessageInFolder
-              );
-            }
-          } else {
-            await this.publishEmailMessage(
-              parsedHeader,
-              seqNumber,
-              folderPath,
-              isLastMessageInFolder
-            );
-          }
+              isLast: isLastMessageInFolder
+            },
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          });
         });
       });
 
@@ -489,32 +354,5 @@ export default class ImapEmailsFetcher {
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     return this.isCompleted;
-  }
-
-  private async publishEmailMessage(
-    parsedHeader: any,
-    seqNumber: number,
-    folderPath: string,
-    isLastMessageInFolder: boolean
-  ) {
-    await publishToStreamsPipeline([
-      {
-        streamName: this.streamName,
-        message: {
-          type: 'email',
-          data: {
-            header: parsedHeader,
-            body: '',
-            seqNumber,
-            folderPath,
-            isLast: isLastMessageInFolder
-          },
-          userId: this.userId,
-          userEmail: this.userEmail,
-          userIdentifier: this.userIdentifier,
-          miningId: this.miningId
-        }
-      }
-    ]);
   }
 }
