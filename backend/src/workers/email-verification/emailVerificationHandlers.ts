@@ -1,8 +1,10 @@
+import { Logger } from 'winston';
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import {
   EmailStatusResult,
-  EmailStatusVerifier
+  EmailStatusVerifier,
+  EmailVerifierType
 } from '../../services/email-status/EmailStatusVerifier';
 import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
 import logger from '../../utils/logger';
@@ -23,7 +25,7 @@ function logRejectedAndReturnResolved<T>(
     )
     .forEach((result) => {
       logger.error(`${context}: Promise rejected`, {
-        error: result.reason,
+        error: result.reason.message,
         timestamp: new Date().toISOString()
       });
     });
@@ -36,142 +38,183 @@ function logRejectedAndReturnResolved<T>(
     .map((result) => result.value);
 }
 
-async function ThrottleAsyncVerification(
-  batchSize: number,
-  emails: string[],
-  verifier: EmailStatusVerifier
-) {
-  const results: EmailStatusResult[] = [];
-  for (let i = 0; i < emails.length; i += batchSize) {
-    const batch = emails.slice(i, i + batchSize);
-    results.push(
-      ...logRejectedAndReturnResolved<EmailStatusResult>(
-        // eslint-disable-next-line no-await-in-loop
-        await Promise.allSettled(batch.map((email) => verifier.verify(email))),
-        'Async email status verification'
-      )
-    );
+class EmailVerificationHandler {
+  private readonly WAITING_FOR_VERIFICATION: Map<string, string>;
+
+  constructor(
+    private readonly contacts: Contacts,
+    private readonly emailStatusCache: EmailStatusCache,
+    private readonly emailStatusVerifier: EmailStatusVerifierFactory,
+
+    private readonly progressCallback: (verified: number) => Promise<void>,
+    private readonly classLogger: Logger,
+    private readonly verificationData: EmailVerificationData[]
+  ) {
+    this.WAITING_FOR_VERIFICATION = new Map<string, string>();
   }
 
-  return results;
-}
-/**
- * Performs verification either in bulk or single checks on the provided emails,
- * then caches and writes the results to the database.
- *
- * @param data - Array of verification data, containing { userId, email }.
- * @param contacts - The contacts db accessor.
- * @param emailStatusCache - The emails status cache accessor.
- * @param emailStatusVerifierFactory - The factory providing email verification services.
- */
-async function emailVerificationHandlerWithBulk(
-  verificationData: EmailVerificationData[],
-  contacts: Contacts,
-  emailStatusCache: EmailStatusCache,
-  emailStatusVerifierFactory: EmailStatusVerifierFactory
-) {
-  const waitingForVerification = new Map();
+  private static createEmailVerificationBatches(
+    emailAddresses: string[],
+    batchSize: number,
+    verifierName: string,
+    verifier: EmailStatusVerifier
+  ): [EmailStatusVerifier, string, string[]][] {
+    const verificationBatches: [EmailStatusVerifier, string, string[]][] = [];
 
-  try {
-    // update email status from cache
-    const cachePromises = verificationData.map(async ({ userId, email }) => {
-      const existingStatus =
-        (await emailStatusCache.get(email)) ??
-        (await contacts.SelectRecentEmailStatus(email));
+    for (let i = 0; i < emailAddresses.length; i += batchSize) {
+      const currentBatch = emailAddresses.slice(i, i + batchSize);
+      verificationBatches.push([verifier, verifierName, currentBatch]);
+    }
 
-      if (!existingStatus) {
-        waitingForVerification.set(email, userId);
-        return;
-      }
+    return verificationBatches;
+  }
 
-      logger.debug('Cached result', {
-        email,
-        verifier: 'CACHED',
-        result: existingStatus
-      });
+  private async isExistingStatus(email: string) {
+    const existingStatus =
+      (await this.emailStatusCache.get(email)) ??
+      (await this.contacts.SelectRecentEmailStatus(email));
+    return existingStatus;
+  }
 
-      await contacts.upsertEmailStatus({
-        verifiedOn: new Date().toISOString(),
-        ...existingStatus, // overwrites verifiedOn if exists.
-        email,
-        userId
-      });
+  private async updateStatus(
+    userId: string,
+    email: string,
+    status: EmailStatusResult
+  ) {
+    this.emailStatusCache.set(email, status);
+    return this.contacts.upsertEmailStatus({
+      verifiedOn: new Date().toISOString(),
+      ...status,
+      email,
+      userId
     });
+  }
+
+  private async getUpdateStatusCache() {
+    const cachePromises = this.verificationData.map(
+      async ({ userId, email }) => {
+        const existing = await this.isExistingStatus(email);
+        if (existing) {
+          await this.updateStatus(userId, email, existing);
+        } else {
+          this.WAITING_FOR_VERIFICATION.set(email, userId);
+        }
+      }
+    );
 
     logRejectedAndReturnResolved(
       await Promise.allSettled(cachePromises),
-      'Updating email status from cache'
+      `[${this.constructor.name}.getUpdateStatusCache]:Updating email status from cache`
     );
 
-    const verifiers = emailStatusVerifierFactory.getEmailVerifiers(
-      Array.from(waitingForVerification.keys())
+    logRejectedAndReturnResolved(
+      await Promise.allSettled([
+        await this.progressCallback(
+          this.verificationData.map(({ email }) => email).length -
+            this.WAITING_FOR_VERIFICATION.size
+        )
+      ]),
+      `[${this.constructor.name}.getUpdateStatusCache]: Sending progress`
     );
+  }
 
-    // Perform email status verification
-    const verificationPromises = Array.from(verifiers.entries()).map(
-      async ([verifierName, [verifier, emails]]) => {
-        const startTime = performance.now();
-
-        logger.info(
-          `[${verifierName}]: Verification started with ${emails.length} email(s)`,
-          { started_at: startTime }
-        );
-
-        const verified =
-          verifierName === 'mailercheck' && emails.length > 100
-            ? await verifier.verifyMany(emails)
-            : await ThrottleAsyncVerification(200, emails, verifier);
-
-        logger.info(
-          `[${verifierName}]: Verification completed with ${verified.length} results`,
-          {
-            started_at: startTime,
-            stopped_at: performance.now(),
-            duration: performance.now() - startTime
-          }
-        );
-
-        return { verifierName, verified };
+  private logVerificationStarted(
+    emailsLength: number,
+    verifierName: string,
+    startTime: number
+  ) {
+    this.classLogger.info(
+      `Verification started with ${emailsLength} email(s)`,
+      {
+        engine: verifierName,
+        started_at: startTime
       }
     );
+  }
 
-    const verificationResult = logRejectedAndReturnResolved(
-      await Promise.allSettled(verificationPromises),
-      'Email verification failed'
+  private logVerificationCompleted(
+    emailsLength: number,
+    verifierName: string,
+    startTime: number
+  ) {
+    this.classLogger.info(
+      `[Verification completed with ${emailsLength} results`,
+      {
+        started_at: startTime,
+        stopped_at: performance.now(),
+        duration: performance.now() - startTime,
+        engine: verifierName
+      }
+    );
+  }
+
+  private async verifyEmails(
+    emails: string[],
+    verifier: EmailStatusVerifier,
+    verifierName: string
+  ) {
+    const startTime = performance.now();
+
+    this.logVerificationStarted(emails.length, verifierName, startTime);
+
+    const results = logRejectedAndReturnResolved<EmailStatusResult>(
+      // eslint-disable-next-line no-await-in-loop
+      await Promise.allSettled(emails.map((email) => verifier.verify(email))),
+      `[${this.constructor.name}.verifyEmails]: Batch email status verification`
     );
 
-    // Update email status
-    const promises = verificationResult.flatMap(({ verified }) =>
-      verified.map(async (result) => {
-        const { email } = result;
-        const userId = waitingForVerification.get(email);
-
-        if (!userId) {
-          logger.warn('No userId found to update email status.', { email });
-          return;
-        }
-        try {
-          emailStatusCache.set(email, result);
-          await contacts.upsertEmailStatus({
-            email,
-            userId,
-            status: result.status,
-            details: result.details,
-            verifiedOn: new Date().toISOString()
-          });
-        } catch (error) {
-          logger.error('Error updating email status', {
-            email,
-            result,
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      })
+    logRejectedAndReturnResolved(
+      await Promise.allSettled(
+        results.map(async (result) => {
+          const userId = this.WAITING_FOR_VERIFICATION.get(result.email);
+          if (!userId) throw new Error('Failed to updated: userId not found');
+          await this.updateStatus(userId, result.email, result);
+        })
+      ),
+      `[${this.constructor.name}.verifyEmails]: Updating email status post verification`
     );
 
-    await Promise.allSettled(promises);
-  } catch (error) {
-    logger.error('Failed when processing message from the stream', error);
+    this.logVerificationCompleted(results.length, verifierName, startTime);
+
+    return results;
+  }
+
+  private async verificationPromises(
+    verifiers: [EmailVerifierType, [EmailStatusVerifier, string[]]][]
+  ) {
+    return verifiers.map(async ([verifierName, [verifier, emails]]) => {
+      const batches = EmailVerificationHandler.createEmailVerificationBatches(
+        emails,
+        verifier.emailsQuota / 10,
+        verifierName,
+        verifier
+      );
+
+      logRejectedAndReturnResolved(
+        await Promise.allSettled(
+          batches.map(async ([engine, engineName, emailBatch]) => {
+            const verified = await this.verifyEmails(
+              emailBatch,
+              engine,
+              engineName
+            );
+            await this.progressCallback(verified.length);
+          })
+        ),
+        'Email verification failed'
+      );
+    });
+  }
+
+  async verify() {
+    await this.getUpdateStatusCache();
+
+    const verifiers = Array.from(
+      this.emailStatusVerifier.getEmailVerifiers(
+        Array.from(this.WAITING_FOR_VERIFICATION.keys())
+      )
+    );
+    await Promise.allSettled([this.verificationPromises(verifiers)]);
   }
 }
 
@@ -181,12 +224,20 @@ export default function initializeEmailVerificationProcessor(
   emailStatusVerifier: EmailStatusVerifierFactory
 ) {
   return {
-    processStreamData: (message: EmailVerificationData[]) =>
-      emailVerificationHandlerWithBulk(
-        message,
+    processStreamData: async (
+      message: EmailVerificationData[],
+      progressCallback: (verified: number) => Promise<void>
+    ) => {
+      const handler = new EmailVerificationHandler(
         contacts,
         emailStatusCache,
-        emailStatusVerifier
-      )
+        emailStatusVerifier,
+        progressCallback,
+        logger,
+        message
+      );
+
+      await handler.verify();
+    }
   };
 }

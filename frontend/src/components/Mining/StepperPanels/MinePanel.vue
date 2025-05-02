@@ -156,7 +156,10 @@ const totalMinedMessage = computed(() =>
     : t('contacts_mined', $leadminerStore.createdContacts.toLocaleString()),
 );
 
-const extractionFinished = computed(() => $leadminerStore.extractionFinished);
+const extractionFinished = computed(
+  () =>
+    !$leadminerStore.miningInterrupted && $leadminerStore.extractionFinished,
+);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
 const extractionProgress = computed(() =>

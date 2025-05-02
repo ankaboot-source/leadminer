@@ -6,12 +6,13 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import { ContactFormat } from '../services/extractors/engines/FileImport';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
-import { validateType } from '../utils/helpers/validation';
+import validateType from '../utils/helpers/validation';
 import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
@@ -24,7 +25,32 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
-import { ContactFormat } from '../services/extractors/engines/FileImport';
+
+/**
+ * Exchanges an OAuth authorization code for tokens and extracts user email
+ *
+ * @param code - The authorization code received from OAuth provider
+ * @param provider - The OAuth provider name (e.g., 'google', 'microsoft')
+ */
+async function exchangeForToken(
+  code: string,
+  provider: OAuthMiningSourceProvider
+) {
+  const tokenConfig = {
+    ...getTokenConfig(provider),
+    code
+  };
+  const { refreshToken, accessToken, idToken, expiresAt } =
+    await getTokenWithScopeValidation(tokenConfig, provider);
+  const { email } = decode(idToken) as { email: string };
+
+  return {
+    email,
+    accessToken,
+    refreshToken,
+    expiresAt
+  };
+}
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -48,32 +74,23 @@ export default function initializeMiningController(
       const { code, state } = req.query as { code: string; state: string };
       const provider = req.params.provider as OAuthMiningSourceProvider;
 
-      const tokenConfig = {
-        ...getTokenConfig(provider),
-        code
-      };
-
       try {
-        const { refreshToken, accessToken, idToken, expiresAt } =
-          await getTokenWithScopeValidation(tokenConfig, provider);
-
-        // User has approved all the required scopes
-        const { email } = decode(idToken) as { email: string };
+        const exchangedTokens = await exchangeForToken(code, provider);
 
         await miningSources.upsert({
           userId: state,
-          email,
+          email: exchangedTokens.email,
           credentials: {
-            email,
-            accessToken,
-            refreshToken,
-            provider,
-            expiresAt
+            ...exchangedTokens,
+            provider
           },
           type: provider
         });
 
-        res.redirect(301, `${ENV.FRONTEND_HOST}/mine?source=${email}`);
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
+        );
       } catch (error) {
         res.redirect(
           301,
@@ -321,7 +338,6 @@ export default function initializeMiningController(
 
         return res.status(201).send({ error: null, data: fileMiningTask });
       } catch (err) {
-        console.log(err);
         res.status(500);
         return next(err);
       }

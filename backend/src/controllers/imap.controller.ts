@@ -13,9 +13,9 @@ import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
+import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './imap.helpers';
-import { validateType } from '../utils/helpers/validation';
 
 type NewToken = {
   access_token: string;

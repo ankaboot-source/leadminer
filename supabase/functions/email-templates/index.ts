@@ -4,7 +4,7 @@ import supabaseEmailsI18n from "./templates.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
-} from "../_shared/supabase-self-hosted.ts";
+} from "../_shared/supabase.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
