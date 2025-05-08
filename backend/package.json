@@ -38,7 +38,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csv-stringify": "^6.5.2",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "express-sse": "github:omgimalexis/express-sse",
     "generic-pool": "^3.9.0",
