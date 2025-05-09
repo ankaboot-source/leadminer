@@ -44,12 +44,31 @@ const signatureStreamsConsumer =
 const emailsStreamConsumer = new EmailSignatureConsumer(
   tasksManagementSubscriber,
   signatureStreamsConsumer,
+  ENV.REDIS_SIGNATURE_STREAM_NAME,
   ENV.REDIS_EMAIL_SIGNATURE_CONSUMER_BATCH_SIZE,
   processStreamData,
   redisClient,
   logger
 );
 
-(() => {
+(async () => {
+  try {
+    logger.info('Setting up Redis stream, group...');
+    await redisClient.xgroup(
+      'CREATE',
+      ENV.REDIS_SIGNATURE_STREAM_NAME,
+      ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP,
+      '$',
+      'MKSTREAM'
+    );
+    logger.info('Consumer group created.');
+  } catch (err: any) {
+    if (err?.message?.includes('BUSYGROUP')) {
+      logger.info('Consumer group already created');
+    } else {
+      logger.error('Failed to start consumer:', err);
+      process.exit(1);
+    }
+  }
   emailsStreamConsumer.start();
 })();

@@ -22,7 +22,6 @@ export interface TaskExtractStreamInfo {
   messagesStream: string;
   messagesConsumerGroup: string;
   emailsVerificationStream: string;
-  signatureStream?: string;
 }
 
 export interface TaskCleanStreamInfo {

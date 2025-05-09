@@ -1,8 +1,8 @@
+import { Logger } from 'winston';
 import { Contacts } from '../../db/interfaces/Contacts';
 import logger from '../../utils/logger';
-import EmailSignatureCache, {
-  EmailSignatureWithMetadata
-} from '../../services/cache/EmailSignatureCache';
+import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
+import { Person } from '../../db/types';
 
 export interface EmailSignature {
   signature: string;
@@ -11,21 +11,30 @@ export interface EmailSignature {
 
 export interface EmailSignatureData {
   userId: string;
-  miningId: string;
   emailData: {
     messageId: string;
     messageDate: string;
     signature: string;
     from: string; // Email address of the sender
   };
-  isLastEmail: boolean;
 }
 
 class EmailSignatureProcessor {
   constructor(
+    private readonly logs: Logger,
     private readonly contacts: Contacts,
     private readonly signatureCache: EmailSignatureCache
   ) {}
+
+  async enrichContactDB(signature: Partial<Person>) {
+    this.logs.debug(signature);
+    return signature;
+  }
+
+  async extractSignature(signature: string): Promise<Partial<Person>> {
+    this.logs.debug(signature);
+    return {} as Partial<Person>;
+  }
 
   /**
    * Processes a stream of email signature data
@@ -33,134 +42,53 @@ class EmailSignatureProcessor {
    * @returns Promise with all signatures if isLastEmail is true, otherwise void
    */
   async processStreamData(data: EmailSignatureData[]) {
-    logger.info(`Processing ${data.length} email signatures`);
+    this.logs.info(`Processing ${data.length} email signatures`);
     const startTime = performance.now();
 
     try {
-      const processingPromises = data.map(async (signature) => {
-        try {
-          await this.processSingleSignature(signature);
+      const processingPromises = data.map(
+        async ({ userId, emailData: { from, signature, messageDate } }) => {
+          try {
+            const isNewerSignature = await this.signatureCache.isNewer(
+              userId,
+              from,
+              messageDate
+            );
 
-          if (signature.isLastEmail) {
-            const allSignatures = await this.signatureCache.getAllForMining(
-              signature.miningId
-            );
-            logger.info(
-              `Retrieved all signatures for mining ${signature.miningId}`,
-              {
-                count: allSignatures.length
+            if (!isNewerSignature) return;
+
+            const contactData = await this.extractSignature(signature);
+            await this.enrichContactDB(contactData);
+
+            // Update signature in redis
+            await this.signatureCache.set(userId, from, signature, messageDate);
+
+            this.logs.info('Parsed/processed signature', {
+              userId,
+              signatureInfo: {
+                signature,
+                email: from,
+                date: messageDate
               }
-            );
+            });
+          } catch (error) {
+            this.logs.error('Error processing signature', {
+              userId,
+              email: from,
+              error: error instanceof Error ? error.message : String(error)
+            });
           }
-        } catch (error) {
-          logger.error('Error processing signature', {
-            userId: signature.userId,
-            miningId: signature.miningId,
-            error: error instanceof Error ? error.message : String(error)
-          });
         }
-      });
+      );
 
       await Promise.allSettled(processingPromises);
-
-      logger.info('Email signature processing completed', {
-        duration: performance.now() - startTime,
-        processedCount: data.length
-      });
     } catch (error) {
-      logger.error('Fatal error in signature processing', {
+      this.logs.error('Fatal error in signature processing', {
         error: error instanceof Error ? error.message : String(error),
         duration: performance.now() - startTime
       });
       throw error;
     }
-  }
-
-  /**
-   * Processes a single email signature
-   * @param data Email signature data to process
-   */
-  private async processSingleSignature(
-    data: EmailSignatureData
-  ): Promise<void> {
-    const { miningId, emailData } = data;
-
-    try {
-      const existingSignature = await this.signatureCache.getMostRecent(
-        emailData.from
-      );
-
-      if (existingSignature) {
-        await this.handleExistingSignature(
-          emailData.from,
-          emailData,
-          existingSignature
-        );
-      } else {
-        await this.storeNewSignature(emailData.from, emailData);
-      }
-
-      logger.debug('Signature processed successfully', {
-        email: emailData.from,
-        miningId,
-        messageId: emailData.messageId
-      });
-    } catch (error) {
-      logger.error('Error in signature processing', {
-        email: emailData.from,
-        miningId,
-        messageId: emailData.messageId,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Handles case when signature already exists in cache
-   */
-  private async handleExistingSignature(
-    email: string,
-    emailData: EmailSignatureData['emailData'],
-    existingSignature: EmailSignatureWithMetadata
-  ): Promise<void> {
-    if (emailData.messageDate > existingSignature.lastSeenDate) {
-      await this.updateSignature(email, emailData);
-    }
-  }
-
-  /**
-   * Stores a new signature in cache
-   */
-  private async storeNewSignature(
-    email: string,
-    emailData: EmailSignatureData['emailData']
-  ): Promise<void> {
-    const signature: EmailSignature = {
-      signature: emailData.signature,
-      date: emailData.messageDate
-    };
-
-    await this.signatureCache.set(email, signature, emailData.messageDate);
-  }
-
-  /**
-   * Updates an existing signature in cache
-   */
-  private async updateSignature(
-    email: string,
-    emailData: EmailSignatureData['emailData']
-  ): Promise<void> {
-    const updatedSignature: EmailSignature = {
-      signature: emailData.signature,
-      date: emailData.messageDate
-    };
-
-    await this.signatureCache.set(
-      email,
-      updatedSignature,
-      emailData.messageDate
-    );
   }
 }
 
@@ -170,8 +98,10 @@ export default function initializeEmailSignatureProcessor(
 ) {
   return {
     processStreamData: (data: EmailSignatureData[]) =>
-      new EmailSignatureProcessor(contacts, signatureCache).processStreamData(
-        data
-      )
+      new EmailSignatureProcessor(
+        logger,
+        contacts,
+        signatureCache
+      ).processStreamData(data)
   };
 }

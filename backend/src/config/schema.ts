@@ -32,6 +32,8 @@ const schema = z.object({
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: z.string().min(1),
   REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: z.string().min(1),
   REDIS_CLEANING_STREAM_CONSUMER_GROUP: z.string().min(1),
+
+  REDIS_SIGNATURE_STREAM_NAME: z.string().min(1),
   REDIS_SIGNATURE_STREAM_CONSUMER_GROUP: z.string().min(1),
 
   /* SUPABASE + POSTGRES */

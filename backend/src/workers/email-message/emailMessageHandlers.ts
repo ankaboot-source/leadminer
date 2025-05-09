@@ -106,7 +106,6 @@ async function emailMessageHandler(
         })
       );
 
-      console.log(data.data);
       const { message } = extractedContacts as ExtractedContacts;
       const { signature } = data.data as EmailFormat;
       const emailFrom = (extractedContacts as ExtractedContacts).persons
@@ -117,14 +116,12 @@ async function emailMessageHandler(
         emailsSignatureProducer.produce([
           {
             userId,
-            miningId,
             emailData: {
               signature,
               from: emailFrom,
               messageDate: message.date ?? '',
               messageId: message.messageId
-            },
-            isLastEmail: false
+            }
           }
         ]);
       }

@@ -14,11 +14,10 @@ export interface PubSubMessage {
 export default class EmailSignatureConsumer {
   private isInterrupted: boolean;
 
-  private readonly activeStreams = new Set<string>();
-
   constructor(
     private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailSignatureData>,
+    private readonly emailSignatureStream: string,
     private readonly batchSize: number,
     private readonly emailProcessor: (
       data: EmailSignatureData[]
@@ -30,14 +29,7 @@ export default class EmailSignatureConsumer {
 
     this.taskManagementSubscriber.subscribe(
       ({ miningId, command, signatureStream }) => {
-        if (signatureStream) {
-          if (command === 'REGISTER') {
-            this.activeStreams.add(signatureStream);
-          } else {
-            this.activeStreams.delete(signatureStream);
-          }
-        }
-
+        this.isInterrupted = false;
         this.logger.debug('Received PubSub signal.', {
           metadata: {
             miningId,
@@ -66,14 +58,10 @@ export default class EmailSignatureConsumer {
           try {
             const processed = await this.emailProcessor(data);
 
-            if (!this.activeStreams.has(streamName)) {
-              return null;
-            }
-
             const miningId = streamName.split('-')[1];
             const extractionProgress = {
               miningId,
-              progressType: 'verifiedContacts',
+              progressType: 'signatureExtracted',
               count: data.length
             };
 
@@ -85,7 +73,10 @@ export default class EmailSignatureConsumer {
             return processed;
           } catch (err) {
             this.logger.error('Extraction error', err);
-            return Promise.reject(err);
+            const error = new Error(
+              (err as Error).message ?? 'Unexpected error'
+            );
+            return Promise.reject(error);
           }
         })
       );
@@ -104,22 +95,18 @@ export default class EmailSignatureConsumer {
       return;
     }
 
-    const streams = Array.from(this.activeStreams);
-
-    if (streams.length > 0) {
-      try {
-        await this.consumeFromStreams(streams);
-      } catch (error) {
-        this.logger.error(
-          'An error occurred while consuming streams:',
-          error as Error
-        );
-      }
+    try {
+      await this.consumeFromStreams([this.emailSignatureStream]);
+    } catch (error) {
+      this.logger.error(
+        'An error occurred while consuming streams:',
+        error as Error
+      );
     }
 
     setTimeout(() => {
       this.consume();
-    }, 0);
+    }, 1000);
   }
 
   /**

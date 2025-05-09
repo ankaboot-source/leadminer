@@ -53,18 +53,12 @@ export default class MessagesConsumer {
         messagesStream,
         emailsVerificationStream
       }) => {
-        const signatureStream = `signature_stream-${miningId}`;
         if (messagesStream && emailMessagesStreamsConsumer) {
           if (command === 'REGISTER') {
-            await this.pubsubStreamCreate(
-              signatureStream,
-              ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
-            );
-
             const emailsSignatureProducer =
               new RedisStreamProducer<EmailSignatureData>(
                 redisClient,
-                signatureStream,
+                ENV.REDIS_SIGNATURE_STREAM_NAME,
                 this.logger
               );
 
@@ -86,10 +80,6 @@ export default class MessagesConsumer {
               queuedEmailsCache
             });
           } else {
-            await this.pubsubStreamDestroy(
-              signatureStream,
-              ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
-            );
             const streamEntry = this.activeStreams.get(messagesStream);
             if (streamEntry) {
               await streamEntry.queuedEmailsCache.destroy();
@@ -107,21 +97,6 @@ export default class MessagesConsumer {
           }
         });
       }
-    );
-  }
-
-  private async pubsubStreamDestroy(streamName: string, consumerGroup: string) {
-    await this.redisClient.xgroup('DESTROY', streamName, consumerGroup);
-    await this.redisClient.del(streamName);
-  }
-
-  private async pubsubStreamCreate(streamName: string, consumerGroup: string) {
-    await this.redisClient.xgroup(
-      'CREATE',
-      streamName,
-      consumerGroup,
-      '$',
-      'MKSTREAM'
     );
   }
 
