@@ -55,7 +55,7 @@
     "vue-tsc": "^2.2.0"
   },
   "dependencies": {
-    "@sentry/nuxt": "^9.11.0",
+    "@sentry/nuxt": "^9.13.0",
     "@vueuse/core": "^13.0.0",
     "@vueuse/nuxt": "^13.0.0",
     "posthog-js": "^1.234.9",
