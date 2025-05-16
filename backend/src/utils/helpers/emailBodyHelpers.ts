@@ -26,3 +26,20 @@ export function getSignature(body: string): string | null {
 
   return signatures.length > 0 ? signatures.join('\n') : null;
 }
+
+// export async function parseEmail(rawEmail: Buffer) {
+//   try {
+//     const parsed = await simpleParser(Buffer.from(rawEmail)); // ← this is the fix
+//   console.log(parsed)
+//     console.log('Subject:', parsed.subject);
+//     console.log('From:', parsed.from?.text);
+//     console.log('To:', parsed.to?.text);
+//     console.log('Date:', parsed.date);
+//     console.log('Attachments:', parsed.attachments.length);
+
+//     const signature = extractSignature(parsed.text);
+//     console.log('Detected signature:', signature);
+//   } catch (err) {
+//     console.error('Email parsing failed:', err);
+//   }
+// }

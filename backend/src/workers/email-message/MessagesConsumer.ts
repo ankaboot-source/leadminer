@@ -8,8 +8,6 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
-import { EmailSignatureData } from '../email-signature/handler';
-import ENV from '../../config';
 
 export interface PubSubMessage {
   miningId: string;
@@ -17,12 +15,10 @@ export interface PubSubMessage {
   messagesStream: string;
   messagesConsumerGroup: string;
   emailsVerificationStream: string;
-  emailsSignatureStream: string;
 }
 
 interface StreamEntry {
   emailsStreamProducer: StreamProducer<EmailVerificationData>;
-  emailsSignatureProducer: StreamProducer<EmailSignatureData>;
   queuedEmailsCache: QueuedEmailsCache;
 }
 
@@ -38,7 +34,6 @@ export default class MessagesConsumer {
     private readonly messageProcessor: (
       data: EmailMessageData,
       emailsStreamProducer: StreamProducer<EmailVerificationData>,
-      emailsSignatureProducer: StreamProducer<EmailSignatureData>,
       queuedEmailsCache: QueuedEmailsCache
     ) => void,
     private readonly redisClient: Redis,
@@ -55,13 +50,6 @@ export default class MessagesConsumer {
       }) => {
         if (messagesStream && emailMessagesStreamsConsumer) {
           if (command === 'REGISTER') {
-            const emailsSignatureProducer =
-              new RedisStreamProducer<EmailSignatureData>(
-                redisClient,
-                ENV.REDIS_SIGNATURE_STREAM_NAME,
-                this.logger
-              );
-
             const queuedEmailsCache = new RedisQueuedEmailsCache(
               redisClient,
               miningId
@@ -76,7 +64,6 @@ export default class MessagesConsumer {
 
             this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
-              emailsSignatureProducer,
               queuedEmailsCache
             });
           } else {
@@ -125,7 +112,6 @@ export default class MessagesConsumer {
                 this.messageProcessor(
                   message,
                   streamEntry.emailsStreamProducer,
-                  streamEntry.emailsSignatureProducer,
                   streamEntry.queuedEmailsCache
                 )
               )

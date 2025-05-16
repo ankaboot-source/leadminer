@@ -126,7 +126,8 @@ export default class TasksManager {
         userId,
         email,
         miningId,
-        streamName: messagesStream,
+        contactStream: messagesStream,
+        signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
         batchSize,
         fetchEmailBody
       });

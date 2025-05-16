@@ -8,12 +8,13 @@ import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
 import initializeEmailSignatureProcessor, {
-  EmailSignatureData
+  EmailData
 } from './workers/email-signature/handler';
 import EmailSignatureConsumer, {
   PubSubMessage
 } from './workers/email-signature/consumer';
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
+import supabaseClient from './utils/supabase';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
@@ -23,7 +24,7 @@ const contacts = new PgContacts(pool, logger);
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
 const { processStreamData } = initializeEmailSignatureProcessor(
-  contacts,
+  supabaseClient,
   emailSignatureCache
 );
 
@@ -33,13 +34,12 @@ const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
   ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL
 );
 
-const signatureStreamsConsumer =
-  new RedisMultipleStreamsConsumer<EmailSignatureData>(
-    redisClient,
-    logger,
-    `consumer-${process.env.HOSTNAME}`,
-    ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
-  );
+const signatureStreamsConsumer = new RedisMultipleStreamsConsumer<EmailData>(
+  redisClient,
+  logger,
+  `consumer-${process.env.HOSTNAME}`,
+  ENV.REDIS_SIGNATURE_STREAM_CONSUMER_GROUP
+);
 
 const emailsStreamConsumer = new EmailSignatureConsumer(
   tasksManagementSubscriber,

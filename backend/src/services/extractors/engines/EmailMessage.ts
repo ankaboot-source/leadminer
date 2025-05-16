@@ -76,7 +76,6 @@ export interface ExtractedContacts {
 export interface EmailFormat {
   header: unknown;
   body: unknown;
-  signature: string;
   folderPath: string;
   isLast: boolean;
 }

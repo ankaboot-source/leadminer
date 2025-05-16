@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis';
-import { Logger } from 'winston';
+import { Logger, stream } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
-import { EmailSignatureData } from './handler';
+import { EmailData } from './handler';
 
 export interface PubSubMessage {
   miningId: string;
@@ -16,12 +16,10 @@ export default class EmailSignatureConsumer {
 
   constructor(
     private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
-    private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailSignatureData>,
+    private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailData>,
     private readonly emailSignatureStream: string,
     private readonly batchSize: number,
-    private readonly emailProcessor: (
-      data: EmailSignatureData[]
-    ) => Promise<void>,
+    private readonly emailProcessor: (data: EmailData) => Promise<void>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
@@ -56,7 +54,9 @@ export default class EmailSignatureConsumer {
       await Promise.allSettled(
         result.map(async ({ streamName, data }) => {
           try {
-            const processed = await this.emailProcessor(data);
+            const promises = await Promise.allSettled(
+              data.map((emailData) => this.emailProcessor(emailData))
+            );
 
             const miningId = streamName.split('-')[1];
             const extractionProgress = {
@@ -70,7 +70,7 @@ export default class EmailSignatureConsumer {
               JSON.stringify(extractionProgress)
             );
 
-            return processed;
+            return promises;
           } catch (err) {
             this.logger.error('Extraction error', err);
             const error = new Error(
