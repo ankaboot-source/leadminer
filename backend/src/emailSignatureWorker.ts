@@ -58,8 +58,8 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
       'MKSTREAM'
     );
     logger.info('Consumer group created.');
-  } catch (err: any) {
-    if (err?.message?.includes('BUSYGROUP')) {
+  } catch (err: unknown) {
+    if ((err as Error)?.message?.includes('BUSYGROUP')) {
       logger.info('Consumer group already created');
     } else {
       logger.error('Failed to start consumer:', err);

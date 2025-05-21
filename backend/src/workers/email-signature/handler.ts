@@ -5,6 +5,7 @@ import { findPhoneNumbersInText } from 'libphonenumber-js';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
+import { assert } from 'console';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -142,6 +143,7 @@ export class EmailSignatureProcessor {
   }
 
   private async upsertContact(contact: Partial<Contact>): Promise<void> {
+    assert(contact.user_id, "upsertContact: 'user_id' is required");
     const payload = {
       image: contact.image ?? null,
       email: contact.email,
@@ -154,7 +156,7 @@ export class EmailSignatureProcessor {
       location: (contact.location ?? []).join(','),
       alternate_name: contact.alternate_name ?? null,
       phone_numbers: contact.phone_numbers?.join(','),
-      user_id: contact.user_id!
+      user_id: contact.user_id
     };
 
     const { error } = await this.supabase
@@ -164,10 +166,7 @@ export class EmailSignatureProcessor {
         p_update_empty_fields_only: false
       });
 
-    if (error) {
-      this.logging.error('Failed to upsert contact', error);
-      throw error;
-    }
+    if (error) throw error;
   }
 }
 
