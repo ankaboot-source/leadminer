@@ -108,6 +108,7 @@ export interface Contact {
   job_title?: string;
   same_as?: string[];
   image?: string;
+  phone_numbers?: string[];
 }
 
 export interface Profile {
