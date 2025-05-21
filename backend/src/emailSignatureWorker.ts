@@ -1,8 +1,6 @@
 import './env';
 
 import ENV from './config';
-import pool from './db/pg';
-import PgContacts from './db/pg/PgContacts';
 import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
@@ -18,8 +16,6 @@ import supabaseClient from './utils/supabase';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
-
-const contacts = new PgContacts(pool, logger);
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 

@@ -3,10 +3,7 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
-import {
-  EmailFormat,
-  ExtractedContacts
-} from '../../services/extractors/engines/EmailMessage';
+import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';

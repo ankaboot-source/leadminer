@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { Logger, stream } from 'winston';
+import { Logger } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
 import { EmailData } from './handler';
