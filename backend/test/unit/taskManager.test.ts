@@ -272,7 +272,7 @@ describe('TasksManager', () => {
         expect(sseBroadcasterFactory.create).toHaveBeenCalledWith();
         expect(emailFetcherFactory.create).toHaveBeenCalledWith({
           miningId: task.miningId,
-          streamName: `messages_stream-${task.miningId}`,
+          contactStream: `messages_stream-${task.miningId}`,
           ...fetcherOptions
         });
 

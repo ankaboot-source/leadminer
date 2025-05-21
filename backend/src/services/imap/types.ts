@@ -15,7 +15,6 @@ export interface EmailMessage {
   data: {
     header: unknown;
     body?: string;
-    signature?: string;
     seqNumber: number;
     isLast: boolean;
     folderPath: string;
