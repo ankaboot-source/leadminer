@@ -54,12 +54,14 @@ export default class MessagesConsumer {
               redisClient,
               miningId
             );
+
             const emailsStreamProducer =
               new RedisStreamProducer<EmailVerificationData>(
                 redisClient,
                 emailsVerificationStream,
                 this.logger
               );
+
             this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
               queuedEmailsCache

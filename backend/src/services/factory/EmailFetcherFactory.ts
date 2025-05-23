@@ -8,7 +8,8 @@ interface Options {
   boxes: string[];
   imapConnectionProvider: ImapConnectionProvider;
   miningId: string;
-  streamName: string;
+  contactStream: string;
+  signatureStream: string;
   fetchEmailBody: boolean;
 }
 
@@ -23,7 +24,8 @@ export default class EmailFetcherFactory {
     userId,
     email,
     miningId,
-    streamName,
+    contactStream,
+    signatureStream,
     fetchEmailBody,
     batchSize
   }: Options) {
@@ -33,7 +35,8 @@ export default class EmailFetcherFactory {
       userId,
       email,
       miningId,
-      streamName,
+      contactStream,
+      signatureStream,
       fetchEmailBody,
       batchSize
     );

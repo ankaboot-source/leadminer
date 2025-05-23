@@ -77,6 +77,7 @@ export interface EmailFormat {
   header: unknown;
   body: unknown;
   folderPath: string;
+  isLast: boolean;
 }
 
 export default class EmailMessage {

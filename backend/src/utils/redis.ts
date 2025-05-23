@@ -66,12 +66,20 @@ class RedisManager {
   /**
    * Deletes all the keys of all the existing databases in redis.
    */
-  async flushAll() {
+  async flushAll(exceptStreams: string[]) {
     try {
-      const status = await this.normalClient.flushall();
-      logger.info(`Flush status: ${status} ✔️`);
+      const keys = await this.normalClient.keys('*');
+      const keysToDelete = keys.filter((key) => !exceptStreams.includes(key));
+
+      if (keysToDelete.length > 0) {
+        await this.normalClient.del(...keysToDelete);
+      }
+
+      logger.info(
+        `Deleted ${keysToDelete.length} keys except '${exceptStreams}' ✔️`
+      );
     } catch (error) {
-      logger.error('Failed flushing Redis.', error);
+      logger.error('Failed flushing Redis selectively.', error);
     }
   }
 

@@ -1,4 +1,5 @@
 import Connection, { Box, parseHeader } from 'imap';
+import PostalMime from 'postal-mime';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -9,30 +10,26 @@ import { EmailMessage } from './types';
 
 const redisClient = redis.getClient();
 
+interface StreamPipeline {
+  stream: string;
+  data: EmailMessage;
+}
+
 /**
  * Publishes an email message to a Redis stream.
- * @param streamName - The name of the Redis stream to publish to.
- * @param emailMessage - The email message to publish.
+ * @param streams - Array contains stream name and the data to publish
  * @returns A promise that resolves when the message is successfully published.
  */
-async function publishEmailMessage(
-  streamName: string,
-  emailMessage: EmailMessage
-) {
-  try {
-    await redisClient.xadd(
-      streamName,
-      '*',
-      'message',
-      JSON.stringify(emailMessage)
-    );
-  } catch (error) {
-    logger.error(
-      `Error when publishing email message to stream ${streamName}`,
-      error
-    );
-    throw error;
-  }
+async function publishStreamsPipeline(
+  streams: StreamPipeline[]
+): Promise<void> {
+  const pipeline = redisClient.multi();
+
+  streams.forEach(({ stream, data }) => {
+    pipeline.xadd(stream, '*', 'message', JSON.stringify(data));
+  });
+
+  await pipeline.exec();
 }
 
 /**
@@ -88,7 +85,8 @@ export default class ImapEmailsFetcher {
     private readonly userId: string,
     private readonly userEmail: string,
     private readonly miningId: string,
-    private readonly streamName: string,
+    private readonly contactStream: string,
+    private readonly signatureStream: string,
     private readonly fetchEmailBody = false,
     private readonly batchSize = 50
   ) {
@@ -274,7 +272,7 @@ export default class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header);
-          const parsedBody = this.fetchEmailBody ? body : '';
+          const normalizedEmail = await PostalMime.parse(header + body);
 
           const messageId = getMessageId(parsedHeader);
 
@@ -301,20 +299,46 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
-          await publishEmailMessage(this.streamName, {
-            type: 'email',
-            data: {
-              header: parsedHeader,
-              body: parsedBody,
-              seqNumber,
-              folderPath,
-              isLast: isLastMessageInFolder
+          await publishStreamsPipeline([
+            {
+              stream: this.contactStream,
+              data: {
+                type: 'email',
+                data: {
+                  header: parsedHeader,
+                  body: '',
+                  seqNumber,
+                  folderPath,
+                  isLast: isLastMessageInFolder
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
             },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          });
+            {
+              stream: this.signatureStream,
+              data: {
+                type: 'email',
+                data: {
+                  header: {
+                    from: normalizedEmail.from,
+                    messageId: normalizedEmail.messageId,
+                    messageDate: normalizedEmail.date
+                  },
+                  body: normalizedEmail.text?.slice(-500),
+                  seqNumber,
+                  folderPath,
+                  isLast: isLastMessageInFolder
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
+            }
+          ]);
         });
       });
 

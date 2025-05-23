@@ -41,6 +41,17 @@ services:
     depends_on:
       - redis
 
+  leadminer-signature-worker:
+    image: leadminer-signature-worker:git
+    container_name: leadminer_signature_worker
+    build:
+      context: backend
+      dockerfile: email-signature-worker.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
   leadminer-frontend:
     image: leadminer-frontend:git
     container_name: nuxt_frontend
