@@ -1,5 +1,5 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/ankaboot-source/leadminer/badge.svg?targetFile=package.json)](https://snyk.io/test/github/ankaboot-source/leadminer?targetFile=package.json)
-[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
+[![Maintainability](https://qlty.sh/badges/a42a3f7d-f1a1-4cf3-92aa-c14c33cea8a2/maintainability.svg)](https://qlty.sh/gh/ankaboot-source/projects/leadminer)
 [![Mozilla Observatory Score](https://img.shields.io/badge/Web%20Security-A%2B-2ea44f)](https://developer.mozilla.org/en-US/observatory/analyze?host=App.leadminer.io)
 [![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=false&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/)
 
