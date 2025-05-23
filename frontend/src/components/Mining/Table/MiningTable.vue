@@ -593,6 +593,27 @@
       </template>
     </Column>
 
+    <!-- Phone numbers -->
+    <Column
+      v-if="visibleColumns.includes('telephone')"
+      field="telephone"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="$t('contact.telephone_definition')">
+          {{ $t('contact.telephone') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+      <template #body="{ data }">
+        <div>{{ data.telephone?.join(', ') }}</div>
+      </template>
+    </Column>
+
     <!-- Location -->
     <Column
       v-if="visibleColumns.includes('location')"
@@ -969,6 +990,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.family_name'), value: 'family_name' },
   { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.alternate_email'), value: 'alternate_email' },
+  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },

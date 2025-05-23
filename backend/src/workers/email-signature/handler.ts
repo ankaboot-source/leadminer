@@ -138,7 +138,7 @@ export class EmailSignatureProcessor {
     return {
       email,
       user_id: userId,
-      phone_numbers: phoneNumbers.map((phone) => phone.number.number)
+      telephone: phoneNumbers.map((phone) => phone.number.number)
     };
   }
 
@@ -155,7 +155,7 @@ export class EmailSignatureProcessor {
       same_as: (contact.same_as ?? []).join(','),
       location: (contact.location ?? []).join(','),
       alternate_name: contact.alternate_name ?? null,
-      phone_numbers: contact.phone_numbers?.join(','),
+      telephone: contact.telephone?.join(','),
       user_id: contact.user_id
     };
 
