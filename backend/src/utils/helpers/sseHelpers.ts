@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { SSE } from 'express-sse';
+import SSE from 'express-sse';
 import logger from '../logger';
 
 /**
