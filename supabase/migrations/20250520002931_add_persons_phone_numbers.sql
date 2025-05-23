@@ -159,6 +159,7 @@ BEGIN
 END;
 $$;
 
+
 CREATE OR REPLACE FUNCTION private.enrich_contacts(p_contacts_data jsonb[], p_update_empty_fields_only boolean DEFAULT true) RETURNS void
     LANGUAGE plpgsql
     SET search_path = ''
