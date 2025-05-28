@@ -278,7 +278,7 @@ watch(contact, (newContact) => {
   contactEdit.value = {
     ...newContact,
     alternate_name: newContact?.alternate_name?.join('\n') ?? null,
-    telephone: contact.value?.telephone?.join('\n') ?? null,
+    telephone: newContact?.telephone?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
     location: newContact?.location?.join('\n') ?? null,
   };
