@@ -610,7 +610,19 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div>{{ data.telephone?.join(', ') }}</div>
+        <template v-for="(phone, index) in data.telephone" :key="index">
+          <Button
+            rounded
+            text
+            icon="pi pi-copy"
+            size="small"
+            class="text-2xl flex-none -m-1"
+            :aria-label="t('copy')"
+            @click="copyPhoneNumber(phone ?? undefined)"
+          />
+          <a :href="`tel:${phone}`">{{ phone }}</a>
+          <span v-if="index < data.telephone.length - 1">, </span>
+        </template>
       </template>
     </Column>
 
@@ -1090,6 +1102,24 @@ onNuxtReady(async () => {
   isLoading.value = false;
 });
 
+function showNotification(
+  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
+  summary: string,
+  detail: string,
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    life: 3000,
+  });
+}
+
+function copyPhoneNumber(phone: string) {
+  showNotification('success', t('phone_copied'), t('contact_phone_copied'));
+  navigator.clipboard.writeText(phone);
+}
+
 onUnmounted(() => {
   $screenStore.destroy();
   $contactsStore.$reset();
@@ -1173,7 +1203,9 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "any": "Any",
-    "contact_information": "Contact Information"
+    "contact_information": "Contact Information",
+    "phone_copied": "Phone number copied",
+    "contact_phone_copied": "Phone number has been copied to your clipboard"
   },
   "fr": {
     "of": "sur",
@@ -1221,7 +1253,9 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact"
+    "contact_information": "Information de contact",
+    "phone_copied": "Numéro de téléphone copié",
+    "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
   }
 }
 </i18n>
