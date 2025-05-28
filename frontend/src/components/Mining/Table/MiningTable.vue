@@ -610,7 +610,19 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div>{{ data.telephone?.join(', ') }}</div>
+        <template v-for="(phone, index) in data.telephone" :key="index">
+          <Button
+            rounded
+            text
+            icon="pi pi-copy"
+            size="small"
+            class="text-2xl flex-none -m-1"
+            :aria-label="t('copy')"
+            @click="copyPhoneNumber(phone ?? undefined)"
+          />
+          <a :href="`tel:${phone}`">{{ phone }}</a>
+          <span v-if="index < data.telephone.length - 1">, </span>
+        </template>
       </template>
     </Column>
 
@@ -1089,6 +1101,24 @@ onNuxtReady(async () => {
 
   isLoading.value = false;
 });
+
+function showNotification(
+  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
+  summary: string,
+  detail: string,
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    life: 3000,
+  });
+}
+
+function copyPhoneNumber(phone: string) {
+  showNotification('success', $t('contact.phone_copied'), $t('contact.contact_phone_copied'));
+  navigator.clipboard.writeText(phone);
+}
 
 onUnmounted(() => {
   $screenStore.destroy();

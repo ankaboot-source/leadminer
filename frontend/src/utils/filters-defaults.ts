@@ -38,6 +38,7 @@ export const DEFAULT_FILTERS = {
       'given_name',
       'family_name',
       'alternate_name',
+      'telephone',
       'location',
       'works_for',
       'job_title',

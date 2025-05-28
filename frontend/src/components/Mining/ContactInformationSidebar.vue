@@ -115,6 +115,40 @@
           </td>
         </tr>
 
+        <tr class="p-row-even">
+          <td class="md:font-medium">
+            {{ $t('contact.telephone') }}
+          </td>
+          <td>
+            <div v-if="!editingContact">
+              <template
+                v-for="(phone, index) in contact.telephone"
+                :key="index"
+              >
+                <div class="p-1">
+                  <Button
+                    rounded
+                    text
+                    icon="pi pi-copy"
+                    size="small"
+                    :aria-label="t('copy')"
+                    @click="copyPhoneNumber(phone ?? undefined)"
+                  />
+                  <a :href="`tel:${phone}`">
+                    <Chip :key="index" :label="phone" />
+                  </a>
+                </div>
+              </template>
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.telephone"
+              rows="3"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
         <tr class="p-row-odd">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
@@ -223,6 +257,9 @@ import {
 const { t } = useI18n({
   useScope: 'local',
 });
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
 
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
@@ -235,6 +272,7 @@ const editingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   ...contact.value,
   alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
+  telephone: contact.value?.telephone?.join('\n') ?? null,
   same_as: contact.value?.same_as?.join('\n') ?? null,
   location: contact.value?.location?.join('\n') ?? null,
 });
@@ -243,6 +281,7 @@ watch(contact, (newContact) => {
   contactEdit.value = {
     ...newContact,
     alternate_name: newContact?.alternate_name?.join('\n') ?? null,
+    telephone: newContact?.telephone?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
     location: newContact?.location?.join('\n') ?? null,
   };
@@ -254,6 +293,7 @@ const skipDialog = computed(
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_name ||
+      contact.value.telephone ||
       contact.value.location ||
       contact.value.works_for ||
       contact.value.job_title ||
@@ -367,6 +407,7 @@ async function saveContactInformations() {
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
+    telephone: transformStringToArray(contactEdit.value.telephone),
     location: transformStringToArray(contactEdit.value.location),
   };
 
@@ -376,6 +417,11 @@ async function saveContactInformations() {
       JSON.stringify(originalContactCopy.alternate_name) !==
       JSON.stringify(editedContactCopy.alternate_name)
         ? editedContactCopy.alternate_name || null
+        : undefined,
+    telephone:
+      JSON.stringify(originalContactCopy.telephone) !==
+      JSON.stringify(editedContactCopy.telephone)
+        ? editedContactCopy.telephone || null
         : undefined,
     same_as:
       JSON.stringify(originalContactCopy.same_as) !==
@@ -422,10 +468,15 @@ function cancelContactInformations() {
 }
 
 function copyContact(email: string, name?: string) {
-  showNotification('success', t('contact_copied'), t('contact_email_copied'));
+  showNotification('success', $t('contact.contact_copied'), $t('contact.contact_email_copied'));
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
+}
+
+function copyPhoneNumber(phone: string) {
+  showNotification('success', t('phone_copied'), t('contact_phone_copied'));
+  navigator.clipboard.writeText(phone);
 }
 </script>
 <i18n lang="json">
