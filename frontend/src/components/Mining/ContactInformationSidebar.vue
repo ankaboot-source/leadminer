@@ -257,6 +257,9 @@ import {
 const { t } = useI18n({
   useScope: 'local',
 });
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
 
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
@@ -465,7 +468,7 @@ function cancelContactInformations() {
 }
 
 function copyContact(email: string, name?: string) {
-  showNotification('success', t('contact_copied'), t('contact_email_copied'));
+  showNotification('success', $t('contact.contact_copied'), $t('contact.contact_email_copied'));
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );

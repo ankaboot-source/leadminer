@@ -1116,7 +1116,7 @@ function showNotification(
 }
 
 function copyPhoneNumber(phone: string) {
-  showNotification('success', t('phone_copied'), t('contact_phone_copied'));
+  showNotification('success', $t('contact.phone_copied'), $t('contact.contact_phone_copied'));
   navigator.clipboard.writeText(phone);
 }
 
@@ -1203,9 +1203,7 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "any": "Any",
-    "contact_information": "Contact Information",
-    "phone_copied": "Phone number copied",
-    "contact_phone_copied": "Phone number has been copied to your clipboard"
+    "contact_information": "Contact Information"
   },
   "fr": {
     "of": "sur",
@@ -1253,9 +1251,7 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact",
-    "phone_copied": "Numéro de téléphone copié",
-    "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
+    "contact_information": "Information de contact"
   }
 }
 </i18n>

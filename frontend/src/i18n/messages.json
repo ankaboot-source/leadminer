@@ -117,7 +117,9 @@
         "group": "Group",
         "chat": "Chat",
         "role": "Role"
-      }
+      },
+      "phone_copied": "Phone number copied",
+      "contact_phone_copied": "Phone number has been copied to your clipboard"
     },
     "mining": {
       "toast_canceled_title": "Mining canceled",
@@ -242,7 +244,9 @@
         "group": "Groupe",
         "chat": "Chat",
         "role": "Role"
-      }
+      },
+    "phone_copied": "Numéro de téléphone copié",
+    "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",
