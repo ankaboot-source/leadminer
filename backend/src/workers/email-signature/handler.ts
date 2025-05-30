@@ -6,6 +6,7 @@ import { assert } from 'console';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
+import { getOriginalMessage } from './utils';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -117,7 +118,8 @@ export class EmailSignatureProcessor {
     if (!body.trim()) return null;
 
     try {
-      const parsed = new EmailReplyParser().read(body);
+      const originalMessage = getOriginalMessage(body);
+      const parsed = new EmailReplyParser().read(originalMessage);
       const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
       return sigFrag?.getContent() ?? null;
     } catch (err) {
