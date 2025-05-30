@@ -36,7 +36,7 @@ export const FORWARDED_SEPARATOR_REGEX = [
   /^\s?Il giorno\s?.+\s?\".+\"\s*[\[|<].+[\]|>]\s?ha scritto\s?:/m, // Outlook 2019 (it)
   /^\s?Op\s?.+\s?heeft\s?.+\s*[\[|<].+[\]|>]\s?geschreven\s?:/m, // Outlook 2019 (nl)
   /^\s?.+\s*[\[|<].+[\]|>]\s?skrev følgende den\s?.+\s?:/m, // Outlook 2019 (no)
-  /^\s?Dnia\s?.+\s?„.+”\s*[\[|<].+[\]|>]\s?napisał\s?:/m, // Outlook 2019 (pl)
+  /^\s?Dnia\s?.+\s?„.+”\s*[\[|<].+[\]|>]\s?napisał\s?:/mu, // Outlook 2019 (pl)
   /^\s?Em\s?.+\,\s?\".+\"\s*[\[|<].+[\]|>]\s?escreveu\s?:/m, // Outlook 2019 (pt)
   /^\s?.+\s?пользователь\s?\".+\"\s*[\[|<].+[\]|>]\s?написал\s?:/m, // Outlook 2019 (ru)
   /^\s?.+\s?používateľ\s?.+\s*\([\[|<].+[\]|>]\)\s?napísal\s?:/m, // Outlook 2019 (sk)
@@ -71,7 +71,7 @@ export const FORWARDED_SEPARATOR_REGEX = [
   /^\s*-{8} Preposlaná správa --- Forwarded Message -{8}\s*/m, // Thunderbird (sk)
   /^\s*-{8} İletilen İleti -{8}\s*/m, // Thunderbird (tr)
   /^\s*-{8} Переслане повідомлення -{8}\s*/m, // Thunderbird (uk)
-  /^\s*-{9,10} メッセージを転送 -{9,10}\s*/m, // HubSpot (ja)
+  /^\s*-{9,10} メッセージを転送 -{9,10}\s*/mu, // HubSpot (ja)
   /^\s*-{9,10} Wiadomość przesłana dalej -{9,10}\s*/m, // HubSpot (pl)
   /^>?\s*-{10} Original Message -{10}\s*/m // IONOS by 1 & 1 (en)
 ];
