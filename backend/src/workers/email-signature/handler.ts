@@ -7,6 +7,7 @@ import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
 import { getOriginalMessage } from './utils';
+import { ExtractSignature } from '../../services/signature/types';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -29,6 +30,7 @@ export class EmailSignatureProcessor {
   constructor(
     private readonly logging: Logger,
     private readonly supabase: SupabaseClient,
+    private readonly signature: ExtractSignature,
     private readonly cache: EmailSignatureCache
   ) {}
 
@@ -135,12 +137,18 @@ export class EmailSignatureProcessor {
   ): Promise<Partial<Contact> | null> {
     this.logging.debug('extractContact()', { email, signature });
 
-    const phoneNumbers = findPhoneNumbersInText(signature);
+    const contact = await this.signature.extract(signature);
 
     return {
       email,
       user_id: userId,
-      telephone: phoneNumbers.map((phone) => phone.number.number)
+      name: contact?.name,
+      image: contact?.image,
+      location: contact?.address,
+      telephone: contact?.telephone,
+      job_title: contact?.jobTitle,
+      works_for: contact?.worksFor,
+      same_as: contact?.sameAs
     };
   }
 
@@ -174,10 +182,13 @@ export class EmailSignatureProcessor {
 
 export default function initializeEmailSignatureProcessor(
   supabase: SupabaseClient,
+  signature: ExtractSignature,
   cache: EmailSignatureCache
 ) {
   return {
     processStreamData: (data: EmailData) =>
-      new EmailSignatureProcessor(logger, supabase, cache).process(data)
+      new EmailSignatureProcessor(logger, supabase, signature, cache).process(
+        data
+      )
   };
 }

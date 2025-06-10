@@ -36,6 +36,9 @@ const schema = z.object({
   REDIS_SIGNATURE_STREAM_NAME: z.string().min(1),
   REDIS_SIGNATURE_STREAM_CONSUMER_GROUP: z.string().min(1),
 
+  SIGNATURE_USE_LLM: boolean(),
+  SIGNATURE_OPENROUTER_API_KEY: z.string().min(1).optional(),
+
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
   SUPABASE_SECRET_PROJECT_TOKEN: z.string().min(1),
