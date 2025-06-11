@@ -25,34 +25,33 @@ export const SignaturePrompt = {
 
     Ensure the response is valid according to the provided JSON schema.`,
 
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'personSignature',
-        strict: true,
-        schema: {
-          type: 'object',
-          properties: {
-            '@type': { type: 'string', const: 'Person' },
-            name: { type: 'string' },
-            image: { type: 'string', format: 'uri' },
-            jobTitle: { type: 'string' },
-            worksFor: { type: 'string' },
-            address: { type: 'string' },
-            telephone: { type: 'string' },
-            sameAs: {
-              type: 'array',
-              items: { type: 'string', format: 'uri' }
-            }
-          },
-          required: ['@type', 'name'],
-          additionalProperties: false
-        }
+  response_format: {
+    type: 'json_schema',
+    json_schema: {
+      name: 'personSignature',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          '@type': { type: 'string', const: 'Person' },
+          name: { type: 'string' },
+          image: { type: 'string', format: 'uri' },
+          jobTitle: { type: 'string' },
+          worksFor: { type: 'string' },
+          address: { type: 'string' },
+          telephone: { type: 'string' },
+          sameAs: {
+            type: 'array',
+            items: { type: 'string', format: 'uri' }
+          }
+        },
+        required: ['@type', 'name'],
+        additionalProperties: false
       }
-    },
+    }
+  },
 
-  buildUserPrompt: (signature: string) =>
-    `email signature:\n\n${signature}`
+  buildUserPrompt: (signature: string) => `email signature:\n\n${signature}`
 };
 
 export class SignatureLLM implements ExtractSignature {
@@ -92,9 +91,7 @@ export class SignatureLLM implements ExtractSignature {
         headers: this.headers(),
         body: this.body(signature)
       });
-      console.log(response)
       const data = await response.json();
-      console.log(JSON.stringify(data, null, 4))
       return data.choices?.[0]?.message?.content;
     } catch (err) {
       this.logger.error('SignatureExtractionLLM error:', err);
@@ -106,7 +103,7 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(signature);
 
-      console.log(content)
+      console.log(content);
 
       if (!content) return null;
 

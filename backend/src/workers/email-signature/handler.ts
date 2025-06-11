@@ -1,7 +1,6 @@
 import { Logger } from 'winston';
 import { SupabaseClient } from '@supabase/supabase-js';
 import EmailReplyParser from 'email-reply-parser';
-import { findPhoneNumbersInText } from 'libphonenumber-js';
 import { assert } from 'console';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
