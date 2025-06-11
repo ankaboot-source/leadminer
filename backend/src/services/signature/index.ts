@@ -29,8 +29,19 @@ export class Signature implements ExtractSignature {
     try {
       return await this.extractor.extract(signature);
     } catch (err) {
-      this.logger.warn('LLM extractor failed. Falling back to regex.', err);
-      return null;
+      if (this.extractor instanceof SignatureLLM) {
+        this.logger.warn(
+          `signature extractor LLM failed. Using fallback.`,
+          err
+        );
+        return await new SignatureRE(this.logger).extract(signature);
+      } 
+        this.logger.error(
+          `${this.extractor.constructor.name} extractor failed`,
+          err
+        );
+        return null;
+      
     }
   }
 }
