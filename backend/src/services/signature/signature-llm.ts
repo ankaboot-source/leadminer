@@ -129,6 +129,8 @@ export class SignatureLLM implements ExtractSignature {
         body: this.body(signature)
       });
       const data = await response.json();
+      const error = data?.error?.message;
+      if (error) throw new Error(error);
       return data.choices?.[0]?.message?.content;
     } catch (err) {
       this.logger.error('SignatureExtractionLLM error:', err);

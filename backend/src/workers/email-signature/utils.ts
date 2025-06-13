@@ -1,3 +1,5 @@
+import { SupabaseClient } from '@supabase/supabase-js';
+
 /* eslint-disable no-useless-escape */
 export const FORWARDED_SEPARATOR_REGEX = [
   /^>?\s*Begin forwarded message\s?:/m, // Apple Mail (en)
@@ -146,4 +148,29 @@ export function getOriginalMessage(emailText: string): string {
   }
 
   return emailText.trim();
+}
+
+export type NotificationType = 'enrich' | 'clean' | 'extract' | 'signature';
+
+export interface NotificationPayload {
+  userId: string;
+  type: NotificationType;
+  details: {
+    signatures: number;
+  };
+}
+
+/**
+ * Push a new notification to the Supabase `notifications` table.
+ */
+export async function pushNotificationDB(
+  supabase: SupabaseClient,
+  { userId, type, details }: NotificationPayload
+) {
+  const { error } = await supabase
+    .schema('private')
+    .from('notifications')
+    .insert([{ user_id: userId, type, details }]);
+
+  if (error) throw error;
 }

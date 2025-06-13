@@ -355,7 +355,9 @@ export default class TasksManager {
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
       if (task.type === 'fetch') {
-        await (task as TaskFetch).instance.stop();
+        await (task as TaskFetch).instance.stop(
+          TaskStatus.Canceled === 'canceled'
+        );
       }
 
       await this.pubsubSendMessage(
