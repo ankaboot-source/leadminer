@@ -121,24 +121,16 @@
           </td>
           <td>
             <div v-if="!editingContact">
-              <template
+              <Chip
                 v-for="(phone, index) in contact.telephone"
                 :key="index"
+                :label="phone"
+                :href="`tel:${phone}`"
+                icon="pi pi-phone"
+                class="cursor-pointer"
+                @click="callPhoneNumber(phone)"
               >
-                <div class="p-1">
-                  <Button
-                    rounded
-                    text
-                    icon="pi pi-copy"
-                    size="small"
-                    :aria-label="t('copy')"
-                    @click="copyPhoneNumber(phone ?? undefined)"
-                  />
-                  <a :href="`tel:${phone}`">
-                    <Chip :key="index" :label="phone" />
-                  </a>
-                </div>
-              </template>
+              </Chip>
             </div>
             <Textarea
               v-else
@@ -468,15 +460,18 @@ function cancelContactInformations() {
 }
 
 function copyContact(email: string, name?: string) {
-  showNotification('success', $t('contact.contact_copied'), $t('contact.contact_email_copied'));
+  showNotification(
+    'success',
+    $t('contact.contact_copied'),
+    $t('contact.contact_email_copied'),
+  );
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
 }
 
-function copyPhoneNumber(phone: string) {
-  showNotification('success', t('phone_copied'), t('contact_phone_copied'));
-  navigator.clipboard.writeText(phone);
+function callPhoneNumber(phone: string) {
+  window.location.href = `tel:${phone}`;
 }
 </script>
 <i18n lang="json">
