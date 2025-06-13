@@ -366,6 +366,25 @@ export default class ImapEmailsFetcher {
   async stop() {
     this.isCanceled = true;
     await this.process;
+    await publishStreamsPipeline([
+      {
+        stream: this.signatureStream,
+        data: {
+          type: 'email',
+          data: {
+            header: {},
+            body: '',
+            seqNumber: -1,
+            folderPath: '',
+            isLast: true
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        }
+      }
+    ]);
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     return this.isCompleted;
