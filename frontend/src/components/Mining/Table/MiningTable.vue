@@ -1095,6 +1095,9 @@ onNuxtReady(async () => {
   ];
 
   await $contactsStore.reloadContacts();
+  if (contacts?.value?.some((contact) => contact.telephone !== null)) {
+    visibleColumns.value.push('telephone');
+  }
   $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;
