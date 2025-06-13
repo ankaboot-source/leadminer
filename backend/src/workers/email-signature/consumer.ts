@@ -3,6 +3,7 @@ import { Logger } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
 import { EmailData } from './handler';
+import { Contact } from '../../db/types';
 
 export interface PubSubMessage {
   miningId: string;
@@ -19,7 +20,7 @@ export default class EmailSignatureConsumer {
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailData>,
     private readonly emailSignatureStream: string,
     private readonly batchSize: number,
-    private readonly emailProcessor: (data: EmailData) => Promise<void>,
+    private readonly emailProcessor: (data: EmailData) => Promise<Partial<Contact>[]>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
@@ -61,7 +62,7 @@ export default class EmailSignatureConsumer {
             const miningId = streamName.split('-')[1];
             const extractionProgress = {
               miningId,
-              progressType: 'signatureExtracted',
+              progressType: 'extractedSignature',
               count: data.length
             };
 

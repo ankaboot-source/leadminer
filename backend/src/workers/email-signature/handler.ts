@@ -7,6 +7,8 @@ import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
 import { getOriginalMessage } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
+import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
+import Redis from 'ioredis';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -30,12 +32,14 @@ export class EmailSignatureProcessor {
     private readonly logging: Logger,
     private readonly supabase: SupabaseClient,
     private readonly signature: ExtractSignature,
-    private readonly cache: EmailSignatureCache
+    private readonly cache: EmailSignatureCache,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
+    private readonly redisClient: Redis
   ) {}
 
-  public async process(data: EmailData): Promise<void> {
+  public async process(data: EmailData): Promise<Partial<Contact>[]> {
     const { userId, miningId, data: payload } = data;
-    const { from, messageDate } = payload.header;
+    const { from, messageDate } = payload.header ?? {};
 
     this.logging.debug('process() start', {
       userId,
@@ -44,17 +48,29 @@ export class EmailSignatureProcessor {
       messageDate
     });
 
-    await this.handleNewSignature(
-      userId,
-      miningId,
-      from.address,
-      payload.body,
-      messageDate
-    );
+    let domainIsValid = false;
+    const [_, domain] = from?.address?.split('@') || [];
 
-    if (payload.isLast) {
-      await this.handleBatchUpdate(userId, miningId);
+    if (from && messageDate && domain) {
+      [domainIsValid] = await this.domainStatusVerification(
+        this.redisClient,
+        domain.toLowerCase()
+      );
     }
+
+    if (domainIsValid) {
+      await this.handleNewSignature(
+        userId,
+        miningId,
+        from?.address,
+        payload.body,
+        messageDate
+      );
+    }
+
+    return payload.isLast
+      ? (await this.handleBatchUpdate(userId, miningId))
+      : []
   }
 
   private async handleNewSignature(
@@ -83,36 +99,49 @@ export class EmailSignatureProcessor {
     }
 
     await this.cache.set(userId, email, signature, messageDate, miningId);
-    this.logging.info('Cached new signature', { email, miningId, messageDate });
+    this.logging.info('Cached new signature', {
+      email,
+      miningId,
+      messageDate,
+      signature
+    });
   }
 
   private async handleBatchUpdate(
     userId: string,
     miningId: string
-  ): Promise<void> {
+  ): Promise<Contact[]> {
     this.logging.debug('handleBatchUpdate()', { userId, miningId });
 
     const all = await this.cache.getAllFromMining(miningId);
 
     if (all.length === 0) {
       this.logging.info('No signatures to process for batch', { miningId });
-      return;
+      return [];
     }
 
-    await Promise.all(
+    const contacts: (Partial<Contact> | undefined)[] = await Promise.all(
       all.map(async ({ email, signature }) => {
         const contact = await this.extractContact(userId, email, signature);
         if (contact) {
           await this.upsertContact(contact);
+          return contact;
         }
+        return undefined;
       })
     );
 
     await this.cache.clearCachedSignature(miningId);
+
+    const successfulContacts = contacts.filter(Boolean) as Contact[];
+
     this.logging.info('Batch complete - cache cleared', {
       miningId,
-      count: all.length
+      processed: all.length,
+      successful: successfulContacts.length
     });
+
+    return successfulContacts;
   }
 
   private extractSignature(body: string): string | null {
@@ -182,12 +211,19 @@ export class EmailSignatureProcessor {
 export default function initializeEmailSignatureProcessor(
   supabase: SupabaseClient,
   signature: ExtractSignature,
-  cache: EmailSignatureCache
+  cache: EmailSignatureCache,
+  domainStatusVerification: DomainStatusVerificationFunction,
+  redisClient: Redis
 ) {
   return {
     processStreamData: (data: EmailData) =>
-      new EmailSignatureProcessor(logger, supabase, signature, cache).process(
-        data
-      )
+      new EmailSignatureProcessor(
+        logger,
+        supabase,
+        signature,
+        cache,
+        domainStatusVerification,
+        redisClient
+      ).process(data)
   };
 }
