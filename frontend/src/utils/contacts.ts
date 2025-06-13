@@ -196,3 +196,7 @@ export async function removeContactsFromDatabase(
     });
   if (error) throw error;
 }
+
+export function callPhoneNumber(phone: string) {
+  window.location.href = `tel:${phone}`;
+}

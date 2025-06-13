@@ -469,10 +469,6 @@ function copyContact(email: string, name?: string) {
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
 }
-
-function callPhoneNumber(phone: string) {
-  window.location.href = `tel:${phone}`;
-}
 </script>
 <i18n lang="json">
 {
