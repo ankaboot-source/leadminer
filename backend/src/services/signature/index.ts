@@ -31,7 +31,7 @@ export class Signature implements ExtractSignature {
     } catch (err) {
       if (this.extractor instanceof SignatureLLM) {
         this.logger.warn(
-          `signature extractor LLM failed. Using fallback.`,
+          'signature extractor LLM failed. Using fallback.',
           err
         );
         return await new SignatureRE(this.logger).extract(signature);
