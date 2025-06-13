@@ -617,6 +617,7 @@
           :href="`tel:${phone}`"
           icon="pi pi-phone"
           class="cursor-pointer"
+          :class="{ 'ml-2': index > 0 }"
           @click="callPhoneNumber(phone)"
         >
         </Chip>
