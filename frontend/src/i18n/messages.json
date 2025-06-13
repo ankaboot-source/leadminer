@@ -245,8 +245,8 @@
         "chat": "Chat",
         "role": "Role"
       },
-    "phone_copied": "Numéro de téléphone copié",
-    "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
+      "phone_copied": "Numéro de téléphone copié",
+      "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",
