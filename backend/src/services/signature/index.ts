@@ -35,13 +35,12 @@ export class Signature implements ExtractSignature {
           err
         );
         return await new SignatureRE(this.logger).extract(signature);
-      } 
-        this.logger.error(
-          `${this.extractor.constructor.name} extractor failed`,
-          err
-        );
-        return null;
-      
+      }
+      this.logger.error(
+        `${this.extractor.constructor.name} extractor failed`,
+        err
+      );
+      return null;
     }
   }
 }
