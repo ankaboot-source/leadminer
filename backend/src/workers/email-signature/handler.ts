@@ -2,13 +2,13 @@ import { Logger } from 'winston';
 import { SupabaseClient } from '@supabase/supabase-js';
 import EmailReplyParser from 'email-reply-parser';
 import { assert } from 'console';
+import Redis from 'ioredis';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
 import { getOriginalMessage } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
-import Redis from 'ioredis';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -49,7 +49,7 @@ export class EmailSignatureProcessor {
     });
 
     let domainIsValid = false;
-    const [_, domain] = from?.address?.split('@') || [];
+    const [, domain] = from?.address?.split('@') || [];
 
     if (from && messageDate && domain) {
       [domainIsValid] = await this.domainStatusVerification(
@@ -68,9 +68,7 @@ export class EmailSignatureProcessor {
       );
     }
 
-    return payload.isLast
-      ? (await this.handleBatchUpdate(userId, miningId))
-      : []
+    return payload.isLast ? this.handleBatchUpdate(userId, miningId) : [];
   }
 
   private async handleNewSignature(

@@ -20,7 +20,9 @@ export default class EmailSignatureConsumer {
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailData>,
     private readonly emailSignatureStream: string,
     private readonly batchSize: number,
-    private readonly emailProcessor: (data: EmailData) => Promise<Partial<Contact>[]>,
+    private readonly emailProcessor: (
+      data: EmailData
+    ) => Promise<Partial<Contact>[]>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
