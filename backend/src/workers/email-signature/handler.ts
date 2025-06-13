@@ -6,7 +6,7 @@ import Redis from 'ioredis';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import { getOriginalMessage } from './utils';
+import { getOriginalMessage, pushNotificationDB } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 
@@ -68,7 +68,21 @@ export class EmailSignatureProcessor {
       );
     }
 
-    return payload.isLast ? this.handleBatchUpdate(userId, miningId) : [];
+    if (!payload.isLast) return [];
+
+    const extracted = await this.handleBatchUpdate(userId, miningId);
+
+    if (!extracted.length) return [];
+
+    await pushNotificationDB(this.supabase, {
+      userId,
+      type: 'signature',
+      details: {
+        signatures: extracted.length
+      }
+    });
+
+    return extracted;
   }
 
   private async handleNewSignature(
@@ -108,7 +122,7 @@ export class EmailSignatureProcessor {
   private async handleBatchUpdate(
     userId: string,
     miningId: string
-  ): Promise<Contact[]> {
+  ): Promise<Partial<Contact>[]> {
     this.logging.debug('handleBatchUpdate()', { userId, miningId });
 
     const all = await this.cache.getAllFromMining(miningId);
@@ -164,7 +178,7 @@ export class EmailSignatureProcessor {
     this.logging.debug('extractContact()', { email, signature });
 
     const contact = await this.signature.extract(signature);
-
+    if (!contact) return null;
     return {
       email,
       user_id: userId,
