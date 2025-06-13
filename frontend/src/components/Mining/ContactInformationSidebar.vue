@@ -120,7 +120,7 @@
             {{ $t('contact.telephone') }}
           </td>
           <td>
-            <div v-if="!editingContact">
+            <div v-if="!editingContact" class="flex flex-wrap gap-2">
               <Chip
                 v-for="(phone, index) in contact.telephone"
                 :key="index"
