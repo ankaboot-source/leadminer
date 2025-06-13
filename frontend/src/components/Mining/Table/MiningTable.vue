@@ -610,17 +610,17 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <Chip
-          v-for="(phone, index) in data.telephone"
-          :key="index"
-          :label="phone"
-          :href="`tel:${phone}`"
-          icon="pi pi-phone"
-          class="cursor-pointer"
-          :class="{ 'ml-2': index > 0 }"
-          @click="callPhoneNumber(phone)"
-        >
-        </Chip>
+        <div class="flex flex-wrap gap-1">
+          <Chip
+            v-for="(phone, index) in data.telephone"
+            :key="index"
+            :label="phone"
+            :href="`tel:${phone}`"
+            icon="pi pi-phone"
+            class="cursor-pointer"
+            @click="callPhoneNumber(phone)"
+          />
+        </div>
       </template>
     </Column>
 

@@ -120,7 +120,7 @@
             {{ $t('contact.telephone') }}
           </td>
           <td>
-            <div v-if="!editingContact" class="flex flex-wrap gap-2">
+            <div v-if="!editingContact" class="flex flex-wrap gap-1">
               <Chip
                 v-for="(phone, index) in contact.telephone"
                 :key="index"
@@ -129,8 +129,7 @@
                 icon="pi pi-phone"
                 class="cursor-pointer"
                 @click="callPhoneNumber(phone)"
-              >
-              </Chip>
+              />
             </div>
             <Textarea
               v-else
