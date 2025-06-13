@@ -1,11 +1,14 @@
 import { Logger } from 'winston';
 import { SupabaseClient } from '@supabase/supabase-js';
 import EmailReplyParser from 'email-reply-parser';
-import { findPhoneNumbersInText } from 'libphonenumber-js';
 import { assert } from 'console';
+import Redis from 'ioredis';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
+import { getOriginalMessage, pushNotificationDB } from './utils';
+import { ExtractSignature } from '../../services/signature/types';
+import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 
 export interface EmailData {
   type: 'file' | 'email';
@@ -28,12 +31,15 @@ export class EmailSignatureProcessor {
   constructor(
     private readonly logging: Logger,
     private readonly supabase: SupabaseClient,
-    private readonly cache: EmailSignatureCache
+    private readonly signature: ExtractSignature,
+    private readonly cache: EmailSignatureCache,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
+    private readonly redisClient: Redis
   ) {}
 
-  public async process(data: EmailData): Promise<void> {
+  public async process(data: EmailData): Promise<Partial<Contact>[]> {
     const { userId, miningId, data: payload } = data;
-    const { from, messageDate } = payload.header;
+    const { from, messageDate } = payload.header ?? {};
 
     this.logging.debug('process() start', {
       userId,
@@ -42,17 +48,41 @@ export class EmailSignatureProcessor {
       messageDate
     });
 
-    await this.handleNewSignature(
-      userId,
-      miningId,
-      from.address,
-      payload.body,
-      messageDate
-    );
+    let domainIsValid = false;
+    const [, domain] = from?.address?.split('@') || [];
 
-    if (payload.isLast) {
-      await this.handleBatchUpdate(userId, miningId);
+    if (from && messageDate && domain) {
+      [domainIsValid] = await this.domainStatusVerification(
+        this.redisClient,
+        domain.toLowerCase()
+      );
     }
+
+    if (domainIsValid) {
+      await this.handleNewSignature(
+        userId,
+        miningId,
+        from?.address,
+        payload.body,
+        messageDate
+      );
+    }
+
+    if (!payload.isLast) return [];
+
+    const extracted = await this.handleBatchUpdate(userId, miningId);
+
+    if (!extracted.length) return [];
+
+    await pushNotificationDB(this.supabase, {
+      userId,
+      type: 'signature',
+      details: {
+        signatures: extracted.length
+      }
+    });
+
+    return extracted;
   }
 
   private async handleNewSignature(
@@ -81,43 +111,57 @@ export class EmailSignatureProcessor {
     }
 
     await this.cache.set(userId, email, signature, messageDate, miningId);
-    this.logging.info('Cached new signature', { email, miningId, messageDate });
+    this.logging.info('Cached new signature', {
+      email,
+      miningId,
+      messageDate,
+      signature
+    });
   }
 
   private async handleBatchUpdate(
     userId: string,
     miningId: string
-  ): Promise<void> {
+  ): Promise<Partial<Contact>[]> {
     this.logging.debug('handleBatchUpdate()', { userId, miningId });
 
     const all = await this.cache.getAllFromMining(miningId);
 
     if (all.length === 0) {
       this.logging.info('No signatures to process for batch', { miningId });
-      return;
+      return [];
     }
 
-    await Promise.all(
+    const contacts: (Partial<Contact> | undefined)[] = await Promise.all(
       all.map(async ({ email, signature }) => {
         const contact = await this.extractContact(userId, email, signature);
         if (contact) {
           await this.upsertContact(contact);
+          return contact;
         }
+        return undefined;
       })
     );
 
     await this.cache.clearCachedSignature(miningId);
+
+    const successfulContacts = contacts.filter(Boolean) as Contact[];
+
     this.logging.info('Batch complete - cache cleared', {
       miningId,
-      count: all.length
+      processed: all.length,
+      successful: successfulContacts.length
     });
+
+    return successfulContacts;
   }
 
   private extractSignature(body: string): string | null {
     if (!body.trim()) return null;
 
     try {
-      const parsed = new EmailReplyParser().read(body);
+      const originalMessage = getOriginalMessage(body);
+      const parsed = new EmailReplyParser().read(originalMessage);
       const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
       return sigFrag?.getContent() ?? null;
     } catch (err) {
@@ -133,12 +177,18 @@ export class EmailSignatureProcessor {
   ): Promise<Partial<Contact> | null> {
     this.logging.debug('extractContact()', { email, signature });
 
-    const phoneNumbers = findPhoneNumbersInText(signature);
-
+    const contact = await this.signature.extract(signature);
+    if (!contact) return null;
     return {
       email,
       user_id: userId,
-      telephone: phoneNumbers.map((phone) => phone.number.number)
+      name: contact?.name,
+      image: contact?.image,
+      location: contact?.address,
+      telephone: contact?.telephone,
+      job_title: contact?.jobTitle,
+      works_for: contact?.worksFor,
+      same_as: contact?.sameAs
     };
   }
 
@@ -172,10 +222,20 @@ export class EmailSignatureProcessor {
 
 export default function initializeEmailSignatureProcessor(
   supabase: SupabaseClient,
-  cache: EmailSignatureCache
+  signature: ExtractSignature,
+  cache: EmailSignatureCache,
+  domainStatusVerification: DomainStatusVerificationFunction,
+  redisClient: Redis
 ) {
   return {
     processStreamData: (data: EmailData) =>
-      new EmailSignatureProcessor(logger, supabase, cache).process(data)
+      new EmailSignatureProcessor(
+        logger,
+        supabase,
+        signature,
+        cache,
+        domainStatusVerification,
+        redisClient
+      ).process(data)
   };
 }

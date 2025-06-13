@@ -13,6 +13,9 @@ import EmailSignatureConsumer, {
 } from './workers/email-signature/consumer';
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
+import { Signature } from './services/signature';
+import { LLMModels } from './services/signature/signature-llm';
+import { checkDomainStatus } from './utils/helpers/domainHelpers';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
@@ -21,7 +24,14 @@ const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
 const { processStreamData } = initializeEmailSignatureProcessor(
   supabaseClient,
-  emailSignatureCache
+  new Signature(logger, {
+    model: LLMModels.DeepSeek8bFree,
+    apiKey: ENV.SIGNATURE_OPENROUTER_API_KEY,
+    useLLM: ENV.SIGNATURE_USE_LLM
+  }),
+  emailSignatureCache,
+  checkDomainStatus,
+  redisClient
 );
 
 const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
