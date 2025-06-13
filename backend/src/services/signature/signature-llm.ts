@@ -38,8 +38,8 @@ export const SignaturePrompt = {
     - 'jobTitle': string (The persons job title)
     - 'worksFor': string (Company or organization the person works for)
     - 'address': string (The persons physical address)
-    - 'telephone': string[] (Array of phone number (e.g., mobile, WhatsApp))
-    - 'sameAs': string[] (Array of full profile URLs)
+    - 'telephone': string[] (Array of the persons phone numbers (e.g., mobile, WhatsApp))
+    - 'sameAs': string[] (Array of the persons full correct profile URLs)
 
     ###CHAIN OF THOUGHT###
 
