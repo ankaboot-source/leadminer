@@ -85,7 +85,7 @@
       "family_name": "Family Name",
       "alternate_name": "Alternate Names",
       "alternate_email": "Alternate emails",
-      "telephone": "Phone number",
+      "telephone": "Phone",
       "location": "Location",
       "works_for": "Works for",
       "job_title": "Job Title",
@@ -212,7 +212,7 @@
       "family_name": "Nom de famille",
       "alternate_name": "Autres noms",
       "alternate_email": "Adresses e-mail alternatives",
-      "telephone": "Numéro de téléphone",
+      "telephone": "Téléphone",
       "location": "Localisation",
       "works_for": "Travaille pour",
       "job_title": "Titre du poste",
@@ -245,8 +245,8 @@
         "chat": "Chat",
         "role": "Role"
       },
-    "phone_copied": "Numéro de téléphone copié",
-    "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
+      "phone_copied": "Numéro de téléphone copié",
+      "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",

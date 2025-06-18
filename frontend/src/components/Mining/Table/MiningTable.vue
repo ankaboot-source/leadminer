@@ -610,19 +610,17 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <template v-for="(phone, index) in data.telephone" :key="index">
-          <Button
-            rounded
-            text
-            icon="pi pi-copy"
-            size="small"
-            class="text-2xl flex-none -m-1"
-            :aria-label="t('copy')"
-            @click="copyPhoneNumber(phone ?? undefined)"
+        <div class="flex flex-wrap gap-1">
+          <Chip
+            v-for="(phone, index) in data.telephone"
+            :key="index"
+            :label="phone"
+            :href="`tel:${phone}`"
+            icon="pi pi-phone"
+            class="cursor-pointer"
+            @click="callPhoneNumber(phone)"
           />
-          <a :href="`tel:${phone}`">{{ phone }}</a>
-          <span v-if="index < data.telephone.length - 1">, </span>
-        </template>
+        </div>
       </template>
     </Column>
 
@@ -1097,28 +1095,13 @@ onNuxtReady(async () => {
   ];
 
   await $contactsStore.reloadContacts();
+  if (contacts?.value?.some((contact) => contact.telephone !== null)) {
+    visibleColumns.value.push('telephone');
+  }
   $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;
 });
-
-function showNotification(
-  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
-  summary: string,
-  detail: string,
-) {
-  $toast.add({
-    severity,
-    summary,
-    detail,
-    life: 3000,
-  });
-}
-
-function copyPhoneNumber(phone: string) {
-  showNotification('success', $t('contact.phone_copied'), $t('contact.contact_phone_copied'));
-  navigator.clipboard.writeText(phone);
-}
 
 onUnmounted(() => {
   $screenStore.destroy();
