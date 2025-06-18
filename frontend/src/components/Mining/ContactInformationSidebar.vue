@@ -283,12 +283,12 @@ const skipDialog = computed(
     !(
       contact.value.given_name ||
       contact.value.family_name ||
-      contact.value.alternate_name ||
-      contact.value.telephone ||
-      contact.value.location ||
+      contact.value.alternate_name?.length ||
+      contact.value.telephone?.length ||
+      contact.value.location?.length ||
       contact.value.works_for ||
       contact.value.job_title ||
-      contact.value.same_as ||
+      contact.value.same_as?.length ||
       contact.value.image
     ),
 );
