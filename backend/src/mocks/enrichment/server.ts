@@ -2,14 +2,14 @@ import express, { json, urlencoded } from 'express';
 import {
   coloredLog,
   colors,
-  PROXYCURL_API_TOKEN,
+  ENRICH_LAYER_API_TOKEN,
   SERVER_PORT,
   VOILANORBERT_API_TOKEN,
   VOILANORBERT_USERNAME
 } from './config';
 
 import voilanorbertRoutes from './endpoints/voilanorbert';
-import proxycurlRoutes from './endpoints/proxycurl';
+import enrichlayerRoutes from './endpoints/enrichlayer';
 
 const app = express();
 
@@ -17,7 +17,7 @@ app.use(json({ limit: '5mb' }));
 app.use(urlencoded({ limit: '5mb', extended: true }));
 
 app.use('/voilanorbert', voilanorbertRoutes);
-app.use('/proxycurl', proxycurlRoutes);
+app.use('/enrichlayer', enrichlayerRoutes);
 
 app.listen(SERVER_PORT, () => {
   // eslint-disable-next-line no-console
@@ -31,9 +31,9 @@ app.listen(SERVER_PORT, () => {
         ${coloredLog(colors.cyan, '- Username:')} ${VOILANORBERT_USERNAME}
     ${coloredLog(
       colors.cyan,
-      '- Proxycurl:'
-    )} http://127.0.0.1:${SERVER_PORT}/proxycurl
-        ${coloredLog(colors.cyan, '- Api key:')} ${PROXYCURL_API_TOKEN}
+      '- EnrichLayer:'
+    )} http://127.0.0.1:${SERVER_PORT}/enrichlayer
+        ${coloredLog(colors.cyan, '- Api key:')} ${ENRICH_LAYER_API_TOKEN}
   `
   );
 });

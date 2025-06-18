@@ -1,18 +1,18 @@
 import ENV from '../../config';
 import { Engine } from './Engine';
 import Enricher from './Enricher';
-import Proxycurl from './proxy-curl';
-import ProxycurlApi from './proxy-curl/client';
 import Thedig from './thedig';
 import ThedigApi from './thedig/client';
 import Voilanorbert from './voilanorbert';
 import VoilanorbertApi from './voilanorbert/client';
 import logger from '../../utils/logger';
 import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
+import EnrichLayerAPI from './enrich-layer/client';
+import EnrichLayer from './enrich-layer';
 
 let ENGINE_THEDIG: Engine | undefined;
 let ENGINE_VOILANORBERT: Engine | undefined;
-let ENGINE_PROXY_CURL: Engine | undefined;
+let ENGINE_ENRICH_LAYER: Engine | undefined;
 
 if (
   ENV.VOILANORBERT_API_KEY &&
@@ -47,12 +47,12 @@ if (ENV.THEDIG_API_KEY && ENV.THEDIG_URL) {
   );
 }
 
-if (ENV.PROXYCURL_API_KEY && ENV.PROXYCURL_URL) {
-  ENGINE_PROXY_CURL = new Proxycurl(
-    new ProxycurlApi(
+if (ENV.ENRICH_LAYER_API_KEY && ENV.ENRICH_LAYER_URL) {
+  ENGINE_ENRICH_LAYER = new EnrichLayer(
+    new EnrichLayerAPI(
       {
-        url: ENV.PROXYCURL_URL,
-        apiKey: ENV.PROXYCURL_API_KEY,
+        url: ENV.ENRICH_LAYER_URL,
+        apiKey: ENV.ENRICH_LAYER_API_KEY,
         rateLimiter: new TokenBucketRateLimiter(295, 60 * 1000)
       },
       logger
@@ -62,7 +62,7 @@ if (ENV.PROXYCURL_API_KEY && ENV.PROXYCURL_URL) {
 }
 
 const EnrichmentService = new Enricher(
-  [ENGINE_THEDIG, ENGINE_PROXY_CURL, ENGINE_VOILANORBERT].filter(
+  [ENGINE_THEDIG, ENGINE_ENRICH_LAYER, ENGINE_VOILANORBERT].filter(
     (engine): engine is Engine => Boolean(engine)
   ),
   logger

@@ -69,7 +69,7 @@ export interface ReverseEmailLookupResponse {
   twitter_profile_url: string;
 }
 
-export default class ProxycurlApi {
+export default class EnrichLayerAPI {
   private readonly api: AxiosInstance;
 
   private readonly rateLimiter;
@@ -99,7 +99,7 @@ export default class ProxycurlApi {
         try {
           const res = await this.rateLimiter.throttleRequests(() =>
             this.api.get<ReverseEmailLookupResponse>(
-              '/api/linkedin/profile/resolve/email',
+              '/api/v2/profile/resolve/email',
               {
                 params: {
                   email,
