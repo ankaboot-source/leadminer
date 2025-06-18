@@ -108,7 +108,7 @@ defineExpose({ openModal });
   "en": {
     "acknowledge": "By clicking \"Enrich My Contacts\", you acknowledge and agree to the following:",
     "purposeOfEnrichment": "This service is intended to enrich information about your existing contacts.",
-    "thirdPartyTools": "The enrichment process uses TheDig, Proxycurl, and VoilaNorbert. Results are cached securely for 90 days to improve efficiency and ensure data integrity.",
+    "thirdPartyTools": "The enrichment process uses TheDig, EnrichLayer, and VoilaNorbert. Results are cached securely for 90 days to improve efficiency and ensure data integrity.",
     "yourResponsibilities": {
       "title": "Your Responsibilities",
       "content_1": "You must have a legitimate interest or have obtained explicit consent from your contacts to perform this enrichment for specific and legal purposes.",
@@ -121,7 +121,7 @@ defineExpose({ openModal });
   "fr": {
     "acknowledge": "En cliquant sur \"Enrichir mes contacts\", vous reconnaissez et acceptez les éléments suivants :",
     "purposeOfEnrichment": "Ce service est destiné à enrichir les informations sur vos contacts existants.",
-    "thirdPartyTools": "Le processus d'enrichissement utilise TheDig, Proxycurl et VoilaNorbert. Les résultats sont mis en cache en toute sécurité pendant 90 jours pour améliorer l'efficacité et garantir l'intégrité des données.",
+    "thirdPartyTools": "Le processus d'enrichissement utilise TheDig, EnrichLayer et VoilaNorbert. Les résultats sont mis en cache en toute sécurité pendant 90 jours pour améliorer l'efficacité et garantir l'intégrité des données.",
     "yourResponsibilities": {
       "title": "Vos responsabilités",
       "content_1": "Vous devez avoir un intérêt légitime ou avoir obtenu le consentement explicite de vos contacts pour effectuer cet enrichissement à des fins spécifiques et légales.",

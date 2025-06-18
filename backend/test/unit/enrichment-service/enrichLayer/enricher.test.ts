@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { Logger } from 'winston';
-import ProxycurlApi, {
+import EnrichLayerAPI, {
   ProfileExtra,
   ReverseEmailLookupResponse
-} from '../../../../src/services/enrichment/proxy-curl/client';
+} from '../../../../src/services/enrichment/enrich-layer/client';
 import { Person } from '../../../../src/db/types';
-import Proxycurl from '../../../../src/services/enrichment/proxy-curl';
+import EnrichLayer from '../../../../src/services/enrichment/enrich-layer';
 
-describe('Proxycurl', () => {
-  let mockClient: jest.Mocked<ProxycurlApi>;
+describe('EnrichLayer', () => {
+  let mockClient: jest.Mocked<EnrichLayerAPI>;
   let mockLogger: jest.Mocked<Logger>;
-  let enricher: Proxycurl;
+  let enricher: EnrichLayer;
 
   beforeEach(() => {
     mockClient = {
       reverseEmailLookup: jest.fn()
-    } as Partial<jest.Mocked<ProxycurlApi>> as jest.Mocked<ProxycurlApi>;
+    } as Partial<jest.Mocked<EnrichLayerAPI>> as jest.Mocked<EnrichLayerAPI>;
 
     mockLogger = {
       debug: jest.fn(),
@@ -25,7 +25,7 @@ describe('Proxycurl', () => {
       error: jest.fn()
     } as unknown as jest.Mocked<Logger>;
 
-    enricher = new Proxycurl(mockClient, mockLogger);
+    enricher = new EnrichLayer(mockClient, mockLogger);
   });
 
   describe('getProfileUrls', () => {
@@ -37,7 +37,7 @@ describe('Proxycurl', () => {
         website: 'https://example.com'
       };
 
-      const urls = Proxycurl.getProfileUrls(profile);
+      const urls = EnrichLayer.getProfileUrls(profile);
 
       expect(urls).toEqual([
         'https://github.com/user123',
@@ -49,7 +49,7 @@ describe('Proxycurl', () => {
 
     it('should return an empty array if no ProfileExtra properties are provided', () => {
       const profile: ProfileExtra = {};
-      const urls = Proxycurl.getProfileUrls(profile);
+      const urls = EnrichLayer.getProfileUrls(profile);
 
       expect(urls).toEqual([]);
     });
@@ -170,7 +170,7 @@ describe('Proxycurl', () => {
       const result = enricher.parseResult([enrichResultMock[0]]);
 
       expect(result).toEqual({
-        engine: 'proxycurl',
+        engine: 'enrichLayer',
         data: [
           {
             email: 'valid@example.com',
@@ -198,7 +198,7 @@ describe('Proxycurl', () => {
       let result = enricher.parseResult([enrichResultMock[1]]);
 
       expect(result).toEqual({
-        engine: 'proxycurl',
+        engine: 'enrichLayer',
         data: [
           {
             email: 'partial@example.com',
@@ -226,7 +226,7 @@ describe('Proxycurl', () => {
       result = enricher.parseResult([enrichResultMock[2]]);
 
       expect(result).toEqual({
-        engine: 'proxycurl',
+        engine: 'enrichLayer',
         data: [
           {
             email: 'partial2@example.com',
@@ -250,7 +250,7 @@ describe('Proxycurl', () => {
       const result = enricher.parseResult([enrichResultMock[3]]);
 
       expect(result).toEqual({
-        engine: 'proxycurl',
+        engine: 'enrichLayer',
         data: [],
         raw_data: [enrichResultMock[3]]
       });
@@ -305,7 +305,7 @@ describe('Proxycurl', () => {
         enrich_profile: 'enrich'
       });
       expect(result).toEqual({
-        engine: 'proxycurl',
+        engine: 'enrichLayer',
         data: [
           {
             email: 'test@example.com',
