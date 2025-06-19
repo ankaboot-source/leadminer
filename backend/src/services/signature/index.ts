@@ -2,6 +2,7 @@ import { Logger } from 'winston';
 import { ExtractSignature, PersonLD } from './types';
 import { LLMModelType, SignatureLLM } from './signature-llm';
 import { SignatureRE } from './signature-regex';
+import { IRateLimiter } from '../rate-limiter/RateLimiter';
 
 export interface Config {
   useLLM: boolean;
@@ -13,12 +14,18 @@ export class Signature implements ExtractSignature {
   private readonly extractor: ExtractSignature;
 
   constructor(
+    private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
     { apiKey, model, useLLM }: Config
   ) {
     if (apiKey && model && useLLM) {
       this.logger.info(`Using LLM-based signature extractor (${model})`);
-      this.extractor = new SignatureLLM(this.logger, model, apiKey);
+      this.extractor = new SignatureLLM(
+        this.rateLimiter,
+        this.logger,
+        model,
+        apiKey
+      );
     } else {
       this.logger.info('Using regex-based signature extractor');
       this.extractor = new SignatureRE(this.logger);

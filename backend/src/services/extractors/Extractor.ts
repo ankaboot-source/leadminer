@@ -29,12 +29,16 @@ function isEmailFormat(data: EmailFormat | FileFormat[]): data is EmailFormat {
   );
 }
 
-function createCsvXlsxExtractor(enablers: ExtractorEnablers, data: FileFormat) {
+function createCsvXlsxExtractor(
+  enablers: ExtractorEnablers,
+  userEmail: string,
+  { fileName, contacts }: FileFormat
+) {
   return new CsvXlsxContactEngine(
     enablers.taggingEngine,
     enablers.redisClientForNormalMode,
     enablers.domainStatusVerification,
-    data
+    { fileName, contacts: contacts.filter(({ email }) => email !== userEmail) }
   );
 }
 
@@ -71,7 +75,7 @@ export function createExtractor(
   enablers: ExtractorEnablers
 ) {
   if (['file'].includes(type)) {
-    return createCsvXlsxExtractor(enablers, data as FileFormat);
+    return createCsvXlsxExtractor(enablers, userEmail, data as FileFormat);
   }
   if (type === 'email') {
     return createEmailExtractor(

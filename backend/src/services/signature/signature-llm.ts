@@ -1,12 +1,12 @@
 import { Logger } from 'winston';
 import { ExtractSignature, PersonLD } from './types';
+import { IRateLimiter } from '../rate-limiter/RateLimiter';
 
 export enum LLMModels {
   DeepSeek8bFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-  Mistral7bFree = 'mistralai/mistral-7b-instruct:free',
-  metaLlama8bInstructFree = 'meta-llama/llama-3.3-8b-instruct:free',
-  googleGemma4bFree = 'google/gemma-3n-e4b-it:free',
-  qwen7bInstructFree = 'qwen/qwen-2.5-7b-instruct:free'
+  qwen7bInstructFree = 'qwen/qwen-2.5-7b-instruct:free',
+  googleGemma9bIt = 'google/gemma-2-9b-it',
+  mistral3b = 'mistralai/ministral-3b'
 }
 
 export type LLMModelType = `${LLMModels}`;
@@ -95,6 +95,7 @@ export class SignatureLLM implements ExtractSignature {
   LLM_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
   constructor(
+    private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
     private readonly model: LLMModelType,
     private readonly apiKey: string
@@ -123,11 +124,13 @@ export class SignatureLLM implements ExtractSignature {
 
   private async sendPrompt(signature: string): Promise<string | null> {
     try {
-      const response = await fetch(this.LLM_ENDPOINT, {
-        method: 'POST',
-        headers: this.headers(),
-        body: this.body(signature)
-      });
+      const response = await this.rateLimiter.throttleRequests(() =>
+        fetch(this.LLM_ENDPOINT, {
+          method: 'POST',
+          headers: this.headers(),
+          body: this.body(signature)
+        })
+      );
       const data = await response.json();
       const error = data?.error?.message;
       if (error) throw new Error(error);
