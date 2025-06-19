@@ -3,7 +3,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import { convertDates, getOrganization } from '~/utils/contacts';
+import { convertDates } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
@@ -101,14 +101,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       ? { ...existingContact, ...newContact }
       : newContact;
 
-    const { works_for: organizationId } = updatedContact;
-
-    if (organizationId) {
-      const organization = await getOrganization({ id: organizationId }, [
-        'name',
-      ]);
-      newContact.works_for = organization ? organization.name : organizationId;
-    }
+    newContact.works_for = await getOrganizationName(updatedContact.works_for);
 
     if (keepPosition)
       contactsCacheMap.set(updatedContact.email, updatedContact);
