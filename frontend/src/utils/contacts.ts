@@ -54,8 +54,10 @@ export async function getOrganization(
  * @param org - The ID of the organization to retrieve.
  * @returns The organization name if found, else return the same input.
  */
+
 export async function getOrganizationName(org: string | null) {
-  if (org?.length !== 36) return org; // Not an UUID, return as is
+  if (!org || !UUID_REGEX.test(org)) return org; // Not an UUID, return as is
+
   const orgData = await getOrganization({ id: org }, ['name']);
   return orgData ? orgData.name : org;
 }
