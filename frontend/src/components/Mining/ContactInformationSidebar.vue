@@ -254,7 +254,6 @@ const { t: $t } = useI18n({
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
 const $contactInformationSidebar = useMiningContactInformationSidebar();
-const $contactsStore = useContactsStore();
 
 const show = defineModel<boolean>('show');
 
