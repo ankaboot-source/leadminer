@@ -237,7 +237,6 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import {
-  getOrganization,
   getStatusColor,
   getStatusLabel,
   getTagColor,
@@ -255,6 +254,7 @@ const { t: $t } = useI18n({
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
 const $contactInformationSidebar = useMiningContactInformationSidebar();
+const $contactsStore = useContactsStore();
 
 const show = defineModel<boolean>('show');
 
@@ -344,10 +344,9 @@ function startRealtimePersons(userId: string, email: string) {
           return;
         }
         if (updatedContact.works_for) {
-          const org = await getOrganization({ id: updatedContact.works_for }, [
-            'name',
-          ]);
-          updatedContact.works_for = org ? org.name : updatedContact.works_for;
+          updatedContact.works_for = await getOrganizationName(
+            updatedContact.works_for,
+          );
         }
         $contactInformationSidebar.contact = {
           ...$contactInformationSidebar.contact,
@@ -358,7 +357,9 @@ function startRealtimePersons(userId: string, email: string) {
   personsSubscription.subscribe();
 }
 
-watch(show, (value) => {
+watch(show, async (value) => {
+  contact.value.works_for = await getOrganizationName(contact.value.works_for);
+
   if (value) {
     startRealtimePersons($user.value.id, contact.value.email);
     return;
