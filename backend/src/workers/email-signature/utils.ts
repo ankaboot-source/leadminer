@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { Contact } from '../../db/types';
 
 /* eslint-disable no-useless-escape */
 export const FORWARDED_SEPARATOR_REGEX = [
@@ -157,6 +158,7 @@ export interface NotificationPayload {
   type: NotificationType;
   details: {
     signatures: number;
+    extracted: Partial<Contact>[];
   };
 }
 

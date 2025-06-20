@@ -74,13 +74,21 @@ export class EmailSignatureProcessor {
 
     if (!extracted.length) return [];
 
-    await pushNotificationDB(this.supabase, {
-      userId,
-      type: 'signature',
-      details: {
-        signatures: extracted.length
-      }
-    });
+    try {
+      await pushNotificationDB(this.supabase, {
+        userId,
+        type: 'signature',
+        details: {
+          extracted,
+          signatures: extracted.length
+        }
+      });
+    } catch (err) {
+      this.logging.error(
+        `Error when pushing notifications: ${(err as Error).message}`,
+        err
+      );
+    }
 
     return extracted;
   }
@@ -134,12 +142,17 @@ export class EmailSignatureProcessor {
 
     const contacts: (Partial<Contact> | undefined)[] = await Promise.all(
       all.map(async ({ email, signature }) => {
-        const contact = await this.extractContact(userId, email, signature);
-        if (contact) {
-          await this.upsertContact(contact);
-          return contact;
+        try {
+          const contact = await this.extractContact(userId, email, signature);
+          if (contact) {
+            await this.upsertContact(contact);
+            return contact;
+          }
+          return undefined;
+        } catch (err) {
+          this.logging.error('Error on extract/insert contact', err);
+          return undefined;
         }
-        return undefined;
       })
     );
 
@@ -205,7 +218,9 @@ export class EmailSignatureProcessor {
       same_as: (contact.same_as ?? []).join(','),
       location: (contact.location ?? []).join(','),
       alternate_name: contact.alternate_name ?? null,
-      telephone: contact.telephone?.join(','),
+      telephone: Array.isArray(contact.telephone)
+        ? contact.telephone.join(',')
+        : [contact.telephone].join(','),
       user_id: contact.user_id
     };
 
