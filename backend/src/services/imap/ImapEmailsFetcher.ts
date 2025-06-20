@@ -1,5 +1,5 @@
 import Connection, { Box, parseHeader } from 'imap';
-import PostalMime from 'postal-mime';
+import PostalMime, { Email } from 'postal-mime';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -272,7 +272,17 @@ export default class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header);
-          const normalizedEmail = await PostalMime.parse(header + body);
+
+          let normalizedEmail: Email | null = null;
+
+          try {
+            normalizedEmail = await PostalMime.parse(header + body);
+          } catch (err) {
+            logger.error(
+              '[PostalMime.parse]: Error during normalizing email',
+              err
+            );
+          }
 
           const messageId = getMessageId(parsedHeader);
 
@@ -322,12 +332,16 @@ export default class ImapEmailsFetcher {
               data: {
                 type: 'email',
                 data: {
-                  header: {
-                    from: normalizedEmail.from,
-                    messageId: normalizedEmail.messageId,
-                    messageDate: normalizedEmail.date
-                  },
-                  body: normalizedEmail.text?.slice(-500),
+                  header: normalizedEmail
+                    ? {
+                        from: normalizedEmail.from,
+                        messageId: normalizedEmail.messageId,
+                        messageDate: normalizedEmail.date
+                      }
+                    : {},
+                  body: normalizedEmail
+                    ? normalizedEmail.text?.slice(-500)
+                    : '',
                   seqNumber,
                   folderPath,
                   isLast: isLastMessageInFolder
