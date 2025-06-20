@@ -11,10 +11,18 @@ DECLARE
 BEGIN
 	owner_id = delete_contacts.user_id;
 	IF deleteallcontacts THEN
+		DELETE FROM private.messages m WHERE m.user_id = owner_id;
 		DELETE FROM private.persons p WHERE p.user_id = owner_id;
 		DELETE FROM private.refinedpersons rp WHERE rp.user_id = owner_id;
 		DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id;
 	ELSE
+		DELETE FROM private.messages
+		WHERE message_id IN (
+			SELECT message_id
+			FROM private.persons pp
+			WHERE pp.user_id = owner_id AND email = ANY(emails)
+		);
+
 		DELETE FROM private.persons p WHERE p.user_id = owner_id AND email = ANY(emails);
 		DELETE FROM private.refinedpersons rp WHERE rp.user_id = owner_id AND email = ANY(emails);
 		DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id AND person_email = ANY(emails);
