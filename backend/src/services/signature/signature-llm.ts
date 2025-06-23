@@ -1,5 +1,4 @@
-import { Logger as winstonLogger } from 'winston';
-import logger from '../../utils/logger';
+import { Logger } from 'winston';
 import { IRateLimiter } from '../rate-limiter/RateLimiter';
 import { ExtractSignature, PersonLD } from './types';
 
@@ -97,7 +96,7 @@ export class SignatureLLM implements ExtractSignature {
 
   constructor(
     private readonly rateLimiter: IRateLimiter,
-    private readonly logger: winstonLogger,
+    private readonly logger: Logger,
     private readonly model: LLMModelType,
     private readonly apiKey: string
   ) {}
@@ -146,7 +145,7 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(signature);
 
-      logger.info('extract signature content', content);
+      this.logger.info('extract signature content', content);
 
       if (!content) return null;
 
