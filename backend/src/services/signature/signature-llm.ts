@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
-import { ExtractSignature, PersonLD } from './types';
+import logger from '../../utils/logger';
 import { IRateLimiter } from '../rate-limiter/RateLimiter';
+import { ExtractSignature, PersonLD } from './types';
 
 export enum LLMModels {
   DeepSeek8bFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
@@ -145,7 +146,7 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(signature);
 
-      console.log(content);
+      logger.info('extract signature content', content);
 
       if (!content) return null;
 
