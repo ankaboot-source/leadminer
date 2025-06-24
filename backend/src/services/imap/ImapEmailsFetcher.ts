@@ -256,6 +256,8 @@ export default class ImapEmailsFetcher {
 
         if (this.isCanceled === true) {
           const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
+          msg.removeAllListeners();
+          fetchResult.removeAllListeners();
           reject(new Error(message));
           return;
         }
@@ -283,6 +285,10 @@ export default class ImapEmailsFetcher {
               err
             );
           }
+
+          // Clear large chunks early
+          header = null as unknown as string;
+          body = null as unknown as string;
 
           const messageId = getMessageId(parsedHeader);
 
