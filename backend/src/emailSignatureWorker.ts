@@ -23,7 +23,7 @@ const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
-const llmModel = LLMModels.mistral3b;
+const llmModel = LLMModels.mistralai7bInstruct;
 
 const { processStreamData } = initializeEmailSignatureProcessor(
   supabaseClient,
@@ -31,7 +31,7 @@ const { processStreamData } = initializeEmailSignatureProcessor(
     new TokenBucketRateLimiter(llmModel.includes('free') ? 15 : 500, 60 * 1000),
     logger,
     {
-      model: LLMModels.mistral3b,
+      model: LLMModels.mistralai7bInstruct,
       apiKey: ENV.SIGNATURE_OPENROUTER_API_KEY,
       useLLM: ENV.SIGNATURE_USE_LLM
     }
