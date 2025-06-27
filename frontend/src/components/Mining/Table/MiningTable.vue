@@ -101,9 +101,11 @@
           <template v-else>
             <template v-if="!implicitSelectAll">
               {{ implicitlySelectedContactsLength.toLocaleString() }}
-              /
             </template>
-            {{ contactsLength?.toLocaleString() }}
+            <template v-if="contactsLength">
+              /
+              {{ contactsLength?.toLocaleString() }}
+            </template>
           </template>
           {{ t('contacts') }}
         </div>
