@@ -99,13 +99,11 @@
         <div class="ml-2">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
-            <template v-if="!implicitSelectAll">
+            <template v-if="!implicitSelectAll && contactsLength">
               {{ implicitlySelectedContactsLength.toLocaleString() }}
-            </template>
-            <template v-if="contactsLength">
               /
-              {{ contactsLength?.toLocaleString() }}
             </template>
+            {{ contactsLength?.toLocaleString() ?? 0 }}
           </template>
           {{ t('contacts') }}
         </div>
