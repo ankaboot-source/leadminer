@@ -14,7 +14,7 @@ import EmailSignatureConsumer, {
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
 import { Signature } from './services/signature';
-import { LLMModels } from './services/signature/signature-llm';
+import { LLMModels } from './services/signature/llm';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
 import { TokenBucketRateLimiter } from './services/rate-limiter/RateLimiter';
 

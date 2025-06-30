@@ -1,7 +1,7 @@
 import { Logger } from 'winston';
 import { ExtractSignature, PersonLD } from './types';
-import { LLMModelType, SignatureLLM } from './signature-llm';
-import { SignatureRE } from './signature-regex';
+import { LLMModelType, SignatureLLM } from './llm';
+import { SignatureRE } from './regex';
 import { IRateLimiter } from '../rate-limiter/RateLimiter';
 
 export interface Config {

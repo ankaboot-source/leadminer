@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 import { findPhoneNumbersInText } from 'libphonenumber-js';
-import { ExtractSignature, PersonLD } from './types';
+import { ExtractSignature, PersonLD } from '../types';
 
 export const URL_X_REGEX =
   /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(\w{1,15})\b/g;

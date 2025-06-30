@@ -6,7 +6,11 @@ import Redis from 'ioredis';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import { getOriginalMessage, pushNotificationDB } from './utils';
+import {
+  getOriginalMessage,
+  isUsefulSignatureContent,
+  pushNotificationDB
+} from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 
@@ -100,20 +104,21 @@ export class EmailSignatureProcessor {
     body: string,
     messageDate: string
   ): Promise<void> {
+    const signature = this.extractSignature(body);
+
+    if (!signature || !isUsefulSignatureContent(signature)) {
+      this.logging.info('No signature found; skipping cache', {
+        email,
+        miningId
+      });
+      return;
+    }
+
     const isNew = await this.cache.isNewer(userId, email, messageDate);
     if (!isNew) {
       this.logging.info('Signature not newer than cached; skipping', {
         email,
         messageDate
-      });
-      return;
-    }
-
-    const signature = this.extractSignature(body);
-    if (!signature) {
-      this.logging.info('No signature found; skipping cache', {
-        email,
-        miningId
       });
       return;
     }

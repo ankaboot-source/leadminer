@@ -4,7 +4,10 @@ import EnrichLayerAPI, {
   ProfileExtra,
   ReverseEmailLookupResponse
 } from './client';
-import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 
 export default class EnrichLayer implements Engine {
   constructor(
