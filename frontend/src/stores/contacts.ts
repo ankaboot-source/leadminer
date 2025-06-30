@@ -118,6 +118,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
     );
   }
 
+  function removeOldContacts(emails: string[]) {
+    emails.forEach((email) => {
+      contactsCacheMap.delete(email);
+    });
+    contactsList.value = contactsList.value?.filter(
+      (contact) => !emails.includes(contact.email),
+    );
+  }
+
   /**
    * Subscribes to real-time updates for contacts.
    */
@@ -185,5 +194,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     unsubscribeFromRealtimeUpdates,
     startSyncInterval,
     clearSyncInterval,
+    removeOldContacts,
   };
 });

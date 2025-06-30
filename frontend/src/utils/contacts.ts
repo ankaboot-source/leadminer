@@ -209,6 +209,10 @@ export async function removeContactsFromDatabase(
       deleteallcontacts: emails === undefined,
     });
   if (error) throw error;
+
+  if (emails && emails?.length > 0) {
+    useContactsStore().removeOldContacts(emails);
+  }
 }
 
 export function callPhoneNumber(phone: string) {
