@@ -1,6 +1,17 @@
 import { Logger } from 'winston';
-import { IRateLimiter } from '../rate-limiter/RateLimiter';
-import { ExtractSignature, PersonLD } from './types';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { ExtractSignature, PersonLD } from '../types';
+import {
+  undefinedIfFalsy,
+  undefinedIfEmpty
+} from '../../../utils/helpers/validation';
+import {
+  parseString,
+  parseStringArray,
+  removeFalsePositives,
+  validatePhones,
+  validateUrls
+} from './output-checkers';
 
 export enum LLMModels {
   DeepSeek8bFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
@@ -159,6 +170,26 @@ export class SignatureLLM implements ExtractSignature {
     }
   }
 
+  private cleanOutput(signature: string, person: PersonLD): PersonLD | null {
+    return removeFalsePositives(
+      {
+        name: undefinedIfFalsy(parseString(person.name)),
+        image: undefinedIfFalsy(parseString(person.image)),
+        jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
+        worksFor: undefinedIfFalsy(parseString(person.worksFor)),
+        address: undefinedIfEmpty(parseStringArray(person.address) ?? []),
+        telephone: undefinedIfEmpty(
+          validatePhones(signature, parseStringArray(person.telephone) ?? [])
+        ),
+        sameAs: undefinedIfEmpty(
+          validateUrls(signature, parseStringArray(person.sameAs) ?? [])
+        )
+      },
+      signature,
+      this.logger
+    );
+  }
+
   public async extract(signature: string): Promise<PersonLD | null> {
     try {
       const content = await this.sendPrompt(signature);
@@ -171,15 +202,7 @@ export class SignatureLLM implements ExtractSignature {
 
       if (person['@type'] !== 'Person') return null;
 
-      return {
-        name: person.name,
-        image: person.image,
-        jobTitle: person.jobTitle,
-        worksFor: person.worksFor,
-        address: person.address ? [person.address] : [],
-        telephone: person.telephone ?? [],
-        sameAs: person.sameAs
-      };
+      return this.cleanOutput(signature, person);
     } catch (err) {
       this.logger.error('SignatureExtractionLLM error:', err);
       return null;

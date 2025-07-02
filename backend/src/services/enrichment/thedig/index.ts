@@ -4,7 +4,10 @@ import VoilanorbertApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from './client';
-import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 
 export default class Thedig implements Engine {
   readonly name = 'thedig';

@@ -1,5 +1,5 @@
 export interface PersonLD {
-  name: string;
+  name?: string;
   image?: string;
   jobTitle?: string;
   worksFor?: string;

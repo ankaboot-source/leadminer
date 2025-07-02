@@ -1,9 +1,12 @@
 import assert from 'assert';
 import Redis from 'ioredis';
 import { Organization, Person, Tag } from '../../../db/types';
-import { undefinedIfEmpty, undefinedIfFalsy } from '../../enrichment/utils';
 import { TaggingEngine } from '../../tagging/types';
 import { DomainStatusVerificationFunction } from './EmailMessage';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 
 export interface ContactFormat {
   email: string;
