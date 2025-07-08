@@ -177,6 +177,16 @@
                   @update:model-value="filtersStore.onRepliesToggle"
                 />
               </li>
+              <li class="flex justify-between gap-2">
+                <div>
+                  {{ t('toggle_phone_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="filtersStore.phoneToggle"
+                  @update:model-value="filtersStore.onPhoneToggle"
+                />
+              </li>
+
               <Divider class="my-0" />
               <MultiSelect
                 v-model="visibleColumns"
@@ -605,9 +615,6 @@
         <div v-tooltip.top="$t('contact.telephone_definition')">
           {{ $t('contact.telephone') }}
         </div>
-      </template>
-      <template #filter="{ filterModel }">
-        <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
@@ -1154,6 +1161,7 @@ table.p-datatable-table {
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
     "toggle_replies_label": "At least one reply",
+    "toggle_phone_label": "Only with phone number",
     "toggle_name_label": "Only with name",
     "toggle_name_tooltip": "Named contacts engage more",
     "toggle_recent_tooltip": "- Less than {recentYearsAgo} years \n- GDPR Proof",
@@ -1202,6 +1210,7 @@ table.p-datatable-table {
     "toggle_valid_label": "Seulement les contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
+    "toggle_phone_label": "Seulement avec un numéro de téléphone",
     "toggle_name_label": "Seulement avec un nom complet",
     "toggle_name_tooltip": "Les contacts connus par leur nom complet répondent davantage",
     "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
