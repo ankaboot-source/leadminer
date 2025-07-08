@@ -42,7 +42,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       .subscribe();
   }
 
-  function reset() {
+  function $reset() {
     notifications.value = [];
     if (subscription) {
       supabase.removeChannel(subscription);
@@ -54,6 +54,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     subscription,
     notifications,
     subscribe,
-    reset,
+    $reset,
   };
 });

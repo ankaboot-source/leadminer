@@ -10,7 +10,7 @@ export default defineNuxtPlugin({
     if (import.meta.client) {
       watch(authenticated, async (auth) => {
         if (!auth && notificationCenter.subscription) {
-          notificationCenter.reset();
+          notificationCenter.$reset();
           return;
         }
         notificationCenter.subscribe((newNotification) => {
