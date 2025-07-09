@@ -36,6 +36,7 @@ function getAllFolders(boxes: BoxNode[]) {
       folders[key] = {
         checked: true,
         partialChecked: false,
+        isNoSelect: Boolean(parent.attribs?.includes('\\Noselect')),
       };
     },
   })(boxes);
