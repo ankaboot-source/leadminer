@@ -2,9 +2,9 @@ import { FilterService } from '@primevue/core/api';
 import { useDebounceFn } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import {
-  DEFAULT_TOGGLES,
-  DEFAULT_FILTERS,
   ANY_SELECTED,
+  DEFAULT_FILTERS,
+  DEFAULT_TOGGLES,
   MAX_YEARS_AGO_TO_FILTER,
   NOT_EMPTY,
 } from '~/utils/filters-defaults';
@@ -14,6 +14,7 @@ type TogglesType = {
   recent: boolean;
   name: boolean;
   replies: boolean;
+  telephone: boolean;
 };
 
 const searchContactModel = ref('');
@@ -22,6 +23,7 @@ const nameToggle = ref(false);
 const validToggle = ref(false);
 const repliesToggle = ref(false);
 const recentToggle = ref(false);
+const phoneToggle = ref(false);
 
 const isDefaultFilters = computed(
   () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
@@ -31,7 +33,8 @@ const areToggledFilters = computed(
     Number(validToggle.value) +
     Number(recentToggle.value) +
     Number(nameToggle.value) +
-    Number(repliesToggle.value),
+    Number(repliesToggle.value) +
+    Number(phoneToggle.value),
 );
 
 function checkValidStatus() {
@@ -89,6 +92,13 @@ function onRecentToggle(toggle?: boolean) {
     : null;
 }
 
+function onPhoneToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    phoneToggle.value = toggle;
+    filters.value.telephone.value = toggle || null;
+  }
+}
+
 function onNameToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     nameToggle.value = toggle;
@@ -139,10 +149,8 @@ function registerFiltersAndStartWatchers() {
   FilterService.register(ANY_SELECTED, (value, filter) =>
     !filter ? true : filter.some((item: string) => value.includes(item)),
   );
-  FilterService.register(NOT_EMPTY, (value) =>
-    nameToggle.value
-      ? !(value === undefined || value === null || value === '')
-      : true,
+  FilterService.register(NOT_EMPTY, (value, filter) =>
+    filter ? !(value === undefined || value === null || value === '') : true,
   );
 
   const debouncedUpdate = useDebounceFn((newValue: string) => {
@@ -165,6 +173,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
       recent: toggles,
       name: toggles,
       replies: toggles,
+      telephone: toggles,
     };
   }
 
@@ -172,6 +181,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
   onValidToggle(toggles.valid);
   onRecentToggle(toggles.recent);
   onRepliesToggle(toggles.replies);
+  onPhoneToggle(toggles.telephone);
 }
 
 function clearFilter() {
@@ -195,6 +205,7 @@ export const useFiltersStore = defineStore('filters', () => {
     validToggle,
     repliesToggle,
     recentToggle,
+    phoneToggle,
 
     areToggledFilters,
     isDefaultFilters,
@@ -203,6 +214,7 @@ export const useFiltersStore = defineStore('filters', () => {
     onRepliesToggle,
     onRecentToggle,
     onNameToggle,
+    onPhoneToggle,
 
     toggleFilters,
     clearFilter,

@@ -1,4 +1,4 @@
-import { FilterOperator, FilterMatchMode } from '@primevue/core';
+import { FilterMatchMode, FilterOperator } from '@primevue/core';
 
 // Filter configuration helpers
 function createConstraint(matchMode: string, value: unknown = null) {
@@ -25,11 +25,13 @@ export const DEFAULT_TOGGLES = {
   recent: false,
   name: false,
   replies: false,
+  telephone: false,
 };
 
 export const DEFAULT_FILTERS = {
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   name: { value: null, matchMode: NOT_EMPTY },
+  telephone: { value: null, matchMode: NOT_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
   ...Object.fromEntries(
@@ -38,7 +40,6 @@ export const DEFAULT_FILTERS = {
       'given_name',
       'family_name',
       'alternate_name',
-      'telephone',
       'location',
       'works_for',
       'job_title',
