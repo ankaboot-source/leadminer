@@ -836,16 +836,16 @@ const hardFilter = computed(() => filtersStore.enrichedToggle);
 
 function onEnrichedToggle() {
   if (filtersStore.enrichedToggle) {
-    filteredContacts.value = contacts.value?.filter((contact: Contact) => {
-      return (
-        contact.same_as?.length ||
-        contact.location?.length ||
-        contact.job_title ||
-        contact.works_for?.length ||
-        contact.image ||
-        contact.telephone?.length
-      );
-    });
+    filteredContacts.value = contacts.value?.filter(
+      (contact: Contact) =>
+        Number(contact.same_as?.length) +
+          Number(contact.location?.length) +
+          Number(contact.job_title) +
+          Number(contact.works_for?.length) +
+          Number(contact.image) +
+          Number(contact.telephone?.length) >=
+        2,
+    );
   } else {
     filteredContacts.value = contacts.value;
   }
