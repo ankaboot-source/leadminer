@@ -829,7 +829,7 @@ function openContactInformation(data: Contact) {
 /* *** Filters *** */
 const filtersStore = useFiltersStore();
 
-const filteredContacts = ref<Contact[]>([]);
+const filteredContacts = ref();
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
 const hardFilter = computed(() => filtersStore.enrichedToggle);
