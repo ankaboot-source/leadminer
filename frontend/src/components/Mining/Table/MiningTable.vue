@@ -829,8 +829,8 @@ function openContactInformation(data: Contact) {
 /* *** Filters *** */
 const filtersStore = useFiltersStore();
 
-const filteredContacts = ref();
-const filteredContactsLength = computed(() => filteredContacts.value.length);
+const filteredContacts = ref<Contact[]>([]);
+const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
 const hardFilter = computed(() => filtersStore.enrichedToggle);
 
@@ -838,12 +838,12 @@ function onEnrichedToggle() {
   if (filtersStore.enrichedToggle) {
     filteredContacts.value = contacts.value?.filter(
       (contact: Contact) =>
-        Number(contact.same_as?.length) +
-          Number(contact.location?.length) +
-          Number(contact.job_title) +
-          Number(contact.works_for?.length) +
-          Number(contact.image) +
-          Number(contact.telephone?.length) >=
+        Number(!!contact.same_as?.length) +
+          Number(!!contact.location?.length) +
+          Number(!!contact.job_title) +
+          Number(!!contact.works_for?.length) +
+          Number(!!contact.image) +
+          Number(!!contact.telephone?.length) >=
         2,
     );
   } else {
