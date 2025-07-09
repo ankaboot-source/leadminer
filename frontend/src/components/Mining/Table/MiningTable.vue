@@ -836,8 +836,6 @@ const hardFilter = computed(() => filtersStore.enrichedToggle);
 
 function onEnrichedToggle() {
   if (filtersStore.enrichedToggle) {
-    console.log(filteredContacts.value);
-
     filteredContacts.value = contacts.value?.filter((contact: Contact) => {
       return (
         contact.same_as?.length ||
@@ -848,12 +846,11 @@ function onEnrichedToggle() {
         contact.telephone?.length
       );
     });
-    console.log(filteredContacts.value);
   } else {
     filteredContacts.value = contacts.value;
   }
-  console.log('enrichedToggle.value', filtersStore.enrichedToggle);
 }
+
 /* *** Settings *** */
 const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
