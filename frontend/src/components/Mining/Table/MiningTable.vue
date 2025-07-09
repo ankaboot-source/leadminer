@@ -25,7 +25,7 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="contacts"
+    :value="hardFilter ? filteredContacts : contacts"
     data-key="email"
     paginator
     filter-display="menu"
@@ -110,7 +110,9 @@
         <div class="grow" />
         <div>
           <Button
-            :disabled="filtersStore.isDefaultFilters"
+            :disabled="
+              filtersStore.isDefaultFilters && !filtersStore.areToggledFilters
+            "
             icon="pi pi-filter-slash"
             :label="$screenStore.size.md ? t('clear') : undefined"
             outlined
@@ -135,6 +137,15 @@
           </Button>
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
+              <li class="flex justify-between gap-2">
+                <div v-tooltip.left="t('toggle_enriched_tooltip')">
+                  {{ t('toggle_enriched_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="filtersStore.enrichedToggle"
+                  @update:model-value="onEnrichedToggle"
+                />
+              </li>
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
@@ -821,14 +832,36 @@ const filtersStore = useFiltersStore();
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
+const hardFilter = computed(() => filtersStore.enrichedToggle);
+
+function onEnrichedToggle() {
+  if (filtersStore.enrichedToggle) {
+    console.log(filteredContacts.value);
+
+    filteredContacts.value = contacts.value?.filter((contact: Contact) => {
+      return (
+        contact.same_as?.length ||
+        contact.location?.length ||
+        contact.job_title ||
+        contact.works_for?.length ||
+        contact.image ||
+        contact.telephone?.length
+      );
+    });
+    console.log(filteredContacts.value);
+  } else {
+    filteredContacts.value = contacts.value;
+  }
+  console.log('enrichedToggle.value', filtersStore.enrichedToggle);
+}
 /* *** Settings *** */
 const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
-function onFilter(event: DataTableFilterEvent) {
-  filteredContacts.value = event.filteredValue;
+function onFilter($event: DataTableFilterEvent) {
+  filteredContacts.value = $event.filteredValue;
 }
 
 watch(
@@ -1157,6 +1190,8 @@ table.p-datatable-table {
     "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
+    "toggle_enriched_tooltip": "Has at least 2 enriched fields (same as, location, job title, works for, avatar, phone)",
+    "toggle_enriched_label": "Only enriched contacts",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
@@ -1206,6 +1241,8 @@ table.p-datatable-table {
     "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
+    "toggle_enriched_tooltip": "A au moins 2 champs enrichis (réseau social, emplacement, poste, entreprise, avatar, téléphone)",
+    "toggle_enriched_label": "Seulement les contacts enrichis",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
     "toggle_valid_label": "Seulement les contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
