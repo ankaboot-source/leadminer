@@ -290,7 +290,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           ? await startMiningEmail(
               user?.id,
               Object.keys(selectedBoxes.value).filter(
-                (key) => selectedBoxes.value[key].checked && key !== '',
+                (key) =>
+                  selectedBoxes.value[key].checked &&
+                  !selectedBoxes.value[key].isNoSelect &&
+                  key !== '',
               ),
               activeMiningSource.value!,
             )
