@@ -25,7 +25,7 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="hardFilter ? filteredContacts : contacts"
+    :value="hardFilter ? enrichedContacts : contacts"
     data-key="email"
     paginator
     filter-display="menu"
@@ -141,10 +141,7 @@
                 <div v-tooltip.left="t('toggle_enriched_tooltip')">
                   {{ t('toggle_enriched_label') }}
                 </div>
-                <ToggleSwitch
-                  v-model="filtersStore.enrichedToggle"
-                  @update:model-value="onEnrichedToggle"
-                />
+                <ToggleSwitch v-model="filtersStore.enrichedToggle" />
               </li>
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
@@ -832,6 +829,10 @@ const filtersStore = useFiltersStore();
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
+const enrichedContacts = computed(
+  () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
+);
+
 const hardFilter = computed(() => filtersStore.enrichedToggle);
 
 function getEnrichedFieldsCount(contact: Contact): number {
@@ -843,16 +844,6 @@ function getEnrichedFieldsCount(contact: Contact): number {
     Number(!!contact.image) +
     Number(!!contact.telephone?.length)
   );
-}
-
-function onEnrichedToggle() {
-  if (filtersStore.enrichedToggle) {
-    filteredContacts.value = contacts.value?.filter(
-      (contact: Contact) => getEnrichedFieldsCount(contact) >= 2,
-    );
-  } else {
-    filteredContacts.value = contacts.value;
-  }
 }
 
 /* *** Settings *** */
