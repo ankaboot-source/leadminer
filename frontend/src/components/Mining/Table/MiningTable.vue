@@ -138,7 +138,7 @@
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_enriched_tooltip')">
+                <div v-tooltip.left="toggleEnrichTooltip">
                   {{ t('toggle_enriched_label') }}
                 </div>
                 <ToggleSwitch v-model="filtersStore.enrichedToggle" />
@@ -834,7 +834,15 @@ const enrichedContacts = computed(
 );
 
 const hardFilter = computed(() => filtersStore.enrichedToggle);
-
+const enrichedFields = [
+  'same_as',
+  'location',
+  'job_title',
+  'works_for',
+  'image',
+  'telephone',
+];
+const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
 function getEnrichedFieldsCount(contact: Contact): number {
   return (
     Number(!!contact.same_as?.length) +
@@ -1182,7 +1190,7 @@ table.p-datatable-table {
     "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
-    "toggle_enriched_tooltip": "Has at least 2 enriched fields (Same As, Location, Job Title, Works for, Avatar, Phone)",
+    "toggle_enriched_tooltip": "Has at least 2 enriched fields",
     "toggle_enriched_label": "Only enriched contacts",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Only valid contacts",
@@ -1233,7 +1241,7 @@ table.p-datatable-table {
     "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
-    "toggle_enriched_tooltip": "A au moins 2 champs enrichis (Réseaux sociaux, Localisation, Titre du poste, Travaille pour, Avatar, Téléphone)",
+    "toggle_enriched_tooltip": "A au moins 2 champs enrichis",
     "toggle_enriched_label": "Seulement les contacts enrichis",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
     "toggle_valid_label": "Seulement les contacts valides",
