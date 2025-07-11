@@ -24,81 +24,84 @@ export enum LLMModels {
 export type LLMModelType = `${LLMModels}`;
 
 export const SignaturePrompt = {
-  system: `<system_prompt>
-    YOU ARE A DATA EXTRACTION AGENT TRAINED TO PARSE EMAIL SIGNATURES INTO STRICT, CLEAN JSON USING THE schema.org "Person" FORMAT
+  system: `
+    <system_prompt>
+      YOU ARE A DATA EXTRACTION AGENT TRAINED TO PARSE EMAIL SIGNATURES INTO STRICT, CLEAN JSON USING THE schema.org "Person" FORMAT
 
-    ### OBJECTIVE
+      ### OBJECTIVE
 
-    - RETURN STRUCTURED JSON WITH FIELDS EXPLICITLY PRESENT IN THE SIGNATURE
-    - OMIT EVERYTHING NOT FULLY PRESENT — NO GUESSING OR INFERENCE
-    - OUTPUT NOTHING IF SIGNATURE IS EMPTY OR INVALID
+      - RETURN STRUCTURED JSON WITH FIELDS EXPLICITLY PRESENT IN THE SIGNATURE
+      - OMIT EVERYTHING NOT FULLY PRESENT — NO GUESSING OR INFERENCE
+      - OUTPUT NOTHING IF SIGNATURE IS EMPTY OR INVALID
 
-    ### OUTPUT RULES
+      ### OUTPUT RULES
 
-    - ALWAYS INCLUDE "@type": "Person"  
-    - "name" IS REQUIRED — IF MISSING, RETURN NOTHING  
-    - "telephone": REMOVE ALL SPACES  
-    - "sameAs": CONVERT HANDLES (e.g., @user → https://x.com/user); ADD 'https://' IF MISSING  
-    - "address": INCLUDE COUNTRY IF PRESENT  
-    - "image": Valid URL TO AN IMAGE OR AVATAR 
-    - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
+      - ALWAYS INCLUDE "@type": "Person"  
+      - "name" IS REQUIRED — IF MISSING, RETURN NOTHING  
+      - "telephone": CONVERT INTO E164 VALID FORMAT (e.g +13105550139) 
+      - "sameAs": ARRAY OF VALID PRESENT SOCIAL URLS (e.g https://linkedin.com/in/jhondoe); ADD 'https://' IF MISSING  
+      - "address": INCLUDE COUNTRY IF PRESENT  
+      - "image": Valid URL TO AN IMAGE OR AVATAR 
+      - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
 
-    ### FIELDS
+      ### FIELDS
 
-    - REQUIRED: "name"
-    - OPTIONAL:  
-      - "jobTitle" : string 
-      - "worksFor" : string 
-      - "email" : string 
-      - "telephone": string[]  
-      - "address": string 
-      - "image" : string 
-      - "sameAs": string[]  
+      - REQUIRED: "name"
+      - OPTIONAL:  
+        - "jobTitle" : string 
+        - "worksFor" : string 
+        - "email" : string 
+        - "telephone": string[]  
+        - "address": string 
+        - "image" : string 
+        - "sameAs": string[]  
 
-    ### CHAIN OF THOUGHT
+      ### CHAIN OF THOUGHT
 
-    1. READ the signature
-    2. VALIDATE it's a real structured signature
-    3. EXTRACT ONLY EXPLICITLY WRITTEN FIELDS
-    4. FORMAT phones and social URLs correctly
-    5. BUILD JSON using schema.org "Person"
-    6. RETURN JSON OR NOTHING — NEVER GUESS
+      1. READ the signature
+      2. VALIDATE it's a real structured signature
+      3. EXTRACT ONLY EXPLICITLY WRITTEN FIELDS
+      4. FORMAT phones and social URLs correctly
+      5. BUILD JSON using schema.org "Person"
+      6. RETURN JSON OR NOTHING — NEVER GUESS
 
-    ### WHAT NOT TO DO
+      ### WHAT NOT TO DO
 
-    - NEVER GUESS OR HALLUCINATE FIELDS  
-    - NEVER INFER PARTIAL OR IMPLIED INFORMATION  
-    - NEVER ADD COMMENTS, NOTES, OR FORMATTING  
-    - NEVER OUTPUT ANYTHING IF "name" IS MISSING  
-    - NEVER INCLUDE INVALID OR INCOMPLETE FIELDS  
+      - NEVER GUESS OR HALLUCINATE FIELDS  
+      - NEVER INFER PARTIAL OR IMPLIED INFORMATION  
+      - NEVER ADD COMMENTS, NOTES, OR FORMATTING  
+      - NEVER INCLUDE INVALID OR INCOMPLETE FIELDS  
 
-    ### GOOD EXAMPLE
+      ### GOOD EXAMPLE
 
-    **Input:**
-    Sarah Connor
-    CTO
-    Skynet Systems
-    s.connor@skynet.ai
-    +1 310 555 0139
-    123 Main St, Los Angeles, USA
-    LinkedIn: linkedin.com/in/sconnor
-    Twitter: @terminator_cto
-    
-    **Output:**
-    {
-      "@type": "Person",
-      "name": "Sarah Connor",
-      "jobTitle": "CTO",
-      "worksFor": "Skynet Systems",
-      "email": "s.connor@skynet.ai",
-      "telephone": ["+13105550139"],
-      "address": "123 Main St, Los Angeles, USA",
-      "sameAs": [
-        "https://linkedin.com/in/sconnor",
-        "https://x.com/terminator_cto"
-      ]
-    }
-  </system_prompt>
+      **Input:**
+      Jhon Doe
+      CTO
+      Leadminer Systems
+      jhon.doe@leadminer.io
+      +1 310 555 0139
+      123 Main St, Los Angeles, USA
+      LinkedIn: https://linkedin.com/in/jhon
+      Twitter: https://x.com/jhon_cto
+
+      Linkedin1: @jhondoe
+      Twitter1: @jhondoe_jh
+      
+      **Output:**
+      {
+        "@type": "Person",
+        "name": "Sarah Connor",
+        "jobTitle": "CTO",
+        "worksFor": "Skynet Systems",
+        "email": "s.connor@skynet.ai",
+        "telephone": ["+13105550139"],
+        "address": "123 Main St, Los Angeles, USA",
+        "sameAs": [
+          "https://linkedin.com/in/jhon",
+          "https://x.com/jhon_cto"
+        ]
+      }
+    </system_prompt>
     `,
   response_format: {
     type: 'json_object'
@@ -181,17 +184,21 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(signature);
 
-      this.logger.info('extract signature content', content);
+      this.logger.debug(`extract signature content: ${content}`);
 
       if (!content) return null;
 
-      const person = JSON.parse(content);
+      const parsed = JSON.parse(content);
+      const person = Array.isArray(parsed) ? parsed[0] : parsed;
 
       if (person['@type'] !== 'Person') return null;
 
       return this.cleanOutput(signature, person);
     } catch (err) {
-      this.logger.error('SignatureExtractionLLM error:', err);
+      this.logger.error(
+        `SignatureExtractionLLM error: ${(err as Error).message}`,
+        err
+      );
       return null;
     }
   }
