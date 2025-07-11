@@ -21,7 +21,7 @@
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
     scrollable
-    :scroll-height="scrollHeight"
+    :scroll-height="scrollHeightTable"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -820,6 +820,7 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
+
 const contactsLength = computed(() => $contactsStore.contactCount);
 
 function openContactInformation(data: Contact) {
@@ -1067,9 +1068,10 @@ const TableRef = ref();
 const tablePosTop = ref(0);
 
 const tableHeight = ref('flex');
-const scrollHeight = computed(() =>
+const scrollHeightTable = computed(() =>
   !isFullscreen.value ? tableHeight.value : '',
 );
+const scrollHeight = ref($screenStore.height);
 
 function observeTop() {
   const stopWatch = watch(
@@ -1094,6 +1096,9 @@ function observeTop() {
   );
 }
 
+const isExceedingScreenHeight = computed(
+  () => scrollHeight.value > $screenStore.height,
+);
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
@@ -1104,9 +1109,9 @@ const stopShowTableFirstTimeWatcher = watch(
       if (contactsLength.value > 0) {
         observeTop();
         watchEffect(() => {
-          tableHeight.value = `${
-            $screenStore.height - tablePosTop.value - 120
-          }px`;
+          tableHeight.value = isExceedingScreenHeight.value
+            ? `${$screenStore.height - tablePosTop.value - 120}px`
+            : 'flex';
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
@@ -1121,7 +1126,7 @@ const stopShowTableFirstTimeWatcher = watch(
   },
   { deep: true, immediate: true },
 );
-
+const scrollHeightObserver = ref<ResizeObserver | null>(null);
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
@@ -1141,12 +1146,18 @@ onNuxtReady(async () => {
   }
   $contactsStore.subscribeToRealtimeUpdates();
 
+  scrollHeightObserver.value = new ResizeObserver(() => {
+    scrollHeight.value = document.documentElement.scrollHeight;
+  });
+  scrollHeightObserver.value.observe(document.documentElement);
+
   isLoading.value = false;
 });
 
 onUnmounted(() => {
   $screenStore.destroy();
   $contactsStore.$reset();
+  scrollHeightObserver.value?.disconnect();
 });
 </script>
 
