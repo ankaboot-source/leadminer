@@ -1,5 +1,5 @@
 import isUrlHttp from 'is-url-http';
-import { isValidPhoneNumber } from 'libphonenumber-js';
+import { parsePhoneNumberWithError } from 'libphonenumber-js';
 import { Logger } from 'winston';
 import { PersonLD } from '../types';
 
@@ -12,9 +12,25 @@ export function validatePhones(
   telephone: string[]
 ): string[] {
   const cleanSig = normalize(signature);
+
   return telephone
-    .map((number) => (isValidPhoneNumber(number) ? number : ''))
-    .map((number) => (cleanSig.includes(normalize(number)) ? number : null))
+    .map((rawNumber) => {
+      const parsed = parsePhoneNumberWithError(rawNumber);
+
+      if (!parsed?.isValid()) return null;
+
+      const international = normalize(parsed.formatInternational());
+      const national = normalize(parsed.formatNational());
+      const e164 = normalize(parsed.number); // +123456789
+
+      const found =
+        cleanSig.includes(international) ||
+        cleanSig.includes(national) ||
+        cleanSig.includes(e164) ||
+        cleanSig.includes(normalize(rawNumber));
+
+      return found ? (parsed.number as string) : null;
+    })
     .filter((p): p is string => Boolean(p));
 }
 
@@ -65,6 +81,8 @@ export function removeFalsePositives(
     keyof PersonLD,
     any
   ][]) {
+    // Ignore pre-validated fields
+    if (['telephone'].includes(key)) continue;
     if (typeof value === 'string') {
       if (!normalizedSignature.includes(normalize(value))) {
         logger.debug(`Removing hallucinated field: ${key} => ${value}`);
