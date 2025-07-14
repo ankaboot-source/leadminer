@@ -214,7 +214,26 @@ export default class ImapEmailsFetcher {
       } catch (error) {
         logger.error('Error when fetching emails', error);
       } finally {
-        // Close the mailbox and release the connection
+        // Notify signature worker fetching is ended
+        await publishStreamsPipeline([
+          {
+            stream: this.signatureStream,
+            data: {
+              type: 'email',
+              data: {
+                header: {},
+                body: '',
+                seqNumber: -1,
+                folderPath,
+                isLast: true
+              },
+              userId: this.userId,
+              userEmail: this.userEmail,
+              userIdentifier: this.userIdentifier,
+              miningId: this.miningId
+            }
+          }
+        ]);
         imapConnection?.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', error);
