@@ -6,13 +6,10 @@ import Redis from 'ioredis';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import {
-  getOriginalMessage,
-  isUsefulSignatureContent,
-  pushNotificationDB
-} from './utils';
+import { isUsefulSignatureContent, pushNotificationDB } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
+import { getOriginalMessage } from '../../utils/helpers/emailParsers';
 
 export interface EmailData {
   type: 'file' | 'email';

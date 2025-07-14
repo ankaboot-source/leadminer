@@ -7,6 +7,11 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
+import {
+  FORWARDED_SEPARATOR_REGEX,
+  REPLY_SEPARATOR_REGEX,
+  REPLY_MARKER_REGEX
+} from '../../utils/helpers/emailParsers';
 
 const redisClient = redis.getClient();
 
@@ -334,50 +339,60 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
-          await publishStreamsPipeline([
-            {
-              stream: this.contactStream,
-              data: {
-                type: 'email',
+          const text = normalizedEmail?.text || '';
+          const isForwardedOrReplied = [
+            ...FORWARDED_SEPARATOR_REGEX,
+            ...REPLY_SEPARATOR_REGEX,
+            ...REPLY_MARKER_REGEX
+          ].some((regex) => text?.match(regex));
+
+          const bodyText = isForwardedOrReplied
+            ? text.slice(0, 2000)
+            : text.slice(-200);
+
+          if (normalizedEmail?.headers.includes)
+            await publishStreamsPipeline([
+              {
+                stream: this.contactStream,
                 data: {
-                  header: parsedHeader,
-                  body: '',
-                  seqNumber,
-                  folderPath,
-                  isLast: isLastMessageInFolder
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
-              }
-            },
-            {
-              stream: this.signatureStream,
-              data: {
-                type: 'email',
+                  type: 'email',
+                  data: {
+                    header: parsedHeader,
+                    body: '',
+                    seqNumber,
+                    folderPath,
+                    isLast: isLastMessageInFolder
+                  },
+                  userId: this.userId,
+                  userEmail: this.userEmail,
+                  userIdentifier: this.userIdentifier,
+                  miningId: this.miningId
+                }
+              },
+              {
+                stream: this.signatureStream,
                 data: {
-                  header: normalizedEmail
-                    ? {
-                        from: normalizedEmail.from,
-                        messageId: normalizedEmail.messageId,
-                        messageDate: normalizedEmail.date
-                      }
-                    : {},
-                  body: normalizedEmail
-                    ? normalizedEmail.text?.slice(-500)
-                    : '',
-                  seqNumber,
-                  folderPath,
-                  isLast: isLastMessageInFolder
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
+                  type: 'email',
+                  data: {
+                    header: normalizedEmail
+                      ? {
+                          from: normalizedEmail.from,
+                          messageId: normalizedEmail.messageId,
+                          messageDate: normalizedEmail.date
+                        }
+                      : {},
+                    body: bodyText,
+                    seqNumber,
+                    folderPath,
+                    isLast: isLastMessageInFolder
+                  },
+                  userId: this.userId,
+                  userEmail: this.userEmail,
+                  userIdentifier: this.userIdentifier,
+                  miningId: this.miningId
+                }
               }
-            }
-          ]);
+            ]);
         });
       });
 
