@@ -13,7 +13,7 @@ import { DomainStatusVerificationFunction } from '../../services/extractors/engi
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
 
 export interface EmailData {
-  type:'email';
+  type: 'email';
   userIdentifier: string;
   userId: string;
   userEmail: string;

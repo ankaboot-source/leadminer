@@ -330,22 +330,25 @@ export default class ImapEmailsFetcher {
             {
               stream: this.signatureStream,
               data: {
-                header: mail
-                  ? {
-                      from: mail.from?.value[0],
-                      messageId: mail.messageId,
-                      messageDate: mail.date
-                    }
-                  : {},
-                body: text,
-                seqNumber,
-                folderPath,
-                isLast: false
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
+                type: 'email',
+                data: {
+                  header: mail
+                    ? {
+                        from: mail.from?.value[0],
+                        messageId: mail.messageId,
+                        messageDate: mail.date
+                      }
+                    : {},
+                  body: text,
+                  seqNumber,
+                  folderPath,
+                  isLast: isLastMessageInFolder
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
             }
           ]);
         });
