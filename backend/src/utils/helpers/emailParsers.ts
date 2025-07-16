@@ -80,64 +80,10 @@ export const REPLY_SEPARATOR_REGEX = ['------------------------------\n'];
 
 export const REPLY_MARKER_REGEX: RegExp[] = [
   // English
-  /^>?\s*On\s[\d\/]+,\s(at\s)?[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // French: Le 15/05/2025, à 19:01, Badreddine Ladjemi <email@example.com>
-  /^>?\s*Le\s[\d\/]+,\sà\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // French (long date form): Le 14 juin 2013 15:14, Name <email> a écrit :
-  /^>?\s*Le\s\d{1,2}\s\w+\s\d{4}\s\d{1,2}:\d{2},?\s.+?\s<.+?>\s+a écrit\s?:?/im,
-
-  // Spanish: El 15/05/2025, a las 19:01, Nombre Apellido <email@example.com>
-  /^>?\s*El\s[\d\/]+,\sa las\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // German: Am 15.05.2025, um 19:01, Name Nachname <email@example.com>
-  /^>?\s*Am\s[\d\.]+,\sum\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Italian: Il 15/05/2025, alle 19:01, Nome Cognome <email@example.com>
-  /^>?\s*Il\s[\d\/]+,\salle\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Dutch: Op 15/05/2025, om 19:01, Naam Achternaam <email@example.com>
-  /^>?\s*Op\s[\d\/]+,\som\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Portuguese: Em 15/05/2025, às 19:01, Nome Sobrenome <email@example.com>
-  /^>?\s*Em\s[\d\/]+,\sàs\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Swedish: Den 15/05/2025, kl. 19:01, Namn Efternamn <email@example.com>
-  /^>?\s*Den\s[\d\/]+,\skl\.\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Danish: Den 15/05/2025, kl. 19:01, Navn Efternavn <email@example.com>
-  /^>?\s*Den\s[\d\/]+,\skl\.\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Finnish: Päiväys 15.05.2025 klo 19:01, Nimi Sukunimi <email@example.com>
-  /^>?\s*Päiväys\s[\d\.]+,\sklo\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Czech: Dne 15.05.2025, v 19:01, Jméno Příjmení <email@example.com>
-  /^>?\s*Dne\s[\d\.]+,\sv\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Hungarian: 2025.05.15., 19:01-kor, Név Vezetéknév <email@example.com>
-  /^>?\s*[\d\.]+,\s[\d:]+-kor,\s.+?\s<.+?>\s?/im,
-
-  // Polish: W dniu 15.05.2025, o godz. 19:01, Imię Nazwisko <email@example.com>
-  /^>?\s*W dniu\s[\d\.]+,\so godz\.\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Romanian: La data de 15.05.2025, ora 19:01, Nume Prenume <email@example.com>
-  /^>?\s*La data de\s[\d\.]+,\sora\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Russian: 15.05.2025 в 19:01, Имя Фамилия <email@example.com>
-  /^>?\s*[\d\.]+\sв\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Turkish: 15.05.2025 tarihinde, saat 19:01, İsim Soyisim <email@example.com>
-  /^>?\s*[\d\.]+\starihinde,\ssaat\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // Ukrainian: 15.05.2025 о 19:01, Ім'я Прізвище <email@example.com>
-  /^>?\s*[\d\.]+\sо\s[\d:]+,\s.+?\s<.+?>\s?/im,
-
-  // General Regex
-  /(^.*?:\s*\n)(^>.+)/im
+  /^(.*)\s*\s^>.+$/im
 ];
 
-export function getOriginalMessage(emailText: string): string {
+export function CleanQuotedForwardedReplies(emailText: string): string {
   const allRegexes = [
     ...FORWARDED_SEPARATOR_REGEX,
     ...REPLY_SEPARATOR_REGEX,
