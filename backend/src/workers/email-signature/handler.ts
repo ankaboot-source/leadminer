@@ -12,6 +12,7 @@ import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
 
+
 export interface EmailData {
   type: 'file' | 'email';
   userIdentifier: string;
