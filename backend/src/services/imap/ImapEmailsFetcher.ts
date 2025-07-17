@@ -1,5 +1,5 @@
 import Connection, { Box, parseHeader } from 'imap';
-import PostalMime, { Email } from 'postal-mime';
+import { simpleParser } from 'mailparser';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -7,11 +7,6 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
-import {
-  FORWARDED_SEPARATOR_REGEX,
-  REPLY_SEPARATOR_REGEX,
-  REPLY_MARKER_REGEX
-} from '../../utils/helpers/emailParsers';
 
 const redisClient = redis.getClient();
 
@@ -219,26 +214,6 @@ export default class ImapEmailsFetcher {
       } catch (error) {
         logger.error('Error when fetching emails', error);
       } finally {
-        // Notify signature worker fetching is ended
-        await publishStreamsPipeline([
-          {
-            stream: this.signatureStream,
-            data: {
-              type: 'email',
-              data: {
-                header: {},
-                body: '',
-                seqNumber: -1,
-                folderPath,
-                isLast: true
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            }
-          }
-        ]);
         imapConnection?.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', error);
@@ -275,8 +250,8 @@ export default class ImapEmailsFetcher {
       let messageCounter = 0;
 
       fetchResult.on('message', (msg, seqNumber) => {
-        let header = '';
-        let body = '';
+        let headerChunks: Buffer[] = [];
+        let bodyChunks: Buffer[] = [];
 
         if (this.isCanceled === true) {
           const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
@@ -289,30 +264,25 @@ export default class ImapEmailsFetcher {
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
-              header += chunk;
+              headerChunks.push(chunk);
             } else if (this.fetchEmailBody) {
-              body += chunk;
+              bodyChunks.push(chunk);
             }
           });
         });
 
         msg.once('end', async () => {
-          const parsedHeader = parseHeader(header);
+          const headerBuf = Buffer.concat(headerChunks);
+          const bodyBuf = Buffer.concat(bodyChunks);
 
-          let normalizedEmail: Email | null = null;
+          const parsedHeader = parseHeader(headerBuf.toString('utf8'));
 
-          try {
-            normalizedEmail = await PostalMime.parse(header + body);
-          } catch (err) {
-            logger.error(
-              '[PostalMime.parse]: Error during normalizing email',
-              err
-            );
-          }
+          const mail = await simpleParser(Buffer.concat([headerBuf, bodyBuf]));
+          const text = (mail.text || '').slice(0, 4000);
 
           // Clear large chunks early
-          header = null as unknown as string;
-          body = null as unknown as string;
+          headerChunks = [];
+          bodyChunks = [];
 
           const messageId = getMessageId(parsedHeader);
 
@@ -339,60 +309,48 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
-          const text = normalizedEmail?.text || '';
-          const isForwardedOrReplied = [
-            ...FORWARDED_SEPARATOR_REGEX,
-            ...REPLY_SEPARATOR_REGEX,
-            ...REPLY_MARKER_REGEX
-          ].some((regex) => text?.match(regex));
-
-          const bodyText = isForwardedOrReplied
-            ? text.slice(0, 2000)
-            : text.slice(-200);
-
-          if (normalizedEmail?.headers.includes)
-            await publishStreamsPipeline([
-              {
-                stream: this.contactStream,
+          await publishStreamsPipeline([
+            {
+              stream: this.contactStream,
+              data: {
+                type: 'email',
                 data: {
-                  type: 'email',
-                  data: {
-                    header: parsedHeader,
-                    body: '',
-                    seqNumber,
-                    folderPath,
-                    isLast: isLastMessageInFolder
-                  },
-                  userId: this.userId,
-                  userEmail: this.userEmail,
-                  userIdentifier: this.userIdentifier,
-                  miningId: this.miningId
-                }
-              },
-              {
-                stream: this.signatureStream,
-                data: {
-                  type: 'email',
-                  data: {
-                    header: normalizedEmail
-                      ? {
-                          from: normalizedEmail.from,
-                          messageId: normalizedEmail.messageId,
-                          messageDate: normalizedEmail.date
-                        }
-                      : {},
-                    body: bodyText,
-                    seqNumber,
-                    folderPath,
-                    isLast: isLastMessageInFolder
-                  },
-                  userId: this.userId,
-                  userEmail: this.userEmail,
-                  userIdentifier: this.userIdentifier,
-                  miningId: this.miningId
-                }
+                  header: parsedHeader,
+                  body: '',
+                  seqNumber,
+                  folderPath,
+                  isLast: isLastMessageInFolder
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
               }
-            ]);
+            },
+            {
+              stream: this.signatureStream,
+              data: {
+                type: 'email',
+                data: {
+                  header: mail
+                    ? {
+                        from: mail.from?.value[0],
+                        messageId: mail.messageId,
+                        messageDate: mail.date
+                      }
+                    : {},
+                  body: text,
+                  seqNumber,
+                  folderPath,
+                  isLast: false
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
+            }
+          ]);
         });
       });
 
@@ -421,26 +379,29 @@ export default class ImapEmailsFetcher {
     if (cancel) {
       this.isCanceled = true;
       await this.process;
-      await publishStreamsPipeline([
-        {
-          stream: this.signatureStream,
-          data: {
-            type: 'email',
-            data: {
-              header: {},
-              body: '',
-              seqNumber: -1,
-              folderPath: '',
-              isLast: true
-            },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          }
-        }
-      ]);
     }
+
+    // Notify signature worker fetching is ended
+    await publishStreamsPipeline([
+      {
+        stream: this.signatureStream,
+        data: {
+          type: 'email',
+          data: {
+            header: {},
+            body: '',
+            seqNumber: -1,
+            folderPath: '',
+            isLast: true
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        }
+      }
+    ]);
+
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     return this.isCompleted;

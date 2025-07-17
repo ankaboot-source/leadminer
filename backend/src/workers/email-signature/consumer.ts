@@ -54,35 +54,21 @@ export default class EmailSignatureConsumer {
         this.batchSize
       );
 
-      await Promise.allSettled(
-        result.map(async ({ streamName, data }) => {
-          try {
-            const promises = await Promise.allSettled(
-              data.map((emailData) => this.emailProcessor(emailData))
-            );
+      for (const { streamName, data } of result) {
+        for (const emailData of data) {
+          /* eslint-disable-next-line no-await-in-loop */
+          await this.emailProcessor(emailData);
+        }
 
-            const miningId = streamName.split('-')[1];
-            const extractionProgress = {
-              miningId,
-              progressType: 'extractedSignature',
-              count: data.length
-            };
+        const miningId = streamName.split('-')[1];
+        const extractionProgress = {
+          miningId,
+          progressType: 'extractedSignature',
+          count: data.length
+        };
 
-            this.redisClient.publish(
-              miningId,
-              JSON.stringify(extractionProgress)
-            );
-
-            return promises;
-          } catch (err) {
-            this.logger.error('Extraction error', err);
-            const error = new Error(
-              (err as Error).message ?? 'Unexpected error'
-            );
-            return Promise.reject(error);
-          }
-        })
-      );
+        this.redisClient.publish(miningId, JSON.stringify(extractionProgress));
+      }
     } catch (err) {
       this.logger.error('Error while consuming messages from stream.', err);
       throw err;
