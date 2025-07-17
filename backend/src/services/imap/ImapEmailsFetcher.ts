@@ -342,7 +342,7 @@ export default class ImapEmailsFetcher {
                   body: text,
                   seqNumber,
                   folderPath,
-                  isLast: isLastMessageInFolder
+                  isLast: false
                 },
                 userId: this.userId,
                 userEmail: this.userEmail,
