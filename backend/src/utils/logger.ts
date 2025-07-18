@@ -26,6 +26,7 @@ function initLogger() {
           json: true,
           replaceTimestamp: true,
           format: format.combine(commonFormat, format.json()),
+          gracefulShutdown: true,
           // eslint-disable-next-line no-console
           onConnectionError: (err) => console.error(err)
         })
