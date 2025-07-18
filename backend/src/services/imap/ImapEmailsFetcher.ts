@@ -250,8 +250,8 @@ export default class ImapEmailsFetcher {
       let messageCounter = 0;
 
       fetchResult.on('message', (msg, seqNumber) => {
-        let headerChunks: Buffer[] = [];
-        let bodyChunks: Buffer[] = [];
+        let headerChunks = '';
+        let bodyChunks = '';
 
         if (this.isCanceled === true) {
           const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
@@ -264,25 +264,22 @@ export default class ImapEmailsFetcher {
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
-              headerChunks.push(chunk);
+              headerChunks += chunk;
             } else if (this.fetchEmailBody) {
-              bodyChunks.push(chunk);
+              bodyChunks += chunk;
             }
           });
         });
 
         msg.once('end', async () => {
-          const headerBuf = Buffer.concat(headerChunks);
-          const bodyBuf = Buffer.concat(bodyChunks);
+          const parsedHeader = parseHeader(headerChunks);
 
-          const parsedHeader = parseHeader(headerBuf.toString('utf8'));
-
-          const mail = await simpleParser(Buffer.concat([headerBuf, bodyBuf]));
+          const mail = await simpleParser(headerChunks + bodyChunks);
           const text = (mail.text || '').slice(0, 4000);
 
           // Clear large chunks early
-          headerChunks = [];
-          bodyChunks = [];
+          headerChunks = '';
+          bodyChunks = '';
 
           const messageId = getMessageId(parsedHeader);
 

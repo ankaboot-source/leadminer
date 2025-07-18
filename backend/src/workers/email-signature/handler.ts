@@ -198,17 +198,25 @@ export class EmailSignatureProcessor {
 
     const contact = await this.signature.extract(signature);
     if (!contact) return null;
-    return {
+
+    const enrichedContact: Partial<Contact> = {
       email,
       user_id: userId,
-      name: contact?.name,
-      image: contact?.image,
-      location: contact?.address,
-      telephone: contact?.telephone,
-      job_title: contact?.jobTitle,
-      works_for: contact?.worksFor,
-      same_as: contact?.sameAs
+      name: contact.name,
+      image: contact.image,
+      location: contact.address,
+      telephone: contact.telephone,
+      job_title: contact.jobTitle,
+      works_for: contact.worksFor,
+      same_as: contact.sameAs
     };
+
+    // Check if anything beyond email and user_id is present
+    const hasExtraInfo = Object.entries(enrichedContact).some(
+      ([key, value]) => !['email', 'user_id'].includes(key) && value
+    );
+
+    return hasExtraInfo ? enrichedContact : null;
   }
 
   private async upsertContact(contact: Partial<Contact>): Promise<void> {

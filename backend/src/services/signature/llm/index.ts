@@ -14,11 +14,12 @@ import {
 } from './output-checkers';
 
 export enum LLMModels {
-  DeepSeek8bFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-  qwen7bInstructFree = 'qwen/qwen-2.5-7b-instruct:free',
-  googleGemma9bIt = 'google/gemma-2-9b-it',
-  deepseekR1DistillQwen32B = 'deepseek/deepseek-r1-distill-qwen-1.5b',
-  mistralai7bInstruct = 'mistralai/mistral-7b-instruct-v0.2'
+  qwenFree = 'qwen/qwen-2.5-7b-instruct:free',
+  deepseekFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+  cohere = 'cohere/command-r',
+  cohere7b = 'cohere/command-r7b-12-2024',
+  meta = 'meta-llama/llama-3.1-8b-instruct',
+  google = 'google/gemma-2-9b-it'
 }
 
 export type LLMModelType = `${LLMModels}`;
@@ -107,7 +108,8 @@ export const SignaturePrompt = {
     type: 'json_object'
   },
 
-  buildUserPrompt: (signature: string) => `${signature}`
+  buildUserPrompt: (signature: string) =>
+    `RETURN NULL IF NOT A REAL PERSON SIGNATURE:\n${signature}`
 };
 
 export class SignatureLLM implements ExtractSignature {
