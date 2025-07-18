@@ -29,13 +29,23 @@ export async function pushNotificationDB(
 
 export function isUsefulSignatureContent(signature: string): boolean {
   const text = signature.trim();
-
+  const words = text.split(/\s+/);
   const hasURL = /(https?:\/\/|www\.)\S+/i.test(text);
   const hasDigits = /\d{3,}/.test(text);
-  const hasMultipleWords = text.split(/\s+/).length >= 5;
   const hasSymbols = /[@+:]/.test(text); // Common in phone/email/title formats
 
-  const useful = hasURL || hasDigits || hasSymbols || hasMultipleWords;
+  const wordsMinMax =
+    words.length >= 5 && words.length <= 40 && text.length <= 300;
 
-  return useful;
+  // 2. At least one positive signal
+  const positive = hasURL || hasDigits || hasSymbols;
+
+  const blocks = [
+    /^(Envoyé\s+à\s+partir\s+de|Sent\s+from)\s+(Outlook|Gmail|iPhone|Android)/i
+  ];
+
+  const isUseful =
+    wordsMinMax && positive && !blocks.some((rx) => rx.test(text));
+
+  return isUseful;
 }
