@@ -4,6 +4,7 @@ import EmailReplyParser from 'email-reply-parser';
 import { assert } from 'console';
 import Redis from 'ioredis';
 import planer from 'planer';
+import libqp from 'libqp';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
@@ -176,10 +177,12 @@ export class EmailSignatureProcessor {
     if (!body.trim()) return null;
 
     try {
+      // Clean from quoted-printable
+      const text = libqp.decode(body).toString();
       // Clean email body from quoted replies
-      const text = planer.extractFrom(body, 'text/plain');
+      const cleanBody = planer.extractFrom(text, 'text/plain');
       // Double-Clean to handle special cases and forwarded messages
-      const originalMessage = CleanQuotedForwardedReplies(text);
+      const originalMessage = CleanQuotedForwardedReplies(cleanBody);
       const parsed = new EmailReplyParser().read(originalMessage);
       const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
       return sigFrag?.getContent() ?? null;
