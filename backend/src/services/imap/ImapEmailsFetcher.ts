@@ -274,7 +274,9 @@ export default class ImapEmailsFetcher {
         msg.once('end', async () => {
           const parsedHeader = parseHeader(headerChunks);
 
-          const mail = await simpleParser(headerChunks + bodyChunks);
+          const mail = await simpleParser(headerChunks + bodyChunks, {
+            skipTextToHtml: true
+          });
           const text = (mail.text || '').slice(0, 4000);
 
           // Clear large chunks early
