@@ -32,7 +32,7 @@ export function isUsefulSignatureContent(signature: string): boolean {
   const words = text.split(/\s+/);
   const hasURL = /(https?:\/\/|www\.)\S+/i.test(text);
   const hasDigits = /\d{3,}/.test(text);
-  const hasSymbols = /[@+:]/.test(text); // Common in phone/email/title formats
+  const hasSymbols = /[@+]/.test(text);
 
   const wordsMinMax =
     words.length >= 5 && words.length <= 40 && text.length <= 300;
