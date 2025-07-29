@@ -16,7 +16,7 @@ export class Signature implements ExtractSignature {
 
     this.logger.info('Signature extractor initialized', {
       primary: primaryEngine?.constructor.name || 'None',
-      fallback: fallbackEngine?.constructor.name || 'None',
+      fallback: fallbackEngine?.constructor.name || 'None'
     });
   }
 
