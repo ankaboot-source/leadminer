@@ -255,7 +255,7 @@ export default class ImapEmailsFetcher {
       });
 
       let header = '';
-      let bodyText: string = '';
+      let bodyText = '';
       let from: EmailAddress;
       let date: Date;
 
