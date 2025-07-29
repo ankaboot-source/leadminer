@@ -1,5 +1,5 @@
-import Connection, { Box, parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
+import Connection, { Box, ImapMessage, parseHeader } from 'imap';
+import { AddressObject, EmailAddress, MailParser } from 'mailparser';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -96,7 +96,7 @@ export default class ImapEmailsFetcher {
     this.processSetKey = `caching:${miningId}`;
 
     if (this.fetchEmailBody) {
-      this.bodies.push('TEXT');
+      this.bodies.push('');
     }
   }
 
@@ -235,6 +235,63 @@ export default class ImapEmailsFetcher {
   }
 
   /**
+   * Reads a single IMAP message stream end-to-end,
+   * parses it with mailparser, and resolves with
+   * { headers, body }.
+   */
+  async fetchMessage(msg: ImapMessage): Promise<{
+    header: Record<string, string[]>;
+    bodyText: string;
+    from: EmailAddress;
+    date: Date;
+  }> {
+    logger.debug(`Reading email message from folder: ${this.folders}`);
+    return new Promise((resolve) => {
+      const parser = new MailParser({
+        skipHtmlToText: true,
+        skipTextToHtml: true,
+        maxHtmlLengthToParse: 2,
+        skipTextLinks: true
+      });
+
+      let header = '';
+      let bodyText: string = '';
+      let from: EmailAddress;
+      let date: Date;
+
+      parser.on('headers', (headerMap) => {
+        [from] = (headerMap.get('from') as AddressObject).value;
+        date = headerMap.get('date') as Date;
+      });
+
+      parser.on('data', (data) => {
+        if (data.type === 'text') {
+          bodyText = data.text;
+        }
+      });
+
+      parser.once('end', () => {
+        resolve({
+          from,
+          date,
+          bodyText,
+          header: parseHeader(header)
+        });
+      });
+
+      msg.on('body', (stream, streamInfo) => {
+        if (streamInfo.which.includes('HEADER')) {
+          stream.on('data', (chunk) => {
+            header += chunk;
+          });
+        } else {
+          stream.pipe(parser);
+        }
+      });
+    });
+  }
+
+  /**
    *
    * @param connection - Open IMAP connection.
    * @param folderPath - Name of the folder locked by the IMAP connection.
@@ -249,10 +306,7 @@ export default class ImapEmailsFetcher {
 
       let messageCounter = 0;
 
-      fetchResult.on('message', (msg, seqNumber) => {
-        let headerChunks = '';
-        let bodyChunks = '';
-
+      fetchResult.on('message', async (msg, seqNumber) => {
         if (this.isCanceled === true) {
           const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
           msg.removeAllListeners();
@@ -261,31 +315,13 @@ export default class ImapEmailsFetcher {
           return;
         }
 
-        msg.on('body', (stream, streamInfo) => {
-          stream.on('data', (chunk) => {
-            if (streamInfo.which.includes('HEADER')) {
-              headerChunks += chunk;
-            } else if (this.fetchEmailBody) {
-              bodyChunks += chunk;
-            }
-          });
-        });
+        try {
+          const { header, bodyText, from, date } = await this.fetchMessage(msg);
 
-        msg.once('end', async () => {
-          const parsedHeader = parseHeader(headerChunks);
+          const text = (bodyText || '').slice(0, 4000);
+          const messageId = getMessageId(header);
 
-          const mail = await simpleParser(headerChunks + bodyChunks, {
-            skipTextToHtml: true
-          });
-          const text = (mail.text || '').slice(0, 4000);
-
-          // Clear large chunks early
-          headerChunks = '';
-          bodyChunks = '';
-
-          const messageId = getMessageId(parsedHeader);
-
-          parsedHeader['message-id'] = [messageId];
+          header['message-id'] = [messageId];
 
           const isLastMessageInFolder = seqNumber === totalInFolder;
 
@@ -314,7 +350,7 @@ export default class ImapEmailsFetcher {
               data: {
                 type: 'email',
                 data: {
-                  header: parsedHeader,
+                  header,
                   body: '',
                   seqNumber,
                   folderPath,
@@ -331,11 +367,11 @@ export default class ImapEmailsFetcher {
               data: {
                 type: 'email',
                 data: {
-                  header: mail
+                  header: from
                     ? {
-                        from: mail.from?.value[0],
-                        messageId: mail.messageId,
-                        messageDate: mail.date
+                        from,
+                        messageId,
+                        messageDate: date
                       }
                     : {},
                   body: text,
@@ -350,15 +386,20 @@ export default class ImapEmailsFetcher {
               }
             }
           ]);
-        });
+        } catch (e) {
+          logger.error(e);
+          reject(e);
+        }
       });
 
       fetchResult.once('error', (err) => {
         logger.error('IMAP fetch error', err);
+        fetchResult.removeAllListeners();
         reject(err);
       });
 
       fetchResult.once('end', () => {
+        fetchResult.removeAllListeners();
         resolve(true);
       });
     });
