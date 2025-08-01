@@ -1,6 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import Connection from 'imap';
+import { ImapFlow as Connection } from 'imapflow';
 import {
   ImapMiningSourceCredentials,
   MiningSources,
@@ -125,6 +125,7 @@ export default function initializeImapController(miningSources: MiningSources) {
 
         imapConnectionProvider = await getImapConnectionProvider(data);
         imapConnection = await imapConnectionProvider.acquireConnection();
+
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
         const tree: any = await imapBoxesFetcher.getTree(data.email);
 

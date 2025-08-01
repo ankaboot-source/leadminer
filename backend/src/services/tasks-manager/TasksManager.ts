@@ -60,9 +60,8 @@ export default class TasksManager {
       if (count > 0) {
         this.updateProgress(miningId, progressType, count);
         this.notifyChanges(miningId, progressType);
-
-        await this.hasCompleted(miningId);
       }
+      await this.hasCompleted(miningId);
     });
   }
 

@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+import assert from 'assert';
 import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 import { ExtractSignature, PersonLD } from '../types';
 import {
@@ -112,15 +113,59 @@ export const SignaturePrompt = {
     `RETURN NULL IF NOT A REAL PERSON SIGNATURE:\n${signature}`
 };
 
+type OpenRouterError = {
+  error: {
+    code: number;
+    message: string;
+    metadata?: Record<string, unknown>;
+  };
+};
+
+type OpenRouterResponse = {
+  id: string;
+  choices: Array<{
+    message: {
+      role: 'assistant' | 'user' | 'system' | 'tool';
+      content: string;
+      refusal: string;
+    };
+    logprobs: Record<string, unknown>;
+    finish_reason: string;
+    index: number;
+  }>;
+  provider: string;
+  model: string;
+  object: string;
+  created: number;
+  system_fingerprint: Record<string, unknown>;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};
+
 export class SignatureLLM implements ExtractSignature {
   LLM_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+
+  private active = true;
 
   constructor(
     private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
     private readonly model: LLMModelType,
     private readonly apiKey: string
-  ) {}
+  ) {
+    assert(
+      apiKey && apiKey.trim() !== '',
+      'API key is required and cannot be empty.'
+    );
+    assert(model, 'Model is required and cannot be null or undefined.');
+  }
+
+  isActive(): boolean {
+    return this.active;
+  }
 
   private headers() {
     return {
@@ -143,6 +188,13 @@ export class SignatureLLM implements ExtractSignature {
     });
   }
 
+  private handleResponseError(error: OpenRouterError['error']) {
+    if ([402, 502, 503].includes(error.code)) {
+      this.active = false;
+    }
+    throw new Error(error.message);
+  }
+
   private async sendPrompt(signature: string): Promise<string | null> {
     try {
       const response = await this.rateLimiter.throttleRequests(() =>
@@ -152,10 +204,13 @@ export class SignatureLLM implements ExtractSignature {
           body: this.body(signature)
         })
       );
+
       const data = await response.json();
-      const error = data?.error?.message;
-      if (error) throw new Error(error);
-      return data.choices?.[0]?.message?.content;
+
+      if ('error' in data)
+        this.handleResponseError((data as OpenRouterError).error);
+
+      return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
       this.logger.error('SignatureExtractionLLM error:', err);
       return null;

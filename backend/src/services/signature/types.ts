@@ -9,5 +9,6 @@ export interface PersonLD {
 }
 
 export interface ExtractSignature {
+  isActive(): boolean;
   extract(signature: string): Promise<PersonLD | null>;
 }

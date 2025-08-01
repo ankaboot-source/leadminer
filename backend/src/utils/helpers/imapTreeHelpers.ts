@@ -1,81 +1,29 @@
-import Connection, { MailBoxes } from 'imap';
+import { ListResponse } from 'imapflow';
 import { FlatTree } from '../../services/imap/types';
-import logger from '../logger';
 
-/**
- * createFlatTreeFromImap - creates a readable flat array from tree object
- * @param imapTree - native imap tree
- */
-export function createFlatTreeFromImap(
-  imapTree: MailBoxes,
-  currentParent?: FlatTree
-) {
-  const readableTree: FlatTree[] = [];
+export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
+  const pathMap = new Map<string, FlatTree>();
 
-  Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
-    let { delimiter } = folderDetails;
+  // Create FlatTree nodes without linking parents yet
+  for (const box of boxes) {
+    pathMap.set(box.path, {
+      label: box.name,
+      key: box.path,
+      total: box.status?.messages || 0,
+      cumulativeTotal: box.status?.messages || 0,
+      attribs: Array.from(box.flags.values())
+    });
+  }
 
-    if (!delimiter) {
-      delimiter = '/';
-      logger.debug(
-        `[createFlatTreeFromImap]: Folder separator was not provided. Defaulting to "${delimiter}".`,
-        folderDetails
-      );
+  // Assign parent references
+  for (const box of boxes) {
+    const node = pathMap.get(box.path)!;
+    if (box.parentPath && pathMap.has(box.parentPath)) {
+      node.parent = pathMap.get(box.parentPath)!;
     }
+  }
 
-    const folder = {
-      label: folderLabel,
-      key: currentParent
-        ? `${currentParent.key}${delimiter}${folderLabel}`
-        : folderLabel,
-      parent: currentParent,
-      attribs: folderDetails.attribs
-    };
-
-    if (imapTree[`${folderLabel}`].children) {
-      readableTree.push(
-        folder,
-        ...createFlatTreeFromImap(imapTree[`${folderLabel}`].children, folder)
-      );
-    } else {
-      readableTree.push(folder);
-    }
-  });
-  return readableTree;
-}
-
-/**
- * Gets the total number of messages per folder
- * @param folders - flat array of objects.
- * @param imapConnection - An IMAP connection.
- */
-export function addTotalPerFolder(
-  folders: FlatTree[],
-  imapConnection: Connection
-) {
-  const promises = folders.map(
-    (folder) =>
-      new Promise((resolve, reject) => {
-        imapConnection.status(folder.key, (err, box) => {
-          if (err) {
-            reject(err);
-          }
-          if (box) {
-            // eslint-disable-next-line no-param-reassign
-            folder.total = box.messages.total;
-            // eslint-disable-next-line no-param-reassign
-            folder.cumulativeTotal = box.messages.total;
-          } else {
-            // eslint-disable-next-line no-param-reassign
-            folder.total = 0;
-            // eslint-disable-next-line no-param-reassign
-            folder.cumulativeTotal = 0;
-          }
-          resolve(true);
-        });
-      })
-  );
-  return Promise.allSettled(promises);
+  return [...pathMap.values()];
 }
 
 /**

@@ -13,10 +13,11 @@ import EmailSignatureConsumer, {
 } from './workers/email-signature/consumer';
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
-import { Signature } from './services/signature';
-import { LLMModels } from './services/signature/llm';
+import { EngineConfig, Signature } from './services/signature';
+import { LLMModels, SignatureLLM } from './services/signature/llm';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
 import { TokenBucketRateLimiter } from './services/rate-limiter/RateLimiter';
+import { SignatureRE } from './services/signature/regex';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
@@ -25,17 +26,31 @@ const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
 const llmModel = LLMModels.cohere;
 
+const signatureEngines: EngineConfig[] = [
+  {
+    engine: new SignatureRE(logger),
+    useAsFallback: true
+  }
+];
+
+if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
+  signatureEngines.push({
+    engine: new SignatureLLM(
+      new TokenBucketRateLimiter(
+        llmModel.includes('free') ? 15 : 500,
+        60 * 1000
+      ),
+      logger,
+      llmModel,
+      ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''
+    ),
+    useAsFallback: false
+  });
+}
+
 const { processStreamData } = initializeEmailSignatureProcessor(
   supabaseClient,
-  new Signature(
-    new TokenBucketRateLimiter(llmModel.includes('free') ? 15 : 500, 60 * 1000),
-    logger,
-    {
-      model: llmModel,
-      apiKey: ENV.SIGNATURE_OPENROUTER_API_KEY,
-      useLLM: ENV.SIGNATURE_USE_LLM
-    }
-  ),
+  new Signature(logger, signatureEngines),
   emailSignatureCache,
   checkDomainStatus,
   redisClient

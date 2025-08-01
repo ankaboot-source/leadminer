@@ -1,4 +1,4 @@
-import Connection from 'imap';
+import { ImapFlow as Connection } from 'imapflow';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import logger from '../utils/logger';
@@ -93,10 +93,7 @@ export async function validateImapCredentials(
   password: string,
   port: number,
   tls: boolean
-): Promise<{
-  connectionProvider: ImapConnectionProvider;
-  connection: Connection;
-}> {
+) {
   const connectionProvider = new ImapConnectionProvider(login).withPassword(
     host,
     password,
