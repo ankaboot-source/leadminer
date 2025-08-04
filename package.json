@@ -22,5 +22,8 @@
   "license": "AGPL-3.0",
   "devDependencies": {
     "supabase": "^2.19.7"
+  },
+  "dependencies": {
+    "p-limit": "^6.2.0"
   }
 }

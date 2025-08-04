@@ -8,8 +8,10 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
+import pLimit from 'p-limit';
 
 const redisClient = redis.getClient();
+const asyncThrottle = pLimit(500);
 
 interface StreamPipeline {
   stream: string;
@@ -261,78 +263,81 @@ export default class ImapEmailsFetcher {
           );
         }
 
-        const seqNumber = msg.seq;
+        asyncThrottle(async () => {
+          const seqNumber = msg.seq;
 
-        const { header, bodyText, from, date } =
-          await ImapEmailsFetcher.parseMessage(msg);
+          const { header, bodyText, from, date } =
+            await ImapEmailsFetcher.parseMessage(msg);
 
-        const text = (bodyText || '').slice(0, 4000);
-        const messageId = getMessageId(header);
+          const text = (bodyText || '').slice(0, 4000);
+          const messageId = getMessageId(header);
 
-        header['message-id'] = [messageId];
+          header['message-id'] = [messageId];
 
-        const isLastMessageInFolder = seqNumber === totalInFolder;
+          const isLastMessageInFolder = seqNumber === totalInFolder;
 
-        // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
-        if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
-          return;
-        }
-
-        this.fetchedIds.add(messageId);
-        this.totalFetched += 1;
-
-        const reachedBatchSize = messageCounter === this.batchSize;
-        const shouldPublishProgress = reachedBatchSize || isLastMessageInFolder;
-        const progressToSend = messageCounter + 1;
-        // Increment the message counter or reset it to 0 if batch size has been reached.
-        messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
-
-        if (shouldPublishProgress) {
-          await publishFetchingProgress(this.miningId, progressToSend);
-        }
-
-        await publishStreamsPipeline([
-          {
-            stream: this.contactStream,
-            data: {
-              type: 'email',
-              data: {
-                header,
-                body: '',
-                seqNumber,
-                folderPath,
-                isLast: isLastMessageInFolder
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            }
-          },
-          {
-            stream: this.signatureStream,
-            data: {
-              type: 'email',
-              data: {
-                header: from
-                  ? {
-                      from,
-                      messageId,
-                      messageDate: date
-                    }
-                  : {},
-                body: text,
-                seqNumber,
-                folderPath,
-                isLast: false
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            }
+          // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
+          if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
+            return;
           }
-        ]);
+
+          this.fetchedIds.add(messageId);
+          this.totalFetched += 1;
+
+          const reachedBatchSize = messageCounter === this.batchSize;
+          const shouldPublishProgress =
+            reachedBatchSize || isLastMessageInFolder;
+          const progressToSend = messageCounter + 1;
+          // Increment the message counter or reset it to 0 if batch size has been reached.
+          messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
+
+          if (shouldPublishProgress) {
+            await publishFetchingProgress(this.miningId, progressToSend);
+          }
+
+          await publishStreamsPipeline([
+            {
+              stream: this.contactStream,
+              data: {
+                type: 'email',
+                data: {
+                  header,
+                  body: '',
+                  seqNumber,
+                  folderPath,
+                  isLast: isLastMessageInFolder
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
+            },
+            {
+              stream: this.signatureStream,
+              data: {
+                type: 'email',
+                data: {
+                  header: from
+                    ? {
+                        from,
+                        messageId,
+                        messageDate: date
+                      }
+                    : {},
+                  body: text,
+                  seqNumber,
+                  folderPath,
+                  isLast: false
+                },
+                userId: this.userId,
+                userEmail: this.userEmail,
+                userIdentifier: this.userIdentifier,
+                miningId: this.miningId
+              }
+            }
+          ]);
+        });
       }
     } catch (err) {
       logger.error(err);
