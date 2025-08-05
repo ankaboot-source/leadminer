@@ -1,6 +1,6 @@
 import { parseHeader } from 'imap';
 import { simpleParser } from 'mailparser';
-import { ImapFlow as Connection } from 'imapflow';
+import { ImapFlow as Connection, FetchMessageObject } from 'imapflow';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -34,6 +34,19 @@ async function publishStreamsPipeline(
 
   await pipeline.exec();
 }
+
+
+function generateSequenceBatches(totalInFolder: number, batchSize: number): string[] {
+  const batches: string[] = [];
+
+  for (let start = 1; start <= totalInFolder; start += batchSize) {
+    const end = Math.min(start + batchSize - 1, totalInFolder);
+    batches.push(`${start}:${end}`);
+  }
+
+  return batches;
+}
+
 
 /**
  * Publishes the fetching progress for a mining task to redis PubSub.
@@ -236,6 +249,95 @@ export default class ImapEmailsFetcher {
     };
   }
 
+
+    /**
+   * Processes a batch of messages and publishes them to Redis streams
+   */
+  private async processBatch(
+    batch: FetchMessageObject[],
+    totalInbox: number,
+    progressCount: number,
+    folderPath: string
+  ): Promise<void> {
+    // Build all stream operations for the entire batch
+    const streamOperations: StreamPipeline[] = [];
+
+    for (const msg of batch) {
+
+      const seqNumber = msg.seq;
+
+      const { header, bodyText, from, date } =
+        await ImapEmailsFetcher.parseMessage(msg);
+
+      const text = (bodyText || '').slice(0, 4000);
+      const messageId = getMessageId(header);
+
+      header['message-id'] = [messageId];
+
+      const isLastMessageInFolder = seqNumber === totalInbox;
+
+      // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
+      if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
+        return;
+      }
+
+      this.fetchedIds.add(messageId);
+      this.totalFetched += 1;
+
+      // Contact stream data
+      streamOperations.push({     
+        stream: this.contactStream,
+        data: {
+          type: 'email',
+          data: {
+            header,
+            body: '',
+            seqNumber,
+            folderPath,
+            isLast: isLastMessageInFolder
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        }
+      });
+
+      // Signature stream data
+      streamOperations.push(
+        {
+          stream: this.signatureStream,
+          data: {
+            type: 'email',
+            data: {
+              header: from
+                ? {
+                    from,
+                    messageId,
+                    messageDate: date
+                  }
+                : {},
+              body: text,
+              seqNumber,
+              folderPath,
+              isLast: false
+            },
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          }
+        }
+      );
+    }
+
+    // Execute all stream operations in a single pipeline
+    await publishStreamsPipeline(streamOperations);
+
+    // Publish progress update
+    await publishFetchingProgress(this.miningId, progressCount);
+  }
+
   /**
    *
    * @param connection - Open IMAP connection.
@@ -249,96 +351,116 @@ export default class ImapEmailsFetcher {
     totalInFolder: number
   ) {
     try {
-      let messageCounter = 0;
 
-      for await (const msg of connection.fetch('1:*', {
-        uid: false,
-        envelope: true,
-        source: true,
-        bodyParts: this.bodies
-      })) {
-        if (this.isCanceled === true) {
-          throw new Error(
-            `Canceled process on folder ${folderPath} with ID ${this.miningId}`
-          );
-        }
+      const sequences = generateSequenceBatches(totalInFolder, 300);
 
-        asyncThrottle(async () => {
-          const seqNumber = msg.seq;
 
-          const { header, bodyText, from, date } =
-            await ImapEmailsFetcher.parseMessage(msg);
+      for (const sequence of sequences) {
 
-          const text = (bodyText || '').slice(0, 4000);
-          const messageId = getMessageId(header);
-
-          header['message-id'] = [messageId];
-
-          const isLastMessageInFolder = seqNumber === totalInFolder;
-
-          // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
-          if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
-            return;
-          }
-
-          this.fetchedIds.add(messageId);
-          this.totalFetched += 1;
-
-          const reachedBatchSize = messageCounter === this.batchSize;
-          const shouldPublishProgress =
-            reachedBatchSize || isLastMessageInFolder;
-          const progressToSend = messageCounter + 1;
-          // Increment the message counter or reset it to 0 if batch size has been reached.
-          messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
-
-          if (shouldPublishProgress) {
-            await publishFetchingProgress(this.miningId, progressToSend);
-          }
-
-          await publishStreamsPipeline([
-            {
-              stream: this.contactStream,
-              data: {
-                type: 'email',
-                data: {
-                  header,
-                  body: '',
-                  seqNumber,
-                  folderPath,
-                  isLast: isLastMessageInFolder
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
-              }
-            },
-            {
-              stream: this.signatureStream,
-              data: {
-                type: 'email',
-                data: {
-                  header: from
-                    ? {
-                        from,
-                        messageId,
-                        messageDate: date
-                      }
-                    : {},
-                  body: text,
-                  seqNumber,
-                  folderPath,
-                  isLast: false
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
-              }
-            }
-          ]);
+        const batchMessages = await connection.fetchAll(sequence, {
+          uid: false,
+          envelope: true,
+          source: true,
+          bodyParts: this.bodies
         });
+
+
+        await this.processBatch(
+          batchMessages,
+          totalInFolder,
+          batchMessages.length,
+          folderPath
+        )
       }
+
+    // for await (const msg of connection.fetch('1:*', {
+    //   uid: false,
+    //   envelope: true,
+    //   source: true,
+    //   bodyParts: this.bodies
+    // })) {
+    //   if (this.isCanceled === true) {
+    //     throw new Error(
+    //       `Canceled process on folder ${folderPath} with ID ${this.miningId}`
+    //     );
+    //   }
+
+    //     asyncThrottle(async () => {
+    //       const seqNumber = msg.seq;
+
+    //       const { header, bodyText, from, date } =
+    //         await ImapEmailsFetcher.parseMessage(msg);
+
+    //       const text = (bodyText || '').slice(0, 4000);
+    //       const messageId = getMessageId(header);
+
+    //       header['message-id'] = [messageId];
+
+    //       const isLastMessageInFolder = seqNumber === totalInFolder;
+
+    //       // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
+    //       if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
+    //         return;
+    //       }
+
+    //       this.fetchedIds.add(messageId);
+    //       this.totalFetched += 1;
+
+    //       const reachedBatchSize = messageCounter === this.batchSize;
+    //       const shouldPublishProgress =
+    //         reachedBatchSize || isLastMessageInFolder;
+    //       const progressToSend = messageCounter + 1;
+    //       // Increment the message counter or reset it to 0 if batch size has been reached.
+    //       messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
+
+    //       if (shouldPublishProgress) {
+    //         await publishFetchingProgress(this.miningId, progressToSend);
+    //       }
+
+    //       await publishStreamsPipeline([
+    //         {
+    //           stream: this.contactStream,
+    //           data: {
+    //             type: 'email',
+    //             data: {
+    //               header,
+    //               body: '',
+    //               seqNumber,
+    //               folderPath,
+    //               isLast: isLastMessageInFolder
+    //             },
+    //             userId: this.userId,
+    //             userEmail: this.userEmail,
+    //             userIdentifier: this.userIdentifier,
+    //             miningId: this.miningId
+    //           }
+    //         },
+    //         {
+    //           stream: this.signatureStream,
+    //           data: {
+    //             type: 'email',
+    //             data: {
+    //               header: from
+    //                 ? {
+    //                     from,
+    //                     messageId,
+    //                     messageDate: date
+    //                   }
+    //                 : {},
+    //               body: text,
+    //               seqNumber,
+    //               folderPath,
+    //               isLast: false
+    //             },
+    //             userId: this.userId,
+    //             userEmail: this.userEmail,
+    //             userIdentifier: this.userIdentifier,
+    //             miningId: this.miningId
+    //           }
+    //         }
+    //       ]);
+    //     });
+    //   }
     } catch (err) {
       logger.error(err);
       throw err;
