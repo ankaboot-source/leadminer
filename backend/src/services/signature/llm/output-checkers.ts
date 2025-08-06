@@ -15,21 +15,25 @@ export function validatePhones(
 
   return telephone
     .map((rawNumber) => {
-      const parsed = parsePhoneNumberWithError(rawNumber);
+      try {
+        const parsed = parsePhoneNumberWithError(rawNumber);
 
-      if (!parsed?.isValid()) return null;
+        if (!parsed?.isValid()) return null;
 
-      const international = normalize(parsed.formatInternational());
-      const national = normalize(parsed.formatNational());
-      const e164 = normalize(parsed.number); // +123456789
+        const international = normalize(parsed.formatInternational());
+        const national = normalize(parsed.formatNational());
+        const e164 = normalize(parsed.number); // +123456789
 
-      const found =
-        cleanSig.includes(international) ||
-        cleanSig.includes(national) ||
-        cleanSig.includes(e164) ||
-        cleanSig.includes(normalize(rawNumber));
+        const found =
+          cleanSig.includes(international) ||
+          cleanSig.includes(national) ||
+          cleanSig.includes(e164) ||
+          cleanSig.includes(normalize(rawNumber));
 
-      return found ? (parsed.number as string) : null;
+        return found ? (parsed.number as string) : null;
+      } catch (err) {
+        return null;
+      }
     })
     .filter((p): p is string => Boolean(p));
 }
