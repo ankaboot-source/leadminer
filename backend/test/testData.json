@@ -120,39 +120,53 @@
       "email": { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
     }
   ],
-  "imapTreeExample": {
-    "Brouillons": {
-      "attribs": ["\\Drafts", "\\HasNoChildren"],
+  "imapTreeExample": [
+    {
+      "path": "Brouillons",
+      "name": "Brouillons",
+      "flags": ["\\Drafts", "\\HasNoChildren"],
       "delimiter": "/",
-      "children": null,
-      "parent": null
+      "parentPath": null,
+      "listed": true,
+      "status": { "messages": 0 }
     },
-    "INBOX": {
-      "attribs": ["\\HasChildren"],
+    {
+      "path": "INBOX",
+      "name": "INBOX",
+      "flags": ["\\HasChildren"],
       "delimiter": "/",
-      "children": {
-        "mars": {
-          "attribs": ["\\Junk", "\\HasNoChildren"],
-          "delimiter": "/",
-          "children": null,
-          "parent": null
-        },
-        "Administratif": {
-          "attribs": ["\\Junk", "\\HasNoChildren"],
-          "delimiter": "/",
-          "children": null,
-          "parent": null
-        }
-      },
-      "parent": null
+      "parentPath": null,
+      "listed": true,
+      "status": { "messages": 0 }
     },
-    "Spam": {
-      "attribs": ["\\Junk", "\\HasNoChildren"],
+    {
+      "path": "INBOX/mars",
+      "name": "mars",
+      "flags": ["\\Junk", "\\HasNoChildren"],
       "delimiter": "/",
-      "children": null,
-      "parent": null
+      "parentPath": "INBOX",
+      "listed": true,
+      "status": { "messages": 1 }
+    },
+    {
+      "path": "INBOX/Administratif",
+      "name": "Administratif",
+      "flags": ["\\Junk", "\\HasNoChildren"],
+      "delimiter": "/",
+      "parentPath": "INBOX",
+      "listed": true,
+      "status": { "messages": 1 }
+    },
+    {
+      "path": "Spam",
+      "name": "Spam",
+      "flags": ["\\Junk", "\\HasNoChildren"],
+      "delimiter": "/",
+      "parentPath": null,
+      "listed": true,
+      "status": { "messages": 1 }
     }
-  },
+  ],
   "emailsHash": [
     "leadminer@leadminer.io",
     "9d18a49b21fc1eed4096d8c84eaebcddd03caa9eab536a885aac6a509a6b1edd"
