@@ -1,5 +1,5 @@
 import { parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
+import { ParsedMail, simpleParser } from 'mailparser';
 import { ImapFlow as Connection } from 'imapflow';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
@@ -8,10 +8,8 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
-import pLimit from 'p-limit';
 
 const redisClient = redis.getClient();
-const asyncThrottle = pLimit(500);
 
 interface StreamPipeline {
   stream: string;
@@ -33,6 +31,20 @@ async function publishStreamsPipeline(
   });
 
   await pipeline.exec();
+}
+
+function generateSequenceBatches(
+  totalInFolder: number,
+  batchSize: number
+): string[] {
+  const batches: string[] = [];
+
+  for (let start = 1; start <= totalInFolder; start += batchSize) {
+    const end = Math.min(start + batchSize - 1, totalInFolder);
+    batches.push(`${start}:${end}`);
+  }
+
+  return batches;
 }
 
 /**
@@ -219,23 +231,6 @@ export default class ImapEmailsFetcher {
     logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
 
-  private static async parseMessage(msg: any): Promise<{
-    header: Record<string, any>;
-    bodyText: string;
-    from: any;
-    date: string;
-  }> {
-    const header = parseHeader(msg.headers.toString('utf8'));
-    const parsed = await simpleParser(msg.source);
-
-    return {
-      header,
-      bodyText: parsed.text || '',
-      from: parsed.from?.value?.[0],
-      date: parsed.date?.toISOString?.() || new Date().toISOString()
-    };
-  }
-
   /**
    *
    * @param connection - Open IMAP connection.
@@ -249,32 +244,39 @@ export default class ImapEmailsFetcher {
     totalInFolder: number
   ) {
     try {
-      let messageCounter = 0;
+      const sequences = generateSequenceBatches(totalInFolder, this.batchSize);
 
-      for await (const msg of connection.fetch('1:*', {
-        uid: false,
-        envelope: true,
-        source: true,
-        bodyParts: this.bodies
-      })) {
-        if (this.isCanceled === true) {
-          throw new Error(
-            `Canceled process on folder ${folderPath} with ID ${this.miningId}`
+      /* eslint-disable no-await-in-loop */
+      for (const sequence of sequences) {
+        const batchMessages = await connection.fetchAll(sequence, {
+          uid: false,
+          envelope: true,
+          source: true,
+          bodyParts: this.bodies
+        });
+
+        const pipeline = redisClient.multi();
+
+        for (const msg of batchMessages) {
+          let header: Record<string, string[]> | null = parseHeader(
+            msg.headers!.toString('utf8')
           );
-        }
+          let parsed: ParsedMail | null = await simpleParser(msg.source!, {
+            skipHtmlToText: true,
+            maxHtmlLengthToParse: 0,
+            skipTextToHtml: true,
+            skipTextLinks: true
+          });
 
-        asyncThrottle(async () => {
-          const seqNumber = msg.seq;
+          /* eslint-disable no-await-in-loop */
+          const text = parsed.text?.slice(0, 4000) || '';
+          const from = parsed.from?.value?.[0];
+          const date = parsed.date?.toISOString?.() || new Date().toISOString();
 
-          const { header, bodyText, from, date } =
-            await ImapEmailsFetcher.parseMessage(msg);
+          header['message-id'] = [getMessageId(header)];
 
-          const text = (bodyText || '').slice(0, 4000);
-          const messageId = getMessageId(header);
-
-          header['message-id'] = [messageId];
-
-          const isLastMessageInFolder = seqNumber === totalInFolder;
+          const [messageId] = header['message-id'];
+          const isLastMessageInFolder = msg.seq === totalInFolder;
 
           // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
           if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
@@ -284,61 +286,61 @@ export default class ImapEmailsFetcher {
           this.fetchedIds.add(messageId);
           this.totalFetched += 1;
 
-          const reachedBatchSize = messageCounter === this.batchSize;
-          const shouldPublishProgress =
-            reachedBatchSize || isLastMessageInFolder;
-          const progressToSend = messageCounter + 1;
-          // Increment the message counter or reset it to 0 if batch size has been reached.
-          messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
-
-          if (shouldPublishProgress) {
-            await publishFetchingProgress(this.miningId, progressToSend);
-          }
-
-          await publishStreamsPipeline([
-            {
-              stream: this.contactStream,
+          pipeline.xadd(
+            this.contactStream,
+            '*',
+            'message',
+            JSON.stringify({
+              type: 'email',
               data: {
-                type: 'email',
-                data: {
-                  header,
-                  body: '',
-                  seqNumber,
-                  folderPath,
-                  isLast: isLastMessageInFolder
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
-              }
-            },
-            {
-              stream: this.signatureStream,
+                header,
+                body: '',
+                seqNumber: msg.seq,
+                folderPath,
+                isLast: isLastMessageInFolder
+              },
+              userId: this.userId,
+              userEmail: this.userEmail,
+              userIdentifier: this.userIdentifier,
+              miningId: this.miningId
+            })
+          );
+
+          pipeline.xadd(
+            this.contactStream,
+            '*',
+            'message',
+            JSON.stringify({
+              type: 'email',
               data: {
-                type: 'email',
-                data: {
-                  header: from
-                    ? {
-                        from,
-                        messageId,
-                        messageDate: date
-                      }
-                    : {},
-                  body: text,
-                  seqNumber,
-                  folderPath,
-                  isLast: false
-                },
-                userId: this.userId,
-                userEmail: this.userEmail,
-                userIdentifier: this.userIdentifier,
-                miningId: this.miningId
-              }
-            }
-          ]);
-        });
+                header: from
+                  ? {
+                      from,
+                      messageId,
+                      messageDate: date
+                    }
+                  : {},
+                body: text,
+                seqNumber: msg.seq,
+                folderPath,
+                isLast: false
+              },
+              userId: this.userId,
+              userEmail: this.userEmail,
+              userIdentifier: this.userIdentifier,
+              miningId: this.miningId
+            })
+          );
+
+          // Clean references
+          parsed = null;
+          header = null;
+        }
+
+        await pipeline.exec();
+        await publishFetchingProgress(this.miningId, batchMessages.length);
       }
+      /* eslint-disable no-await-in-loop */
     } catch (err) {
       logger.error(err);
       throw err;
