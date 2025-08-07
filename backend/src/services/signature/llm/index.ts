@@ -134,17 +134,16 @@ export const SignaturePrompt = {
           },
           email: {
             type: 'string',
-            format: 'email',
             description: 'Email address, exactly as written in the signature'
           },
           telephone: {
             type: 'array',
             items: {
               type: 'string',
-              pattern: '^\\+\\d{7,15}$'
+              pattern: '\\+\\d{7,15}'
             },
             description:
-              'List of phone numbers formatted in valid E.164 format (e.g., +13105550139); only include if explicitly written'
+              'List of phone numbers in E.164 format (e.g., +13105550139); only include if explicitly written'
           },
           address: {
             type: 'string',
@@ -153,18 +152,16 @@ export const SignaturePrompt = {
           },
           image: {
             type: 'string',
-            format: 'uri',
             description:
               'Direct URL to an image or avatar, only if explicitly included'
           },
           sameAs: {
             type: 'array',
             items: {
-              type: 'string',
-              format: 'uri'
+              type: 'string'
             },
             description:
-              'Array of valid social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
+              'Array of social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
           }
         },
         required: ['@type', 'name'],
