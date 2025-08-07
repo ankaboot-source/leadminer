@@ -115,11 +115,13 @@ export const SignaturePrompt = {
           '@type': {
             type: 'string',
             const: 'Person',
-            description: 'Must always be "Person" as per schema.org type definition'
+            description:
+              'Must always be "Person" as per schema.org type definition'
           },
           name: {
             type: 'string',
-            description: 'Full name exactly as written in the signature, preserving original spelling and capitalization'
+            description:
+              'Full name exactly as written in the signature, preserving original spelling and capitalization'
           },
           jobTitle: {
             type: 'string',
@@ -127,7 +129,8 @@ export const SignaturePrompt = {
           },
           worksFor: {
             type: 'string',
-            description: 'Organization or company name, only if explicitly present'
+            description:
+              'Organization or company name, only if explicitly present'
           },
           email: {
             type: 'string',
@@ -140,16 +143,19 @@ export const SignaturePrompt = {
               type: 'string',
               pattern: '^\\+\\d{7,15}$'
             },
-            description: 'List of phone numbers formatted in valid E.164 format (e.g., +13105550139); only include if explicitly written'
+            description:
+              'List of phone numbers formatted in valid E.164 format (e.g., +13105550139); only include if explicitly written'
           },
           address: {
             type: 'string',
-            description: 'Full address including country, only if fully written in the signature'
+            description:
+              'Full address including country, only if fully written in the signature'
           },
           image: {
             type: 'string',
             format: 'uri',
-            description: 'Direct URL to an image or avatar, only if explicitly included'
+            description:
+              'Direct URL to an image or avatar, only if explicitly included'
           },
           sameAs: {
             type: 'array',
@@ -157,7 +163,8 @@ export const SignaturePrompt = {
               type: 'string',
               format: 'uri'
             },
-            description: 'Array of valid social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
+            description:
+              'Array of valid social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
           }
         },
         required: ['@type', 'name'],
