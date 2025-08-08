@@ -22,6 +22,8 @@ class ImapConnectionProvider {
         user: email,
         pass: ''
       },
+      logger: false,
+      socketTimeout: 3600000, // Timeout after one hour
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       secure: true
@@ -88,13 +90,17 @@ class ImapConnectionProvider {
   async connect() {
     const connection = new Connection(this.imapConfig as ImapFlowOptions);
 
-    // Optional: mirror the old “close / end” debug logs
     connection.once('close', (hadError: boolean) => {
       logger.debug('ImapFlow connection closed.', { hadError });
     });
 
     connection.once('end', () => {
       logger.debug('ImapFlow connection ended.');
+    });
+
+    connection.on('error', (err) => {
+      logger.error('ImapFlow connection error:', err);
+      throw err;
     });
 
     try {
@@ -141,11 +147,15 @@ class ImapConnectionProvider {
    * Releases an IMAP connection and returns it to the pool.
    * @param imapConnection - An IMAP connection.
    */
-  releaseConnection(imapConnection: Connection) {
+  async releaseConnection(imapConnection: Connection) {
     if (!this.poolIsInitialized) {
       Promise.resolve();
     }
-    return this.connectionsPool!.release(imapConnection);
+    try {
+      await this.connectionsPool!.release(imapConnection);
+    } catch (err) {
+      logger.error(`[ImapConnectionProvider]: Error releasing connection`, err);
+    }
   }
 
   /**
@@ -163,6 +173,7 @@ class ImapConnectionProvider {
       },
       destroy: async (connection) => {
         await connection.logout();
+        logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
       }
     };
 
