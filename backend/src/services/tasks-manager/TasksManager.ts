@@ -60,9 +60,8 @@ export default class TasksManager {
       if (count > 0) {
         this.updateProgress(miningId, progressType, count);
         this.notifyChanges(miningId, progressType);
-
-        await this.hasCompleted(miningId);
       }
+      await this.hasCompleted(miningId);
     });
   }
 
@@ -461,11 +460,10 @@ export default class TasksManager {
       ...clean.details.progress
     };
 
-    logger.debug('Task progress update', {
-      ...progress
-    });
-
     if (!fetch.stoppedAt && fetch.instance.isCompleted) {
+      logger.debug('Task progress update', {
+        ...progress
+      });
       await this.stopTask([fetch]);
       this.notifyChanges(task.miningId, 'fetched', 'fetching-finished');
     }
@@ -475,6 +473,9 @@ export default class TasksManager {
       fetch.stoppedAt &&
       progress.extracted >= progress.fetched
     ) {
+      logger.debug('Task progress update', {
+        ...progress
+      });
       await this.stopTask([extract]);
       this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
     }
@@ -484,6 +485,9 @@ export default class TasksManager {
       extract.stoppedAt &&
       progress.verifiedContacts >= progress.createdContacts
     ) {
+      logger.debug('Task progress update', {
+        ...progress
+      });
       await this.stopTask([clean]);
       this.notifyChanges(
         task.miningId,

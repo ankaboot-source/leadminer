@@ -10,7 +10,13 @@ export const URL_LINKEDIN_REGEX =
 export class SignatureRE implements ExtractSignature {
   LLM_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
+  private readonly active = true;
+
   constructor(private readonly logger: Logger) {}
+
+  isActive(): boolean {
+    return this.active;
+  }
 
   private static getTelephone(signature: string): string[] {
     const telephone = findPhoneNumbersInText(signature);

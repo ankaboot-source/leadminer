@@ -1,52 +1,88 @@
 import { Logger } from 'winston';
 import { ExtractSignature, PersonLD } from './types';
-import { LLMModelType, SignatureLLM } from './llm';
-import { SignatureRE } from './regex';
-import { IRateLimiter } from '../rate-limiter/RateLimiter';
 
-export interface Config {
-  useLLM: boolean;
-  apiKey?: string;
-  model?: LLMModelType;
+export interface EngineConfig {
+  engine: ExtractSignature;
+  useAsFallback: boolean;
 }
 
 export class Signature implements ExtractSignature {
-  private readonly extractor: ExtractSignature;
-
   constructor(
-    private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
-    { apiKey, model, useLLM }: Config
+    private readonly engines: EngineConfig[]
   ) {
-    if (apiKey && model && useLLM) {
-      this.logger.info(`Using LLM-based signature extractor (${model})`);
-      this.extractor = new SignatureLLM(
-        this.rateLimiter,
-        this.logger,
-        model,
-        apiKey
-      );
-    } else {
-      this.logger.info('Using regex-based signature extractor');
-      this.extractor = new SignatureRE(this.logger);
-    }
+    const primaryEngine = this.getEngine();
+    const fallbackEngine = this.getFallback();
+
+    this.logger.info('Signature extractor initialized', {
+      primary: primaryEngine?.constructor.name || 'None',
+      fallback: fallbackEngine?.constructor.name || 'None'
+    });
+  }
+
+  isActive(): boolean {
+    this.logger.warn(`${this.constructor.name}: Empty method is being called`);
+    throw new Error('Method not implemented');
+  }
+
+  /**
+   * Get the first active engine in the list
+   */
+  private getEngine(): ExtractSignature | null {
+    const activeEngine = this.engines.find(
+      (config) => config.engine.isActive() && !config.useAsFallback
+    );
+    return activeEngine?.engine || null;
+  }
+
+  /**
+   * Get the first fallback engine in the list
+   */
+  private getFallback(): ExtractSignature | null {
+    const fallbackEngine = this.engines.find(
+      (config) => config.engine.isActive() && config.useAsFallback
+    );
+    return fallbackEngine?.engine || null;
   }
 
   async extract(signature: string): Promise<PersonLD | null> {
-    try {
-      return await this.extractor.extract(signature);
-    } catch (err) {
-      if (this.extractor instanceof SignatureLLM) {
-        this.logger.warn(
-          'signature extractor LLM failed. Using fallback.',
-          err
-        );
-        return await new SignatureRE(this.logger).extract(signature);
-      }
-      this.logger.error(
-        `${this.extractor.constructor.name} extractor failed`,
-        err
+    const primary = this.getEngine();
+    const fallback = this.getFallback();
+    const engine = primary ?? fallback;
+
+    if (engine && primary) {
+      this.logger.debug(`Using primary engine: ${primary.constructor.name}`);
+    } else if (engine && fallback) {
+      this.logger.debug(
+        `Primary engine not available, falling back to: ${fallback.constructor.name}`
       );
+    } else {
+      this.logger.error('No available engine for signature extraction');
+      return null;
+    }
+
+    try {
+      this.logger.debug(
+        `Attempting extraction with engine: ${engine.constructor.name}`
+      );
+      const result = await engine.extract(signature);
+
+      this.logger.debug(
+        `Engine ${engine.constructor.name} extraction completed`,
+        {
+          success: result !== null
+        }
+      );
+
+      return result;
+    } catch (err) {
+      this.logger.error(
+        `Engine ${engine.constructor.name} failed during extraction`,
+        {
+          error: err instanceof Error ? err.message : String(err)
+        }
+      );
+
       return null;
     }
   }

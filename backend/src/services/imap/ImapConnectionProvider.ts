@@ -1,12 +1,12 @@
 import { Factory, Pool, createPool } from 'generic-pool';
-import Connection, { Config } from 'imap';
+import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import assert from 'assert';
 import ENV from '../../config';
-import generateXOauthToken from '../../utils/helpers/tokenHelpers';
 import logger from '../../utils/logger';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 class ImapConnectionProvider {
-  private imapConfig: Config;
+  private imapConfig: Partial<ImapFlowOptions>;
 
   private poolIsInitialized;
 
@@ -19,12 +19,15 @@ class ImapConnectionProvider {
    */
   constructor(email: string) {
     this.imapConfig = {
-      user: email,
-      connTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
-      authTimeout: ENV.IMAP_AUTH_TIMEOUT,
-      tls: true,
-      keepalive: false,
-      password: ''
+      auth: {
+        user: email,
+        pass: ''
+      },
+      logger: false,
+      socketTimeout: 3600000, // Timeout after one hour
+      connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
+      greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
+      secure: true
     };
 
     this.poolIsInitialized = false;
@@ -36,20 +39,16 @@ class ImapConnectionProvider {
    */
   async withOauth(token: string) {
     try {
-      const email = this.imapConfig.user;
-      const xoauth2Token = generateXOauthToken(token, email);
-
+      const email = this.imapConfig.auth?.user as string;
       const { host, port, tls } = await getOAuthImapConfigByEmail(email);
-      const tlsOptions = { host, port, servername: host };
 
-      this.imapConfig = {
+      Object.assign(this.imapConfig, {
         host,
         port,
-        tls,
-        tlsOptions,
-        xoauth2: xoauth2Token,
-        ...this.imapConfig
-      };
+        secure: tls,
+        auth: { user: email, accessToken: token }
+      });
+
       return this;
     } catch (error) {
       throw new Error(`Failed generating XOAuthToken: ${error}`);
@@ -72,18 +71,15 @@ class ImapConnectionProvider {
       );
     }
 
-    this.imapConfig = {
-      ...this.imapConfig,
-      password,
+    Object.assign(this.imapConfig, {
+      auth: {
+        pass: password
+      },
       host,
       port,
-      tls,
-      tlsOptions: {
-        port,
-        host,
-        servername: host
-      }
-    };
+      secure: tls
+    });
+
     return this;
   }
 
@@ -93,27 +89,27 @@ class ImapConnectionProvider {
    * @throws {Error} - If the connection fails for any reason.
    */
   async connect() {
+    const connection = new Connection(this.imapConfig as ImapFlowOptions);
+
+    connection.once('close', (hadError: boolean) => {
+      logger.debug('ImapFlow connection closed.', { hadError });
+    });
+
+    connection.once('end', () => {
+      logger.debug('ImapFlow connection ended.');
+    });
+
+    connection.on('error', (err) => {
+      logger.error('ImapFlow connection error:', err);
+      throw err;
+    });
+
     try {
-      const imapConnection: Connection = await new Promise(
-        (resolve, reject) => {
-          const connection = new Connection(this.imapConfig);
-          connection.on('error', (err: Error) => reject(err));
-          connection.once('ready', () => resolve(connection));
-          connection.connect();
-        }
-      );
-
-      imapConnection.once('close', (hadError: boolean) => {
-        logger.debug('Imap connection closed.', { metadata: { hadError } });
-      });
-      imapConnection.once('end', () => {
-        logger.debug('Imap connection ended.');
-      });
-
-      return imapConnection;
-    } catch (error) {
-      logger.error('Imap connection error', error);
-      throw error;
+      await connection.connect(); // throws on auth / network issues
+      return connection;
+    } catch (err) {
+      logger.error('ImapFlow connection error', err);
+      throw err;
     }
   }
 
@@ -128,12 +124,13 @@ class ImapConnectionProvider {
     if (!this.poolIsInitialized) {
       // Should throw an error, if wrong creds and prevents pool from getting initialized.
       const connection = await this.connect();
-      connection.destroy();
+      await connection.logout();
       this.initializePool();
       this.poolIsInitialized = true;
     }
 
-    return this.connectionsPool!.acquire();
+    assert(this.connectionsPool, 'Connection Pool should not be undefined');
+    return this.connectionsPool.acquire();
   }
 
   /**
@@ -143,8 +140,9 @@ class ImapConnectionProvider {
     if (!this.poolIsInitialized) {
       return;
     }
+    assert(this.connectionsPool, 'Connection Pool should not be undefined');
     logger.debug('Cleaning IMAP Pool');
-    await this.connectionsPool?.clear();
+    await this.connectionsPool.clear();
     this.poolIsInitialized = false;
   }
 
@@ -152,11 +150,16 @@ class ImapConnectionProvider {
    * Releases an IMAP connection and returns it to the pool.
    * @param imapConnection - An IMAP connection.
    */
-  releaseConnection(imapConnection: Connection) {
+  async releaseConnection(imapConnection: Connection) {
     if (!this.poolIsInitialized) {
       Promise.resolve();
     }
-    return this.connectionsPool!.release(imapConnection);
+    try {
+      assert(this.connectionsPool, 'Connection Pool should not be undefined');
+      await this.connectionsPool.release(imapConnection);
+    } catch (err) {
+      logger.error('[ImapConnectionProvider]: Error releasing connection', err);
+    }
   }
 
   /**
@@ -172,9 +175,9 @@ class ImapConnectionProvider {
           throw err;
         }
       },
-      destroy: (connection) => {
-        connection.destroy();
-        return Promise.resolve();
+      destroy: async (connection) => {
+        await connection.logout();
+        logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
       }
     };
 
