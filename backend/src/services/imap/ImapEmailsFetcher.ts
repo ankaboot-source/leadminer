@@ -115,6 +115,14 @@ export default class ImapEmailsFetcher {
     }
   }
 
+  private throwOnCancel(folder: string) {
+    if (this.isCanceled === true) {
+      throw new Error(
+        `Canceled process on folder ${folder} with ID ${this.miningId}`
+      );
+    }
+  }
+
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
@@ -179,16 +187,17 @@ export default class ImapEmailsFetcher {
    * Fetches all email messages in the configured boxes.
    */
   async fetchEmailMessages() {
-    const promises = this.folders.map(async (folderPath) => {
+    const promises = this.folders.map(async (folder) => {
       let imapConnection: Connection | null = null;
 
-      if (EXCLUDED_IMAP_FOLDERS.includes(folderPath)) {
+      if (EXCLUDED_IMAP_FOLDERS.includes(folder)) {
         // Skip excluded folders
         return;
       }
 
       try {
         imapConnection = await this.imapConnectionProvider.acquireConnection();
+        logger.debug(`Opened imap folder ${folder}`);
 
         if (this.isCanceled) {
           // Kill pending promises before starting.
@@ -196,12 +205,12 @@ export default class ImapEmailsFetcher {
           return;
         }
 
-        const mailbox = await imapConnection.mailboxOpen(folderPath, {
+        const mailbox = await imapConnection.mailboxOpen(folder, {
           readOnly: true
         });
 
         if (mailbox.exists > 0) {
-          await this.fetchBox(imapConnection, folderPath, mailbox.exists);
+          await this.fetchBox(imapConnection, folder, mailbox.exists);
         }
       } catch (error) {
         logger.error('Error when fetching emails', error);
@@ -209,6 +218,7 @@ export default class ImapEmailsFetcher {
         if (imapConnection) {
           try {
             await imapConnection.mailboxClose();
+            logger.debug(`Closed imap folder ${folder}`);
           } catch (err) {
             logger.warn('Error closing mailbox', err);
           }
@@ -219,7 +229,6 @@ export default class ImapEmailsFetcher {
 
     // Wait for all promises to settle before resolving the main promise
     this.process = Promise.allSettled(promises);
-
     await this.process;
 
     this.isCompleted = true;
@@ -248,6 +257,8 @@ export default class ImapEmailsFetcher {
 
       /* eslint-disable no-await-in-loop */
       for (const sequence of sequences) {
+        this.throwOnCancel(folderPath);
+
         const batchMessages = await connection.fetchAll(sequence, {
           uid: false,
           envelope: true,
@@ -257,7 +268,11 @@ export default class ImapEmailsFetcher {
 
         const pipeline = redisClient.multi();
 
+        let publishedEmails = 0;
+
         for (const msg of batchMessages) {
+          this.throwOnCancel(folderPath);
+
           let header: Record<string, string[]> | null = parseHeader(
             msg.headers!.toString('utf8')
           );
@@ -273,18 +288,16 @@ export default class ImapEmailsFetcher {
           const from = parsed.from?.value?.[0];
           const date = parsed.date?.toISOString?.() || new Date().toISOString();
 
-          header['message-id'] = [getMessageId(header)];
+          const messageId = getMessageId(header);
 
-          const [messageId] = header['message-id'];
+          header['message-id'] = [messageId];
+
           const isLastMessageInFolder = msg.seq === totalInFolder;
 
           // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
           if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
-            return;
+            continue;
           }
-
-          this.fetchedIds.add(messageId);
-          this.totalFetched += 1;
 
           pipeline.xadd(
             this.contactStream,
@@ -307,7 +320,7 @@ export default class ImapEmailsFetcher {
           );
 
           pipeline.xadd(
-            this.contactStream,
+            this.signatureStream,
             '*',
             'message',
             JSON.stringify({
@@ -332,17 +345,21 @@ export default class ImapEmailsFetcher {
             })
           );
 
+          this.fetchedIds.add(messageId);
+          this.totalFetched += 1;
+          publishedEmails += 1;
+
           // Clean references
           parsed = null;
           header = null;
         }
 
         await pipeline.exec();
-        await publishFetchingProgress(this.miningId, batchMessages.length);
+        await publishFetchingProgress(this.miningId, publishedEmails);
       }
       /* eslint-disable no-await-in-loop */
     } catch (err) {
-      logger.error(err);
+      logger.error('Error when reading emails', err);
       throw err;
     }
   }
