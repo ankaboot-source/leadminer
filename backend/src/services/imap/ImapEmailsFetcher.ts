@@ -274,14 +274,17 @@ export default class ImapEmailsFetcher {
           this.throwOnCancel(folderPath);
 
           let header: Record<string, string[]> | null = parseHeader(
-            msg.headers!.toString('utf8')
+            (msg.headers as Buffer<ArrayBufferLike>).toString('utf8')
           );
-          let parsed: ParsedMail | null = await simpleParser(msg.source!, {
-            skipHtmlToText: true,
-            maxHtmlLengthToParse: 0,
-            skipTextToHtml: true,
-            skipTextLinks: true
-          });
+          let parsed: ParsedMail | null = await simpleParser(
+            msg.source as Buffer<ArrayBufferLike>,
+            {
+              skipHtmlToText: true,
+              maxHtmlLengthToParse: 0,
+              skipTextToHtml: true,
+              skipTextLinks: true
+            }
+          );
 
           /* eslint-disable no-await-in-loop */
           const text = parsed.text?.slice(0, 4000) || '';

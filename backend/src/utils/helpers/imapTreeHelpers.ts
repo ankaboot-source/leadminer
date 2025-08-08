@@ -17,9 +17,9 @@ export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
 
   // Assign parent references
   for (const box of boxes) {
-    const node = pathMap.get(box.path)!;
-    if (box.parentPath && pathMap.has(box.parentPath)) {
-      node.parent = pathMap.get(box.parentPath)!;
+    const node = pathMap.get(box.path);
+    if (node && box.parentPath && pathMap.has(box.parentPath)) {
+      node.parent = pathMap.get(box.parentPath);
     }
   }
 
