@@ -209,9 +209,7 @@ BEGIN
     END IF;
 
     -- Merge incoming phone numbers into telephone array
-    new_telephone := (
-        string_to_array(contact_record->>'telephone', ',')
-    );
+    new_telephone := string_to_array(NULLIF(contact_record->>'telephone', ''), ',');
 
     IF new_telephone IS NOT NULL THEN
         SELECT p.telephone
@@ -257,14 +255,14 @@ BEGIN
         name = COALESCE(pp.name, new_name::TEXT),
         url = COALESCE(pp.url, (contact_record->>'url')::TEXT),
         image = COALESCE(pp.image, (contact_record->>'image')::TEXT),
-        location = COALESCE(pp.location, string_to_array(contact_record->>'location', ',')::TEXT[]),
+        location = COALESCE(pp.location, string_to_array(NULLIF(contact_record->>'location', ''), ',')::TEXT[]),
         alternate_name = COALESCE(pp.alternate_name, (new_alternate_name)::TEXT[]),
-        same_as = COALESCE(pp.same_as, string_to_array(contact_record->>'same_as', ',')::TEXT[]),
+        same_as = COALESCE(pp.same_as, string_to_array(NULLIF(contact_record->>'same_as', ''), ',')::TEXT[]),
         given_name = COALESCE(pp.given_name, (contact_record->>'given_name')::TEXT),
         family_name = COALESCE(pp.family_name, (contact_record->>'family_name')::TEXT),
         job_title = COALESCE(pp.job_title, (contact_record->>'job_title')::TEXT),
         works_for = COALESCE(pp.works_for, organization_id),
-        identifiers = COALESCE(pp.identifiers, string_to_array(contact_record->>'identifiers', ',')::TEXT[]),
+        identifiers = COALESCE(pp.identifiers, string_to_array(NULLIF(contact_record->>'identifiers', ''), ',')::TEXT[]),
         status = COALESCE(pp.status, (contact_record->>'status')::TEXT),
         telephone = COALESCE(pp.telephone, (merged_telephone)::TEXT[])
       WHERE 
@@ -276,14 +274,14 @@ BEGIN
         name = COALESCE(new_name::TEXT, pp.name),
         url = COALESCE((contact_record->>'url')::TEXT, pp.url),
         image = COALESCE((contact_record->>'image')::TEXT, pp.image),
-        location = COALESCE(string_to_array(contact_record->>'location', ',')::TEXT[], pp.location),
+        location = COALESCE(string_to_array(NULLIF(contact_record->>'location', ''), ',')::TEXT[], pp.location),
         alternate_name = COALESCE((new_alternate_name)::TEXT[], pp.alternate_name),
-        same_as = COALESCE(string_to_array(contact_record->>'same_as', ',')::TEXT[], pp.same_as),
+        same_as = COALESCE(string_to_array(NULLIF(contact_record->>'same_as', ''), ',')::TEXT[], pp.same_as),
         given_name = COALESCE((contact_record->>'given_name')::TEXT, pp.given_name),
         family_name = COALESCE((contact_record->>'family_name')::TEXT, pp.family_name),
         job_title = COALESCE((contact_record->>'job_title')::TEXT, pp.job_title),
         works_for = COALESCE(organization_id, pp.works_for),
-        identifiers = COALESCE(string_to_array(contact_record->>'identifiers', ',')::TEXT[], pp.identifiers),
+        identifiers = COALESCE(string_to_array(NULLIF(contact_record->>'identifiers', ''), ',')::TEXT[], pp.identifiers),
         status = COALESCE((contact_record->>'status')::TEXT, pp.status),
         telephone = COALESCE((merged_telephone)::TEXT[], pp.telephone)
 

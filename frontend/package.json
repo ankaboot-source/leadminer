@@ -55,10 +55,10 @@
     "vue-tsc": "^2.2.0"
   },
   "dependencies": {
-    "@sentry/nuxt": "^9.15.0",
+    "@sentry/nuxt": "^9.38.0",
     "@vueuse/core": "^13.4.0",
     "@vueuse/nuxt": "^13.0.0",
-    "posthog-js": "^1.239.1",
+    "posthog-js": "^1.255.1",
     "read-excel-file": "^5.8.7"
   }
 }

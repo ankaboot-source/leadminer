@@ -1,5 +1,5 @@
 import Connection, { Box, parseHeader } from 'imap';
-import PostalMime, { Email } from 'postal-mime';
+import { simpleParser } from 'mailparser';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -214,7 +214,6 @@ export default class ImapEmailsFetcher {
       } catch (error) {
         logger.error('Error when fetching emails', error);
       } finally {
-        // Close the mailbox and release the connection
         imapConnection?.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', error);
@@ -251,8 +250,8 @@ export default class ImapEmailsFetcher {
       let messageCounter = 0;
 
       fetchResult.on('message', (msg, seqNumber) => {
-        let header = '';
-        let body = '';
+        let headerChunks = '';
+        let bodyChunks = '';
 
         if (this.isCanceled === true) {
           const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
@@ -265,30 +264,22 @@ export default class ImapEmailsFetcher {
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
-              header += chunk;
+              headerChunks += chunk;
             } else if (this.fetchEmailBody) {
-              body += chunk;
+              bodyChunks += chunk;
             }
           });
         });
 
         msg.once('end', async () => {
-          const parsedHeader = parseHeader(header);
+          const parsedHeader = parseHeader(headerChunks);
 
-          let normalizedEmail: Email | null = null;
-
-          try {
-            normalizedEmail = await PostalMime.parse(header + body);
-          } catch (err) {
-            logger.error(
-              '[PostalMime.parse]: Error during normalizing email',
-              err
-            );
-          }
+          const mail = await simpleParser(headerChunks + bodyChunks);
+          const text = (mail.text || '').slice(0, 4000);
 
           // Clear large chunks early
-          header = null as unknown as string;
-          body = null as unknown as string;
+          headerChunks = '';
+          bodyChunks = '';
 
           const messageId = getMessageId(parsedHeader);
 
@@ -338,19 +329,17 @@ export default class ImapEmailsFetcher {
               data: {
                 type: 'email',
                 data: {
-                  header: normalizedEmail
+                  header: mail
                     ? {
-                        from: normalizedEmail.from,
-                        messageId: normalizedEmail.messageId,
-                        messageDate: normalizedEmail.date
+                        from: mail.from?.value[0],
+                        messageId: mail.messageId,
+                        messageDate: mail.date
                       }
                     : {},
-                  body: normalizedEmail
-                    ? normalizedEmail.text?.slice(-500)
-                    : '',
+                  body: text,
                   seqNumber,
                   folderPath,
-                  isLast: isLastMessageInFolder
+                  isLast: false
                 },
                 userId: this.userId,
                 userEmail: this.userEmail,
@@ -387,26 +376,29 @@ export default class ImapEmailsFetcher {
     if (cancel) {
       this.isCanceled = true;
       await this.process;
-      await publishStreamsPipeline([
-        {
-          stream: this.signatureStream,
-          data: {
-            type: 'email',
-            data: {
-              header: {},
-              body: '',
-              seqNumber: -1,
-              folderPath: '',
-              isLast: true
-            },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          }
-        }
-      ]);
     }
+
+    // Notify signature worker fetching is ended
+    await publishStreamsPipeline([
+      {
+        stream: this.signatureStream,
+        data: {
+          type: 'email',
+          data: {
+            header: {},
+            body: '',
+            seqNumber: -1,
+            folderPath: '',
+            isLast: true
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        }
+      }
+    ]);
+
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     return this.isCompleted;
