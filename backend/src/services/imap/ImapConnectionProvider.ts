@@ -1,5 +1,6 @@
 import { Factory, Pool, createPool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import assert from 'assert';
 import ENV from '../../config';
 import logger from '../../utils/logger';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
@@ -128,7 +129,8 @@ class ImapConnectionProvider {
       this.poolIsInitialized = true;
     }
 
-    return this.connectionsPool!.acquire();
+    assert(this.connectionsPool, 'Connection Pool should not be undefined');
+    return this.connectionsPool.acquire();
   }
 
   /**
@@ -138,8 +140,9 @@ class ImapConnectionProvider {
     if (!this.poolIsInitialized) {
       return;
     }
+    assert(this.connectionsPool, 'Connection Pool should not be undefined');
     logger.debug('Cleaning IMAP Pool');
-    await this.connectionsPool?.clear();
+    await this.connectionsPool.clear();
     this.poolIsInitialized = false;
   }
 
@@ -152,9 +155,10 @@ class ImapConnectionProvider {
       Promise.resolve();
     }
     try {
-      await this.connectionsPool!.release(imapConnection);
+      assert(this.connectionsPool, 'Connection Pool should not be undefined');
+      await this.connectionsPool.release(imapConnection);
     } catch (err) {
-      logger.error(`[ImapConnectionProvider]: Error releasing connection`, err);
+      logger.error('[ImapConnectionProvider]: Error releasing connection', err);
     }
   }
 

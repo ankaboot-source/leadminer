@@ -4,6 +4,7 @@ import {
   createFlatTreeFromImap,
   buildFinalTree
 } from '../../src/utils/helpers/imapTreeHelpers';
+import { FlatTree } from '../../src/services/imap/types';
 
 describe('IMAP Tree Utilities', () => {
   const mockBoxes: ListResponse[] = [
@@ -13,7 +14,7 @@ describe('IMAP Tree Utilities', () => {
       flags: new Set(['HasChildren']),
       delimiter: '/',
       status: { messages: 5 }
-    } as any,
+    } as ListResponse,
     {
       path: 'INBOX/Work',
       name: 'Work',
@@ -21,7 +22,7 @@ describe('IMAP Tree Utilities', () => {
       delimiter: '/',
       parentPath: 'INBOX',
       status: { messages: 10 }
-    } as any,
+    } as ListResponse,
     {
       path: 'INBOX/Spam',
       name: 'Spam',
@@ -29,14 +30,14 @@ describe('IMAP Tree Utilities', () => {
       delimiter: '/',
       parentPath: 'INBOX',
       status: { messages: 2 }
-    } as any,
+    } as ListResponse,
     {
       path: 'Drafts',
       name: 'Drafts',
       flags: new Set(['Drafts', 'HasNoChildren']),
       delimiter: '/',
       status: { messages: 1 }
-    } as any
+    } as ListResponse
   ];
 
   it('should create a flat tree from IMAP boxes', () => {
@@ -110,7 +111,7 @@ describe('IMAP Tree Utilities', () => {
     const flatTree = createFlatTreeFromImap(mockBoxes);
     const tree = buildFinalTree(flatTree, 'user@example.com');
 
-    const recursivelyCheckNoParent = (node: any) => {
+    const recursivelyCheckNoParent = (node: FlatTree) => {
       expect(node.parent).toBeUndefined();
       if (node.children) {
         node.children.forEach(recursivelyCheckNoParent);
