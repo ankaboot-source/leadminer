@@ -8,6 +8,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
+import { ChainableCommander } from 'ioredis';
 
 const redisClient = redis.getClient();
 
@@ -253,55 +254,47 @@ export default class ImapEmailsFetcher {
     totalInFolder: number
   ) {
     try {
-      const sequences = generateSequenceBatches(totalInFolder, this.batchSize);
+      let publishedEmails = 0;
+      let pipeline = redisClient.multi();
 
-      /* eslint-disable no-await-in-loop */
-      for (const sequence of sequences) {
+      for await (let msg of connection.fetch('1:*', {
+        uid: false,
+        envelope: true,
+        source: true,
+        bodyParts: this.bodies
+      })) {
         this.throwOnCancel(folderPath);
 
-        const batchMessages = await connection.fetchAll(sequence, {
-          uid: false,
-          envelope: true,
-          source: true,
-          bodyParts: this.bodies
-        });
-
-        const pipeline = redisClient.multi();
-
-        let publishedEmails = 0;
-
-        for (const msg of batchMessages) {
-          this.throwOnCancel(folderPath);
-
-          let header: Record<string, string[]> | null = parseHeader(
-            (msg.headers as Buffer<ArrayBufferLike>).toString('utf8')
-          );
-          let parsed: ParsedMail | null = await simpleParser(
-            msg.source as Buffer<ArrayBufferLike>,
-            {
-              skipHtmlToText: true,
-              maxHtmlLengthToParse: 0,
-              skipTextToHtml: true,
-              skipTextLinks: true
-            }
-          );
-
-          /* eslint-disable no-await-in-loop */
-          const text = parsed.text?.slice(0, 4000) || '';
-          const from = parsed.from?.value?.[0];
-          const date = parsed.date?.toISOString?.() || new Date().toISOString();
-
-          const messageId = getMessageId(header);
-
-          header['message-id'] = [messageId];
-
-          const isLastMessageInFolder = msg.seq === totalInFolder;
-
-          // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
-          if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
-            continue;
+        let header: Record<string, string[]> | null = parseHeader(
+          (msg.headers as Buffer<ArrayBufferLike>).toString('utf8')
+        );
+        let parsed: ParsedMail | null = await simpleParser(
+          msg.source as Buffer<ArrayBufferLike>,
+          {
+            skipHtmlToText: true,
+            maxHtmlLengthToParse: 0,
+            skipTextToHtml: true,
+            skipTextLinks: true
           }
+        );
 
+        /* eslint-disable no-await-in-loop */
+        const text = parsed.text?.slice(0, 4000) || '';
+        const from = parsed.from?.value?.[0];
+        const date = parsed.date?.toISOString?.() || new Date().toISOString();
+
+        const messageId = getMessageId(header);
+
+        header['message-id'] = [messageId];
+
+        const isLastMessageInFolder = msg.seq === totalInFolder;
+
+        // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
+        if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
+          continue;
+        }
+
+        await Promise.all([
           pipeline.xadd(
             this.contactStream,
             '*',
@@ -320,7 +313,7 @@ export default class ImapEmailsFetcher {
               userIdentifier: this.userIdentifier,
               miningId: this.miningId
             })
-          );
+          ),
 
           pipeline.xadd(
             this.signatureStream,
@@ -346,26 +339,163 @@ export default class ImapEmailsFetcher {
               userIdentifier: this.userIdentifier,
               miningId: this.miningId
             })
-          );
+          )
+        ]);
 
-          this.fetchedIds.add(messageId);
-          this.totalFetched += 1;
-          publishedEmails += 1;
+        this.fetchedIds.add(messageId);
+        this.totalFetched += 1;
+        publishedEmails += 1;
 
-          // Clean references
-          parsed = null;
-          header = null;
+        // Clean references
+        parsed = null;
+        header = null;
+
+        if (pipeline.length >= this.batchSize) {
+          await pipeline.exec();
+          pipeline = redisClient.multi();
+          publishedEmails = 0
+          await publishFetchingProgress(this.miningId, publishedEmails);
         }
+      }
 
+      if (pipeline.length) {
         await pipeline.exec();
         await publishFetchingProgress(this.miningId, publishedEmails);
       }
+
       /* eslint-disable no-await-in-loop */
     } catch (err) {
       logger.error('Error when reading emails', err);
       throw err;
     }
   }
+
+  // /**
+  //  *
+  //  * @param connection - Open IMAP connection.
+  //  * @param folderPath - Name of the folder locked by the IMAP connection.
+  //  * @param totalInFolder - Total email messages in the folder.
+  //  * @returns
+  //  */
+  // async fetchBox(
+  //   connection: Connection,
+  //   folderPath: string,
+  //   totalInFolder: number
+  // ) {
+  //   try {
+  //     const sequences = generateSequenceBatches(totalInFolder, this.batchSize);
+
+  //     /* eslint-disable no-await-in-loop */
+  //     for (const sequence of sequences) {
+  //       this.throwOnCancel(folderPath);
+
+  //       const batchMessages = await connection.fetchAll(sequence, {
+  //         uid: false,
+  //         envelope: true,
+  //         source: true,
+  //         bodyParts: this.bodies
+  //       });
+
+  //       const pipeline = redisClient.multi();
+
+  //       let publishedEmails = 0;
+
+  //       for (const msg of batchMessages) {
+  //         this.throwOnCancel(folderPath);
+
+  //         let header: Record<string, string[]> | null = parseHeader(
+  //           (msg.headers as Buffer<ArrayBufferLike>).toString('utf8')
+  //         );
+  //         let parsed: ParsedMail | null = await simpleParser(
+  //           msg.source as Buffer<ArrayBufferLike>,
+  //           {
+  //             skipHtmlToText: true,
+  //             maxHtmlLengthToParse: 0,
+  //             skipTextToHtml: true,
+  //             skipTextLinks: true
+  //           }
+  //         );
+
+  //         /* eslint-disable no-await-in-loop */
+  //         const text = parsed.text?.slice(0, 4000) || '';
+  //         const from = parsed.from?.value?.[0];
+  //         const date = parsed.date?.toISOString?.() || new Date().toISOString();
+
+  //         const messageId = getMessageId(header);
+
+  //         header['message-id'] = [messageId];
+
+  //         const isLastMessageInFolder = msg.seq === totalInFolder;
+
+  //         // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
+  //         if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
+  //           continue;
+  //         }
+
+  //         pipeline.xadd(
+  //           this.contactStream,
+  //           '*',
+  //           'message',
+  //           JSON.stringify({
+  //             type: 'email',
+  //             data: {
+  //               header,
+  //               body: '',
+  //               seqNumber: msg.seq,
+  //               folderPath,
+  //               isLast: isLastMessageInFolder
+  //             },
+  //             userId: this.userId,
+  //             userEmail: this.userEmail,
+  //             userIdentifier: this.userIdentifier,
+  //             miningId: this.miningId
+  //           })
+  //         );
+
+  //         pipeline.xadd(
+  //           this.signatureStream,
+  //           '*',
+  //           'message',
+  //           JSON.stringify({
+  //             type: 'email',
+  //             data: {
+  //               header: from
+  //                 ? {
+  //                     from,
+  //                     messageId,
+  //                     messageDate: date
+  //                   }
+  //                 : {},
+  //               body: text,
+  //               seqNumber: msg.seq,
+  //               folderPath,
+  //               isLast: false
+  //             },
+  //             userId: this.userId,
+  //             userEmail: this.userEmail,
+  //             userIdentifier: this.userIdentifier,
+  //             miningId: this.miningId
+  //           })
+  //         );
+
+  //         this.fetchedIds.add(messageId);
+  //         this.totalFetched += 1;
+  //         publishedEmails += 1;
+
+  //         // Clean references
+  //         parsed = null;
+  //         header = null;
+  //       }
+
+  //       await pipeline.exec();
+  //       await publishFetchingProgress(this.miningId, publishedEmails);
+  //     }
+  //     /* eslint-disable no-await-in-loop */
+  //   } catch (err) {
+  //     logger.error('Error when reading emails', err);
+  //     throw err;
+  //   }
+  // }
 
   /**
    * Starts fetching email messages.
