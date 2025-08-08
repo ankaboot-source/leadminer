@@ -14,110 +14,163 @@ import {
 } from './output-checkers';
 
 export enum LLMModels {
-  DeepSeek8bFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-  qwen7bInstructFree = 'qwen/qwen-2.5-7b-instruct:free',
-  googleGemma9bIt = 'google/gemma-2-9b-it',
-  deepseekR1DistillQwen32B = 'deepseek/deepseek-r1-distill-qwen-1.5b',
-  mistralai7bInstruct = 'mistralai/mistral-7b-instruct-v0.2'
+  qwenFree = 'qwen/qwen-2.5-7b-instruct:free',
+  deepseekFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+  cohere = 'cohere/command-r',
+  cohere7b = 'cohere/command-r7b-12-2024',
+  meta = 'meta-llama/llama-3.1-8b-instruct',
+  google = 'google/gemma-2-9b-it'
 }
 
 export type LLMModelType = `${LLMModels}`;
 
 export const SignaturePrompt = {
-  system: `<ystem_prompt>
-    YOU ARE A DATA EXTRACTION AGENT THAT PARSES EMAIL SIGNATURES AND OUTPUTS CLEAN JSON IN THE schema.org "Person" FORMAT
+  system: `
+    <system_prompt>
+      YOU ARE A DATA EXTRACTION AGENT TRAINED TO PARSE EMAIL SIGNATURES INTO STRICT, CLEAN JSON USING THE schema.org "Person" FORMAT
 
-    ### TASK
+      ### OBJECTIVE
 
-    - EXTRACT ONLY WHAT IS EXPLICITLY PRESENT IN THE TEXT  
-    - FORMAT AND RETURN AS VALID JSON  
-    - DO NOT GUESS, INFER, OR ALTER DATA  
-    - RETURN NOTHING IF THE INPUT IS EMPTY OR NOT A VALID SIGNATURE
+      - RETURN STRUCTURED JSON WITH FIELDS EXPLICITLY PRESENT IN THE SIGNATURE
+      - OMIT EVERYTHING NOT FULLY PRESENT — NO GUESSING OR INFERENCE
+      - OUTPUT NOTHING IF SIGNATURE IS EMPTY OR INVALID
 
-    ### RULES
+      ### OUTPUT RULES
 
-    - ONLY USE WHAT IS CLEARLY WRITTEN — NO INFERENCE OR COMPLETION  
-    - DO NOT GUESS NAMES, TITLES, COMPANIES, OR ANY OTHER DETAILS  
-    - PRESERVE ORIGINAL SPELLING AND CAPITALIZATION  
-    - REMOVE SPACES FROM PHONE NUMBERS (e.g., '+1234567890')  
-    - CONVERT SOCIAL HANDLES TO FULL URLs IN 'sameAs' (e.g., @janesmith → https://x.com/janesmith)  
-    - ADD 'https://' TO 'sameAs' LINKS IF MISSING  
-    - ADD COUNTRY IF PRESENT IN THE ADDRESS LINE  
-    - DO NOT OUTPUT IF NAME IS NOT IN THE SIGNATURE TEXT  
-    - OMIT FIELDS NOT FULLY PRESENT IN THE SIGNATURE TEXT  
-    - RETURN EMPTY RESULT IF NO STRUCTURED SIGNATURE DETECTED  
-    - BETTER TO RETURN NOTHING THAN TO HALLUCINATE DATA
+      - ALWAYS INCLUDE "@type": "Person"  
+      - "name" IS REQUIRED — IF MISSING, RETURN NOTHING  
+      - "telephone": CONVERT INTO E164 VALID FORMAT (e.g +13105550139) 
+      - "sameAs": ARRAY OF VALID PRESENT SOCIAL URLS (e.g https://linkedin.com/in/jhondoe); ADD 'https://' IF MISSING  
+      - "address": INCLUDE COUNTRY IF PRESENT  
+      - "image": Valid URL TO AN IMAGE OR AVATAR 
+      - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
 
-    ### REQUIRED FIELD
+      ### FIELDS
 
-    - "@type": always set to "Person"  
-    - "name": must be explicitly found in the signature text
+      - REQUIRED: "name"
+      - OPTIONAL:  
+        - "jobTitle" : string 
+        - "worksFor" : string 
+        - "email" : string 
+        - "telephone": string[]  
+        - "address": string 
+        - "image" : string 
+        - "sameAs": string[]  
 
-    ### OPTIONAL FIELDS (Include only if fully present)
+      ### CHAIN OF THOUGHT
 
-    - "image": string (URL to an image/avatar)  
-    - "jobTitle": string (e.g., 'Software Engineer')  
-    - "worksFor": string (e.g., 'Acme Corp')  
-    - "address": string (must include country if present)  
-    - "telephone": string[] (remove spaces)  
-    - "sameAs": string[] (full social URLs starting with 'https://')
+      1. READ the signature
+      2. VALIDATE it's a real structured signature
+      3. EXTRACT ONLY EXPLICITLY WRITTEN FIELDS
+      4. FORMAT phones and social URLs correctly
+      5. BUILD JSON using schema.org "Person"
+      6. RETURN JSON OR NOTHING — NEVER GUESS
 
-    ### VALIDATION PRE-CHECKS
+      ### WHAT NOT TO DO
 
-    - If "name" is not present in the input text, output nothing  
-    - If signature is empty or nonsensical, return nothing  
-    - Check whether keywords like "LinkedIn", "Twitter", "X", etc., are present before parsing "sameAs"  
-    - Only output phones if they match valid number patterns
+      - NEVER GUESS OR HALLUCINATE FIELDS  
+      - NEVER INFER PARTIAL OR IMPLIED INFORMATION  
+      - NEVER ADD COMMENTS, NOTES, OR FORMATTING  
+      - NEVER INCLUDE INVALID OR INCOMPLETE FIELDS  
 
-    ### CHAIN OF THOUGHT
+      ### GOOD EXAMPLE
 
-    1. READ the signature line by line  
-    2. VALIDATE that the text contains a real signature  
-    3. IDENTIFY explicit values only — no assumptions  
-    4. CHECK if each field is clearly and fully present  
-    5. PARSE email, phone, socials, name, etc.  
-    6. FORMAT phones and links as required  
-    7. BUILD strict schema.org Person JSON  
-    8. SKIP or return empty if invalid or insufficient data  
-    9. OUTPUT JSON ONLY — no preamble or notes
+      **Input:**
+      Jhon Doe
+      CTO
+      Leadminer Systems
+      jhon.doe@leadminer.io
+      +1 310 555 0139
+      123 Main St, Los Angeles, USA
+      LinkedIn: https://linkedin.com/in/jhon
+      Twitter: https://x.com/jhon_cto
 
-    ### WHAT NOT TO DO
-
-    - Do not guess or hallucinate any field  
-    - Do not fill partial or incomplete data  
-    - Do not invent values or expand unclear inputs  
-    - Do not include markdown, explanations, or commentary
-
-    ### EXAMPLE
-
-    Input:
-    Jane Smith  
-    Marketing Lead  
-    Bright Horizons Ltd.  
-    jane@brighthorizons.co.uk  
-    +44 7911 123456  
-    1 Sunrise Way, London, Great Britain  
-    Twitter: @janesmith
-
-    Output:
-    {
-      "@type": "Person",
-      "name": "Jane Smith",
-      "jobTitle": "Marketing Lead",
-      "worksFor": "Bright Horizons Ltd.",
-      "email": "jane@brighthorizons.co.uk",
-      "telephone": ["+447911123456"],
-      "address": "1 Sunrise Way, London, Great Britain",
-      "sameAs": ["https://x.com/janesmith"]
-    }
-
+      Linkedin1: @jhondoe
+      Twitter1: @jhondoe_jh
+      
+      **Output:**
+      {
+        "@type": "Person",
+        "name": "Sarah Connor",
+        "jobTitle": "CTO",
+        "worksFor": "Skynet Systems",
+        "email": "s.connor@skynet.ai",
+        "telephone": ["+13105550139"],
+        "address": "123 Main St, Los Angeles, USA",
+        "sameAs": [
+          "https://linkedin.com/in/jhon",
+          "https://x.com/jhon_cto"
+        ]
+      }
     </system_prompt>
     `,
   response_format: {
-    type: 'json_object'
+    type: 'json_schema',
+    json_schema: {
+      name: 'parsed_email_signature',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          '@type': {
+            type: 'string',
+            const: 'Person',
+            description:
+              'Must always be "Person" as per schema.org type definition'
+          },
+          name: {
+            type: 'string',
+            description:
+              'Full name exactly as written in the signature, preserving original spelling and capitalization'
+          },
+          jobTitle: {
+            type: 'string',
+            description: 'Job title or position, only if explicitly stated'
+          },
+          worksFor: {
+            type: 'string',
+            description:
+              'Organization or company name, only if explicitly present'
+          },
+          email: {
+            type: 'string',
+            description: 'Email address, exactly as written in the signature'
+          },
+          telephone: {
+            type: 'array',
+            items: {
+              type: 'string',
+              pattern: '\\+\\d{7,15}'
+            },
+            description:
+              'List of phone numbers in E.164 format (e.g., +13105550139); only include if explicitly written'
+          },
+          address: {
+            type: 'string',
+            description:
+              'Full address including country, only if fully written in the signature'
+          },
+          image: {
+            type: 'string',
+            description:
+              'Direct URL to an image or avatar, only if explicitly included'
+          },
+          sameAs: {
+            type: 'array',
+            items: {
+              type: 'string'
+            },
+            description:
+              'Array of social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
+          }
+        },
+        required: ['@type', 'name'],
+        additionalProperties: false
+      }
+    }
   },
-
-  buildUserPrompt: (signature: string) => `${signature}`
+  buildUserPrompt: (signature: string) =>
+    `RETURN NULL IF NOT A REAL PERSON SIGNATURE:\n${signature}`
 };
 
 export class SignatureLLM implements ExtractSignature {
@@ -194,17 +247,21 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(signature);
 
-      this.logger.info('extract signature content', content);
+      this.logger.debug(`extract signature content: ${content}`);
 
       if (!content) return null;
 
-      const person = JSON.parse(content);
+      const parsed = JSON.parse(content);
+      const person = Array.isArray(parsed) ? parsed[0] : parsed;
 
       if (person['@type'] !== 'Person') return null;
 
       return this.cleanOutput(signature, person);
     } catch (err) {
-      this.logger.error('SignatureExtractionLLM error:', err);
+      this.logger.error(
+        `SignatureExtractionLLM error: ${(err as Error).message}`,
+        err
+      );
       return null;
     }
   }

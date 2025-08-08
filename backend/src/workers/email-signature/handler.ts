@@ -3,19 +3,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import EmailReplyParser from 'email-reply-parser';
 import { assert } from 'console';
 import Redis from 'ioredis';
+import planer from 'planer';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import {
-  getOriginalMessage,
-  isUsefulSignatureContent,
-  pushNotificationDB
-} from './utils';
+import { isUsefulSignatureContent, pushNotificationDB } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
+import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
 
 export interface EmailData {
-  type: 'file' | 'email';
+  type: 'email';
   userIdentifier: string;
   userId: string;
   userEmail: string;
@@ -178,7 +176,10 @@ export class EmailSignatureProcessor {
     if (!body.trim()) return null;
 
     try {
-      const originalMessage = getOriginalMessage(body);
+      // Clean email body from quoted replies
+      const text = planer.extractFrom(body, 'text/plain');
+      // Double-Clean to handle special cases and forwarded messages
+      const originalMessage = CleanQuotedForwardedReplies(text);
       const parsed = new EmailReplyParser().read(originalMessage);
       const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
       return sigFrag?.getContent() ?? null;
@@ -197,17 +198,25 @@ export class EmailSignatureProcessor {
 
     const contact = await this.signature.extract(signature);
     if (!contact) return null;
-    return {
+
+    const enrichedContact: Partial<Contact> = {
       email,
       user_id: userId,
-      name: contact?.name,
-      image: contact?.image,
-      location: contact?.address,
-      telephone: contact?.telephone,
-      job_title: contact?.jobTitle,
-      works_for: contact?.worksFor,
-      same_as: contact?.sameAs
+      name: contact.name,
+      image: contact.image,
+      location: contact.address,
+      telephone: contact.telephone,
+      job_title: contact.jobTitle,
+      works_for: contact.worksFor,
+      same_as: contact.sameAs
     };
+
+    // Check if anything beyond email and user_id is present
+    const hasExtraInfo = Object.entries(enrichedContact).some(
+      ([key, value]) => !['email', 'user_id'].includes(key) && value
+    );
+
+    return hasExtraInfo ? enrichedContact : null;
   }
 
   private async upsertContact(contact: Partial<Contact>): Promise<void> {
