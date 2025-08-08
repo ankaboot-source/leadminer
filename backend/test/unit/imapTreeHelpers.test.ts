@@ -10,14 +10,14 @@ describe('IMAP Tree Utilities', () => {
     {
       path: 'INBOX',
       name: 'INBOX',
-      flags: new Set(['\HasChildren']),
+      flags: new Set(['HasChildren']),
       delimiter: '/',
       status: { messages: 5 }
     } as any,
     {
       path: 'INBOX/Work',
       name: 'Work',
-      flags: new Set(['\HasNoChildren']),
+      flags: new Set(['HasNoChildren']),
       delimiter: '/',
       parentPath: 'INBOX',
       status: { messages: 10 }
@@ -25,7 +25,7 @@ describe('IMAP Tree Utilities', () => {
     {
       path: 'INBOX/Spam',
       name: 'Spam',
-      flags: new Set(['\Junk', '\HasNoChildren']),
+      flags: new Set(['Junk', 'HasNoChildren']),
       delimiter: '/',
       parentPath: 'INBOX',
       status: { messages: 2 }
@@ -33,7 +33,7 @@ describe('IMAP Tree Utilities', () => {
     {
       path: 'Drafts',
       name: 'Drafts',
-      flags: new Set(['\Drafts', '\HasNoChildren']),
+      flags: new Set(['Drafts', 'HasNoChildren']),
       delimiter: '/',
       status: { messages: 1 }
     } as any
@@ -47,7 +47,7 @@ describe('IMAP Tree Utilities', () => {
     const inbox = flatTree.find((node) => node.key === 'INBOX');
     expect(inbox).toBeDefined();
     expect(inbox?.label).toBe('INBOX');
-    expect(inbox?.attribs).toContain('\HasChildren');
+    expect(inbox?.attribs).toContain('HasChildren');
     expect(inbox?.total).toBe(5);
 
     const work = flatTree.find((node) => node.key === 'INBOX/Work');
@@ -60,13 +60,13 @@ describe('IMAP Tree Utilities', () => {
       label: 'INBOX',
       total: 5
     });
-    expect(work?.attribs).toContain('\HasNoChildren');
+    expect(work?.attribs).toContain('HasNoChildren');
     expect(work?.total).toBe(10);
 
     const spam = flatTree.find((node) => node.key === 'INBOX/Spam');
     expect(spam).toBeDefined();
     expect(spam?.label).toBe('Spam');
-    expect(spam?.attribs).toContain('\Junk');
+    expect(spam?.attribs).toContain('Junk');
     expect(spam?.parent).toStrictEqual({
       attribs: ['HasChildren'],
       cumulativeTotal: 5,
@@ -78,7 +78,7 @@ describe('IMAP Tree Utilities', () => {
 
     const drafts = flatTree.find((node) => node.key === 'Drafts');
     expect(drafts).toBeDefined();
-    expect(drafts?.attribs).toContain('\Drafts');
+    expect(drafts?.attribs).toContain('Drafts');
     expect(drafts?.total).toBe(1);
   });
 
