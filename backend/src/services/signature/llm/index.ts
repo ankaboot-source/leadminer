@@ -105,9 +105,70 @@ export const SignaturePrompt = {
     </system_prompt>
     `,
   response_format: {
-    type: 'json_object'
+    type: 'json_schema',
+    json_schema: {
+      name: 'parsed_email_signature',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          '@type': {
+            type: 'string',
+            const: 'Person',
+            description:
+              'Must always be "Person" as per schema.org type definition'
+          },
+          name: {
+            type: 'string',
+            description:
+              'Full name exactly as written in the signature, preserving original spelling and capitalization'
+          },
+          jobTitle: {
+            type: 'string',
+            description: 'Job title or position, only if explicitly stated'
+          },
+          worksFor: {
+            type: 'string',
+            description:
+              'Organization or company name, only if explicitly present'
+          },
+          email: {
+            type: 'string',
+            description: 'Email address, exactly as written in the signature'
+          },
+          telephone: {
+            type: 'array',
+            items: {
+              type: 'string',
+              pattern: '\\+\\d{7,15}'
+            },
+            description:
+              'List of phone numbers in E.164 format (e.g., +13105550139); only include if explicitly written'
+          },
+          address: {
+            type: 'string',
+            description:
+              'Full address including country, only if fully written in the signature'
+          },
+          image: {
+            type: 'string',
+            description:
+              'Direct URL to an image or avatar, only if explicitly included'
+          },
+          sameAs: {
+            type: 'array',
+            items: {
+              type: 'string'
+            },
+            description:
+              'Array of social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
+          }
+        },
+        required: ['@type', 'name'],
+        additionalProperties: false
+      }
+    }
   },
-
   buildUserPrompt: (signature: string) =>
     `RETURN NULL IF NOT A REAL PERSON SIGNATURE:\n${signature}`
 };
