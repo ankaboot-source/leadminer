@@ -241,20 +241,20 @@ export default class ImapEmailsFetcher {
     try {
       let publishedEmails = 0;
       let pipeline = redisClient.multi();
-
       for await (const msg of connection.fetch('1:*', {
         uid: false,
         envelope: false,
         source: true,
-        bodyParts: ["1"],
-        bodyStructure:true
+        headers: true
       })) {
         this.throwOnCancel(folderPath);
-        const textt = msg.bodyParts?.get('1')?.toString('utf8')
+
+        const { seq, headers } = msg;
+
         let header: Record<string, string[]> | null = parseHeader(
-          (msg.headers as Buffer<ArrayBufferLike>).toString('utf8')
+          (headers as Buffer<ArrayBufferLike>).toString('utf8')
         );
-        let parsed: ParsedMail | null = await simpleParser(
+        const parsed: ParsedMail | null = await simpleParser(
           msg.source as Buffer<ArrayBufferLike>,
           {
             skipHtmlToText: true,
@@ -280,27 +280,27 @@ export default class ImapEmailsFetcher {
           continue;
         }
 
-        await Promise.all([
-          pipeline.xadd(
-            this.contactStream,
-            '*',
-            'message',
-            JSON.stringify({
-              type: 'email',
-              data: {
-                header,
-                body: '',
-                seqNumber: msg.seq,
-                folderPath,
-                isLast: isLastMessageInFolder
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            })
-          ),
+        pipeline.xadd(
+          this.contactStream,
+          '*',
+          'message',
+          JSON.stringify({
+            type: 'email',
+            data: {
+              header,
+              body: '',
+              seqNumber: seq,
+              folderPath,
+              isLast: isLastMessageInFolder
+            },
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          })
+        );
 
+        if (text && from && date) {
           pipeline.xadd(
             this.signatureStream,
             '*',
@@ -308,16 +308,14 @@ export default class ImapEmailsFetcher {
             JSON.stringify({
               type: 'email',
               data: {
-                header: from
-                  ? {
-                      rawHeader: header,
-                      from,
-                      messageId,
-                      messageDate: date
-                    }
-                  : {},
+                header: {
+                  from,
+                  messageId,
+                  messageDate: date,
+                  rawHeader: header
+                },
                 body: text,
-                seqNumber: msg.seq,
+                seqNumber: seq,
                 folderPath,
                 isLast: false
               },
@@ -326,15 +324,14 @@ export default class ImapEmailsFetcher {
               userIdentifier: this.userIdentifier,
               miningId: this.miningId
             })
-          )
-        ]);
+          );
+        }
 
         this.fetchedIds.add(messageId);
         this.totalFetched += 1;
         publishedEmails += 1;
 
         // Clean references
-        parsed = null;
         header = null;
 
         if (pipeline.length >= this.batchSize) {
