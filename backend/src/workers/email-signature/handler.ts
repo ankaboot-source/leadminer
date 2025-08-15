@@ -11,6 +11,8 @@ import { isUsefulSignatureContent, pushNotificationDB } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
+import EmailTaggingEngine from '../../services/tagging';
+import { REACHABILITY } from '../../utils/constants';
 
 export interface EmailData {
   type: 'email';
@@ -20,6 +22,7 @@ export interface EmailData {
   miningId: string;
   data: {
     header: {
+      rawHeader: Record<string, string[]>;
       from: { address: string; name: string };
       messageID: string;
       messageDate: string;
@@ -28,6 +31,11 @@ export interface EmailData {
     isLast?: boolean;
   };
 }
+
+const IGNORED_TAGS: ReadonlyArray<string> = [
+  'transactional',
+  'no-reply'
+] as const;
 
 export class EmailSignatureProcessor {
   constructor(
@@ -38,6 +46,36 @@ export class EmailSignatureProcessor {
     private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly redisClient: Redis
   ) {}
+
+  private async isWorthProcessing(data: EmailData) {
+    const { data: payload } = data;
+    const { from, messageDate, rawHeader } = payload.header ?? {};
+    const [, domain] = from?.address?.split('@') || [];
+
+    if (!from || !messageDate || !domain) return false;
+
+    const [domainIsValid, domainType] = await this.domainStatusVerification(
+      this.redisClient,
+      domain.toLowerCase()
+    );
+
+    if (!domainIsValid) return false;
+
+    const tags = EmailTaggingEngine.getTags({
+      header: rawHeader,
+      email: { address: from.address, name: from.name, domainType },
+      field: 'from'
+    });
+
+    // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
+    if (tags.some((t) => IGNORED_TAGS.includes(t.name))) return false;
+
+    if (!tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
+      return false;
+    }
+
+    return true;
+  }
 
   public async process(data: EmailData): Promise<Partial<Contact>[]> {
     const { userId, miningId, data: payload } = data;
@@ -50,17 +88,9 @@ export class EmailSignatureProcessor {
       messageDate
     });
 
-    let domainIsValid = false;
-    const [, domain] = from?.address?.split('@') || [];
+    const shouldProcess = await this.isWorthProcessing(data);
 
-    if (from && messageDate && domain) {
-      [domainIsValid] = await this.domainStatusVerification(
-        this.redisClient,
-        domain.toLowerCase()
-      );
-    }
-
-    if (domainIsValid) {
+    if (shouldProcess) {
       await this.handleNewSignature(
         userId,
         miningId,
