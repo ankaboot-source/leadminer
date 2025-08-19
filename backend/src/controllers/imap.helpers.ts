@@ -1,4 +1,4 @@
-import { ImapFlow as Connection, ImapFlow } from 'imapflow';
+import { ImapFlow as Connection } from 'imapflow';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import logger from '../utils/logger';
