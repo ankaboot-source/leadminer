@@ -68,8 +68,13 @@ export class EmailSignatureProcessor {
     });
 
     // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
-    return !tags.some((t) => IGNORED_TAGS.includes(t.name)) &&
-          tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON);
+    if (tags.some((t) => IGNORED_TAGS.includes(t.name))) return false;
+
+    if (!tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
+      return false;
+    }
+
+    return true;
   }
 
   public async process(data: EmailData): Promise<Partial<Contact>[]> {
