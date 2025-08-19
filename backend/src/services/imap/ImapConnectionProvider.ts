@@ -73,6 +73,7 @@ class ImapConnectionProvider {
 
     Object.assign(this.imapConfig, {
       auth: {
+        user: this.imapConfig.auth?.user,
         pass: password
       },
       host,
