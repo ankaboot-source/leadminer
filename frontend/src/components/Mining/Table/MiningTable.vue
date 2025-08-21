@@ -1096,7 +1096,7 @@ function observeTop() {
 }
 
 const isExceedingScreenHeight = computed(
-  () => scrollHeight.value > $screenStore.height,
+  () => scrollHeight.value !== $screenStore.height,
 );
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
