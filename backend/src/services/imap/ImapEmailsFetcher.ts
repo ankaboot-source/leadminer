@@ -1,6 +1,7 @@
 import { parseHeader } from 'imap';
-import { ParsedMail, simpleParser } from 'mailparser';
+import { simpleParser } from 'mailparser';
 import { ImapFlow as Connection } from 'imapflow';
+import pLimit from 'p-limit';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -8,6 +9,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
+import ENV from '../../config';
 
 const redisClient = redis.getClient();
 
@@ -50,6 +52,25 @@ async function publishFetchingProgress(
 
   // Publish a progress with how many messages we fetched.
   await redisClient.publish(miningId, JSON.stringify(progress));
+}
+
+/**
+ * Builds sequence ranges for IMAP fetching based on total messages.
+ * @param total - Total number of messages
+ * @param chunkSize - Size of each chunk (default: 10000)
+ * @returns Array of IMAP sequence range strings
+ */
+function buildSequenceRanges(total: number, chunkSize: number): string[] {
+  const ranges: string[] = [];
+  let start = 1;
+
+  while (start <= total) {
+    const end = Math.min(start + chunkSize - 1, total);
+    ranges.push(`${start}:${end}`);
+    start = end + 1;
+  }
+
+  return ranges;
 }
 
 export default class ImapEmailsFetcher {
@@ -227,52 +248,77 @@ export default class ImapEmailsFetcher {
   }
 
   /**
-   *
-   * @param connection - Open IMAP connection.
-   * @param folderPath - Name of the folder locked by the IMAP connection.
-   * @param totalInFolder - Total email messages in the folder.
-   * @returns
+   * Processes fetched messages from a specific range in a folder.
+   * @param connection - Open IMAP connection with mailbox already opened
+   * @param range - IMAP sequence range to fetch (e.g., '1:1000' or '1:*')
+   * @param folderPath - Name of the folder
+   * @param totalInFolder - Total number of messages in the folder
    */
-  async fetchBox(
+  private async processFetch(
     connection: Connection,
+    range: string,
     folderPath: string,
     totalInFolder: number
   ) {
+    const startTime = Date.now();
+    let publishedEmails = 0;
+    let processedCount = 0;
+    let pipeline = redisClient.multi();
+
+    // Increase batch size for parallel processing
+    const parallelBatchSize = Math.max(this.batchSize * 2, 200);
+
+    logger.info(`[${this.miningId}] Starting range ${range}`);
+
     try {
-      let publishedEmails = 0;
-      let pipeline = redisClient.multi();
-      for await (const msg of connection.fetch('1:*', {
+      for await (const msg of connection.fetch(range, {
         uid: false,
-        envelope: false,
-        source: true,
-        headers: true
+        source: false,
+        envelope: true,
+        headers: true,
+        bodyParts: ['HEADER', 'TEXT']
       })) {
         this.throwOnCancel(folderPath);
+        processedCount += 1;
 
-        const { seq, headers } = msg;
+        const { seq, headers, envelope } = msg;
 
-        let header: Record<string, string[]> | null = parseHeader(
-          (headers as Buffer<ArrayBufferLike>).toString('utf8')
-        );
-        const parsed: ParsedMail | null = await simpleParser(
-          msg.source as Buffer<ArrayBufferLike>,
-          {
-            skipHtmlToText: true,
-            maxHtmlLengthToParse: 0,
-            skipTextToHtml: true,
-            skipTextLinks: true
+        let header: Record<string, string[]> | null;
+        try {
+          header = parseHeader(
+            (headers as Buffer<ArrayBufferLike>).toString('utf8')
+          );
+        } catch (err) {
+          logger.warn(
+            `[${this.miningId}] Failed to parse header for seq ${seq}, skipping`
+          );
+          continue;
+        }
+
+        let text = '';
+        if (msg.bodyParts?.has('text')) {
+          const textPart = msg.bodyParts.get('text');
+          if (textPart && textPart.length > 0) {
+            try {
+              const textContent = textPart;
+              const { text: parsedText } = await simpleParser(textContent, {
+                skipHtmlToText: true,
+                skipTextToHtml: true,
+                skipImageLinks: true,
+                skipTextLinks: true,
+              });
+              text = parsedText?.slice(0, 4000) || '';
+            } catch (err) {
+              text = '';
+            }
           }
-        );
+        }
 
-        /* eslint-disable no-await-in-loop */
-        const text = parsed.text?.slice(0, 4000) || '';
-        const from = parsed.from?.value?.[0];
-        const date = parsed.date?.toISOString?.() || new Date().toISOString();
-
+        const from = envelope?.from?.pop();
+        const date = envelope?.date?.toISOString?.();
         const messageId = getMessageId(header);
 
         header['message-id'] = [messageId];
-
         const isLastMessageInFolder = msg.seq === totalInFolder;
 
         // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
@@ -331,10 +377,9 @@ export default class ImapEmailsFetcher {
         this.totalFetched += 1;
         publishedEmails += 1;
 
-        // Clean references
         header = null;
 
-        if (pipeline.length >= this.batchSize) {
+        if (pipeline.length >= parallelBatchSize) {
           await pipeline.exec();
           await publishFetchingProgress(this.miningId, publishedEmails);
           pipeline = redisClient.multi();
@@ -347,11 +392,257 @@ export default class ImapEmailsFetcher {
         await publishFetchingProgress(this.miningId, publishedEmails);
       }
 
-      /* eslint-disable no-await-in-loop */
+      const totalTime = Date.now() - startTime;
+      const rate = processedCount / (totalTime / 1000);
+      logger.info(
+        `[${this.miningId}] Completed range ${range}: ${processedCount} messages in ${totalTime}ms (${rate.toFixed(1)} msg/sec)`
+      );
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      logger.error(
+        `[${this.miningId}] Error in range ${range} after ${processedCount} messages in ${totalTime}ms:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Acquires connections with timeout handling for parallel processing.
+   * @param folderPath - Name of the folder
+   * @param numConnections - Number of connections to acquire
+   * @returns Array of acquired connections
+   */
+  private async acquireConnectionsWithTimeout(
+    folderPath: string,
+    numConnections: number
+  ): Promise<Connection[]> {
+    const connections: Connection[] = [];
+    const CONNECTION_TIMEOUT = 10000; // 10 seconds timeout per connection
+
+    // Use Promise.allSettled to acquire connections in parallel with individual timeouts
+    const connectionPromises = Array.from(
+      { length: numConnections },
+      async (_unused, i) => {
+        this.throwOnCancel(folderPath);
+
+        const timeoutPromise = new Promise<never>((_unusedResolve, reject) => {
+          setTimeout(
+            () => reject(new Error('Connection timeout')),
+            CONNECTION_TIMEOUT
+          );
+        });
+
+        const connectionPromise = this.imapConnectionProvider
+          .acquireConnection()
+          .then(async (conn) => {
+            await conn.mailboxOpen(folderPath, { readOnly: true });
+            return conn;
+          });
+
+        try {
+          const conn = await Promise.race([connectionPromise, timeoutPromise]);
+          logger.debug(
+            `[${this.miningId}] Acquired connection ${i + 1}/${numConnections}`
+          );
+          return conn;
+        } catch (error) {
+          const errorMessage = (error as Error).message;
+          logger.warn(
+            `[${this.miningId}] Failed to acquire connection ${i + 1}: ${errorMessage}`
+          );
+          throw error;
+        }
+      }
+    );
+
+    const results = await Promise.allSettled(connectionPromises);
+
+    // Collect successful connections
+    results.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        connections.push(result.value);
+      }
+    });
+
+    // If we have some connections but fewer than requested, log the adjustment
+    if (connections.length > 0 && connections.length < numConnections) {
+      logger.info(
+        `[${this.miningId}] Using ${connections.length} available connections instead of ${numConnections}`
+      );
+    }
+
+    return connections;
+  }
+
+  /**
+   * Fetches messages from a folder using either single connection or parallel connections based on folder size.
+   * @param connection - Open IMAP connection
+   * @param folderPath - Name of the folder locked by the IMAP connection
+   * @param totalInFolder - Total email messages in the folder
+   */
+  async fetchBox(
+    connection: Connection,
+    folderPath: string,
+    totalInFolder: number
+  ): Promise<void> {
+    try {
+      if (totalInFolder > ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION) {
+        await this.processLargeFolder(connection, folderPath, totalInFolder);
+      } else {
+        logger.debug(
+          `[${this.miningId}] Using single connection for ${totalInFolder} messages in ${folderPath}`
+        );
+        await this.processFetch(connection, '1:*', folderPath, totalInFolder);
+      }
     } catch (err) {
-      logger.error('Error when reading emails', err);
+      logger.error(
+        `[${this.miningId}] Error processing folder ${folderPath}:`,
+        err
+      );
       throw err;
     }
+  }
+
+  /**
+   * Processes large folders using parallel connections.
+   * @param fallbackConnection - Fallback connection if parallel processing fails
+   * @param folderPath - Name of the folder
+   * @param totalInFolder - Total messages in the folder
+   */
+  private async processLargeFolder(
+    fallbackConnection: Connection,
+    folderPath: string,
+    totalInFolder: number
+  ): Promise<void> {
+    logger.info(
+      `[${this.miningId}] Parallel fetching ${totalInFolder} messages from ${folderPath}`
+    );
+
+    const ranges = buildSequenceRanges(
+      totalInFolder,
+      ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+    );
+
+    const numConnections = Math.min(
+      ranges.length,
+      ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
+    );
+
+    logger.debug(
+      `[${this.miningId}] Requesting ${numConnections} connections for ${ranges.length} ranges`
+    );
+
+    const connections = await this.acquireConnectionsWithTimeout(
+      folderPath,
+      numConnections
+    );
+
+    if (connections.length === 0) {
+      logger.info(
+        `[${this.miningId}] No parallel connections available, using fallback connection for ${folderPath}`
+      );
+      await this.processFetch(
+        fallbackConnection,
+        '1:*',
+        folderPath,
+        totalInFolder
+      );
+      return;
+    }
+
+    logger.info(
+      `[${this.miningId}] Processing ${ranges.length} ranges with ${connections.length} connections`
+    );
+
+    let parallelTasks: Promise<void>[] = [];
+
+    try {
+      const limit = pLimit(connections.length);
+
+      parallelTasks = ranges.map((range, index) => {
+        const connectionIndex = index % connections.length;
+        const assignedConnection = connections[connectionIndex];
+
+        return limit(async () => {
+          this.throwOnCancel(folderPath);
+          await this.processFetch(
+            assignedConnection,
+            range,
+            folderPath,
+            totalInFolder
+          );
+        });
+      });
+
+      const results = await Promise.allSettled(parallelTasks);
+      this.handleParallelResults(results, folderPath);
+    } catch (error) {
+      // Cancel all pending tasks on error
+      await Promise.allSettled(parallelTasks);
+      throw error;
+    } finally {
+      await this.cleanupConnections(connections);
+    }
+  }
+
+  /**
+   * Handles results from parallel processing.
+   * @param results - Results from Promise.allSettled
+   * @param folderPath - Name of the folder
+   */
+  private handleParallelResults(
+    results: PromiseSettledResult<void>[],
+    folderPath: string
+  ): void {
+    const failures = results.filter((result) => result.status === 'rejected');
+    const successes = results.length - failures.length;
+
+    if (failures.length === results.length) {
+      throw new Error(
+        `[${this.miningId}] All parallel fetch tasks failed for folder ${folderPath}`
+      );
+    }
+
+    if (failures.length > 0) {
+      const canceledTasks = failures.filter(
+        (f) =>
+          f.status === 'rejected' &&
+          f.reason?.message?.includes('Canceled process')
+      ).length;
+
+      if (canceledTasks > 0) {
+        logger.info(
+          `[${this.miningId}] ${canceledTasks} tasks canceled, ${successes} completed`
+        );
+      } else {
+        logger.warn(
+          `[${this.miningId}] ${failures.length} tasks failed, ${successes} completed`
+        );
+      }
+    } else {
+      logger.info(
+        `[${this.miningId}] All ${successes} parallel tasks completed successfully`
+      );
+    }
+  }
+
+  /**
+   * Cleans up parallel connections.
+   * @param connections - Array of connections to clean up
+   */
+  private async cleanupConnections(connections: Connection[]): Promise<void> {
+    await Promise.allSettled(
+      connections.map(async (conn) => {
+        try {
+          await conn.mailboxClose();
+        } catch (err) {
+          logger.warn(`[${this.miningId}] Error closing mailbox:`, err);
+        } finally {
+          await this.imapConnectionProvider.releaseConnection(conn);
+        }
+      })
+    );
   }
 
   /**
@@ -370,6 +661,7 @@ export default class ImapEmailsFetcher {
       await this.process;
     }
 
+    console.log('canceling')
     // Notify signature worker fetching is ended
     await publishStreamsPipeline([
       {
@@ -390,6 +682,8 @@ export default class ImapEmailsFetcher {
         }
       }
     ]);
+
+    console.log('canceled')
 
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
