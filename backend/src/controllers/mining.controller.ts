@@ -262,7 +262,7 @@ export default function initializeMiningController(
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
-          batchSize: ENV.LEADMINER_FETCH_BATCH_SIZE,
+          batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
         miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);

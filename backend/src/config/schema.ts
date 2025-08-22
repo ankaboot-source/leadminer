@@ -10,8 +10,12 @@ const schema = z.object({
   LEADMINER_API_HOST: z.string().url(),
   LEADMINER_API_HASH_SECRET: z.string().min(1),
   LEADMINER_MINING_ID_GENERATOR_LENGTH: number(),
-  LEADMINER_FETCH_BATCH_SIZE: number(),
   FRONTEND_HOST: z.string().url(),
+
+  /* FETCHING */
+  FETCHING_BATCH_SIZE_TO_SEND: number(),
+  FETCHING_CHUNK_SIZE_PER_CONNECTION: number(),
+  FETCHING_MAX_CONNECTIONS_PER_FOLDER: number(),
 
   /* IMAP */
   IMAP_AUTH_TIMEOUT: number(),
