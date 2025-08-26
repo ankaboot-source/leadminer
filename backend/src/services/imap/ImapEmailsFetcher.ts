@@ -75,6 +75,7 @@ function buildSequenceRanges(total: number, chunkSize: number): string[] {
 
 export default class ImapEmailsFetcher {
   private readonly CONNECTION_TIMEOUT_MS = 10000;
+
   private readonly EMAIL_TEXT_MAX_LENGTH = 4000;
 
   private readonly userIdentifier: string;
