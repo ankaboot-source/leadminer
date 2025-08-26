@@ -1,6 +1,6 @@
 import { parseHeader } from 'imap';
 import { simpleParser } from 'mailparser';
-import { ImapFlow as Connection } from 'imapflow';
+import { ImapFlow as Connection, MailboxObject } from 'imapflow';
 // Removed p-limit - using simple batch processing instead
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
@@ -12,10 +12,6 @@ import { EmailMessage } from './types';
 import ENV from '../../config';
 
 const redisClient = redis.getClient();
-
-// Constants
-const CONNECTION_TIMEOUT_MS = 10000; // 10 seconds timeout per connection
-const EMAIL_TEXT_MAX_LENGTH = 4000; // Maximum length for email text content
 
 interface StreamPipeline {
   stream: string;
@@ -78,6 +74,9 @@ function buildSequenceRanges(total: number, chunkSize: number): string[] {
 }
 
 export default class ImapEmailsFetcher {
+  private readonly CONNECTION_TIMEOUT_MS = 10000;
+  private readonly EMAIL_TEXT_MAX_LENGTH = 4000;
+
   private readonly userIdentifier: string;
 
   private readonly processSetKey: string;
@@ -135,7 +134,7 @@ export default class ImapEmailsFetcher {
    */
   private async openMailbox(
     folderPath: string
-  ): Promise<{ connection: Connection; mailbox: any }> {
+  ): Promise<{ connection: Connection; mailbox: MailboxObject }> {
     const connection = await this.imapConnectionProvider.acquireConnection();
     logger.debug(
       `[${this.miningId}] Acquired connection for folder ${folderPath}`
@@ -147,12 +146,10 @@ export default class ImapEmailsFetcher {
       });
       logger.debug(`[${this.miningId}] Opened mailbox ${folderPath}`);
 
-      // Track all connections for potential force-closing during cancellation
       this.activeConnections.add(connection);
 
       return { connection, mailbox };
     } catch (error) {
-      // If mailbox opening fails, release the connection immediately
       await this.imapConnectionProvider.releaseConnection(connection);
       throw error;
     }
@@ -170,22 +167,13 @@ export default class ImapEmailsFetcher {
     try {
       await connection.mailboxClose();
       logger.debug(`[${this.miningId}] Closed mailbox ${folderPath}`);
-    } catch (err: any) {
-      // During cancellation, connections may already be closed - log as debug instead of warning
-      if (this.isCanceled && err?.code === 'NoConnection') {
-        logger.debug(
-          `[${this.miningId}] Mailbox ${folderPath} already closed (expected during cancellation)`
-        );
-      } else {
-        logger.warn(
-          `[${this.miningId}] Error closing mailbox ${folderPath}:`,
-          err
-        );
-      }
+    } catch (err) {
+      logger.warn(
+        `[${this.miningId}] Error closing mailbox ${folderPath}:`,
+        err
+      );
     } finally {
-      // Remove from active connections tracking
       this.activeConnections.delete(connection);
-
       await this.imapConnectionProvider.releaseConnection(connection);
       logger.debug(
         `[${this.miningId}] Released connection for folder ${folderPath}`
@@ -272,7 +260,6 @@ export default class ImapEmailsFetcher {
         }
 
         try {
-          // Each folder processing method will handle its own connections
           this.process = this.fetchBox(folder);
           // eslint-disable-next-line no-await-in-loop
           await this.process;
@@ -289,7 +276,6 @@ export default class ImapEmailsFetcher {
       // Pubsub to ensure event is received and fetching is closed
       await publishFetchingProgress(this.miningId, 0);
 
-      // Set the fetching status to completed and log message
       logger.info(`[${this.miningId}] All fetch promises are terminated.`);
     } catch (error) {
       logger.error(`[${this.miningId}] Error in fetchEmailMessages:`, error);
@@ -347,11 +333,11 @@ export default class ImapEmailsFetcher {
         let text = '';
         if (msg.bodyParts?.has('text')) {
           const textPart = msg.bodyParts.get('text');
-          if (textPart && textPart.length > 0) {
+          if (headers && textPart && textPart.length > 0) {
             try {
               const textContent = textPart;
               const { text: parsedText } = await simpleParser(
-                Buffer.concat([headers!, textContent]),
+                Buffer.concat([headers, textContent]),
                 {
                   skipHtmlToText: true,
                   skipTextToHtml: true,
@@ -359,7 +345,7 @@ export default class ImapEmailsFetcher {
                   skipTextLinks: true
                 }
               );
-              text = parsedText?.slice(0, EMAIL_TEXT_MAX_LENGTH) || '';
+              text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
             } catch (err) {
               text = '';
             }
@@ -478,7 +464,7 @@ export default class ImapEmailsFetcher {
         const timeoutPromise = new Promise<never>((_unusedResolve, reject) => {
           setTimeout(
             () => reject(new Error('Connection timeout')),
-            CONNECTION_TIMEOUT_MS
+            this.CONNECTION_TIMEOUT_MS
           );
         });
 
@@ -612,7 +598,6 @@ export default class ImapEmailsFetcher {
     );
 
     try {
-      // Process ranges in batches using available connections
       for (let i = 0; i < ranges.length; i += connections.length) {
         const batch = ranges.slice(i, i + connections.length);
         const batchTasks = batch.map((range, index) => {
@@ -672,15 +657,8 @@ export default class ImapEmailsFetcher {
       connections.map(async (conn) => {
         try {
           await conn.mailboxClose();
-        } catch (err: any) {
-          // During cancellation, connections may already be closed
-          if (this.isCanceled && err?.code === 'NoConnection') {
-            logger.debug(
-              `[${this.miningId}] Connection mailbox already closed (expected during cancellation)`
-            );
-          } else {
-            logger.warn(`[${this.miningId}] Error closing mailbox:`, err);
-          }
+        } catch (err) {
+          logger.warn(`[${this.miningId}] Error closing mailbox:`, err);
         } finally {
           // Remove from active connections tracking
           this.activeConnections.delete(conn);

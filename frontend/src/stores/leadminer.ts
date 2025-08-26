@@ -161,6 +161,32 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  async function stopMiningApi(
+    endEntireTask: boolean,
+    processes: string[] | null,
+  ) {
+    const user = useSupabaseUser().value;
+
+    if (!user || !miningTask.value) {
+      return null;
+    }
+
+    const { miningId } = miningTask.value;
+
+    const res = await $api(
+      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
+      {
+        method: 'POST',
+        body: {
+          endEntireTask,
+          processes,
+        },
+      },
+    );
+
+    return res;
+  }
+
   function startProgressListener(
     type: MiningType,
     miningId: string,
@@ -323,31 +349,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  async function stopMiningApi(
-    endEntireTask: boolean,
-    processes: string[] | null,
-  ) {
-    const user = useSupabaseUser().value;
-
-    if (!user || !miningTask.value) {
-      return;
-    }
-
-    const { miningId } = miningTask.value;
-
-    const res = await $api(
-      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
-      {
-        method: 'POST',
-        body: {
-          endEntireTask,
-          processes,
-        },
-      },
-    );
-
-    return res;
-  }
   /**
    * Stops the mining process.
    * @throws {Error} Throws an error if there is an issue while stopping the mining process.

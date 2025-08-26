@@ -58,7 +58,7 @@ class SSE {
         headers: {
           'x-sb-jwt': token,
         },
-        onopen: async (_) => {
+        onopen: async () => {
           console.log('[SSE] Connection established successfully.');
         },
         onmessage: (msg: EventSourceMessage) => {
