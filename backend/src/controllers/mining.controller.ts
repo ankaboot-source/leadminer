@@ -135,7 +135,7 @@ export default function initializeMiningController(
 
       const sanitizedHost = sanitizeImapInput(host);
       const sanitizedEmail = sanitizeImapInput(email);
-      const sanitizedPassword = sanitizeImapInput(password);
+      const sanitizedPassword = password;
 
       try {
         // Validate & Get the valid IMAP login connection before creating the pool.
