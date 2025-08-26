@@ -161,6 +161,32 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  async function stopMiningApi(
+    endEntireTask: boolean,
+    processes: string[] | null,
+  ) {
+    const user = useSupabaseUser().value;
+
+    if (!user || !miningTask.value) {
+      return null;
+    }
+
+    const { miningId } = miningTask.value;
+
+    const res = await $api(
+      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
+      {
+        method: 'POST',
+        body: {
+          endEntireTask,
+          processes,
+        },
+      },
+    );
+
+    return res;
+  }
+
   function startProgressListener(
     type: MiningType,
     miningId: string,
@@ -179,7 +205,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
       onError: () => {
         miningInterrupted.value = true;
-        setTimeout(() => {
+        setTimeout(async () => {
+          try {
+            await stopMiningApi(true, []);
+          } catch (err) {
+            console.error('[SSE] error: ', (err as Error).message);
+          }
           $resetMining();
           $toast.add({
             severity: 'warn',
@@ -327,23 +358,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     processes: string[] | null,
   ) {
     try {
-      const user = useSupabaseUser().value;
-
-      if (!user || !miningTask.value) {
-        return;
-      }
-
       isLoadingStopMining.value = true;
 
-      const { miningId } = miningTask.value;
-
-      await $api(`/imap/mine/${miningType.value}/${user.id}/${miningId}`, {
-        method: 'POST',
-        body: {
-          endEntireTask,
-          processes,
-        },
-      });
+      await stopMiningApi(endEntireTask, processes);
 
       if (endEntireTask) {
         miningTask.value = undefined;
