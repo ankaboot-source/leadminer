@@ -102,7 +102,8 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'mail@',
   'connect@',
   'livraison@',
-  'no_responder@'
+  'no_responder@',
+  'invitations@'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',

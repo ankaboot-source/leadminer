@@ -29,6 +29,12 @@ export async function pushNotificationDB(
 
 export function isUsefulSignatureContent(signature: string): boolean {
   const text = signature.trim();
+
+  // Reject if text has email reply parts
+  if (/>+\s*\w+/m.test(text)) {
+    return false;
+  }
+
   const words = text.split(/\s+/);
   const hasURL = /(https?:\/\/|www\.)\S+/i.test(text);
   const hasDigits = /\d{3,}/.test(text);
