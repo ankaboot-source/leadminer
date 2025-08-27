@@ -25,8 +25,12 @@ export default function initializeStreamController(
         logger.debug(`Attaching sse connection for taskId ${taskId}`);
         manager.attachSSE(taskId, { req, res });
       } catch (error) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
         res.status(404);
-        res.write('id: 0\n');
+        res.write('id: 404-not-found\n');
         res.write('event: close\n');
         res.write(`data: ${JSON.stringify((error as Error).message)}\n\n`);
         res.flushHeaders();
@@ -34,17 +38,7 @@ export default function initializeStreamController(
       }
 
       req.on('close', async () => {
-        try {
-          logger.debug(
-            `Closing sse connection and deleting task for taskId ${taskId}`
-          );
-          await manager.deleteTask(taskId, null);
-        } catch (error) {
-          logger.error(
-            `Error when disconnecting from the stream with miningId ${taskId}`,
-            error
-          );
-        }
+        logger.warn(`SSE Connection lost for mining task with id: ${taskId}`);
       });
     }
   };

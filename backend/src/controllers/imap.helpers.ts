@@ -5,7 +5,7 @@ import logger from '../utils/logger';
 
 const IMAP_ERROR_CODES = new Map([
   [
-    'authentication',
+    'AUTHENTICATIONFAILED',
     {
       status: 401,
       fields: ['email', 'password'],
@@ -14,7 +14,7 @@ const IMAP_ERROR_CODES = new Map([
     }
   ],
   [
-    'authentication-disabled',
+    'AUTHENTICATION-DISABLED',
     {
       status: 402,
       fields: ['host', 'port'],
@@ -23,7 +23,7 @@ const IMAP_ERROR_CODES = new Map([
     }
   ],
   [
-    'authentication-app-password',
+    'AUTHENTICATION-APP-PASSWORD',
     {
       status: 401,
       fields: ['password'],
@@ -31,7 +31,7 @@ const IMAP_ERROR_CODES = new Map([
     }
   ],
   [
-    'socket',
+    'ENOTFOUND',
     {
       status: 503,
       fields: ['host', 'port'],
@@ -40,11 +40,29 @@ const IMAP_ERROR_CODES = new Map([
     }
   ],
   [
-    'timeout',
+    'ETIMEDOUT',
     {
       status: 504,
       fields: ['host', 'port'],
       message: 'Connection timed out while attempting to connect to the server.'
+    }
+  ],
+  [
+    'ECONNREFUSED',
+    {
+      status: 502,
+      fields: ['host', 'port'],
+      message:
+        'The connection was refused by the server. Please verify IMAP service availability and firewall rules.'
+    }
+  ],
+  [
+    'EHOSTUNREACH',
+    {
+      status: 503,
+      fields: ['host', 'port'],
+      message:
+        'The host is unreachable. Please check your network connection and server accessibility.'
     }
   ]
 ]);
@@ -55,18 +73,16 @@ const IMAP_ERROR_CODES = new Map([
  * @returns - The new error object with the corresponding error message, or the original error object.
  */
 export function generateErrorObjectFromImapError(error: any) {
-  let errorMessage = IMAP_ERROR_CODES.get(`${error.source}`);
+  let errorMessage = IMAP_ERROR_CODES.get(
+    `${error.code ?? error.serverResponseCode}`
+  );
 
-  if (error.source?.startsWith('timeout')) {
-    errorMessage = IMAP_ERROR_CODES.get('timeout');
+  if (error.response?.toLowerCase().includes('logging in is disabled')) {
+    errorMessage = IMAP_ERROR_CODES.get('AUTHENTICATION-DISABLED');
   }
 
-  if (error.message?.toLowerCase().includes('logging in is disabled')) {
-    errorMessage = IMAP_ERROR_CODES.get('authentication-disabled');
-  }
-
-  if (error.message?.toLowerCase().includes('application-specific password')) {
-    errorMessage = IMAP_ERROR_CODES.get('authentication-app-password');
+  if (error.response?.toLowerCase().includes('application-specific password')) {
+    errorMessage = IMAP_ERROR_CODES.get('AUTHENTICATION-APP-PASSWORD');
   }
 
   return errorMessage
@@ -75,7 +91,12 @@ export function generateErrorObjectFromImapError(error: any) {
         errorMessage.status,
         errorMessage.fields
       )
-    : error;
+    : new ImapAuthError(error.message, 500, [
+        'host',
+        'port',
+        'username',
+        'password'
+      ]);
 }
 
 /**
@@ -134,13 +155,14 @@ export async function getValidImapLogin(
     ));
     return login;
   } catch (error) {
+    const imapError = generateErrorObjectFromImapError(error);
     try {
       // If Unauthorized, try username.
-      if (!(error instanceof ImapAuthError && error.status === 401))
-        throw error;
+      if (!(imapError.status === 401)) throw imapError;
+
       [login] = email.split('@');
       if (login === email) throw error;
-      logger.error('Failed to log in, trying username instead of email...');
+      logger.warn('Failed to log in, trying username instead of email...');
       ({ connectionProvider, connection } = await validateImapCredentials(
         host,
         login,

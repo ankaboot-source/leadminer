@@ -15,44 +15,61 @@ describe('generateErrorObjectFromImapError', () => {
   const testCases = [
     {
       description: 'authentication error',
-      error: { source: 'authentication' },
+      error: { code: 'AUTHENTICATIONFAILED' },
       expectedStatus: 401,
       expectedFields: ['email', 'password']
     },
     {
       description: 'authentication-disabled error',
-      error: { message: 'Logging in is disabled' },
+      error: { response: 'Logging in is disabled' },
       expectedStatus: 402,
       expectedFields: ['host', 'port']
     },
     {
       description: 'application-specific-password error',
       error: {
-        source: 'authentication',
-        message: 'application-specific password is required'
+        code: 'AUTHENTICATIONFAILED',
+        response: 'application-specific password is required'
       },
       expectedStatus: 401,
       expectedFields: ['password']
     },
     {
       description: 'connect error',
-      error: { source: 'socket' },
+      error: { code: 'ENOTFOUND' },
       expectedStatus: 503,
       expectedFields: ['host', 'port']
     },
     {
       description: 'timeout error',
-      error: { source: 'timeout' },
+      error: { code: 'ETIMEDOUT' },
       expectedStatus: 504,
       expectedFields: ['host', 'port']
     },
     {
-      description: 'unknown',
-      error: { source: 'unknown', message: 'Unknown error occurred' }
+      description: 'refused',
+      error: { code: 'ECONNREFUSED' },
+      expectedStatus: 502,
+      expectedFields: ['host', 'port']
+    },
+    {
+      description: 'unreached',
+      error: { code: 'EHOSTUNREACH' },
+      expectedStatus: 503,
+      expectedFields: ['host', 'port']
     },
     {
       description: 'unknown',
-      error: {}
+      error: { code: 'unknown', message: 'Unknown error occurred' }
+    },
+    {
+      description: 'unknown',
+      error: new ImapAuthError('Unknown error occurred', 500, [
+        'host',
+        'port',
+        'username',
+        'password'
+      ])
     }
   ];
 
@@ -63,7 +80,8 @@ describe('generateErrorObjectFromImapError', () => {
       )}`, () => {
         const result = generateErrorObjectFromImapError(error);
         if (description === 'unknown') {
-          expect(result).toEqual(error);
+          expect(result).toBeInstanceOf(ImapAuthError);
+          expect(result.message).toEqual(error.message);
         } else {
           expect(result).toBeInstanceOf(ImapAuthError);
           expect(result.status).toEqual(expectedStatus);
