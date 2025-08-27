@@ -55,9 +55,9 @@
     "vue-tsc": "^2.2.0"
   },
   "dependencies": {
-    "@sentry/nuxt": "^9.38.0",
+    "@sentry/nuxt": "^9.40.0",
     "@vueuse/core": "^13.5.0",
-    "@vueuse/nuxt": "^13.0.0",
+    "@vueuse/nuxt": "^13.5.0",
     "posthog-js": "^1.256.2",
     "read-excel-file": "^5.8.8"
   }

@@ -43,7 +43,6 @@ export const SignaturePrompt = {
       - "telephone": CONVERT INTO E164 VALID FORMAT (e.g +13105550139) 
       - "sameAs": ARRAY OF VALID PRESENT SOCIAL URLS (e.g https://linkedin.com/in/jhondoe); ADD 'https://' IF MISSING  
       - "address": INCLUDE COUNTRY IF PRESENT  
-      - "image": Valid URL TO AN IMAGE OR AVATAR 
       - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
 
       ### FIELDS
@@ -55,7 +54,6 @@ export const SignaturePrompt = {
         - "email" : string 
         - "telephone": string[]  
         - "address": string 
-        - "image" : string 
         - "sameAs": string[]  
 
       ### CHAIN OF THOUGHT
@@ -150,11 +148,6 @@ export const SignaturePrompt = {
             type: 'string',
             description:
               'Full address including country, only if fully written in the signature'
-          },
-          image: {
-            type: 'string',
-            description:
-              'Direct URL to an image or avatar, only if explicitly included'
           },
           sameAs: {
             type: 'array',
@@ -282,7 +275,6 @@ export class SignatureLLM implements ExtractSignature {
     return removeFalsePositives(
       {
         name: undefinedIfFalsy(parseString(person.name)),
-        image: undefinedIfFalsy(parseString(person.image)),
         jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
         worksFor: undefinedIfFalsy(parseString(person.worksFor)),
         address: undefinedIfEmpty(parseStringArray(person.address) ?? []),
