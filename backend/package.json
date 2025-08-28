@@ -38,7 +38,7 @@
     "axios": "^1.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "csv-stringify": "^6.5.2",
+    "csv-stringify": "^6.6.0",
     "dotenv": "^16.6.1",
     "email-reply-parser": "^2.0.1",
     "express": "^4.21.2",
