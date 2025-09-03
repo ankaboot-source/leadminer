@@ -36,7 +36,7 @@ export default function validateType(key: string, value: any, type: string) {
       return validateBoolean(key, value);
     case 'string[]':
       return validateStringArray(key, value);
-    case: 'string':
+    case 'string':
       return validateString(key, value);
     default:
       return null;
