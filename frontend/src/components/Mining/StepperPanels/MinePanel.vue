@@ -123,7 +123,7 @@ const totalEmails = computed<number>(() => {
   if (sourceType.value === 'boxes' && boxes.value[0]) {
     return objectScan(['**.{total}'], {
       joined: true,
-       
+
       filterFn: ({ parent, property, value, context }: never) => {
         if (
           property === 'total' &&
