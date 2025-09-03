@@ -123,7 +123,7 @@
           !selectedHeaders.includes('email') && t('email_column_required')
         "
         class="border-solid border-2 border-black"
-        :label="t('start_mining')"
+        :label="t('start_mining_now')"
         severity="contrast"
         :disabled="!selectedHeaders.includes('email')"
         @click="startMining"
@@ -424,7 +424,7 @@ function startMining() {
     "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
-    "start_mining": "Start mining now!",
+    "start_mining_now": "Start mining now!",
     "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
     "select_column_placeholder": "Select a field",
@@ -436,7 +436,7 @@ function startMining() {
     "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
-    "start_mining": "Commencer l'extraction de vos contacts",
+    "start_mining_now": "Commencer l'extraction de vos contacts",
     "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",

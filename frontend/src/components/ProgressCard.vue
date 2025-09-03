@@ -1,13 +1,12 @@
 <template>
-  <div class="grid grid-cols-3 items-center">
-    <div />
-    <div id="progress-title" class="text-xl justify-items-center">
+  <div class="justify-items-center">
+    <div id="progress-title" class="text-2xl mb-6">
       <slot name="progress-title">
         {{ props.progressTitle }}
       </slot>
     </div>
 
-    <div id="progress-time" class="hidden md:block justify-items-end">
+    <div id="progress-time" class="mb-3">
       <slot name="progress-time">
         <div v-if="progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
@@ -22,22 +21,11 @@
     </div>
   </div>
 
-  <Divider
-    :pt="{
-      root: {
-        style: {
-          marginTop: '0.6rem',
-          marginBottom: '0.6rem',
-        },
-      },
-    }"
+  <ProgressBar
+    v-tooltip.bottom="{ value: props.progressTooltip, escape: false }"
+    class="mb-6"
+    :value="progressValue"
   />
-  <div class="flex flex-col justify-center">
-    <ProgressBar
-      v-tooltip.bottom="{ value: props.progressTooltip, escape: false }"
-      :value="progressValue"
-    />
-  </div>
 </template>
 
 <script setup lang="ts">

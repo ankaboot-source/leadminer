@@ -2,6 +2,7 @@
   <Panel
     v-model:collapsed="collapsePanel"
     class="mb-4 flex flex-col grow"
+    :class="{ 'max-h-fit': $stepper.index !== 1 }"
     :toggleable="isToggleable"
     pt:content:class="flex grow"
     pt:content-container:class="flex grow"

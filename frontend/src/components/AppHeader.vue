@@ -17,6 +17,7 @@
         <Button
           type="button"
           :label="$t('common.start_mining')"
+          :disabled="$leadminerStore.activeMiningTask"
           @click="navigateToMine()"
         />
         <component :is="CreditsCounter" />
@@ -115,7 +116,11 @@ const homePath = $user
     : minePath;
 
 function navigateToMine() {
-  if ($leadminerStore.miningStartedAndFinished) {
+  // If finished a mining or if already on the mining page, reset the stepper and mining store
+  if (
+    $leadminerStore.miningStartedAndFinished ||
+    $router.currentRoute.value.path === minePath
+  ) {
     $stepper.$reset();
     $leadminerStore.$resetMining();
   }

@@ -1,7 +1,7 @@
 <template>
   <ProgressCard
     v-if="boxes"
-    :status="activeMiningTask"
+    :status="$leadminerStore.activeMiningTask"
     :total="totalEmails"
     :rate="AVERAGE_EXTRACTION_RATE"
     :started="taskStartedAt"
@@ -9,7 +9,7 @@
     :progress-tooltip="progressTooltip"
   >
     <template #progress-title>
-      <div v-if="$leadminerStore.isLoadingBoxes" class="flex items-center">
+      <div v-if="$leadminerStore.isLoadingBoxes">
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
       </div>
@@ -24,37 +24,11 @@
     </template>
   </ProgressCard>
 
-  <mining-settings
-    ref="miningSettingsRef"
-    :total-emails="totalEmails"
-    :is-loading-boxes="$leadminerStore.isLoadingBoxes"
-  />
-  <div id="mobile-buttons" class="flex flex-col gap-2 pt-6 md:hidden">
+  <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
-      v-if="!activeMiningTask"
-      id="mine-stepper"
+      id="mine-stepper-settings-button"
       :disabled="
-        $leadminerStore.isLoadingBoxes ||
-        $leadminerStore.isLoadingStartMining ||
-        totalEmails === 0
-      "
-      :loading="$leadminerStore.isLoadingStartMining"
-      severity="contrast"
-      :label="t('start_mining_now')"
-      @click="startMining"
-    />
-    <Button
-      v-else
-      :loading="$leadminerStore?.isLoadingStartMining"
-      severity="contrast"
-      icon="pi pi-stop"
-      icon-pos="right"
-      :label="t('halt_mining')"
-      @click="haltMining"
-    />
-    <Button
-      :disabled="
-        activeMiningTask ||
+        $leadminerStore.activeMiningTask ||
         $leadminerStore.isLoadingStartMining ||
         $leadminerStore.isLoadingBoxes
       "
@@ -63,60 +37,37 @@
       :label="t('fine_tune_mining')"
       outlined
       @click="openMiningSettings"
-    >
-    </Button>
+    />
+
     <Button
-      :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
-      severity="secondary"
-      :label="t('back')"
-      @click="$stepper.prev()"
+      v-if="!$leadminerStore.activeMiningTask"
+      id="mine-stepper-start-button"
+      :disabled="
+        $leadminerStore.isLoadingBoxes ||
+        $leadminerStore.isLoadingStartMining ||
+        totalEmails === 0
+      "
+      :loading="$leadminerStore.isLoadingStartMining"
+      :label="$t('common.start_mining_now')"
+      @click="startMining"
+    />
+    <Button
+      v-else
+      id="mine-stepper-stop-button"
+      :loading="$leadminerStore?.isLoadingStartMining"
+      icon="pi pi-stop"
+      icon-pos="right"
+      :label="t('halt_mining')"
+      @click="haltMining"
     />
   </div>
-  <div class="hidden md:flex pt-6 justify-between">
-    <Button
-      :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
-      severity="secondary"
-      :label="t('back')"
-      @click="$stepper.prev()"
-    />
-    <div class="flex gap-2">
-      <Button
-        :disabled="
-          activeMiningTask ||
-          $leadminerStore.isLoadingStartMining ||
-          $leadminerStore.isLoadingBoxes
-        "
-        class="text-black"
-        severity="secondary"
-        :label="t('fine_tune_mining')"
-        outlined
-        @click="openMiningSettings"
-      >
-      </Button>
-      <Button
-        v-if="!activeMiningTask"
-        :disabled="
-          $leadminerStore.isLoadingBoxes ||
-          $leadminerStore.isLoadingStartMining ||
-          totalEmails === 0
-        "
-        :loading="$leadminerStore.isLoadingStartMining"
-        severity="contrast"
-        :label="t('start_mining_now')"
-        @click="startMining"
-      />
-      <Button
-        v-else
-        :loading="$leadminerStore?.isLoadingStartMining"
-        severity="contrast"
-        icon="pi pi-stop"
-        icon-pos="right"
-        :label="t('halt_mining')"
-        @click="haltMining"
-      />
-    </div>
-  </div>
+
   <importFileDialog ref="importFileDialogRef" />
+  <MiningSettingsDialog
+    ref="miningSettingsDialogRef"
+    :total-emails="totalEmails"
+    :is-loading-boxes="$leadminerStore.isLoadingBoxes"
+  />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -124,14 +75,18 @@ import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
-import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
+import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
 const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
+});
+
+const { t: $t } = useI18n({
+  useScope: 'global',
 });
 
 const { miningSource } = defineProps<{
@@ -147,15 +102,14 @@ const $contactsStore = useContactsStore();
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
-const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
+const miningSettingsDialogRef =
+  ref<InstanceType<typeof MiningSettingsDialog>>();
 
 const boxes = computed(() => $leadminerStore.boxes);
 const selectedBoxes = computed<TreeSelectionKeys>(
   () => $leadminerStore.selectedBoxes,
 );
-const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined,
-);
+
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
@@ -205,7 +159,7 @@ onMounted(async () => {
   }
 
   if (
-    activeMiningTask.value ||
+    $leadminerStore.activeMiningTask ||
     $leadminerStore.isLoadingBoxes ||
     $leadminerStore.isLoadingStartMining ||
     $leadminerStore.isLoadingStopMining
@@ -265,7 +219,7 @@ watch(extractionFinished, async (finished) => {
 
 function openMiningSettings() {
   if (source.value === 'boxes') {
-    miningSettingsRef.value!.open(); // skipcq: JS-0339 is component ref
+    miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
   } else if (source.value === 'file') {
     importFileDialogRef.value.openModal();
   }
@@ -302,7 +256,7 @@ async function startMiningBoxes() {
     } else {
       $toast.add({
         severity: 'error',
-        summary: t('start_mining'),
+        summary: $t('start_mining'),
         detail: t('mining_issue'),
         life: 3000,
       });
@@ -363,7 +317,6 @@ async function haltMining() {
     "retrieving_mailboxes": "Retrieving mailboxes...",
     "emails_to_mine": "email to mine. | emails to mine.",
     "emails_mined": "email mined. | emails mined.",
-    "start_mining_now": "Start mining now!",
     "halt_mining": "Halt mining",
     "fine_tune_mining": "Fine tune mining",
     "back": "Back",
@@ -374,7 +327,6 @@ async function haltMining() {
     "select_at_least_one_folder": "Please select at least one folder to start mining.",
     "mining_started": "Mining Started",
     "mining_success": "Your mining is successfully started.",
-    "start_mining": "Start Mining",
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
     "mining_stopped": "Mining Stopped",
     "mining_canceled": "Your mining is successfully canceled.",
@@ -384,7 +336,6 @@ async function haltMining() {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
     "emails_to_mine": "email à extraire. | emails à extraire",
     "emails_mined": "email extrait. | emails extraits",
-    "start_mining_now": "Lancer maintenant l'extraction !",
     "halt_mining": "Arrêter l'extraction",
     "fine_tune_mining": "Affiner l'extraction",
     "back": "Retour",
@@ -395,7 +346,6 @@ async function haltMining() {
     "select_at_least_one_folder": "Veuillez sélectionner au moins un dossier pour commencer l'extraction.",
     "mining_started": "Extraction commencée",
     "mining_success": "Votre extraction a été lancée avec succès.",
-    "start_mining": "Lancer l'extraction",
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
     "mining_stopped": "Extraction arrêtée",
     "mining_canceled": "Votre extraction a été annulée avec succès.",

@@ -24,6 +24,7 @@ export default defineI18nConfig(() => ({
         enrich: 'Enrich',
         edit: 'Edit',
         start_mining: 'Start mining',
+        start_mining_now: 'Start mining now!',
         read_privacy_policy:
           'Read our Data Privacy Policy for more information',
         support_assistance:
@@ -149,6 +150,7 @@ export default defineI18nConfig(() => ({
         enrich: 'Enrichir',
         edit: 'Modifier',
         start_mining: "Commencer l'extraction",
+        start_mining_now: "Lancer maintenant l'extraction !",
         read_privacy_policy:
           "Consultez notre Politique de Confidentialité des Données pour plus d'informations",
         support_assistance:

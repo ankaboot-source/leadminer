@@ -41,9 +41,12 @@ We will then take care of the issue as soon as possible.
 
 ## I Want To Contribute
 
-> ### Legal Notice
->
-> By contributing to this project, you assert that you have authored 100% of the content, have the necessary rights to the content, and that it can be provided under the project license.
+### Contributor License Agreement (CLA)
+
+By submitting a contribution to the Software, you ("Contributor") agree to the following:
+  1. **License to the Public:** You grant the public a non-exclusive, perpetual, worldwide, royalty-free license to use, modify, and distribute your contribution under the AGPL (Affero General Public License).
+  2. **License to Ankaboot:** You grant Ankaboot ("Publisher") a non-exclusive, perpetual, worldwide, royalty-free license to use, modify, distribute, sublicense, and sell your contribution under any license, including proprietary licenses.
+  3. **Representations:** You confirm that you are the sole author of the contribution and have the right to grant these licenses.
 
 ### Your First Code Contribution
 
