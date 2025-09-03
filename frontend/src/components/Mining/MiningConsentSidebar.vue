@@ -7,36 +7,33 @@
     :show-close-icon="false"
     :block-scroll="true"
     :header="t('authorization_required')"
-    pt:footer:class="pt-0"
+    pt:footer:class="pt-0 flex justify-end gap-2"
+    pt:content:class="grid gap-4 px-8 pt-4 text-base"
   >
-    <div class="grid gap-4 px-8 pt-4 text-base">
-      <span>
-        {{ t('authorization_declined') }}
-        {{ t('no_authorization_contacts') }}
-      </span>
-      <div>
-        {{ $t('common.support_assistance') }}
-        <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
-          support@leadminer.io.
-        </NuxtLink>
-        {{ t('keep_data_secure') }}
-      </div>
+    <span>
+      {{ t('authorization_declined') }}
+      {{ t('no_authorization_contacts') }}
+    </span>
+    <div>
+      {{ $t('common.support_assistance') }}
+      <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
+        support@leadminer.io.
+      </NuxtLink>
+      {{ t('keep_data_secure') }}
     </div>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <Button
-          severity="secondary"
-          class="secondary-button capitalize"
-          :label="$t('common.cancel')"
-          @click="close()"
-        />
-        <Button
-          severity="primary"
-          class="capitalize"
-          :label="t('authorize')"
-          @click="refreshOAuth"
-        />
-      </div>
+      <Button
+        severity="secondary"
+        class="secondary-button capitalize"
+        :label="$t('common.cancel')"
+        @click="close()"
+      />
+      <Button
+        severity="primary"
+        class="capitalize"
+        :label="t('authorize')"
+        @click="refreshOAuth"
+      />
     </template>
   </Drawer>
 </template>
@@ -51,12 +48,12 @@ const { t } = useI18n({
 const show = defineModel<boolean>('show');
 const $screenStore = useScreenStore();
 const $imapDialogStore = useImapDialog();
-
+const $stepper = useMiningStepper();
 const provider = defineModel<MiningSourceType>('provider');
 
 function close() {
   show.value = false;
-  useMiningStepper().go(1);
+  $stepper.go(1);
 }
 function showImapDialog() {
   $imapDialogStore.showImapDialog = true;

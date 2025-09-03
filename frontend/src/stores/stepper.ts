@@ -3,7 +3,11 @@ import { ref } from 'vue';
 
 export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const collapsed = ref(false);
-  const index = ref(1);
+  const index = ref(-1);
+
+  function open() {
+    collapsed.value = false;
+  }
 
   function next() {
     index.value += 1;
@@ -22,16 +26,12 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
     return step < index.value;
   }
 
-  function open() {
-    collapsed.value = false;
-  }
-
   function hide() {
     collapsed.value = true;
   }
 
   function $reset() {
-    index.value = 1;
+    index.value = -1;
   }
 
   return {
@@ -46,3 +46,36 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
     $reset,
   };
 });
+
+export const useStepperSourcePanel = defineStore(
+  'mining-stepper-source-panel',
+  () => {
+    const sourceOptions = computed(() => useLeadminerStore().miningSources);
+
+    const showsOtherSources = ref(false);
+
+    function showOtherSources() {
+      showsOtherSources.value = true;
+    }
+
+    function showOtherSourcesByDefault() {
+      if (sourceOptions.value.length === 0) showOtherSources();
+    }
+
+    function hideOtherSources() {
+      if (sourceOptions.value.length > 0) showsOtherSources.value = false;
+    }
+
+    function $reset() {
+      showsOtherSources.value = false;
+    }
+
+    return {
+      showsOtherSources,
+      showOtherSources,
+      showOtherSourcesByDefault,
+      hideOtherSources,
+      $reset,
+    };
+  },
+);

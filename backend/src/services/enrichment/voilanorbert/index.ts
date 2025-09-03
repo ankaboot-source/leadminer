@@ -1,7 +1,10 @@
 import { Logger } from 'winston';
 import { Engine, EngineResponse, Person } from '../Engine';
 import VoilanorbertApi, { ResponseWebhook } from './client';
-import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 
 export default class Voilanorbert implements Engine {
   readonly name = 'voilanorbert';

@@ -2,10 +2,26 @@ import { Details, Status } from '../services/email-status/EmailStatusVerifier';
 
 import { REACHABILITY } from '../utils/constants';
 
-export interface ExtractionResult {
+export interface EmailExtractionResult {
+  type: 'email';
   message: Message;
-  persons: PersonWithPocAndTag[];
+  persons: Array<{
+    person: Person;
+    pointOfContact: PointOfContact;
+    tags: Tag[];
+  }>;
 }
+
+export interface FileExtractionResult {
+  type: 'file';
+  organizations: Organization[];
+  persons: Array<{
+    person: Person;
+    tags: Tag[];
+  }>;
+}
+
+export type ExtractionResult = EmailExtractionResult | FileExtractionResult;
 
 export interface Message {
   channel: string;
@@ -47,6 +63,7 @@ export interface Person {
   identifiers?: string[];
   alternateName?: string[];
   alternateEmail?: string[];
+  worksFor?: string;
   source: string;
 }
 
@@ -91,6 +108,7 @@ export interface Contact {
   job_title?: string;
   same_as?: string[];
   image?: string;
+  telephone?: string[];
 }
 
 export interface Profile {
@@ -130,3 +148,17 @@ export interface SupabaseTask {
   stopped_at?: string;
   duration?: number;
 }
+
+export type Organization = {
+  name: string;
+  alternate_name?: string;
+  location?: string[];
+  id?: string;
+  url?: string;
+  legal_name?: string;
+  telephone?: string;
+  email?: string;
+  image?: string;
+  founder?: string;
+  _domain?: string;
+};

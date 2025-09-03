@@ -3,21 +3,20 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import { convertDates, getOrganization } from '~/utils/contacts';
+import { convertDates } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
   const $supabase = useSupabaseClient();
-  const $leadminerStore = useLeadminerStore();
 
+  const updateContactList = ref<boolean>(false);
+  const contactsCacheMap = new Map<string, Contact>();
   const contactsList = ref<Contact[] | undefined>(undefined);
-  const cachedContactsList = ref<Contact[]>([]);
 
   const selectedEmails = ref<string[] | undefined>(undefined);
   const selectedContactsCount = ref<number>(0);
 
   const contactCount = computed(() => contactsList.value?.length);
-  const isMiningTaskActive = computed(() => $leadminerStore.activeTask);
 
   let realtimeChannel: RealtimeChannel | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -25,20 +24,25 @@ export const useContactsStore = defineStore('contacts-store', () => {
   /**
    * Applies cached contacts to the main contacts list.
    */
-  function applyCachedContacts() {
-    if (cachedContactsList.value.length > 0) {
-      contactsList.value = cachedContactsList.value;
-      cachedContactsList.value = [];
-    }
+  function syncContactsList() {
+    if (!contactsCacheMap.size || !updateContactList.value) return;
+
+    const synced = convertDates(
+      structuredClone([...contactsCacheMap.values()].reverse()),
+    );
+
+    contactsList.value = synced;
+    updateContactList.value = false;
+    console.debug('Contacts list updated from cache');
   }
 
   /**
    * Starts the sync interval to periodically apply cached contacts.
    */
   function startSyncInterval() {
-    cachedContactsList.value = [];
-    syncIntervalId = setInterval(() => {
-      applyCachedContacts();
+    clearSyncInterval();
+    syncIntervalId = setInterval(async () => {
+      await syncContactsList();
     }, 2000);
   }
 
@@ -59,16 +63,21 @@ export const useContactsStore = defineStore('contacts-store', () => {
       .rpc('get_contacts_table', { user_id: $user.value?.id });
 
     if (error) throw error;
-    contactsList.value = convertDates(data);
+    return data as Contact[];
   }
 
   /**
    * Loads contacts from db and restarts SyncInterval.
    */
   async function reloadContacts() {
-    clearSyncInterval();
-    await loadContacts();
-    startSyncInterval();
+    updateContactList.value = false;
+    contactsCacheMap.clear();
+    const contacts = await loadContacts();
+    contacts
+      .toReversed()
+      .forEach((contact) => contactsCacheMap.set(contact.email, contact));
+    updateContactList.value = true;
+    syncContactsList();
   }
 
   /**
@@ -82,64 +91,39 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (error) throw error;
   }
 
-  function upsertContactInList(
+  async function updateContactsCache(
     newContact: Contact,
-    oldContacts: Contact[],
     keepPosition = false,
   ) {
-    const index = oldContacts.findIndex(
-      (contact) => contact.email === newContact.email,
-    );
-    const isFound = index !== -1;
-    const updatedContact = isFound
-      ? { ...oldContacts[index], ...newContact }
+    const { email } = newContact;
+    const existingContact = contactsCacheMap.get(email);
+    const updatedContact = existingContact
+      ? { ...existingContact, ...newContact }
       : newContact;
 
-    if (!keepPosition) {
-      if (isFound) oldContacts.splice(index, 1); // Removes contact
-      oldContacts.unshift(updatedContact); // Prepends updated contact
-    } else {
-      if (isFound) {
-        oldContacts[index] = updatedContact;
-      } else {
-        oldContacts.unshift(updatedContact);
-      }
-    }
-  }
+    newContact.works_for = await getOrganizationName(updatedContact.works_for);
 
-  /**
-   * Handles a new contact from realtime.
-   * @param contact - The new contact object.
-   */
-  async function processNewContact(contact: Contact) {
-    if (!contactsList.value) return;
+    if (keepPosition)
+      contactsCacheMap.set(updatedContact.email, updatedContact);
 
-    const [newContact] = convertDates([contact]);
-    const { works_for: organizationId } = newContact;
-
-    if (organizationId) {
-      const organization = await getOrganization({ id: organizationId }, [
-        'name',
-      ]);
-      newContact.works_for = organization ? organization.name : organizationId;
-    }
-
-    // If a mining task is active, cache the contacts for periodic rendering
-    if (isMiningTaskActive.value) {
-      if (cachedContactsList.value.length === 0) {
-        const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
-        cachedContactsList.value = convertDates(contactsCopy);
-      }
-      upsertContactInList(newContact, cachedContactsList.value);
-    } else {
-      // Otherwise, update the contacts instantly
-      upsertContactInList(newContact, contactsList.value, true);
-    }
+    // Remove and reinsert to change position in the Map
+    contactsCacheMap.delete(email);
+    contactsCacheMap.set(email, updatedContact);
   }
 
   function removeOldContact(email: string) {
+    contactsCacheMap.delete(email);
     contactsList.value = contactsList.value?.filter(
       (contact) => contact.email !== email,
+    );
+  }
+
+  function removeOldContacts(emails: string[]) {
+    emails.forEach((email) => {
+      contactsCacheMap.delete(email);
+    });
+    contactsList.value = contactsList.value?.filter(
+      (contact) => !emails.includes(contact.email),
     );
   }
 
@@ -155,15 +139,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
           event: '*',
           schema: 'private',
           table: 'persons',
-          filter: `user_id=eq.${$user.value?.id}`,
+          filter: `updated_at=gt.${new Date().toISOString()}`,
         },
-        async (payload: RealtimePostgresChangesPayload<Contact>) => {
-          if (payload.eventType === 'DELETE' && payload.old.email) {
+        (payload: RealtimePostgresChangesPayload<Contact>) => {
+          if (payload.eventType === 'DELETE' && payload.old.email)
             removeOldContact(payload.old.email);
-            return;
-          }
-          const newContact = payload.new as Contact;
-          await processNewContact(newContact);
+          else if (payload.new as Contact)
+            setTimeout(async () => {
+              await updateContactsCache(payload.new as Contact);
+              updateContactList.value = true;
+            }, 0);
         },
       );
 
@@ -175,14 +160,13 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Unsubscribes from real-time updates and clears the sync interval.
    */
   async function unsubscribeFromRealtimeUpdates() {
+    await syncContactsList();
+
     if (realtimeChannel) {
       await realtimeChannel.unsubscribe();
       await $supabase.removeChannel(realtimeChannel);
     }
-    if (syncIntervalId) {
-      applyCachedContacts();
-      clearSyncInterval();
-    }
+    if (syncIntervalId) clearSyncInterval();
   }
 
   /**
@@ -190,11 +174,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
    */
   function $reset() {
     unsubscribeFromRealtimeUpdates();
+    contactsCacheMap.clear();
+    updateContactList.value = false;
     contactsList.value = undefined;
     selectedEmails.value = undefined;
     selectedContactsCount.value = 0;
   }
-  cachedContactsList.value = [];
 
   return {
     contactsList,
@@ -209,5 +194,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     unsubscribeFromRealtimeUpdates,
     startSyncInterval,
     clearSyncInterval,
+    removeOldContacts,
   };
 });

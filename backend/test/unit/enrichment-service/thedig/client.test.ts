@@ -13,6 +13,7 @@ import ThedigApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from '../../../../src/services/enrichment/thedig/client';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
 // Mock dependencies
 jest.mock('axios');
@@ -21,6 +22,14 @@ const mockAxiosInstance = {
   post: jest.fn()
 } as unknown as jest.Mocked<typeof axios>;
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+
+const THEDIG_THROTTLE_REQUESTS = 1;
+const THEDIG_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  THEDIG_THROTTLE_REQUESTS,
+  THEDIG_THROTTLE_INTERVAL
+);
 
 describe('ThedigApi', () => {
   let mockLogger: jest.Mocked<Logger>;
@@ -32,11 +41,7 @@ describe('ThedigApi', () => {
       {
         url: 'https://api.example.com',
         apiToken: 'test-token',
-        rateLimiter: {
-          requests: 5,
-          interval: 1000,
-          spaced: false
-        }
+        rateLimiter: RATE_LIMITER
       },
       mockLogger
     );
@@ -73,7 +78,7 @@ describe('ThedigApi', () => {
       expect(result).toEqual(personResponse);
     });
 
-    it('should limit to 10 requests every 2 seconds', async () => {
+    it('should properly use rate limiter', async () => {
       const personRequest: EnrichPersonRequest = {
         name: 'John Doe',
         email: 'john@example.com'
@@ -87,21 +92,17 @@ describe('ThedigApi', () => {
         } as EnrichPersonResponse
       });
 
-      // Create 10 enrichment requests
-      const requests = Array.from({ length: 10 }, () =>
-        theDigClient.enrich(personRequest)
+      const startTime = Date.now();
+      const requests = [
+        await theDigClient.enrich(personRequest),
+        await theDigClient.enrich(personRequest),
+        await theDigClient.enrich(personRequest)
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        THEDIG_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      // Measure time taken for all requests
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(10);
     });
 
     it('should log an error and throw if API request fails', async () => {
@@ -145,7 +146,7 @@ describe('ThedigApi', () => {
       });
     });
 
-    it('should limit to 10 requests every 2 seconds', async () => {
+    it('should properly use rate limiter', async () => {
       const personRequest = [
         {
           name: 'John Doe',
@@ -157,23 +158,22 @@ describe('ThedigApi', () => {
         }
       ];
 
+      // Mock the Axios POST response
       mockAxiosInstance.post.mockResolvedValue({
         data: 'bulk-token-123'
       });
 
-      const requests = Array.from({ length: 10 }, () =>
-        theDigClient.enrichBulk(personRequest, 'webhook')
+      const startTime = Date.now();
+      const requests = [
+        await theDigClient.enrichBulk(personRequest, 'webhook'),
+        await theDigClient.enrichBulk(personRequest, 'webhook'),
+        await theDigClient.enrichBulk(personRequest, 'webhook')
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        THEDIG_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(10);
     });
 
     it('should log an error and throw if bulk request fails', async () => {

@@ -10,8 +10,12 @@ const schema = z.object({
   LEADMINER_API_HOST: z.string().url(),
   LEADMINER_API_HASH_SECRET: z.string().min(1),
   LEADMINER_MINING_ID_GENERATOR_LENGTH: number(),
-  LEADMINER_FETCH_BATCH_SIZE: number(),
   FRONTEND_HOST: z.string().url(),
+
+  /* FETCHING */
+  FETCHING_BATCH_SIZE_TO_SEND: number(),
+  FETCHING_CHUNK_SIZE_PER_CONNECTION: number(),
+  FETCHING_MAX_CONNECTIONS_PER_FOLDER: number(),
 
   /* IMAP */
   IMAP_AUTH_TIMEOUT: number(),
@@ -28,9 +32,16 @@ const schema = z.object({
   REDIS_TLS: boolean(),
   REDIS_CONSUMER_BATCH_SIZE: number(),
   REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE: number(),
+  REDIS_EMAIL_SIGNATURE_CONSUMER_BATCH_SIZE: number(),
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: z.string().min(1),
   REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: z.string().min(1),
   REDIS_CLEANING_STREAM_CONSUMER_GROUP: z.string().min(1),
+
+  REDIS_SIGNATURE_STREAM_NAME: z.string().min(1),
+  REDIS_SIGNATURE_STREAM_CONSUMER_GROUP: z.string().min(1),
+
+  SIGNATURE_USE_LLM: boolean(),
+  SIGNATURE_OPENROUTER_API_KEY: z.string().min(1).optional(),
 
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
@@ -38,7 +49,8 @@ const schema = z.object({
   PG_CONNECTION_STRING: z.string().url(),
 
   /* SENTRY */
-  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN_BACKEND: z.string().url().optional(),
+  SENTRY_ENVIRONMENT_BACKEND: z.string().min(1).optional(),
 
   /* LOGGING */
   GRAFANA_LOKI_HOST: z.string().url().optional(),
@@ -53,7 +65,10 @@ const schema = z.object({
   AZURE_SECRET: z.string().min(1),
 
   /* Email verification */
-  LOAD_BALANCE_VERIFIERS: boolean().default('false'),
+  EMAILS_QUOTA_REACHER: number(),
+  EMAILS_QUOTA_MAILERCHECK: number(),
+  EMAILS_QUOTA_ZEROBOUNCE: number(),
+
   LOAD_BALANCE_ENRICHERS: boolean().default('false'),
 
   /* REACHER */
@@ -99,9 +114,9 @@ const schema = z.object({
   THEDIG_URL: z.string().min(1).optional(),
   THEDIG_API_KEY: z.string().min(1).optional(),
 
-  /* PROXYCURL */
-  PROXYCURL_URL: z.string().min(1).optional(),
-  PROXYCURL_API_KEY: z.string().min(1).optional(),
+  /* ENRICH-LAYER */
+  ENRICH_LAYER_URL: z.string().min(1).optional(),
+  ENRICH_LAYER_API_KEY: z.string().min(1).optional(),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });

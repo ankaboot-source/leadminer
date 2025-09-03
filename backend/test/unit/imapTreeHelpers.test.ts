@@ -1,249 +1,123 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { ListResponse } from 'imapflow';
+import { describe, it, expect } from '@jest/globals';
 import {
-  buildFinalTree,
-  createFlatTreeFromImap
+  createFlatTreeFromImap,
+  buildFinalTree
 } from '../../src/utils/helpers/imapTreeHelpers';
-import dataTest from '../testData.json';
-import logger from '../../src/utils/logger';
+import { FlatTree } from '../../src/services/imap/types';
 
-jest.mock('../../src/config', () => ({
-  LEADMINER_API_LOG_LEVEL: 'debug'
-}));
-
-// Mock the logger module inline within jest.mock
-jest.mock('../../src/utils/logger', () => ({
-  debug: jest.fn()
-}));
-
-describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
-  const { imapTreeExample } = dataTest;
-  const expectedOutput = [
+describe('IMAP Tree Utilities', () => {
+  const mockBoxes: ListResponse[] = [
     {
-      label: 'Brouillons',
-      key: 'Brouillons',
-      attribs: ['\\Drafts', '\\HasNoChildren']
-    },
-    { label: 'INBOX', key: 'INBOX', attribs: ['\\HasChildren'] },
+      path: 'INBOX',
+      name: 'INBOX',
+      flags: new Set(['HasChildren']),
+      delimiter: '/',
+      status: { messages: 5 }
+    } as ListResponse,
     {
-      label: 'mars',
-      key: 'INBOX/mars',
-      parent: {
-        label: 'INBOX',
-        key: 'INBOX',
-        attribs: ['\\HasChildren']
-      },
-      attribs: ['\\Junk', '\\HasNoChildren']
-    },
+      path: 'INBOX/Work',
+      name: 'Work',
+      flags: new Set(['HasNoChildren']),
+      delimiter: '/',
+      parentPath: 'INBOX',
+      status: { messages: 10 }
+    } as ListResponse,
     {
-      label: 'Administratif',
-      key: 'INBOX/Administratif',
-      parent: {
-        label: 'INBOX',
-        key: 'INBOX',
-        attribs: ['\\HasChildren']
-      },
-      attribs: ['\\Junk', '\\HasNoChildren']
-    },
+      path: 'INBOX/Spam',
+      name: 'Spam',
+      flags: new Set(['Junk', 'HasNoChildren']),
+      delimiter: '/',
+      parentPath: 'INBOX',
+      status: { messages: 2 }
+    } as ListResponse,
     {
-      label: 'Spam',
-      key: 'Spam',
-      attribs: ['\\Junk', '\\HasNoChildren']
-    }
+      path: 'Drafts',
+      name: 'Drafts',
+      flags: new Set(['Drafts', 'HasNoChildren']),
+      delimiter: '/',
+      status: { messages: 1 }
+    } as ListResponse
   ];
 
-  it('should return valid flat array', () => {
-    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
-    const output = createFlatTreeFromImap(imapTreeExample);
-    expect(output).toEqual(expectedOutput);
+  it('should create a flat tree from IMAP boxes', () => {
+    const flatTree = createFlatTreeFromImap(mockBoxes);
+
+    expect(flatTree).toHaveLength(4);
+
+    const inbox = flatTree.find((node) => node.key === 'INBOX');
+    expect(inbox).toBeDefined();
+    expect(inbox?.label).toBe('INBOX');
+    expect(inbox?.attribs).toContain('HasChildren');
+    expect(inbox?.total).toBe(5);
+
+    const work = flatTree.find((node) => node.key === 'INBOX/Work');
+    expect(work).toBeDefined();
+    expect(work?.label).toBe('Work');
+    expect(work?.parent).toStrictEqual({
+      attribs: ['HasChildren'],
+      cumulativeTotal: 5,
+      key: 'INBOX',
+      label: 'INBOX',
+      total: 5
+    });
+    expect(work?.attribs).toContain('HasNoChildren');
+    expect(work?.total).toBe(10);
+
+    const spam = flatTree.find((node) => node.key === 'INBOX/Spam');
+    expect(spam).toBeDefined();
+    expect(spam?.label).toBe('Spam');
+    expect(spam?.attribs).toContain('Junk');
+    expect(spam?.parent).toStrictEqual({
+      attribs: ['HasChildren'],
+      cumulativeTotal: 5,
+      key: 'INBOX',
+      label: 'INBOX',
+      total: 5
+    });
+    expect(spam?.total).toBe(2);
+
+    const drafts = flatTree.find((node) => node.key === 'Drafts');
+    expect(drafts).toBeDefined();
+    expect(drafts?.attribs).toContain('Drafts');
+    expect(drafts?.total).toBe(1);
   });
 
-  it('should separate with the provided delimiter', () => {
-    const imapTreeWithCustomDelimiter = {
-      INBOX: {
-        attribs: ['\\HasChildren'],
-        delimiter: ':',
-        children: {
-          subfolder1: {
-            attribs: ['\\Junk', '\\HasNoChildren'],
-            delimiter: '/',
-            children: null,
-            parent: null
-          },
-          subfolder2: {
-            attribs: ['\\Junk', '\\HasNoChildren'],
-            delimiter: '.',
-            children: null,
-            parent: null
-          }
-        },
-        parent: null
+  it('should correctly build a hierarchical tree structure using user email as root node', () => {
+    const flatTree = createFlatTreeFromImap(mockBoxes);
+    const tree = buildFinalTree(flatTree, 'user@example.com');
+
+    // Root node with user email
+    expect(tree).toHaveLength(1);
+    expect(tree[0].label).toBe('user@example.com');
+
+    // Top-level children: INBOX and Drafts
+    const topLevel = tree[0].children;
+    expect(topLevel).toHaveLength(2);
+
+    const inboxNode = topLevel?.find((child) => child.label === 'INBOX');
+    expect(inboxNode).toBeDefined();
+    expect(inboxNode?.children).toHaveLength(2); // Work and Spam
+
+    const draftsNode = topLevel?.find((child) => child.label === 'Drafts');
+    expect(draftsNode).toBeDefined();
+    expect(draftsNode?.children).toBeUndefined();
+
+    // Total messages: 5 (INBOX) + 10 (Work) + 2 (Spam) + 1 (Drafts) = 18
+    expect(tree[0].total).toBe(18);
+  });
+
+  it('should ensure no node in the final tree contains a parent reference', () => {
+    const flatTree = createFlatTreeFromImap(mockBoxes);
+    const tree = buildFinalTree(flatTree, 'user@example.com');
+
+    const recursivelyCheckNoParent = (node: FlatTree) => {
+      expect(node.parent).toBeUndefined();
+      if (node.children) {
+        node.children.forEach(recursivelyCheckNoParent);
       }
     };
 
-    const expectedOutputWithCustomDelimiter = [
-      {
-        label: 'INBOX',
-        key: 'INBOX',
-        attribs: ['\\HasChildren']
-      },
-      {
-        label: 'subfolder1',
-        key: 'INBOX/subfolder1',
-        parent: {
-          label: 'INBOX',
-          key: 'INBOX',
-          attribs: ['\\HasChildren']
-        },
-        attribs: ['\\Junk', '\\HasNoChildren']
-      },
-      {
-        label: 'subfolder2',
-        key: 'INBOX.subfolder2',
-        parent: {
-          label: 'INBOX',
-          key: 'INBOX',
-          attribs: ['\\HasChildren']
-        },
-        attribs: ['\\Junk', '\\HasNoChildren']
-      }
-    ];
-
-    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
-    const output = createFlatTreeFromImap(imapTreeWithCustomDelimiter);
-    expect(output).toEqual(expectedOutputWithCustomDelimiter);
-  });
-
-  it("should log a warning if delimiter is missing and default to '/'", () => {
-    const imapTreeWithMissingDelimiter = {
-      INBOX: {
-        attribs: ['\\HasChildren'],
-        delimiter: ':',
-        children: {
-          subfolder1: {
-            attribs: ['\\Junk', '\\HasNoChildren'],
-            delimiter: '',
-            children: null,
-            parent: null
-          },
-          subfolder2: {
-            attribs: ['\\Junk', '\\HasNoChildren'],
-            delimiter: '',
-            children: null,
-            parent: null
-          }
-        },
-        parent: null
-      }
-    };
-
-    const expectedOutputWithDefaultDelimiter = [
-      {
-        label: 'INBOX',
-        key: 'INBOX',
-        attribs: ['\\HasChildren']
-      },
-      {
-        label: 'subfolder1',
-        key: 'INBOX/subfolder1',
-        parent: {
-          label: 'INBOX',
-          key: 'INBOX',
-          attribs: ['\\HasChildren']
-        },
-        attribs: ['\\Junk', '\\HasNoChildren']
-      },
-      {
-        label: 'subfolder2',
-        key: 'INBOX/subfolder2',
-        parent: {
-          label: 'INBOX',
-          key: 'INBOX',
-          attribs: ['\\HasChildren']
-        },
-        attribs: ['\\Junk', '\\HasNoChildren']
-      }
-    ];
-
-    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
-    const output = createFlatTreeFromImap(imapTreeWithMissingDelimiter);
-    expect(output).toEqual(expectedOutputWithDefaultDelimiter);
-    expect(logger.debug).toHaveBeenCalledTimes(2);
-  });
-});
-
-// TODO - Rework tree parsing algorithm
-describe.skip('imapTreeHelpers.buildFinalTree(foldersFlatArray, userEmail)', () => {
-  it('should build a valid tree', () => {
-    const input = [
-      {
-        label: 'Brouillons',
-        key: 'Brouillons',
-        total: 0,
-        cumulativeTotal: 0
-      },
-      {
-        label: 'INBOX',
-        key: 'INBOX',
-        total: 0,
-        cumulativeTotal: 0
-      },
-      {
-        label: 'mars',
-        key: 'INBOX/mars',
-        parent: { label: 'INBOX', key: 'INBOX', total: 0, cumulativeTotal: 0 },
-        total: 1,
-        cumulativeTotal: 1
-      },
-      {
-        label: 'Administratif',
-        key: 'INBOX/Administratif',
-        parent: { label: 'INBOX', key: 'INBOX', total: 0, cumulativeTotal: 0 },
-        total: 1,
-        cumulativeTotal: 1
-      },
-      {
-        label: 'Spam',
-        key: 'Spam',
-        total: 1,
-        cumulativeTotal: 1
-      }
-    ];
-    const expectedOutput = [
-      {
-        label: 'email@example.com',
-        children: [
-          {
-            label: 'Brouillons',
-            key: 'Brouillons',
-            total: 0,
-            cumulativeTotal: 0
-          },
-          {
-            label: 'INBOX',
-            key: 'INBOX',
-            cumulativeTotal: 2,
-            total: 0,
-            children: [
-              {
-                label: 'mars',
-                key: 'INBOX/mars',
-                total: 1,
-                cumulativeTotal: 1
-              },
-              {
-                label: 'Administratif',
-                key: 'INBOX/Administratif',
-                total: 1,
-                cumulativeTotal: 1
-              }
-            ]
-          },
-          { label: 'Spam', key: 'Spam', total: 1, cumulativeTotal: 1 }
-        ],
-        total: 3
-      }
-    ];
-    const output = buildFinalTree(input, 'email@example.com');
-    expect(output).toEqual(expectedOutput);
+    tree.forEach(recursivelyCheckNoParent);
   });
 });

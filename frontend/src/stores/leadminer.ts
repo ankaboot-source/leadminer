@@ -3,15 +3,21 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
 import { updateMiningSourcesValidity } from '@/utils/sources';
-import type { MiningSource, MiningTask } from '../types/mining';
+import { startMiningNotification } from '~/utils/extras';
+import type { MiningSource, MiningTask, MiningType } from '../types/mining';
 import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
+  const { t } = useI18n();
+  const $toast = useToast();
+  const $stepper = useMiningStepper();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
+
+  const miningType = ref<MiningType>('email');
 
   const miningTask = ref<MiningTask | undefined>();
   const miningStartedAt = ref<number | undefined>();
@@ -53,6 +59,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     Boolean(miningStartedAt.value && cleaningFinished.value),
   );
 
+  const miningInterrupted = ref(false);
   const errors = ref({});
 
   function $resetMining() {
@@ -79,6 +86,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     cleaningFinished.value = true;
 
     activeEnrichment.value = false;
+
+    miningInterrupted.value = false;
 
     errors.value = {};
   }
@@ -152,90 +161,132 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  async function startMiningBoxes() {
-    const { data: sessionData } = await useSupabaseClient().auth.getSession();
-    if (!sessionData.session?.access_token) {
-      return;
+  async function stopMiningApi(
+    endEntireTask: boolean,
+    processes: string[] | null,
+  ) {
+    const user = useSupabaseUser().value;
+
+    if (!user || !miningTask.value) {
+      return null;
     }
 
-    try {
-      isLoadingStartMining.value = true;
-      const { data } = await $api<{ data: MiningTask }>(
-        `/imap/mine/${sessionData.session.user.id}`,
-        {
-          method: 'POST',
-          body: {
-            boxes: Object.keys(selectedBoxes.value).filter(
-              (key) => selectedBoxes.value[key].checked && key !== '',
-            ),
-            miningSource: activeMiningSource.value,
-          },
-        },
-      );
+    const { miningId } = miningTask.value;
 
-      const task = data;
-      sse.initConnection(task?.miningId, sessionData.session.access_token, {
-        onExtractedUpdate: (count) => {
-          extractedEmails.value = count;
-        },
-        onFetchedUpdate: (count) => {
-          scannedEmails.value = count;
-        },
-        onClose: () => {
-          miningTask.value = undefined;
-          sse.closeConnection();
-        },
-        onFetchingDone: (totalFetched) => {
-          scannedEmails.value = totalFetched;
-          fetchingFinished.value = true;
-        },
-        onExtractionDone: (totalExtracted) => {
-          extractedEmails.value = totalExtracted;
-          extractionFinished.value = true;
-        },
-        onCleaningDone: (totalCleaned) => {
-          verifiedContacts.value = totalCleaned;
-          cleaningFinished.value = true;
-        },
-        onVerifiedContacts: (totalVerified) => {
-          verifiedContacts.value = totalVerified;
-        },
-        onCreatedContacts: (totalCreated) => {
-          createdContacts.value = totalCreated;
-        },
-      });
-
-      miningTask.value = task;
-      miningStartedAt.value = performance.now();
-      loadingStatus.value = false;
-      loadingStatusDns.value = false;
-      isLoadingStartMining.value = false;
-    } catch (err) {
-      loadingStatus.value = false;
-      loadingStatusDns.value = false;
-      isLoadingStartMining.value = false;
-      sse.closeConnection();
-      throw err;
-    }
-  }
-
-  async function startMiningFile() {
-    const { data: sessionData } = await useSupabaseClient().auth.getSession();
-    if (!sessionData.session?.access_token) {
-      return;
-    }
-
-    console.log(selectedFile.value);
-    await $api<{ data: MiningTask }>(
-      `/imap/mine/file/${sessionData.session.user.id}`,
+    const res = await $api(
+      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
       {
         method: 'POST',
         body: {
-          name: selectedFile.value?.name,
-          contacts: selectedFile.value?.contacts,
+          endEntireTask,
+          processes,
         },
       },
     );
+
+    return res;
+  }
+
+  function startProgressListener(
+    type: MiningType,
+    miningId: string,
+    token: string,
+  ) {
+    sse.initConnection(type, miningId, token, {
+      onExtractedUpdate: (count) => {
+        extractedEmails.value = count;
+      },
+      onFetchedUpdate: (count) => {
+        scannedEmails.value = count;
+      },
+      onClose: () => {
+        miningTask.value = undefined;
+        sse.closeConnection();
+      },
+      onError: () => {
+        miningInterrupted.value = true;
+        setTimeout(async () => {
+          try {
+            await stopMiningApi(true, []);
+          } catch (err) {
+            console.error('[SSE] error: ', (err as Error).message);
+          }
+          $resetMining();
+          $toast.add({
+            severity: 'warn',
+            summary: t('mining.toast_canceled_title'),
+            detail: t('mining.toast_canceled_by_connection_detail'),
+            life: 5000,
+          });
+          $stepper.go(1);
+        }, 0);
+      },
+
+      onFetchingDone: (totalFetched) => {
+        scannedEmails.value = totalFetched;
+        fetchingFinished.value = true;
+      },
+      onExtractionDone: (totalExtracted) => {
+        extractedEmails.value = totalExtracted;
+        extractionFinished.value = true;
+      },
+      onCleaningDone: (totalCleaned) => {
+        verifiedContacts.value = totalCleaned;
+        cleaningFinished.value = true;
+      },
+      onVerifiedContacts: (totalVerified) => {
+        verifiedContacts.value = totalVerified;
+      },
+      onCreatedContacts: (totalCreated) => {
+        createdContacts.value = totalCreated;
+      },
+    });
+  }
+
+  async function startMiningEmail(
+    userId: string,
+    folders: string[],
+    miningSource: MiningSource,
+  ) {
+    // Set current miningType: file or email
+    miningType.value = 'email';
+
+    const { data: task } = await $api<{ data: MiningTask }>(
+      `/imap/mine/${miningType.value}/${userId}`,
+      {
+        method: 'POST',
+        body: {
+          boxes: folders,
+          miningSource,
+        },
+      },
+    );
+
+    return task;
+  }
+
+  async function startMiningFile(
+    userId: string,
+    fileName: string,
+    importedContacts: Record<string, string>[],
+  ) {
+    // Set current miningType: file or email
+    miningType.value = 'file';
+    fetchingFinished.value = true;
+    scannedEmails.value = 1;
+
+    const { data: task } = await $api<{ data: MiningTask }>(
+      `/imap/mine/${miningType.value}/${userId}`,
+      {
+        method: 'POST',
+        body: {
+          name: fileName,
+          contacts: importedContacts,
+        },
+      },
+    );
+
+    return task;
   }
 
   /**
@@ -243,20 +294,58 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
   async function startMining(source: 'boxes' | 'file') {
+    const user = useSupabaseUser().value;
+    const token = useSupabaseSession().value?.access_token;
+
+    if (!user || !token) return;
+    if (source === 'file' && !selectedBoxes.value) return;
+    if (source === 'boxes' && !activeMiningSource.value) return;
+
+    // reset, prepare states
     loadingStatus.value = true;
     loadingStatusDns.value = true;
+
     scannedEmails.value = 0;
     extractedEmails.value = 0;
-    verifiedContacts.value = 0;
     createdContacts.value = 0;
+    verifiedContacts.value = 0;
+
     fetchingFinished.value = false;
     extractionFinished.value = false;
     cleaningFinished.value = false;
 
-    if (source === 'boxes') {
-      await startMiningBoxes();
-    } else if (source === 'file') {
-      await startMiningFile();
+    try {
+      isLoadingStartMining.value = true;
+      const task =
+        source === 'boxes'
+          ? await startMiningEmail(
+              user?.id,
+              Object.keys(selectedBoxes.value).filter(
+                (key) =>
+                  selectedBoxes.value[key].checked &&
+                  !selectedBoxes.value[key].isNoSelect &&
+                  key !== '',
+              ),
+              activeMiningSource.value!,
+            )
+          : await startMiningFile(
+              user.id,
+              selectedFile.value!.name,
+              selectedFile.value!.contacts,
+            );
+
+      startProgressListener(miningType.value, task.miningId, token);
+
+      miningTask.value = task;
+      miningStartedAt.value = performance.now();
+      startMiningNotification();
+    } catch (err) {
+      sse.closeConnection();
+      throw err;
+    } finally {
+      loadingStatus.value = false;
+      loadingStatusDns.value = false;
+      isLoadingStartMining.value = false;
     }
   }
 
@@ -269,22 +358,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     processes: string[] | null,
   ) {
     try {
-      const user = useSupabaseUser().value;
-
-      if (!user || !miningTask.value) {
-        return;
-      }
       isLoadingStopMining.value = true;
 
-      const { miningId } = miningTask.value;
-
-      await $api(`/imap/mine/${user.id}/${miningId}`, {
-        method: 'POST',
-        body: {
-          endEntireTask,
-          processes,
-        },
-      });
+      await stopMiningApi(endEntireTask, processes);
 
       if (endEntireTask) {
         miningTask.value = undefined;
@@ -315,6 +391,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     activeEnrichment,
     miningTask,
+    miningType,
     miningStartedAt,
     miningSources,
     activeMiningSource,
@@ -336,6 +413,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     miningStartedAndFinished,
+    miningInterrupted,
     errors,
   };
 });

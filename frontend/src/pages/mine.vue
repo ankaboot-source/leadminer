@@ -1,13 +1,32 @@
 <template>
   <div class="flex flex-col grow">
-    <MiningStepper
-      v-model:collapsed="$stepper.collapsed"
-      :is-toggleable="showTable"
-    />
+    <div class="flex flex-col grow border rounded-md px-2 pt-6">
+      <MiningStepper />
+    </div>
     <MiningTable :show-table="showTable" />
   </div>
 </template>
+
 <script setup lang="ts">
+import { FetchError } from 'ofetch';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
+
 const $stepper = useMiningStepper();
-const showTable = computed(() => $stepper.index !== 1);
+const $leadminer = useLeadminerStore();
+const showTable = computed(
+  () => $leadminer.activeMiningTask || $stepper.index > 2,
+);
+
+try {
+  await $leadminer.fetchMiningSources();
+} catch (error) {
+  onMounted(() => {
+    throw error instanceof FetchError && error.response?.status === 401
+      ? error
+      : new Error(t('fetch_sources_failed'));
+  });
+}
 </script>

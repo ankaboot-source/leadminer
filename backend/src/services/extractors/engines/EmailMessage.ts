@@ -1,29 +1,89 @@
 import { Redis } from 'ioredis';
-import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
-import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
+import { REACHABILITY, REGEX_LIST_ID } from '../../../utils/constants';
+import { extractNameAndEmail, extractNameAndEmailFromBody } from '../helpers';
 
-import { Message, Person, PointOfContact } from '../../db/types';
-import { differenceInDays } from '../../utils/helpers/date';
-import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
-import CatchAllDomainsCache from '../cache/CatchAllDomainsCache';
-import EmailStatusCache from '../cache/EmailStatusCache';
-import { Status } from '../email-status/EmailStatusVerifier';
-import { TaggingEngine } from '../tagging/types';
-import {
-  Contact,
-  ContactLead,
-  ContactTag,
-  DomainStatusVerificationFunction,
-  EmailSendersRecipients,
-  IGNORED_MESSAGE_TAGS,
-  MESSAGING_FIELDS,
-  MessageField
-} from './types';
+import { Message, Person, PointOfContact } from '../../../db/types';
+import { differenceInDays } from '../../../utils/helpers/date';
+import { getSpecificHeader } from '../../../utils/helpers/emailHeaderHelpers';
+import CatchAllDomainsCache from '../../cache/CatchAllDomainsCache';
+import EmailStatusCache from '../../cache/EmailStatusCache';
+import { Status } from '../../email-status/EmailStatusVerifier';
+import { TaggingEngine } from '../../tagging/types';
+
+const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
+  'transactional',
+  'no-reply'
+] as const;
+
+const MESSAGING_FIELDS = [
+  'to',
+  'from',
+  'cc',
+  'bcc',
+  'reply-to',
+  'reply_to',
+  'list-post'
+] as const;
+
+export type MessageField = (typeof MESSAGING_FIELDS)[number];
+
+interface EmailSendersRecipients {
+  to: MessageField;
+  from: MessageField;
+  cc: MessageField;
+  bcc: MessageField;
+  'reply-to'?: MessageField;
+  reply_to?: MessageField;
+  'list-post'?: MessageField;
+}
+
+interface ContactLead {
+  name?: string;
+  email: {
+    address: string;
+    plusAddress?: string;
+    identifier: string;
+    domain: string;
+    domainType?: string;
+  };
+  sourceField: MessageField | 'body';
+  source: 'header' | 'body';
+}
+
+interface ContactTag {
+  name: string;
+  reachable: REACHABILITY;
+  source: string;
+}
+
+export type DomainStatusVerificationFunction = (
+  redisClient: Redis,
+  domain: string
+) => Promise<
+  [boolean, 'provider' | 'disposable' | 'custom' | 'invalid', string]
+>;
+
+export interface ExtractedContacts {
+  type: 'email';
+  message: Message;
+  persons: {
+    person: Person;
+    pointOfContact: PointOfContact;
+    tags: ContactTag[];
+  }[];
+}
+
+export interface EmailFormat {
+  header: unknown;
+  body: unknown;
+  folderPath: string;
+  isLast: boolean;
+}
 
 export default class EmailMessage {
-  private static IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
+  static readonly IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
 
-  private static MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS = 100;
+  static readonly MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS = 100;
 
   readonly messageId: string;
 
@@ -320,8 +380,9 @@ export default class EmailMessage {
    * Extracts contacts from an email message, then returns the extracted data.
    * @returns
    */
-  async getContacts(): Promise<Contact> {
-    const contacts: Contact = {
+  async getContacts(): Promise<ExtractedContacts> {
+    const contacts = {
+      type: 'email' as ExtractedContacts['type'],
       message: this.getMessageDetails(),
       persons: await this.extractContacts()
     };

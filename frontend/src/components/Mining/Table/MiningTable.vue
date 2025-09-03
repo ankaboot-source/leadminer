@@ -21,11 +21,11 @@
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
     scrollable
-    :scroll-height="scrollHeight"
+    :scroll-height="scrollHeightTable"
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="contacts"
+    :value="hardFilter ? enrichedContacts : contacts"
     data-key="email"
     paginator
     filter-display="menu"
@@ -59,24 +59,30 @@
     </template>
     <template #header>
       <div class="flex items-center gap-1">
-        <EnrichButton
-          source="datatable"
-          :enrichment-realtime-callback="emptyFunction"
-          :enrichment-request-response-callback="emptyFunction"
-          :contacts-to-enrich="implicitlySelectedContacts"
-          :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
-        />
-        <Button
-          id="export-csv"
-          v-tooltip.top="
-            isExportDisabled &&
-            t('select_at_least_one_contact', { action: t('export') })
-          "
-          icon="pi pi-external-link"
-          :label="$screenStore.size.md ? t('export_csv') : undefined"
-          :disabled="isExportDisabled"
-          @click="exportTable()"
-        />
+        <div>
+          <EnrichButton
+            source="datatable"
+            :enrichment-realtime-callback="emptyFunction"
+            :enrichment-request-response-callback="emptyFunction"
+            :contacts-to-enrich="implicitlySelectedContacts"
+            :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
+          />
+        </div>
+
+        <div>
+          <Button
+            id="export-csv"
+            v-tooltip.top="
+              isExportDisabled &&
+              t('select_at_least_one_contact', { action: t('export') })
+            "
+            icon="pi pi-external-link"
+            :label="$screenStore.size.md ? t('export_csv') : undefined"
+            :disabled="isExportDisabled"
+            @click="exportTable()"
+          />
+        </div>
+
         <div
           v-tooltip.top="
             (isExportDisabled || !selectedContactsLength) &&
@@ -93,18 +99,20 @@
         <div class="ml-2">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
-            <template v-if="!implicitSelectAll">
+            <template v-if="!implicitSelectAll && contactsLength">
               {{ implicitlySelectedContactsLength.toLocaleString() }}
               /
             </template>
-            {{ contactsLength?.toLocaleString() }}
+            {{ contactsLength?.toLocaleString() ?? 0 }}
           </template>
           {{ t('contacts') }}
         </div>
         <div class="grow" />
         <div>
           <Button
-            :disabled="filtersStore.isDefaultFilters"
+            :disabled="
+              filtersStore.isDefaultFilters && !filtersStore.areToggledFilters
+            "
             icon="pi pi-filter-slash"
             :label="$screenStore.size.md ? t('clear') : undefined"
             outlined
@@ -130,6 +138,12 @@
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between gap-2">
+                <div v-tooltip.left="toggleEnrichTooltip">
+                  {{ t('toggle_enriched_label') }}
+                </div>
+                <ToggleSwitch v-model="filtersStore.enrichedToggle" />
+              </li>
+              <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
                 </div>
@@ -139,12 +153,12 @@
                 />
               </li>
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_fullname_tooltip')">
-                  {{ t('toggle_fullname_label') }}
+                <div v-tooltip.left="t('toggle_name_tooltip')">
+                  {{ t('toggle_name_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.fullnameToggle"
-                  @update:model-value="filtersStore.onFullnameToggle"
+                  v-model="filtersStore.nameToggle"
+                  @update:model-value="filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -171,6 +185,16 @@
                   @update:model-value="filtersStore.onRepliesToggle"
                 />
               </li>
+              <li class="flex justify-between gap-2">
+                <div>
+                  {{ t('toggle_phone_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="filtersStore.phoneToggle"
+                  @update:model-value="filtersStore.onPhoneToggle"
+                />
+              </li>
+
               <Divider class="my-0" />
               <MultiSelect
                 v-model="visibleColumns"
@@ -587,6 +611,34 @@
       </template>
     </Column>
 
+    <!-- Phone numbers -->
+    <Column
+      v-if="visibleColumns.includes('telephone')"
+      field="telephone"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="$t('contact.telephone_definition')">
+          {{ $t('contact.telephone') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        <div class="flex flex-wrap gap-1">
+          <Chip
+            v-for="(phone, index) in data.telephone"
+            :key="index"
+            :label="phone"
+            :href="`tel:${phone}`"
+            icon="pi pi-phone"
+            class="cursor-pointer"
+            @click="callPhoneNumber(phone)"
+          />
+        </div>
+      </template>
+    </Column>
+
     <!-- Location -->
     <Column
       v-if="visibleColumns.includes('location')"
@@ -676,16 +728,18 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="t('created_at_definition')">
-          {{ t('created_at') }}
+        <div v-tooltip.top="$t('contact.created_at_definition')">
+          {{ $t('contact.created_at') }}
         </div>
       </template>
       <template #body="{ data }">
-        {{
-          data.created_at
-            ? data.created_at?.toLocaleDateString()
-            : data.created_at
-        }}
+        <div v-tooltip.bottom="data.created_at?.toLocaleString()">
+          {{
+            data.created_at
+              ? data.created_at?.toLocaleDateString()
+              : data.created_at
+          }}
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
@@ -763,6 +817,7 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
+
 const contactsLength = computed(() => $contactsStore.contactCount);
 
 function openContactInformation(data: Contact) {
@@ -773,7 +828,32 @@ function openContactInformation(data: Contact) {
 const filtersStore = useFiltersStore();
 
 const filteredContacts = ref<Contact[]>([]);
-const filteredContactsLength = computed(() => filteredContacts.value.length);
+const filteredContactsLength = computed(() => filteredContacts.value?.length);
+
+const enrichedContacts = computed(
+  () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
+);
+
+const hardFilter = computed(() => filtersStore.enrichedToggle);
+const enrichedFields = [
+  'same_as',
+  'location',
+  'job_title',
+  'works_for',
+  'image',
+  'telephone',
+];
+const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
+function getEnrichedFieldsCount(contact: Contact): number {
+  return (
+    Number(!!contact.same_as?.length) +
+    Number(!!contact.location?.length) +
+    Number(!!contact.job_title) +
+    Number(!!contact.works_for?.length) +
+    Number(!!contact.image) +
+    Number(!!contact.telephone?.length)
+  );
+}
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -781,8 +861,8 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
-function onFilter(event: DataTableFilterEvent) {
-  filteredContacts.value = event.filteredValue;
+function onFilter($event: DataTableFilterEvent) {
+  filteredContacts.value = $event.filteredValue;
 }
 
 watch(
@@ -961,6 +1041,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.family_name'), value: 'family_name' },
   { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.alternate_email'), value: 'alternate_email' },
+  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },
@@ -986,9 +1067,10 @@ const TableRef = ref();
 const tablePosTop = ref(0);
 
 const tableHeight = ref('flex');
-const scrollHeight = computed(() =>
+const scrollHeightTable = computed(() =>
   !isFullscreen.value ? tableHeight.value : '',
 );
+const scrollHeight = ref($screenStore.height);
 
 function observeTop() {
   const stopWatch = watch(
@@ -1013,6 +1095,9 @@ function observeTop() {
   );
 }
 
+const isExceedingScreenHeight = computed(
+  () => scrollHeight.value !== $screenStore.height,
+);
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
@@ -1023,9 +1108,9 @@ const stopShowTableFirstTimeWatcher = watch(
       if (contactsLength.value > 0) {
         observeTop();
         watchEffect(() => {
-          tableHeight.value = `${
-            $screenStore.height - tablePosTop.value - 120
-          }px`;
+          tableHeight.value = isExceedingScreenHeight.value
+            ? `${$screenStore.height - tablePosTop.value - 120}px`
+            : 'flex';
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
@@ -1040,7 +1125,7 @@ const stopShowTableFirstTimeWatcher = watch(
   },
   { deep: true, immediate: true },
 );
-
+const scrollHeightObserver = ref<ResizeObserver | null>(null);
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
@@ -1054,8 +1139,16 @@ onNuxtReady(async () => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
 
-  await $contactsStore.loadContacts();
+  await $contactsStore.reloadContacts();
+  if (contacts?.value?.some((contact) => contact.telephone !== null)) {
+    visibleColumns.value.push('telephone');
+  }
   $contactsStore.subscribeToRealtimeUpdates();
+
+  scrollHeightObserver.value = new ResizeObserver(() => {
+    scrollHeight.value = document.documentElement.scrollHeight;
+  });
+  scrollHeightObserver.value.observe(document.documentElement);
 
   isLoading.value = false;
 });
@@ -1063,6 +1156,7 @@ onNuxtReady(async () => {
 onUnmounted(() => {
   $screenStore.destroy();
   $contactsStore.$reset();
+  scrollHeightObserver.value?.disconnect();
 });
 </script>
 
@@ -1107,12 +1201,15 @@ table.p-datatable-table {
     "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
+    "toggle_enriched_tooltip": "Has at least 2 enriched fields",
+    "toggle_enriched_label": "Only enriched contacts",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
     "toggle_replies_label": "At least one reply",
-    "toggle_fullname_label": "Only with fullname",
-    "toggle_fullname_tooltip": "Named contacts engage more",
+    "toggle_phone_label": "Only with phone number",
+    "toggle_name_label": "Only with name",
+    "toggle_name_tooltip": "Named contacts engage more",
     "toggle_recent_tooltip": "- Less than {recentYearsAgo} years \n- GDPR Proof",
     "toggle_recent_label": "Recent contacts",
     "visible_columns": "{n} Visible field | {n} Visible fields",
@@ -1155,12 +1252,15 @@ table.p-datatable-table {
     "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
+    "toggle_enriched_tooltip": "A au moins 2 champs enrichis",
+    "toggle_enriched_label": "Contacts enrichis",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
-    "toggle_valid_label": "Seulement les contacts valides",
+    "toggle_valid_label": "Contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
-    "toggle_fullname_label": "Seulement avec nom complet",
-    "toggle_fullname_tooltip": "Les contacts connus par leur nom répondent davantage",
+    "toggle_phone_label": "Avec numéro de téléphone",
+    "toggle_name_label": "Avec nom complet",
+    "toggle_name_tooltip": "Les contacts connus par leur nom complet répondent davantage",
     "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
     "toggle_recent_label": "Contacts récents",
     "visible_columns": "{n} Champ visible | {n} Champs visibles",

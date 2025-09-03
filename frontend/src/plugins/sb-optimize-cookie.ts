@@ -11,20 +11,14 @@
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * to deal in the Software without restriction, including without limitation, the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * - The above copyright notice and this permission notice shall be included
- *   in all copies or substantial portions of the Software.
+ * - The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
@@ -60,46 +54,6 @@ interface Chunk {
 const MAX_CHUNK_SIZE = 3180;
 const TO_BASE64URL =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split('');
-
-/**
- * Converts a JavaScript string (which may include any valid character) into a
- * Base64-URL encoded string. The string is first encoded in UTF-8 which is
- * then encoded as Base64-URL.
- *
- * @param str The string to convert.
- */
-function stringToBase64URL(str: string) {
-  const base64: string[] = [];
-
-  let queue = 0;
-  let queuedBits = 0;
-
-  const emitter = (byte: number) => {
-    queue = (queue << 8) | byte;
-    queuedBits += 8;
-
-    while (queuedBits >= 6) {
-      const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
-      queuedBits -= 6;
-    }
-  };
-
-  stringToUTF8(str, emitter);
-
-  if (queuedBits > 0) {
-    queue = queue << (6 - queuedBits);
-    queuedBits = 6;
-
-    while (queuedBits >= 6) {
-      const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
-      queuedBits -= 6;
-    }
-  }
-
-  return base64.join('');
-}
 
 /**
  * Converts a Unicode codepoint to a multi-byte UTF-8 sequence.
@@ -153,6 +107,46 @@ function stringToUTF8(str: string, emit: (byte: number) => void) {
 
     codepointToUTF8(codepoint, emit);
   }
+}
+
+/**
+ * Converts a JavaScript string (which may include any valid character) into a
+ * Base64-URL encoded string. The string is first encoded in UTF-8 which is
+ * then encoded as Base64-URL.
+ *
+ * @param str The string to convert.
+ */
+function stringToBase64URL(str: string) {
+  const base64: string[] = [];
+
+  let queue = 0;
+  let queuedBits = 0;
+
+  const emitter = (byte: number) => {
+    queue = (queue << 8) | byte;
+    queuedBits += 8;
+
+    while (queuedBits >= 6) {
+      const pos = (queue >> (queuedBits - 6)) & 63;
+      base64.push(TO_BASE64URL[pos]);
+      queuedBits -= 6;
+    }
+  };
+
+  stringToUTF8(str, emitter); // Now this will work
+
+  if (queuedBits > 0) {
+    queue = queue << (6 - queuedBits);
+    queuedBits = 6;
+
+    while (queuedBits >= 6) {
+      const pos = (queue >> (queuedBits - 6)) & 63;
+      base64.push(TO_BASE64URL[pos]);
+      queuedBits -= 6;
+    }
+  }
+
+  return base64.join('');
 }
 
 /**
@@ -275,6 +269,9 @@ export default defineNuxtPlugin(() => {
       },
     };
 
+    // Delete user identities
+    delete trimmedSession.user.identities;
+
     const targetDate = new Date('2025-11-22T09:40:00Z');
     const maxAge = Math.max(
       0,
@@ -311,8 +308,10 @@ export default defineNuxtPlugin(() => {
 
   if (import.meta.client) {
     watch(newSession, (session) => {
-      if (session) {
-        overwriteSupabaseCookies(session);
+      try {
+        if (session) overwriteSupabaseCookies(session);
+      } catch (error) {
+        console.error('Error overwriting Supabase cookies:', error);
       }
     });
   }

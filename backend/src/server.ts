@@ -15,6 +15,7 @@ import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
 import SupabaseTasks from './db/supabase/tasks';
+import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -30,7 +31,7 @@ console.log(
 );
 
 (async () => {
-  await redis.flushAll();
+  await redis.flushAll([ENV.REDIS_SIGNATURE_STREAM_NAME]);
   await redis.initProviders();
 
   const miningSources = new PgMiningSources(
@@ -50,9 +51,18 @@ console.log(
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
+  const tasksManagerFile = new TasksManagerFile(
+    tasksResolver,
+    redis.getSubscriberClient(),
+    redis.getClient(),
+    new EmailFetcherFactory(),
+    new SSEBroadcasterFactory(),
+    flickrBase58IdGenerator()
+  );
   const app = initializeApp(
     authResolver,
     tasksManager,
+    tasksManagerFile,
     miningSources,
     contactsResolver,
     userResolver,

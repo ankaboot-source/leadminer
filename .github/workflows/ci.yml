@@ -8,7 +8,6 @@ on:
     types:
       - completed
 
-
 jobs:
   backend:
     runs-on: ubuntu-latest

@@ -1,16 +1,19 @@
 import Logger from "../_shared/logger.ts";
 import corsHeaders from "../_shared/cors.ts";
 import supabaseEmailsI18n from "./templates.ts";
-import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase-self-hosted.ts";
+import {
+  createSupabaseAdmin,
+  createSupabaseClient,
+} from "../_shared/supabase.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("LEADMINER_PROJECT_URL");
-  const supabaseAnonKey = Deno.env.get("LEADMINER_ANON_KEY");
-  const supabaseServiceRoleKey = Deno.env.get("LEADMINER_SECRET_TOKEN");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
     Logger.error("Missing environment variables.");
@@ -22,14 +25,14 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
   if (req.method === "GET") {
     const url = new URL(req.url);
     const language = url.searchParams.get("language");
-    const template = supabaseEmailsI18n.get(language as string) ?? null
+    const template = supabaseEmailsI18n.get(language as string) ?? null;
     return new Response(JSON.stringify(template), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -44,7 +47,7 @@ Deno.serve(async (req) => {
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -57,7 +60,7 @@ Deno.serve(async (req) => {
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -72,20 +75,21 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    const currentTemplate = user.user_metadata?.EmailTemplate;
+    const currentTemplate = user!.user_metadata?.EmailTemplate;
 
     if (!currentTemplate || currentTemplate.lang !== language) {
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        user.id,
-        {
-          user_metadata: { 
-            EmailTemplate: {
-              language,
-              ...supabaseEmailsI18n.get(language)
-            }
-          }
-        }
-      );
+      const { error: updateError } = await supabaseAdmin.auth.admin
+        .updateUserById(
+          user!.id,
+          {
+            user_metadata: {
+              EmailTemplate: {
+                language,
+                ...supabaseEmailsI18n.get(language),
+              },
+            },
+          },
+        );
 
       if (updateError) {
         throw updateError;
@@ -97,14 +101,13 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error)
-    Logger.error(error.message || "Failed to process the request");
+    Logger.error((error as Error).message || "Failed to process the request");
     return new Response(
       JSON.stringify({ error: "Failed to process the request" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });

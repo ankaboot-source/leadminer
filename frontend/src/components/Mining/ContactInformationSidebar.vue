@@ -115,6 +115,31 @@
           </td>
         </tr>
 
+        <tr class="p-row-even">
+          <td class="md:font-medium">
+            {{ $t('contact.telephone') }}
+          </td>
+          <td>
+            <div v-if="!editingContact" class="flex flex-wrap gap-1">
+              <Chip
+                v-for="(phone, index) in contact.telephone"
+                :key="index"
+                :label="phone"
+                :href="`tel:${phone}`"
+                icon="pi pi-phone"
+                class="cursor-pointer"
+                @click="callPhoneNumber(phone)"
+              />
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.telephone"
+              rows="3"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
         <tr class="p-row-odd">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
@@ -212,7 +237,6 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import {
-  getOrganization,
   getStatusColor,
   getStatusLabel,
   getTagColor,
@@ -222,6 +246,9 @@ import {
 
 const { t } = useI18n({
   useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
 });
 
 const $toast = useToast();
@@ -235,6 +262,7 @@ const editingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   ...contact.value,
   alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
+  telephone: contact.value?.telephone?.join('\n') ?? null,
   same_as: contact.value?.same_as?.join('\n') ?? null,
   location: contact.value?.location?.join('\n') ?? null,
 });
@@ -243,6 +271,7 @@ watch(contact, (newContact) => {
   contactEdit.value = {
     ...newContact,
     alternate_name: newContact?.alternate_name?.join('\n') ?? null,
+    telephone: newContact?.telephone?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
     location: newContact?.location?.join('\n') ?? null,
   };
@@ -253,11 +282,12 @@ const skipDialog = computed(
     !(
       contact.value.given_name ||
       contact.value.family_name ||
-      contact.value.alternate_name ||
-      contact.value.location ||
+      contact.value.alternate_name?.length ||
+      contact.value.telephone?.length ||
+      contact.value.location?.length ||
       contact.value.works_for ||
       contact.value.job_title ||
-      contact.value.same_as ||
+      contact.value.same_as?.length ||
       contact.value.image
     ),
 );
@@ -313,10 +343,9 @@ function startRealtimePersons(userId: string, email: string) {
           return;
         }
         if (updatedContact.works_for) {
-          const org = await getOrganization({ id: updatedContact.works_for }, [
-            'name',
-          ]);
-          updatedContact.works_for = org ? org.name : updatedContact.works_for;
+          updatedContact.works_for = await getOrganizationName(
+            updatedContact.works_for,
+          );
         }
         $contactInformationSidebar.contact = {
           ...$contactInformationSidebar.contact,
@@ -327,7 +356,9 @@ function startRealtimePersons(userId: string, email: string) {
   personsSubscription.subscribe();
 }
 
-watch(show, (value) => {
+watch(show, async (value) => {
+  contact.value.works_for = await getOrganizationName(contact.value.works_for);
+
   if (value) {
     startRealtimePersons($user.value.id, contact.value.email);
     return;
@@ -367,6 +398,7 @@ async function saveContactInformations() {
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
+    telephone: transformStringToArray(contactEdit.value.telephone),
     location: transformStringToArray(contactEdit.value.location),
   };
 
@@ -376,6 +408,11 @@ async function saveContactInformations() {
       JSON.stringify(originalContactCopy.alternate_name) !==
       JSON.stringify(editedContactCopy.alternate_name)
         ? editedContactCopy.alternate_name || null
+        : undefined,
+    telephone:
+      JSON.stringify(originalContactCopy.telephone) !==
+      JSON.stringify(editedContactCopy.telephone)
+        ? editedContactCopy.telephone || null
         : undefined,
     same_as:
       JSON.stringify(originalContactCopy.same_as) !==
@@ -422,7 +459,11 @@ function cancelContactInformations() {
 }
 
 function copyContact(email: string, name?: string) {
-  showNotification('success', t('contact_copied'), t('contact_email_copied'));
+  showNotification(
+    'success',
+    $t('contact.contact_copied'),
+    $t('contact.contact_email_copied'),
+  );
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );

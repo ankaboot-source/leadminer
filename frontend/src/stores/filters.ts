@@ -1,178 +1,124 @@
-import {
-  FilterMatchMode,
-  FilterOperator,
-  FilterService,
-} from '@primevue/core/api';
+import { FilterService } from '@primevue/core/api';
+import { useDebounceFn } from '@vueuse/core';
 import { defineStore } from 'pinia';
+import {
+  ANY_SELECTED,
+  DEFAULT_FILTERS,
+  DEFAULT_TOGGLES,
+  MAX_YEARS_AGO_TO_FILTER,
+  NOT_EMPTY,
+} from '~/utils/filters-defaults';
 
-const ANY_SELECTED = 'ANY_SELECTED';
-FilterService.register(ANY_SELECTED, (value, filter) =>
-  !filter ? true : filter.some((item: string) => value.includes(item)),
-);
-
-const fullnameToggle = ref(false); // fullname: NOT_EMPTY
-
-const NOT_EMPTY = 'NOT_EMPTY';
-FilterService.register(NOT_EMPTY, (value, filter) => {
-  if (!fullnameToggle.value) return true;
-  return !(
-    (filter || !filter) &&
-    (value === undefined || value === null || value === '')
-  );
-});
-
-const defaultFilters = {
-  global: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
-  name: {
-    value: null,
-    matchMode: NOT_EMPTY,
-  },
-  source: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  recency: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
-  occurrence: {
-    operator: FilterOperator.AND,
-    constraints: [
-      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-    ],
-  },
-  // Replies
-  replied_conversations: {
-    operator: FilterOperator.AND,
-    constraints: [
-      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-    ],
-  },
-  tags: { value: null, matchMode: ANY_SELECTED },
-  status: { value: [], matchMode: FilterMatchMode.IN },
-  recipient: {
-    operator: FilterOperator.AND,
-    constraints: [
-      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-    ],
-  },
-  sender: {
-    operator: FilterOperator.AND,
-    constraints: [
-      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-    ],
-  },
-  seniority: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
-  given_name: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  family_name: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  alternate_name: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  location: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  works_for: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  job_title: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
-  },
-  updated_at: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
-  created_at: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
+type TogglesType = {
+  valid: boolean;
+  recent: boolean;
+  name: boolean;
+  replies: boolean;
+  telephone: boolean;
 };
 
-export const useFiltersStore = defineStore('filters', () => {
-  const filters = ref(JSON.parse(JSON.stringify(defaultFilters)));
-  function $reset() {
-    filters.value = JSON.parse(JSON.stringify(defaultFilters));
-  }
-  const isDefaultFilters = computed(
-    () => JSON.stringify(filters.value) === JSON.stringify(defaultFilters),
+const searchContactModel = ref('');
+const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
+const nameToggle = ref(false);
+const validToggle = ref(false);
+const repliesToggle = ref(false);
+const recentToggle = ref(false);
+const phoneToggle = ref(false);
+const enrichedToggle = ref(false);
+
+const isDefaultFilters = computed(
+  () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
+);
+const areToggledFilters = computed(
+  () =>
+    Number(validToggle.value) +
+    Number(recentToggle.value) +
+    Number(nameToggle.value) +
+    Number(repliesToggle.value) +
+    Number(phoneToggle.value) +
+    Number(enrichedToggle.value),
+);
+
+function checkValidStatus() {
+  return Boolean(
+    filters.value.status.value.length === 1 &&
+      filters.value.status.value[0] === 'VALID',
   );
+}
 
-  // skipcq: JS-0323
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function debounce<T extends (...args: any[]) => any>(
-    func: T,
-    wait: number,
-  ): (...args: Parameters<T>) => void {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    return function _(...args: Parameters<T>): void {
-      if (timeout !== null) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(() => func(...args), wait);
-    };
+function updatedStatusValue() {
+  const isValidStatus = checkValidStatus();
+  if (!isValidStatus && validToggle.value) {
+    return ['VALID'];
+  } else if (isValidStatus && !validToggle.value) {
+    return [];
+  }
+  return null;
+}
+
+function onValidToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    validToggle.value = toggle;
   }
 
-  const debouncedUpdate = debounce((newValue: string) => {
-    filters.value.global.value = newValue;
-  }, 500);
-  const searchContactModel = ref('');
-
-  watch(searchContactModel, (newValue: string) => {
-    debouncedUpdate(newValue);
-  });
-
-  const validToggle = ref(false); // status: valid
-  function onValidToggle(toggle?: boolean) {
-    if (toggle !== undefined) {
-      validToggle.value = toggle;
-    }
-    if (filters.value.status.value === null) {
-      filters.value.status.value = [];
-    }
-
-    const isValidStatus =
-      filters.value.status.value.length === 1 &&
-      filters.value.status.value[0] === 'VALID';
-
-    if (!isValidStatus && validToggle.value) {
-      filters.value.status.value = ['VALID'];
-    } else if (isValidStatus && !validToggle.value) {
-      filters.value.status.value = [];
-    }
+  if (filters.value.status.value === null) {
+    filters.value.status.value = [];
   }
-  watch(
+
+  const updatedStatus = updatedStatusValue();
+  if (updatedStatus) {
+    filters.value.status.value = updatedStatus;
+  }
+}
+
+function onRepliesToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    repliesToggle.value = toggle;
+  }
+  filters.value.replied_conversations.constraints = [
+    { value: repliesToggle.value ? 1 : null, matchMode: 'gte' },
+  ];
+}
+
+function onRecentToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    recentToggle.value = toggle;
+  }
+  filters.value.recency.constraints?.splice(1);
+  filters.value.recency.constraints[0].value = recentToggle.value
+    ? new Date(
+        new Date().setFullYear(
+          new Date().getFullYear() - MAX_YEARS_AGO_TO_FILTER,
+        ),
+      )
+    : null;
+}
+
+function onPhoneToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    phoneToggle.value = toggle;
+    filters.value.telephone.value = toggle || null;
+  }
+}
+
+function onNameToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    nameToggle.value = toggle;
+    filters.value.name.value = toggle || null;
+  }
+}
+
+function watchStatusToggle() {
+  return watch(
     () => filters.value.status.value,
     (newStatusValue) => {
       validToggle.value =
         newStatusValue?.length === 1 && newStatusValue[0] === 'VALID';
     },
   );
-
-  const repliesToggle = ref(false); // replies: >=1
-  function onRepliesToggle(toggle?: boolean) {
-    if (toggle !== undefined) {
-      repliesToggle.value = toggle;
-    }
-    filters.value.replied_conversations.constraints = [
-      { value: repliesToggle.value ? 1 : null, matchMode: 'gte' },
-    ];
-  }
-  watch(
+}
+function watchRepliesToggle() {
+  return watch(
     () => filters.value.replied_conversations.constraints,
     (newRepliesValue) => {
       repliesToggle.value =
@@ -181,98 +127,102 @@ export const useFiltersStore = defineStore('filters', () => {
         newRepliesValue[0].matchMode === 'gte';
     },
   );
+}
 
-  const recentToggle = ref(false); // recency: <3 years
-  const recentYearsAgo = 3;
-  function onRecentToggle(toggle?: boolean) {
-    if (toggle !== undefined) {
-      recentToggle.value = toggle;
-    }
-    filters.value.recency.constraints?.splice(1);
-    filters.value.recency.constraints[0].value = recentToggle.value
-      ? new Date(
-          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo),
-        )
-      : null;
-  }
-
-  watch(
+function watchRecencyToggle() {
+  return watch(
     () => filters.value.recency.constraints,
     (newRecencyConstraints) => {
       recentToggle.value =
         newRecencyConstraints.length === 1 &&
         newRecencyConstraints[0].value?.toLocaleDateString() ===
           new Date(
-            new Date().setFullYear(new Date().getFullYear() - recentYearsAgo),
+            new Date().setFullYear(
+              new Date().getFullYear() - MAX_YEARS_AGO_TO_FILTER,
+            ),
           ).toLocaleDateString();
     },
     { deep: true },
   );
+}
 
-  function onFullnameToggle(toggle?: boolean) {
-    if (toggle !== undefined) {
-      fullnameToggle.value = toggle;
-      filters.value.name.value = toggle || null;
-    }
-  }
-
-  type togglesType = {
-    valid: boolean;
-    recent: boolean;
-    fullname: boolean;
-    replies: boolean;
-  };
-  const defaultToggles = {
-    valid: true,
-    recent: true,
-    fullname: true,
-    replies: false,
-  };
-  function toggleFilters(toggles: togglesType | boolean = defaultToggles) {
-    if (typeof toggles === 'boolean') {
-      toggles = {
-        valid: toggles,
-        recent: toggles,
-        fullname: toggles,
-        replies: toggles,
-      };
-    }
-    onValidToggle(toggles.valid);
-    onRecentToggle(toggles.recent);
-    onFullnameToggle(toggles.fullname);
-    onRepliesToggle(toggles.replies);
-  }
-
-  function clearFilter() {
-    searchContactModel.value = '';
-    toggleFilters(false);
-    $reset();
-  }
-
-  const areToggledFilters = computed(
-    () =>
-      Number(validToggle.value) +
-      Number(recentToggle.value) +
-      Number(fullnameToggle.value) +
-      Number(repliesToggle.value),
+function registerFiltersAndStartWatchers() {
+  // Filter registration
+  FilterService.register(ANY_SELECTED, (value, filter) =>
+    !filter ? true : filter.some((item: string) => value.includes(item)),
+  );
+  FilterService.register(NOT_EMPTY, (value, filter) =>
+    filter ? !(value === undefined || value === null || value === '') : true,
   );
 
+  const debouncedUpdate = useDebounceFn((newValue: string) => {
+    filters.value.global.value = newValue;
+  }, 500);
+
+  watch(searchContactModel, (newValue: string) => {
+    debouncedUpdate(newValue);
+  });
+
+  watchStatusToggle();
+  watchRepliesToggle();
+  watchRecencyToggle();
+}
+
+function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
+  if (typeof toggles === 'boolean') {
+    toggles = {
+      valid: toggles,
+      recent: toggles,
+      name: toggles,
+      replies: toggles,
+      telephone: toggles,
+    };
+  }
+
+  onNameToggle(toggles.name);
+  onValidToggle(toggles.valid);
+  onRecentToggle(toggles.recent);
+  onRepliesToggle(toggles.replies);
+  onPhoneToggle(toggles.telephone);
+}
+
+function clearFilter() {
+  searchContactModel.value = '';
+  enrichedToggle.value = false;
+  toggleFilters(false);
+  $reset();
+}
+
+function $reset() {
+  filters.value = structuredClone(DEFAULT_FILTERS);
+}
+
+export const useFiltersStore = defineStore('filters', () => {
+  registerFiltersAndStartWatchers();
   return {
+    recentYearsAgo: MAX_YEARS_AGO_TO_FILTER,
+
     filters,
-    $reset,
-    isDefaultFilters,
     searchContactModel,
+    nameToggle,
+    validToggle,
+    repliesToggle,
+    recentToggle,
+    phoneToggle,
+    enrichedToggle,
+
     areToggledFilters,
+    isDefaultFilters,
+
+    onValidToggle,
+    onRepliesToggle,
+    onRecentToggle,
+    onNameToggle,
+    onPhoneToggle,
+
     toggleFilters,
     clearFilter,
-    validToggle,
-    onValidToggle,
-    repliesToggle,
-    onRepliesToggle,
-    recentToggle,
-    recentYearsAgo,
-    onRecentToggle,
-    fullnameToggle,
-    onFullnameToggle,
+
+    $reset,
   };
 });

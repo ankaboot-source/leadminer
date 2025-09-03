@@ -71,8 +71,8 @@
       </span>
     </template>
   </Button>
-  <EnrichGdprDialog
-    ref="enrichGdprDialogRef"
+  <EnrichGdprSidebar
+    ref="EnrichGdprSidebarRef"
     @has-given-consent="onAcceptEnrich"
   />
 </template>
@@ -88,8 +88,9 @@ import {
   CreditsDialogEnrichRef,
   openCreditsDialog,
 } from '@/utils/credits';
+import type { FetchResponse } from 'ofetch';
 import type { Contact } from '~/types/contact';
-import EnrichGdprDialog from '../EnrichGdprDialog.vue';
+import EnrichGdprSidebar from '../EnrichGdprSidebar.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -136,7 +137,7 @@ function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
   detail: string,
-  group?: 'achievement',
+  group?: 'achievement' | 'enrich-info',
 ) {
   $toast.add({
     severity,
@@ -154,39 +155,49 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
+function showSuccessNotification(total_enriched: number) {
+  showNotification(
+    'success',
+    '',
+    t('notification.enrichment_completed', {
+      n: total_enriched,
+      enriched: total_enriched.toLocaleString(),
+    }),
+    'achievement',
+  );
+}
+
+function showDefaultNotification() {
+  showNotification('info', '', t('notification.no_additional_info'));
+}
+
+function showCanceledNotification() {
+  showNotification('error', '', t('notification.enrichment_canceled'));
+}
+
+function showNotAvailableNotification() {
+  showNotification(
+    'error',
+    '',
+    t('notification.enricher_configuration_required'),
+  );
+}
+
 function handleEnrichmentProgressNotification(task: EnrichmentTask) {
   const {
     status,
     details: { total_enriched },
   } = task;
+  if (status === 'running') return;
 
-  if (task.status === 'running') return;
-
-  // status done, canceled
   stopEnrichment();
 
   if (status === 'canceled') {
-    showNotification(
-      'error',
-      t('notification.summary'),
-      t('notification.enrichment_canceled'),
-    );
+    showCanceledNotification();
   } else if (total_enriched > 0) {
-    showNotification(
-      'success',
-      t('notification.summary'),
-      t('notification.enrichment_completed', {
-        n: total_enriched,
-        enriched: total_enriched.toLocaleString(),
-      }),
-      'achievement',
-    );
+    showSuccessNotification(total_enriched);
   } else {
-    showNotification(
-      'info',
-      t('notification.summary'),
-      t('notification.no_additional_info'),
-    );
+    showDefaultNotification();
   }
 }
 
@@ -210,6 +221,42 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
+function enrichmentNoCredits(total: number, available: number) {
+  stopEnrichment();
+  openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
+}
+
+function enrichmentSingleResponseHandler(
+  response: FetchResponse<EnrichContactResponse>,
+) {
+  const { _data: result, status } = response;
+  if (status === 200 && result?.task) {
+    handleEnrichmentProgressNotification(result.task);
+  } else if (response.status === 402 && result?.total && result?.available) {
+    enrichmentNoCredits(result.total, result.available);
+  } else if (status === 503) {
+    showNotAvailableNotification();
+  }
+}
+
+function enrichmentBulkResponseHandler(
+  response: FetchResponse<EnrichContactResponse>,
+) {
+  const { _data: result, status } = response;
+
+  const handleSuccess = (task: EnrichmentTask) => {
+    if (task.status === 'running') setupEnrichmentRealtime();
+    else handleEnrichmentProgressNotification(task);
+  };
+  if (status === 200 && result?.task) {
+    handleSuccess(result?.task);
+  } else if (status === 402 && result?.total && result?.available) {
+    enrichmentNoCredits(result.total, result.available);
+  } else if (response.status === 503) {
+    showNotAvailableNotification();
+  }
+}
+
 async function enrichPerson(
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>,
@@ -224,20 +271,7 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, task } = response._data;
-
-      if (response.status === 402) {
-        stopEnrichment();
-        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
-      } else if (response.status === 200) {
-        handleEnrichmentProgressNotification(task);
-      } else if (response.status === 503) {
-        showNotification(
-          'error',
-          t('notification.summary'),
-          t('notification.enricher_configuration_required'),
-        );
-      }
+      enrichmentSingleResponseHandler(response);
     },
   });
 }
@@ -248,9 +282,10 @@ async function enrichPersonBulk(
   contacts: Partial<Contact>[],
 ) {
   showNotification(
-    'success',
-    t('notification.summary'),
-    t('notification.enrichment_started', { toEnrich: contacts.length }),
+    'info',
+    t('notification.enrichment_started_title', { toEnrich: contacts.length }),
+    t('notification.enrichment_started_message'),
+    'enrich-info',
   );
   await $api<EnrichContactResponse>('/enrich/person/bulk', {
     method: 'POST',
@@ -261,24 +296,7 @@ async function enrichPersonBulk(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, task } = response._data;
-
-      if (response.status === 402) {
-        stopEnrichment();
-        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
-      } else if (response.status === 200) {
-        if (task.status === 'running') {
-          setupEnrichmentRealtime();
-        } else {
-          handleEnrichmentProgressNotification(task);
-        }
-      } else if (response.status === 503) {
-        showNotification(
-          'error',
-          t('notification.summary'),
-          t('notification.enricher_configuration_required'),
-        );
-      }
+      enrichmentBulkResponseHandler(response);
     },
   });
 }
@@ -310,7 +328,7 @@ onMounted(async () => {
   }
 });
 
-const enrichGdprDialogRef = ref();
+const EnrichGdprSidebarRef = ref();
 const $profile = useSupabaseUserProfile();
 const hasAcceptedEnriching = computed(
   () => $profile.value?.gdpr_details.hasAcceptedEnriching,
@@ -322,7 +340,7 @@ const hasAcceptedEnriching = computed(
  */
 function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
   if (!justAcceptedEnrich && !hasAcceptedEnriching.value) {
-    enrichGdprDialogRef.value.openModal();
+    EnrichGdprSidebarRef.value.openModal();
     return;
   }
 
@@ -365,10 +383,9 @@ const isEnrichDisabled = computed(
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
-      "summary": "Enrich",
-      "enrichment_started_one": "Enrichment on {toEnrich} contact has started. Please wait a few minutes.",
-      "enrichment_started": "Enrichment on {toEnrich} contacts has started. Please wait a few minutes.",
-      "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
+      "enrichment_started_title": "Enrichment on {toEnrich} contacts has started",
+      "enrichment_started_message": "Please wait a few minutes",
+      "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts have been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts.",
@@ -386,9 +403,8 @@ const isEnrichDisabled = computed(
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
-      "summary": "Enrichir",
-      "enrichment_started": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes.",
-      "enrichment_started_one": "L'enrichissement de {toEnrich} contact a commencé. Veuillez patienter quelques minutes.",
+      "enrichment_started_title": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes ☕",
+      "enrichment_started_message": "Veuillez patienter quelques minutes ☕",
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",

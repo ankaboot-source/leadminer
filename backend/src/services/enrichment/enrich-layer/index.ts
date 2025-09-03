@@ -1,18 +1,21 @@
 import { Logger } from 'winston';
 import { Engine, EngineResponse, Person } from '../Engine';
-import ProxycurlApi, {
+import EnrichLayerAPI, {
   ProfileExtra,
   ReverseEmailLookupResponse
 } from './client';
-import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 
-export default class Proxycurl implements Engine {
+export default class EnrichLayer implements Engine {
   constructor(
-    private readonly client: ProxycurlApi,
+    private readonly client: EnrichLayerAPI,
     private readonly logger: Logger
   ) {}
 
-  readonly name = 'proxycurl';
+  readonly name = 'enrichLayer';
 
   readonly isSync = true;
 
@@ -91,7 +94,7 @@ export default class Proxycurl implements Engine {
           response?.linkedin_profile_url,
           response?.facebook_profile_url,
           response?.twitter_profile_url,
-          ...Proxycurl.getProfileUrls(response?.profile?.extra)
+          ...EnrichLayer.getProfileUrls(response?.profile?.extra)
         ])
       }
     ]

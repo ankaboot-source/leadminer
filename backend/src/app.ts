@@ -21,10 +21,12 @@ import initializeMiningRoutes from './routes/mining.routes';
 import initializeSentry from './middleware/sentry';
 import initializeStreamRouter from './routes/stream.routes';
 import notFound from './middleware/notFound';
+import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 
 export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
+  tasksManagerFile: TasksManagerFile,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
@@ -32,8 +34,12 @@ export default function initializeApp(
 ) {
   const app = express();
 
-  if (ENV.SENTRY_DSN) {
-    initializeSentry(app, ENV.SENTRY_DSN);
+  if (ENV.SENTRY_DSN_BACKEND) {
+    initializeSentry(
+      app,
+      ENV.SENTRY_DSN_BACKEND,
+      ENV.SENTRY_ENVIRONMENT_BACKEND
+    );
   }
 
   if (Billing) {
@@ -53,21 +59,36 @@ export default function initializeApp(
 
   app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
-  app.use('/api/imap', initializeStreamRouter(tasksManager, authResolver));
   app.use(
     '/api/imap',
-    initializeMiningRoutes(tasksManager, miningSources, authResolver)
+    initializeStreamRouter(tasksManager, tasksManagerFile, authResolver)
+  );
+  app.use(
+    '/api/imap',
+    initializeMiningRoutes(
+      tasksManager,
+      tasksManagerFile,
+      miningSources,
+      authResolver
+    )
   );
   app.use('/api', initializeContactsRoutes(contacts, authResolver));
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 
-  if (ENV.SENTRY_DSN) {
+  if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.setupExpressErrorHandler(app);
   }
 
   app.use(notFound);
   app.use(errorLogger);
   app.use(errorHandler);
+
+  process.on('uncaughtException', (err) => {
+    logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, err.stack || err);
+    if (ENV.SENTRY_DSN_BACKEND) {
+      Sentry.captureException(err);
+    }
+  });
 
   return app;
 }

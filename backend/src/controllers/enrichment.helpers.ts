@@ -54,6 +54,7 @@ export async function getContactsToEnrich(
     .schema('private')
     .from('persons')
     .select('email, name')
+    .eq('user_id', userId)
     .in('email', refinedEmails)
     .returns<{ email: string; name: string }[]>();
 

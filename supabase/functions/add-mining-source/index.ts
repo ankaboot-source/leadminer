@@ -3,16 +3,16 @@ import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
-} from "../_shared/supabase-self-hosted.ts";
+} from "../_shared/supabase.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("LEADMINER_PROJECT_URL");
-  const supabaseAnonKey = Deno.env.get("LEADMINER_ANON_KEY");
-  const supabaseServiceRoleKey = Deno.env.get("LEADMINER_SECRET_TOKEN");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
     Logger.error("Missing environment variables.");
@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -78,22 +78,25 @@ Deno.serve(async (req: Request) => {
   const expiresAt = new Date().setHours(new Date().getHours() + 7);
 
   try {
-    const { error } = await admin.schema('private').rpc('upsert_mining_source', {
-      _user_id: user.id,
-      _email: user.email,
-      _type: provider,
-      _credentials: JSON.stringify({
-        email: user.email as string,
-        accessToken: providerToken,
-        refreshToken: "",
-        provider,
-        expiresAt,
-      }),
-      _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET")
-    });
+    const { error } = await admin.schema("private").rpc(
+      "upsert_mining_source",
+      {
+        _user_id: user.id,
+        _email: user.email,
+        _type: provider,
+        _credentials: JSON.stringify({
+          email: user.email as string,
+          accessToken: providerToken,
+          refreshToken: "",
+          provider,
+          expiresAt,
+        }),
+        _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET"),
+      },
+    );
 
     if (error) {
-      throw error
+      throw error;
     }
 
     return new Response(null, {
@@ -101,7 +104,7 @@ Deno.serve(async (req: Request) => {
       status: 200,
     });
   } catch (error) {
-    Logger.error(error.message);
+    Logger.error((error as Error).message);
 
     return new Response(JSON.stringify(error), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

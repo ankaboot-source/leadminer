@@ -49,6 +49,20 @@ export async function getOrganization(
 }
 
 /**
+ * Retrieves an organization's by its id from the `organizations` table.
+ *
+ * @param org - The ID of the organization to retrieve.
+ * @returns The organization name if found, else return the same input.
+ */
+
+export async function getOrganizationName(org: string | null) {
+  if (!org || !UUID_REGEX.test(org)) return org; // Not an UUID, return as is
+
+  const orgData = await getOrganization({ id: org }, ['name']);
+  return orgData ? orgData.name : org;
+}
+
+/**
  * Creates a new organization in the `organizations` table with the specified name.
  *
  * @param organizationName - The name of the organization to create.
@@ -195,4 +209,12 @@ export async function removeContactsFromDatabase(
       deleteallcontacts: emails === undefined,
     });
   if (error) throw error;
+
+  if (emails && emails?.length > 0) {
+    useContactsStore().removeOldContacts(emails);
+  }
+}
+
+export function callPhoneNumber(phone: string) {
+  window.location.href = `tel:${phone}`;
 }

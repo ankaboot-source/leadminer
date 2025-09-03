@@ -1,5 +1,5 @@
 import { REACHABILITY } from '../../utils/constants';
-import { MessageField } from '../extractors/types';
+import { type MessageField } from '../extractors/engines/EmailMessage';
 
 export interface EmailMessageContent {
   header: any;

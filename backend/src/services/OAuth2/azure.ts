@@ -1,17 +1,14 @@
 import { AuthorizationCode } from 'simple-oauth2';
+import generateOAuthConfig from './utils';
 import ENV from '../../config';
 
-const config = {
-  client: {
-    id: ENV.AZURE_CLIENT_ID,
-    secret: ENV.AZURE_SECRET
-  },
-  auth: {
-    tokenHost: 'https://login.microsoftonline.com',
-    authorizePath: '/common/oauth2/v2.0/authorize',
-    tokenPath: '/common/oauth2/v2.0/token'
-  }
-};
+const config = generateOAuthConfig(
+  ENV.AZURE_CLIENT_ID,
+  ENV.AZURE_SECRET,
+  'https://login.microsoftonline.com',
+  '/common/oauth2/v2.0/authorize',
+  '/common/oauth2/v2.0/token'
+);
 
 const azureOAuth2Client = new AuthorizationCode(config);
 

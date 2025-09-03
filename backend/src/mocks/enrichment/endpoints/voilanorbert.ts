@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import axios from 'axios';
 import { Request, Response, Router } from 'express';
+import logger from '../../../utils/logger';
 import { SERVER_PORT } from '../config';
 
 const router = Router();
@@ -65,8 +66,10 @@ router.post(
       });
       return res;
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log((err as Error).message);
+      logger.error(
+        'Error when enriching using voilanorbert',
+        (err as Error).message
+      );
       return err;
     }
   }

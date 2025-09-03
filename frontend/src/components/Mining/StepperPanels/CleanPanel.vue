@@ -22,20 +22,17 @@
       class="w-full md:w-max"
       icon="pi pi-stop"
       icon-pos="right"
+      severity="danger"
+      outlined
       :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
-    <Button
-      class="w-full md:w-max"
-      severity="secondary"
-      :label="t('start_new_mining')"
-      @click="startNewMining"
-    />
   </div>
+  <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
+import { AcceptNewsLetter } from '~/utils/extras';
 import { FetchError } from 'ofetch';
-
 import ProgressCard from '@/components/ProgressCard.vue';
 
 const { t } = useI18n({
@@ -43,12 +40,13 @@ const { t } = useI18n({
 });
 
 const $toast = useToast();
-const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
-const verificationFinished = computed(() => $leadminerStore.cleaningFinished);
+const verificationFinished = computed(
+  () => !$leadminerStore.miningInterrupted && $leadminerStore.cleaningFinished,
+);
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
 );
@@ -72,15 +70,22 @@ function cleaningDoneNotification() {
   });
 }
 
+function cleaningFinished() {
+  cleaningDoneNotification();
+  const timeoutId = setTimeout(() => navigateTo('/contacts'), 10000);
+
+  onBeforeUnmount(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
 onMounted(() => {
   if (verificationFinished.value) {
-    cleaningDoneNotification();
-    navigateTo('/contacts');
+    cleaningFinished();
   } else {
     watch(verificationFinished, (finished) => {
       if (finished) {
-        cleaningDoneNotification();
-        navigateTo('/contacts');
+        cleaningFinished();
       }
     });
   }
@@ -113,11 +118,6 @@ async function haltCleaning() {
       throw error;
     }
   }
-}
-
-function startNewMining() {
-  $leadminerStore.$resetMining();
-  $stepper.$reset();
 }
 </script>
 

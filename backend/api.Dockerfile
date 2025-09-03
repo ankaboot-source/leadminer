@@ -18,4 +18,4 @@ COPY --from=build-stage /leadminer-api/dist .
 EXPOSE 8081
 EXPOSE 8021
 
-CMD ["node", "server.js"]
+CMD ["node", "--max-old-space-size=2048", "server.js"]

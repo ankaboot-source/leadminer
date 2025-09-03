@@ -7,7 +7,7 @@ export default function errorLogger(
   _res: Response,
   next: NextFunction
 ) {
-  logger.error(err.message, err);
+  logger.error('[middleware.errorLogger]:', err);
 
   next(err);
 }

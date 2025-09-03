@@ -1,7 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 interface BulkSubmitResponse {
   job_id: string;
@@ -68,12 +68,6 @@ interface BulkVerificationResultsResponse {
   results: EmailCheckOutput[];
 }
 
-interface RateLimiterOptions {
-  requests: number;
-  interval: number;
-  spaced: boolean;
-}
-
 interface ReacherConfig {
   host?: string;
   timeoutMs?: number;
@@ -86,7 +80,6 @@ interface ReacherConfig {
   gmailUseApi?: boolean;
   yahooUseApi?: boolean;
   hotmailUseHeadless?: string;
-  rateLimiter: RateLimiterOptions;
 }
 
 interface SMTPConfig {
@@ -104,14 +97,40 @@ interface ValidationOptions {
   fromEmail: string;
 }
 
+function extractWaitTime(errorMessage?: string): number {
+  const DEFAULT_WAIT_TIME = 10000; // 10 sec
+  const match = /(\d+(?:\.\d+)?)\s*s/.exec(errorMessage ?? '');
+  return match ? Math.ceil(parseFloat(match[1]) * 1000) : DEFAULT_WAIT_TIME;
+}
+
+async function reacherRequestWithRetry<T>(callback: () => Promise<T>) {
+  try {
+    return await callback();
+  } catch (error) {
+    const err = error as AxiosError;
+    const status = err.response?.status;
+    const message = (err.response?.data as { error?: string })?.error ?? '';
+    const shouldRetry = status === 429 && message.includes('wait');
+    if (!shouldRetry) throw err;
+
+    const waitTime = extractWaitTime(message);
+    console.info(
+      `[ReacherClient.reacherRequestWithRetry]: Rate limited. Waiting ${waitTime}ms before retrying`
+    );
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(true), waitTime);
+    });
+
+    return await callback();
+  }
+}
+
 export default class ReacherClient {
   static readonly SINGLE_VERIFICATION_PATH = '/v1/check_email';
 
   static readonly BULK_VERIFICATION_PATH = '/v0/bulk';
 
   private readonly api: AxiosInstance;
-
-  private readonly rate_limit_handler;
 
   private readonly smtpConfig: {
     from_email?: string;
@@ -137,17 +156,13 @@ export default class ReacherClient {
   } = {};
 
   constructor(
-    private readonly logger: Logger,
-    config: ReacherConfig
+    config: ReacherConfig,
+    private readonly rateLimiter: IRateLimiter,
+    private readonly logger: Logger
   ) {
     this.api = axios.create({
       baseURL: config.host
     });
-    this.rate_limit_handler = throttledQueue(
-      config.rateLimiter.requests,
-      config.rateLimiter.interval,
-      config.rateLimiter.spaced
-    );
 
     if (config.timeoutMs) {
       this.api.defaults.timeout = config.timeoutMs;
@@ -206,18 +221,20 @@ export default class ReacherClient {
     validationOptions?: ValidationOptions
   ): Promise<EmailCheckOutput> {
     try {
-      const { data } = await this.rate_limit_handler(() =>
-        this.api.post<EmailCheckOutput>(
-          ReacherClient.SINGLE_VERIFICATION_PATH,
-          {
-            to_email: email,
-            ...this.additionalSettings,
-            ...this.smtpConfig,
-            from_email: validationOptions
-              ? validationOptions.fromEmail
-              : this.smtpConfig.from_email
-          },
-          { signal: abortSignal }
+      const { data } = await this.rateLimiter.throttleRequests(() =>
+        reacherRequestWithRetry(() =>
+          this.api.post<EmailCheckOutput>(
+            ReacherClient.SINGLE_VERIFICATION_PATH,
+            {
+              to_email: email,
+              ...this.additionalSettings,
+              ...this.smtpConfig,
+              from_email: validationOptions
+                ? validationOptions.fromEmail
+                : this.smtpConfig.from_email
+            },
+            { signal: abortSignal }
+          )
         )
       );
       return { ...data, input: email };

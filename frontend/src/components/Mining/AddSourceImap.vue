@@ -15,12 +15,7 @@
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
         <label for="email_username">Email or Username</label>
-        <InputText
-          v-model="imapEmail"
-          :disabled="loadingSave"
-          class="w-full"
-          @click="resetAdvancedSettings"
-        />
+        <InputText v-model="imapEmail" :disabled="loadingSave" class="w-full" />
       </div>
       <div class="w-full flex flex-col gap-1">
         <label for="password">{{ $t('auth.password') }}</label>
@@ -111,7 +106,10 @@ const show = defineModel<boolean>('show');
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
+
 const imapSource = defineModel<MiningSource>('source');
+
+const $sourcePanel = useStepperSourcePanel();
 
 const imapAdvancedSettings = ref(false);
 
@@ -138,12 +136,6 @@ const isInvalidImapPort = (port: number) =>
 
 const invalidImapHost = (host: string | undefined) =>
   formErrors.host.value || !host?.length || host.length === 0;
-
-const resetAdvancedSettings = (): void => {
-  imapHost.value = '';
-  imapPort.value = 993;
-  imapSecureConnection.value = true;
-};
 
 function resetFormErrors() {
   Object.values(formErrors).forEach((error) => {
@@ -198,8 +190,9 @@ async function getImapConfigsForEmail(
             port: imapPort.value,
             secure: imapSecureConnection.value,
           }
-        : await $api<ImapConfigs | null>(`/imap/config/${email}`, {
+        : await useNuxtApp().$saasEdgeFunctions<ImapConfigs | null>('imap', {
             method: 'GET',
+            params: { email },
           });
     return configs;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -241,6 +234,7 @@ async function onSubmitImapCredentials() {
         isValid: true,
       };
       show.value = false;
+      $sourcePanel.hideOtherSources();
     }
   } catch (error) {
     if (error instanceof FetchError) {

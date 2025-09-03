@@ -88,7 +88,7 @@ export default defineNuxtConfig({
     locales: ['en', 'fr'],
     defaultLocale: 'en',
     strategy: 'no_prefix',
-    vueI18n: './i18n.config.ts', // if you are using custom path, default
+    vueI18n: '../i18n.config.ts', // if you are using custom path, default
     detectBrowserLanguage: {
       useCookie: true,
       cookieSecure: true,
@@ -142,6 +142,13 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
+    workbox: {
+      navigateFallback: undefined,
+      runtimeCaching: [],
+      skipWaiting: true,
+      clientsClaim: true,
+    },
+    injectRegister: 'auto',
     manifest: {
       id: 'leadminer',
       name: 'Leadminer',

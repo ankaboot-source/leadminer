@@ -4,7 +4,7 @@
     v-model:visible="visible"
     modal
     :header="t('import_csv_excel')"
-    pt:content:class="grow p-3 border-y border-slate-200"
+    pt:content:class="grow p-3 pt-0"
     pt:footer:class="p-3"
     :draggable="false"
     :maximizable="$screenStore?.size?.md"
@@ -13,30 +13,48 @@
   >
     <FileUpload
       ref="fileUpload"
+      pt:root:class="h-full"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
+      :pt:header:class="{ hidden: !contentJson }"
+      :pt:content:class="{
+        'flex flex-col ': true,
+        'pt-4 h-full w-full': !contentJson,
+      }"
       @select="onSelectFile($event)"
     >
       <template #header>
-        <div v-if="contentJson">{{ t('description') }}</div>
-        <template v-else> {{ null }}</template>
+        <div v-if="contentJson" class="w-full">
+          {{ t('select_column_description', { ROWS_SHOWN_NUMBER }) }}
+          <Message
+            v-if="unavailableEmailRows"
+            severity="warn"
+            class="mt-2"
+            size="small"
+          >
+            {{
+              t('unavailable_email_rows', {
+                n: unavailableEmailRows.length,
+                unavailableEmailRows: unavailableEmailRows
+                  .map((value) => ++value)
+                  .join(', '),
+              })
+            }}
+          </Message>
+        </div>
+        <template v-else>{{ null }}</template>
       </template>
 
       <template #content>
         <div
           v-if="!contentJson"
-          class="flex items-center justify-center flex-col gap-3"
+          class="flex flex-col items-center justify-center gap-3 m-auto"
         >
-          <template v-if="!uploadLoading">
-            <i
-              class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
-            />
-            <p>{{ t('drag_and_drop') }}</p>
-          </template>
-          <div v-else>
-            <ProgressSpinner />
-          </div>
+          <i
+            class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
+          />
+          <p>{{ t('drag_and_drop') }}</p>
 
           <Button
             v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
@@ -58,7 +76,7 @@
 
         <template v-else>
           <DataTable
-            :value="topFiveItems"
+            :value="parsedData"
             show-gridlines
             pt:tablecontainer:class="grow"
             scroll-height="flex"
@@ -67,6 +85,11 @@
             striped-rows
             size="small"
             scrollable
+            :current-page-report-template="`{first} - {last} / {totalRecords} ${t('contacts')}`"
+            paginator-template="
+            FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+            :paginator="true"
+            :rows="ROWS_SHOWN_NUMBER"
           >
             <Column
               v-for="col of columns"
@@ -99,6 +122,7 @@
                       !col.available_option.includes(data.value)
                   "
                   show-clear
+                  @value-change="handleSelectChangeEvent"
                 />
               </template>
 
@@ -135,11 +159,17 @@
 <script setup lang="ts">
 import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
-import csvToJson from 'convert-csv-to-json';
+import Papa from 'papaparse';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
+import readXlsxFile from 'read-excel-file';
+import type { Contact } from '~/types/contact';
 
 const SOURCE = 'file';
 const { t } = useI18n({
+  useScope: 'local',
+});
+
+const { t: $t } = useI18n({
   useScope: 'local',
 });
 const $leadminerStore = useLeadminerStore();
@@ -158,22 +188,25 @@ const fileUpload = ref();
 const fileName = ref<string>();
 const columns = ref<Column[]>([]);
 const parsedData = ref();
-const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
-const acceptedFiles = '.csv, .xls, .xlsx';
+const acceptedFiles = '.csv, .xlsx';
 const uploadFailed = ref(false);
 const uploadLoading = ref(false);
+const ROWS_SHOWN_NUMBER = 5;
 
-const options = [
-  { value: 'name', label: 'Name' },
+const options: {
+  value: keyof Contact;
+  label: string;
+}[] = [
+  { value: 'name', label: t('contact.name') },
   { value: 'email', label: 'Email' },
-  { value: 'given_name', label: 'Given name' },
-  { value: 'family_name', label: 'Family name' },
-  { value: 'alternate_names', label: 'Alternate names' },
-  { value: 'location', label: 'Location' },
-  { value: 'works_for', label: 'Works for' },
-  { value: 'job_title', label: 'Job title' },
-  { value: 'same_as', label: 'Same as' },
-  { value: 'image', label: 'Avatar URL' },
+  { value: 'given_name', label: $t('contact.given_name') },
+  { value: 'family_name', label: $t('contact.family_name') },
+  { value: 'alternate_name', label: $t('contact.alternate_name') },
+  { value: 'location', label: $t('contact.location') },
+  { value: 'works_for', label: $t('contact.works_for') },
+  { value: 'job_title', label: $t('contact.job_title') },
+  { value: 'same_as', label: $t('contact.same_as') },
+  { value: 'image', label: $t('contact.image') },
 ];
 
 const URL_OPTIONS = ['image', 'same_as'];
@@ -189,6 +222,7 @@ type Column = {
   key?: number;
   original_header?: string;
   available_option: string[];
+  unavailable_email_rows?: number[];
 };
 type Row = Record<string, string>;
 
@@ -202,29 +236,6 @@ const selectedHeaders = computed(() =>
 );
 const $screenStore = useScreenStore();
 
-const DELIMITERS = [',', ';', '|', '\t'];
-function getLocalDelimiter() {
-  const language = navigator?.language?.substring(0, 2);
-  switch (language) {
-    case 'fr':
-    case 'de':
-    case 'es':
-    case 'pt':
-    case 'it':
-      return ';';
-    default:
-      return ',';
-  }
-}
-function getOrderedDelimiters() {
-  const localDelimiter = getLocalDelimiter();
-  return [
-    localDelimiter,
-    ...DELIMITERS.filter((delimiter) => delimiter !== localDelimiter),
-  ];
-}
-const orderedDelimiters = getOrderedDelimiters();
-
 function reset() {
   fileUpload.value?.clear();
   contentJson.value = null;
@@ -233,60 +244,61 @@ function reset() {
   $leadminerStore.selectedFile = null;
 }
 
-function readFile(file: File): Promise<string | null> {
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.readAsText(file, 'UTF-8');
-    reader.onload = () => resolve(reader.result as string | null);
-    reader.onerror = () => reject(Error("Couldn't read the file."));
-  });
-}
-
 function isEmptyCell(cellValue: string) {
   return cellValue === '' || cellValue === undefined || cellValue === null;
 }
+
 function getColumns(rows: Row[]) {
   const keys = Object.keys(rows[0]);
-  const emailColumnIndexes = new Set<number>();
   const urlColumnIndexes = new Set<number>();
   const emptyColumnIndexes = new Set<number>();
+  const emailColumnIndexes = new Set<number>();
+  const emailFailedColumnIndexes: { [key: number]: number[] } = {};
 
   // Initialize sets with indexes from the first row
-  keys.forEach((key, index) => {
+  keys.forEach((key, col_index) => {
     const cellValue = String(rows[0][key]).toLowerCase();
-    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(index);
+    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(col_index);
     if (
       isValidURL(cellValue) ||
       cellValue === '' ||
       cellValue === undefined ||
       cellValue === null
     )
-      urlColumnIndexes.add(index);
+      urlColumnIndexes.add(col_index);
     if (cellValue === '' || cellValue === undefined || cellValue === null)
-      emptyColumnIndexes.add(index);
+      emptyColumnIndexes.add(col_index);
   });
   if (emailColumnIndexes.size === 0)
     throw new Error('No email column detected in the CSV data.');
 
   // Clean from sets based on next rows
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+  for (let row_index = 1; row_index < rows.length; row_index++) {
+    const row = rows[row_index];
     const row_keys = Object.keys(row);
     const validIndexes = new Set<number>([
       ...emailColumnIndexes,
       ...urlColumnIndexes,
     ]);
-    validIndexes.forEach((index) => {
-      const cellValue = String(row[row_keys[index]]).toLowerCase();
-      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue))
-        emailColumnIndexes.delete(index);
+    validIndexes.forEach((valid_index) => {
+      const cellValue = String(row[row_keys[valid_index]]).toLowerCase();
+      if (emailColumnIndexes.has(valid_index) && !REGEX_EMAIL.test(cellValue)) {
+        if (!emailFailedColumnIndexes[valid_index])
+          emailFailedColumnIndexes[valid_index] = [row_index];
+        else emailFailedColumnIndexes[valid_index].push(row_index);
+        console.debug(
+          `Email column fails at col ${valid_index} row ${row_index}:`,
+          row,
+          emailFailedColumnIndexes,
+        );
+      }
       if (
-        urlColumnIndexes.has(index) &&
+        urlColumnIndexes.has(valid_index) &&
         !(isValidURL(cellValue) || isEmptyCell(cellValue))
       )
-        urlColumnIndexes.delete(index);
-      if (emptyColumnIndexes.has(index) && !isEmptyCell(cellValue))
-        emptyColumnIndexes.delete(index);
+        urlColumnIndexes.delete(valid_index);
+      if (emptyColumnIndexes.has(valid_index) && !isEmptyCell(cellValue))
+        emptyColumnIndexes.delete(valid_index);
     });
   }
 
@@ -299,12 +311,36 @@ function getColumns(rows: Row[]) {
       (index) => !emptyColumnIndexes.has(index), // Remove empty columns
     ),
     emptyColumnIndexes: Array.from(emptyColumnIndexes),
+    emailFailedColumnIndexes,
   };
 }
 
-function createHeaders(rows: Row[]) {
-  const { emailColumnIndexes, urlColumnIndexes, emptyColumnIndexes } =
-    getColumns(rows);
+const unavailableEmailRows = ref<number[]>();
+function handleSelectChangeEvent(value: string | null) {
+  if (value === 'email' || value === null) {
+    updateUnavailableEmailRows();
+  }
+}
+
+function updateUnavailableEmailRows() {
+  unavailableEmailRows.value = columns.value.find(
+    (col) => col.header === 'email',
+  )?.unavailable_email_rows;
+}
+
+function createHeaders(rows: Row[]): {
+  original_header: string;
+  field: string;
+  header: keyof Contact | null;
+  available_option: string[];
+  unavailable_email_rows?: number[];
+}[] {
+  const {
+    emailColumnIndexes,
+    urlColumnIndexes,
+    emptyColumnIndexes,
+    emailFailedColumnIndexes,
+  } = getColumns(rows);
 
   console.debug(`Email able columns detected at index ${emailColumnIndexes}.`);
   console.debug(`URL able columns detected at index ${urlColumnIndexes}.`);
@@ -312,11 +348,7 @@ function createHeaders(rows: Row[]) {
 
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
-    const matchingOption = options.find(
-      (option) =>
-        key === option.label.replace(/\s/g, '') || key === option.value,
-    ); // https://github.com/iuccio/csvToJson/pull/68
-
+    const matchingOption = options.find((option) => key === option.value);
     const available_option = (() => {
       if (emptyColumnIndexes.includes(index)) return [];
       if (emailColumnIndexes.includes(index)) return ['email'];
@@ -331,7 +363,57 @@ function createHeaders(rows: Row[]) {
           ? 'email'
           : matchingOption?.value || null, // Map to email or label or null
       available_option,
+      ...(emailFailedColumnIndexes[index] && {
+        unavailable_email_rows: emailFailedColumnIndexes[index],
+      }),
     };
+  });
+}
+
+// Helper function to parse CSV file
+function parseCsvFile(file: File): Promise<Record<string, string>[]> {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      skipEmptyLines: true,
+      header: true,
+      complete: (results) => {
+        console.debug('Parsed CSV data:', results.data);
+        console.debug('Parsed CSV meta:', results.meta);
+        resolve(results.data as Record<string, string>[]);
+      },
+      error: (error) => {
+        console.error('Error parsing CSV:', error.message);
+        reject(new Error('No valid CSV content could be parsed.'));
+      },
+    });
+  });
+}
+
+// Helper function to parse XLSX file
+async function parseXlsxFile(file: File) {
+  const data = await readXlsxFile(file);
+  // Convert the array to header mapped objects
+  const header = data[0].map((h) => String(h ?? '')); // Convert to string
+  return data.slice(1).map((row) =>
+    header.reduce(
+      (obj, h, i) => {
+        obj[h] = String(row[i] ?? ''); // Also ensure values are strings if needed
+        return obj;
+      },
+      {} as { [key: string]: string },
+    ),
+  );
+}
+
+// Helper function to map row data with columns
+function mapRowData(data: Record<string, string>[], cols: Column[]): Row[] {
+  return data.map((row: Row) => {
+    const updatedRow: Row = {};
+    Object.keys(row).forEach((key, colIndex) => {
+      const field = cols[colIndex]?.field || key;
+      updatedRow[field] = row[key];
+    });
+    return updatedRow;
   });
 }
 
@@ -340,48 +422,31 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
   try {
-    fileName.value = file.name;
     console.debug({ 'Selected file:': file });
-    const content = await readFile(file);
-    if (!content) throw Error();
-    let successfullyParsed = false;
-    for (const delimiter of orderedDelimiters) {
-      try {
-        console.debug('Trying to parse using the delimiter:', delimiter);
-        // Parse CSV string to JSON
-        contentJson.value = csvToJson
-          .supportQuotedField(true)
-          .fieldDelimiter(delimiter)
-          .csvStringToJson(content);
-        if (
-          Array.isArray(contentJson.value) &&
-          contentJsonLength.value &&
-          contentJsonLength.value > 0
-        ) {
-          columns.value = createHeaders(contentJson.value);
-          successfullyParsed = true;
-          break;
-        } else {
-          throw Error('No valid CSV content could be parsed.');
-        }
-      } catch {
-        console.error('Failed parsing using the delimiter:', delimiter);
-        continue;
-      }
-    }
-    if (!successfullyParsed || !contentJson.value || !columns.value) {
-      throw new Error('No valid CSV content could be parsed.');
+    fileName.value = file.name;
+    contentJson.value = file.type.includes('csv')
+      ? await parseCsvFile(file)
+      : await parseXlsxFile(file);
+
+    console.debug({ fileContentJson: contentJson.value });
+    if (
+      !Array.isArray(contentJson.value) ||
+      !(contentJsonLength.value && contentJsonLength.value > 0)
+    ) {
+      throw Error('No valid CSV content could be parsed.');
     }
 
-    console.log({ columns: columns.value });
-    parsedData.value = contentJson.value.map((row: Row) => {
-      const updatedRow: Row = {};
-      Object.keys(row).forEach((key, colIndex) => {
-        const field = columns.value[colIndex]?.field || key;
-        updatedRow[field] = row[key];
-      });
-      return updatedRow;
-    });
+    columns.value = createHeaders(contentJson.value);
+    if (!columns.value) {
+      throw new Error('No valid CSV content could be parsed.');
+    }
+    if (!dialog.value.maximized && Object.keys(columns.value).length >= 4)
+      dialog.value.maximize(); // Fullscreen if more than 4 columns
+
+    updateUnavailableEmailRows();
+    console.debug({ columns: columns.value });
+
+    parsedData.value = mapRowData(contentJson.value, columns.value);
     console.debug({ parsedData: parsedData.value });
   } catch (error) {
     uploadFailed.value = true;
@@ -392,7 +457,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   }
 }
 
-function startMining() {
+async function startMining() {
   const parsedDataWithMappedHeaders: Row[] = parsedData.value.map(
     (row: Row) => {
       const updatedRow: Row = {};
@@ -404,6 +469,12 @@ function startMining() {
       return updatedRow;
     },
   );
+
+  // Remove rows with unavailable emails
+  unavailableEmailRows.value
+    ?.sort((a, b) => b - a)
+    ?.forEach((index) => parsedDataWithMappedHeaders.splice(index, 1));
+
   if (!Object.keys(parsedDataWithMappedHeaders[0]).includes('email')) {
     throw Error('An email field should be selected.');
   }
@@ -411,8 +482,9 @@ function startMining() {
     name: fileName.value ?? '',
     contacts: parsedDataWithMappedHeaders,
   };
+
+  await $leadminerStore.startMining(SOURCE);
   $stepper.next();
-  $leadminerStore.startMining(SOURCE);
   visible.value = false;
 }
 </script>
@@ -421,26 +493,32 @@ function startMining() {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
-    "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
+    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {ROWS_SHOWN_NUMBER} rows.",
+    "contacts": "contacts",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
     "start_mining_now": "Start mining now!",
-    "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
-    "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
+    "upload_tooltip": ".csv or .xlsx file max {maxSizeInMB}MB",
+    "upload_error": "Your file must be in one of the following formats: .csv or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
     "select_column_placeholder": "Select a field",
-    "email_column_required": "Select an email field"
+    "email_column_required": "Select an email field",
+    "contact": { "name": "Name" },
+    "unavailable_email_rows": "The following row won't be extracted due to an invalid email address: {unavailableEmailRows}. | The following {n} rows won't be extracted due to invalid email addresses: {unavailableEmailRows}."
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
+    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {ROWS_SHOWN_NUMBER} premières lignes.",
+    "contacts": "contacts",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
-    "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
-    "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
+    "upload_error": "Votre fichier doit être au format .csv ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
+    "upload_tooltip": "Fichier .csv ou .xlsx max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",
-    "email_column_required": "Sélectionnez un champ email"
+    "email_column_required": "Sélectionnez un champ email",
+    "contact": { "name": "Nom complet" },
+    "unavailable_email_rows": "La ligne suivante ne sera pas extraite en raison d'une adresse e-mail invalide : {unavailableEmailRows}. | Les {n} lignes suivantes ne seront pas extraites en raison d'adresses e-mail invalides : {unavailableEmailRows}."
   }
 }
 </i18n>

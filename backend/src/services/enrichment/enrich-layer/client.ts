@@ -1,18 +1,13 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 
 import { Logger } from 'winston';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 interface Config {
   url: string;
   apiKey: string;
-  rateLimiter: {
-    requests: number;
-    interval: number;
-    maxRetries: number;
-    spaced: boolean;
-  };
+  rateLimiter: IRateLimiter;
 }
 
 interface Experience {
@@ -74,7 +69,7 @@ export interface ReverseEmailLookupResponse {
   twitter_profile_url: string;
 }
 
-export default class ProxycurlApi {
+export default class EnrichLayerAPI {
   private readonly api: AxiosInstance;
 
   private readonly rateLimiter;
@@ -82,11 +77,7 @@ export default class ProxycurlApi {
   private readonly maxRetries: number = 5;
 
   constructor(
-    {
-      url,
-      apiKey,
-      rateLimiter: { requests, interval, maxRetries, spaced }
-    }: Config,
+    { url, apiKey, rateLimiter }: Config,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
@@ -95,8 +86,7 @@ export default class ProxycurlApi {
         Authorization: `Bearer ${apiKey}`
       }
     });
-    this.maxRetries = maxRetries ?? this.maxRetries;
-    this.rateLimiter = throttledQueue(requests, interval, spaced);
+    this.rateLimiter = rateLimiter;
   }
 
   async reverseEmailLookup({
@@ -107,9 +97,9 @@ export default class ProxycurlApi {
     const response = await this.rateLimitRetryWithExponentialBackoff(
       async () => {
         try {
-          const res = await this.rateLimiter(() =>
+          const res = await this.rateLimiter.throttleRequests(() =>
             this.api.get<ReverseEmailLookupResponse>(
-              '/api/linkedin/profile/resolve/email',
+              '/api/v2/profile/resolve/email',
               {
                 params: {
                   email,

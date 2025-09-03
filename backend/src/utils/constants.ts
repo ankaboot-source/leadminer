@@ -19,6 +19,7 @@ export const MAX_REDIS_PUBLISH_RETRIES_COUNT = 3;
 export const MAX_WORKER_TIMEOUT = 600000;
 export const MX_RESOLVER_TIMEOUT_MS = 3000;
 export const REGEX_HEADER_EMAIL_SPLIT_PATTERN = headerRegexEmailSplitPattern;
+export const SIGNATURE_EXTRACTION_STREAM = 'signature-extraction-stream';
 export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
@@ -26,6 +27,8 @@ export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
   /\s(\(?(via\s?.{1,20}?)|\((Google|Drive)\s?.{0,20}\))$/i;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+export const MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
+  /(?=(@hotmail|@yahoo|@live|@outlook|@msn|@wanadoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
 
 // Tagging
 
@@ -98,7 +101,9 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'feedback@',
   'mail@',
   'connect@',
-  'livraison@'
+  'livraison@',
+  'no_responder@',
+  'invitations@'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
@@ -178,5 +183,6 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'developpement@',
   'webmaster@',
   'service@',
-  'facture@'
+  'facture@',
+  'contacto@'
 ];

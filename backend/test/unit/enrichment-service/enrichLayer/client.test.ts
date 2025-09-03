@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import axios from 'axios';
 import { Logger } from 'winston';
-import ProxycurlApi, {
+import EnrichLayerAPI, {
   ReverseEmailLookupParams,
   ReverseEmailLookupResponse
-} from '../../../../src/services/enrichment/proxy-curl/client';
+} from '../../../../src/services/enrichment/enrich-layer/client';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
-// Mock dependencies
 jest.mock('axios');
 
 const mockLogger: Logger = {
@@ -20,19 +20,22 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-describe('ProxycurlApi', () => {
+const REACHER_THROTTLE_REQUESTS = 1;
+const REACHER_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  REACHER_THROTTLE_REQUESTS,
+  REACHER_THROTTLE_INTERVAL
+);
+
+describe('EnrichLayerAPI', () => {
   const config = {
     url: 'https://api.example.com',
     apiKey: 'dummy-api-key',
-    rateLimiter: {
-      requests: 5,
-      interval: 1000,
-      maxRetries: 3,
-      spaced: false
-    }
+    rateLimiter: RATE_LIMITER
   };
 
-  const proxyCurl = new ProxycurlApi(config, mockLogger);
+  const enrichLayer = new EnrichLayerAPI(config, mockLogger);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -55,14 +58,14 @@ describe('ProxycurlApi', () => {
         .mockImplementationOnce(() => Promise.reject(rateLimitError))
         .mockImplementationOnce(() => Promise.resolve(successResponse));
 
-      const response = await proxyCurl.reverseEmailLookup(params);
+      const response = await enrichLayer.reverseEmailLookup(params);
 
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3); // Initial attempt + 2 retries
       expect(mockLogger.info).toHaveBeenCalledWith(
-        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
+        '[EnrichLayerAPI:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
-        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 2 waiting 4000ms before retry'
+        '[EnrichLayerAPI:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 2 waiting 4000ms before retry'
       );
       expect(response.email).toBe(params.email);
     }, 10000);
@@ -78,21 +81,20 @@ describe('ProxycurlApi', () => {
         Promise.reject({ response: { status: 500 } })
       );
 
-      await expect(proxyCurl.reverseEmailLookup(params)).rejects.toThrow();
+      await expect(enrichLayer.reverseEmailLookup(params)).rejects.toThrow();
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).not.toHaveBeenCalledWith(
-        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
+        '[EnrichLayerAPI:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
       );
     });
 
-    it('should limit to 10 requests every 2 seconds', async () => {
+    it('should properly use rate limiter', async () => {
       const email = 'test@example.com';
       const params: ReverseEmailLookupParams = {
         email,
         lookup_depth: 'superficial',
         enrich_profile: 'skip'
       };
-
       mockAxiosInstance.get.mockReturnValue({
         data: {
           email,
@@ -105,19 +107,17 @@ describe('ProxycurlApi', () => {
         }
       });
 
-      const requests = Array.from({ length: 10 }, () =>
-        proxyCurl.reverseEmailLookup(params)
+      const startTime = Date.now();
+      const requests = [
+        await enrichLayer.reverseEmailLookup(params),
+        await enrichLayer.reverseEmailLookup(params),
+        await enrichLayer.reverseEmailLookup(params)
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(10);
     });
   });
 });

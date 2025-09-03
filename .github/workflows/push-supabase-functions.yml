@@ -10,17 +10,28 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
+      - name: Checkout source repository
         uses: actions/checkout@v3
 
-      - name: Push supabase functions to leadminer.io
-        uses: dmnemec/copy_file_to_another_repo_action@main
+      - name: Clone destination repository
+        run: |
+          git clone https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer.io.git leadminer.io
+
+      - name: Delete existing files in destination repo
+        run: |
+          rm -rf leadminer.io/supabase/functions/*
+
+      - name: Copy new files to destination repo
+        run: |
+          cp -r supabase/functions/. leadminer.io/supabase/functions/
+
+      - name: Commit and push changes
+        run: |
+          cd leadminer.io
+          git config user.name "deploy-leadminer"
+          git config user.email "deploy@leadminer.io"
+          git add -A
+          git commit -m "Update Supabase functions"
+          git push
         env:
-          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_PAT }}
-        with:
-          source_file: 'supabase/functions'
-          destination_repo: 'ankaboot-source/leadminer.io'
-          destination_folder: './saas-supabase/supabase'
-          user_email: 'deploy@leadminer.io'
-          user_name: 'deploy-bot'
-          commit_message: 'Updating supabase functions'
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_PAT }}

@@ -7,30 +7,30 @@
     :started="taskStartedAt"
     :progress="extractionProgress"
     :progress-tooltip="progressTooltip"
+    :mode="sourceType === 'file' ? 'indeterminate' : 'determinate'"
   >
     <template #progress-title>
       <div v-if="$leadminerStore.isLoadingBoxes">
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
       </div>
-      <div v-else-if="!$leadminerStore.miningTask">
-        {{ totalEmails.toLocaleString() }}
-        {{
-          extractionProgress < 1
-            ? t('emails_to_mine', totalEmails)
-            : t('emails_mined', totalEmails)
-        }}
+      <div v-else-if="!$leadminerStore.activeMiningTask">
+        {{ totalMined.toLocaleString() }}
+        {{ extractionProgress < 1 ? totalToMineMessage : totalMinedMessage }}
+      </div>
+      <div v-else>
+        <i class="pi pi-spin pi-spinner mr-1.5" />
+        {{ t('is_mining') }}
       </div>
     </template>
   </ProgressCard>
 
   <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
+      v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-settings-button"
       :disabled="
-        $leadminerStore.activeMiningTask ||
-        $leadminerStore.isLoadingStartMining ||
-        $leadminerStore.isLoadingBoxes
+        $leadminerStore.isLoadingStartMining || $leadminerStore.isLoadingBoxes
       "
       class="text-black"
       severity="secondary"
@@ -57,6 +57,8 @@
       :loading="$leadminerStore?.isLoadingStartMining"
       icon="pi pi-stop"
       icon-pos="right"
+      severity="danger"
+      outlined
       :label="t('halt_mining')"
       @click="haltMining"
     />
@@ -93,11 +95,12 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource;
 }>();
 
-const source = computed(() => (miningSource ? 'boxes' : 'file'));
+const sourceType = computed(() => (miningSource ? 'boxes' : 'file'));
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
+const $consentSidebar = useMiningConsentSidebar();
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
@@ -113,11 +116,11 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
-  if (source.value === 'file') {
+  if (sourceType.value === 'file') {
     return $leadminerStore.selectedFile?.contacts.length || 0;
   }
 
-  if (source.value === 'boxes' && boxes.value[0]) {
+  if (sourceType.value === 'boxes' && boxes.value[0]) {
     return objectScan(['**.{total}'], {
       joined: true,
        
@@ -137,7 +140,26 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
-const extractionFinished = computed(() => $leadminerStore.extractionFinished);
+const totalMined = computed(() =>
+  sourceType.value === 'boxes'
+    ? totalEmails.value
+    : $leadminerStore.createdContacts,
+);
+const totalToMineMessage = computed(() =>
+  $leadminerStore.miningType === 'email'
+    ? t('emails_to_mine', totalEmails.value)
+    : t('contacts_to_mine', totalEmails.value),
+);
+const totalMinedMessage = computed(() =>
+  $leadminerStore.miningType === 'email'
+    ? t('emails_mined', totalEmails.value)
+    : t('contacts_mined', $leadminerStore.createdContacts.toLocaleString()),
+);
+
+const extractionFinished = computed(
+  () =>
+    !$leadminerStore.miningInterrupted && $leadminerStore.extractionFinished,
+);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
 const extractionProgress = computed(() =>
@@ -147,14 +169,19 @@ const extractionProgress = computed(() =>
 );
 
 const progressTooltip = computed(() =>
-  t('mined_total_emails', {
-    extractedEmails: extractedEmails.value.toLocaleString(),
-    totalEmails: totalEmails.value.toLocaleString(),
-  }),
+  $leadminerStore.miningType === 'email'
+    ? t('mined_total_emails', {
+        extractedEmails: extractedEmails.value.toLocaleString(),
+        totalEmails: totalEmails.value.toLocaleString(),
+      })
+    : t('mined_total_contacts', {
+        extractedEmails: $leadminerStore.createdContacts.toLocaleString(),
+        totalEmails: totalEmails.value.toLocaleString(),
+      }),
 );
 
 onMounted(async () => {
-  if (source.value === 'file') {
+  if (sourceType.value === 'file') {
     return;
   }
 
@@ -172,9 +199,8 @@ onMounted(async () => {
   } catch (error) {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
-      throw error;
     } else {
-      useMiningConsentSidebar().show(miningSource.type, miningSource.email);
+      $consentSidebar.show(miningSource.type, miningSource.email);
     }
   }
 });
@@ -192,6 +218,16 @@ async function refineReloadContacts() {
   $contactsStore.subscribeToRealtimeUpdates();
 }
 
+const totalExtractedNotificationMessage = computed(() =>
+  sourceType.value === 'boxes'
+    ? t('contacts_extracted', {
+        extractedEmails: extractedEmails.value,
+      })
+    : t('notification_contacts_extracted', {
+        extractedEmails: $leadminerStore.createdContacts,
+      }),
+);
+
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
@@ -204,12 +240,9 @@ watch(extractionFinished, async (finished) => {
     await refineReloadContacts();
   } else if (finished) {
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('mining_done'),
-      detail: t('contacts_extracted', {
-        extractedEmails: extractedEmails.value,
-      }),
-      group: 'achievement',
+      detail: totalExtractedNotificationMessage,
       life: 5000,
     });
     $stepper.next();
@@ -218,9 +251,9 @@ watch(extractionFinished, async (finished) => {
 });
 
 function openMiningSettings() {
-  if (source.value === 'boxes') {
+  if (sourceType.value === 'boxes') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else if (source.value === 'file') {
+  } else if (sourceType.value === 'file') {
     importFileDialogRef.value.openModal();
   }
 }
@@ -242,21 +275,21 @@ async function startMiningBoxes() {
   }
   canceled.value = false;
   try {
-    await $leadminerStore.startMining(source.value);
+    await $leadminerStore.startMining(sourceType.value);
   } catch (error) {
     if (
       error instanceof FetchError &&
       error.response?.status === 401 &&
       $leadminerStore.activeMiningSource
     ) {
-      useMiningConsentSidebar().show(
+      $consentSidebar.show(
         $leadminerStore.activeMiningSource.type,
         $leadminerStore.activeMiningSource.email,
       );
     } else {
       $toast.add({
         severity: 'error',
-        summary: $t('start_mining'),
+        summary: $t('common.start_mining'),
         detail: t('mining_issue'),
         life: 3000,
       });
@@ -266,16 +299,16 @@ async function startMiningBoxes() {
 
 async function startMiningFile() {
   try {
-    await $leadminerStore.startMining(source.value);
+    await $leadminerStore.startMining(sourceType.value);
   } catch (error) {
     console.error(error);
   }
 }
 
 async function startMining() {
-  if (source.value === 'boxes') {
+  if (sourceType.value === 'boxes') {
     await startMiningBoxes();
-  } else if (source.value === 'file') {
+  } else if (sourceType.value === 'file') {
     await startMiningFile();
   }
 }
@@ -314,6 +347,11 @@ async function haltMining() {
 <i18n lang="json">
 {
   "en": {
+    "contacts_to_mine": "contact to mine. | contacts to mine.",
+    "contacts_mined": "contact mined. | contacts mined.",
+    "mined_total_contacts": "Mined / Total contact\n{extractedEmails} / {totalEmails}",
+    "notification_contacts_extracted": "{extractedEmails} contacts extracted from your file",
+
     "retrieving_mailboxes": "Retrieving mailboxes...",
     "emails_to_mine": "email to mine. | emails to mine.",
     "emails_mined": "email mined. | emails mined.",
@@ -322,7 +360,7 @@ async function haltMining() {
     "back": "Back",
     "mined_total_emails": "Mined / Total emails\n{extractedEmails} / {totalEmails}",
     "mining_done": "Mining done",
-    "contacts_extracted": "{extractedEmails} contacts extracted from your mailbox",
+    "contacts_extracted": "{extractedEmails} email messages extracted from your mailbox",
     "select_folders": "Select folders",
     "select_at_least_one_folder": "Please select at least one folder to start mining.",
     "mining_started": "Mining Started",
@@ -330,9 +368,14 @@ async function haltMining() {
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
     "mining_stopped": "Mining Stopped",
     "mining_canceled": "Your mining is successfully canceled.",
-    "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled."
+    "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled.",
+    "is_mining": "Contact extraction in progress..."
   },
   "fr": {
+    "contacts_to_mine": "contact à extraire. | contacts à extraire.",
+    "contacts_mined": "contact extrait. | contacts extraits.",
+    "mined_total_contacts": "Extraits / Total contacts\n{extractedEmails} / {totalEmails}",
+    "notification_contacts_extracted": "{extractedEmails} contacts extraits de votre fichier",
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
     "emails_to_mine": "email à extraire. | emails à extraire",
     "emails_mined": "email extrait. | emails extraits",
@@ -341,7 +384,7 @@ async function haltMining() {
     "back": "Retour",
     "mined_total_emails": "Extrait / Total des e-mails\n{extractedEmails} / {totalEmails}",
     "mining_done": "Extraction terminée",
-    "contacts_extracted": "{extractedEmails} contacts extraits de votre boîte aux lettres",
+    "contacts_extracted": "{extractedEmails} messages e-mail extraits de votre boîte aux lettres",
     "select_folders": "Sélectionnez des dossiers",
     "select_at_least_one_folder": "Veuillez sélectionner au moins un dossier pour commencer l'extraction.",
     "mining_started": "Extraction commencée",
@@ -349,7 +392,8 @@ async function haltMining() {
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
     "mining_stopped": "Extraction arrêtée",
     "mining_canceled": "Votre extraction a été annulée avec succès.",
-    "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée."
+    "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée.",
+    "is_mining": "Extraction des contacts en cours..."
   }
 }
 </i18n>
