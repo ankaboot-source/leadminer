@@ -15,11 +15,12 @@
     "dev:backend-api": "npm run dev:api --prefix ./backend",
     "dev:backend-worker": "npm run dev:worker --prefix ./backend",
     "dev:backend-email-worker": "npm run dev:email-worker --prefix ./backend",
+    "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
     "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
   "devDependencies": {
-    "supabase": "^2.2.1"
+    "supabase": "^2.19.7"
   }
 }
