@@ -18,7 +18,7 @@ function validateStringArray(key: string, value: any) {
     : null;
 }
 
-// skipcq: JS-0323
+// skipcq: JS-0296 
 function validateString(key: String, value: any) {
   return typeof value !== 'string' || value.trim() === '' 
     ? `${key} must be a non-empty string.`
