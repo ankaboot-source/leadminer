@@ -1,5 +1,5 @@
 import { expect, test} from '@jest/globals';
-import { validateType } from '../../src/utils/helpers/validation';
+import validateType from '../../src/utils/helpers/validation';
 
 
 /* TESTING EMPTY VALUE */
