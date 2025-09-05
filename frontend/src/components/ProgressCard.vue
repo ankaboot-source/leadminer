@@ -8,7 +8,7 @@
 
     <div id="progress-time" class="mb-3">
       <slot name="progress-time">
-        <div v-if="progressPercentage < 100">
+        <div v-if="progressPercentage > 0 && progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
@@ -114,12 +114,12 @@ onMounted(() => {
 {
   "en": {
     "finished_in": "Finished in {t}",
-    "estimated_time": "Estimated time: {t}",
+    "estimated_time": "The contact mining may take around 20 minutes depending on your inbox size",
     "remaining_time": "{t} remaining"
   },
   "fr": {
     "finished_in": "Terminé en {t}",
-    "estimated_time": "Temps estimé : {t}",
+    "estimated_time": "L'extraction de contacts peut prendre environ 20 minutes selon la taille de votre boîte mail",
     "remaining_time": "{t} restantes"
   }
 }
