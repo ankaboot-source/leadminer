@@ -74,9 +74,9 @@ function buildSequenceRanges(total: number, chunkSize: number): string[] {
 }
 
 export default class ImapEmailsFetcher {
-  private readonly CONNECTION_TIMEOUT_MS = 10000;
+  private readonly CONNECTION_TIMEOUT_MS = 20000;
 
-  private readonly EMAIL_TEXT_MAX_LENGTH = 4000;
+  private readonly EMAIL_TEXT_MAX_LENGTH = 3000;
 
   private readonly userIdentifier: string;
 
@@ -89,6 +89,8 @@ export default class ImapEmailsFetcher {
   public isCompleted = false;
 
   private isCanceled = false;
+
+  private hasAuthFailureLogged = false;
 
   private activeConnections = new Set<Connection>();
 
@@ -183,6 +185,22 @@ export default class ImapEmailsFetcher {
   }
 
   /**
+   * Checks if an error represents a fatal authentication failure that should stop.
+   * @param error - The error to check
+   * @returns True if this is an authentication failure
+   */
+  private static isAuthFailure(error: any): boolean {
+    return (
+      error?.authenticationFailed === true ||
+      error?.serverResponseCode === 'AUTHENTICATIONFAILED' ||
+      (error?.responseStatus === 'NO' &&
+        error?.responseText?.includes?.('Invalid credentials')) ||
+      error?.message?.includes?.('AUTHENTICATIONFAILED') ||
+      error?.message?.includes?.('Invalid credentials')
+    );
+  }
+
+  /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
   async getTotalMessages() {
@@ -250,7 +268,7 @@ export default class ImapEmailsFetcher {
       for (const folder of this.folders) {
         if (this.isCanceled) {
           logger.info(
-            `[${this.miningId}] Cancellation detected after processing folder ${folder}. No further folders will be processed.`
+            `[${this.miningId}] Cancellation requested; stopping before folder ${folder}`
           );
           break;
         }
@@ -265,10 +283,22 @@ export default class ImapEmailsFetcher {
           // eslint-disable-next-line no-await-in-loop
           await this.process;
         } catch (error) {
-          logger.error(
-            `[${this.miningId}] Error when fetching emails from folder ${folder}:`,
-            error
-          );
+          if (ImapEmailsFetcher.isAuthFailure(error)) {
+            if (!this.hasAuthFailureLogged) {
+              logger.error(
+                `[${this.miningId}] Authentication failed; aborting mining task`,
+                error
+              );
+              this.hasAuthFailureLogged = true;
+            }
+            this.isCanceled = true;
+            break;
+          } else {
+            logger.error(
+              `[${this.miningId}] Error when fetching emails from folder ${folder}:`,
+              error
+            );
+          }
         }
       }
 
@@ -315,6 +345,13 @@ export default class ImapEmailsFetcher {
         headers: true,
         bodyParts: ['HEADER', 'TEXT']
       })) {
+        if (this.isCanceled) {
+          logger.info(
+            `[${this.miningId}] Cancellation detected; stopping range ${range}`
+          );
+          break;
+        }
+
         processedCount += 1;
 
         const { seq, headers, envelope } = msg;
@@ -418,7 +455,7 @@ export default class ImapEmailsFetcher {
 
         header = null;
 
-        if (pipeline.length >= parallelBatchSize) {
+        if (publishedEmails >= parallelBatchSize) {
           await pipeline.exec();
           await publishFetchingProgress(this.miningId, publishedEmails);
           pipeline = redisClient.multi();
@@ -426,7 +463,7 @@ export default class ImapEmailsFetcher {
         }
       }
 
-      if (pipeline.length) {
+      if (publishedEmails > 0) {
         await pipeline.exec();
         await publishFetchingProgress(this.miningId, publishedEmails);
       }
@@ -558,6 +595,13 @@ export default class ImapEmailsFetcher {
     folderPath: string,
     totalInFolder: number
   ): Promise<void> {
+    if (this.isCanceled) {
+      logger.info(
+        `[${this.miningId}] Cancellation detected; skipping large folder processing for ${folderPath}`
+      );
+      return;
+    }
+
     logger.info(
       `[${this.miningId}] Parallel fetching ${totalInFolder} messages from ${folderPath}`
     );
@@ -600,6 +644,13 @@ export default class ImapEmailsFetcher {
 
     try {
       for (let i = 0; i < ranges.length; i += connections.length) {
+        if (this.isCanceled) {
+          logger.info(
+            `[${this.miningId}] Cancellation detected; stopping batch processing for ${folderPath}`
+          );
+          break;
+        }
+
         const batch = ranges.slice(i, i + connections.length);
         const batchTasks = batch.map((range, index) => {
           const connection = connections[index];
