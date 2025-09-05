@@ -48,7 +48,7 @@
     "html-entities": "^2.6.0",
     "imap": "^0.8.19",
     "imapflow": "^1.0.194",
-    "ioredis": "^5.6.1",
+    "ioredis": "^5.7.0",
     "is-url-http": "^2.3.9",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.12",
