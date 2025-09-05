@@ -126,7 +126,7 @@ export default class ImapEmailsFetcher {
     this.processSetKey = `caching:${miningId}`;
 
     if (this.fetchEmailBody) {
-      this.bodies.push('');
+      this.bodies.push('TEXT');
     }
   }
 
@@ -185,18 +185,26 @@ export default class ImapEmailsFetcher {
   }
 
   /**
-   * Checks if an error represents a fatal authentication failure that should stop.
+   * Checks if an error represents a fatal authentication failure.
    * @param error - The error to check
    * @returns True if this is an authentication failure
    */
-  private static isAuthFailure(error: any): boolean {
+  private static isAuthFailure(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const err = error as Record<string, unknown>;
+
     return (
-      error?.authenticationFailed === true ||
-      error?.serverResponseCode === 'AUTHENTICATIONFAILED' ||
-      (error?.responseStatus === 'NO' &&
-        error?.responseText?.includes?.('Invalid credentials')) ||
-      error?.message?.includes?.('AUTHENTICATIONFAILED') ||
-      error?.message?.includes?.('Invalid credentials')
+      err.authenticationFailed === true ||
+      err.serverResponseCode === 'AUTHENTICATIONFAILED' ||
+      (err.responseStatus === 'NO' &&
+        typeof err.responseText === 'string' &&
+        err.responseText.includes('Invalid credentials')) ||
+      (typeof err.message === 'string' &&
+        (err.message.includes('AUTHENTICATIONFAILED') ||
+          err.message.includes('Invalid credentials')))
     );
   }
 
@@ -343,7 +351,7 @@ export default class ImapEmailsFetcher {
         source: false,
         envelope: true,
         headers: true,
-        bodyParts: ['HEADER', 'TEXT']
+        bodyParts: this.bodies
       })) {
         if (this.isCanceled) {
           logger.info(
@@ -422,7 +430,7 @@ export default class ImapEmailsFetcher {
           })
         );
 
-        if (text && from && date) {
+        if (text.length && from && date) {
           pipeline.xadd(
             this.signatureStream,
             '*',
