@@ -325,7 +325,7 @@ export default defineNuxtPlugin(() => {
       session?.expires_at
         ? new Date(session.expires_at * 1000).toLocaleString()
         : 'unknown',
-      '\nNow:',
+      '\nLogged at:',
       new Date().toLocaleTimeString(),
     );
 
