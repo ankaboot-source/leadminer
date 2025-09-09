@@ -83,7 +83,6 @@ $supabaseClient.auth.onAuthStateChange((event) => {
 watch(idle, (isIdle) => {
   if (isIdle && !activeTask.value && user.value) {
     signOut();
-    reloadNuxtApp({ persistState: false, force: true });
   }
 });
 
