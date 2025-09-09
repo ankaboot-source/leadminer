@@ -272,11 +272,8 @@ export default defineNuxtPlugin(() => {
     // Delete user identities
     delete trimmedSession.user.identities;
 
-    const targetDate = new Date('2025-11-22T09:40:00Z');
-    const maxAge = Math.max(
-      0,
-      Math.floor((targetDate.getTime() - Date.now()) / 1000),
-    );
+    const maxAge = 60 * 60 * 24 * 30; // 30 days
+
     const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
 
     const cookies = createSupabaseCookies(
@@ -316,9 +313,24 @@ export default defineNuxtPlugin(() => {
     });
   }
 
-  supabase.auth.onAuthStateChange((_, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log(
+      'Auth event:',
+      event,
+      session,
+      `expires at ${
+        session?.expires_at !== undefined
+          ? new Date(session.expires_at * 1000)
+          : 'unknown'
+      }`,
+    );
+
     if (session) {
       newSession.value = session;
+
+      if (event === 'TOKEN_REFRESHED') {
+        overwriteSupabaseCookies(session);
+      }
     }
   });
 });
