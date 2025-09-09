@@ -315,14 +315,18 @@ export default defineNuxtPlugin(() => {
 
   supabase.auth.onAuthStateChange((event, session) => {
     console.log(
-      'Auth event:',
+      '%c[Debug]',
+      'color: DeepSkyBlue; font-weight: bold;',
+      '\nAuth Event:',
       event,
+      '\nSession:',
       session,
-      `expires at ${
-        session?.expires_at !== undefined
-          ? new Date(session.expires_at * 1000)
-          : 'unknown'
-      }`,
+      '\nExpires At:',
+      session?.expires_at
+        ? new Date(session.expires_at * 1000).toLocaleString()
+        : 'unknown',
+      '\nNow:',
+      new Date().toLocaleTimeString(),
     );
 
     if (session) {
