@@ -346,6 +346,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
+
+      await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
     }
   }
 
