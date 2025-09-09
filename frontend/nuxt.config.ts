@@ -122,7 +122,7 @@ export default defineNuxtConfig({
     key: process.env.SUPABASE_ANON_KEY,
     clientOptions: {
       auth: {
-        flowType: 'implicit',
+        flowType: 'pkce',
         detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,
