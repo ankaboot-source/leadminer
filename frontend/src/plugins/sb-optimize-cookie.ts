@@ -256,60 +256,60 @@ export default defineNuxtPlugin(() => {
   const { url, cookieName, cookieOptions } = useRuntimeConfig().public.supabase;
 
   const overwriteSupabaseCookies = (session: Session) => {
-    const trimmedSession: Session = {
-      ...session,
-      user: {
-        ...session.user,
-        user_metadata: {
-          ...session.user.user_metadata,
-          EmailTemplate: {
-            language: session.user.user_metadata.EmailTemplate?.language,
+    try {
+      const trimmedSession: Session = {
+        ...session,
+        user: {
+          ...session.user,
+          user_metadata: {
+            ...session.user.user_metadata,
+            EmailTemplate: {
+              language: session.user.user_metadata.EmailTemplate?.language,
+            },
           },
         },
-      },
-    };
+      };
 
-    // Delete user identities
-    delete trimmedSession.user.identities;
+      // Delete user identities
+      delete trimmedSession.user.identities;
 
-    const maxAge = 60 * 60 * 24 * 30; // 30 days
+      const maxAge = 60 * 60 * 24 * 30; // 30 days
 
-    const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
+      const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
 
-    const cookies = createSupabaseCookies(
-      storageName,
-      JSON.stringify(trimmedSession),
-      cookieOptions,
-    );
-
-    if (cookies.length > 0) {
-      deleteSupabaseCookies(
-        [storageName],
-        cookies.map(({ name }) => name),
+      const cookies = createSupabaseCookies(
+        storageName,
+        JSON.stringify(trimmedSession),
+        cookieOptions,
       );
-      cookies.forEach(({ name, value: val }) => {
-        const cookie = useCookie(name, {
-          maxAge,
-          path: '/',
-          sameSite: cookieOptions.sameSite as
-            | 'lax'
-            | 'strict'
-            | 'none'
-            | undefined,
-          secure: cookieOptions.secure,
+
+      if (cookies.length > 0) {
+        deleteSupabaseCookies(
+          [storageName],
+          cookies.map(({ name }) => name),
+        );
+        cookies.forEach(({ name, value: val }) => {
+          const cookie = useCookie(name, {
+            maxAge,
+            path: '/',
+            sameSite: cookieOptions.sameSite as
+              | 'lax'
+              | 'strict'
+              | 'none'
+              | undefined,
+            secure: cookieOptions.secure,
+          });
+          cookie.value = val;
         });
-        cookie.value = val;
-      });
+      }
+    } catch (error) {
+      console.error('Error overwriting Supabase cookies:', error);
     }
   };
 
   if (import.meta.client) {
     watch(newSession, (session) => {
-      try {
-        if (session) overwriteSupabaseCookies(session);
-      } catch (error) {
-        console.error('Error overwriting Supabase cookies:', error);
-      }
+      if (session) overwriteSupabaseCookies(session);
     });
   }
 
@@ -327,10 +327,6 @@ export default defineNuxtPlugin(() => {
 
     if (session) {
       newSession.value = session;
-
-      if (event === 'TOKEN_REFRESHED') {
-        overwriteSupabaseCookies(session);
-      }
     }
   });
 });
