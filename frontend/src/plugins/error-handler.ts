@@ -62,6 +62,14 @@ export default defineNuxtPlugin((nuxtApp) => {
     if (isExpectedFaultyCode(error)) return;
 
     if (isUnauthorized(error)) {
+      console.log(
+        '%c[Debug]',
+        'color: DeepSkyBlue; font-weight: bold;',
+        '\nisUnauthorized() triggered.',
+        '\nPrinted at:',
+        new Date().toLocaleTimeString(),
+      );
+
       toastService.add({
         summary: 'Session Expired',
         severity: 'warn',

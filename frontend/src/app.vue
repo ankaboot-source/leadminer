@@ -83,6 +83,13 @@ $supabaseClient.auth.onAuthStateChange((event) => {
 watch(idle, (isIdle) => {
   if (isIdle && !activeTask.value && user.value) {
     signOut();
+    console.log(
+      '%c[Debug]',
+      'color: DeepSkyBlue; font-weight: bold;',
+      '\nidle signOut() triggered.',
+      '\nPrinted at:',
+      new Date().toLocaleTimeString(),
+    );
   }
 });
 
