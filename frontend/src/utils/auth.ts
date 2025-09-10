@@ -31,6 +31,13 @@ export function clearPersistedData() {
 }
 
 export function signOutManually() {
+  console.log(
+    '%c[Debug]',
+    'color: DeepSkyBlue; font-weight: bold;',
+    '\nsignOutManually() triggered.',
+    '\nPrinted at:',
+    new Date().toLocaleTimeString(),
+  );
   sse.closeConnection();
   clearPersistedData();
   useResetStore().all();
@@ -40,6 +47,14 @@ export function signOutManually() {
 }
 
 export async function signOut() {
+  console.log(
+    '%c[Debug]',
+    'color: DeepSkyBlue; font-weight: bold;',
+    '\nsignOut() triggered.',
+    '\nPrinted at:',
+    new Date().toLocaleTimeString(),
+  );
+
   const { error } = await useSupabaseClient().auth.signOut();
   useSupabaseUser().value = null;
   useSupabaseUserProfile().value = null;
