@@ -62,14 +62,14 @@
 </template>
 
 <script setup lang="ts">
-import { signOutManually } from './utils/auth';
-import { reloadNuxtApp } from 'nuxt/app';
 import { useIdle } from '@vueuse/core';
+import { reloadNuxtApp } from 'nuxt/app';
+import { signOutManually } from './utils/auth';
 const user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
-const activeMiningTask = computed(() => $leadminerStore.activeMiningTask);
+const activeTask = computed(() => $leadminerStore.activeTask);
 const $supabaseClient = useSupabaseClient();
-const { idle, reset } = useIdle(30 * 60 * 1000); // 30 min timeout
+const { idle, reset } = useIdle(60 * 60 * 1000); // 1 hour timeout
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
@@ -81,13 +81,12 @@ $supabaseClient.auth.onAuthStateChange((event) => {
   }
 });
 watch(idle, (isIdle) => {
-  if (isIdle && !activeMiningTask.value && user.value) {
+  if (isIdle && !activeTask.value && user.value) {
     signOut();
-    reloadNuxtApp({ persistState: false, force: true });
   }
 });
 
-watch(activeMiningTask, () => {
+watch(activeTask, () => {
   reset();
 });
 

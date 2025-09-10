@@ -475,6 +475,7 @@ export default class ImapEmailsFetcher {
         // Execute batch if needed
         if (pipeline.length >= batchSize) {
           await this.executePipelineBatch(pipeline, publishedEmails);
+
           pipeline = redisClient.multi();
           publishedEmails = 0;
         }
