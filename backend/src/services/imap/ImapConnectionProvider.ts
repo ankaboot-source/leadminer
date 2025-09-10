@@ -177,8 +177,15 @@ class ImapConnectionProvider {
         }
       },
       destroy: async (connection) => {
-        await connection.logout();
-        logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
+        try {
+          await connection.logout();
+          logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
+        } catch (err) {
+          logger.error(
+            '[ImapConnectionProvider]: Error destroying connection',
+            err
+          );
+        }
       }
     };
 
