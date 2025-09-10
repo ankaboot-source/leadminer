@@ -44,8 +44,6 @@ export async function signOut() {
   useSupabaseUser().value = null;
   useSupabaseUserProfile().value = null;
   if (error) {
-    reloadNuxtApp({
-      persistState: false,
-    });
+    reloadNuxtApp({ persistState: false });
   }
 }
