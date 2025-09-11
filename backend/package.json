@@ -49,7 +49,7 @@
     "imap": "^0.8.19",
     "imapflow": "^1.0.194",
     "ioredis": "^5.7.0",
-    "is-url-http": "^2.3.9",
+    "is-url-http": "^2.3.10",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.12",
     "limiter": "^3.0.0",
