@@ -236,45 +236,90 @@ export default class ImapEmailsFetcher {
     return total;
   }
 
+  async getAvailableConnections(): Promise<number> {
+    const clients: any[] = [];
+    const attempts = Array.from(
+      { length: ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER },
+      (_, i) => i
+    );
+
+    const results = await Promise.allSettled(
+      attempts.map(async () => {
+        const conn = await this.imapConnectionProvider.acquireConnection();
+        clients.push(conn);
+        return true;
+      })
+    );
+
+    // Count how many succeeded
+    const count = results.filter((r) => r.status === 'fulfilled').length;
+
+    // Cleanup
+    await Promise.all(
+      clients.map((c) =>
+        this.imapConnectionProvider.releaseConnection(c).catch(() => {
+        })
+      )
+    );
+
+    logger.info(`Server approved ${count} connections`);
+    return count;
+  }
+
   /**
    * Fetches all email messages in the configured boxes.
    */
   async fetchEmailMessages() {
     const emailJobs: EmailJob[] = [];
-    let connection: Connection | null = null;
-    try {
-      connection = await this.imapConnectionProvider.acquireConnection();
 
-      for (const folder of this.folders) {
-        if (EXCLUDED_IMAP_FOLDERS.includes(folder)) continue;
+    // Adapt queue to use the available connections.
+    this.emailsQueue.concurrency = await this.getAvailableConnections();
 
-        let totalInFolder = 0;
-        /* eslint-disable-next-line no-await-in-loop */
-        const mailbox = await connection.mailboxOpen(folder, {
-          readOnly: true
-        });
-        totalInFolder = mailbox.exists;
-        /* eslint-disable-next-line no-await-in-loop */
-        await connection.mailboxClose();
+    const foldersToProcess = this.folders.filter(
+      (f) => !EXCLUDED_IMAP_FOLDERS.includes(f)
+    );
 
-        if (totalInFolder === 0) continue;
-
-        // Create jobs with connection assignment
-        const ranges = buildSequenceRanges(
-          totalInFolder,
-          ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
-        );
-
-        ranges.forEach((range) => {
-          emailJobs.push({
-            folder,
-            range,
-            totalInFolder
+    // Map folders to async jobs
+    await Promise.all(
+      foldersToProcess.map(async (folder) => {
+        const connection = await this.imapConnectionProvider.acquireConnection();
+        try {
+          const mailbox = await connection.mailboxOpen(folder, {
+            readOnly: true
           });
-        });
-      }
+          const totalInFolder = mailbox.exists;
 
-      await this.imapConnectionProvider.releaseConnection(connection);
+          await connection.mailboxClose();
+
+          if (totalInFolder === 0) return;
+
+          const ranges = buildSequenceRanges(
+            totalInFolder,
+            ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+          );
+
+          logger.debug(
+            `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
+          );
+          ranges.forEach((range) => {
+            emailJobs.push({
+              folder,
+              range,
+              totalInFolder
+            });
+          });
+        } catch (err) {
+          logger.warn(
+            `Failed to process folder ${folder}: ${(err as Error).message}`
+          );
+        } finally {
+          if (connection) {
+            await this.imapConnectionProvider.releaseConnection(connection);
+          }
+        }
+      })
+    );
+    try {
       emailJobs.map((job) =>
         this.emailsQueue.add(() => this.processEmailJob(job))
       );
@@ -285,10 +330,6 @@ export default class ImapEmailsFetcher {
       logger.info(`[${this.miningId}] All email jobs completed`);
     } catch (err) {
       logger.error(err);
-    } finally {
-      if (connection) {
-        await this.imapConnectionProvider.releaseConnection(connection);
-      }
     }
   }
 
