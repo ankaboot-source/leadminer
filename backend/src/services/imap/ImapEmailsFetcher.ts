@@ -257,8 +257,7 @@ export default class ImapEmailsFetcher {
     // Cleanup
     await Promise.all(
       clients.map((c) =>
-        this.imapConnectionProvider.releaseConnection(c).catch(() => {
-        })
+        this.imapConnectionProvider.releaseConnection(c).catch(() => {})
       )
     );
 
@@ -282,7 +281,8 @@ export default class ImapEmailsFetcher {
     // Map folders to async jobs
     await Promise.all(
       foldersToProcess.map(async (folder) => {
-        const connection = await this.imapConnectionProvider.acquireConnection();
+        const connection =
+          await this.imapConnectionProvider.acquireConnection();
         try {
           const mailbox = await connection.mailboxOpen(folder, {
             readOnly: true
@@ -361,9 +361,11 @@ export default class ImapEmailsFetcher {
     for await (const msg of this.createFetchStream(connection, range)) {
       if (this.isCanceled) break;
 
+      let header: Record<string, string[]>;
       const { seq, headers, envelope } = msg;
 
-      let header: Record<string, string[]>;
+      if (envelope?.from?.pop()?.address === this.userEmail) continue;
+
       try {
         header = parseHeader((headers as Buffer).toString('utf8'));
       } catch {
