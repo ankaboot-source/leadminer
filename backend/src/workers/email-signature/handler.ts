@@ -78,16 +78,16 @@ export class EmailSignatureProcessor {
     const { userId, miningId, data: payload } = data;
     const { from, messageDate } = payload.header ?? {};
 
-    this.logging.debug('process() start', {
-      userId,
-      miningId,
-      from,
-      messageDate
-    });
-
     const shouldProcess = await this.isWorthProcessing(data);
 
     if (shouldProcess) {
+      this.logging.debug('Processing new signature', {
+        userId,
+        miningId,
+        from,
+        messageDate
+      });
+
       await this.handleNewSignature(
         userId,
         miningId,
