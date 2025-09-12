@@ -114,12 +114,12 @@ onMounted(() => {
 {
   "en": {
     "finished_in": "Finished in {t}",
-    "estimated_time": "The contact mining may take around 20 minutes depending on your inbox size",
+    "estimated_time": "The contact mining may take around {t}",
     "remaining_time": "{t} remaining"
   },
   "fr": {
     "finished_in": "Terminé en {t}",
-    "estimated_time": "L'extraction de contacts peut prendre environ 20 minutes selon la taille de votre boîte mail",
+    "estimated_time": "L'extraction de contacts peut prendre environ {t}",
     "remaining_time": "{t} restantes"
   }
 }
