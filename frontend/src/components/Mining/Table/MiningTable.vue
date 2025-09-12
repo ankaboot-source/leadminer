@@ -33,8 +33,8 @@
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
-    :rows="150"
-    :rows-per-page-options="[150, 500, 1000]"
+    :rows="rowsPerPage"
+    :rows-per-page-options="rowsPerPageOptions"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -817,8 +817,10 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
-
 const contactsLength = computed(() => $contactsStore.contactCount);
+
+const rowsPerPageOptions = [20, 50, 150, 500, 1000];
+const rowsPerPage = ref(150);
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
@@ -872,6 +874,7 @@ watch(
       $leadminerStore.cleaningFinished = false;
       filtersStore.clearFilter();
       filtersStore.onNameToggle(true); // toggle on name filter on start mining
+      rowsPerPage.value = 20;
     } else {
       $leadminerStore.cleaningFinished = true;
       filtersStore.toggleFilters();
