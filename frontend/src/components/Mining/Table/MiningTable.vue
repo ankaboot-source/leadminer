@@ -871,6 +871,7 @@ watch(
     if (isActive) {
       $leadminerStore.cleaningFinished = false;
       filtersStore.clearFilter();
+      filtersStore.onNameToggle(true); // toggle on name filter on start mining
     } else {
       $leadminerStore.cleaningFinished = true;
       filtersStore.toggleFilters();
