@@ -2,6 +2,7 @@
   <ProgressCard
     :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
+    :current="verifiedContacts"
     :rate="3"
     :started="taskStartedAt"
     :progress="verificationProgress"
@@ -31,9 +32,9 @@
   <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
-import { AcceptNewsLetter } from '~/utils/extras';
-import { FetchError } from 'ofetch';
 import ProgressCard from '@/components/ProgressCard.vue';
+import { FetchError } from 'ofetch';
+import { AcceptNewsLetter } from '~/utils/extras';
 
 const { t } = useI18n({
   useScope: 'local',

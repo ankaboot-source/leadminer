@@ -36,10 +36,15 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
+const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
+const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
+
 const props = defineProps({
   status: { type: Boolean, required: true },
   rate: { type: Number, required: true },
   total: { type: Number, default: 0 },
+  current: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
   started: { type: Number, default: 0 },
   // skipcq: JS-0715 - Is used in the template
@@ -72,7 +77,11 @@ watchEffect(() => {
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
 
-  if (props.progress < 0.01 || elapsedTime === 0) {
+  if (
+    props.current < SUFFICIENT_ITEMS_FOR_ESTIMATION &&
+    (props.progress < MIN_PROGRESS_FOR_ESTIMATION ||
+      elapsedTime < MIN_ELAPSED_FOR_ESTIMATION)
+  ) {
     return Math.round(props.total / props.rate);
   }
 
