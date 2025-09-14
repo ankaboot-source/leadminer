@@ -33,8 +33,8 @@
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
-    :rows="150"
-    :rows-per-page-options="[150, 500, 1000]"
+    :rows="rowsPerPage"
+    :rows-per-page-options="rowsPerPageOptions"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -817,8 +817,11 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
-
 const contactsLength = computed(() => $contactsStore.contactCount);
+
+const DEFAULT_ROWS_PER_PAGE = 150;
+const rowsPerPageOptions = [20, 50, 150, 500, 1000];
+const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
@@ -864,16 +867,21 @@ function toggleSettingsPanel(event: Event) {
 function onFilter($event: DataTableFilterEvent) {
   filteredContacts.value = $event.filteredValue;
 }
-
+function optimizeTableForMining() {
+  filtersStore.onNameToggle(true); // toggle on name filter on start mining
+  rowsPerPage.value = 20; // Lower rows per page for better performance
+}
 watch(
   () => $leadminerStore.activeMiningTask,
   (isActive) => {
     if (isActive) {
       $leadminerStore.cleaningFinished = false;
       filtersStore.clearFilter();
+      optimizeTableForMining();
     } else {
       $leadminerStore.cleaningFinished = true;
       filtersStore.toggleFilters();
+      rowsPerPage.value = DEFAULT_ROWS_PER_PAGE;
     }
   },
 );
