@@ -72,7 +72,7 @@ watchEffect(() => {
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
 
-  if (props.progress < 0.1 || elapsedTime === 0) {
+  if (props.progress < 0.01 || elapsedTime === 0) {
     return Math.round(props.total / props.rate);
   }
 
