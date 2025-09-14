@@ -4,7 +4,7 @@
     v-tooltip.top="
       !isRemoveDisabled && t('remove_contacts', contactsToDeleteLength)
     "
-    icon="pi pi-times"
+    icon="pi pi-trash"
     :label="$screenStore.size.md ? t('remove') : undefined"
     severity="danger"
     outlined
