@@ -39,7 +39,7 @@ const { t } = useI18n({
 const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
 const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
 const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
-const PROGRESS_UPDATE_INTERVAL = 1000 * 60; // update estimation once per 1 minute
+const ESTIMATION_UPDATE_INTERVAL = 1000 * 60; // update progress estimation once per 1 minute
 
 const props = defineProps({
   status: { type: Boolean, required: true },
@@ -105,7 +105,7 @@ const estimatedRemainingTimeConverted = ref(getEstimationString());
 onMounted(() => {
   const progressEstimator = setInterval(() => {
     estimatedRemainingTimeConverted.value = getEstimationString();
-  }, PROGRESS_UPDATE_INTERVAL);
+  }, ESTIMATION_UPDATE_INTERVAL);
 
   watch(
     () => props.status,
