@@ -280,19 +280,62 @@
                 {{ data.email }}
               </div>
             </div>
+
             <div
-              v-if="data.same_as && visibleColumns.includes('same_as')"
+              v-if="
+                (data.same_as && visibleColumns.includes('same_as')) ||
+                (data.telephone && visibleColumns.includes('telephone'))
+              "
               class="flex md:hidden gap-2"
             >
-              <social-links :social-links="data.same_as" :small="true" />
+              <template
+                v-if="data.telephone && visibleColumns.includes('telephone')"
+              >
+                <Chip
+                  v-for="(phone, index) in data.telephone"
+                  :key="index"
+                  v-tooltip="phone"
+                  :href="`tel:${phone}`"
+                  icon="pi pi-phone"
+                  class="cursor-pointer"
+                  unstyled
+                  @click="callPhoneNumber(phone)"
+                />
+              </template>
+              <template
+                v-if="data.same_as && visibleColumns.includes('same_as')"
+              >
+                <social-links :social-links="data.same_as" :small="true" />
+              </template>
             </div>
           </div>
           <div class="flex items-center">
             <div
-              v-if="data.same_as && visibleColumns.includes('same_as')"
+              v-if="
+                (data.same_as && visibleColumns.includes('same_as')) ||
+                (data.telephone && visibleColumns.includes('telephone'))
+              "
               class="hidden md:flex gap-2"
             >
-              <social-links :social-links="data.same_as" :small="true" />
+              <template
+                v-if="data.telephone && visibleColumns.includes('telephone')"
+              >
+                <Chip
+                  v-for="(phone, index) in data.telephone"
+                  :key="index"
+                  v-tooltip="phone"
+                  :href="`tel:${phone}`"
+                  icon="pi pi-phone"
+                  class="cursor-pointer"
+                  unstyled
+                  @click="callPhoneNumber(phone)"
+                />
+              </template>
+              <template
+                v-if="data.same_as && visibleColumns.includes('same_as')"
+              >
+                <social-links :social-links="data.same_as" :small="true" />
+              </template>
             </div>
             <Button
               rounded
@@ -608,34 +651,6 @@
       </template>
       <template #body="{ data }">
         <div>{{ data.alternate_email?.join(', ') }}</div>
-      </template>
-    </Column>
-
-    <!-- Phone numbers -->
-    <Column
-      v-if="visibleColumns.includes('telephone')"
-      field="telephone"
-      sortable
-      :show-filter-operator="false"
-      :show-add-button="false"
-    >
-      <template #header>
-        <div v-tooltip.top="$t('contact.telephone_definition')">
-          {{ $t('contact.telephone') }}
-        </div>
-      </template>
-      <template #body="{ data }">
-        <div class="flex flex-wrap gap-1">
-          <Chip
-            v-for="(phone, index) in data.telephone"
-            :key="index"
-            :label="phone"
-            :href="`tel:${phone}`"
-            icon="pi pi-phone"
-            class="cursor-pointer"
-            @click="callPhoneNumber(phone)"
-          />
-        </div>
       </template>
     </Column>
 
@@ -1049,12 +1064,12 @@ const visibleColumnsOptions = [
   { label: $t('contact.family_name'), value: 'family_name' },
   { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.alternate_email'), value: 'alternate_email' },
-  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },
   { label: $t('contact.name'), value: 'name' },
   { label: $t('contact.same_as'), value: 'same_as' },
+  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
@@ -1140,6 +1155,7 @@ onNuxtReady(async () => {
     'contacts',
     'name',
     'same_as',
+    'telephone',
     'image',
     ...($screenStore.width > 550 ? ['occurrence'] : []),
     ...($screenStore.width > 700 ? ['recency'] : []),
@@ -1148,9 +1164,7 @@ onNuxtReady(async () => {
   ];
 
   await $contactsStore.reloadContacts();
-  if (contacts?.value?.some((contact) => contact.telephone !== null)) {
-    visibleColumns.value.push('telephone');
-  }
+
   $contactsStore.subscribeToRealtimeUpdates();
 
   scrollHeightObserver.value = new ResizeObserver(() => {
