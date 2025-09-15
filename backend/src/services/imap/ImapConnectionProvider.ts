@@ -102,7 +102,6 @@ class ImapConnectionProvider {
 
     connection.on('error', (err) => {
       logger.error('ImapFlow connection error:', err);
-      throw err;
     });
 
     try {
