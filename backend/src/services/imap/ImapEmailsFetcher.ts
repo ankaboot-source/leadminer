@@ -8,37 +8,14 @@ import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
-import { EmailMessage } from './types';
 import ENV from '../../config';
 
 const redisClient = redis.getClient();
-
-interface StreamPipeline {
-  stream: string;
-  data: EmailMessage;
-}
 
 interface EmailJob {
   folder: string;
   range: string;
   totalInFolder: number;
-}
-
-/**
- * Publishes an email message to a Redis stream.
- * @param streams - Array contains stream name and the data to publish
- * @returns A promise that resolves when the message is successfully published.
- */
-async function publishStreamsPipeline(
-  streams: StreamPipeline[]
-): Promise<void> {
-  const pipeline = redisClient.multi();
-
-  streams.forEach(({ stream, data }) => {
-    pipeline.xadd(stream, '*', 'message', JSON.stringify(data));
-  });
-
-  await pipeline.exec();
 }
 
 /**
@@ -521,57 +498,43 @@ export default class ImapEmailsFetcher {
         this.isCanceled = true;
       }
 
-      if (this.emailsQueue.size > 0 || this.emailsQueue.pending > 0) {
-        logger.info(
-          `[${this.miningId}] Stopping emailsQueue queue: ${this.emailsQueue.size} queued, ${this.emailsQueue.pending} pending`
-        );
-
-        if (cancel) {
-          // Clear pending tasks on cancellation
-          this.emailsQueue.clear();
-        } else {
-          // Wait for current tasks to complete gracefully
-          await this.emailsQueue.onIdle();
-        }
-      }
-
       logger.info(
         `[${this.miningId}] Publishing final signature stream message...`
       );
 
       // Notify signature worker fetching is ended
-      await publishStreamsPipeline([
-        {
-          stream: this.signatureStream,
+      await redisClient.xadd(
+        this.signatureStream,
+        '*',
+        'message',
+        JSON.stringify({
+          type: 'email',
           data: {
-            type: 'email',
-            data: {
-              header: {},
-              body: '',
-              seqNumber: -1,
-              folderPath: '',
-              isLast: true
-            },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          }
-        }
-      ]);
+            header: {},
+            body: '',
+            seqNumber: -1,
+            folderPath: '',
+            isLast: true
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        })
+      );
 
       logger.info(
         `[${this.miningId}] Fetching process ${cancel ? 'canceled' : 'stopped'} successfully`
       );
-
-      // Cleanup operations
-      await redisClient.unlink(this.processSetKey);
-      await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
-
       return this.isCompleted;
     } catch (error) {
       logger.error(`[${this.miningId}] Error during stop process:`, error);
       throw error;
+    } finally {
+      // Cleanup operations
+      this.emailsQueue.clear();
+      await redisClient.unlink(this.processSetKey);
+      await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     }
   }
 }
