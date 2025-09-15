@@ -23,6 +23,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
+  const extractSignatures = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const selectedFile = ref<{
     name: string;
@@ -247,6 +248,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     userId: string,
     folders: string[],
     miningSource: MiningSource,
+    extractSignatures = false,
   ) {
     // Set current miningType: file or email
     miningType.value = 'email';
@@ -258,6 +260,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           boxes: folders,
           miningSource,
+          extractSignatures,
         },
       },
     );
@@ -327,6 +330,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
                   key !== '',
               ),
               activeMiningSource.value!,
+              extractSignatures.value,
             )
           : await startMiningFile(
               user.id,
@@ -399,6 +403,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource,
     boxes,
     selectedBoxes,
+    extractSignatures,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,

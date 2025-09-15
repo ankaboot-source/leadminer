@@ -200,6 +200,7 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
 
       const {
+        extractSignatures,
         miningSource: { email },
         boxes: folders
       }: {
@@ -207,12 +208,15 @@ export default function initializeMiningController(
           email: string;
         };
         boxes: string[];
+        extractSignatures: boolean;
       } = req.body;
 
       const errors = [
         validateType('email', email, 'string'),
-        validateType('boxes', folders, 'string[]')
+        validateType('boxes', folders, 'string[]'),
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
+      console.log(req.body, errors);
 
       if (errors.length) {
         return res
@@ -232,7 +236,7 @@ export default function initializeMiningController(
         );
 
       if (!miningSourceCredentials) {
-        return res.status(400).json({
+        return res.status(401).json({
           message: "This mining source isn't registered for this user"
         });
       }
@@ -263,7 +267,7 @@ export default function initializeMiningController(
           userId: user.id,
           email: miningSourceCredentials.email,
           batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
-          fetchEmailBody: ENV.IMAP_FETCH_BODY
+          fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY
         };
         miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
       } catch (err) {

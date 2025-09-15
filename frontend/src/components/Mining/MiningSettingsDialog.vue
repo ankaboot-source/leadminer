@@ -28,6 +28,18 @@
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
+
+    <!-- aligned switch (quick) -->
+    <div class="flex items-center gap-2 mt-4 pl-8">
+      <ToggleSwitch
+        v-model="$leadminerStore.extractSignatures"
+        input-id="extractSignatures"
+      />
+      <label for="extractSignatures" class="text-sm cursor-pointer">
+        {{ t('extract_signatures_option') }}
+      </label>
+      <small class="">{{ t('extract_signatures_sub') }}</small>
+    </div>
     <TreeCard
       v-if="shouldShowTreeCard"
       :class="{ disabled: $leadminerStore.activeMiningTask }"
@@ -89,12 +101,16 @@ defineExpose({
   "en": {
     "fine_tune_mining": "Fine-tune your mining",
     "select_folders_to_mine": "Select folders to mine",
-    "email_messages_selected": "Email messages selected"
+    "email_messages_selected": "Email messages selected",
+    "extract_signatures_option": "Extract contact details from signatures",
+    "extract_signatures_sub": "(this may take more time)"
   },
   "fr": {
     "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
-    "email_messages_selected": "Emails sélectionnés"
+    "email_messages_selected": "E-mails sélectionnés",
+    "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
+    "extract_signatures_sub": "(cela peut prendre plus de temps)"
   }
 }
 </i18n>
