@@ -3,6 +3,7 @@
     v-if="boxes"
     :status="$leadminerStore.activeMiningTask"
     :total="totalEmails"
+    :current="extractedEmails"
     :rate="AVERAGE_EXTRACTION_RATE"
     :started="taskStartedAt"
     :progress="extractionProgress"

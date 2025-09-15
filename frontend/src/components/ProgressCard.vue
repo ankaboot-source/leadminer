@@ -36,10 +36,15 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
+const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
+const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
+
 const props = defineProps({
   status: { type: Boolean, required: true },
   rate: { type: Number, required: true },
   total: { type: Number, default: 0 },
+  current: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
   started: { type: Number, default: 0 },
   // skipcq: JS-0715 - Is used in the template
@@ -72,7 +77,11 @@ watchEffect(() => {
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
 
-  if (props.progress < 0.1 || elapsedTime === 0) {
+  if (
+    props.current < SUFFICIENT_ITEMS_FOR_ESTIMATION &&
+    (props.progress < MIN_PROGRESS_FOR_ESTIMATION ||
+      elapsedTime < MIN_ELAPSED_FOR_ESTIMATION)
+  ) {
     return Math.round(props.total / props.rate);
   }
 
@@ -114,12 +123,12 @@ onMounted(() => {
 {
   "en": {
     "finished_in": "Finished in {t}",
-    "estimated_time": "The contact mining may take around 20 minutes depending on your inbox size",
+    "estimated_time": "The contact mining may take around {t}",
     "remaining_time": "{t} remaining"
   },
   "fr": {
     "finished_in": "Terminé en {t}",
-    "estimated_time": "L'extraction de contacts peut prendre environ 20 minutes selon la taille de votre boîte mail",
+    "estimated_time": "L'extraction de contacts peut prendre environ {t}",
     "remaining_time": "{t} restantes"
   }
 }
