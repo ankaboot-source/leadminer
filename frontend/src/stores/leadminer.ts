@@ -248,7 +248,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     userId: string,
     folders: string[],
     miningSource: MiningSource,
-    extractSignatures = false,
+    extractEmailSignatures = false,
   ) {
     // Set current miningType: file or email
     miningType.value = 'email';
@@ -260,7 +260,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           boxes: folders,
           miningSource,
-          extractSignatures,
+          extractSignatures: extractEmailSignatures,
         },
       },
     );
