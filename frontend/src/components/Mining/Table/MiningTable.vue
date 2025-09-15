@@ -297,8 +297,7 @@
                   v-tooltip="phone"
                   :href="`tel:${phone}`"
                   icon="pi pi-phone"
-                  class="cursor-pointer"
-                  unstyled
+                  class="cursor-pointer p-0 px-1"
                   @click="callPhoneNumber(phone)"
                 />
               </template>
@@ -326,8 +325,7 @@
                   v-tooltip="phone"
                   :href="`tel:${phone}`"
                   icon="pi pi-phone"
-                  class="cursor-pointer"
-                  unstyled
+                  class="cursor-pointer p-0 px-1"
                   @click="callPhoneNumber(phone)"
                 />
               </template>
