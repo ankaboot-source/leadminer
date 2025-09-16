@@ -26,7 +26,12 @@
     class="mb-6"
     :value="progressValue"
     :mode="props.mode"
+    @click="togglePopover"
   />
+
+  <Popover ref="popoverRef" class="whitespace-pre-line">
+    {{ props.progressTooltip }}
+  </Popover>
 </template>
 
 <script setup lang="ts">
@@ -36,6 +41,10 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const popoverRef = ref();
+function togglePopover(event: Event) {
+  popoverRef.value.toggle(event);
+}
 const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
 const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
 const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
