@@ -58,7 +58,7 @@ export function getTokenConfig(provider: OAuthMiningSourceProvider) {
   } = {
     redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/${provider}/callback`,
     scope: providerScopes[provider].scopes,
-    prompt: 'select_account'
+    prompt: 'consent select_account'
   };
 
   if (provider === 'google') {
