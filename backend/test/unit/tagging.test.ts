@@ -513,11 +513,6 @@ describe('test engines.EmailTaggingEngine', () => {
           reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
-        },
-        {
-          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
-          name: 'role',
-          source: 'refined#email_address'
         }
       ];
 
