@@ -251,8 +251,8 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex items-center justify-between gap-2">
-          <div class="max-w-[70vw] flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2 w-full min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
               :src="getImageViaProxy(data.image)"
@@ -260,14 +260,16 @@
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <div class="truncate">
+
+            <div class="min-w-0">
               <div
                 v-if="data.name && visibleColumns.includes('name')"
-                class="truncate w-min cursor-pointer"
+                class="truncate cursor-pointer"
                 @click="openContactInformation(data)"
               >
                 {{ data.name }}
               </div>
+
               <div
                 class="truncate cursor-pointer"
                 :class="{
@@ -281,12 +283,13 @@
               </div>
             </div>
 
+            <!-- RIGHT -->
             <div
               v-if="
                 (data.same_as && visibleColumns.includes('same_as')) ||
                 (data.telephone && visibleColumns.includes('telephone'))
               "
-              class="flex md:hidden gap-2"
+              class="flex md:hidden gap-2 flex-shrink-0"
             >
               <template
                 v-if="data.telephone && visibleColumns.includes('telephone')"
@@ -308,13 +311,14 @@
               </template>
             </div>
           </div>
-          <div class="flex items-center">
+
+          <div class="flex items-center gap-2 flex-shrink-0">
             <div
               v-if="
                 (data.same_as && visibleColumns.includes('same_as')) ||
                 (data.telephone && visibleColumns.includes('telephone'))
               "
-              class="hidden md:flex gap-2"
+              class="hidden md:flex gap-2 flex-shrink-0"
             >
               <template
                 v-if="data.telephone && visibleColumns.includes('telephone')"
