@@ -45,7 +45,7 @@ async function publishFetchingProgress(
  */
 function buildSequenceRanges(
   total: number,
-  chunkSize: number = 10000
+  chunkSize = 10000
 ): string[] {
   const ranges: string[] = [];
 
@@ -214,7 +214,7 @@ export default class ImapEmailsFetcher {
   }
 
   async getAvailableConnections(): Promise<number> {
-    const clients: any[] = [];
+    const clients: Connection[] = [];
     const attempts = Array.from(
       { length: ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER },
       (_, i) => i
@@ -297,7 +297,7 @@ export default class ImapEmailsFetcher {
       })
     );
     try {
-      emailJobs.map((job) =>
+      emailJobs.forEach((job) =>
         this.emailsQueue.add(() => this.processEmailJob(job))
       );
       await this.emailsQueue.onIdle();

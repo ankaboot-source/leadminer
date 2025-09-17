@@ -7,7 +7,7 @@ const pool = new Pool({
   max: 10
 });
 
-pool.on('error', function (error, client) {
+pool.on('error', (error, client) => {
   logger.error('Error raised by pg-pool: ', error);
   client.release();
 });
