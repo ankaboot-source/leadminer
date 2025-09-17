@@ -34,6 +34,60 @@ class ImapConnectionProvider {
   }
 
   /**
+   * Creates a single IMAP connection to test credentials.
+   * @param email - Email to connect with
+   * @param options - Optional: host, password, port, tls, or OAuth token
+   * @returns Promise<Connection> - A connected ImapFlow instance
+   */
+  static async getSingleConnection(
+    email: string,
+    options?: {
+      host?: string;
+      password?: string;
+      tls?: boolean;
+      port?: number;
+      oauthToken?: string;
+    }
+  ): Promise<Connection> {
+    assert(
+      options?.password || options?.oauthToken,
+      'Either password or OAuth token and host must be provided'
+    );
+    const imapConfig: Partial<ImapFlowOptions> = {
+      auth: options?.oauthToken
+        ? { user: email, accessToken: options.oauthToken }
+        : { user: email },
+      logger: false,
+      socketTimeout: 3600000, // Timeout after one hour
+      connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
+      greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
+      secure: true
+    };
+
+    if (!options?.host || !options?.port) {
+      const { host, port, tls } = await getOAuthImapConfigByEmail(email);
+      imapConfig.host = host;
+      imapConfig.port = port;
+      imapConfig.secure = tls;
+    }
+
+    const connection = new Connection(imapConfig as ImapFlowOptions);
+
+    // Optional logging
+    connection.on('error', (err) => {
+      logger.error('ImapFlow connection error:', err);
+    });
+
+    try {
+      await connection.connect();
+      return connection;
+    } catch (err) {
+      await connection.logout();
+      throw err;
+    }
+  }
+
+  /**
    * Builds the configuration for connecting to Google using OAuth.
    * @param accessToken - OAuth access token
    */
