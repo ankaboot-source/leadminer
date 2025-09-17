@@ -43,10 +43,7 @@ async function publishFetchingProgress(
  * @param chunkSize - Size of each chunk (default: 10000)
  * @returns Array of IMAP sequence range strings
  */
-function buildSequenceRanges(
-  total: number,
-  chunkSize = 10000
-): string[] {
+function buildSequenceRanges(total: number, chunkSize = 10000): string[] {
   const ranges: string[] = [];
 
   if (total <= chunkSize) {
