@@ -216,7 +216,6 @@ export default function initializeMiningController(
         validateType('boxes', folders, 'string[]'),
         validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
-      console.log(req.body, errors);
 
       if (errors.length) {
         return res
