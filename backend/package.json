@@ -47,7 +47,7 @@
     "google-auth-library": "^9.15.1",
     "html-entities": "^2.6.0",
     "imap": "^0.8.19",
-    "imapflow": "^1.0.194",
+    "imapflow": "^1.0.195",
     "ioredis": "^5.7.0",
     "is-url-http": "^2.3.10",
     "jsonwebtoken": "^9.0.2",
