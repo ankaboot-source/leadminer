@@ -186,13 +186,6 @@ class ImapConnectionProvider {
    * @throws {Error} - If the connection fails for any reason.
    */
   async connect() {
-    logger.debug(
-      util.inspect(
-        { currentOauthToken: this.currentOauthToken },
-        { depth: null, colors: true }
-      )
-    );
-
     const connection = new Connection(this.imapConfig as ImapFlowOptions);
 
     connection.once('close', (hadError: boolean) => {

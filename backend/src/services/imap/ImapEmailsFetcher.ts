@@ -465,20 +465,15 @@ export default class ImapEmailsFetcher {
         this.emailsQueue.add(() =>
           this.processEmailJob({ range, folder, totalInFolder })
         );
-        logger.debug('emailsQueue: Added');
 
         if (this.hasOAuthError) return;
         this.hasOAuthError = true; // to avoid refreshing pool on every connection
-        logger.warn(`Is Auth Error, Refreshing OAuth token at ${range}`);
+        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
 
         this.emailsQueue.pause();
-        logger.debug('emailsQueue: Paused');
-
         await this.imapConnectionProvider.refreshPool();
-        logger.debug('Refreshed Pool');
-
         this.emailsQueue.start();
-        logger.debug('emailsQueue: Started');
+
         return;
       } else if (connection) {
         await this.imapConnectionProvider.releaseConnection(connection);

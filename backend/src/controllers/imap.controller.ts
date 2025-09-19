@@ -1,7 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { ImapFlow as Connection } from 'imapflow';
-import util from 'util';
 import {
   ImapMiningSourceCredentials,
   MiningSources,
@@ -50,11 +49,6 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
     refresh_token: refreshToken,
     expires_at: expiresAt
   });
-
-  logger.debug(util.inspect({ token }, { depth: null, colors: true }));
-
-  if (!refreshToken) {
-  }
 
   return { token, refreshToken, provider };
 }

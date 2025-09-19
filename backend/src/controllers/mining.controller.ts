@@ -1,7 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
-import util from 'util';
 import ENV from '../config';
 import {
   MiningSources,
@@ -78,10 +77,6 @@ export default function initializeMiningController(
 
       try {
         const exchangedTokens = await exchangeForToken(code, provider);
-
-        logger.debug(
-          util.inspect({ exchangedTokens }, { depth: null, colors: true })
-        );
 
         await miningSources.upsert({
           userId: state,

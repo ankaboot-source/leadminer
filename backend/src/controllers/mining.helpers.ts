@@ -171,7 +171,6 @@ export async function refreshAccessToken(
 
     const refreshed = await tokenInstance.refresh();
     const refreshedToken = refreshed.token;
-    logger.debug(util.inspect({ refreshed }, { depth: null, colors: true }));
 
     // Update miningSources table with new tokens
     // await miningSources.upsert({
