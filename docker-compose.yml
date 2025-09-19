@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:alpine
-    command: --port ${REDIS_PORT}
+    command: redis-server --maxmemory ${REDIS_MAXMEMORY} --maxmemory-policy ${REDIS_EVICTION_POLICY} --port ${REDIS_PORT}
     restart: always
 
   leadminer-api:
