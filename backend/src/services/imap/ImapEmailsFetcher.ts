@@ -1,7 +1,9 @@
 import { parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
 import { ImapFlow as Connection, MailboxObject } from 'imapflow';
+import { simpleParser } from 'mailparser';
 // Removed p-limit - using simple batch processing instead
+import util from 'util';
+import ENV from '../../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -9,7 +11,6 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
-import ENV from '../../config';
 
 const redisClient = redis.getClient();
 
@@ -362,6 +363,14 @@ export default class ImapEmailsFetcher {
 
         processedCount += 1;
 
+        if (processedCount === 25) {
+          const fakeError = {
+            authenticationFailed: true, // ✅ triggers isAuthFailure
+            message: 'Simulated auth failure for testing'
+          };
+          throw fakeError;
+        }
+
         const { seq, headers, envelope } = msg;
 
         let header: Record<string, string[]> | null;
@@ -487,6 +496,38 @@ export default class ImapEmailsFetcher {
         `[${this.miningId}] Error in range ${range} after ${processedCount} messages in ${totalTime}ms:`,
         error
       );
+      if (ImapEmailsFetcher.isAuthFailure(error)) {
+        logger.debug(
+          `Is Auth Error, Refreshing OAuth token at ${processedCount} after 5 seconds`
+        );
+        await new Promise((resolve) => {
+          setTimeout(resolve, 5000);
+        });
+        await this.imapConnectionProvider.refreshOauthToken();
+
+        await this.closeMailbox(connection, folderPath);
+
+        const newConnection =
+          await this.imapConnectionProvider.acquireConnection();
+
+        // STUCK HERE
+        await newConnection.mailboxOpen(folderPath, { readOnly: true });
+        this.activeConnections.add(newConnection);
+
+        // Calculate remaining range to fetch
+        const remainingStart = processedCount + 1;
+        const remainingRange = `${remainingStart}:${range.split(':')[1]}`;
+
+        // Continue fetching with new connection
+        await this.processFetch(
+          newConnection,
+          remainingRange,
+          folderPath,
+          totalInFolder
+        );
+        return;
+      }
+
       throw error;
     }
   }
@@ -586,7 +627,7 @@ export default class ImapEmailsFetcher {
     } catch (err) {
       logger.error(
         `[${this.miningId}] Error processing folder ${folderPath}:`,
-        err
+        util.inspect(err, { depth: null, colors: true })
       );
       throw err;
     } finally {

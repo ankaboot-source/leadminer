@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
+import util from 'util';
 import ENV from '../config';
 import {
   MiningSources,
@@ -13,6 +14,7 @@ import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
+import logger from '../utils/logger';
 import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
@@ -58,7 +60,7 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
+    async createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
 
@@ -77,6 +79,10 @@ export default function initializeMiningController(
       try {
         const exchangedTokens = await exchangeForToken(code, provider);
 
+        logger.debug(
+          util.inspect({ exchangedTokens }, { depth: null, colors: true })
+        );
+
         await miningSources.upsert({
           userId: state,
           email: exchangedTokens.email,
@@ -92,6 +98,7 @@ export default function initializeMiningController(
           `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
         );
       } catch (error) {
+        logger.error(error);
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`
@@ -241,7 +248,7 @@ export default function initializeMiningController(
         'accessToken' in miningSourceCredentials
           ? await new ImapConnectionProvider(
               miningSourceCredentials.email
-            ).withOauth(miningSourceCredentials.accessToken)
+            ).withOauth(miningSourceCredentials)
           : new ImapConnectionProvider(
               miningSourceCredentials.email
             ).withPassword(

@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { ImapFlow as Connection } from 'imapflow';
+import util from 'util';
 import {
   ImapMiningSourceCredentials,
   MiningSources,
@@ -28,7 +29,7 @@ async function getImapConnectionProvider(
 ) {
   if ('accessToken' in data) {
     const connection = await new ImapConnectionProvider(data.email).withOauth(
-      data.accessToken
+      data
     );
     return connection;
   }
@@ -49,6 +50,8 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
     refresh_token: refreshToken,
     expires_at: expiresAt
   });
+
+  logger.debug(util.inspect({ token }, { depth: null, colors: true }));
 
   return { token, refreshToken, provider };
 }
@@ -109,6 +112,7 @@ export default function initializeImapController(miningSources: MiningSources) {
               return res.status(401).send({
                 data: { message: 'Token has expired' }
               });
+
             const newToken = (await token.refresh()).token as NewToken;
 
             await upsertMiningSource(
