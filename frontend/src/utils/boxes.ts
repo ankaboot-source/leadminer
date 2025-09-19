@@ -21,33 +21,11 @@ export const EMAIL_EXCLUDED_FOLDERS = [
 ];
 
 /**
- * Gets all selected folders
- * @param boxes - The array of folder names to filter
- * @returns The filtered array of boxes
- */
-function getAllFolders(boxes: BoxNode[]) {
-  const folders: TreeSelectionKeys = [];
-  objectScan(['**.key'], {
-    joined: true,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    filterFn: ({ parent }: any) => {
-      const { key } = parent;
-      folders[key] = {
-        checked: true,
-        partialChecked: false,
-        isNoSelect: Boolean(parent.attribs?.includes('\\Noselect')),
-      };
-    },
-  })(boxes);
-  return folders;
-}
-
-/**
  * Filters out default selected folders from the input boxes based on email service
  * @param boxes - The array of folder names to filter
  * @returns The filtered array of boxes
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function getFilteredFolders(boxes: BoxNode[]) {
   const filteredFolders: TreeSelectionKeys = [];
   let foundAllMailKey: string | null = null;
@@ -77,6 +55,8 @@ function getFilteredFolders(boxes: BoxNode[]) {
       const isNoSelect = Boolean(attribs?.includes('\\Noselect'));
 
       if (isAllMail && !isNoSelect) {
+        // skipcq: JS-0320
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         Object.keys(filteredFolders).forEach((k) => delete filteredFolders[k]);
         // Add All Mail as the only selected folder
         filteredFolders[key] = {
