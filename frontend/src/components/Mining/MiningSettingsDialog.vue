@@ -110,7 +110,7 @@ defineExpose({
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
     "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-    "extract_signatures_sub": "( cela peut prendre plus de temps )"
+    "extract_signatures_sub": "(l'extraction prendra plus de temps)"
   }
 }
 </i18n>
