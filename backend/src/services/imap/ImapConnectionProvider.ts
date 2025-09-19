@@ -297,6 +297,13 @@ class ImapConnectionProvider {
       logger.error('Error creating IMAP connection pool resource', err);
     });
   }
+
+  async refreshPool() {
+    await this.cleanPool();
+    await this.refreshOauthToken();
+    const connection = await this.acquireConnection();
+    await this.releaseConnection(connection);
+  }
 }
 
 export default ImapConnectionProvider;

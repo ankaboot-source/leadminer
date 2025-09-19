@@ -421,6 +421,8 @@ export default class ImapEmailsFetcher {
       if (publishedEmails >= batchSize) {
         await publishFetchingProgress(this.miningId, publishedEmails);
         publishedEmails = 0;
+
+        throw new Error({ authenticationFailed: true } as any); // test
       }
     }
 
@@ -467,34 +469,17 @@ export default class ImapEmailsFetcher {
         error
       );
       if (ImapEmailsFetcher.isAuthFailure(error)) {
-        // logger.debug(
-        //   `Is Auth Error, Refreshing OAuth token at ${processedCount} after 5 seconds`
-        // );
-        // await new Promise((resolve) => {
-        //   setTimeout(resolve, 5000);
-        // });
-        // await this.imapConnectionProvider.refreshOauthToken();
-
-        // await this.closeMailbox(connection, folderPath);
-
-        // const newConnection =
-        //   await this.imapConnectionProvider.acquireConnection();
-
-        // // STUCK HERE
-        // await newConnection.mailboxOpen(folderPath, { readOnly: true });
-        // this.activeConnections.add(newConnection);
-
-        // // Calculate remaining range to fetch
-        // const remainingStart = processedCount + 1;
-        // const remainingRange = `${remainingStart}:${range.split(':')[1]}`;
-
-        // // Continue fetching with new connection
-        // await this.processFetch(
-        //   newConnection,
-        //   remainingRange,
-        //   folderPath,
-        //   totalInFolder
-        // );
+        logger.debug(
+          `Is Auth Error, Refreshing OAuth token at ${range} after 5 seconds`
+        );
+        await new Promise((resolve) => {
+          setTimeout(resolve, 5000);
+        });
+        await this.emailsQueue.pause();
+        this.imapConnectionProvider.refreshPool();
+        this.emailsQueue.add(() =>
+          this.processEmailJob({ range, folder, totalInFolder })
+        );
         return;
       }
 
