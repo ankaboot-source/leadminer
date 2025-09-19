@@ -6,10 +6,21 @@
     :maximizable="$screenStore?.size?.md"
     :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
     :style="{ width: '60vw', height: '70vh' }"
-    pt:content:class="grow p-3 border-y border-slate-200"
-    pt:footer:class="p-3"
+    pt:content:class="grow p-4 border-y border-slate-200"
+    pt:footer:class="p-4"
     :header="t('fine_tune_mining')"
   >
+    <!-- aligned switch (quick) -->
+    <div class="flex items-center gap-2 pb-4">
+      <ToggleSwitch
+        v-model="$leadminerStore.extractSignatures"
+        input-id="extractSignatures"
+      />
+      <label for="extractSignatures" class="cursor-pointer">
+        {{ t('extract_signatures_option') }} {{ t('extract_signatures_sub') }}
+      </label>
+    </div>
+
     <div class="flex items-center gap-2">
       <div class="text-h6">{{ t('select_folders_to_mine') }}</div>
       <Button
@@ -28,22 +39,11 @@
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
-
-    <!-- aligned switch (quick) -->
-    <div class="flex items-center gap-2 mt-4 pl-8">
-      <ToggleSwitch
-        v-model="$leadminerStore.extractSignatures"
-        input-id="extractSignatures"
-      />
-      <label for="extractSignatures" class="text-sm cursor-pointer">
-        {{ t('extract_signatures_option') }}
-      </label>
-      <small class="">{{ t('extract_signatures_sub') }}</small>
-    </div>
     <TreeCard
       v-if="shouldShowTreeCard"
       :class="{ disabled: $leadminerStore.activeMiningTask }"
     />
+
     <template #footer>
       <Button :label="$t('common.save')" @click="close" />
     </template>
@@ -103,14 +103,14 @@ defineExpose({
     "select_folders_to_mine": "Select folders to mine",
     "email_messages_selected": "Email messages selected",
     "extract_signatures_option": "Extract contact details from signatures",
-    "extract_signatures_sub": "(this may take more time)"
+    "extract_signatures_sub": "( this may take more time )"
   },
   "fr": {
     "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
     "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-    "extract_signatures_sub": "(cela peut prendre plus de temps)"
+    "extract_signatures_sub": "( cela peut prendre plus de temps )"
   }
 }
 </i18n>

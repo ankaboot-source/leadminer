@@ -132,5 +132,8 @@ BEGIN
     DROP TABLE IF EXISTS real_names;
     DROP TABLE IF EXISTS email_aggregates;
     DROP TABLE IF EXISTS combined_data;
+
+    -- Clear table messages
+    DELETE FROM private.messages m WHERE m.user_id = user_id
 END;
 $$;
