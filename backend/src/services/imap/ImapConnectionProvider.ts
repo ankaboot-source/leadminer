@@ -116,8 +116,8 @@ class ImapConnectionProvider {
   }
 
   updateOauthAccessToken(accessToken: string) {
-    if (this.imapConfig && this.imapConfig.auth) {
-      (this.imapConfig.auth as any).accessToken = accessToken;
+    if (this.imapConfig.auth) {
+      this.imapConfig.auth.accessToken = accessToken;
     }
   }
 

@@ -184,9 +184,8 @@ export async function refreshAccessToken(
 
     return refreshedToken;
   } catch (error) {
-    console.error(error);
     logger.error(
-      `Failed to refresh access token`,
+      'Failed to refresh access token',
       util.inspect(error, { depth: null, colors: true })
     );
     throw error;

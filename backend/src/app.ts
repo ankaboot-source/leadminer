@@ -86,7 +86,7 @@ export default function initializeApp(
 
   process.on('uncaughtException', (err) => {
     logger.error(
-      `[UNCAUGHT EXCEPTION]:`,
+      '[UNCAUGHT EXCEPTION]:',
       util.inspect(err, { depth: null, colors: true })
     );
     if (ENV.SENTRY_DSN_BACKEND) {
