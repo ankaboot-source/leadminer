@@ -87,7 +87,6 @@ export default function initializeMiningController(
           },
           type: provider
         });
-
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
