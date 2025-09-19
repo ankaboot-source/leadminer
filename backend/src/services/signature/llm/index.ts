@@ -266,7 +266,7 @@ export class SignatureLLM implements ExtractSignature {
 
       return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
-      this.logger.error('SignatureExtractionLLM error:', {error: err});
+      this.logger.error('SignatureExtractionLLM error:', { error: err });
       return null;
     }
   }
