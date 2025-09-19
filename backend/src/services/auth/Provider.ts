@@ -43,13 +43,9 @@ export function getDomainFromEmail(email: string) {
   return email.split('@')[1]?.split('.')[0];
 }
 
-export function getProviderFromEmail(email: string): Provider {
+export function getProviderFromEmail(email: string): Provider | undefined {
   const domain = getDomainFromEmail(email);
   const provider = PROVIDER_BY_DOMAIN.get(domain);
-
-  if (!provider) {
-    throw new Error(`No provider found for email domain: ${domain}`);
-  }
 
   return provider;
 }
