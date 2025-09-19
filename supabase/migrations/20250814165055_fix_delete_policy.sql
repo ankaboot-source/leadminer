@@ -3,3 +3,4 @@ CREATE POLICY "Enable delete for users based on user_id" ON "private"."persons" 
 
 DROP POLICY "Enable delete for users based on user_id" ON private.pointsofcontact;
 CREATE POLICY "Enable delete for users based on user_id" ON "private"."pointsofcontact" as permissive FOR DELETE TO public USING (( auth.uid() = pointsofcontact.user_id));
+CREATE POLICY "Enable delete for users based on user_id" ON "private"."messages" as permissive FOR DELETE TO public USING (( auth.uid() = messages.user_id));

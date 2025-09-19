@@ -1,8 +1,8 @@
 import { parseHeader } from 'imap';
-import { ImapFlow as Connection, MailboxObject } from 'imapflow';
+import { ImapFlow as Connection } from 'imapflow';
 import { simpleParser } from 'mailparser';
 // Removed p-limit - using simple batch processing instead
-import util from 'util';
+import PQueue from 'p-queue';
 import ENV from '../../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
@@ -10,30 +10,13 @@ import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
-import { EmailMessage } from './types';
 
 const redisClient = redis.getClient();
 
-interface StreamPipeline {
-  stream: string;
-  data: EmailMessage;
-}
-
-/**
- * Publishes an email message to a Redis stream.
- * @param streams - Array contains stream name and the data to publish
- * @returns A promise that resolves when the message is successfully published.
- */
-async function publishStreamsPipeline(
-  streams: StreamPipeline[]
-): Promise<void> {
-  const pipeline = redisClient.multi();
-
-  streams.forEach(({ stream, data }) => {
-    pipeline.xadd(stream, '*', 'message', JSON.stringify(data));
-  });
-
-  await pipeline.exec();
+interface EmailJob {
+  folder: string;
+  range: string;
+  totalInFolder: number;
 }
 
 /**
@@ -61,10 +44,14 @@ async function publishFetchingProgress(
  * @param chunkSize - Size of each chunk (default: 10000)
  * @returns Array of IMAP sequence range strings
  */
-function buildSequenceRanges(total: number, chunkSize: number): string[] {
+function buildSequenceRanges(total: number, chunkSize = 10000): string[] {
   const ranges: string[] = [];
-  let start = 1;
 
+  if (total <= chunkSize) {
+    return ['1:*'];
+  }
+
+  let start = 1;
   while (start <= total) {
     const end = Math.min(start + chunkSize - 1, total);
     ranges.push(`${start}:${end}`);
@@ -75,29 +62,25 @@ function buildSequenceRanges(total: number, chunkSize: number): string[] {
 }
 
 export default class ImapEmailsFetcher {
-  private readonly CONNECTION_TIMEOUT_MS = 20000;
-
   private readonly EMAIL_TEXT_MAX_LENGTH = 3000;
 
-  private readonly userIdentifier: string;
+  private isCanceled: boolean;
+
+  private totalFetched: number;
+
+  private hasAuthFailureLogged: boolean;
+
+  private readonly bodies: string[];
+
+  private readonly emailsQueue: PQueue;
 
   private readonly processSetKey: string;
 
-  private readonly fetchedIds = new Set<string>();
+  private readonly userIdentifier: string;
 
-  private totalFetched = 0;
+  private readonly fetchedIds: Set<string>;
 
-  public isCompleted = false;
-
-  private isCanceled = false;
-
-  private hasAuthFailureLogged = false;
-
-  private activeConnections = new Set<Connection>();
-
-  private readonly bodies = ['HEADER'];
-
-  private process?: Promise<void>;
+  public isCompleted: boolean;
 
   /**
    * Constructor for ImapEmailsFetcher.
@@ -126,63 +109,19 @@ export default class ImapEmailsFetcher {
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
-    if (this.fetchEmailBody) {
-      this.bodies.push('TEXT');
-    }
-  }
+    this.totalFetched = 0;
 
-  /**
-   * Acquires an IMAP connection and opens the specified mailbox.
-   * @param folderPath - Name of the folder to open
-   * @returns Promise resolving to the opened connection and mailbox info
-   */
-  private async openMailbox(
-    folderPath: string
-  ): Promise<{ connection: Connection; mailbox: MailboxObject }> {
-    const connection = await this.imapConnectionProvider.acquireConnection();
-    logger.debug(
-      `[${this.miningId}] Acquired connection for folder ${folderPath}`
-    );
+    this.isCanceled = false;
+    this.isCompleted = false;
+    this.hasAuthFailureLogged = false;
 
-    try {
-      const mailbox = await connection.mailboxOpen(folderPath, {
-        readOnly: true
-      });
-      logger.debug(`[${this.miningId}] Opened mailbox ${folderPath}`);
-
-      this.activeConnections.add(connection);
-
-      return { connection, mailbox };
-    } catch (error) {
-      await this.imapConnectionProvider.releaseConnection(connection);
-      throw error;
-    }
-  }
-
-  /**
-   * Closes the mailbox and releases the IMAP connection.
-   * @param connection - The IMAP connection to close
-   * @param folderPath - Name of the folder (for logging)
-   */
-  private async closeMailbox(
-    connection: Connection,
-    folderPath: string
-  ): Promise<void> {
-    try {
-      await connection.mailboxClose();
-      logger.debug(`[${this.miningId}] Closed mailbox ${folderPath}`);
-    } catch (err) {
-      logger.warn(
-        `[${this.miningId}] Error closing mailbox ${folderPath}:`,
-        err
-      );
-    } finally {
-      this.activeConnections.delete(connection);
-      await this.imapConnectionProvider.releaseConnection(connection);
-      logger.debug(
-        `[${this.miningId}] Released connection for folder ${folderPath}`
-      );
-    }
+    this.fetchedIds = new Set<string>();
+    this.emailsQueue = new PQueue({
+      concurrency: ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER,
+      intervalCap: 1, // only 1 job starts per interval
+      interval: 100 // 100ms gap between job starts
+    });
+    this.bodies = this.fetchEmailBody ? ['TEXT'] : []; // HEADER is handled by ImapFlow;
   }
 
   /**
@@ -269,66 +208,118 @@ export default class ImapEmailsFetcher {
     return total;
   }
 
+  async getAvailableConnections(): Promise<number> {
+    const clients: Connection[] = [];
+    const attempts = Array.from(
+      { length: ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER },
+      (_, i) => i
+    );
+
+    const results = await Promise.allSettled(
+      attempts.map(async () => {
+        const conn = await this.imapConnectionProvider.acquireConnection();
+        clients.push(conn);
+        return true;
+      })
+    );
+
+    // Count how many succeeded
+    const count = results.filter((r) => r.status === 'fulfilled').length;
+
+    // Cleanup
+    await Promise.all(
+      clients.map((c) =>
+        this.imapConnectionProvider.releaseConnection(c).catch(() => {})
+      )
+    );
+
+    logger.info(`Server approved ${count} connections`);
+    return count;
+  }
+
   /**
    * Fetches all email messages in the configured boxes.
    */
   async fetchEmailMessages() {
-    try {
-      for (const folder of this.folders) {
-        if (this.isCanceled) {
-          logger.info(
-            `[${this.miningId}] Cancellation requested; stopping before folder ${folder}`
-          );
-          break;
-        }
+    const emailJobs: EmailJob[] = [];
 
-        if (EXCLUDED_IMAP_FOLDERS.includes(folder)) {
-          // Skip excluded folders
-          continue;
-        }
+    // Adapt queue to use the available connections.
+    this.emailsQueue.concurrency = await this.getAvailableConnections();
 
+    const foldersToProcess = this.folders.filter(
+      (f) => !EXCLUDED_IMAP_FOLDERS.includes(f)
+    );
+
+    // Map folders to async jobs
+    await Promise.all(
+      foldersToProcess.map(async (folder) => {
+        const connection =
+          await this.imapConnectionProvider.acquireConnection();
         try {
-          this.process = this.fetchBox(folder);
-          // eslint-disable-next-line no-await-in-loop
-          await this.process;
-        } catch (error) {
-          if (ImapEmailsFetcher.isAuthFailure(error)) {
-            if (!this.hasAuthFailureLogged) {
-              logger.error(
-                `[${this.miningId}] Authentication failed; aborting mining task`,
-                error
-              );
-              this.hasAuthFailureLogged = true;
-            }
-            this.isCanceled = true;
-            break;
-          } else {
-            logger.error(
-              `[${this.miningId}] Error when fetching emails from folder ${folder}:`,
-              error
-            );
+          const mailbox = await connection.mailboxOpen(folder, {
+            readOnly: true
+          });
+          const totalInFolder = mailbox.exists;
+
+          await connection.mailboxClose();
+
+          if (totalInFolder === 0) return;
+
+          const ranges = buildSequenceRanges(
+            totalInFolder,
+            ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+          );
+
+          logger.debug(
+            `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
+          );
+          ranges.forEach((range) => {
+            emailJobs.push({
+              folder,
+              range,
+              totalInFolder
+            });
+          });
+        } catch (err) {
+          logger.warn(
+            `Failed to process folder ${folder}: ${(err as Error).message}`
+          );
+        } finally {
+          if (connection) {
+            await this.imapConnectionProvider.releaseConnection(connection);
           }
         }
-      }
-
+      })
+    );
+    try {
+      emailJobs.forEach((job) =>
+        this.emailsQueue.add(() => this.processEmailJob(job))
+      );
+      await this.emailsQueue.onIdle();
       this.isCompleted = true;
 
-      // Pubsub to ensure event is received and fetching is closed
       await publishFetchingProgress(this.miningId, 0);
-
-      logger.info(`[${this.miningId}] All fetch promises are terminated.`);
-    } catch (error) {
-      logger.error(`[${this.miningId}] Error in fetchEmailMessages:`, error);
-      throw error;
+      logger.info(`[${this.miningId}] All email jobs completed`);
+    } catch (err) {
+      logger.error(err);
     }
   }
 
   /**
-   * Processes fetched messages from a specific range in a folder.
-   * @param connection - Open IMAP connection with mailbox already opened
-   * @param range - IMAP sequence range to fetch (e.g., '1:1000' or '1:*')
-   * @param folderPath - Name of the folder
-   * @param totalInFolder - Total number of messages in the folder
+   * Creates a fetch stream for IMAP messages.
+   */
+  private createFetchStream(connection: Connection, range: string) {
+    return connection.fetch(range, {
+      uid: false,
+      source: false,
+      envelope: true,
+      headers: true,
+      bodyParts: this.bodies
+    });
+  }
+
+  /**
+   * Process fetch for a range
    */
   private async processFetch(
     connection: Connection,
@@ -336,101 +327,84 @@ export default class ImapEmailsFetcher {
     folderPath: string,
     totalInFolder: number
   ) {
-    const startTime = Date.now();
     let publishedEmails = 0;
-    let processedCount = 0;
-    let pipeline = redisClient.multi();
+    const batchSize = Math.max(this.batchSize, 200);
 
-    // Increase batch size for parallel processing
-    const parallelBatchSize = Math.max(this.batchSize * 2, 200);
+    for await (const msg of this.createFetchStream(connection, range)) {
+      if (this.isCanceled) break;
 
-    logger.info(`[${this.miningId}] Starting range ${range}`);
+      let header: Record<string, string[]>;
+      const { seq, headers, envelope } = msg;
+      const from = envelope?.from?.pop();
+      const date = envelope?.date?.toISOString?.();
 
-    try {
-      for await (const msg of connection.fetch(range, {
-        uid: false,
-        source: false,
-        envelope: true,
-        headers: true,
-        bodyParts: this.bodies
-      })) {
-        if (this.isCanceled) {
-          logger.info(
-            `[${this.miningId}] Cancellation detected; stopping range ${range}`
-          );
-          break;
-        }
+      if (from?.address === this.userEmail) continue;
 
-        processedCount += 1;
+      try {
+        header = parseHeader((headers as Buffer).toString('utf8'));
+      } catch {
+        continue;
+      }
 
-        if (processedCount === 25) {
-          const fakeError = {
-            authenticationFailed: true, // ✅ triggers isAuthFailure
-            message: 'Simulated auth failure for testing'
-          };
-          throw fakeError;
-        }
+      const messageId = getMessageId(header);
+      header['message-id'] = [messageId];
 
-        const { seq, headers, envelope } = msg;
+      const isLastMessageInFolder = msg.seq === totalInFolder;
 
-        let header: Record<string, string[]> | null;
+      if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) continue;
+
+      await redisClient.xadd(
+        this.contactStream,
+        '*',
+        'message',
+        JSON.stringify({
+          type: 'email',
+          data: {
+            header,
+            body: '',
+            seqNumber: seq,
+            folderPath,
+            isLast: isLastMessageInFolder
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        })
+      );
+
+      let text = msg.bodyParts?.get('text') ?? '';
+
+      if (headers && text?.length) {
         try {
-          header = parseHeader(
-            (headers as Buffer<ArrayBufferLike>).toString('utf8')
-          );
-        } catch (err) {
-          logger.warn(
-            `[${this.miningId}] Failed to parse header for seq ${seq}, skipping`
-          );
-          continue;
-        }
-
-        let text = '';
-        if (msg.bodyParts?.has('text')) {
-          const textPart = msg.bodyParts.get('text');
-          if (headers && textPart && textPart.length > 0) {
-            try {
-              const textContent = textPart;
-              const { text: parsedText } = await simpleParser(
-                Buffer.concat([headers, textContent]),
-                {
-                  skipHtmlToText: true,
-                  skipTextToHtml: true,
-                  skipImageLinks: true,
-                  skipTextLinks: true
-                }
-              );
-              text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-            } catch (err) {
-              text = '';
+          const { text: parsedText } = await simpleParser(
+            Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
+            {
+              skipHtmlToText: true,
+              skipTextToHtml: true,
+              skipImageLinks: true,
+              skipTextLinks: true
             }
-          }
+          );
+          text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
+        } catch {
+          text = '';
         }
+      }
 
-        const from = envelope?.from?.pop();
-        const date = envelope?.date?.toISOString?.();
-        const messageId = getMessageId(header);
-
-        header['message-id'] = [messageId];
-        const isLastMessageInFolder = msg.seq === totalInFolder;
-
-        // To prevent loss of progress counter, check that the duplicated message is not the final one in the folder.
-        if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) {
-          continue;
-        }
-
-        pipeline.xadd(
-          this.contactStream,
+      if (text.length && from && date) {
+        await redisClient.xadd(
+          this.signatureStream,
           '*',
           'message',
           JSON.stringify({
             type: 'email',
             data: {
-              header,
-              body: '',
+              header: { from, messageId, messageDate: date, rawHeader: header },
+              body: text,
               seqNumber: seq,
               folderPath,
-              isLast: isLastMessageInFolder
+              isLast: false
             },
             userId: this.userId,
             userEmail: this.userEmail,
@@ -438,335 +412,98 @@ export default class ImapEmailsFetcher {
             miningId: this.miningId
           })
         );
-
-        if (text.length && from && date) {
-          pipeline.xadd(
-            this.signatureStream,
-            '*',
-            'message',
-            JSON.stringify({
-              type: 'email',
-              data: {
-                header: {
-                  from,
-                  messageId,
-                  messageDate: date,
-                  rawHeader: header
-                },
-                body: text,
-                seqNumber: seq,
-                folderPath,
-                isLast: false
-              },
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            })
-          );
-        }
-
-        this.fetchedIds.add(messageId);
-        this.totalFetched += 1;
-        publishedEmails += 1;
-
-        header = null;
-
-        if (publishedEmails >= parallelBatchSize) {
-          await pipeline.exec();
-          await publishFetchingProgress(this.miningId, publishedEmails);
-          pipeline = redisClient.multi();
-          publishedEmails = 0;
-        }
       }
 
-      if (publishedEmails > 0) {
-        await pipeline.exec();
+      this.fetchedIds.add(messageId);
+      this.totalFetched += 1;
+      publishedEmails += 1;
+
+      if (publishedEmails >= batchSize) {
         await publishFetchingProgress(this.miningId, publishedEmails);
+        publishedEmails = 0;
       }
+    }
 
-      const totalTime = Date.now() - startTime;
-      const rate = processedCount / (totalTime / 1000);
+    if (publishedEmails > 0) {
+      await publishFetchingProgress(this.miningId, publishedEmails);
+      publishedEmails = 0;
+    }
+  }
+
+  /**
+   * Opens a connection and fetches messages.
+   * @param emailJob - The email job to process
+   */
+  private async processEmailJob(emailJob: EmailJob): Promise<void> {
+    if (this.isCanceled) return;
+
+    const { folder, range, totalInFolder } = emailJob;
+
+    let connection: Connection | null = null;
+    try {
+      connection = await this.imapConnectionProvider.acquireConnection();
+      await connection.mailboxOpen(folder, { readOnly: true });
       logger.info(
-        `[${this.miningId}] Completed range ${range}: ${processedCount} messages in ${totalTime}ms (${rate.toFixed(1)} msg/sec)`
+        `[${this.miningId}:${folder}]: Opened folder for range ${range}`
+      );
+
+      await this.processFetch(connection, range, folder, totalInFolder);
+
+      await connection.mailboxClose();
+      logger.info(
+        `[${this.miningId}:${folder}]: Closed folder for range ${range}`
       );
     } catch (error) {
-      const totalTime = Date.now() - startTime;
+      if (ImapEmailsFetcher.isAuthFailure(error)) {
+        if (!this.hasAuthFailureLogged) {
+          logger.error(`[${this.miningId}] Authentication failed`, error);
+          this.hasAuthFailureLogged = true;
+        }
+        this.isCanceled = true;
+        throw error;
+      }
       logger.error(
-        `[${this.miningId}] Error in range ${range} after ${processedCount} messages in ${totalTime}ms:`,
+        `[${this.miningId}:${folder}]: ${(error as Error).message}`,
         error
       );
       if (ImapEmailsFetcher.isAuthFailure(error)) {
-        logger.debug(
-          `Is Auth Error, Refreshing OAuth token at ${processedCount} after 5 seconds`
-        );
-        await new Promise((resolve) => {
-          setTimeout(resolve, 5000);
-        });
-        await this.imapConnectionProvider.refreshOauthToken();
+        // logger.debug(
+        //   `Is Auth Error, Refreshing OAuth token at ${processedCount} after 5 seconds`
+        // );
+        // await new Promise((resolve) => {
+        //   setTimeout(resolve, 5000);
+        // });
+        // await this.imapConnectionProvider.refreshOauthToken();
 
-        await this.closeMailbox(connection, folderPath);
+        // await this.closeMailbox(connection, folderPath);
 
-        const newConnection =
-          await this.imapConnectionProvider.acquireConnection();
+        // const newConnection =
+        //   await this.imapConnectionProvider.acquireConnection();
 
-        // STUCK HERE
-        await newConnection.mailboxOpen(folderPath, { readOnly: true });
-        this.activeConnections.add(newConnection);
+        // // STUCK HERE
+        // await newConnection.mailboxOpen(folderPath, { readOnly: true });
+        // this.activeConnections.add(newConnection);
 
-        // Calculate remaining range to fetch
-        const remainingStart = processedCount + 1;
-        const remainingRange = `${remainingStart}:${range.split(':')[1]}`;
+        // // Calculate remaining range to fetch
+        // const remainingStart = processedCount + 1;
+        // const remainingRange = `${remainingStart}:${range.split(':')[1]}`;
 
-        // Continue fetching with new connection
-        await this.processFetch(
-          newConnection,
-          remainingRange,
-          folderPath,
-          totalInFolder
-        );
+        // // Continue fetching with new connection
+        // await this.processFetch(
+        //   newConnection,
+        //   remainingRange,
+        //   folderPath,
+        //   totalInFolder
+        // );
         return;
       }
 
       throw error;
-    }
-  }
-
-  /**
-   * Acquires connections with timeout handling for parallel processing.
-   * @param folderPath - Name of the folder
-   * @param numConnections - Number of connections to acquire
-   * @returns Array of acquired connections
-   */
-  private async acquireConnectionsWithTimeout(
-    folderPath: string,
-    numConnections: number
-  ): Promise<Connection[]> {
-    const connections: Connection[] = [];
-
-    // Use Promise.allSettled to acquire connections in parallel with individual timeouts
-    const connectionPromises = Array.from(
-      { length: numConnections },
-      async (_unused, i) => {
-        const timeoutPromise = new Promise<never>((_unusedResolve, reject) => {
-          setTimeout(
-            () => reject(new Error('Connection timeout')),
-            this.CONNECTION_TIMEOUT_MS
-          );
-        });
-
-        const connectionPromise = this.imapConnectionProvider
-          .acquireConnection()
-          .then(async (conn) => {
-            await conn.mailboxOpen(folderPath, { readOnly: true });
-            // Track parallel connections as well
-            this.activeConnections.add(conn);
-            return conn;
-          });
-
-        try {
-          const conn = await Promise.race([connectionPromise, timeoutPromise]);
-          logger.debug(
-            `[${this.miningId}] Acquired connection ${i + 1}/${numConnections}`
-          );
-          return conn;
-        } catch (error) {
-          const errorMessage = (error as Error).message;
-          logger.warn(
-            `[${this.miningId}] Failed to acquire connection ${i + 1}: ${errorMessage}`
-          );
-          throw error;
-        }
-      }
-    );
-
-    const results = await Promise.allSettled(connectionPromises);
-
-    // Collect successful connections
-    results.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        connections.push(result.value);
-      }
-    });
-
-    // If we have some connections but fewer than requested, log the adjustment
-    if (connections.length > 0 && connections.length < numConnections) {
-      logger.info(
-        `[${this.miningId}] Using ${connections.length} available connections instead of ${numConnections}`
-      );
-    }
-
-    return connections;
-  }
-
-  /**
-   * Fetches messages from a folder using either single connection or parallel connections based on folder size.
-   * @param folderPath - Name of the folder to fetch
-   */
-  async fetchBox(folderPath: string): Promise<void> {
-    const { connection, mailbox } = await this.openMailbox(folderPath);
-
-    try {
-      if (mailbox.exists === 0) {
-        logger.debug(
-          `[${this.miningId}] Folder ${folderPath} is empty, skipping`
-        );
-        return;
-      }
-
-      const totalInFolder = mailbox.exists;
-
-      if (totalInFolder > ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION) {
-        await this.processLargeFolder(folderPath, totalInFolder);
-      } else {
-        logger.debug(
-          `[${this.miningId}] Using single connection for ${totalInFolder} messages in ${folderPath}`
-        );
-        await this.processFetch(connection, '1:*', folderPath, totalInFolder);
-      }
-    } catch (err) {
-      logger.error(
-        `[${this.miningId}] Error processing folder ${folderPath}:`,
-        util.inspect(err, { depth: null, colors: true })
-      );
-      throw err;
     } finally {
-      await this.closeMailbox(connection, folderPath);
-    }
-  }
-
-  /**
-   * Processes large folders using parallel connections in simple batches.
-   * @param folderPath - Name of the folder
-   * @param totalInFolder - Total messages in the folder
-   */
-  private async processLargeFolder(
-    folderPath: string,
-    totalInFolder: number
-  ): Promise<void> {
-    if (this.isCanceled) {
-      logger.info(
-        `[${this.miningId}] Cancellation detected; skipping large folder processing for ${folderPath}`
-      );
-      return;
-    }
-
-    logger.info(
-      `[${this.miningId}] Parallel fetching ${totalInFolder} messages from ${folderPath}`
-    );
-
-    const ranges = buildSequenceRanges(
-      totalInFolder,
-      ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
-    );
-
-    const numConnections = Math.min(
-      ranges.length,
-      ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
-    );
-
-    logger.debug(
-      `[${this.miningId}] Requesting ${numConnections} connections for ${ranges.length} ranges`
-    );
-
-    const connections = await this.acquireConnectionsWithTimeout(
-      folderPath,
-      numConnections
-    );
-
-    if (connections.length === 0) {
-      logger.info(
-        `[${this.miningId}] No parallel connections available, using single connection fallback for ${folderPath}`
-      );
-      const { connection } = await this.openMailbox(folderPath);
-      try {
-        await this.processFetch(connection, '1:*', folderPath, totalInFolder);
-      } finally {
-        await this.closeMailbox(connection, folderPath);
+      if (connection) {
+        await this.imapConnectionProvider.releaseConnection(connection);
       }
-      return;
     }
-
-    logger.info(
-      `[${this.miningId}] Processing ${ranges.length} ranges with ${connections.length} connections`
-    );
-
-    try {
-      for (let i = 0; i < ranges.length; i += connections.length) {
-        if (this.isCanceled) {
-          logger.info(
-            `[${this.miningId}] Cancellation detected; stopping batch processing for ${folderPath}`
-          );
-          break;
-        }
-
-        const batch = ranges.slice(i, i + connections.length);
-        const batchTasks = batch.map((range, index) => {
-          const connection = connections[index];
-          return this.processFetch(
-            connection,
-            range,
-            folderPath,
-            totalInFolder
-          );
-        });
-        // eslint-disable-next-line no-await-in-loop
-        const results = await Promise.allSettled(batchTasks);
-
-        this.handleParallelResults(results, folderPath);
-      }
-    } finally {
-      await this.cleanupConnections(connections);
-    }
-  }
-
-  /**
-   * Handles results from parallel processing.
-   * @param results - Results from Promise.allSettled
-   * @param folderPath - Name of the folder
-   */
-  private handleParallelResults(
-    results: PromiseSettledResult<void>[],
-    folderPath: string
-  ): void {
-    const failures = results.filter((result) => result.status === 'rejected');
-    const successes = results.length - failures.length;
-
-    if (failures.length === results.length) {
-      throw new Error(
-        `[${this.miningId}] All parallel fetch tasks failed for folder ${folderPath}`
-      );
-    }
-
-    if (failures.length > 0) {
-      logger.warn(
-        `[${this.miningId}] ${failures.length} tasks failed, ${successes} completed successfully`
-      );
-    } else if (successes > 0) {
-      logger.info(
-        `[${this.miningId}] All ${successes} parallel tasks completed successfully`
-      );
-    }
-  }
-
-  /**
-   * Cleans up parallel connections.
-   * @param connections - Array of connections to clean up
-   */
-  private async cleanupConnections(connections: Connection[]): Promise<void> {
-    await Promise.allSettled(
-      connections.map(async (conn) => {
-        try {
-          await conn.mailboxClose();
-        } catch (err) {
-          logger.warn(`[${this.miningId}] Error closing mailbox:`, err);
-        } finally {
-          // Remove from active connections tracking
-          this.activeConnections.delete(conn);
-          await this.imapConnectionProvider.releaseConnection(conn);
-        }
-      })
-    );
   }
 
   /**
@@ -777,7 +514,7 @@ export default class ImapEmailsFetcher {
   }
 
   /**
-   * Performs cleanup operations after the fetching process has finished or stopped.
+   * Performs cleanupConnections operations after the fetching process has finished or stopped.
    */
   async stop(cancel: boolean) {
     try {
@@ -786,61 +523,43 @@ export default class ImapEmailsFetcher {
         this.isCanceled = true;
       }
 
-      try {
-        // Force close all active connections to interrupt ongoing fetch operations
-        if (this.activeConnections.size > 0) {
-          logger.info(
-            `[${this.miningId}] Force closing ${this.activeConnections.size} active connections`
-          );
-          const closePromises = Array.from(this.activeConnections).map(
-            (connection) => connection.close()
-          );
-          await Promise.allSettled(closePromises);
-        }
-        await this.process;
-      } catch (e) {
-        logger.debug(
-          `[${this.miningId}] Process completed with error:`,
-          (e as Error)?.message || e
-        );
-      }
-
       logger.info(
         `[${this.miningId}] Publishing final signature stream message...`
       );
+
       // Notify signature worker fetching is ended
-      await publishStreamsPipeline([
-        {
-          stream: this.signatureStream,
+      await redisClient.xadd(
+        this.signatureStream,
+        '*',
+        'message',
+        JSON.stringify({
+          type: 'email',
           data: {
-            type: 'email',
-            data: {
-              header: {},
-              body: '',
-              seqNumber: -1,
-              folderPath: '',
-              isLast: true
-            },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          }
-        }
-      ]);
+            header: {},
+            body: '',
+            seqNumber: -1,
+            folderPath: '',
+            isLast: true
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        })
+      );
 
       logger.info(
         `[${this.miningId}] Fetching process ${cancel ? 'canceled' : 'stopped'} successfully`
       );
-
-      // Cleanup operations
-      await redisClient.unlink(this.processSetKey);
-      await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
-
       return this.isCompleted;
     } catch (error) {
       logger.error(`[${this.miningId}] Error during stop process:`, error);
       throw error;
+    } finally {
+      // Cleanup operations
+      this.emailsQueue.clear();
+      await redisClient.unlink(this.processSetKey);
+      await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     }
   }
 }

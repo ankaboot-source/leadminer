@@ -41,10 +41,25 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const POPOVER_TIMEOUT = 10000; // 10 seconds
 const popoverRef = ref();
-function togglePopover(event: Event) {
+const popoverTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
+function togglePopover(event: MouseEvent) {
+  if (!popoverRef.value) return;
+
   popoverRef.value.toggle(event);
+
+  if (popoverTimeout.value) {
+    clearTimeout(popoverTimeout.value);
+    popoverTimeout.value = null;
+  }
+
+  popoverTimeout.value = setTimeout(() => {
+    popoverRef.value?.hide();
+    popoverTimeout.value = null;
+  }, POPOVER_TIMEOUT);
 }
+
 const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
 const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
 const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
