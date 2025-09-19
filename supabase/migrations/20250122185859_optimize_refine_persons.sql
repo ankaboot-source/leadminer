@@ -134,6 +134,6 @@ BEGIN
     DROP TABLE IF EXISTS combined_data;
 
     -- Clear table messages
-    DELETE FROM private.messages m WHERE m.user_id = user_id
+    DELETE FROM private.messages m WHERE m.user_id = user_id;
 END;
 $$;

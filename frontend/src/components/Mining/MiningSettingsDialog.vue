@@ -11,12 +11,12 @@
     :header="t('fine_tune_mining')"
   >
     <!-- aligned switch (quick) -->
-    <div class="flex items-center gap-2 pb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2 pb-4">
       <ToggleSwitch
         v-model="$leadminerStore.extractSignatures"
         input-id="extractSignatures"
       />
-      <label for="extractSignatures" class="cursor-pointer">
+      <label for="extractSignatures" class="cursor-pointer text-sm">
         {{ t('extract_signatures_option') }} {{ t('extract_signatures_sub') }}
       </label>
     </div>
@@ -110,7 +110,7 @@ defineExpose({
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
     "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-    "extract_signatures_sub": "( cela peut prendre plus de temps )"
+    "extract_signatures_sub": "(l'extraction prendra plus de temps)"
   }
 }
 </i18n>
