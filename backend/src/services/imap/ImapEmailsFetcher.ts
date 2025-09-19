@@ -10,6 +10,7 @@ import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
+
 const redisClient = redis.getClient();
 
 interface EmailJob {
@@ -473,7 +474,7 @@ export default class ImapEmailsFetcher {
         this.emailsQueue.start();
 
         return;
-      } else if (connection) {
+      } if (connection) {
         await this.imapConnectionProvider.releaseConnection(connection);
       }
       this.isCanceled = true;

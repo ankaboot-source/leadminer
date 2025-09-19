@@ -126,7 +126,8 @@ class ImapConnectionProvider {
 
     if (!this.currentOauthToken) throw Error('No refresh token');
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
+    /* eslint-disable no-await-in-loop */
+    for (let attempt = 1; attempt <= retries; attempt += 1) {
       try {
         const newAccessToken = await refreshAccessToken(this.currentOauthToken);
         this.updateOauthAccessToken(String(newAccessToken.access_token));
@@ -146,7 +147,9 @@ class ImapConnectionProvider {
         }
 
         // Wait a bit before retrying
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 3000);
+        });
       }
     }
   }
