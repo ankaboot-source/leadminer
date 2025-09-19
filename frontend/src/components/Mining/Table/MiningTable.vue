@@ -1040,7 +1040,7 @@ async function exportTable(partialExport = false) {
           severity: 'success',
           summary: t('csv_export'),
           detail: t('contacts_exported_successfully'),
-          life: 3000,
+          life: 8000,
         });
       }
     },

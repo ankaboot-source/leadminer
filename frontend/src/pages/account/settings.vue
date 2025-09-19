@@ -229,7 +229,7 @@ async function updateUserAccount(userAccount: UserAttributes) {
       severity: 'success',
       summary: t('password_updated'),
       detail: t('password_update_detail'),
-      life: 3000,
+      life: 5000,
     });
   }
 }
@@ -250,7 +250,7 @@ async function updateUserProfile(userProfile: Partial<Profile>) {
     severity: 'success',
     summary: t('profile_updated'),
     detail: t('profile_success'),
-    life: 3000,
+    life: 5000,
   });
 }
 
