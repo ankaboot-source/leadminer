@@ -16,7 +16,7 @@
         v-model="$leadminerStore.extractSignatures"
         input-id="extractSignatures"
       />
-      <label for="extractSignatures" class="cursor-pointer text-sm">
+      <label for="extractSignatures" class="cursor-pointer">
         {{ t('extract_signatures_option') }} {{ t('extract_signatures_sub') }}
       </label>
     </div>
