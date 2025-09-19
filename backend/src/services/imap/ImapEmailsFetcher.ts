@@ -419,12 +419,6 @@ export default class ImapEmailsFetcher {
       if (publishedEmails >= batchSize) {
         await publishFetchingProgress(this.miningId, publishedEmails);
         publishedEmails = 0;
-
-        const fakeError = {
-          authenticationFailed: true,
-          message: 'Simulated auth failure'
-        };
-        throw fakeError;
       }
     }
 
