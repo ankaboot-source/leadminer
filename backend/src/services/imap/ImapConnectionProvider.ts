@@ -132,11 +132,17 @@ class ImapConnectionProvider {
         this.updateOauthAccessToken(String(newAccessToken.access_token));
         logger.debug('OAuth token refreshed and updated in ImapConfig');
         return;
-      } catch (err) {
-        logger.warn(`Attempt ${attempt} failed to refresh token: ${err}`);
+      } catch (error) {
+        logger.warn(
+          `Attempt ${attempt} failed to refresh token:`,
+          util.inspect(error, { depth: null, colors: true })
+        );
         if (attempt === retries) {
-          logger.error('All attempts to refresh token failed');
-          throw err;
+          logger.error(
+            'All attempts to refresh token failed',
+            util.inspect(error, { depth: null, colors: true })
+          );
+          throw error;
         }
 
         // Wait a bit before retrying
