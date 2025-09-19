@@ -124,8 +124,8 @@ const totalEmails = computed<number>(() => {
   if (sourceType.value === 'boxes' && boxes.value[0]) {
     return objectScan(['**.{total}'], {
       joined: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      filterFn: ({ parent, property, value, context }: any) => {
+
+      filterFn: ({ parent, property, value, context }: never) => {
         if (
           property === 'total' &&
           parent.key &&
@@ -197,7 +197,7 @@ onMounted(async () => {
 
   try {
     await $leadminerStore.fetchInbox();
-  } catch (error: any) {
+  } catch (error) {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
     } else {
