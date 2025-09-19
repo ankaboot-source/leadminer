@@ -2,26 +2,27 @@ import * as Sentry from '@sentry/node';
 
 import express, { json, urlencoded } from 'express';
 
+import util from 'util';
 import { Logger } from 'winston';
-import AuthResolver from './services/auth/AuthResolver';
-import Billing from './utils/billing-plugin';
-import { Contacts } from './db/interfaces/Contacts';
 import ENV from './config';
+import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
-import TasksManager from './services/tasks-manager/TasksManager';
 import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
+import notFound from './middleware/notFound';
+import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
 import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
-import initializeSentry from './middleware/sentry';
 import initializeStreamRouter from './routes/stream.routes';
-import notFound from './middleware/notFound';
+import AuthResolver from './services/auth/AuthResolver';
 import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
+import TasksManager from './services/tasks-manager/TasksManager';
+import Billing from './utils/billing-plugin';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -84,7 +85,10 @@ export default function initializeApp(
   app.use(errorHandler);
 
   process.on('uncaughtException', (err) => {
-    logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, err.stack || err);
+    logger.error(
+      '[UNCAUGHT EXCEPTION]:',
+      util.inspect(err, { depth: null, colors: true })
+    );
     if (ENV.SENTRY_DSN_BACKEND) {
       Sentry.captureException(err);
     }

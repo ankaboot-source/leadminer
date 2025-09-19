@@ -1,14 +1,15 @@
 import { parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
 import { ImapFlow as Connection } from 'imapflow';
+import { simpleParser } from 'mailparser';
 import PQueue from 'p-queue';
+import util from 'util';
+import ENV from '../../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
-import ENV from '../../config';
 
 const redisClient = redis.getClient();
 
@@ -67,7 +68,7 @@ export default class ImapEmailsFetcher {
 
   private totalFetched: number;
 
-  private hasAuthFailureLogged: boolean;
+  private hasOAuthError = false;
 
   private readonly bodies: string[];
 
@@ -112,7 +113,6 @@ export default class ImapEmailsFetcher {
 
     this.isCanceled = false;
     this.isCompleted = false;
-    this.hasAuthFailureLogged = false;
 
     this.fetchedIds = new Set<string>();
     this.emailsQueue = new PQueue({
@@ -452,24 +452,34 @@ export default class ImapEmailsFetcher {
       logger.info(
         `[${this.miningId}:${folder}]: Closed folder for range ${range}`
       );
+
+      await this.imapConnectionProvider.releaseConnection(connection);
     } catch (error) {
-      if (ImapEmailsFetcher.isAuthFailure(error)) {
-        if (!this.hasAuthFailureLogged) {
-          logger.error(`[${this.miningId}] Authentication failed`, error);
-          this.hasAuthFailureLogged = true;
-        }
-        this.isCanceled = true;
-        throw error;
-      }
       logger.error(
-        `[${this.miningId}:${folder}]: ${(error as Error).message}`,
-        error
+        `[${this.miningId}:${folder}]:`,
+        util.inspect(error, { depth: null, colors: true })
       );
-      throw error;
-    } finally {
+
+      if (ImapEmailsFetcher.isAuthFailure(error)) {
+        this.emailsQueue.add(() =>
+          this.processEmailJob({ range, folder, totalInFolder })
+        );
+
+        if (this.hasOAuthError) return;
+        this.hasOAuthError = true; // to avoid refreshing pool on every connection
+        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+
+        this.emailsQueue.pause();
+        await this.imapConnectionProvider.refreshPool();
+        this.emailsQueue.start();
+
+        return;
+      }
       if (connection) {
         await this.imapConnectionProvider.releaseConnection(connection);
       }
+      this.isCanceled = true;
+      throw error;
     }
   }
 
@@ -520,7 +530,10 @@ export default class ImapEmailsFetcher {
       );
       return this.isCompleted;
     } catch (error) {
-      logger.error(`[${this.miningId}] Error during stop process:`, error);
+      logger.error(
+        `[${this.miningId}] Error during stop process:`,
+        util.inspect(error, { depth: null, colors: true })
+      );
       throw error;
     } finally {
       // Cleanup operations
