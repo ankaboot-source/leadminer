@@ -474,7 +474,8 @@ export default class ImapEmailsFetcher {
         this.emailsQueue.start();
 
         return;
-      } if (connection) {
+      }
+      if (connection) {
         await this.imapConnectionProvider.releaseConnection(connection);
       }
       this.isCanceled = true;
