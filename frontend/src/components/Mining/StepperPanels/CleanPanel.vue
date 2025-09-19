@@ -3,7 +3,7 @@
     :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
     :current="verifiedContacts"
-    :rate="3"
+    :rate="AVERAGE_CLEANING_RATE"
     :started="taskStartedAt"
     :progress="verificationProgress"
     :progress-tooltip="progressTooltip"

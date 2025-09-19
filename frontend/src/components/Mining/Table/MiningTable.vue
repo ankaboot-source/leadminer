@@ -1040,7 +1040,7 @@ async function exportTable(partialExport = false) {
           severity: 'success',
           summary: t('csv_export'),
           detail: t('contacts_exported_successfully'),
-          life: 3000,
+          life: 8000,
         });
       }
     },
@@ -1151,6 +1151,8 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
+
+onBeforeMount(() => (isLoading.value = true));
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
