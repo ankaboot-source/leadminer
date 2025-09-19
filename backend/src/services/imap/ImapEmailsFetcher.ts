@@ -67,8 +67,6 @@ export default class ImapEmailsFetcher {
 
   private totalFetched: number;
 
-  private connections: Connection[];
-
   private hasAuthFailureLogged: boolean;
 
   private readonly bodies: string[];
@@ -110,7 +108,6 @@ export default class ImapEmailsFetcher {
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
-    this.connections = [];
     this.totalFetched = 0;
 
     this.isCanceled = false;
@@ -123,7 +120,7 @@ export default class ImapEmailsFetcher {
       intervalCap: 1, // only 1 job starts per interval
       interval: 100 // 100ms gap between job starts
     });
-    this.bodies = this.fetchEmailBody ? ['HEADER', 'TEXT'] : ['HEADER'];
+    this.bodies = this.fetchEmailBody ? ['TEXT'] : []; // HEADER is handled by ImapFlow;
   }
 
   /**
@@ -337,8 +334,10 @@ export default class ImapEmailsFetcher {
 
       let header: Record<string, string[]>;
       const { seq, headers, envelope } = msg;
+      const from = envelope?.from?.pop();
+      const date = envelope?.date?.toISOString?.();
 
-      if (envelope?.from?.pop()?.address === this.userEmail) continue;
+      if (from?.address === this.userEmail) continue;
 
       try {
         header = parseHeader((headers as Buffer).toString('utf8'));
@@ -346,29 +345,6 @@ export default class ImapEmailsFetcher {
         continue;
       }
 
-      let text = '';
-      if (msg.bodyParts?.has('text')) {
-        const textPart = msg.bodyParts.get('text');
-        if (headers && textPart?.length) {
-          try {
-            const { text: parsedText } = await simpleParser(
-              Buffer.concat([headers, textPart]),
-              {
-                skipHtmlToText: true,
-                skipTextToHtml: true,
-                skipImageLinks: true,
-                skipTextLinks: true
-              }
-            );
-            text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-          } catch {
-            text = '';
-          }
-        }
-      }
-
-      const from = envelope?.from?.pop();
-      const date = envelope?.date?.toISOString?.();
       const messageId = getMessageId(header);
       header['message-id'] = [messageId];
 
@@ -395,6 +371,25 @@ export default class ImapEmailsFetcher {
           miningId: this.miningId
         })
       );
+
+      let text = msg.bodyParts?.get('text') ?? '';
+
+      if (headers && text?.length) {
+        try {
+          const { text: parsedText } = await simpleParser(
+            Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
+            {
+              skipHtmlToText: true,
+              skipTextToHtml: true,
+              skipImageLinks: true,
+              skipTextLinks: true
+            }
+          );
+          text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
+        } catch {
+          text = '';
+        }
+      }
 
       if (text.length && from && date) {
         await redisClient.xadd(
