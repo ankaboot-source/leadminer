@@ -17,7 +17,7 @@ import {
 export enum LLMModels {
   qwenFree = 'qwen/qwen-2.5-7b-instruct:free',
   deepseekFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-  cohere = 'cohere/command-r',
+  cohere = 'cohere/command-r-08-2024',
   cohere7b = 'cohere/command-r7b-12-2024',
   meta = 'meta-llama/llama-3.1-8b-instruct',
   google = 'google/gemma-2-9b-it'
@@ -266,7 +266,7 @@ export class SignatureLLM implements ExtractSignature {
 
       return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
-      this.logger.error('SignatureExtractionLLM error:', err);
+      this.logger.error('SignatureExtractionLLM error:', {error: err});
       return null;
     }
   }
