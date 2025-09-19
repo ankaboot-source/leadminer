@@ -1151,6 +1151,8 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
+
+onBeforeMount(() => (isLoading.value = true));
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
