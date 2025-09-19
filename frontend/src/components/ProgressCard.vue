@@ -127,9 +127,18 @@ function getEstimationString() {
 const estimatedRemainingTimeConverted = ref(getEstimationString());
 
 onMounted(() => {
+  // periodic updates
   const progressEstimator = setInterval(() => {
     estimatedRemainingTimeConverted.value = getEstimationString();
   }, ESTIMATION_UPDATE_INTERVAL);
+
+  // update immediately when critical props change
+  watch(
+    () => props.total,
+    () => {
+      estimatedRemainingTimeConverted.value = getEstimationString();
+    },
+  );
 
   watch(
     () => props.status,
