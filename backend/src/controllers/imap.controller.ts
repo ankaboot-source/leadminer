@@ -50,6 +50,10 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
     expires_at: expiresAt
   });
 
+  logger.debug(
+    'Got token that expires at ' + new Date(expiresAt).toLocaleString()
+  );
+
   return { token, refreshToken, provider };
 }
 
@@ -106,7 +110,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           const { token, refreshToken, provider } = getTokenAndProvider(data);
           if (!refreshToken)
             return res.status(401).send({
-              data: { message: 'Token has expired' }
+              data: { message: 'No Refresh Token' }
             });
 
           if (token.expired(1000)) {
