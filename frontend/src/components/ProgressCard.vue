@@ -14,7 +14,10 @@
         <div v-else-if="progressPercentage === 100">
           {{ t('finished_in', { t: convertSeconds(finishedTime) }) }}
         </div>
-        <div v-else-if="!$leadminerStore.isLoadingBoxes">
+        <div v-else-if="$leadminerStore.isLoadingBoxes">
+          {{ t('hold_on_while_loading_boxes') }}
+        </div>
+        <div v-else>
           {{ t('estimated_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
       </slot>
@@ -162,12 +165,14 @@ onMounted(() => {
   "en": {
     "finished_in": "Finished in {t}",
     "estimated_time": "The contact mining may take around {t}",
-    "remaining_time": "{t} remaining"
+    "remaining_time": "{t} remaining",
+    "hold_on_while_loading_boxes": "Please hold on while we are retrieving mailboxes..."
   },
   "fr": {
     "finished_in": "Terminé en {t}",
     "estimated_time": "L'extraction de contacts peut prendre environ {t}",
-    "remaining_time": "{t} restantes"
+    "remaining_time": "{t} restantes",
+    "hold_on_while_loading_boxes": "Veuillez patienter pendant que nous récupérons les boîtes aux lettres..."
   }
 }
 </i18n>
