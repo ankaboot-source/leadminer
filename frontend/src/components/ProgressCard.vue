@@ -166,13 +166,13 @@ onMounted(() => {
     "finished_in": "Finished in {t}",
     "estimated_time": "The contact mining may take around {t}",
     "remaining_time": "{t} remaining",
-    "hold_on_while_loading_boxes": "Please hold on while we are retrieving mailboxes..."
+    "hold_on_while_loading_boxes": "Please hold on while we are retrieving your mailboxes..."
   },
   "fr": {
     "finished_in": "Terminé en {t}",
     "estimated_time": "L'extraction de contacts peut prendre environ {t}",
     "remaining_time": "{t} restantes",
-    "hold_on_while_loading_boxes": "Veuillez patienter pendant que nous récupérons les boîtes aux lettres..."
+    "hold_on_while_loading_boxes": "Veuillez patienter pendant que nous récupérons vos boîtes aux lettres..."
   }
 }
 </i18n>
