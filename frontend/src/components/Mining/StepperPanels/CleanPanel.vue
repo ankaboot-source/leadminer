@@ -98,7 +98,7 @@ async function haltCleaning() {
   try {
     await $leadminerStore.stopMining(true, null);
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('cleaning_stopped'),
       detail: t('cleaning_canceled'),
       life: 3000,
