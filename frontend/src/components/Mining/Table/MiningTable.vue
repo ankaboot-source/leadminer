@@ -291,7 +291,7 @@
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
-              <social-links
+              <social-links-and-phones
                 :social-links="data.same_as"
                 :show-social-links="visibleColumns.includes('same_as')"
                 :phones="data.telephone"
@@ -309,7 +309,7 @@
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
-              <social-links
+              <social-links-and-phones
                 :social-links="data.same_as"
                 :show-social-links="visibleColumns.includes('same_as')"
                 :phones="data.telephone"
@@ -774,8 +774,8 @@ import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-const SocialLinks = defineAsyncComponent(
-  () => import('../../icons/SocialLink.vue'),
+const SocialLinksAndPhones = defineAsyncComponent(
+  () => import('../../icons/SocialLinksAndPhones.vue'),
 );
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),

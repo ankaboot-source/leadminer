@@ -27,6 +27,7 @@
     />
   </template>
 </template>
+
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
@@ -34,7 +35,7 @@ const props = withDefaults(
     phones?: string[];
     showSocialLinks?: boolean;
     showPhones?: boolean;
-    small: boolean;
+    small?: boolean;
   }>(),
   {
     socialLinks: () => [],
