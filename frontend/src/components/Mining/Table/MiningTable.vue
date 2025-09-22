@@ -291,24 +291,13 @@
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
-              <template
-                v-if="data.telephone && visibleColumns.includes('telephone')"
-              >
-                <Chip
-                  v-for="(phone, index) in data.telephone"
-                  :key="index"
-                  v-tooltip="phone"
-                  :href="`tel:${phone}`"
-                  icon="pi pi-phone"
-                  class="cursor-pointer p-0 px-1"
-                  @click="callPhoneNumber(phone)"
-                />
-              </template>
-              <template
-                v-if="data.same_as && visibleColumns.includes('same_as')"
-              >
-                <social-links :social-links="data.same_as" :small="true" />
-              </template>
+              <social-links
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
           </div>
 
@@ -320,24 +309,13 @@
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
-              <template
-                v-if="data.telephone && visibleColumns.includes('telephone')"
-              >
-                <Chip
-                  v-for="(phone, index) in data.telephone"
-                  :key="index"
-                  v-tooltip="phone"
-                  :href="`tel:${phone}`"
-                  icon="pi pi-phone"
-                  class="cursor-pointer p-0 px-1"
-                  @click="callPhoneNumber(phone)"
-                />
-              </template>
-              <template
-                v-if="data.same_as && visibleColumns.includes('same_as')"
-              >
-                <social-links :social-links="data.same_as" :small="true" />
-              </template>
+              <social-links
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
             <Button
               rounded

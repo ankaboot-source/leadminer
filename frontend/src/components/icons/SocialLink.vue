@@ -1,26 +1,49 @@
 <template>
-  <NuxtLink
-    v-for="(link, index) in socialLinks"
-    :key="index"
-    :to="link"
-    target="_blank"
-    rel="noopener"
-  >
-    <i
-      v-tooltip.right="{
+  <template v-if="showPhones">
+    <Chip
+      v-for="(phone, index) in phones"
+      :key="index"
+      v-tooltip="{
+        value: phone,
+        class: 'text-xs ml-1',
+      }"
+      icon="pi pi-phone"
+      class="cursor-pointer p-0 px-1"
+      @click="callPhoneNumber(phone)"
+    />
+  </template>
+
+  <template v-if="showSocialLinks">
+    <Chip
+      v-for="(link, index) in socialLinks"
+      :key="index"
+      v-tooltip="{
         value: link,
         class: 'text-xs ml-1',
       }"
-      :class="`pi pi-${getSameAsIcon(link)}`"
-      class="text-md md:text-lg lg:text-xl"
+      :icon="`pi pi-${getSameAsIcon(link)}`"
+      class="cursor-pointer p-0 px-1"
+      @click="openLink(link)"
     />
-  </NuxtLink>
+  </template>
 </template>
 <script setup lang="ts">
-const props = defineProps<{
-  socialLinks: string[];
-  small: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    socialLinks?: string[];
+    phones?: string[];
+    showSocialLinks?: boolean;
+    showPhones?: boolean;
+    small: boolean;
+  }>(),
+  {
+    socialLinks: () => [],
+    phones: () => [],
+    showSocialLinks: true,
+    showPhones: true,
+    small: false,
+  },
+);
 
 const socialLinks = computed(() =>
   props.small ? props.socialLinks.slice(0, 3) : props.socialLinks,
@@ -40,5 +63,9 @@ function getSameAsIcon(url: string) {
   } catch {
     return 'globe';
   }
+}
+
+function openLink(url: string) {
+  window.open(url, '_blank');
 }
 </script>
