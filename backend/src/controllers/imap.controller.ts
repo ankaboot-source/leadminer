@@ -51,7 +51,7 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   });
 
   logger.debug(
-    'Got token that expires at ' + new Date(expiresAt).toLocaleString()
+    `Got token that expires at ${new Date(expiresAt).toLocaleString()}`
   );
 
   return { token, refreshToken, provider };
