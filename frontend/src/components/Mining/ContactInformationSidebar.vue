@@ -56,7 +56,7 @@
             v-if="contact.same_as?.length && !editingContact"
             class="flex gap-2 grow"
           >
-            <social-link :social-links="contact.same_as" :small="false" />
+            <social-links-and-phones :social-links="contact.same_as" />
           </div>
           <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
             <Tag
@@ -227,13 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-  User,
-} from '@supabase/supabase-js';
-
-import SocialLink from '@/components/icons/SocialLink.vue';
+import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import {
@@ -243,6 +237,11 @@ import {
   getTagLabel,
   isValidURL,
 } from '@/utils/contacts';
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+  User,
+} from '@supabase/supabase-js';
 
 const { t } = useI18n({
   useScope: 'local',
