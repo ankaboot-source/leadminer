@@ -14,7 +14,7 @@
         <div v-else-if="progressPercentage === 100">
           {{ t('finished_in', { t: convertSeconds(finishedTime) }) }}
         </div>
-        <div v-else>
+        <div v-else-if="!$leadminerStore.isLoadingBoxes">
           {{ t('estimated_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
       </slot>
@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { convertSeconds, timeConversionRounded } from '@/utils/time';
+const $leadminerStore = useLeadminerStore();
 
 const { t } = useI18n({
   useScope: 'local',
@@ -61,9 +62,10 @@ function togglePopover(event: MouseEvent) {
 }
 
 const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
-const MIN_ELAPSED_FOR_ESTIMATION = 5 * 1000; // wait 5 seconds for estimation
+const MIN_ELAPSED_FOR_ESTIMATION = 5; // wait 5 seconds for estimation
+const SUFFICIENT_ELAPSED_FOR_ESTIMATION = 120; // estimate right away if elapsed time >= 120 seconds
 const SUFFICIENT_ITEMS_FOR_ESTIMATION = 100; // estimate right away if >=100 items treated
-const ESTIMATION_UPDATE_INTERVAL = 1000 * 30; // update progress estimation once per 30 seconds
+const ESTIMATION_UPDATE_INTERVAL = 30; // update progress estimation once per 30 seconds
 
 const props = defineProps({
   status: { type: Boolean, required: true },
@@ -89,24 +91,27 @@ const progressPercentage = computed(() => Math.floor(progressValue.value));
 
 const finishedTime = ref(0);
 
-function getElapsedTime() {
-  return Math.floor((performance.now() - progressStartedAt.value || 0) / 1000);
+function getElapsedSeconds() {
+  if (!progressStartedAt.value) return 0;
+  return Math.floor((performance.now() - progressStartedAt.value) / 1000);
 }
 
 watchEffect(() => {
   if (progressPercentage.value === 100 && finishedTime.value === 0) {
-    finishedTime.value = getElapsedTime();
+    finishedTime.value = getElapsedSeconds();
   }
 });
 
 function getEstimatedRemainingTime() {
-  const elapsedTime = getElapsedTime();
+  const elapsedTime = getElapsedSeconds();
 
-  if (
-    props.current < SUFFICIENT_ITEMS_FOR_ESTIMATION &&
-    (props.progress < MIN_PROGRESS_FOR_ESTIMATION ||
-      elapsedTime < MIN_ELAPSED_FOR_ESTIMATION)
-  ) {
+  const isEstimatable =
+    props.current >= SUFFICIENT_ITEMS_FOR_ESTIMATION ||
+    elapsedTime >= SUFFICIENT_ELAPSED_FOR_ESTIMATION ||
+    (props.progress >= MIN_PROGRESS_FOR_ESTIMATION &&
+      elapsedTime >= MIN_ELAPSED_FOR_ESTIMATION);
+
+  if (!isEstimatable) {
     return Math.round(props.total / props.rate);
   }
 
@@ -116,7 +121,6 @@ function getEstimatedRemainingTime() {
   if (estimatedRemainingTime < 0) {
     estimatedRemainingTime = 0;
   }
-
   return estimatedRemainingTime;
 }
 
@@ -130,7 +134,7 @@ onMounted(() => {
   // periodic updates
   const progressEstimator = setInterval(() => {
     estimatedRemainingTimeConverted.value = getEstimationString();
-  }, ESTIMATION_UPDATE_INTERVAL);
+  }, ESTIMATION_UPDATE_INTERVAL * 1000);
 
   // update immediately when critical props change
   watch(
