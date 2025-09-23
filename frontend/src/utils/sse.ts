@@ -25,7 +25,6 @@ class SSE {
   initConnection(
     miningType: 'file' | 'email',
     miningId: string,
-    token: string,
     {
       onFetchedUpdate,
       onExtractedUpdate,
@@ -50,6 +49,13 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
+    const token = useSupabaseSession().value?.access_token;
+    if (!token) {
+      throw new Error('[SSE] No access token available.');
+    }
+    // SSE Connection lost for mining task with id: LdGPApKfeJ | {}
+    // Failed to get authenticated user invalid JWT
+
     return fetchEventSource(
       `${
         useRuntimeConfig().public.SERVER_ENDPOINT
