@@ -1,0 +1,1 @@
+ALTER ROLE authenticator SET statement_timeout = '120s';
