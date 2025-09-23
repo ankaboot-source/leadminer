@@ -156,7 +156,14 @@ export default class ImapEmailsFetcher {
       err.code === 'bad_jwt' ||
       err.name === 'AuthApiError';
 
-    return isImapAuthError || isTokenExpired;
+    // 3. Check for connection errors that might require re-authentication
+    const isConnectionErrorRequiringAuth =
+      err.code === 'ECONNRESET' ||
+      err.code === 'NoConnection' ||
+      (typeof err.message === 'string' &&
+        err.message.includes('Connection not available'));
+
+    return isImapAuthError || isTokenExpired || isConnectionErrorRequiringAuth;
   }
 
   /**
