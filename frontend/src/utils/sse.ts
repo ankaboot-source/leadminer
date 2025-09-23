@@ -53,8 +53,6 @@ class SSE {
     if (!token) {
       throw new Error('[SSE] No access token available.');
     }
-    // SSE Connection lost for mining task with id: LdGPApKfeJ | {}
-    // Failed to get authenticated user invalid JWT
 
     return fetchEventSource(
       `${
