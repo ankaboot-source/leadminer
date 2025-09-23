@@ -153,8 +153,8 @@ export default class ImapEmailsFetcher {
           err.message.includes('JWT expired') ||
           err.message.includes('invalid JWT') ||
           err.message.includes('bad_jwt'))) ||
-      err.code === 'bad_jwt';
-    err.name === 'AuthApiError';
+      err.code === 'bad_jwt' ||
+      err.name === 'AuthApiError';
 
     return isImapAuthError || isTokenExpired;
   }
