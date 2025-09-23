@@ -135,7 +135,8 @@ export default class ImapEmailsFetcher {
 
     const err = error as Record<string, unknown>;
 
-    return (
+    // 1. Check for IMAP authentication failures (your existing logic)
+    const isImapAuthError =
       err.authenticationFailed === true ||
       err.serverResponseCode === 'AUTHENTICATIONFAILED' ||
       (err.responseStatus === 'NO' &&
@@ -143,8 +144,26 @@ export default class ImapEmailsFetcher {
         err.responseText.includes('Invalid credentials')) ||
       (typeof err.message === 'string' &&
         (err.message.includes('AUTHENTICATIONFAILED') ||
-          err.message.includes('Invalid credentials')))
-    );
+          err.message.includes('Invalid credentials')));
+
+    // 2. Check for OAuth/JWT token expiration
+    const isTokenExpired =
+      (typeof err.message === 'string' &&
+        (err.message.includes('token is expired') ||
+          err.message.includes('JWT expired') ||
+          err.message.includes('invalid JWT') ||
+          err.message.includes('bad_jwt'))) ||
+      err.code === 'bad_jwt' ||
+      err.name === 'AuthApiError';
+
+    // 3. Check for connection errors that might require re-authentication
+    const isConnectionErrorRequiringAuth =
+      err.code === 'ECONNRESET' ||
+      err.code === 'NoConnection' ||
+      (typeof err.message === 'string' &&
+        err.message.includes('Connection not available'));
+
+    return isImapAuthError || isTokenExpired || isConnectionErrorRequiringAuth;
   }
 
   /**

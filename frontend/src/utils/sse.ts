@@ -25,7 +25,6 @@ class SSE {
   initConnection(
     miningType: 'file' | 'email',
     miningId: string,
-    token: string,
     {
       onFetchedUpdate,
       onExtractedUpdate,
@@ -50,6 +49,11 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
+    const token = useSupabaseSession().value?.access_token;
+    if (!token) {
+      throw new Error('[SSE] No access token available.');
+    }
+
     return fetchEventSource(
       `${
         useRuntimeConfig().public.SERVER_ENDPOINT
