@@ -27,8 +27,7 @@ export const EMAIL_EXCLUDED_FOLDERS = [
  * @returns The filtered array of boxes
  */
 export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  console.log('Filtering folders from boxes: ', boxes);
-  const filteredFolders: TreeSelectionKeys = {}; // Use object, not array
+  const filteredFolders: TreeSelectionKeys = {};
   let foundAllMailKey: string | null = null;
 
   objectScan(['**.key'], {
