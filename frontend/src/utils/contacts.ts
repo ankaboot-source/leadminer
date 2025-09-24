@@ -210,9 +210,7 @@ export async function removeContactsFromDatabase(
     });
   if (error) throw error;
 
-  if (emails && emails?.length > 0) {
-    useContactsStore().removeOldContacts(emails);
-  }
+  useContactsStore().removeOldContacts(emails);
 }
 
 export function callPhoneNumber(phone: string) {

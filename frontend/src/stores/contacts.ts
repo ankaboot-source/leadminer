@@ -118,7 +118,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
     );
   }
 
-  function removeOldContacts(emails: string[]) {
+  function removeOldContacts(emails?: string[]) {
+    if (!emails) {
+      contactsCacheMap.clear();
+      contactsList.value = [];
+      return;
+    }
     emails.forEach((email) => {
       contactsCacheMap.delete(email);
     });
