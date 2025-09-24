@@ -457,13 +457,14 @@ export default class ImapEmailsFetcher {
     }
   }
 
-  private setOAuthRefreshCooldown(seconds: number = 30) {
+  private setOAuthRefreshCooldown(seconds = 30) {
     this.isRefreshingOAuthToken = true;
     setTimeout(seconds * 1000).then(() => {
       this.isRefreshingOAuthToken = false;
       logger.debug('OAuth error flag reset - ready for future auth checks');
     });
   }
+
   /**
    * Opens a connection and fetches messages.
    * @param emailJob - The email job to process
