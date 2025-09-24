@@ -70,6 +70,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes.value = [];
     selectedBoxes.value = [];
     selectedFile.value = null;
+    extractSignatures.value = true;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -128,6 +129,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
+      extractSignatures.value = true;
 
       console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
