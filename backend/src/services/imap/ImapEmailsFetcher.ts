@@ -317,6 +317,8 @@ export default class ImapEmailsFetcher {
       this.isCompleted = true;
 
       await publishFetchingProgress(this.miningId, 0);
+
+      await this.stop(false);
       logger.info(`[${this.miningId}] All email jobs completed`);
     } catch (err) {
       logger.error(err);
@@ -349,7 +351,13 @@ export default class ImapEmailsFetcher {
     const batchSize = Math.max(this.batchSize, 200);
 
     for await (const msg of this.createFetchStream(connection, range)) {
-      if (this.isCanceled) break;
+      if (this.isCanceled) {
+        logger.debug(
+          `[${this.miningId}:${folderPath}:${range}]: Received cancellation signal, aborting... `
+        );
+        connection.close();
+        break;
+      }
 
       let header: Record<string, string[]>;
       const { seq, headers, envelope } = msg;
@@ -466,13 +474,6 @@ export default class ImapEmailsFetcher {
       );
 
       await this.processFetch(connection, range, folder, totalInFolder);
-
-      await connection.mailboxClose();
-      logger.info(
-        `[${this.miningId}:${folder}]: Closed folder for range ${range}`
-      );
-
-      await this.imapConnectionProvider.releaseConnection(connection);
     } catch (error) {
       logger.error(
         `[${this.miningId}:${folder}]:`,
@@ -494,11 +495,16 @@ export default class ImapEmailsFetcher {
 
         return;
       }
-      if (connection) {
-        await this.imapConnectionProvider.releaseConnection(connection);
-      }
       this.isCanceled = true;
       throw error;
+    } finally {
+      if (connection && connection?.usable) {
+        await connection.mailboxClose();
+        logger.info(
+          `[${this.miningId}:${folder}]: Closed folder for range ${range}`
+        );
+        await this.imapConnectionProvider.releaseConnection(connection);
+      }
     }
   }
 
@@ -515,7 +521,7 @@ export default class ImapEmailsFetcher {
   async stop(cancel: boolean) {
     try {
       if (cancel) {
-        logger.info(`[${this.miningId}] Canceling fetching process...`);
+        logger.info(`[${this.miningId}] Triggering cancel signal...`);
         this.isCanceled = true;
       }
 
@@ -544,6 +550,8 @@ export default class ImapEmailsFetcher {
         })
       );
 
+      await this.emailsQueue.onIdle();
+
       logger.info(
         `[${this.miningId}] Fetching process ${cancel ? 'canceled' : 'stopped'} successfully`
       );
@@ -556,7 +564,6 @@ export default class ImapEmailsFetcher {
       throw error;
     } finally {
       // Cleanup operations
-      this.emailsQueue.clear();
       await redisClient.unlink(this.processSetKey);
       await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     }
