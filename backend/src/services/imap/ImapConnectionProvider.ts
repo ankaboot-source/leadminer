@@ -121,6 +121,10 @@ class ImapConnectionProvider {
     }
   }
 
+  isOauth() {
+    return !!this.imapConfig.auth?.accessToken;
+  }
+
   async refreshOauthToken(retries = 3): Promise<void> {
     logger.debug('Refreshing OAuth token in ImapConfig');
 

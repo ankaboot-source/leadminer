@@ -1,6 +1,7 @@
 import { parseHeader } from 'imap';
 import { ImapFlow as Connection } from 'imapflow';
 import { simpleParser } from 'mailparser';
+import { setTimeout } from 'node:timers/promises';
 import PQueue from 'p-queue';
 import util from 'util';
 import ENV from '../../config';
@@ -68,7 +69,7 @@ export default class ImapEmailsFetcher {
 
   private totalFetched: number;
 
-  private hasOAuthError = false;
+  private isRefreshingOAuthToken = false;
 
   private readonly bodies: string[];
 
@@ -456,6 +457,13 @@ export default class ImapEmailsFetcher {
     }
   }
 
+  private setOAuthRefreshCooldown(seconds: number = 30) {
+    this.isRefreshingOAuthToken = true;
+    setTimeout(seconds * 1000).then(() => {
+      this.isRefreshingOAuthToken = false;
+      logger.debug('OAuth error flag reset - ready for future auth checks');
+    });
+  }
   /**
    * Opens a connection and fetches messages.
    * @param emailJob - The email job to process
@@ -480,13 +488,16 @@ export default class ImapEmailsFetcher {
         util.inspect(error, { depth: null, colors: true })
       );
 
-      if (ImapEmailsFetcher.isAuthFailure(error)) {
+      if (
+        ImapEmailsFetcher.isAuthFailure(error) &&
+        this.imapConnectionProvider.isOauth()
+      ) {
         this.emailsQueue.add(() =>
           this.processEmailJob({ range, folder, totalInFolder })
         );
 
-        if (this.hasOAuthError) return;
-        this.hasOAuthError = true; // to avoid refreshing pool on every connection
+        if (this.isRefreshingOAuthToken) return;
+        this.setOAuthRefreshCooldown(); // to avoid refreshing pool on every connection
         logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
 
         this.emailsQueue.pause();
