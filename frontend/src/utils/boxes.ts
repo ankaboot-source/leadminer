@@ -51,7 +51,7 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
 
       const checked = attribs && !attribs.includes('\\HasChildren');
       const partialChecked = !checked;
-      const isNoSelect = Boolean(attribs?.includes('\\Noselect'));
+      const isNoSelect = Boolean(attribs?.includes('\\Noselect')) || undefined;
 
       if (isAllMail && !isNoSelect) {
         // Clear previous selections
