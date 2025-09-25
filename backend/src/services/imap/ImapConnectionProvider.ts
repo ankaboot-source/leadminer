@@ -203,7 +203,7 @@ class ImapConnectionProvider {
           this.currentOAuthSourceDetails.source.credentials
         );
         await this.updateOAuthToken(newToken);
-        logger.debug('OAuth token refreshed and updated in ImapConfig');
+        logger.debug('OAuth token refreshed and updated successfully');
         return;
       } catch (error) {
         logger.warn(
