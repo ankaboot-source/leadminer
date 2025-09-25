@@ -491,7 +491,7 @@ export default class ImapEmailsFetcher {
 
       if (
         ImapEmailsFetcher.isAuthFailure(error) &&
-        this.imapConnectionProvider.isOauth()
+        this.imapConnectionProvider.isOAuth()
       ) {
         this.emailsQueue.add(() =>
           this.processEmailJob({ range, folder, totalInFolder })

@@ -27,7 +27,7 @@ async function getImapConnectionProvider(
   data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
 ) {
   if ('accessToken' in data) {
-    const connection = await new ImapConnectionProvider(data.email).withOauth(
+    const connection = await new ImapConnectionProvider(data.email).withOAuth(
       data
     );
     return connection;
@@ -50,10 +50,6 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
     expires_at: expiresAt
   });
 
-  logger.debug(
-    `Got token that expires at ${new Date(expiresAt).toLocaleString()}`
-  );
-
   return { token, refreshToken, provider };
 }
 
@@ -62,13 +58,13 @@ async function upsertMiningSource(
   userId: string,
   token: NewToken,
   provider: OAuthMiningSourceProvider,
-  data: OAuthMiningSourceCredentials
+  email: string
 ) {
   await miningSources.upsert({
     type: provider,
-    email: data.email,
+    email,
     credentials: {
-      email: data.email,
+      email,
       provider,
       accessToken: token.access_token,
       refreshToken: token.refresh_token,
@@ -121,7 +117,7 @@ export default function initializeImapController(miningSources: MiningSources) {
               userId,
               newToken,
               provider,
-              data
+              data.email
             );
 
             data.accessToken = newToken.access_token;
