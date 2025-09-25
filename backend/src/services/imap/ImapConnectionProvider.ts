@@ -112,8 +112,8 @@ class ImapConnectionProvider {
    * @param accessToken - OAuth access token
    */
   async withOAuth(
-    oAuthMiningSourceCredentials: OAuthMiningSourceCredentials,
-    complementaryOAuthSourceDetails?: {
+    credentials: OAuthMiningSourceCredentials,
+    complementarySourceDetails?: {
       miningSources: MiningSources;
       userId: string;
     }
@@ -122,12 +122,12 @@ class ImapConnectionProvider {
       const email = this.imapConfig.auth?.user as string;
 
       this.currentOAuthSourceDetails = {
-        sources: complementaryOAuthSourceDetails?.miningSources,
+        sources: complementarySourceDetails?.miningSources,
         source: {
           email,
-          userId: complementaryOAuthSourceDetails?.userId,
-          credentials: oAuthMiningSourceCredentials,
-          type: oAuthMiningSourceCredentials.provider
+          userId: complementarySourceDetails?.userId,
+          credentials: credentials,
+          type: credentials.provider
         }
       };
 
@@ -139,7 +139,7 @@ class ImapConnectionProvider {
         secure: tls,
         auth: {
           user: email,
-          accessToken: oAuthMiningSourceCredentials.accessToken
+          accessToken: credentials.accessToken
         }
       });
 
