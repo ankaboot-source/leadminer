@@ -126,7 +126,7 @@ class ImapConnectionProvider {
         source: {
           email,
           userId: complementarySourceDetails?.userId,
-          credentials: credentials,
+          credentials,
           type: credentials.provider
         }
       };
