@@ -65,8 +65,8 @@ function togglePopover(event: MouseEvent) {
 }
 
 const MIN_PROGRESS_FOR_ESTIMATION = 0.05; // wait 5% progress for estimation
-const MIN_ELAPSED_FOR_ESTIMATION = 5; // wait 5 seconds for estimation
-const SUFFICIENT_ELAPSED_FOR_ESTIMATION = 120; // estimate right away if elapsed time >= 120 seconds
+const MIN_ELAPSED_FOR_ESTIMATION = 5 * 60; // wait 5 minutes for estimation
+const SUFFICIENT_ELAPSED_FOR_ESTIMATION = 10 * 60; // estimate right away if elapsed time >= 10 minutes
 const SUFFICIENT_ITEMS_FOR_ESTIMATION = 1000; // estimate right away if >=1000 items treated
 const ESTIMATION_UPDATE_INTERVAL = 30; // update progress estimation once per 30 seconds
 
