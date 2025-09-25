@@ -115,7 +115,7 @@
           </td>
         </tr>
 
-        <tr class="p-row-even">
+        <tr class="p-row-odd">
           <td class="md:font-medium">
             {{ $t('contact.telephone') }}
           </td>
@@ -140,7 +140,7 @@
           </td>
         </tr>
 
-        <tr class="p-row-odd">
+        <tr class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
@@ -155,14 +155,14 @@
           </td>
         </tr>
 
-        <tr class="p-row-even">
+        <tr class="p-row-odd">
           <td class="md:font-medium">{{ $t('contact.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
-        <tr class="p-row-odd">
+        <tr class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
@@ -171,7 +171,7 @@
         </tr>
 
         <template v-if="editingContact">
-          <tr class="p-row-even">
+          <tr class="p-row-odd">
             <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
@@ -183,7 +183,7 @@
             </td>
           </tr>
 
-          <tr class="p-row-odd">
+          <tr class="p-row-even">
             <td class="md:font-medium">{{ $t('contact.image') }}</td>
             <td>
               <InputText

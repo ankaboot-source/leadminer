@@ -44,9 +44,20 @@
       <div v-if="!isLoading" class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div
-          v-if="filtersStore.areToggledFilters !== 0 && contactsLength !== 0"
+          v-if="
+            contactsLength !== 0 &&
+            !(filtersStore.isDefaultFilters && !filtersStore.areToggledFilters)
+          "
         >
-          {{ t('try_clearing_filters') }}
+          <span>{{ t('try') }}</span>
+          <Button
+            size="small"
+            icon="pi pi-filter-slash"
+            class="mt-3 ml-2"
+            :label="t('clearing_filters')"
+            outlined
+            @click="filtersStore.clearFilter()"
+          />
         </div>
       </div>
     </template>
@@ -1198,7 +1209,8 @@ table.p-datatable-table {
   "en": {
     "of": "of",
     "no_contacts_found": "No contacts found",
-    "try_clearing_filters": "Try clearing filters",
+    "try": "Try",
+    "clearing_filters": "Clearing filters",
     "select_at_least_one_contact": "Select at least one contact to {action}",
     "export_csv": "Export CSV",
     "export": "export",
@@ -1249,7 +1261,8 @@ table.p-datatable-table {
   "fr": {
     "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
-    "try_clearing_filters": "Essayez de vider les filtres",
+    "try": "Essayez de",
+    "clearing_filters": "Vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à {action}",
     "export": "exporter",
     "remove": "supprimer",
