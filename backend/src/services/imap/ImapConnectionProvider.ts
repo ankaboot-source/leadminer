@@ -1,17 +1,32 @@
 import assert from 'assert';
-import { Factory, Pool, createPool } from 'generic-pool';
+import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import { Token } from 'simple-oauth2';
 import util from 'util';
 import ENV from '../../config';
 import { refreshAccessToken } from '../../controllers/mining.helpers';
-import { OAuthMiningSourceCredentials } from '../../db/interfaces/MiningSources';
+import {
+  MiningSource,
+  MiningSources,
+  MiningSourceType,
+  OAuthMiningSourceCredentials
+} from '../../db/interfaces/MiningSources';
 import logger from '../../utils/logger';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
+type CurrentOAuthSource = {
+  email: string;
+  userId?: string;
+  credentials: OAuthMiningSourceCredentials;
+  type: MiningSourceType;
+};
 class ImapConnectionProvider {
   private imapConfig: Partial<ImapFlowOptions>;
 
-  private currentOauthToken?: OAuthMiningSourceCredentials;
+  private currentOAuthSourceDetails?: {
+    sources?: MiningSources;
+    source: CurrentOAuthSource;
+  };
 
   private poolIsInitialized;
 
@@ -96,17 +111,36 @@ class ImapConnectionProvider {
    * Builds the configuration for connecting to Google using OAuth.
    * @param accessToken - OAuth access token
    */
-  async withOauth(token: OAuthMiningSourceCredentials) {
+  async withOAuth(
+    credentials: OAuthMiningSourceCredentials,
+    complementarySourceDetails?: {
+      miningSources: MiningSources;
+      userId: string;
+    }
+  ) {
     try {
-      this.currentOauthToken = token;
       const email = this.imapConfig.auth?.user as string;
+
+      this.currentOAuthSourceDetails = {
+        sources: complementarySourceDetails?.miningSources,
+        source: {
+          email,
+          userId: complementarySourceDetails?.userId,
+          credentials,
+          type: credentials.provider
+        }
+      };
+
       const { host, port, tls } = await getOAuthImapConfigByEmail(email);
 
       Object.assign(this.imapConfig, {
         host,
         port,
         secure: tls,
-        auth: { user: email, accessToken: token.accessToken }
+        auth: {
+          user: email,
+          accessToken: credentials.accessToken
+        }
       });
 
       return this;
@@ -115,23 +149,61 @@ class ImapConnectionProvider {
     }
   }
 
-  updateOauthAccessToken(accessToken: string) {
+  async updateOAuthToken(token: Token) {
+    if (!this.currentOAuthSourceDetails?.source.credentials)
+      throw Error('currentOAuthSourceDetails.source.credentials is undefined');
+
+    this.currentOAuthSourceDetails.source.credentials.accessToken = String(
+      token.access_token
+    );
+
+    if (token.refresh_token) {
+      this.currentOAuthSourceDetails.source.credentials.refreshToken = String(
+        token.refresh_token
+      );
+    }
+
+    if (token.expires_at) {
+      this.currentOAuthSourceDetails.source.credentials.expiresAt = Number(
+        token.expires_at
+      );
+    }
+
     if (this.imapConfig.auth) {
-      this.imapConfig.auth.accessToken = accessToken;
+      this.imapConfig.auth.accessToken =
+        this.currentOAuthSourceDetails.source.credentials.accessToken;
+    }
+
+    if (
+      this.currentOAuthSourceDetails.sources &&
+      this.currentOAuthSourceDetails.source.userId
+    ) {
+      await this.currentOAuthSourceDetails.sources.upsert(
+        this.currentOAuthSourceDetails.source as MiningSource
+      );
     }
   }
 
-  async refreshOauthToken(retries = 3): Promise<void> {
-    logger.debug('Refreshing OAuth token in ImapConfig');
+  isOAuth() {
+    return !!this.imapConfig.auth?.accessToken;
+  }
 
-    if (!this.currentOauthToken) throw Error('No refresh token');
+  async refreshOAuthToken(retries = 3): Promise<void> {
+    logger.debug(
+      `Refreshing OAuth token in ImapConfig that expired at ${new Date(this.currentOAuthSourceDetails?.source.credentials.expiresAt || 0).toLocaleString()}`
+    );
+
+    if (!this.currentOAuthSourceDetails?.source.credentials)
+      throw Error('currentOAuthSourceDetails.source.credentials is undefined');
 
     /* eslint-disable no-await-in-loop */
     for (let attempt = 1; attempt <= retries; attempt += 1) {
       try {
-        const newAccessToken = await refreshAccessToken(this.currentOauthToken);
-        this.updateOauthAccessToken(String(newAccessToken.access_token));
-        logger.debug('OAuth token refreshed and updated in ImapConfig');
+        const newToken = await refreshAccessToken(
+          this.currentOAuthSourceDetails.source.credentials
+        );
+        await this.updateOAuthToken(newToken);
+        logger.debug('OAuth token refreshed and updated successfully');
         return;
       } catch (error) {
         logger.warn(
@@ -302,7 +374,7 @@ class ImapConnectionProvider {
 
   async refreshPool() {
     await this.cleanPool();
-    await this.refreshOauthToken();
+    await this.refreshOAuthToken();
     const connection = await this.acquireConnection();
     await this.releaseConnection(connection);
   }

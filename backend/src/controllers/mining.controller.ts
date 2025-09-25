@@ -245,7 +245,10 @@ export default function initializeMiningController(
         'accessToken' in miningSourceCredentials
           ? await new ImapConnectionProvider(
               miningSourceCredentials.email
-            ).withOauth(miningSourceCredentials)
+            ).withOAuth(miningSourceCredentials, {
+              miningSources,
+              userId: user.id
+            })
           : new ImapConnectionProvider(
               miningSourceCredentials.email
             ).withPassword(

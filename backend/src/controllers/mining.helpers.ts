@@ -172,16 +172,6 @@ export async function refreshAccessToken(
     const refreshed = await tokenInstance.refresh();
     const refreshedToken = refreshed.token;
 
-    // Update miningSources table with the new tokens
-
-    // await miningSources.upsert({
-    //   credentials: {
-    //     accessToken: refreshedToken.access_token,
-    //     refreshToken: refreshedToken.refresh_token,
-    //     expiresAt: refreshedToken.expires_at
-    //   }
-    // });
-
     return refreshedToken;
   } catch (error) {
     logger.error(
