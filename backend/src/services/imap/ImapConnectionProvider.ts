@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { Factory, Pool, createPool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import { Token } from 'simple-oauth2';
 import util from 'util';
 import ENV from '../../config';
 import { refreshAccessToken } from '../../controllers/mining.helpers';
@@ -11,7 +12,7 @@ import { getOAuthImapConfigByEmail } from '../auth/Provider';
 class ImapConnectionProvider {
   private imapConfig: Partial<ImapFlowOptions>;
 
-  private currentOauthToken?: OAuthMiningSourceCredentials;
+  private currentOAuthToken?: OAuthMiningSourceCredentials;
 
   private poolIsInitialized;
 
@@ -98,7 +99,7 @@ class ImapConnectionProvider {
    */
   async withOauth(token: OAuthMiningSourceCredentials) {
     try {
-      this.currentOauthToken = token;
+      this.currentOAuthToken = token;
       const email = this.imapConfig.auth?.user as string;
       const { host, port, tls } = await getOAuthImapConfigByEmail(email);
 
@@ -115,9 +116,21 @@ class ImapConnectionProvider {
     }
   }
 
-  updateOauthAccessToken(accessToken: string) {
+  updateOAuthToken(token: Token) {
+    if (!this.currentOAuthToken) throw Error('currentOAuthToken is undefined');
+
+    this.currentOAuthToken.accessToken = String(token.access_token);
+
+    this.currentOAuthToken.refreshToken = token.refresh_token
+      ? String(token.refresh_token)
+      : this.currentOAuthToken.refreshToken;
+
+    this.currentOAuthToken.expiresAt = token.expires_at
+      ? Number(token.expires_at)
+      : this.currentOAuthToken.expiresAt;
+
     if (this.imapConfig.auth) {
-      this.imapConfig.auth.accessToken = accessToken;
+      this.imapConfig.auth.accessToken = this.currentOAuthToken.accessToken;
     }
   }
 
@@ -125,16 +138,18 @@ class ImapConnectionProvider {
     return !!this.imapConfig.auth?.accessToken;
   }
 
-  async refreshOauthToken(retries = 3): Promise<void> {
-    logger.debug('Refreshing OAuth token in ImapConfig');
+  async refreshOAuthToken(retries = 3): Promise<void> {
+    logger.debug(
+      `Refreshing OAuth token in ImapConfig that expired at ${new Date(this.currentOAuthToken?.expiresAt || 0).toLocaleString()}`
+    );
 
-    if (!this.currentOauthToken) throw Error('No refresh token');
+    if (!this.currentOAuthToken) throw Error('currentOAuthToken is undefined');
 
     /* eslint-disable no-await-in-loop */
     for (let attempt = 1; attempt <= retries; attempt += 1) {
       try {
-        const newAccessToken = await refreshAccessToken(this.currentOauthToken);
-        this.updateOauthAccessToken(String(newAccessToken.access_token));
+        const newToken = await refreshAccessToken(this.currentOAuthToken);
+        this.updateOAuthToken(newToken);
         logger.debug('OAuth token refreshed and updated in ImapConfig');
         return;
       } catch (error) {
@@ -306,7 +321,7 @@ class ImapConnectionProvider {
 
   async refreshPool() {
     await this.cleanPool();
-    await this.refreshOauthToken();
+    await this.refreshOAuthToken();
     const connection = await this.acquireConnection();
     await this.releaseConnection(connection);
   }
