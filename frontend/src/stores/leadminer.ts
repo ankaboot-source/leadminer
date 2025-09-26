@@ -70,6 +70,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes.value = [];
     selectedBoxes.value = [];
     selectedFile.value = null;
+    extractSignatures.value = true;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -128,7 +129,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
+      extractSignatures.value = true;
 
+      console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
       }>('/imap/boxes', {
@@ -188,12 +191,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return res;
   }
 
-  function startProgressListener(
-    type: MiningType,
-    miningId: string,
-    token: string,
-  ) {
-    sse.initConnection(type, miningId, token, {
+  function startProgressListener(type: MiningType, miningId: string) {
+    sse.initConnection(type, miningId, {
       onExtractedUpdate: (count) => {
         extractedEmails.value = count;
       },
@@ -297,6 +296,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
   async function startMining(source: 'boxes' | 'file') {
+    await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
+
     const user = useSupabaseUser().value;
     const token = useSupabaseSession().value?.access_token;
 
@@ -338,7 +339,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
               selectedFile.value!.contacts,
             );
 
-      startProgressListener(miningType.value, task.miningId, token);
+      startProgressListener(miningType.value, task.miningId);
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
@@ -350,8 +351,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
-
-      await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
     }
   }
 

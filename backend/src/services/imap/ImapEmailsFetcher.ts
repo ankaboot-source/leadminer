@@ -1,14 +1,16 @@
 import { parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
 import { ImapFlow as Connection } from 'imapflow';
+import { simpleParser } from 'mailparser';
+import { setTimeout } from 'node:timers/promises';
 import PQueue from 'p-queue';
+import util from 'util';
+import ENV from '../../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
-import ENV from '../../config';
 
 const redisClient = redis.getClient();
 
@@ -67,7 +69,7 @@ export default class ImapEmailsFetcher {
 
   private totalFetched: number;
 
-  private hasAuthFailureLogged: boolean;
+  private isRefreshingOAuthToken = false;
 
   private readonly bodies: string[];
 
@@ -112,7 +114,6 @@ export default class ImapEmailsFetcher {
 
     this.isCanceled = false;
     this.isCompleted = false;
-    this.hasAuthFailureLogged = false;
 
     this.fetchedIds = new Set<string>();
     this.emailsQueue = new PQueue({
@@ -135,7 +136,8 @@ export default class ImapEmailsFetcher {
 
     const err = error as Record<string, unknown>;
 
-    return (
+    // 1. Check for IMAP authentication failures (your existing logic)
+    const isImapAuthError =
       err.authenticationFailed === true ||
       err.serverResponseCode === 'AUTHENTICATIONFAILED' ||
       (err.responseStatus === 'NO' &&
@@ -143,8 +145,26 @@ export default class ImapEmailsFetcher {
         err.responseText.includes('Invalid credentials')) ||
       (typeof err.message === 'string' &&
         (err.message.includes('AUTHENTICATIONFAILED') ||
-          err.message.includes('Invalid credentials')))
-    );
+          err.message.includes('Invalid credentials')));
+
+    // 2. Check for OAuth/JWT token expiration
+    const isTokenExpired =
+      (typeof err.message === 'string' &&
+        (err.message.includes('token is expired') ||
+          err.message.includes('JWT expired') ||
+          err.message.includes('invalid JWT') ||
+          err.message.includes('bad_jwt'))) ||
+      err.code === 'bad_jwt' ||
+      err.name === 'AuthApiError';
+
+    // 3. Check for connection errors that might require re-authentication
+    const isConnectionErrorRequiringAuth =
+      err.code === 'ECONNRESET' ||
+      err.code === 'NoConnection' ||
+      (typeof err.message === 'string' &&
+        err.message.includes('Connection not available'));
+
+    return isImapAuthError || isTokenExpired || isConnectionErrorRequiringAuth;
   }
 
   /**
@@ -298,6 +318,8 @@ export default class ImapEmailsFetcher {
       this.isCompleted = true;
 
       await publishFetchingProgress(this.miningId, 0);
+
+      await this.stop(false);
       logger.info(`[${this.miningId}] All email jobs completed`);
     } catch (err) {
       logger.error(err);
@@ -330,7 +352,13 @@ export default class ImapEmailsFetcher {
     const batchSize = Math.max(this.batchSize, 200);
 
     for await (const msg of this.createFetchStream(connection, range)) {
-      if (this.isCanceled) break;
+      if (this.isCanceled) {
+        logger.debug(
+          `[${this.miningId}:${folderPath}:${range}]: Received cancellation signal, aborting... `
+        );
+        connection.close();
+        break;
+      }
 
       let header: Record<string, string[]>;
       const { seq, headers, envelope } = msg;
@@ -429,6 +457,14 @@ export default class ImapEmailsFetcher {
     }
   }
 
+  private setOAuthRefreshCooldown(seconds = 30) {
+    this.isRefreshingOAuthToken = true;
+    setTimeout(seconds * 1000).then(() => {
+      this.isRefreshingOAuthToken = false;
+      logger.debug('OAuth error flag reset - ready for future auth checks');
+    });
+  }
+
   /**
    * Opens a connection and fetches messages.
    * @param emailJob - The email job to process
@@ -447,27 +483,38 @@ export default class ImapEmailsFetcher {
       );
 
       await this.processFetch(connection, range, folder, totalInFolder);
-
-      await connection.mailboxClose();
-      logger.info(
-        `[${this.miningId}:${folder}]: Closed folder for range ${range}`
-      );
     } catch (error) {
-      if (ImapEmailsFetcher.isAuthFailure(error)) {
-        if (!this.hasAuthFailureLogged) {
-          logger.error(`[${this.miningId}] Authentication failed`, error);
-          this.hasAuthFailureLogged = true;
-        }
-        this.isCanceled = true;
-        throw error;
-      }
       logger.error(
-        `[${this.miningId}:${folder}]: ${(error as Error).message}`,
-        error
+        `[${this.miningId}:${folder}]:`,
+        util.inspect(error, { depth: null, colors: true })
       );
+
+      if (
+        ImapEmailsFetcher.isAuthFailure(error) &&
+        this.imapConnectionProvider.isOAuth()
+      ) {
+        this.emailsQueue.add(() =>
+          this.processEmailJob({ range, folder, totalInFolder })
+        );
+
+        if (this.isRefreshingOAuthToken) return;
+        this.setOAuthRefreshCooldown(); // to avoid refreshing pool on every connection
+        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+
+        this.emailsQueue.pause();
+        await this.imapConnectionProvider.refreshPool();
+        this.emailsQueue.start();
+
+        return;
+      }
+      this.isCanceled = true;
       throw error;
     } finally {
-      if (connection) {
+      if (connection && connection?.usable) {
+        await connection.mailboxClose();
+        logger.info(
+          `[${this.miningId}:${folder}]: Closed folder for range ${range}`
+        );
         await this.imapConnectionProvider.releaseConnection(connection);
       }
     }
@@ -486,7 +533,7 @@ export default class ImapEmailsFetcher {
   async stop(cancel: boolean) {
     try {
       if (cancel) {
-        logger.info(`[${this.miningId}] Canceling fetching process...`);
+        logger.info(`[${this.miningId}] Triggering cancel signal...`);
         this.isCanceled = true;
       }
 
@@ -515,16 +562,20 @@ export default class ImapEmailsFetcher {
         })
       );
 
+      await this.emailsQueue.onIdle();
+
       logger.info(
         `[${this.miningId}] Fetching process ${cancel ? 'canceled' : 'stopped'} successfully`
       );
       return this.isCompleted;
     } catch (error) {
-      logger.error(`[${this.miningId}] Error during stop process:`, error);
+      logger.error(
+        `[${this.miningId}] Error during stop process:`,
+        util.inspect(error, { depth: null, colors: true })
+      );
       throw error;
     } finally {
       // Cleanup operations
-      this.emailsQueue.clear();
       await redisClient.unlink(this.processSetKey);
       await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     }

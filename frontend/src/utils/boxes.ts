@@ -7,6 +7,7 @@ export interface BoxNode {
   label: string;
   total: number;
   children?: BoxNode[];
+  attribs?: string[];
 }
 
 export const EMAIL_EXCLUDED_FOLDERS = [
@@ -21,13 +22,12 @@ export const EMAIL_EXCLUDED_FOLDERS = [
 ];
 
 /**
- * Filters out default selected folders from the input boxes based on email service
+ * Gets default selected folders from the input boxes based on email service
  * @param boxes - The array of folder names to filter
  * @returns The filtered array of boxes
  */
-
-function getFilteredFolders(boxes: BoxNode[]) {
-  const filteredFolders: TreeSelectionKeys = [];
+export function getDefaultSelectedFolders(boxes: BoxNode[]) {
+  const filteredFolders: TreeSelectionKeys = {};
   let foundAllMailKey: string | null = null;
 
   objectScan(['**.key'], {
@@ -49,22 +49,34 @@ function getFilteredFolders(boxes: BoxNode[]) {
 
       if (isExcluded) return;
 
-      // Format to be like PrimeVue's TreeSelectionKeys
       const checked = attribs && !attribs.includes('\\HasChildren');
       const partialChecked = !checked;
-      const isNoSelect = Boolean(attribs?.includes('\\Noselect'));
+      const isNoSelect = Boolean(attribs?.includes('\\Noselect')) || undefined;
 
       if (isAllMail && !isNoSelect) {
+        // Clear previous selections
         // skipcq: JS-0320
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         Object.keys(filteredFolders).forEach((k) => delete filteredFolders[k]);
-        // Add All Mail as the only selected folder
+        // Add All Mail as checked
         filteredFolders[key] = {
           checked: true,
           partialChecked: false,
           isNoSelect,
         };
         foundAllMailKey = key;
+
+        // Also mark parent folders as partially checked
+        const pathParts = key.split('/');
+        while (pathParts.length > 0) {
+          pathParts.pop(); // remove current
+          const parentKey = pathParts.join('/');
+          if (parentKey in filteredFolders) continue;
+          filteredFolders[parentKey] = {
+            checked: false,
+            partialChecked: true,
+          };
+        }
       } else {
         filteredFolders[key] = {
           checked,
@@ -76,14 +88,4 @@ function getFilteredFolders(boxes: BoxNode[]) {
   })(boxes);
 
   return filteredFolders;
-}
-
-/**
- * Gets default selected folders from the input boxes based on email service
- * @param boxes - The array of folder names to filter
- * @returns The filtered array of boxes
- */
-export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  const defaultFolders = getFilteredFolders(boxes);
-  return defaultFolders;
 }

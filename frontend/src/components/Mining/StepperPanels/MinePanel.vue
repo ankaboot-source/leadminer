@@ -244,7 +244,7 @@ watch(extractionFinished, async (finished) => {
       severity: 'info',
       summary: t('mining_done'),
       detail: totalExtractedNotificationMessage,
-      life: 5000,
+      life: 8000,
     });
     $stepper.next();
     await refineReloadContacts();

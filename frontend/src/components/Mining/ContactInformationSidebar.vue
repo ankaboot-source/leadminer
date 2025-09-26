@@ -56,7 +56,7 @@
             v-if="contact.same_as?.length && !editingContact"
             class="flex gap-2 grow"
           >
-            <social-link :social-links="contact.same_as" :small="false" />
+            <social-links-and-phones :social-links="contact.same_as" />
           </div>
           <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
             <Tag
@@ -115,7 +115,7 @@
           </td>
         </tr>
 
-        <tr class="p-row-even">
+        <tr class="p-row-odd">
           <td class="md:font-medium">
             {{ $t('contact.telephone') }}
           </td>
@@ -140,7 +140,7 @@
           </td>
         </tr>
 
-        <tr class="p-row-odd">
+        <tr class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
@@ -155,14 +155,14 @@
           </td>
         </tr>
 
-        <tr class="p-row-even">
+        <tr class="p-row-odd">
           <td class="md:font-medium">{{ $t('contact.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
-        <tr class="p-row-odd">
+        <tr class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
@@ -171,7 +171,7 @@
         </tr>
 
         <template v-if="editingContact">
-          <tr class="p-row-even">
+          <tr class="p-row-odd">
             <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
@@ -183,7 +183,7 @@
             </td>
           </tr>
 
-          <tr class="p-row-odd">
+          <tr class="p-row-even">
             <td class="md:font-medium">{{ $t('contact.image') }}</td>
             <td>
               <InputText
@@ -227,13 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import type {
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-  User,
-} from '@supabase/supabase-js';
-
-import SocialLink from '@/components/icons/SocialLink.vue';
+import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import {
@@ -243,6 +237,11 @@ import {
   getTagLabel,
   isValidURL,
 } from '@/utils/contacts';
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+  User,
+} from '@supabase/supabase-js';
 
 const { t } = useI18n({
   useScope: 'local',

@@ -56,9 +56,9 @@
   },
   "dependencies": {
     "@sentry/nuxt": "^9.40.0",
-    "@vueuse/core": "^13.6.0",
+    "@vueuse/core": "^13.8.0",
     "@vueuse/nuxt": "^13.5.0",
-    "posthog-js": "^1.260.1",
+    "posthog-js": "^1.261.0",
     "read-excel-file": "^5.8.8"
   }
 }

@@ -44,9 +44,20 @@
       <div v-if="!isLoading" class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div
-          v-if="filtersStore.areToggledFilters !== 0 && contactsLength !== 0"
+          v-if="
+            contactsLength !== 0 &&
+            !(filtersStore.isDefaultFilters && !filtersStore.areToggledFilters)
+          "
         >
-          {{ t('try_clearing_filters') }}
+          <span>{{ t('try') }}</span>
+          <Button
+            size="small"
+            icon="pi pi-filter-slash"
+            class="mt-3 ml-2"
+            :label="t('clearing_filters')"
+            outlined
+            @click="filtersStore.clearFilter()"
+          />
         </div>
       </div>
     </template>
@@ -291,24 +302,13 @@
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
-              <template
-                v-if="data.telephone && visibleColumns.includes('telephone')"
-              >
-                <Chip
-                  v-for="(phone, index) in data.telephone"
-                  :key="index"
-                  v-tooltip="phone"
-                  :href="`tel:${phone}`"
-                  icon="pi pi-phone"
-                  class="cursor-pointer p-0 px-1"
-                  @click="callPhoneNumber(phone)"
-                />
-              </template>
-              <template
-                v-if="data.same_as && visibleColumns.includes('same_as')"
-              >
-                <social-links :social-links="data.same_as" :small="true" />
-              </template>
+              <social-links-and-phones
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
           </div>
 
@@ -320,24 +320,13 @@
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
-              <template
-                v-if="data.telephone && visibleColumns.includes('telephone')"
-              >
-                <Chip
-                  v-for="(phone, index) in data.telephone"
-                  :key="index"
-                  v-tooltip="phone"
-                  :href="`tel:${phone}`"
-                  icon="pi pi-phone"
-                  class="cursor-pointer p-0 px-1"
-                  @click="callPhoneNumber(phone)"
-                />
-              </template>
-              <template
-                v-if="data.same_as && visibleColumns.includes('same_as')"
-              >
-                <social-links :social-links="data.same_as" :small="true" />
-              </template>
+              <social-links-and-phones
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
             <Button
               rounded
@@ -796,8 +785,8 @@ import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-const SocialLinks = defineAsyncComponent(
-  () => import('../../icons/SocialLink.vue'),
+const SocialLinksAndPhones = defineAsyncComponent(
+  () => import('../../icons/SocialLinksAndPhones.vue'),
 );
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
@@ -1040,7 +1029,7 @@ async function exportTable(partialExport = false) {
           severity: 'success',
           summary: t('csv_export'),
           detail: t('contacts_exported_successfully'),
-          life: 3000,
+          life: 8000,
         });
       }
     },
@@ -1151,6 +1140,8 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
+
+onBeforeMount(() => (isLoading.value = true));
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
@@ -1218,7 +1209,8 @@ table.p-datatable-table {
   "en": {
     "of": "of",
     "no_contacts_found": "No contacts found",
-    "try_clearing_filters": "Try clearing filters",
+    "try": "Try",
+    "clearing_filters": "Clearing filters",
     "select_at_least_one_contact": "Select at least one contact to {action}",
     "export_csv": "Export CSV",
     "export": "export",
@@ -1269,7 +1261,8 @@ table.p-datatable-table {
   "fr": {
     "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
-    "try_clearing_filters": "Essayez de vider les filtres",
+    "try": "Essayez de",
+    "clearing_filters": "Vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à {action}",
     "export": "exporter",
     "remove": "supprimer",

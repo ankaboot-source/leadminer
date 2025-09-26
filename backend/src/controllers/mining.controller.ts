@@ -11,6 +11,7 @@ import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
+import logger from '../utils/logger';
 import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
@@ -56,7 +57,7 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
+    async createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
 
@@ -84,12 +85,12 @@ export default function initializeMiningController(
           },
           type: provider
         });
-
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
         );
       } catch (error) {
+        logger.error(error);
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`

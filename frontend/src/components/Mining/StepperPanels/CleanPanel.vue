@@ -3,7 +3,7 @@
     :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
     :current="verifiedContacts"
-    :rate="3"
+    :rate="AVERAGE_CLEANING_RATE"
     :started="taskStartedAt"
     :progress="verificationProgress"
     :progress-tooltip="progressTooltip"
@@ -98,7 +98,7 @@ async function haltCleaning() {
   try {
     await $leadminerStore.stopMining(true, null);
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('cleaning_stopped'),
       detail: t('cleaning_canceled'),
       life: 3000,

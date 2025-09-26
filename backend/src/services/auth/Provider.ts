@@ -43,9 +43,15 @@ export function getDomainFromEmail(email: string) {
   return email.split('@')[1]?.split('.')[0];
 }
 
-export async function getOAuthImapConfigByEmail(email: string) {
+export function getProviderFromEmail(email: string): Provider | undefined {
   const domain = getDomainFromEmail(email);
   const provider = PROVIDER_BY_DOMAIN.get(domain);
+
+  return provider;
+}
+
+export async function getOAuthImapConfigByEmail(email: string) {
+  const provider = getProviderFromEmail(email);
   const imapConfig = provider ? PROVIDER_CONFIG[provider] : null;
 
   if (imapConfig) {

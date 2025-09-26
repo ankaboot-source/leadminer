@@ -39,13 +39,13 @@ async function upsertMiningSource(
   userId: string,
   token: NewToken,
   provider: OAuthMiningSourceProvider,
-  data: OAuthMiningSourceCredentials
+  email: string
 ) {
   await miningSources.upsert({
     type: provider,
-    email: data.email,
+    email,
     credentials: {
-      email: data.email,
+      email,
       provider,
       accessToken: token.access_token,
       refreshToken: token.refresh_token,
@@ -82,11 +82,12 @@ export default function initializeImapController(miningSources: MiningSources) {
         }
         if ('accessToken' in data) {
           const { token, refreshToken, provider } = getTokenAndProvider(data);
+          if (!refreshToken)
+            return res.status(401).send({
+              data: { message: 'No Refresh Token' }
+            });
+
           if (token.expired(1000)) {
-            if (!refreshToken)
-              return res.status(401).send({
-                data: { message: 'Token has expired' }
-              });
             const newToken = (await token.refresh()).token as NewToken;
 
             await upsertMiningSource(
@@ -94,7 +95,7 @@ export default function initializeImapController(miningSources: MiningSources) {
               userId,
               newToken,
               provider,
-              data
+              data.email
             );
 
             data.accessToken = newToken.access_token;
