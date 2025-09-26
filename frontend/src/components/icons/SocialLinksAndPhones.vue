@@ -47,7 +47,7 @@ const props = withDefaults(
 );
 
 const socialLinks = computed(() =>
-  props.small ? props.socialLinks.slice(0, 3) : props.socialLinks,
+  props.small ? props.socialLinks?.slice(0, 3) : props.socialLinks,
 );
 
 function getSameAsIcon(url: string) {
