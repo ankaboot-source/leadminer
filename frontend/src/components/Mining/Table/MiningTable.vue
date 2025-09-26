@@ -116,7 +116,9 @@
             </template>
             {{ contactsLength?.toLocaleString() ?? 0 }}
           </template>
-          {{ t('contacts') }}
+          <template v-if="$screenStore.size.md">
+            {{ t('contacts') }}
+          </template>
         </div>
         <div class="grow" />
         <div>
