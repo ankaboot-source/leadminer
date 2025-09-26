@@ -1,0 +1,98 @@
+import Redis, { RedisOptions } from 'ioredis';
+import ENV from '../config';
+import logger from './logger';
+
+class RedisManager {
+  private readonly normalClient;
+
+  /**
+   * @constructor
+   * @param host - Redis host
+   * @param port - Redis port
+   * @param user - Redis user
+   * @param password - Redis password
+   * @param  tls - Enable tls
+   */
+  constructor(
+    host: string,
+    port: number,
+    user: string | undefined,
+    password: string | undefined,
+    db: number,
+    tls: boolean
+  ) {
+    let redisOpts: RedisOptions = {
+      host,
+      port,
+      db,
+      maxRetriesPerRequest: null
+    };
+
+    if (tls) {
+      redisOpts = {
+        ...redisOpts,
+        tls: {}
+      };
+    }
+
+    if (user && password) {
+      redisOpts = {
+        ...redisOpts,
+        username: user,
+        password
+      };
+    }
+
+    this.normalClient = new Redis(redisOpts);
+  }
+
+  /**
+   * Deletes all the keys of all the existing databases in redis.
+   */
+  async flushAll(exceptStreams: string[]) {
+    try {
+      const keys = await this.normalClient.keys('*');
+      const keysToDelete = keys.filter((key) => !exceptStreams.includes(key));
+
+      if (keysToDelete.length > 0) {
+        await this.normalClient.del(...keysToDelete);
+      }
+
+      logger.info(
+        `Deleted ${keysToDelete.length} keys except '${exceptStreams}' ✔️`
+      );
+    } catch (error) {
+      logger.error('Failed flushing Redis selectively.', error);
+    }
+  }
+
+  /**
+   * Returns Redis client instance.
+   * Don't use this client to subscribe to pub/sub channels.
+   * Instead, you should use `getSubscriberClient` for subscribing.
+   * @returns Redis client instance
+   */
+  getClient() {
+    return this.normalClient;
+  }
+
+  /**
+   * Returns a duplicate of the Redis client instance that can be used
+   * as a pub/sub subscriber.
+   * @return Redis client instance
+   */
+  getSubscriberClient() {
+    return this.normalClient.duplicate();
+  }
+}
+
+const redis = new RedisManager(
+  ENV.REDIS_HOST,
+  ENV.REDIS_PORT,
+  ENV.REDIS_USERNAME,
+  ENV.REDIS_PASSWORD,
+  ENV.REDIS_DB,
+  ENV.REDIS_TLS
+);
+
+export default redis;
