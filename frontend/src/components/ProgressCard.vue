@@ -18,7 +18,7 @@
           {{ t('hold_on_while_loading_boxes') }}
         </div>
         <div v-else>
-          {{ t('estimated_time', { t: estimatedRemainingTimeConverted }) }}
+          {{ t('estimated_time_constant') }}
         </div>
       </slot>
     </div>
@@ -165,12 +165,14 @@ onMounted(() => {
   "en": {
     "finished_in": "Finished in {t}",
     "estimated_time": "The contact mining may take around {t}",
+    "estimated_time_constant": "The contact mining may take around 20 minutes",
     "remaining_time": "{t} remaining",
     "hold_on_while_loading_boxes": "Please hold on while we are retrieving your mailboxes..."
   },
   "fr": {
     "finished_in": "Terminé en {t}",
     "estimated_time": "L'extraction de contacts peut prendre environ {t}",
+    "estimated_time_constant": "L'extraction de contacts peut prendre environ 20 minutes",
     "remaining_time": "{t} restantes",
     "hold_on_while_loading_boxes": "Veuillez patienter pendant que nous récupérons vos boîtes aux lettres..."
   }
