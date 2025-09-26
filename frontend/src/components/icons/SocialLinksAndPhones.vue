@@ -31,8 +31,8 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    socialLinks?: string[];
-    phones?: string[];
+    socialLinks?: string[] | null;
+    phones?: string[] | null;
     showSocialLinks?: boolean;
     showPhones?: boolean;
     small?: boolean;
