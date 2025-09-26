@@ -6,7 +6,6 @@ import {
   RedisCommand,
   StreamInfo,
   Task,
-  TaskFetch,
   TaskProgress,
   TaskProgressType
 } from './types';
@@ -16,10 +15,10 @@ import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 import ENV from '../../config';
 import SupabaseTasks from '../../db/supabase/tasks';
 import logger from '../../utils/logger';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
+import EmailFetcherClient from '../email-fetching';
 
 export default class TasksManager {
   /**
@@ -33,7 +32,6 @@ export default class TasksManager {
    * Creates a new MiningTaskManager instance.
    * @param redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
    * @param redisPublisher - The Redis publisher instance to use for publishing mining events.
-   * @param emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
    * @param idGenerator - A function that generates unique mining IDs
    */
@@ -41,7 +39,7 @@ export default class TasksManager {
     private readonly tasksResolver: SupabaseTasks,
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
-    private readonly emailFetcherFactory: EmailFetcherFactory,
+    private readonly emailFetcherAPI: EmailFetcherClient,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
     private readonly idGenerator: () => Promise<string>
   ) {
@@ -55,7 +53,26 @@ export default class TasksManager {
 
     // Set up the Redis subscriber to listen for updates
     this.redisSubscriber.on('message', async (_channel, data) => {
-      const { miningId, progressType, count } = JSON.parse(data);
+      const { miningId, progressType, count, isCompleted, isCanceled } =
+        JSON.parse(data);
+
+      if (progressType === 'fetched' && (isCanceled || isCompleted)) {
+        const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+        if (!task) return;
+
+        const { fetch } = task.process;
+
+        fetch.status = isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
+
+        if (
+          !fetch.stoppedAt &&
+          [TaskStatus.Done, TaskStatus.Canceled].includes(fetch.status)
+        ) {
+          await this.stopTask([fetch], isCanceled);
+          this.notifyChanges(miningId, 'fetched', 'fetching-finished');
+        }
+      }
 
       if (count > 0) {
         this.updateProgress(miningId, progressType, count);
@@ -103,10 +120,8 @@ export default class TasksManager {
    * @throws {Error} If there is an error when creating the task.
    */
   async createTask({
-    imapConnectionProvider,
     email,
     boxes,
-    batchSize,
     fetchEmailBody,
     userId
   }: ImapEmailsFetcherOptions) {
@@ -119,17 +134,6 @@ export default class TasksManager {
         emailsConsumerGroup
       } = stream;
 
-      const fetcher = this.emailFetcherFactory.create({
-        imapConnectionProvider,
-        boxes,
-        userId,
-        email,
-        miningId,
-        contactStream: messagesStream,
-        signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
-        batchSize,
-        fetchEmailBody
-      });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       const miningTask: MiningTask = {
@@ -142,15 +146,14 @@ export default class TasksManager {
             category: TaskCategory.Mining,
             type: TaskType.Fetch,
             status: TaskStatus.Running,
-            instance: fetcher,
             details: {
               miningId,
               stream: {
                 messagesStream
               },
               progress: {
-                totalMessages: await fetcher.getTotalMessages(),
-                folders: fetcher.folders,
+                totalMessages: 0,
+                folders: boxes,
                 fetched: 0
               }
             }
@@ -217,13 +220,29 @@ export default class TasksManager {
       miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
-      fetch.instance.start();
 
       await Promise.all(
         [extract, clean].map((p) =>
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
+
+      try {
+        await this.emailFetcherAPI.startFetch({
+          boxes,
+          userId,
+          email,
+          miningId,
+          contactStream: messagesStream,
+          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
+          extractSignatures: fetchEmailBody
+        });
+      } catch (error) {
+        logger.error(`Failed to start fetching task with id: ${miningId}`, {
+          error
+        });
+        throw new Error('Failed to start fetching');
+      }
 
       this.redisSubscriber.subscribe(miningId, (err) => {
         if (err) {
@@ -354,9 +373,17 @@ export default class TasksManager {
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
       if (task.type === 'fetch') {
-        await (task as TaskFetch).instance.stop(
-          TaskStatus.Canceled === 'canceled'
-        );
+        try {
+          await this.emailFetcherAPI.stopFetch({
+            miningId: task.details.miningId,
+            canceled: task.status === 'canceled'
+          });
+        } catch (error) {
+          logger.error(
+            `Failed to stop current active fetching with id: ${task.details.miningId}`,
+            { error }
+          );
+        }
       }
 
       await this.pubsubSendMessage(
@@ -460,7 +487,7 @@ export default class TasksManager {
       ...clean.details.progress
     };
 
-    if (!fetch.stoppedAt && fetch.instance.isCompleted) {
+    if (!fetch.stoppedAt && fetch.status === TaskStatus.Done) {
       logger.debug('Task progress update', {
         ...progress
       });
@@ -505,7 +532,9 @@ export default class TasksManager {
       try {
         await this.deleteTask(miningId, null);
       } catch (error) {
-        logger.error(error);
+        logger.error(`Error deleting task: ${(error as Error).message}`, {
+          error
+        });
       }
     }
 

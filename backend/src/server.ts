@@ -7,7 +7,6 @@ import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
 import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
@@ -16,6 +15,8 @@ import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
 import SupabaseTasks from './db/supabase/tasks';
 import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
+import EmailFetcherClient from './services/email-fetching';
+import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -47,7 +48,7 @@ console.log(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
-    new EmailFetcherFactory(),
+    new EmailFetcherClient(logger, ENV.EMAIL_FETCHING_SERVICE_API_TOKEN, ENV.EMAIL_FETCHING_SERVICE_URL),
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );

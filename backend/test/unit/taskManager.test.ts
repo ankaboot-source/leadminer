@@ -24,21 +24,22 @@ import {
 } from '../../src/services/tasks-manager/utils';
 
 import ENV from '../../src/config';
-import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
-import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../src/db/supabase/tasks';
 import TasksManager from '../../src/services/tasks-manager/TasksManager';
 import redis from '../../src/utils/redis';
+import EmailFetcherClient from '../../src/services/email-fetching';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
   SUPABASE_SECRET_PROJECT_TOKEN: 'fake',
   REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: 'fake-group-extracting',
-  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning'
+  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning',
+  REDIS_SIGNATURE_STREAM_NAME: 'signature-test-stream',
+  IMAP_FETCH_BODY: true
 }));
 
 jest.mock('../../src/utils/redis', () => {
@@ -85,21 +86,18 @@ jest.mock('../../src/db/supabase/tasks', () =>
 const fakeRedisClient = redis.getClient();
 const tasksResolver = new SupabaseTasks({} as SupabaseClient, {} as Logger);
 
-const mockEmailFetcher = {
-  getTotalMessages: jest.fn(() => 1000),
-  start: jest.fn(),
-  stop: jest.fn()
-};
 const mockedProgressHandler = {
   send: jest.fn(),
   stop: jest.fn()
 };
-const emailFetcherFactory = {
-  create: jest.fn(() => mockEmailFetcher)
-};
 
 const sseBroadcasterFactory = {
   create: jest.fn(() => mockedProgressHandler)
+};
+
+const emailFetcherAPI = {
+  startFetch: jest.fn(() => Promise.resolve()),
+  stopFetch: jest.fn(() => Promise.resolve())
 };
 
 const miningIdGenerator = jest.fn(() =>
@@ -205,10 +203,8 @@ describe('TasksManager', () => {
   const fetcherOptions: ImapEmailsFetcherOptions = {
     email: 'abc123@test.io',
     userId: 'abc123',
-    batchSize: 0,
     boxes: ['test'],
-    imapConnectionProvider: {} as ImapConnectionProvider,
-    fetchEmailBody: false
+    fetchEmailBody: ENV.IMAP_FETCH_BODY
   };
 
   beforeEach(() => {
@@ -217,7 +213,7 @@ describe('TasksManager', () => {
       tasksResolver,
       fakeRedisClient,
       fakeRedisClient,
-      emailFetcherFactory as unknown as EmailFetcherFactory,
+      emailFetcherAPI as unknown as EmailFetcherClient,
       sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
       miningIdGenerator
     );
@@ -235,7 +231,7 @@ describe('TasksManager', () => {
           tasksResolver,
           fakeRedisClient,
           fakeRedisClient,
-          emailFetcherFactory as unknown as EmailFetcherFactory,
+          emailFetcherAPI as unknown as EmailFetcherClient,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
           miningIdGenerator
         );
@@ -245,7 +241,7 @@ describe('TasksManager', () => {
           tasksResolver,
           fakeRedisClient,
           fakeRedisClient,
-          emailFetcherFactory as unknown as EmailFetcherFactory,
+          emailFetcherAPI as unknown as EmailFetcherClient,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
           miningIdGenerator
         );
@@ -266,14 +262,18 @@ describe('TasksManager', () => {
 
         expect(miningIdGenerator).toHaveBeenCalledTimes(1);
         expect(sseBroadcasterFactory.create).toHaveBeenCalledTimes(1);
-        expect(emailFetcherFactory.create).toHaveBeenCalledTimes(1);
+        expect(emailFetcherAPI.startFetch).toHaveBeenCalledTimes(1);
 
         expect(miningIdGenerator).toHaveBeenCalledWith();
         expect(sseBroadcasterFactory.create).toHaveBeenCalledWith();
-        expect(emailFetcherFactory.create).toHaveBeenCalledWith({
+        expect(emailFetcherAPI.startFetch).toHaveBeenCalledWith({
           miningId: task.miningId,
           contactStream: `messages_stream-${task.miningId}`,
-          ...fetcherOptions
+          userId: fetcherOptions.userId,
+          email: fetcherOptions.email,
+          boxes: fetcherOptions.boxes,
+          extractSignatures: ENV.IMAP_FETCH_BODY,
+          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME
         });
 
         expect(tasksResolver.create).toHaveBeenCalledWith(
