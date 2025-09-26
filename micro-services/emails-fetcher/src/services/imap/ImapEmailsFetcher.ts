@@ -493,7 +493,8 @@ export default class ImapEmailsFetcher {
 
         return;
       }
-      this.isCanceled = true;
+      console.log(error)
+      // this.isCanceled = true;
       throw error;
     } finally {
       if (connection && connection.usable) {
