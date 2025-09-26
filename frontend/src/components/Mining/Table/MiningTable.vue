@@ -107,7 +107,7 @@
             :deselect-contacts="deselectContacts"
           />
         </div>
-        <div class="ml-2">
+        <div class="ml-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
             <template v-if="!implicitSelectAll && contactsLength">
