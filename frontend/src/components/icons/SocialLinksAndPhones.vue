@@ -31,8 +31,8 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    socialLinks?: string[];
-    phones?: string[];
+    socialLinks?: string[] | null;
+    phones?: string[] | null;
     showSocialLinks?: boolean;
     showPhones?: boolean;
     small?: boolean;
@@ -47,7 +47,7 @@ const props = withDefaults(
 );
 
 const socialLinks = computed(() =>
-  props.small ? props.socialLinks.slice(0, 3) : props.socialLinks,
+  props.small ? props.socialLinks?.slice(0, 3) : props.socialLinks,
 );
 
 function getSameAsIcon(url: string) {
