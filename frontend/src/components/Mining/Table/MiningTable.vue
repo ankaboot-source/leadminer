@@ -1158,6 +1158,14 @@ onNuxtReady(async () => {
 
   await $contactsStore.reloadContacts();
 
+  if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
+    console.log(
+      'Data in persons table but not in refinedpersons, refining contacts...',
+    );
+    await $contactsStore.refineContacts();
+    await $contactsStore.reloadContacts();
+  }
+
   $contactsStore.subscribeToRealtimeUpdates();
 
   scrollHeightObserver.value = new ResizeObserver(() => {
