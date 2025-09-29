@@ -107,16 +107,25 @@
             :deselect-contacts="deselectContacts"
           />
         </div>
-        <div class="ml-2">
+        <div class="ml-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
             <template v-if="!implicitSelectAll && contactsLength">
-              {{ implicitlySelectedContactsLength.toLocaleString() }}
-              /
+              {{
+                implicitlySelectedContactsLength.toLocaleString() +
+                ($screenStore.size.md ? ' ' : '') +
+                '/' +
+                ($screenStore.size.md ? ' ' : '') +
+                contactsLength.toLocaleString()
+              }}
             </template>
-            {{ contactsLength?.toLocaleString() ?? 0 }}
+            <template v-else>
+              {{ contactsLength?.toLocaleString() ?? 0 }}
+            </template>
           </template>
-          {{ t('contacts') }}
+          <template v-if="$screenStore.size.md">
+            {{ ' ' + t('contacts') }}
+          </template>
         </div>
         <div class="grow" />
         <div>
