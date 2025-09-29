@@ -10,7 +10,7 @@ export interface BoxNode {
   attribs?: string[];
 }
 
-export const EMAIL_EXCLUDED_FOLDERS = [
+const EXCLUDED_FOLDERS_FROM_DEFAULT = [
   'mailspring',
   'outbox',
   'drafts',
@@ -21,14 +21,17 @@ export const EMAIL_EXCLUDED_FOLDERS = [
   '\\trash',
 ];
 
+const EXCLUDED_FOLDERS_FROM_SELECTION = ['\\Noselect'];
+
 /**
  * Gets default selected folders from the input boxes based on email service
  * @param boxes - The array of folder names to filter
- * @returns The filtered array of boxes
+ * @returns The filtered array of boxes and a set of excluded boxes keys
  */
-export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  const filteredFolders: TreeSelectionKeys = {};
+export function getDefaultAndExcludedFolders(boxes: BoxNode[]) {
+  const defaultFolders: TreeSelectionKeys = {};
   let foundAllMailKey: string | null = null;
+  const excludedKeys = new Set<string>();
 
   objectScan(['**.key'], {
     joined: true,
@@ -40,12 +43,19 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
       const folderParent = folder.pop();
       const isAllMail = attribs?.includes('\\All');
 
+      if (
+        attribs &&
+        EXCLUDED_FOLDERS_FROM_SELECTION.some((box) => attribs.includes(box))
+      ) {
+        excludedKeys.add(key);
+      }
+
       if (foundAllMailKey && !isAllMail) return;
 
       const isExcluded = [...(attribs ?? []), folderName, folderParent]
         .filter(Boolean)
         .map((name) => name.toLowerCase())
-        .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
+        .some((name) => EXCLUDED_FOLDERS_FROM_DEFAULT.includes(name));
 
       if (isExcluded) return;
 
@@ -57,9 +67,9 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
         // Clear previous selections
         // skipcq: JS-0320
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-        Object.keys(filteredFolders).forEach((k) => delete filteredFolders[k]);
+        Object.keys(defaultFolders).forEach((k) => delete defaultFolders[k]);
         // Add All Mail as checked
-        filteredFolders[key] = {
+        defaultFolders[key] = {
           checked: true,
           partialChecked: false,
           isNoSelect,
@@ -71,21 +81,20 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
         while (pathParts.length > 0) {
           pathParts.pop(); // remove current
           const parentKey = pathParts.join('/');
-          if (parentKey in filteredFolders) continue;
-          filteredFolders[parentKey] = {
+          if (parentKey in defaultFolders) continue;
+          defaultFolders[parentKey] = {
             checked: false,
             partialChecked: true,
           };
         }
       } else {
-        filteredFolders[key] = {
+        defaultFolders[key] = {
           checked,
           partialChecked,
-          isNoSelect,
         };
       }
     },
   })(boxes);
 
-  return filteredFolders;
+  return { defaultFolders, excludedKeys };
 }
