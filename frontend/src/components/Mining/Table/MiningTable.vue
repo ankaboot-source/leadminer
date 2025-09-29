@@ -719,12 +719,14 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="t('updated_at_definition')">
-          {{ t('updated_at') }}
+        <div v-tooltip.top="$t('contact.updated_at_definition')">
+          {{ $t('contact.updated_at') }}
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+        <div v-tooltip.bottom="data.updated_at?.toLocaleString()">
+          {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
@@ -749,11 +751,7 @@
       </template>
       <template #body="{ data }">
         <div v-tooltip.bottom="data.created_at?.toLocaleString()">
-          {{
-            data.created_at
-              ? data.created_at?.toLocaleDateString()
-              : data.created_at
-          }}
+          {{ data.created_at?.toLocaleDateString() ?? data.created_at }}
         </div>
       </template>
       <template #filter="{ filterModel }">
