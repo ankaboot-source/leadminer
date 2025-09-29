@@ -150,9 +150,9 @@ CREATE TABLE "public"."persons" (
     "works_for" "uuid",
     "identifiers" "text"[],
     "status" "text",
-    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamptz DEFAULT "now"() NOT NULL,
     "source" "text" NOT NULL,
-    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamptz DEFAULT "now"() NOT NULL,
     "verification_details" "json",
     PRIMARY KEY ("email", "user_id", "source")
 );
@@ -313,8 +313,8 @@ CREATE TABLE "public"."refinedpersons" (
     "conversations" integer,
     "replied_conversations" integer,
     "seniority" timestamp with time zone,
-    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamptz DEFAULT "now"() NOT NULL,
+    "updated_at" timestamptz DEFAULT "now"() NOT NULL,
     PRIMARY KEY ("email", "user_id")
 );
 
