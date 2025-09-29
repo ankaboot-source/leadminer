@@ -5,7 +5,7 @@ create extension if not exists moddatetime schema extensions;
 CREATE TABLE "public"."domains" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text",
-    "last_check" timestamp with time zone,
+    "last_check" timestamptz,
     "email_server_type" "text",
     PRIMARY KEY ("id")
 );
@@ -22,7 +22,7 @@ CREATE TYPE "public"."engagement_type_enum" AS ENUM (
 CREATE TABLE "public"."engagement" (
     "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id"),
     "engagement_type" "public"."engagement_type_enum" NOT NULL,
-    "engagement_created_at" timestamp with time zone DEFAULT "now"(),
+    "engagement_created_at" timestamptz DEFAULT "now"(),
     "email" "text" NOT NULL,
     PRIMARY KEY ("email", "user_id", "engagement_type")
 );
@@ -36,7 +36,7 @@ ALTER TABLE "public"."engagement" ENABLE ROW LEVEL SECURITY;
 CREATE TABLE "public"."messages" (
     "channel" "text",
     "folder_path" "text",
-    "date" timestamp with time zone,
+    "date" timestamptz,
     "user_id" "uuid" NOT NULL,
     "list_id" "text",
     "message_id" "text" NOT NULL,
@@ -49,7 +49,7 @@ PARTITION BY HASH ("user_id");
 CREATE TABLE "public"."messages_0" (
     "channel" "text",
     "folder_path" "text",
-    "date" timestamp with time zone,
+    "date" timestamptz,
     "user_id" "uuid" NOT NULL,
     "list_id" "text",
     "message_id" "text" NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE "public"."messages_0" (
 CREATE TABLE "public"."messages_1" (
     "channel" text,
     "folder_path" text,
-    "date" timestamp with time zone,
+    "date" timestamptz,
     "user_id" uuid NOT NULL,
     "list_id" text,
     "message_id" text NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE "public"."messages_1" (
 CREATE TABLE "public"."messages_2" (
     "channel" "text",
     "folder_path" "text",
-    "date" timestamp with time zone,
+    "date" timestamptz,
     "user_id" "uuid" NOT NULL,
     "list_id" "text",
     "message_id" "text" NOT NULL,
@@ -98,7 +98,7 @@ ALTER TABLE "public"."messages_2" ENABLE ROW LEVEL SECURITY;
 -- Table mining_sources
 
 CREATE TABLE "public"."mining_sources" (
-    "created_at" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamptz DEFAULT "now"(),
     "credentials" "bytea" NOT NULL,
     "email" "text" NOT NULL,
     "type" "text" NOT NULL,
@@ -307,12 +307,12 @@ CREATE TABLE "public"."refinedpersons" (
     "occurrence" integer,
     "tags" "text"[],
     "email" "text" NOT NULL,
-    "recency" timestamp with time zone,
+    "recency" timestamptz,
     "sender" integer,
     "recipient" integer,
     "conversations" integer,
     "replied_conversations" integer,
-    "seniority" timestamp with time zone,
+    "seniority" timestamptz,
     "created_at" timestamptz DEFAULT "now"() NOT NULL,
     "updated_at" timestamptz DEFAULT "now"() NOT NULL,
     PRIMARY KEY ("email", "user_id")
@@ -407,8 +407,8 @@ CREATE TABLE "public"."tasks" (
     "type" "public"."task_type_enum" NOT NULL,
     "details" "jsonb",
     "duration" integer,
-    "stopped_at" timestamp with time zone,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "stopped_at" timestamptz,
+    "started_at" timestamptz DEFAULT "now"() NOT NULL,
     PRIMARY KEY ("id")
 );
 
