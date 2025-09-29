@@ -21,7 +21,7 @@ const EXCLUDED_FOLDERS_FROM_DEFAULT = [
   '\\trash',
 ];
 
-const EXCLUDED_FOLDERS_FROM_SELECTION = ['\\Noselect'];
+const EXCLUDED_ATTRIBS_FROM_SELECTION = ['\\Noselect'];
 
 /**
  * Gets default selected folders from the input boxes based on email service
@@ -45,7 +45,9 @@ export function getDefaultAndExcludedFolders(boxes: BoxNode[]) {
 
       if (
         attribs &&
-        EXCLUDED_FOLDERS_FROM_SELECTION.some((box) => attribs.includes(box))
+        EXCLUDED_ATTRIBS_FROM_SELECTION.some((attrib) =>
+          attribs.includes(attrib),
+        )
       ) {
         excludedKeys.add(key);
       }
