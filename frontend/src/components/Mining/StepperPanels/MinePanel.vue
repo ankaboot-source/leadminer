@@ -232,7 +232,7 @@ const totalExtractedNotificationMessage = computed(() =>
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('mining_stopped'),
       detail: t('mining_canceled'),
       life: 3000,
@@ -244,6 +244,7 @@ watch(extractionFinished, async (finished) => {
       severity: 'info',
       summary: t('mining_done'),
       detail: totalExtractedNotificationMessage,
+      group: 'achievement',
       life: 8000,
     });
     $stepper.next();
