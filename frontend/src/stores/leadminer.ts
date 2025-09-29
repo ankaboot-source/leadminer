@@ -5,7 +5,7 @@ import { ref } from 'vue';
 import { updateMiningSourcesValidity } from '@/utils/sources';
 import { startMiningNotification } from '~/utils/extras';
 import type { MiningSource, MiningTask, MiningType } from '../types/mining';
-import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
+import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
@@ -25,6 +25,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
+  const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
     name: string;
     contacts: Record<string, string>[];
@@ -69,6 +70,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
+    excludedBoxes.value = new Set();
     selectedFile.value = null;
     extractSignatures.value = true;
 
@@ -144,7 +146,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const { folders } = data || {};
       if (folders) {
         boxes.value = [...folders];
-        selectedBoxes.value = getDefaultSelectedFolders(folders);
+
+        const { defaultFolders, excludedKeys } =
+          getDefaultAndExcludedFolders(folders);
+
+        selectedBoxes.value = defaultFolders;
+        excludedBoxes.value = excludedKeys;
       }
 
       miningSources.value = updateMiningSourcesValidity(
@@ -327,7 +334,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
               Object.keys(selectedBoxes.value).filter(
                 (key) =>
                   selectedBoxes.value[key].checked &&
-                  !selectedBoxes.value[key].isNoSelect &&
+                  !excludedBoxes.value.has(key) &&
                   key !== '',
               ),
               activeMiningSource.value!,
@@ -402,6 +409,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource,
     boxes,
     selectedBoxes,
+    excludedBoxes,
     extractSignatures,
     selectedFile,
     isLoadingStartMining,
