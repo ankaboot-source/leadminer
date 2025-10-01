@@ -66,16 +66,21 @@ function buildSequenceRanges(total: number, chunkSize = 10000): string[] {
 }
 
 export default class ImapEmailsFetcher {
+  
+  
   public isCanceled: boolean;
-
+  
   public isCompleted: boolean;
-
-  private readonly EMAIL_TEXT_MAX_LENGTH = 3000;
-
+  
+  
   private totalFetched: number;
-
+  
   private isRefreshingOAuthToken = false;
-
+  
+  private FETCHING_MAX_ERRORS: number;
+  private FETCHING_TOTAL_ERRORS: number;
+  private readonly EMAIL_TEXT_MAX_LENGTH: number;
+  
   private readonly bodies: string[];
 
   private readonly emailsQueue: PQueue;
@@ -114,10 +119,18 @@ export default class ImapEmailsFetcher {
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
+    
+    // Fetching state
     this.totalFetched = 0;
-
     this.isCanceled = false;
     this.isCompleted = false;
+
+    // Email body length to send
+    this.EMAIL_TEXT_MAX_LENGTH = 3000;
+
+    // Error Tracking
+    this.FETCHING_TOTAL_ERRORS = 0;
+    this.FETCHING_MAX_ERRORS = maxConcurrentConnections * 1.5
 
     this.fetchedIds = new Set<string>();
     this.emailsQueue = new PQueue({
@@ -144,8 +157,7 @@ export default class ImapEmailsFetcher {
     const isImapAuthError =
       err.authenticationFailed === true ||
       err.serverResponseCode === 'AUTHENTICATIONFAILED' ||
-      (err.responseStatus === 'NO' &&
-        typeof err.responseText === 'string' &&
+        (typeof err.responseText === 'string' &&
         err.responseText.includes('Invalid credentials')) ||
       (typeof err.message === 'string' &&
         (err.message.includes('AUTHENTICATIONFAILED') ||
@@ -171,7 +183,7 @@ export default class ImapEmailsFetcher {
     return isImapAuthError || isTokenExpired || isConnectionErrorRequiringAuth;
   }
 
-  private setOAuthRefreshCooldown(seconds = 30) {
+  private setOAuthRefreshCooldown(seconds = 120) {
     this.isRefreshingOAuthToken = true;
     setTimeout(() => {
       this.isRefreshingOAuthToken = false;
@@ -333,13 +345,16 @@ export default class ImapEmailsFetcher {
     let publishedEmails = 0;
     const batchSize = Math.max(this.batchSize, 200);
 
-    for await (const msg of this.createFetchStream(connection, range)) {
+    const streamGen = this.createFetchStream(connection, range)
+
+    for await (const msg of streamGen) {
       if (this.isCanceled) {
         logger.debug(
           `[${this.miningId}:${folderPath}:${range}]: Received cancellation signal, aborting... `
         );
         connection.close();
-        break;
+
+        throw new Error('Received cancellation signal, Aborting')
       }
 
       let header: Record<string, string[]>;
@@ -470,40 +485,55 @@ export default class ImapEmailsFetcher {
       );
 
       await this.processFetch(connection, range, folder, totalInFolder);
+
+      await connection.mailboxClose();
+      logger.info(
+        `[${this.miningId}:${folder}:${range}:${connection?.id}]: Closed folder for range ${range}`
+      );
+      await this.imapConnectionProvider.releaseConnection(connection);
     } catch (error) {
       logger.error(
-        `[${this.miningId}:${folder}:${range}]: ${(error as Error).message}`,
+        `[${this.miningId}:${folder}:${range}:${connection?.id}]: ${(error as Error).message}`,
         util.inspect(error, { depth: null, colors: true })
       );
+
+      if (connection)
+        await this.imapConnectionProvider.destroyConnection(connection)
+
+      if (this.FETCHING_TOTAL_ERRORS >= this.FETCHING_MAX_ERRORS) {
+        this.isCanceled = true;
+        throw error
+      }
+
+      this.FETCHING_TOTAL_ERRORS += 1;
+
+     logger.debug(
+        `[${this.miningId}:${folder}:${range}:${connection?.id}]: Pushing range again to queue for retry`
+      );
+
+      this.emailsQueue.add(() =>
+        this.processEmailJob({ range, folder, totalInFolder })
+      );
+
       if (
-        ImapEmailsFetcher.isAuthFailure(error) &&
-        this.imapConnectionProvider.isOAuth()
-      ) {
-        this.emailsQueue.add(() =>
-          this.processEmailJob({ range, folder, totalInFolder })
-        );
+          ImapEmailsFetcher.isAuthFailure(error) &&
+          this.imapConnectionProvider.isOAuth()
+        ) {
+          if (this.isRefreshingOAuthToken) return;
 
-        if (this.isRefreshingOAuthToken) return;
-        this.setOAuthRefreshCooldown(); // to avoid refreshing pool on every connection
-        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+          // Reset total errors
+          this.FETCHING_TOTAL_ERRORS = 0;
 
-        this.emailsQueue.pause();
-        await this.imapConnectionProvider.refreshPool();
-        this.emailsQueue.start();
+          // to avoid refreshing pool on every connection
+          this.setOAuthRefreshCooldown();
+          
+          logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
 
-        return;
-      }
-      console.log(error)
-      // this.isCanceled = true;
-      throw error;
-    } finally {
-      if (connection && connection.usable) {
-        await connection.mailboxClose();
-        logger.info(
-          `[${this.miningId}:${folder}:${range}:${connection?.id}]: Closed folder for range ${range}`
-        );
-        await this.imapConnectionProvider.releaseConnection(connection);
-      }
+          this.emailsQueue.pause();
+          await this.imapConnectionProvider.refreshPool();
+          this.emailsQueue.start();
+        }
+      return;
     }
   }
 

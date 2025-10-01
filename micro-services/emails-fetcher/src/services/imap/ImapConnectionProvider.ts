@@ -185,7 +185,7 @@ class ImapConnectionProvider {
       await connection.connect();
       return connection;
     } catch (err) {
-      await connection.logout();
+      connection.usable && await connection.logout();
       throw err;
     }
   }
@@ -259,6 +259,10 @@ class ImapConnectionProvider {
     });
 
     return this;
+  }
+
+  async destroyConnection(connection: Connection) {
+    await this.connectionsPool?.destroy(connection)
   }
 
   /**
@@ -338,7 +342,6 @@ class ImapConnectionProvider {
   }
 
   async refreshPool() {
-    await this.cleanPool();
     await this.refreshOAuthToken();
     const connection = await this.acquireConnection();
     await this.releaseConnection(connection);
@@ -359,6 +362,7 @@ class ImapConnectionProvider {
       },
       destroy: async (connection) => {
         try {
+          connection.usable &&
           await connection.logout();
           logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
         } catch (err) {
