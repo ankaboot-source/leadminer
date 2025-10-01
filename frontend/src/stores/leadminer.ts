@@ -23,7 +23,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
-  const extractSignatures = ref(true);
+  const extractSignatures = ref(false);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const selectedFile = ref<{
     name: string;
@@ -70,7 +70,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes.value = [];
     selectedBoxes.value = [];
     selectedFile.value = null;
-    extractSignatures.value = true;
+    extractSignatures.value = false;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
