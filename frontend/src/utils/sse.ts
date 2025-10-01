@@ -49,10 +49,6 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
-    const token = useSupabaseSession().value?.access_token;
-    if (!token) {
-      throw new Error('[SSE] No access token available.');
-    }
 
     return fetchEventSource(
       `${

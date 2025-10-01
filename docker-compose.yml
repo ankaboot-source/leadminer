@@ -17,6 +17,19 @@ services:
     ports:
       - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
 
+  leadminer-email-fetcher-service:
+    image: leadminer-email-fetcher-service:git
+    container_name: leadminer_email_fetcher_service
+    build:
+      context: micro-services/emails-fetcher
+      dockerfile: email-fetcher.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    ports:
+      - ${EMAIL_FETCHING_SERVICE_PORT}:${EMAIL_FETCHING_SERVICE_PORT}
+
   leadminer-contact-extraction-worker:
     image: leadminer-contact-extraction-worker:git
     container_name: leadminer_contact_extraction
@@ -45,17 +58,6 @@ services:
     build:
       context: backend
       dockerfile: email-signature-worker.Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      - redis
-
-  leadminer-email-fetcher-service:
-    image: leadminer-email-fetcher-service:git
-    container_name: leadminer_email_fetcher_service
-    build:
-      context: micro-services/emails-fetcher
-      dockerfile: email-fetcher.Dockerfile
     env_file:
       - .env
     depends_on:

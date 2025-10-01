@@ -1,7 +1,6 @@
 // src/clients/EmailFetcherClient.ts
 import { Logger } from 'winston';
 import axios, { AxiosInstance } from 'axios';
-import ENV from '../../config';
 
 export interface FetchStartPayload {
   userId: string;

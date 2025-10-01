@@ -48,7 +48,11 @@ console.log(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
-    new EmailFetcherClient(logger, ENV.EMAIL_FETCHING_SERVICE_API_TOKEN, ENV.EMAIL_FETCHING_SERVICE_URL),
+    new EmailFetcherClient(
+      logger,
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
+      ENV.EMAIL_FETCHING_SERVICE_URL
+    ),
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
