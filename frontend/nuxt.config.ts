@@ -8,6 +8,12 @@ export default defineNuxtConfig({
   imports: {
     autoImport: true,
     dirs: ['stores'],
+    imports: [
+      {
+        from: 'primevue/usetoast',
+        name: 'useToast',
+      },
+    ],
   },
 
   build: {
