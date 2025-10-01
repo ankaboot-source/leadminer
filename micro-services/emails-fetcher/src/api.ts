@@ -183,7 +183,7 @@ apiRoutes.post(
         credentials
       );
 
-      if (totalApprovedImapConnections < 0) {
+      if (totalApprovedImapConnections <= 0) {
         throw new Error(
           'Inconsistent connection state: available IMAP connections below zero'
         );
