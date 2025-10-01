@@ -308,7 +308,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     $leadminerStore.activeEnrichment = true;
 
     if (contactsToEnrich.value?.length === 1) {
-      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]);
+      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]!);
     } else {
       await enrichPersonBulk(
         updateEmptyFieldsOnly,

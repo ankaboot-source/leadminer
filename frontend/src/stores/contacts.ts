@@ -50,7 +50,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Clears the sync interval.
    */
   function clearSyncInterval() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
+    if (syncIntervalId) {
+      clearInterval(syncIntervalId);
+      syncIntervalId = null;
+    }
   }
 
   /**
@@ -60,7 +63,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_table', { user_id: $user.value?.id });
+      .rpc('get_contacts_table', { user_id: $user.value?.sub });
 
     if (error) throw error;
     return data as Contact[];
@@ -87,7 +90,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { userid: $user.value?.id });
+      .rpc('refine_persons', { userid: $user.value?.sub });
     if (error) throw error;
   }
 
@@ -156,7 +159,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
             }, 0);
         },
       );
-
     startSyncInterval();
     realtimeChannel.subscribe();
   }

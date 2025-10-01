@@ -240,7 +240,6 @@ import {
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
-  User,
 } from '@supabase/supabase-js';
 
 const { t } = useI18n({
@@ -251,7 +250,7 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-const $user = useSupabaseUser() as Ref<User>;
+const $user = useSupabaseUser();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
@@ -358,8 +357,8 @@ function startRealtimePersons(userId: string, email: string) {
 watch(show, async (value) => {
   contact.value.works_for = await getOrganizationName(contact.value.works_for);
 
-  if (value) {
-    startRealtimePersons($user.value.id, contact.value.email);
+  if (value && $user.value) {
+    startRealtimePersons($user.value.sub, contact.value.email);
     return;
   }
   if (personsSubscription) {
@@ -448,7 +447,8 @@ async function saveContactInformations() {
         ? editedContactCopy.image || null
         : undefined,
   };
-  await updateContact($user.value.id, contactToUpdate);
+  if (!$user.value?.sub) return;
+  await updateContact($user.value.sub, contactToUpdate);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }
