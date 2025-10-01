@@ -980,7 +980,8 @@ const isExportDisabled = computed(
     !implicitlySelectedContactsLength.value,
 );
 function getFileName() {
-  const { email } = $user.value!;
+  if (!$user.value) return;
+  const { email } = $user.value;
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;

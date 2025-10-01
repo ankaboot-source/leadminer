@@ -308,6 +308,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     $leadminerStore.activeEnrichment = true;
 
     if (contactsToEnrich.value?.length === 1) {
+      // skipcq: JS-0339
       await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]!);
     } else {
       await enrichPersonBulk(
