@@ -219,7 +219,6 @@ apiRoutes.post(
         })
       );
     } catch (err) {
-      console.log(err);
       logger.error('Failed to start fetching', err);
       if (
         err instanceof Error &&

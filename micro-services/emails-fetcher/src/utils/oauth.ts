@@ -7,7 +7,7 @@ import {
 } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
-import logger from '../utils/logger';
+import logger from './logger';
 
 const providerScopes = {
   google: {
@@ -100,20 +100,6 @@ export async function getTokenWithScopeValidation(
     idToken: token.id_token,
     expiresAt: token.expires_at
   } as TokenType;
-}
-
-const REGEX_EMAIL = /^\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{0,66}\.[A-Z]{2,18}\b$/i;
-const isInvalidEmail = (email?: string) =>
-  email ? !REGEX_EMAIL.test(email) : false;
-function isValidURL(url: string) {
-  try {
-    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
-    // eslint-disable-next-line no-new
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function refreshAccessToken(

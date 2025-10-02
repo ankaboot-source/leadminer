@@ -9,7 +9,6 @@ import ImapConnectionProvider from './ImapConnectionProvider';
 import ENV from '../../config';
 import redis from '../../utils/redis';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
-import { workerPool } from '../../workers/pool';
 
 const redisClient = redis.getClient();
 
@@ -66,21 +65,20 @@ function buildSequenceRanges(total: number, chunkSize = 10000): string[] {
 }
 
 export default class ImapEmailsFetcher {
-  
-  
   public isCanceled: boolean;
-  
+
   public isCompleted: boolean;
-  
-  
+
   private totalFetched: number;
-  
+
   private isRefreshingOAuthToken = false;
-  
+
   private FETCHING_MAX_ERRORS: number;
+
   private FETCHING_TOTAL_ERRORS: number;
+
   private readonly EMAIL_TEXT_MAX_LENGTH: number;
-  
+
   private readonly bodies: string[];
 
   private readonly emailsQueue: PQueue;
@@ -114,15 +112,11 @@ export default class ImapEmailsFetcher {
     private readonly batchSize = 50,
     private readonly maxConcurrentConnections = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
   ) {
-
-    console.log(this.fetchEmailBody);
-    
     // Generate a unique identifier for the user.
     this.userIdentifier = hashEmail(userEmail, userId);
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
-    
     // Fetching state
     this.totalFetched = 0;
     this.isCanceled = false;
@@ -133,13 +127,13 @@ export default class ImapEmailsFetcher {
 
     // Error Tracking
     this.FETCHING_TOTAL_ERRORS = 0;
-    this.FETCHING_MAX_ERRORS = maxConcurrentConnections * 1.5
+    this.FETCHING_MAX_ERRORS = maxConcurrentConnections * 1.5;
 
     this.fetchedIds = new Set<string>();
     this.emailsQueue = new PQueue({
       concurrency: this.maxConcurrentConnections,
       intervalCap: 1, // only 1 job starts per interval
-      interval: 200 // 200ms gap between each job starts
+      interval: 300 // 200ms gap between each job starts
     });
     this.bodies = this.fetchEmailBody ? ['TEXT'] : []; // HEADER is handled by ImapFlow;
   }
@@ -160,7 +154,7 @@ export default class ImapEmailsFetcher {
     const isImapAuthError =
       err.authenticationFailed === true ||
       err.serverResponseCode === 'AUTHENTICATIONFAILED' ||
-        (typeof err.responseText === 'string' &&
+      (typeof err.responseText === 'string' &&
         err.responseText.includes('Invalid credentials')) ||
       (typeof err.message === 'string' &&
         (err.message.includes('AUTHENTICATIONFAILED') ||
@@ -348,7 +342,7 @@ export default class ImapEmailsFetcher {
     let publishedEmails = 0;
     const batchSize = Math.max(this.batchSize, 200);
 
-    const streamGen = this.createFetchStream(connection, range)
+    const streamGen = this.createFetchStream(connection, range);
 
     for await (const msg of streamGen) {
       if (this.isCanceled) {
@@ -357,7 +351,7 @@ export default class ImapEmailsFetcher {
         );
         connection.close();
 
-        throw new Error('Received cancellation signal, Aborting')
+        throw new Error('Received cancellation signal, Aborting');
       }
 
       let header: Record<string, string[]>;
@@ -398,67 +392,48 @@ export default class ImapEmailsFetcher {
         })
       );
 
-      if (from?.address === this.userEmail || !this.fetchEmailBody) continue;
+      if (!this.fetchEmailBody || from?.address === this.userEmail) continue;
 
-      // let text = msg.bodyParts?.get('text') ?? '';
+      let text = msg.bodyParts?.get('text') ?? '';
 
-      // if (headers && text?.length) {
-      //   try {
-      //     const { text: parsedText } = await simpleParser(
-      //       Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
-      //       {
-      //         skipHtmlToText: true,
-      //         skipTextToHtml: true,
-      //         skipImageLinks: true,
-      //         skipTextLinks: true
-      //       }
-      //     );
-      //     text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-      //   } catch {
-      //     text = '';
-      //   }
-      // }
+      if (headers && text?.length) {
+        try {
+          const { text: parsedText } = await simpleParser(
+            Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
+            {
+              skipHtmlToText: true,
+              skipTextToHtml: true,
+              skipImageLinks: true,
+              skipTextLinks: true
+            }
+          );
+          text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
+        } catch {
+          text = '';
+        }
+      }
 
-      // if (text.length && from && date) {
-      //   await redisClient.xadd(
-      //     this.signatureStream,
-      //     '*',
-      //     'message',
-      //     JSON.stringify({
-      //       type: 'email',
-      //       data: {
-      //         header: { from, messageId, messageDate: date, rawHeader: header },
-      //         body: text,
-      //         seqNumber: seq,
-      //         folderPath,
-      //         isLast: false
-      //       },
-      //       userId: this.userId,
-      //       userEmail: this.userEmail,
-      //       userIdentifier: this.userIdentifier,
-      //       miningId: this.miningId
-      //     })
-      //   );
-      // }
-
-      workerPool.execute(
-          {
-            headersBuf: headers as Buffer,
-            bodyTextBuf: msg.bodyParts?.get('text'),
-            emailTextMaxLength: this.EMAIL_TEXT_MAX_LENGTH,
-            from,
-            date: date ?? null,
-            header,
-            seq,
-            folderPath,
-            signatureStream: this.signatureStream,
+      if (text.length && from && date) {
+        await redisClient.xadd(
+          this.signatureStream,
+          '*',
+          'message',
+          JSON.stringify({
+            type: 'email',
+            data: {
+              header: { from, messageId, messageDate: date, rawHeader: header },
+              body: text,
+              seqNumber: seq,
+              folderPath,
+              isLast: false
+            },
             userId: this.userId,
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier,
-            miningId: this.miningId,
-            messageId
-        }
-      )
+            miningId: this.miningId
+          })
+        );
+      }
 
       this.fetchedIds.add(messageId);
       this.totalFetched += 1;
@@ -526,7 +501,7 @@ export default class ImapEmailsFetcher {
       );
 
       if (connection)
-        await this.imapConnectionProvider.destroyConnection(connection)
+        await this.imapConnectionProvider.destroyConnection(connection);
 
       if (this.FETCHING_TOTAL_ERRORS >= this.FETCHING_MAX_ERRORS) {
         this.isCanceled = true;
@@ -535,7 +510,7 @@ export default class ImapEmailsFetcher {
 
       this.FETCHING_TOTAL_ERRORS += 1;
 
-     logger.debug(
+      logger.debug(
         `[${this.miningId}:${folder}:${range}:${connection?.id}]: Pushing range again to queue for retry`
       );
 
@@ -544,29 +519,30 @@ export default class ImapEmailsFetcher {
       );
 
       if (
-          ImapEmailsFetcher.isAuthFailure(error) &&
-          this.imapConnectionProvider.isOAuth()
-        ) {
-          if (this.isRefreshingOAuthToken) return;
+        ImapEmailsFetcher.isAuthFailure(error) &&
+        this.imapConnectionProvider.isOAuth()
+      ) {
+        if (this.isRefreshingOAuthToken) return;
 
-          // Reset total errors
-          this.FETCHING_TOTAL_ERRORS = 0;
+        // Reset total errors
+        this.FETCHING_TOTAL_ERRORS = 0;
 
-          // to avoid refreshing pool on every connection
-          this.setOAuthRefreshCooldown();
-          
-          logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+        // to avoid refreshing pool on every connection
+        this.setOAuthRefreshCooldown();
 
-          this.emailsQueue.pause();
-          // Wait until all other pending tasks (except this one) have finished resolving
-          while (this.emailsQueue.pending > 1) {
-            await new Promise(r => setTimeout(r, 50));
-          }
-          const success = await this.imapConnectionProvider.refreshOauth();
-          this.isCanceled = !success // cancel task if it fails to refresh
-          this.emailsQueue.start();
+        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+
+        this.emailsQueue.pause();
+        // Wait until all other pending tasks (except this one) have finished resolving
+
+        while (this.emailsQueue.pending > 1) {
+          // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+          await new Promise((r) => setTimeout(r, 50));
         }
-      return;
+        const success = await this.imapConnectionProvider.refreshOauth();
+        this.isCanceled = !success; // cancel task if it fails to refresh
+        this.emailsQueue.start();
+      }
     }
   }
 

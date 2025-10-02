@@ -1,6 +1,8 @@
 import { Factory, Pool, createPool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
 import assert from 'assert';
+import { Token } from 'simple-oauth2';
+import util from 'util';
 import ENV from '../../config';
 import logger from '../../utils/logger';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
@@ -10,9 +12,7 @@ import {
   MiningSourceType,
   OAuthMiningSourceCredentials
 } from '../../db/interfaces/MiningSources';
-import { Token } from 'simple-oauth2';
 import { refreshAccessToken } from '../../utils/oauth';
-import util from 'util';
 
 type CurrentOAuthSource = {
   email: string;
@@ -185,7 +185,7 @@ class ImapConnectionProvider {
       await connection.connect();
       return connection;
     } catch (err) {
-      connection.usable && await connection.logout();
+      if (connection) await connection.logout();
       throw err;
     }
   }
@@ -262,7 +262,7 @@ class ImapConnectionProvider {
   }
 
   async destroyConnection(connection: Connection) {
-    await this.connectionsPool?.destroy(connection)
+    await this.connectionsPool?.destroy(connection);
   }
 
   /**
@@ -342,7 +342,7 @@ class ImapConnectionProvider {
   }
 
   async refreshOauth() {
-    try { 
+    try {
       await this.refreshOAuthToken();
       return true;
     } catch (error) {
@@ -365,8 +365,7 @@ class ImapConnectionProvider {
       },
       destroy: async (connection) => {
         try {
-          connection.usable &&
-          await connection.logout();
+          if (connection.usable) await connection.logout();
           logger.debug('[ImapConnectionProvider]: Imap connection destroyed');
         } catch (err) {
           logger.error(

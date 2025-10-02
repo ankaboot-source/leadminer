@@ -4,7 +4,7 @@ export interface WorkerTask {
 
   // values needed by worker for publishing
   emailTextMaxLength: number;
-  from: any;  // shape of envelope.from
+  from: any; // shape of envelope.from
   date: string | null;
   header: Record<string, string[]>;
   seq: number;

@@ -1,6 +1,4 @@
-// src/emailWorker.ts
-import { parentPort } from 'worker_threads';
-import { ThreadWorker } from 'poolifier'
+import { ThreadWorker } from 'poolifier';
 import { simpleParser } from 'mailparser';
 
 import type { WorkerTask } from './types';
@@ -9,28 +7,40 @@ import redis from '../utils/redis';
 const redisClient = redis.getClient();
 
 async function workerFn(task?: WorkerTask): Promise<{ success: boolean }> {
-  
-  if (!task) return { success: false }
+  if (!task) return { success: false };
 
-  const { headersBuf, bodyTextBuf, emailTextMaxLength, from, date, header, seq,
-          folderPath, signatureStream, userId, userEmail, userIdentifier,
-          miningId, messageId } = task
+  const {
+    headersBuf,
+    bodyTextBuf,
+    emailTextMaxLength,
+    from,
+    date,
+    header,
+    seq,
+    folderPath,
+    signatureStream,
+    userId,
+    userEmail,
+    userIdentifier,
+    miningId,
+    messageId
+  } = task;
 
-  let text = ''
+  let text = '';
 
   try {
     if (bodyTextBuf && bodyTextBuf.length) {
-      const raw = Buffer.concat([headersBuf, bodyTextBuf])
+      const raw = Buffer.concat([headersBuf, bodyTextBuf]);
       const parsed = await simpleParser(raw, {
         skipHtmlToText: true,
         skipTextToHtml: true,
         skipImageLinks: true,
         skipTextLinks: true
-      })
-      text = parsed.text ? parsed.text.slice(0, emailTextMaxLength) : ''
+      });
+      text = parsed.text ? parsed.text.slice(0, emailTextMaxLength) : '';
     }
   } catch {
-    text = ''
+    text = '';
   }
 
   if (text.length && from && date) {
@@ -52,11 +62,11 @@ async function workerFn(task?: WorkerTask): Promise<{ success: boolean }> {
         userIdentifier,
         miningId
       })
-    )
+    );
   }
 
-  return { success: true }
+  return { success: true };
 }
 
 // Wrap with ThreadWorker so poolifier can use it
-export default new ThreadWorker(workerFn)
+export default new ThreadWorker(workerFn);
