@@ -37,7 +37,7 @@
     "express-sse": "^1.0.0",
     "generic-pool": "^3.9.0",
     "imap": "^0.8.19",
-    "imapflow": "^1.0.195",
+    "imapflow": "^1.0.198",
     "ioredis": "^5.7.0",
     "mailparser": "^3.7.4",
     "nodemon": "^3.1.10",
