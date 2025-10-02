@@ -81,6 +81,7 @@ class ImapConnectionProvider {
       socketTimeout: 3600000, // Timeout after one hour
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
+      disableAutoIdle: true,
       secure: true
     };
 

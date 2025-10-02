@@ -51,7 +51,8 @@ class ImapConnectionProvider {
       socketTimeout: 3600000, // Timeout after one hour
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
-      secure: true
+      secure: true,
+      disableAutoIdle: true
     };
 
     this.poolIsInitialized = false;
@@ -162,9 +163,9 @@ class ImapConnectionProvider {
       port: options.port,
       secure: options.tls ?? true,
       logger: false,
-      socketTimeout: 3600000, // Timeout after one hour
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
-      greetingTimeout: ENV.IMAP_AUTH_TIMEOUT
+      greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
+      disableAutoIdle: true
     };
 
     if (!options?.host || !options?.port) {
