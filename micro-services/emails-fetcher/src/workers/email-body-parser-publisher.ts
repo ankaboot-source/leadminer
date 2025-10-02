@@ -29,7 +29,7 @@ async function workerFn(task?: WorkerTask): Promise<{ success: boolean }> {
   let text = '';
 
   try {
-    if (bodyTextBuf && bodyTextBuf.length) {
+    if (bodyTextBuf?.length) {
       const raw = Buffer.concat([headersBuf, bodyTextBuf]);
       const parsed = await simpleParser(raw, {
         skipHtmlToText: true,

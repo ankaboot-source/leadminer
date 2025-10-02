@@ -94,7 +94,7 @@ async function getAvailableConnections(
         clients.push(conn);
         return true;
       } catch (err) {
-        logger.error(`Error getting test connection`, err);
+        logger.error('Error getting test connection', err);
         return null;
       }
     })

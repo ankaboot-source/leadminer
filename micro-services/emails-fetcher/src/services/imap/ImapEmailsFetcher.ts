@@ -598,7 +598,7 @@ export default class ImapEmailsFetcher {
     );
 
     await this.imapConnectionProvider.cleanPool();
-    logger.debug(`Cleaned imap connections pool`);
+    logger.debug('Cleaned imap connections pool');
   }
 
   /**
