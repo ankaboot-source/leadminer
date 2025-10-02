@@ -1,8 +1,3 @@
-/** @type {import('tailwindcss').Config} */
-// skipcq: JS-0359
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const primeui = require('tailwindcss-primeui');
-
 export default {
   content: [
     './src/components/**/*.{js,vue,ts}',
@@ -21,5 +16,4 @@ export default {
       '2xl': '1536px',
     },
   },
-  plugins: [primeui],
 };

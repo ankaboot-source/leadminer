@@ -128,7 +128,7 @@ function stringToBase64URL(str: string) {
 
     while (queuedBits >= 6) {
       const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
+      if (TO_BASE64URL[pos]) base64.push(TO_BASE64URL[pos]);
       queuedBits -= 6;
     }
   };
@@ -141,7 +141,7 @@ function stringToBase64URL(str: string) {
 
     while (queuedBits >= 6) {
       const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
+      if (TO_BASE64URL[pos]) base64.push(TO_BASE64URL[pos]);
       queuedBits -= 6;
     }
   }
@@ -244,7 +244,7 @@ function deleteSupabaseCookies(keys: string[], excluded: string[] = []) {
   const cookies = document.cookie.split('; ');
   cookies.forEach((cookie) => {
     const cookieName = cookie.split('=')[0];
-    if (cookiesToDelete.includes(cookieName)) {
+    if (cookieName && cookiesToDelete.includes(cookieName)) {
       useCookie(cookieName).value = null;
     }
   });
@@ -314,21 +314,6 @@ export default defineNuxtPlugin(() => {
   }
 
   supabase.auth.onAuthStateChange((event, session) => {
-    console.log(
-      '%c[Debug]',
-      'color: DeepSkyBlue; font-weight: bold;',
-      '\nAuth Event:',
-      event,
-      '\nSession:',
-      session,
-      '\nExpires At:',
-      session?.expires_at
-        ? new Date(session.expires_at * 1000).toLocaleString()
-        : 'unknown',
-      '\nPrinted at:',
-      new Date().toLocaleTimeString(),
-    );
-
     if (session) {
       newSession.value = session;
     }

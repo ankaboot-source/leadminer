@@ -766,7 +766,6 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '@supabase/supabase-js';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
@@ -821,7 +820,7 @@ const emptyFunction = () => {};
 
 const $toast = useToast();
 
-const $user = useSupabaseUser() as Ref<User>;
+const $user = useSupabaseUser();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
@@ -981,7 +980,7 @@ const isExportDisabled = computed(
     !implicitlySelectedContactsLength.value,
 );
 function getFileName() {
-  const { email } = $user.value;
+  const { email } = $user.value!; // skipcq: JS-0339
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;

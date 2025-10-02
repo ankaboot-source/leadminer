@@ -84,7 +84,7 @@ async function handleFirstTimeSignIn() {
   const $user = useSupabaseUser();
   const $session = useSupabaseSession();
 
-  const provider = $user.value?.app_metadata.provider;
+  const provider = $user.value?.app_metadata?.provider;
   const providerToken = $session.value?.provider_token;
   const firstTimeSignin = $user.value?.user_metadata.first_time_signin;
   const emailTemplate = $user.value?.user_metadata.EmailTemplate;
@@ -95,7 +95,7 @@ async function handleFirstTimeSignIn() {
     await updateFirstTimeSignIn();
   }
 
-  if (!emailTemplate || emailTemplate.language !== language) {
+  if (language && (!emailTemplate || emailTemplate.language !== language)) {
     await updateUserEmailTemplatesI18n(language);
   }
 }
@@ -137,7 +137,7 @@ export default defineNuxtPlugin({
 
         $currentProfile.value = await getCurrentUserProfile($supabaseClient);
         await handleFirstTimeSignIn();
-        channel = createUserProfileRealtimeChannel($user.value?.id as string);
+        channel = createUserProfileRealtimeChannel($user.value?.sub as string);
         channel.subscribe();
       });
     }

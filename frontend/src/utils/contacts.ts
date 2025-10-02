@@ -1,4 +1,3 @@
-import type { User } from '@supabase/supabase-js';
 import type { Contact } from '~/types/contact';
 import type { Organization } from '~/types/organization';
 
@@ -198,13 +197,15 @@ export function isValidURL(url: string) {
 export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
-  const $user = useSupabaseUser() as Ref<User>;
+  const $user = useSupabaseUser();
+  if (!$user.value?.sub) return;
+
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('delete_contacts', {
-      user_id: $user.value.id,
+      user_id: $user.value.sub,
       emails: emails ?? null,
       deleteallcontacts: emails === undefined,
     });
