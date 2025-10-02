@@ -9,7 +9,7 @@ import ImapConnectionProvider from './ImapConnectionProvider';
 import ENV from '../../config';
 import redis from '../../utils/redis';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
-import util from 'util';
+import { workerPool } from '../../workers/pool';
 
 const redisClient = redis.getClient();
 
@@ -114,6 +114,9 @@ export default class ImapEmailsFetcher {
     private readonly batchSize = 50,
     private readonly maxConcurrentConnections = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
   ) {
+
+    console.log(this.fetchEmailBody);
+    
     // Generate a unique identifier for the user.
     this.userIdentifier = hashEmail(userEmail, userId);
     // Set the key for the process set. used for caching.
@@ -395,48 +398,67 @@ export default class ImapEmailsFetcher {
         })
       );
 
-      if (from?.address === this.userEmail) continue;
+      if (from?.address === this.userEmail || !this.fetchEmailBody) continue;
 
-      let text = msg.bodyParts?.get('text') ?? '';
+      // let text = msg.bodyParts?.get('text') ?? '';
 
-      if (headers && text?.length) {
-        try {
-          const { text: parsedText } = await simpleParser(
-            Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
-            {
-              skipHtmlToText: true,
-              skipTextToHtml: true,
-              skipImageLinks: true,
-              skipTextLinks: true
-            }
-          );
-          text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-        } catch {
-          text = '';
-        }
-      }
+      // if (headers && text?.length) {
+      //   try {
+      //     const { text: parsedText } = await simpleParser(
+      //       Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
+      //       {
+      //         skipHtmlToText: true,
+      //         skipTextToHtml: true,
+      //         skipImageLinks: true,
+      //         skipTextLinks: true
+      //       }
+      //     );
+      //     text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
+      //   } catch {
+      //     text = '';
+      //   }
+      // }
 
-      if (text.length && from && date) {
-        await redisClient.xadd(
-          this.signatureStream,
-          '*',
-          'message',
-          JSON.stringify({
-            type: 'email',
-            data: {
-              header: { from, messageId, messageDate: date, rawHeader: header },
-              body: text,
-              seqNumber: seq,
-              folderPath,
-              isLast: false
-            },
+      // if (text.length && from && date) {
+      //   await redisClient.xadd(
+      //     this.signatureStream,
+      //     '*',
+      //     'message',
+      //     JSON.stringify({
+      //       type: 'email',
+      //       data: {
+      //         header: { from, messageId, messageDate: date, rawHeader: header },
+      //         body: text,
+      //         seqNumber: seq,
+      //         folderPath,
+      //         isLast: false
+      //       },
+      //       userId: this.userId,
+      //       userEmail: this.userEmail,
+      //       userIdentifier: this.userIdentifier,
+      //       miningId: this.miningId
+      //     })
+      //   );
+      // }
+
+      workerPool.execute(
+          {
+            headersBuf: headers as Buffer,
+            bodyTextBuf: msg.bodyParts?.get('text'),
+            emailTextMaxLength: this.EMAIL_TEXT_MAX_LENGTH,
+            from,
+            date: date ?? null,
+            header,
+            seq,
+            folderPath,
+            signatureStream: this.signatureStream,
             userId: this.userId,
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          })
-        );
-      }
+            miningId: this.miningId,
+            messageId
+        }
+      )
 
       this.fetchedIds.add(messageId);
       this.totalFetched += 1;
@@ -490,11 +512,17 @@ export default class ImapEmailsFetcher {
       logger.info(
         `[${this.miningId}:${folder}:${range}:${connection?.id}]: Closed folder for range ${range}`
       );
+
+      if (this.isRefreshingOAuthToken) {
+        // A pending task that is completed (success or failure) , while we're refreshing token.
+        // Destroy the connection, since it’s using an expired OAuth token.
+        await this.imapConnectionProvider.destroyConnection(connection);
+      }
       await this.imapConnectionProvider.releaseConnection(connection);
     } catch (error) {
       logger.error(
         `[${this.miningId}:${folder}:${range}:${connection?.id}]: ${(error as Error).message}`,
-        util.inspect(error, { depth: null, colors: true })
+        { error }
       );
 
       if (connection)
@@ -502,7 +530,7 @@ export default class ImapEmailsFetcher {
 
       if (this.FETCHING_TOTAL_ERRORS >= this.FETCHING_MAX_ERRORS) {
         this.isCanceled = true;
-        throw error
+        return;
       }
 
       this.FETCHING_TOTAL_ERRORS += 1;
@@ -530,7 +558,12 @@ export default class ImapEmailsFetcher {
           logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
 
           this.emailsQueue.pause();
-          await this.imapConnectionProvider.refreshPool();
+          // Wait until all other pending tasks (except this one) have finished resolving
+          while (this.emailsQueue.pending > 1) {
+            await new Promise(r => setTimeout(r, 50));
+          }
+          const success = await this.imapConnectionProvider.refreshOauth();
+          this.isCanceled = !success // cancel task if it fails to refresh
           this.emailsQueue.start();
         }
       return;

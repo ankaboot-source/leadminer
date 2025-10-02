@@ -11,6 +11,9 @@ import notFound from './middleware/notFound';
 import logger from './utils/logger';
 import apiRoutes from './api';
 
+// init by import
+import { workerPool } from './workers/pool';
+
 const app = express();
 
 if (ENV.SENTRY_DSN_BACKEND) {

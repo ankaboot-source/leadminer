@@ -96,7 +96,7 @@ class ImapConnectionProvider {
     }
   }
 
-  async refreshOAuthToken(retries = 3): Promise<void> {
+  async refreshOAuthToken(retries = 10): Promise<void> {
     logger.debug(
       `Refreshing OAuth token in ImapConfig that expired at ${new Date(this.currentOAuthSourceDetails?.source.credentials.expiresAt || 0).toLocaleString()}`
     );
@@ -341,10 +341,13 @@ class ImapConnectionProvider {
     }
   }
 
-  async refreshPool() {
-    await this.refreshOAuthToken();
-    const connection = await this.acquireConnection();
-    await this.releaseConnection(connection);
+  async refreshOauth() {
+    try { 
+      await this.refreshOAuthToken();
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
