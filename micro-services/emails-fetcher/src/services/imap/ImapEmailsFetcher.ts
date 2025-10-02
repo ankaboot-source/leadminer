@@ -170,23 +170,9 @@ export default class ImapEmailsFetcher {
       err.code === 'bad_jwt' ||
       err.name === 'AuthApiError';
 
-    // 3. Check for connection errors that might require re-authentication
-    const isConnectionErrorRequiringAuth =
-      err.code === 'ECONNRESET' ||
-      err.code === 'NoConnection' ||
-      (typeof err.message === 'string' &&
-        err.message.includes('Connection not available'));
-
-    return isImapAuthError || isTokenExpired || isConnectionErrorRequiringAuth;
+    return isImapAuthError || isTokenExpired;
   }
 
-  private setOAuthRefreshCooldown(seconds = 120) {
-    this.isRefreshingOAuthToken = true;
-    setTimeout(() => {
-      this.isRefreshingOAuthToken = false;
-      logger.debug('OAuth error flag reset - ready for future auth checks');
-    }, seconds * 1000);
-  }
 
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
@@ -488,12 +474,13 @@ export default class ImapEmailsFetcher {
         `[${this.miningId}:${folder}:${range}:${connection?.id}]: Closed folder for range ${range}`
       );
 
-      if (this.isRefreshingOAuthToken) {
+      if (this.isRefreshingOAuthToken || !connection.usable) {
         // A pending task that is completed (success or failure) , while we're refreshing token.
         // Destroy the connection, since it’s using an expired OAuth token.
         await this.imapConnectionProvider.destroyConnection(connection);
+      } else {
+        await this.imapConnectionProvider.releaseConnection(connection);
       }
-      await this.imapConnectionProvider.releaseConnection(connection);
     } catch (error) {
       logger.error(
         `[${this.miningId}:${folder}:${range}:${connection?.id}]: ${(error as Error).message}`,
@@ -527,8 +514,7 @@ export default class ImapEmailsFetcher {
         // Reset total errors
         this.FETCHING_TOTAL_ERRORS = 0;
 
-        // to avoid refreshing pool on every connection
-        this.setOAuthRefreshCooldown();
+        this.isRefreshingOAuthToken = true;
 
         logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
 
@@ -540,7 +526,13 @@ export default class ImapEmailsFetcher {
           await new Promise((r) => setTimeout(r, 50));
         }
         const success = await this.imapConnectionProvider.refreshOauth();
-        this.isCanceled = !success; // cancel task if it fails to refresh
+
+        if (!success) {
+          this.isCanceled = !success; // cancel task if it fails to refresh
+        } else {
+          // to avoid refreshing pool on every connection
+          this.isRefreshingOAuthToken = false;
+        }
         this.emailsQueue.start();
       }
     }
