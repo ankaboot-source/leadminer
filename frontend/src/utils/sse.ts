@@ -49,21 +49,41 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
-    const token = useSupabaseSession().value?.access_token;
-    if (!token) {
-      throw new Error('[SSE] No access token available.');
-    }
 
     return fetchEventSource(
       `${
         useRuntimeConfig().public.SERVER_ENDPOINT
       }/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
-        headers: {
-          'x-sb-jwt': token,
+        fetch: async (input, init) => {
+          const token = useSupabaseSession().value?.access_token;
+
+          if (!token) {
+            throw new Error('[SSE] No access token available.');
+          }
+
+          console.debug(`[SSE] Setting up headers with x-sb-jwt: ${token}`);
+
+          return fetch(input, {
+            ...init,
+            headers: {
+              ...(init?.headers || {}),
+              'x-sb-jwt': token,
+            },
+          });
         },
-        onopen: async () => {
-          console.log('[SSE] Connection established successfully.');
+        onopen: async (response) => {
+          if (response.status === 200) {
+            console.debug(
+              '[SSE] Connection established successfully',
+              response,
+            );
+            console.debug(
+              '[SSE] Clearing any pending cleanup operations',
+              response,
+            );
+            this.clearPendingCleanup();
+          }
         },
         onmessage: (msg: EventSourceMessage) => {
           this.clearPendingCleanup();

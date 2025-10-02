@@ -157,10 +157,7 @@ const totalMinedMessage = computed(() =>
     : t('contacts_mined', $leadminerStore.createdContacts.toLocaleString()),
 );
 
-const extractionFinished = computed(
-  () =>
-    !$leadminerStore.miningInterrupted && $leadminerStore.extractionFinished,
-);
+const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
 const extractionProgress = computed(() =>
@@ -371,7 +368,8 @@ async function haltMining() {
     "mining_stopped": "Mining Stopped",
     "mining_canceled": "Your mining is successfully canceled.",
     "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled.",
-    "is_mining": "Contact extraction in progress..."
+    "is_mining": "Contact extraction in progress...",
+    "mining_interrupted": "Mining Interrupted"
   },
   "fr": {
     "contacts_to_mine": "contact à extraire. | contacts à extraire.",
@@ -395,7 +393,8 @@ async function haltMining() {
     "mining_stopped": "Extraction arrêtée",
     "mining_canceled": "Votre extraction a été annulée avec succès.",
     "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée.",
-    "is_mining": "Extraction des contacts en cours..."
+    "is_mining": "Extraction des contacts en cours...",
+    "mining_interrupted": "L'extraction a été interrompue"
   }
 }
 </i18n>

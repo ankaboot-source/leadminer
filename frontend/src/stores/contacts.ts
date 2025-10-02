@@ -175,6 +175,27 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
+   * Check if there is data in persons.
+   */
+  async function hasPersons(): Promise<boolean> {
+    if (!$user.value?.id) return false;
+
+    console.log('Checking if user has persons...');
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from('persons')
+      .select('*', { count: 'exact' })
+      .eq('user_id', $user.value.id)
+      .limit(1);
+
+    if (error) throw error;
+
+    console.log(`User has persons: ${(data?.length ?? 0) > 0}`);
+    return (data?.length ?? 0) > 0;
+  }
+
+  /**
    * Resets the store.
    */
   function $reset() {
@@ -200,5 +221,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,
+    hasPersons,
   };
 });
