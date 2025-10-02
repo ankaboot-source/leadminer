@@ -229,7 +229,7 @@ const totalExtractedNotificationMessage = computed(() =>
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('mining_stopped'),
       detail: t('mining_canceled'),
       life: 3000,
@@ -237,20 +237,13 @@ watch(extractionFinished, async (finished) => {
     $stepper.next();
     await refineReloadContacts();
   } else if (finished) {
-    if ($leadminerStore.miningInterrupted) {
-      $toast.add({
-        severity: 'error',
-        summary: t('mining_interrupted'),
-        life: 5000,
-      });
-    } else {
-      $toast.add({
-        severity: 'info',
-        summary: t('mining_done'),
-        detail: totalExtractedNotificationMessage,
-        life: 8000,
-      });
-    }
+    $toast.add({
+      severity: 'info',
+      summary: t('mining_done'),
+      detail: totalExtractedNotificationMessage,
+      group: 'achievement',
+      life: 8000,
+    });
     $stepper.next();
     await refineReloadContacts();
   }
