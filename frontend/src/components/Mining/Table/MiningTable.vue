@@ -833,7 +833,7 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
 
-const DEFAULT_ROWS_PER_PAGE = 20;
+const DEFAULT_ROWS_PER_PAGE = 150;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 
