@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col grow">
     <div
-      class="flex flex-col grow border border-(--p-surface-200) rounded-md px-2 pt-6"
+      class="flex flex-col grow border border-surface-200 rounded-md px-2 pt-6"
     >
       <MiningStepper />
     </div>
