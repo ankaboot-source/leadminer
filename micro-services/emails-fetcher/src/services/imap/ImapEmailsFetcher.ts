@@ -173,7 +173,6 @@ export default class ImapEmailsFetcher {
     return isImapAuthError || isTokenExpired;
   }
 
-
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
@@ -378,6 +377,20 @@ export default class ImapEmailsFetcher {
         })
       );
 
+      this.fetchedIds.add(messageId);
+      this.totalFetched += 1;
+      publishedEmails += 1;
+
+      if (publishedEmails >= batchSize) {
+        await publishFetchingProgress(
+          this.miningId,
+          publishedEmails,
+          this.isCanceled,
+          this.isCompleted
+        );
+        publishedEmails = 0;
+      }
+
       if (!this.fetchEmailBody || from?.address === this.userEmail) continue;
 
       let text = msg.bodyParts?.get('text') ?? '';
@@ -419,20 +432,6 @@ export default class ImapEmailsFetcher {
             miningId: this.miningId
           })
         );
-      }
-
-      this.fetchedIds.add(messageId);
-      this.totalFetched += 1;
-      publishedEmails += 1;
-
-      if (publishedEmails >= batchSize) {
-        await publishFetchingProgress(
-          this.miningId,
-          publishedEmails,
-          this.isCanceled,
-          this.isCompleted
-        );
-        publishedEmails = 0;
       }
     }
 
