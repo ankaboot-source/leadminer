@@ -17,6 +17,7 @@
     reorderable-columns
     show-gridlines
     pt:tablecontainer:class="grow"
+    class="rounded-md outline outline-surface-200 outline-offset-1"
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
@@ -245,11 +246,12 @@
     <!-- Select -->
     <Column
       selection-mode="multiple"
+      class="border-l-0"
       style="width: 38px"
       :pt="{
         rowCheckbox: {
           root: {
-            style: { 'z-index': 0 },
+            style: { 'z-index': 0 }, // https://github.com/primefaces/primevue/issues/5483
           },
         },
       }"
@@ -831,7 +833,7 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
 
-const DEFAULT_ROWS_PER_PAGE = 150;
+const DEFAULT_ROWS_PER_PAGE = 20;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 
@@ -1199,7 +1201,6 @@ onUnmounted(() => {
 .fullscreenTable {
   position: fixed;
   z-index: 3;
-  background-color: white;
   max-width: 100vw;
   max-height: 100vh;
   top: 0;
@@ -1215,6 +1216,11 @@ onUnmounted(() => {
 */
 table.p-datatable-table {
   border-collapse: separate;
+}
+
+.p-datatable-paginator-bottom,
+.p-datatable-header {
+  border: 0;
 }
 </style>
 
