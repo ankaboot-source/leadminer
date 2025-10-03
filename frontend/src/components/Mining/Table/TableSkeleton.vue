@@ -5,7 +5,7 @@
     striped-rows
     paginator
     size="small"
-    class="h-full bg-white border-x"
+    class="h-full bg-white"
     scroll-height="flex"
     pt:tablecontainer:class="grow"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
