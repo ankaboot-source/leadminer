@@ -180,7 +180,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Check if there is data in persons.
    */
   async function hasPersons(): Promise<boolean> {
-    if (!$user.value?.id) return false;
+    if (!$user.value?.sub) return false;
 
     console.log('Checking if user has persons...');
     const { data, error } = await $supabase
@@ -188,7 +188,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       .schema('private')
       .from('persons')
       .select('*', { count: 'exact' })
-      .eq('user_id', $user.value.id)
+      .eq('user_id', $user.value.sub)
       .limit(1);
 
     if (error) throw error;

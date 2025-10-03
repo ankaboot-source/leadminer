@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import type { User, UserAttributes } from '@supabase/supabase-js';
+import type { UserAttributes } from '@supabase/supabase-js';
 import { AcceptNewsLetter } from '~/utils/extras';
 
 import { isInvalidEmail } from '@/utils/email';
@@ -176,10 +176,10 @@ const $profile = useSupabaseUserProfile();
 
 const {
   data: { user },
-  error,
+  error: userError,
 } = await useSupabaseClient().auth.getUser();
 
-if (!user || error) throw new Error('Unable to fetch user data');
+if (!user || userError) throw new Error('Unable to fetch user data');
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
