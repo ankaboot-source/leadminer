@@ -81,13 +81,19 @@ async function updateFirstTimeSignIn() {
  * Handles first-time sign-in logic.
  */
 async function handleFirstTimeSignIn() {
-  const $user = useSupabaseUser();
+  const {
+    data: { user },
+    error,
+  } = await useSupabaseClient().auth.getUser();
+
+  if (!user || error) throw new Error('Failed to fetch user data.');
+
   const $session = useSupabaseSession();
 
-  const provider = $user.value?.app_metadata?.provider;
+  const provider = user.app_metadata?.provider;
   const providerToken = $session.value?.provider_token;
-  const firstTimeSignin = $user.value?.user_metadata.first_time_signin;
-  const emailTemplate = $user.value?.user_metadata.EmailTemplate;
+  const firstTimeSignin = user.user_metadata.first_time_signin;
+  const emailTemplate = user.user_metadata.EmailTemplate;
   const language = navigator.language.split('-')[0];
 
   if (!firstTimeSignin && provider && providerToken) {

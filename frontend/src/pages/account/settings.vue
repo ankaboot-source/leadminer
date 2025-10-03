@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UserAttributes } from '@supabase/supabase-js';
+import type { User, UserAttributes } from '@supabase/supabase-js';
 import { AcceptNewsLetter } from '~/utils/extras';
 
 import { isInvalidEmail } from '@/utils/email';
@@ -172,8 +172,14 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
-const $user = useSupabaseUser();
 const $profile = useSupabaseUserProfile();
+
+const {
+  data: { user },
+  error,
+} = await useSupabaseClient().auth.getUser();
+
+if (!user || error) throw new Error('Unable to fetch user data');
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
@@ -181,7 +187,7 @@ const showDeleteModal = ref(false);
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const isSocialLogin = ref($user.value?.app_metadata.provider === 'email');
+const isSocialLogin = ref(user?.app_metadata.provider === 'email');
 
 const disableUpdateButton = computed(
   () =>

@@ -46,5 +46,6 @@ export const useScreenStore = defineStore('screen', () => {
     init,
     handleResize,
     destroy,
+    $reset: destroy,
   };
 });

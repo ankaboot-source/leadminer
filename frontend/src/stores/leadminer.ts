@@ -185,7 +185,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const { miningId } = miningTask.value;
 
     const res = await $api(
-      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
+      `/imap/mine/${miningType.value}/${user.sub}/${miningId}`,
       {
         method: 'POST',
         body: {
@@ -330,7 +330,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const task =
         source === 'boxes'
           ? await startMiningEmail(
-              user?.id,
+              user?.sub,
               Object.keys(selectedBoxes.value).filter(
                 (key) =>
                   selectedBoxes.value[key].checked &&
@@ -341,7 +341,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
               extractSignatures.value,
             )
           : await startMiningFile(
-              user.id,
+              user.sub,
               selectedFile.value!.name,
               selectedFile.value!.contacts,
             );
