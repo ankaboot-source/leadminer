@@ -65,7 +65,7 @@
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import { signOutManually } from './utils/auth';
-const user = useSupabaseUser();
+const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const activeTask = computed(() => $leadminerStore.activeTask);
 const $supabaseClient = useSupabaseClient();
@@ -81,7 +81,7 @@ $supabaseClient.auth.onAuthStateChange((event) => {
   }
 });
 watch(idle, (isIdle) => {
-  if (isIdle && !activeTask.value && user.value) {
+  if (isIdle && !activeTask.value && $user.value) {
     signOut();
   }
 });
