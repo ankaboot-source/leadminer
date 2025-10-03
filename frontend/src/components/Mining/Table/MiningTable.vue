@@ -17,7 +17,7 @@
     reorderable-columns
     show-gridlines
     pt:tablecontainer:class="grow"
-    class="border border-surface-200 rounded-md"
+    class="rounded-md outline outline-surface-200 outline-offset-1"
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
@@ -833,7 +833,7 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
 
-const DEFAULT_ROWS_PER_PAGE = 150;
+const DEFAULT_ROWS_PER_PAGE = 20;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 
