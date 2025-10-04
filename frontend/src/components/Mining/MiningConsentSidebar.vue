@@ -7,8 +7,8 @@
     :show-close-icon="false"
     :block-scroll="true"
     :header="t('authorization_required')"
-    pt:footer:class="pt-0 flex justify-end gap-2"
-    pt:content:class="grid gap-4 px-8 pt-4 text-base"
+    pt:content:class="grid gap-4 px-8 text-base pb-0"
+    pt:footer:class="flex justify-end gap-2"
   >
     <span>
       {{ t('authorization_declined') }}
@@ -59,6 +59,7 @@ function showImapDialog() {
   $imapDialogStore.showImapDialog = true;
   close();
 }
+
 function refreshOAuth() {
   if (provider.value === 'imap') {
     showImapDialog();
