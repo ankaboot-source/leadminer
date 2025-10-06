@@ -216,7 +216,7 @@
             </template>
           </div>
         </div>
-        <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
+        <NuxtLink class="text-right link" to="/auth/forgot-password">
           {{ $t('auth.forgot_password') }}
         </NuxtLink>
       </div>
