@@ -1,2 +1,8 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+
+@layer components {
+  .link {
+    @apply text-indigo-500 hover:text-indigo-600 transition-colors;
+  }
+}

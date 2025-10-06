@@ -22,7 +22,7 @@
     <div class="grid gap-2">
       <span>
         {{ $t('auth.no_account') }}
-        <NuxtLink to="/auth/signup" class="font-bold text-indigo-500">
+        <NuxtLink to="/auth/signup" class="font-bold link capitalize">
           {{ $t('auth.sign_up') }}
         </NuxtLink>
       </span>
