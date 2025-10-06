@@ -42,9 +42,9 @@
         </template>
       </div>
       <div class="grid gap-1">
-        <label class="text-left" for="password">{{
-          $t('auth.password')
-        }}</label>
+        <label class="text-left" for="password">
+          {{ $t('auth.password') }}
+        </label>
         <Password
           v-model="password"
           :input-style="{ width: '100%' }"
@@ -182,9 +182,9 @@
             </template>
           </div>
           <div class="grid gap-1">
-            <label class="text-left" for="password">{{
-              $t('auth.password')
-            }}</label>
+            <label class="text-left" for="password">
+              {{ $t('auth.password') }}
+            </label>
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
