@@ -257,7 +257,7 @@ const { t: $t } = useI18n({
 });
 
 const { authMode = 'sign-in' } = defineProps<{
-  authMode: authModes;
+  authMode?: authModes;
 }>();
 
 const $toast = useToast();
