@@ -427,6 +427,24 @@
       </template>
     </Column>
 
+    <Column
+      v-if="visibleColumns.includes('temperature')"
+      field="temperature"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('temperature_definition')">
+          {{ t('temperature') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
     <!-- Tags -->
     <Column
       v-if="visibleColumns.includes('tags')"
@@ -1054,6 +1072,7 @@ const visibleColumnsOptions = [
   { label: t('occurrence'), value: 'occurrence' },
   { label: t('recency'), value: 'recency' },
   { label: t('replies'), value: 'replied_conversations' },
+  { label: t('temperature'), value: 'temperature' },
   { label: t('tags'), value: 'tags' },
   { label: t('reachable'), value: 'status' },
   { label: t('recipient'), value: 'recipient' },
@@ -1158,6 +1177,7 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
+    'temperature',
     ...($screenStore.width > 550 ? ['occurrence'] : []),
     ...($screenStore.width > 700 ? ['recency'] : []),
     ...($screenStore.width > 800 ? ['tags'] : []),
