@@ -1,3 +1,6 @@
+DROP FUNCTION private.refine_persons;
+DROP FUNCTION private.get_distinct_or_exclude_from_array;
+
 CREATE OR REPLACE FUNCTION private.get_distinct_or_exclude_from_array(
     input_array anyarray,
     exclude_array anyarray DEFAULT NULL
