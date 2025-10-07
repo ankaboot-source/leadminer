@@ -3,14 +3,11 @@
     v-model:visible="show"
     position="right"
     class="w-full md:w-1/2 xl:w-1/3"
-    pt:content:class="pb-0"
-    pt:header:class="pb-0"
+    pt:header:class="flex-col-reverse"
+    pt:pc-close-button:root:class="self-end"
     @hide="() => onHide()"
   >
-    <template #header><span class="grow" /> </template>
-
-    <!-- Header -->
-    <div class="pl-4 pb-2 sticky top-0 bg-surface-0 z-10">
+    <template #header>
       <div class="flex items-center gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
@@ -72,180 +69,168 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Scrollable Content -->
-    <div class="flex-1 overflow-y-auto">
-      <table
-        class="p-datatable p-datatable-striped w-full"
-        style="display: table"
-      >
-        <tbody class="p-datatable-tbody">
-          <tr class="p-row-even border-t-1 border-(--p-drawer-border-color)">
-            <td class="md:font-medium w-4/12">
-              {{ $t('contact.given_name') }}
-            </td>
-            <td>
-              <div v-if="!editingContact">
-                {{ contact.given_name }}
-              </div>
-              <InputText
-                v-else
-                v-model="contactEdit.given_name"
-                class="w-full"
-              />
-            </td>
-          </tr>
-          <tr class="p-row-odd">
-            <td class="md:font-medium">{{ $t('contact.family_name') }}</td>
-            <td class="w-full">
-              <div v-if="!editingContact">
-                {{ contact.family_name }}
-              </div>
-              <InputText
-                v-else
-                v-model="contactEdit.family_name"
-                class="w-full"
-              />
-            </td>
-          </tr>
-          <tr class="p-row-even">
-            <td class="md:font-medium">
-              {{ $t('contact.alternate_name') }}
-            </td>
-            <td>
-              <div v-if="!editingContact">
-                {{ contact.alternate_name?.join(', ') }}
-              </div>
-              <Textarea
-                v-else
-                v-model="contactEdit.alternate_name"
-                rows="3"
-                class="w-full"
-              />
-            </td>
-          </tr>
-
-          <tr class="p-row-odd">
-            <td class="md:font-medium">
-              {{ $t('contact.telephone') }}
-            </td>
-            <td>
-              <div v-if="!editingContact" class="flex flex-wrap gap-1">
-                <Chip
-                  v-for="(phone, index) in contact.telephone"
-                  :key="index"
-                  :label="phone"
-                  :href="`tel:${phone}`"
-                  icon="pi pi-phone"
-                  class="cursor-pointer"
-                  @click="callPhoneNumber(phone)"
-                />
-              </div>
-              <Textarea
-                v-else
-                v-model="contactEdit.telephone"
-                rows="3"
-                class="w-full"
-              />
-            </td>
-          </tr>
-
-          <tr class="p-row-even">
-            <td class="md:font-medium">{{ $t('contact.location') }}</td>
-            <td>
-              <div v-if="!editingContact">
-                {{ contact.location?.join(', ') }}
-              </div>
-              <Textarea
-                v-else
-                v-model="contactEdit.location"
-                rows="3"
-                class="w-full"
-              />
-            </td>
-          </tr>
-
-          <tr class="p-row-odd">
-            <td class="md:font-medium">{{ $t('contact.works_for') }}</td>
-            <td>
-              <div v-if="!editingContact">{{ contact.works_for }}</div>
-              <InputText
-                v-else
-                v-model="contactEdit.works_for"
-                class="w-full"
-              />
-            </td>
-          </tr>
-          <tr class="p-row-even">
-            <td class="md:font-medium">{{ $t('contact.job_title') }}</td>
-            <td>
-              <div v-if="!editingContact">{{ contact.job_title }}</div>
-              <InputText
-                v-else
-                v-model="contactEdit.job_title"
-                class="w-full"
-              />
-            </td>
-          </tr>
-
-          <template v-if="editingContact">
-            <tr class="p-row-odd">
-              <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
-              <td>
-                <Textarea
-                  v-model="contactEdit.same_as"
-                  class="w-full"
-                  rows="3"
-                  :invalid="!isValidSameAs"
-                />
-              </td>
-            </tr>
-
-            <tr class="p-row-even">
-              <td class="md:font-medium">{{ $t('contact.image') }}</td>
-              <td>
-                <InputText
-                  v-model="contactEdit.image"
-                  class="w-full"
-                  :invalid="!isValidAvatar"
-                />
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Footer -->
-    <div
-      className="grid grid-cols-2 gap-2 items-center pt-4 sticky bottom-0 bg-surface-0 z-10 pb-2"
+    <!-- Content -->
+    <table
+      class="p-datatable p-datatable-striped w-full"
+      style="display: table"
     >
-      <template v-if="!editingContact">
-        <EnrichButton
-          source="contact"
-          :enrichment-realtime-callback="enrichmentRealtimeCallback"
-          :enrichment-request-response-callback="() => {}"
-          :contacts-to-enrich="[contact]"
-          :enrich-all-contacts="false"
-          :skip-dialog="skipDialog"
-        />
-        <Button
-          icon-pos="right"
-          icon="pi pi-pen-to-square"
-          :label="$t('common.edit')"
-          @click="editContactInformations()"
-        />
-      </template>
-      <template v-else>
-        <Button
-          :label="$t('common.cancel')"
-          severity="secondary"
-          @click="cancelContactInformations()"
-        />
-        <Button :label="$t('common.save')" @click="saveContactInformations()" />
-      </template>
-    </div>
+      <tbody class="p-datatable-tbody">
+        <tr class="p-row-even border-t-1 border-(--p-drawer-border-color)">
+          <td class="md:font-medium w-4/12">
+            {{ $t('contact.given_name') }}
+          </td>
+          <td>
+            <div v-if="!editingContact">
+              {{ contact.given_name }}
+            </div>
+            <InputText v-else v-model="contactEdit.given_name" class="w-full" />
+          </td>
+        </tr>
+        <tr class="p-row-odd">
+          <td class="md:font-medium">{{ $t('contact.family_name') }}</td>
+          <td class="w-full">
+            <div v-if="!editingContact">
+              {{ contact.family_name }}
+            </div>
+            <InputText
+              v-else
+              v-model="contactEdit.family_name"
+              class="w-full"
+            />
+          </td>
+        </tr>
+        <tr class="p-row-even">
+          <td class="md:font-medium">
+            {{ $t('contact.alternate_name') }}
+          </td>
+          <td>
+            <div v-if="!editingContact">
+              {{ contact.alternate_name?.join(', ') }}
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.alternate_name"
+              rows="3"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
+        <tr class="p-row-odd">
+          <td class="md:font-medium">
+            {{ $t('contact.telephone') }}
+          </td>
+          <td>
+            <div v-if="!editingContact" class="flex flex-wrap gap-1">
+              <Chip
+                v-for="(phone, index) in contact.telephone"
+                :key="index"
+                :label="phone"
+                :href="`tel:${phone}`"
+                icon="pi pi-phone"
+                class="cursor-pointer"
+                @click="callPhoneNumber(phone)"
+              />
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.telephone"
+              rows="3"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
+        <tr class="p-row-even">
+          <td class="md:font-medium">{{ $t('contact.location') }}</td>
+          <td>
+            <div v-if="!editingContact">
+              {{ contact.location?.join(', ') }}
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.location"
+              rows="3"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
+        <tr class="p-row-odd">
+          <td class="md:font-medium">{{ $t('contact.works_for') }}</td>
+          <td>
+            <div v-if="!editingContact">{{ contact.works_for }}</div>
+            <InputText v-else v-model="contactEdit.works_for" class="w-full" />
+          </td>
+        </tr>
+        <tr class="p-row-even">
+          <td class="md:font-medium">{{ $t('contact.job_title') }}</td>
+          <td>
+            <div v-if="!editingContact">{{ contact.job_title }}</div>
+            <InputText v-else v-model="contactEdit.job_title" class="w-full" />
+          </td>
+        </tr>
+
+        <template v-if="editingContact">
+          <tr class="p-row-odd">
+            <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
+            <td>
+              <Textarea
+                v-model="contactEdit.same_as"
+                class="w-full"
+                rows="3"
+                :invalid="!isValidSameAs"
+              />
+            </td>
+          </tr>
+
+          <tr class="p-row-even">
+            <td class="md:font-medium">{{ $t('contact.image') }}</td>
+            <td>
+              <InputText
+                v-model="contactEdit.image"
+                class="w-full"
+                :invalid="!isValidAvatar"
+              />
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+
+    <template #footer>
+      <div class="grid grid-cols-2 gap-2 items-center">
+        <template v-if="!editingContact">
+          <EnrichButton
+            source="contact"
+            :enrichment-realtime-callback="enrichmentRealtimeCallback"
+            :enrichment-request-response-callback="() => {}"
+            :contacts-to-enrich="[contact]"
+            :enrich-all-contacts="false"
+            :skip-dialog="skipDialog"
+          />
+          <Button
+            icon-pos="right"
+            icon="pi pi-pen-to-square"
+            :label="$t('common.edit')"
+            @click="editContactInformations()"
+          />
+        </template>
+        <template v-else>
+          <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="cancelContactInformations()"
+          />
+          <Button
+            :label="$t('common.save')"
+            @click="saveContactInformations()"
+          />
+        </template>
+      </div>
+    </template>
   </Drawer>
 </template>
 <script setup lang="ts">
