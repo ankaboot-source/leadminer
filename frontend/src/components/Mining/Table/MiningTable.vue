@@ -1226,25 +1226,25 @@ onUnmounted(() => {
 const getHeatColorStyle = (temp: number | null) => {
   if (temp === null) return { backgroundColor: '#9ca3af' };
 
-  let normalizedTemp = Math.min(Math.max(temp / 100, 0), 1);
+  const normalizedTemperature = Math.min(Math.max(temp / 100, 0), 1);
 
-  if (normalizedTemp < 0.3) {
+  if (normalizedTemperature < 0.3) {
     // Cool blues
-    normalizedTemp = normalizedTemp / 0.3;
+    const temperatureRatio = normalizedTemperature / 0.3;
     return {
-      backgroundColor: `hsl(${220 - normalizedTemp * 20}, 95%, ${55 - normalizedTemp * 10}%)`,
+      backgroundColor: `hsl(${220 - temperatureRatio * 20}, 95%, ${55 - temperatureRatio * 10}%)`,
     };
-  } else if (normalizedTemp < 0.7) {
+  } else if (normalizedTemperature < 0.7) {
     // Warm oranges/ambers - skipping green
-    normalizedTemp = (normalizedTemp - 0.3) / 0.4;
+    const temperatureRatio = (normalizedTemperature - 0.3) / 0.4;
     return {
-      backgroundColor: `hsl(${40 - normalizedTemp * 20}, 95%, ${50 - normalizedTemp * 5}%)`,
+      backgroundColor: `hsl(${40 - temperatureRatio * 20}, 95%, ${50 - temperatureRatio * 5}%)`,
     };
   } else {
     // Hot reds
-    normalizedTemp = (normalizedTemp - 0.7) / 0.3;
+    const temperatureRatio = (normalizedTemperature - 0.7) / 0.3;
     return {
-      backgroundColor: `hsl(${20 - normalizedTemp * 20}, 95%, ${45 - normalizedTemp * 10}%)`,
+      backgroundColor: `hsl(${20 - temperatureRatio * 20}, 95%, ${45 - temperatureRatio * 10}%)`,
     };
   }
 };
