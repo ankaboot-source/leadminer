@@ -443,6 +443,21 @@
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
       </template>
+      <template #body="{ data }">
+        <div
+          v-if="data.temperature"
+          class="flex items-center justify-center gap-3"
+        >
+          <div
+            :style="getHeatColorStyle(data.temperature)"
+            class="w-8 h-8 rounded-full text-xs font-bold text-white"
+          >
+            <span class="flex items-center justify-center w-full h-full">
+              {{ data.temperature }}
+            </span>
+          </div>
+        </div>
+      </template>
     </Column>
 
     <!-- Tags -->
@@ -1178,10 +1193,8 @@ onNuxtReady(async () => {
     'telephone',
     'image',
     'temperature',
-    ...($screenStore.width > 550 ? ['occurrence'] : []),
-    ...($screenStore.width > 700 ? ['recency'] : []),
-    ...($screenStore.width > 800 ? ['tags'] : []),
-    ...($screenStore.width > 950 ? ['status'] : []),
+    ...($screenStore.width > 550 ? ['tags'] : []),
+    ...($screenStore.width > 700 ? ['status'] : []),
   ];
 
   await $contactsStore.reloadContacts();
@@ -1209,6 +1222,32 @@ onUnmounted(() => {
   $contactsStore.$reset();
   scrollHeightObserver.value?.disconnect();
 });
+
+const getHeatColorStyle = (temp: number | null) => {
+  if (temp === null) return { backgroundColor: '#9ca3af' };
+
+  let normalizedTemp = Math.min(Math.max(temp / 100, 0), 1);
+
+  if (normalizedTemp < 0.3) {
+    // Cool blues
+    normalizedTemp = normalizedTemp / 0.3;
+    return {
+      backgroundColor: `hsl(${220 - normalizedTemp * 20}, 95%, ${55 - normalizedTemp * 10}%)`,
+    };
+  } else if (normalizedTemp < 0.7) {
+    // Warm oranges/ambers - skipping green
+    normalizedTemp = (normalizedTemp - 0.3) / 0.4;
+    return {
+      backgroundColor: `hsl(${40 - normalizedTemp * 20}, 95%, ${50 - normalizedTemp * 5}%)`,
+    };
+  } else {
+    // Hot reds
+    normalizedTemp = (normalizedTemp - 0.7) / 0.3;
+    return {
+      backgroundColor: `hsl(${20 - normalizedTemp * 20}, 95%, ${45 - normalizedTemp * 10}%)`,
+    };
+  }
+};
 </script>
 
 <style>
@@ -1276,6 +1315,8 @@ table.p-datatable-table {
     "source": "Source",
     "occurrence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
+    "temperature_definition": "The hotter, the more replies, recent activity, and engagement — and a higher chance of future replies.",
+    "temperature": "Temperature",
     "recency": "Recency",
     "recency_definition": "When was the last time this contact was seen",
     "replies_definition": "How many times this contact replied",
@@ -1328,6 +1369,8 @@ table.p-datatable-table {
     "source": "Source",
     "occurence_definition": "Occurrences totales de ce contact",
     "occurrence": "Occurrence",
+    "temperature_definition": "Plus la température est élevée, plus il y a de réponses, d'activité récente et d'engagement, et plus les chances d'obtenir des réponses futures sont élevées.",
+    "temperature": "Temperature",
     "recency": "Récence",
     "recency_definition": "Dernière fois que ce contact a été vu",
     "replies_definition": "Nombre de réponses de ce contact",
