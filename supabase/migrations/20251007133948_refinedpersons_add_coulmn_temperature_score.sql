@@ -90,7 +90,6 @@ SELECT ROUND(100 * score_0_1)::int
 FROM clamped;
 $$;
 
--- 2) Trigger function : alimente NEW.temperature automatiquement
 CREATE OR REPLACE FUNCTION private.trg_set_contact_temperature()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -111,7 +110,6 @@ BEGIN
 END;
 $$;
 
--- 3) Trigger : recalcul avant insert/update des champs éligibles
 DROP TRIGGER IF EXISTS set_contact_temperature ON private.refinedpersons;
 CREATE TRIGGER set_contact_temperature
 BEFORE INSERT OR UPDATE OF
@@ -127,7 +125,7 @@ SET temperature = private.contact_temperature(
 );
 
 
--- Update get_contacts
+-- Update get_contacts functions
 
 DROP FUNCTION private.get_contacts_table;
 CREATE FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz)
