@@ -30,6 +30,7 @@ export interface Contact {
   replied_conversations?: number;
   status: EmailStatus | null;
   occurrence?: number;
+  temperature: number | null;
   personid?: string;
   recency?: Date;
   seniority?: Date;
