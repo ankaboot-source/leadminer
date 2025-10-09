@@ -434,6 +434,7 @@
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
+      class="w-48"
     >
       <template #header>
         <div v-tooltip.top="t('temperature_definition')">
