@@ -44,15 +44,13 @@
     </div>
     <div>
       <p>
-        Still did not receive it?
+        {{ $t('auth.sign_up_still_not_receive') }}
         <span
-          :class="[
-            'link cursor-pointer',
-            { 'text-gray-400 pointer-events-none': cooldown },
-          ]"
+          class="link cursor-pointer"
+          :class="{ 'text-gray-400 pointer-events-none': cooldown }"
           @click="!cooldown && resendConfirmationEmail()"
         >
-          {{ cooldown ? `Resend in ${cooldown}s` : 'Resend' }}
+          {{ $t('auth.sign_up_resend_in', cooldown) }}
         </span>
       </p>
     </div>
@@ -64,7 +62,7 @@ const $route = useRoute();
 const email = $route.query.email as string;
 const $session = useSupabaseSession();
 const $supabaseClient = useSupabaseClient();
-const cooldown = ref(0);
+const cooldown = ref(30);
 
 onBeforeMount(() => {
   const unauthorized = window.history.state.back !== '/auth/signup' || !email;
@@ -87,7 +85,6 @@ async function resendConfirmationEmail() {
   });
 
   if (error) {
-    console.error('Error resending confirmation email:', error.message);
     throw Error(error.message);
   }
 
