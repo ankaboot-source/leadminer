@@ -36,4 +36,66 @@ import EmailAuth from '@/components/auth/EmailAuth.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
 import LegalInformation from '~/components/auth/LegalInformation.vue';
+
+import { onMounted, useRoute } from '#imports';
+import { useToast } from 'primevue/usetoast';
+
+const $toast = useToast();
+const $route = useRoute();
+const { t } = useI18n({
+  useScope: 'local',
+});
+onMounted(async () => {
+  if ('error' in $route.query) {
+    // #1980
+    const errorTitle =
+      $route.query.error === 'invalid_request'
+        ? t(`error.invalid_request.title`)
+        : $t('error.default.title');
+
+    const errorMessage =
+      $route.query.error === 'invalid_request'
+        ? t(`error.invalid_request.message`)
+        : $t('error.default.message');
+
+    $toast.add({
+      severity: 'error',
+      summary: errorTitle,
+      detail: errorMessage,
+      life: 3000,
+    });
+
+    const newQuery = { ...$route.query };
+    delete newQuery.error;
+
+    navigateTo(
+      {
+        path: $route.path,
+        query: newQuery,
+      },
+      { replace: true },
+    );
+  }
+});
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "error": {
+      "invalid_request": {
+        "title": "Oops!",
+        "message": "Timeout, please try again."
+      }
+    }
+  },
+  "fr": {
+    "error": {
+      "invalid_request": {
+        "title": "Oops !",
+        "message": "La requête a expiré, veuillez réessayer."
+      }
+    }
+  }
+}
+</i18n>
