@@ -451,7 +451,7 @@
         >
           <div
             :style="getHeatColorStyle(data.temperature)"
-            class="w-8 h-8 rounded-full text-xs font-bold text-white"
+            class="w-8 h-8 rounded-lg text-xs font-bold"
           >
             <span class="flex items-center justify-center w-full h-full">
               {{ data.temperature }}
@@ -1225,15 +1225,33 @@ onUnmounted(() => {
 });
 
 const getHeatColorStyle = (temp: number | null) => {
-  if (temp === null) return { backgroundColor: '#9ca3af' };
+  if (temp === null) {
+    return {
+      backgroundColor: '#f3f4f6',
+    };
+  }
 
   const normalized = Math.min(Math.max(temp / 100, 0), 1);
 
-  const hue = 45 - normalized * 35;
-  const saturation = 95;
-  const lightness = 35 + (1 - normalized) * 10;
+  // Hue: yellow (45°) → pink-red (~0°)
+  const hue = 45 - normalized * 45;
 
-  return { backgroundColor: `hsl(${hue}, ${saturation}%, ${lightness}%)` };
+  // Lightness: keep pastel
+  const lightnessBg = 95 - normalized * 10;
+  const lightnessText = lightnessBg - 55;
+  const borderLightness = lightnessBg - 15;
+
+  const saturation = 75; // soft pastel
+
+  const bgColor = `hsl(${hue}, ${saturation}%, ${lightnessBg}%)`;
+  const textColor = `hsl(${hue}, ${saturation}%, ${lightnessText}%)`;
+  const borderColor = `hsl(${hue}, ${saturation}%, ${borderLightness}%)`;
+
+  return {
+    backgroundColor: bgColor,
+    color: textColor,
+    border: `1px solid ${borderColor}`,
+  };
 };
 </script>
 
