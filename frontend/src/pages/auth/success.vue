@@ -64,7 +64,8 @@ const $toast = useToast();
 const $route = useRoute();
 const email = $route.query.email as string;
 
-const cooldown = ref(30);
+const COOLDOWN_DEFAULT = 45;
+const cooldown = ref(COOLDOWN_DEFAULT);
 
 onBeforeMount(() => {
   const unauthorized = window.history.state.back !== '/auth/signup' || !email;
@@ -101,7 +102,7 @@ async function resendConfirmationEmail() {
 }
 
 function startCooldown() {
-  cooldown.value = 30;
+  cooldown.value = COOLDOWN_DEFAULT;
   const timer = setInterval(() => {
     cooldown.value--;
     if (cooldown.value <= 0) clearInterval(timer);
