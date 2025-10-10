@@ -50,12 +50,12 @@ onMounted(async () => {
     // #1980
     const errorTitle =
       $route.query.error === 'invalid_request'
-        ? t(`error.invalid_request.title`)
+        ? t('error.invalid_request.title')
         : $t('error.default.title');
 
     const errorMessage =
       $route.query.error === 'invalid_request'
-        ? t(`error.invalid_request.message`)
+        ? t('error.invalid_request.message')
         : $t('error.default.message');
 
     $toast.add({
