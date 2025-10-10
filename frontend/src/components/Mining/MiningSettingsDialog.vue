@@ -11,12 +11,7 @@
     :header="t('fine_tune_mining')"
   >
     <div class="flex flex-row flex-wrap items-center gap-2 pb-4">
-      <RefineMiningSlider
-        :model-value-body-size-filter="
-          $leadminerStore.filterBodySize ?? undefined
-        "
-        :model-value-extract-signature="$leadminerStore.extractSignatures"
-      />
+      <ExtractSignatureSettings />
     </div>
 
     <div class="flex items-center gap-2">
@@ -50,7 +45,7 @@
 
 <script setup lang="ts">
 import TreeCard from '@/components/cards/TreeCard.vue';
-import RefineMiningSlider from './RefineMiningSlider.vue';
+import ExtractSignatureSettings from './ExtractSignatureSettings.vue';
 
 const { t } = useI18n({
   useScope: 'local',

@@ -453,7 +453,7 @@ export default class ImapEmailsFetcher {
               { error: err }
             );
           } finally {
-            if (connection && connection.usable)
+            if (connection?.usable)
               await this.imapConnectionProvider.releaseConnection(connection);
             else if (connection)
               await this.imapConnectionProvider.destroyConnection(connection);
@@ -565,10 +565,11 @@ export default class ImapEmailsFetcher {
         publishedEmails = 0;
       }
 
-      if (!this.fetchEmailBody || from?.address === this.userEmail) continue;
+      if (!this.fetchEmailBody || !partId || from?.address === this.userEmail)
+        continue;
 
       const text = decodeQuotedPrintable(
-        msg.bodyParts?.get(partId!)?.toLocaleString() ?? '',
+        msg.bodyParts?.get(partId)?.toLocaleString() ?? '',
         'utf-8'
       );
 
@@ -705,7 +706,7 @@ export default class ImapEmailsFetcher {
 
         this.isRefreshingOAuthToken = true;
 
-        logger.warn(`Has Auth Error & is Refreshing OAuth token at`);
+        logger.warn('Has Auth Error & is Refreshing OAuth token');
 
         this.emailsQueue.pause();
         // Wait until all other pending tasks (except this one) have finished resolving

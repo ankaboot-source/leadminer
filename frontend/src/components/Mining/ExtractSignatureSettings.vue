@@ -59,8 +59,7 @@ const localBodySizeFilter = computed(() => $leadminerStore.filterBodySize);
 
 const displayLabel = computed(() => {
   if (localBodySizeFilter.value >= maxBodySize) return t('slider_slower_label');
-  else if (localBodySizeFilter.value)
-    return `${Math.round(localBodySizeFilter.value / 1024)} KB`;
+  return `${Math.round(localBodySizeFilter.value / 1024)} KB`;
 });
 </script>
 
