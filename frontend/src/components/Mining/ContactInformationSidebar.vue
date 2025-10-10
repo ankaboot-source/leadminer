@@ -3,10 +3,11 @@
     v-model:visible="show"
     position="right"
     class="w-full md:w-1/2 xl:w-1/3"
+    pt:header:class="flex-col-reverse"
+    pt:pc-close-button:root:class="self-end"
     @hide="() => onHide()"
   >
-    <template #header><span class="grow" /> </template>
-    <div class="px-4">
+    <template #header>
       <div class="flex items-center gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
@@ -68,13 +69,15 @@
           </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <!-- Content -->
     <table
       class="p-datatable p-datatable-striped w-full"
       style="display: table"
     >
       <tbody class="p-datatable-tbody">
-        <tr class="p-row-even">
+        <tr class="p-row-even border-t-1 border-(--p-drawer-border-color)">
           <td class="md:font-medium w-4/12">
             {{ $t('contact.given_name') }}
           </td>
@@ -197,35 +200,39 @@
       </tbody>
     </table>
 
-    <div className="grid grid-cols-2 gap-2 items-center pt-4">
-      <template v-if="!editingContact">
-        <EnrichButton
-          source="contact"
-          :enrichment-realtime-callback="enrichmentRealtimeCallback"
-          :enrichment-request-response-callback="() => {}"
-          :contacts-to-enrich="[contact]"
-          :enrich-all-contacts="false"
-          :skip-dialog="skipDialog"
-        />
-        <Button
-          icon-pos="right"
-          icon="pi pi-pen-to-square"
-          :label="$t('common.edit')"
-          @click="editContactInformations()"
-        />
-      </template>
-      <template v-else>
-        <Button
-          :label="$t('common.cancel')"
-          severity="secondary"
-          @click="cancelContactInformations()"
-        />
-        <Button :label="$t('common.save')" @click="saveContactInformations()" />
-      </template>
-    </div>
+    <template #footer>
+      <div class="grid grid-cols-2 gap-2 items-center">
+        <template v-if="!editingContact">
+          <EnrichButton
+            source="contact"
+            :enrichment-realtime-callback="enrichmentRealtimeCallback"
+            :enrichment-request-response-callback="() => {}"
+            :contacts-to-enrich="[contact]"
+            :enrich-all-contacts="false"
+            :skip-dialog="skipDialog"
+          />
+          <Button
+            icon-pos="right"
+            icon="pi pi-pen-to-square"
+            :label="$t('common.edit')"
+            @click="editContactInformations()"
+          />
+        </template>
+        <template v-else>
+          <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="cancelContactInformations()"
+          />
+          <Button
+            :label="$t('common.save')"
+            @click="saveContactInformations()"
+          />
+        </template>
+      </div>
+    </template>
   </Drawer>
 </template>
-
 <script setup lang="ts">
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';

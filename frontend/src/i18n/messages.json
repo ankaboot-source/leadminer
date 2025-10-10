@@ -124,6 +124,12 @@
     "mining": {
       "toast_canceled_title": "Mining canceled",
       "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue."
+    },
+    "error": {
+      "default": {
+        "title": "Unexpected error",
+        "message": "An unexpected error occurred. Please try again."
+      }
     }
   },
   "fr": {
@@ -251,6 +257,12 @@
     "mining": {
       "toast_canceled_title": "Extraction annulée",
       "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
+    },
+    "error": {
+      "default": {
+        "title": "Erreur inattendue",
+        "message": "Une erreur inattendue s'est produite. Veuillez réessayer."
+      }
     }
   }
 }
