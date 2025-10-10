@@ -39,6 +39,7 @@
     "imap": "^0.8.19",
     "imapflow": "^1.0.198",
     "ioredis": "^5.7.0",
+    "lettercoder": "^0.1.1",
     "mailparser": "^3.7.4",
     "nodemon": "^3.1.10",
     "p-queue": "^9.0.0",

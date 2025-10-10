@@ -1,7 +1,7 @@
 import { parseHeader } from 'imap';
-import { simpleParser } from 'mailparser';
-import { ImapFlow as Connection } from 'imapflow';
+import { ImapFlow as Connection, MessageStructureObject } from 'imapflow';
 import PQueue from 'p-queue';
+import { decodeQuotedPrintable } from 'lettercoder';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
@@ -15,7 +15,35 @@ const redisClient = redis.getClient();
 interface EmailJob {
   folder: string;
   range: string;
+  isUid: boolean;
+  partId?: string;
   totalInFolder: number;
+}
+
+/**
+ * Recursively find the first text/plain part ID in an IMAP BODYSTRUCTURE.
+ * @param node - The BODYSTRUCTURE object returned by ImapFlow
+ * @returns The part ID string (e.g., "1.2") or null if not found
+ */
+function findPlainTextNode(
+  node?: MessageStructureObject
+): MessageStructureObject | null {
+  if (!node) return null;
+
+  const type = (node.type || '').toLowerCase();
+
+  if (type === 'text/plain') {
+    return node || null;
+  }
+
+  if (Array.isArray(node.childNodes)) {
+    for (const child of node.childNodes) {
+      const result = findPlainTextNode(child);
+      if (result) return result;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -108,8 +136,9 @@ export default class ImapEmailsFetcher {
     private readonly miningId: string,
     private readonly contactStream: string,
     private readonly signatureStream: string,
-    private readonly fetchEmailBody = false,
-    private readonly batchSize = 50,
+    private readonly fetchEmailBody: boolean,
+    private readonly batchSize: number,
+    private readonly maxBodyTextSize: number | undefined,
     private readonly maxConcurrentConnections = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
   ) {
     // Generate a unique identifier for the user.
@@ -270,7 +299,8 @@ export default class ImapEmailsFetcher {
             emailJobs.push({
               folder,
               range,
-              totalInFolder
+              totalInFolder,
+              isUid: false
             });
           });
         } catch (err) {
@@ -303,16 +333,147 @@ export default class ImapEmailsFetcher {
   }
 
   /**
-   * Creates a fetch stream for IMAP messages.
+   * Fetches all email messages in the configured boxes.
    */
-  private createFetchStream(connection: Connection, range: string) {
-    return connection.fetch(range, {
-      uid: false,
-      source: false,
-      envelope: true,
-      headers: true,
-      bodyParts: this.bodies
-    });
+  async fetchEmailMessagesWithBody() {
+    const emailJobs: {
+      range: string;
+      folder: string;
+      totalInFolder: number;
+    }[] = [];
+
+    const foldersToProcess = this.folders.filter(
+      (f) => !EXCLUDED_IMAP_FOLDERS.includes(f)
+    );
+
+    // Map folders to async jobs
+    await Promise.all(
+      foldersToProcess.map(async (folder) => {
+        const connection =
+          await this.imapConnectionProvider.acquireConnection();
+        try {
+          const mailbox = await connection.mailboxOpen(folder, {
+            readOnly: true
+          });
+          const totalInFolder = mailbox.exists;
+
+          await connection.mailboxClose();
+
+          if (totalInFolder === 0) return;
+
+          const ranges = buildSequenceRanges(
+            totalInFolder,
+            ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+          );
+
+          logger.debug(
+            `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
+          );
+          ranges.forEach((range) => {
+            emailJobs.push({
+              folder,
+              range,
+              totalInFolder
+            });
+          });
+        } catch (err) {
+          logger.warn(
+            `Failed to process folder ${folder}: ${(err as Error).message}`
+          );
+        } finally {
+          if (connection) {
+            await this.imapConnectionProvider.releaseConnection(connection);
+          }
+        }
+      })
+    );
+
+    try {
+      /* eslint-disable no-await-in-loop */
+      for (const job of emailJobs) {
+        let connection: Connection | null = null;
+        this.emailsQueue.add(async () => {
+          if (this.isCanceled) return;
+          try {
+            connection = await this.imapConnectionProvider.acquireConnection();
+
+            const textPlainMap = new Map<string, Set<number>>();
+
+            const { range, folder, totalInFolder } = job;
+
+            logger.debug(
+              `[${this.miningId}:${folder}:${range}] Starting bodyStructure fetch for ${totalInFolder} emails`
+            );
+
+            await connection.mailboxOpen(folder, { readOnly: true });
+
+            const stream = await connection.fetchAll(range, {
+              bodyStructure: true,
+              uid: true,
+              source: false,
+              headers: false
+            });
+
+            for (const { uid, bodyStructure } of stream) {
+              const node = findPlainTextNode(bodyStructure);
+              const size = node?.size ?? 0;
+
+              let key = node?.part ? node.part : '__no_text__';
+
+              if (this.maxBodyTextSize && size > this.maxBodyTextSize)
+                key = '__no_text__';
+
+              if (!textPlainMap.has(key)) textPlainMap.set(key, new Set());
+              textPlainMap.get(key)?.add(uid);
+            }
+
+            this.emailsQueue.addAll(
+              Array.from(textPlainMap.entries()).map(([partId, uids]) => {
+                const uidList = Array.from(uids);
+                logger.debug(
+                  `[${this.miningId}:${folder}:${range}] Queuing ${uidList.length} UIDs for partId=${partId}`
+                );
+                return async () => {
+                  await this.processEmailJob({
+                    folder,
+                    partId: partId === '__no_text__' ? undefined : partId,
+                    totalInFolder,
+                    range: uidList.join(','),
+                    isUid: partId !== '__no_text__'
+                  });
+                };
+              }),
+              { priority: 1 }
+            );
+
+            await connection.mailboxClose();
+          } catch (err) {
+            logger.error(
+              `Error during bodyStructure fetch: ${(err as Error).message}`,
+              { error: err }
+            );
+          } finally {
+            if (connection?.usable)
+              await this.imapConnectionProvider.releaseConnection(connection);
+            else if (connection)
+              await this.imapConnectionProvider.destroyConnection(connection);
+          }
+        });
+      }
+      /* eslint-enable no-await-in-loop */
+
+      await this.emailsQueue.onIdle();
+
+      this.isCompleted = true;
+
+      if (!this.isCanceled) {
+        await this.stop(false);
+      }
+
+      logger.info(`[${this.miningId}] All email jobs completed`);
+    } catch (err) {
+      logger.error(err);
+    }
   }
 
   /**
@@ -321,18 +482,31 @@ export default class ImapEmailsFetcher {
   private async processFetch(
     connection: Connection,
     range: string,
+    isUid: boolean,
+    partId: string | undefined,
     folderPath: string,
     totalInFolder: number
   ) {
     let publishedEmails = 0;
     const batchSize = Math.max(this.batchSize, 200);
 
-    const streamGen = this.createFetchStream(connection, range);
+    const streamGen = connection.fetch(
+      range,
+      {
+        source: false,
+        envelope: true,
+        headers: true,
+        bodyParts: partId ? [partId] : undefined
+      },
+      {
+        uid: isUid
+      }
+    );
 
     for await (const msg of streamGen) {
       if (this.isCanceled) {
         logger.debug(
-          `[${this.miningId}:${folderPath}:${range}]: Received cancellation signal, aborting... `
+          `[${this.miningId}:${folderPath}]: Received cancellation signal, aborting... `
         );
         connection.close();
 
@@ -391,26 +565,30 @@ export default class ImapEmailsFetcher {
         publishedEmails = 0;
       }
 
-      if (!this.fetchEmailBody || from?.address === this.userEmail) continue;
+      if (!this.fetchEmailBody || !partId || from?.address === this.userEmail)
+        continue;
 
-      let text = msg.bodyParts?.get('text') ?? '';
+      const text = decodeQuotedPrintable(
+        msg.bodyParts?.get(partId)?.toLocaleString() ?? '',
+        'utf-8'
+      );
 
-      if (headers && text?.length) {
-        try {
-          const { text: parsedText } = await simpleParser(
-            Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
-            {
-              skipHtmlToText: true,
-              skipTextToHtml: true,
-              skipImageLinks: true,
-              skipTextLinks: true
-            }
-          );
-          text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-        } catch {
-          text = '';
-        }
-      }
+      // if (headers && text?.length) {
+      //   try {
+      //     const { text: parsedText } = await simpleParser(
+      //       Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
+      //       {
+      //         skipHtmlToText: true,
+      //         skipTextToHtml: true,
+      //         skipImageLinks: true,
+      //         skipTextLinks: true
+      //       }
+      //     );
+      //     text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
+      //   } catch {
+      //     text = '';
+      //   }
+      // }
 
       if (text.length && from && date) {
         await redisClient.xadd(
@@ -453,7 +631,7 @@ export default class ImapEmailsFetcher {
   private async processEmailJob(emailJob: EmailJob): Promise<void> {
     if (this.isCanceled) return;
 
-    const { folder, range, totalInFolder } = emailJob;
+    const { folder, range, totalInFolder, isUid, partId } = emailJob;
 
     let connection: Connection | null = null;
 
@@ -463,14 +641,21 @@ export default class ImapEmailsFetcher {
       await connection.mailboxOpen(folder, { readOnly: true });
 
       logger.info(
-        `[${this.miningId}:${folder}:${range}:${connection?.id}]: Opened folder for range ${range}`
+        `[${this.miningId}:${folder}:${connection?.id}]: Opened folder for range`
       );
 
-      await this.processFetch(connection, range, folder, totalInFolder);
+      await this.processFetch(
+        connection,
+        range,
+        isUid,
+        partId,
+        folder,
+        totalInFolder
+      );
 
       await connection.mailboxClose();
       logger.info(
-        `[${this.miningId}:${folder}:${range}:${connection?.id}]: Closed folder for range ${range}`
+        `[${this.miningId}:${folder}:${connection?.id}]: Closed folder for range`
       );
 
       if (this.isRefreshingOAuthToken || !connection.usable) {
@@ -482,7 +667,7 @@ export default class ImapEmailsFetcher {
       }
     } catch (error) {
       logger.error(
-        `[${this.miningId}:${folder}:${range}:${connection?.id}]: ${(error as Error).message}`,
+        `[${this.miningId}:${folder}:${connection?.id}]: ${(error as Error).message}`,
         { error }
       );
 
@@ -497,11 +682,17 @@ export default class ImapEmailsFetcher {
       this.FETCHING_TOTAL_ERRORS += 1;
 
       logger.debug(
-        `[${this.miningId}:${folder}:${range}:${connection?.id}]: Pushing range again to queue for retry`
+        `[${this.miningId}:${folder}:${connection?.id}]: Pushing range again to queue for retry`
       );
 
       this.emailsQueue.add(() =>
-        this.processEmailJob({ range, folder, totalInFolder })
+        this.processEmailJob({
+          range,
+          isUid,
+          partId,
+          folder,
+          totalInFolder
+        })
       );
 
       if (
@@ -515,7 +706,7 @@ export default class ImapEmailsFetcher {
 
         this.isRefreshingOAuthToken = true;
 
-        logger.warn(`Has Auth Error & is Refreshing OAuth token at ${range}`);
+        logger.warn('Has Auth Error & is Refreshing OAuth token');
 
         this.emailsQueue.pause();
         // Wait until all other pending tasks (except this one) have finished resolving
@@ -541,6 +732,7 @@ export default class ImapEmailsFetcher {
    * Starts fetching email messages.
    */
   start() {
+    if (this.fetchEmailBody) return this.fetchEmailMessagesWithBody();
     return this.fetchEmailMessages();
   }
 

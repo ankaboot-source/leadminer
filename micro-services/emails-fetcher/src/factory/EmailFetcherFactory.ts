@@ -12,6 +12,7 @@ interface Options {
   signatureStream: string;
   fetchEmailBody: boolean;
   maxConcurrentConnections: number;
+  filterBodySize: number | undefined;
 }
 
 export default class EmailFetcherFactory {
@@ -29,7 +30,8 @@ export default class EmailFetcherFactory {
     signatureStream,
     fetchEmailBody,
     batchSize,
-    maxConcurrentConnections
+    maxConcurrentConnections,
+    filterBodySize
   }: Options) {
     return new ImapEmailsFetcher(
       imapConnectionProvider,
@@ -41,7 +43,8 @@ export default class EmailFetcherFactory {
       signatureStream,
       fetchEmailBody,
       batchSize,
-      maxConcurrentConnections
+      maxConcurrentConnections,
+      filterBodySize
     );
   }
 }

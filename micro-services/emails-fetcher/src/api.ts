@@ -44,6 +44,7 @@ interface FetchPostBody {
   email: string;
   boxes: string[];
   extractSignatures: boolean;
+  filterBodySize: number | undefined;
   contactStream: string;
   signatureStream: string;
 }
@@ -128,6 +129,7 @@ apiRoutes.post(
       signatureStream,
       extractSignatures,
       email,
+      filterBodySize,
       boxes: folders
     }: FetchPostBody = req.body;
 
@@ -215,6 +217,7 @@ apiRoutes.post(
           batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
           fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
           maxConcurrentConnections: totalApprovedImapConnections,
+          filterBodySize,
           imapConnectionProvider
         })
       );
