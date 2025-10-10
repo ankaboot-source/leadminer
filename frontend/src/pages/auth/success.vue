@@ -42,13 +42,29 @@
         {{ $t('auth.sign_up_success_message2') }}
       </p>
     </div>
+    <div>
+      <p>
+        Still did not receive it?
+        <span
+          :class="[
+            'link cursor-pointer',
+            { 'text-gray-400 pointer-events-none': cooldown },
+          ]"
+          @click="!cooldown && resendConfirmationEmail()"
+        >
+          {{ cooldown ? `Resend in ${cooldown}s` : 'Resend' }}
+        </span>
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 const $route = useRoute();
-const session = useSupabaseSession();
-const { email } = $route.query;
+const email = $route.query.email as string;
+const $session = useSupabaseSession();
+const $supabaseClient = useSupabaseClient();
+const cooldown = ref(0);
 
 onBeforeMount(() => {
   const unauthorized = window.history.state.back !== '/auth/signup' || !email;
@@ -56,9 +72,33 @@ onBeforeMount(() => {
     const $router = useRouter();
     $router.replace('/auth');
   }
+
+  startCooldown();
 });
 
-watch(session, (activeSession) => {
+watch($session, (activeSession) => {
   if (activeSession) navigateTo('/');
 });
+
+async function resendConfirmationEmail() {
+  const { error } = await $supabaseClient.auth.resend({
+    type: 'signup',
+    email,
+  });
+
+  if (error) {
+    console.error('Error resending confirmation email:', error.message);
+    throw Error(error.message);
+  }
+
+  startCooldown();
+}
+
+function startCooldown() {
+  cooldown.value = 30;
+  const timer = setInterval(() => {
+    cooldown.value--;
+    if (cooldown.value <= 0) clearInterval(timer);
+  }, 1000);
+}
 </script>
