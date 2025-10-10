@@ -11,13 +11,12 @@
     :header="t('fine_tune_mining')"
   >
     <div class="flex flex-row flex-wrap items-center gap-2 pb-4">
-      <ToggleSwitch
-        v-model="$leadminerStore.extractSignatures"
-        input-id="extractSignatures"
+      <RefineMiningSlider
+        :model-value-body-size-filter="
+          $leadminerStore.filterBodySize ?? undefined
+        "
+        :model-value-extract-signature="$leadminerStore.extractSignatures"
       />
-      <label for="extractSignatures" class="cursor-pointer flex-1">
-        {{ t('extract_signatures_option') }} {{ t('extract_signatures_sub') }}
-      </label>
     </div>
 
     <div class="flex items-center gap-2">
@@ -51,6 +50,7 @@
 
 <script setup lang="ts">
 import TreeCard from '@/components/cards/TreeCard.vue';
+import RefineMiningSlider from './RefineMiningSlider.vue';
 
 const { t } = useI18n({
   useScope: 'local',

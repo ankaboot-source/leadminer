@@ -199,6 +199,7 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
 
       const {
+        filterBodySize,
         extractSignatures,
         miningSource: { email },
         boxes: folders
@@ -208,6 +209,7 @@ export default function initializeMiningController(
         };
         boxes: string[];
         extractSignatures: boolean;
+        filterBodySize: number | undefined;
       } = req.body;
 
       const errors = [
@@ -244,7 +246,8 @@ export default function initializeMiningController(
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
-          fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY
+          fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
+          filterBodySize
         });
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
