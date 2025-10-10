@@ -43,8 +43,8 @@ export default class EmailFetcherFactory {
       signatureStream,
       fetchEmailBody,
       batchSize,
-      maxConcurrentConnections,
-      filterBodySize
+      filterBodySize,
+      maxConcurrentConnections
     );
   }
 }
