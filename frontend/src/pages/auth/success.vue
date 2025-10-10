@@ -58,10 +58,12 @@
 </template>
 
 <script setup lang="ts">
-const $route = useRoute();
-const email = $route.query.email as string;
 const $session = useSupabaseSession();
 const $supabaseClient = useSupabaseClient();
+const $toast = useToast();
+const $route = useRoute();
+const email = $route.query.email as string;
+
 const cooldown = ref(30);
 
 onBeforeMount(() => {
@@ -87,6 +89,13 @@ async function resendConfirmationEmail() {
   if (error) {
     throw Error(error.message);
   }
+
+  $toast.add({
+    severity: 'success',
+    summary: $t('auth.confirmation_sent'),
+    detail: $t('auth.confirmation_email', { email }),
+    life: 5000,
+  });
 
   startCooldown();
 }

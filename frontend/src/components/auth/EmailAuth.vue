@@ -347,12 +347,13 @@ function showToast(
   severity: ToastMessageOptions['severity'],
   summary: string,
   detail: string,
+  life = 3000,
 ) {
   $toast.add({
     severity,
     summary,
     detail,
-    life: 3000,
+    life,
   });
 }
 
@@ -361,6 +362,7 @@ function handleSuccess() {
     'success',
     $t('auth.sign_up_success'),
     $t('auth.confirmation_email', { email: email.value }),
+    5000,
   );
   $router.push({
     path: '/auth/success',
