@@ -41,12 +41,12 @@ onMounted(async () => {
   }
 
   if (!session) {
-    return navigateTo('/auth/login');
+    navigateTo('/auth/login');
+  } else {
+    const $contactsStore = useContactsStore();
+    await $contactsStore.reloadContacts();
+    const homePath = $contactsStore.contactCount ? '/contacts' : '/mine';
+    navigateTo(homePath);
   }
-
-  const $contactsStore = useContactsStore();
-  await $contactsStore.reloadContacts();
-  const homePath = $contactsStore.contactCount ? '/contacts' : '/mine';
-  navigateTo(homePath);
 });
 </script>
