@@ -231,6 +231,14 @@
                 :max-selected-labels="0"
                 @change="onSelectColumnsChange"
               />
+
+              <Divider class="my-0" />
+              <li class="flex justify-between gap-2">
+                <div>
+                  {{ t('toggle_dense_contacts_column_label') }}
+                </div>
+                <ToggleSwitch v-model="denseContactsColumn" />
+              </li>
             </ul>
           </Popover>
         </div>
@@ -258,7 +266,7 @@
     />
 
     <!-- Contacts -->
-    <Column field="contacts">
+    <Column field="contacts" :class="{ 'max-w-[50svw]': denseContactsColumn }">
       <template #header>
         <div class="pr-2 hidden md:block">{{ t('contacts') }}</div>
         <div class="grow p-column-filter p-fluid p-column-filter-menu">
@@ -427,6 +435,7 @@
       </template>
     </Column>
 
+    <!-- Temperature -->
     <Column
       v-if="visibleColumns.includes('temperature')"
       field="temperature"
@@ -434,11 +443,11 @@
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
-      class="w-48"
+      class="w-px temperatureColumn"
     >
       <template #header>
         <div v-tooltip.top="t('temperature_definition')">
-          {{ t('temperature') }}
+          {{ $screenStore.size.md ? t('temperature') : '🔥' }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -447,12 +456,10 @@
       <template #body="{ data }">
         <div
           v-if="data.temperature"
-          class="flex items-center justify-center gap-3"
+          :style="getHeatColorStyle(data.temperature)"
+          class="flex items-center justify-center rounded-lg"
         >
-          <div
-            :style="getHeatColorStyle(data.temperature)"
-            class="w-8 h-8 rounded-lg text-xs font-bold"
-          >
+          <div class="w-8 h-8 text-xs font-bold">
             <span class="flex items-center justify-center w-full h-full">
               {{ data.temperature }}
             </span>
@@ -1224,7 +1231,7 @@ onUnmounted(() => {
   scrollHeightObserver.value?.disconnect();
 });
 
-const getHeatColorStyle = (temp: number | null) => {
+function getHeatColorStyle(temp: number | null) {
   if (temp === null) {
     return {
       backgroundColor: '#f3f4f6',
@@ -1252,7 +1259,9 @@ const getHeatColorStyle = (temp: number | null) => {
     color: textColor,
     border: `1px solid ${borderColor}`,
   };
-};
+}
+
+const denseContactsColumn = ref(true);
 </script>
 
 <style>
@@ -1286,6 +1295,15 @@ table.p-datatable-table {
 .p-datatable-header {
   border: 0;
 }
+
+/* Use passthrough if able */
+.temperatureColumn
+  > div
+  > div.p-datatable-filter.p-datatable-popover-filter
+  > button {
+  height: 25px;
+  width: 25px;
+}
 </style>
 
 <i18n lang="json">
@@ -1312,6 +1330,7 @@ table.p-datatable-table {
     "toggle_name_tooltip": "Named contacts engage more",
     "toggle_recent_tooltip": "- Less than {recentYearsAgo} years \n- GDPR Proof",
     "toggle_recent_label": "Recent contacts",
+    "toggle_dense_contacts_column_label": "Denser contacts column",
     "visible_columns": "{n} Visible field | {n} Visible fields",
     "contacts": "Contacts",
     "emails": "Emails",
@@ -1366,13 +1385,14 @@ table.p-datatable-table {
     "toggle_name_tooltip": "Les contacts connus par leur nom complet répondent davantage",
     "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
     "toggle_recent_label": "Contacts récents",
+    "toggle_dense_contacts_column_label": "Colonne de contacts plus denses",
     "visible_columns": "{n} Champ visible | {n} Champs visibles",
     "contacts": "Contacts",
     "emails": "Emails",
     "search_contacts": "Rechercher des contacts",
     "source_definition": "La boîte mail d'où ce contact est extrait",
     "source": "Source",
-    "occurence_definition": "Occurrences totales de ce contact",
+    "occurrence_definition": "Occurrences totales de ce contact",
     "occurrence": "Occurrence",
     "temperature_definition": "Plus la température est élevée, plus il y a de réponses, d'activité récente et d'engagement, et plus les chances d'obtenir des réponses futures sont élevées.",
     "temperature": "Temperature",
