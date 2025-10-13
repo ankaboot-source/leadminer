@@ -456,12 +456,14 @@
       <template #body="{ data }">
         <div
           v-if="data.temperature"
-          :style="getHeatColorStyle(data.temperature)"
-          class="flex items-center justify-center rounded-lg"
+          class="flex items-center justify-center gap-3"
         >
-          <div class="w-8 h-8 text-xs font-bold">
+          <div
+            :style="getHeatColorStyle(data.temperature)"
+            class="w-9 h-9 rounded-lg text-xs font-bold p-2"
+          >
             <span class="flex items-center justify-center w-full h-full">
-              {{ data.temperature }}
+              {{ data.temperature }}°
             </span>
           </div>
         </div>
@@ -1200,9 +1202,9 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
-    'temperature',
-    ...($screenStore.width > 550 ? ['tags'] : []),
-    ...($screenStore.width > 700 ? ['status'] : []),
+    ...($screenStore.width > 550 ? ['temperature'] : []),
+    ...($screenStore.width > 700 ? ['tags'] : []),
+    ...($screenStore.width > 800 ? ['status'] : []),
   ];
 
   await $contactsStore.reloadContacts();
@@ -1232,11 +1234,7 @@ onUnmounted(() => {
 });
 
 function getHeatColorStyle(temp: number | null) {
-  if (temp === null) {
-    return {
-      backgroundColor: '#f3f4f6',
-    };
-  }
+  if (temp === null) return;
 
   const normalized = Math.min(Math.max(temp / 100, 0), 1);
 
@@ -1250,12 +1248,10 @@ function getHeatColorStyle(temp: number | null) {
 
   const saturation = 75; // soft pastel
 
-  const bgColor = `hsl(${hue}, ${saturation}%, ${lightnessBg}%)`;
   const textColor = `hsl(${hue}, ${saturation}%, ${lightnessText}%)`;
   const borderColor = `hsl(${hue}, ${saturation}%, ${borderLightness}%)`;
 
   return {
-    backgroundColor: bgColor,
     color: textColor,
     border: `1px solid ${borderColor}`,
   };
