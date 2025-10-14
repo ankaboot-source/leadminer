@@ -7,12 +7,11 @@ import {
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
+import logger from '../utils/logger';
 import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
@@ -58,7 +57,7 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
+    async createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
 
@@ -86,12 +85,12 @@ export default function initializeMiningController(
           },
           type: provider
         });
-
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
         );
       } catch (error) {
+        logger.error(error);
         res.redirect(
           301,
           `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`
@@ -200,6 +199,7 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
 
       const {
+        extractSignatures,
         miningSource: { email },
         boxes: folders
       }: {
@@ -207,11 +207,13 @@ export default function initializeMiningController(
           email: string;
         };
         boxes: string[];
+        extractSignatures: boolean;
       } = req.body;
 
       const errors = [
         validateType('email', email, 'string'),
-        validateType('boxes', folders, 'string[]')
+        validateType('boxes', folders, 'string[]'),
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -232,46 +234,20 @@ export default function initializeMiningController(
         );
 
       if (!miningSourceCredentials) {
-        return res.status(400).json({
+        return res.status(401).json({
           message: "This mining source isn't registered for this user"
         });
       }
 
-      const imapConnectionProvider =
-        'accessToken' in miningSourceCredentials
-          ? await new ImapConnectionProvider(
-              miningSourceCredentials.email
-            ).withOauth(miningSourceCredentials.accessToken)
-          : new ImapConnectionProvider(
-              miningSourceCredentials.email
-            ).withPassword(
-              miningSourceCredentials.host,
-              miningSourceCredentials.password,
-              miningSourceCredentials.tls,
-              miningSourceCredentials.port
-            );
-
-      let imapConnection = null;
-      let miningTask = null;
-
       try {
-        // Connect to validate connection before creating the pool.
-        imapConnection = await imapConnectionProvider.acquireConnection();
-        const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
-          imapConnectionProvider,
+        const miningTask = await tasksManager.createTask({
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
-          batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
-          fetchEmailBody: ENV.IMAP_FETCH_BODY
-        };
-        miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
+          fetchEmailBody: extractSignatures
+        });
+        return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
-        if (imapConnection) {
-          await imapConnectionProvider.releaseConnection(imapConnection);
-        }
-        await imapConnectionProvider.cleanPool();
-
         if (
           err instanceof Error &&
           err.message.toLowerCase().startsWith('invalid credentials')
@@ -291,8 +267,6 @@ export default function initializeMiningController(
         res.status(500);
         return next(new Error(newError.message));
       }
-
-      return res.status(201).send({ error: null, data: miningTask });
     },
 
     async startMiningFile(req: Request, res: Response, next: NextFunction) {

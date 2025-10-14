@@ -2,7 +2,8 @@
   <ProgressCard
     :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
-    :rate="3"
+    :current="verifiedContacts"
+    :rate="AVERAGE_CLEANING_RATE"
     :started="taskStartedAt"
     :progress="verificationProgress"
     :progress-tooltip="progressTooltip"
@@ -31,9 +32,9 @@
   <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
-import { AcceptNewsLetter } from '~/utils/extras';
-import { FetchError } from 'ofetch';
 import ProgressCard from '@/components/ProgressCard.vue';
+import { FetchError } from 'ofetch';
+import { AcceptNewsLetter } from '~/utils/extras';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -97,7 +98,7 @@ async function haltCleaning() {
   try {
     await $leadminerStore.stopMining(true, null);
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('cleaning_stopped'),
       detail: t('cleaning_canceled'),
       life: 3000,

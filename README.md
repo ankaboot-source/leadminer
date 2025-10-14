@@ -20,6 +20,7 @@
 
 - ⛏️📧 Extract contacts from your mailbox
 - 🧹💌 Clean your email list
+- 💎✒️ Enrich contacts details with signature extraction
 
 ## 📑 Table of contents
 

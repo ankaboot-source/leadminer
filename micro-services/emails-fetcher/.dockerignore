@@ -1,0 +1,7 @@
+.nyc_output
+coverage
+logs
+node_modules
+.vscode
+test
+dist

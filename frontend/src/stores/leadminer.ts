@@ -5,7 +5,7 @@ import { ref } from 'vue';
 import { updateMiningSourcesValidity } from '@/utils/sources';
 import { startMiningNotification } from '~/utils/extras';
 import type { MiningSource, MiningTask, MiningType } from '../types/mining';
-import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
+import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
@@ -23,7 +23,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
+  const extractSignatures = ref(false);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
+  const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
     name: string;
     contacts: Record<string, string>[];
@@ -68,7 +70,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
+    excludedBoxes.value = new Set();
     selectedFile.value = null;
+    extractSignatures.value = false;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -127,7 +131,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
-
+      extractSignatures.value = false;
+      console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
       }>('/imap/boxes', {
@@ -140,7 +145,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const { folders } = data || {};
       if (folders) {
         boxes.value = [...folders];
-        selectedBoxes.value = getDefaultSelectedFolders(folders);
+
+        const { defaultFolders, excludedKeys } =
+          getDefaultAndExcludedFolders(folders);
+
+        selectedBoxes.value = defaultFolders;
+        excludedBoxes.value = excludedKeys;
       }
 
       miningSources.value = updateMiningSourcesValidity(
@@ -174,7 +184,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const { miningId } = miningTask.value;
 
     const res = await $api(
-      `/imap/mine/${miningType.value}/${user.id}/${miningId}`,
+      `/imap/mine/${miningType.value}/${user.sub}/${miningId}`,
       {
         method: 'POST',
         body: {
@@ -187,12 +197,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return res;
   }
 
-  function startProgressListener(
-    type: MiningType,
-    miningId: string,
-    token: string,
-  ) {
-    sse.initConnection(type, miningId, token, {
+  function startProgressListener(type: MiningType, miningId: string) {
+    sse.initConnection(type, miningId, {
       onExtractedUpdate: (count) => {
         extractedEmails.value = count;
       },
@@ -247,6 +253,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     userId: string,
     folders: string[],
     miningSource: MiningSource,
+    extractEmailSignatures = false,
   ) {
     // Set current miningType: file or email
     miningType.value = 'email';
@@ -258,6 +265,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           boxes: folders,
           miningSource,
+          extractSignatures: extractEmailSignatures,
         },
       },
     );
@@ -294,6 +302,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
   async function startMining(source: 'boxes' | 'file') {
+    await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
+
     const user = useSupabaseUser().value;
     const token = useSupabaseSession().value?.access_token;
 
@@ -319,22 +329,23 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const task =
         source === 'boxes'
           ? await startMiningEmail(
-              user?.id,
+              user?.sub,
               Object.keys(selectedBoxes.value).filter(
                 (key) =>
                   selectedBoxes.value[key].checked &&
-                  !selectedBoxes.value[key].isNoSelect &&
+                  !excludedBoxes.value.has(key) &&
                   key !== '',
               ),
               activeMiningSource.value!,
+              extractSignatures.value,
             )
           : await startMiningFile(
-              user.id,
+              user.sub,
               selectedFile.value!.name,
               selectedFile.value!.contacts,
             );
 
-      startProgressListener(miningType.value, task.miningId, token);
+      startProgressListener(miningType.value, task.miningId);
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
@@ -397,6 +408,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource,
     boxes,
     selectedBoxes,
+    excludedBoxes,
+    extractSignatures,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,

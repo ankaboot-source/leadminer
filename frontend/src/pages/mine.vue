@@ -1,6 +1,8 @@
 <template>
   <div class="flex flex-col grow">
-    <div class="flex flex-col grow border rounded-md px-2 pt-6">
+    <div
+      class="flex flex-col grow border border-surface-200 rounded-md px-2 pt-6"
+    >
       <MiningStepper />
     </div>
     <MiningTable :show-table="showTable" />
@@ -14,8 +16,8 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const $stepper = useMiningStepper();
 const $leadminer = useLeadminerStore();
+const $stepper = useMiningStepper();
 const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );

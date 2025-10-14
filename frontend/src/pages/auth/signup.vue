@@ -4,9 +4,7 @@
       <div class="flex flex-col space-y-1.5">
         <span class="text-4xl font-bold font-serif">
           {{
-            `${$t('common.create')} ${$t('common.your')} ${$t(
-              'common.account',
-            )}`
+            `${$t('common.create')} ${$t('common.your')} ${$t('common.account')}`
           }}
         </span>
         <span class="text-xl">{{ $t('auth.discover_gems') }}</span>
@@ -23,7 +21,7 @@
 
       <span>
         {{ $t('auth.account_already') }}
-        <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
+        <NuxtLink to="/auth/login" class="font-bold link capitalize">
           {{ $t('auth.sign_in') }}
         </NuxtLink>
       </span>
@@ -34,7 +32,7 @@
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
+import LegalInformation from '@/components/auth/LegalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
-import LegalInformation from '~/components/auth/LegalInformation.vue';
 </script>

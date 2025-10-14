@@ -1,10 +1,13 @@
-@layer tailwind-base, primevue, tailwind-utilities;
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
 
-@layer tailwind-base {
-  @tailwind base;
+@layer components {
+  .link {
+    @apply text-indigo-500 hover:text-indigo-600 transition-colors;
+  }
 }
 
-@layer tailwind-utilities {
-  @tailwind components;
-  @tailwind utilities;
+/* fixes toast out of screen on mobile */
+.p-toast {
+  @apply w-[calc(100vw-80px)] sm:w-[calc(100vw-90px)] md:w-[25rem];
 }

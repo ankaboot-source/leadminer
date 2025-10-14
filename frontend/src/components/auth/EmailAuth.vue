@@ -42,9 +42,9 @@
         </template>
       </div>
       <div class="grid gap-1">
-        <label class="text-left" for="password">{{
-          $t('auth.password')
-        }}</label>
+        <label class="text-left" for="password">
+          {{ $t('auth.password') }}
+        </label>
         <Password
           v-model="password"
           :input-style="{ width: '100%' }"
@@ -182,9 +182,9 @@
             </template>
           </div>
           <div class="grid gap-1">
-            <label class="text-left" for="password">{{
-              $t('auth.password')
-            }}</label>
+            <label class="text-left" for="password">
+              {{ $t('auth.password') }}
+            </label>
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
@@ -216,7 +216,7 @@
             </template>
           </div>
         </div>
-        <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
+        <NuxtLink class="text-right link capitalize" to="/auth/forgot-password">
           {{ $t('auth.forgot_password') }}
         </NuxtLink>
       </div>
@@ -257,7 +257,7 @@ const { t: $t } = useI18n({
 });
 
 const { authMode = 'sign-in' } = defineProps<{
-  authMode: authModes;
+  authMode?: authModes;
 }>();
 
 const $toast = useToast();
@@ -347,12 +347,13 @@ function showToast(
   severity: ToastMessageOptions['severity'],
   summary: string,
   detail: string,
+  life = 3000,
 ) {
   $toast.add({
     severity,
     summary,
     detail,
-    life: 3000,
+    life,
   });
 }
 
@@ -361,6 +362,7 @@ function handleSuccess() {
     'success',
     $t('auth.sign_up_success'),
     $t('auth.confirmation_email', { email: email.value }),
+    5000,
   );
   $router.push({
     path: '/auth/success',

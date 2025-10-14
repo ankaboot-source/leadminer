@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import Aura from '@primevue/themes/aura';
+import Aura from '@primeuix/themes/aura';
 import pkg from './package.json';
 
 export default defineNuxtConfig({
@@ -8,6 +8,12 @@ export default defineNuxtConfig({
   imports: {
     autoImport: true,
     dirs: ['stores'],
+    imports: [
+      {
+        from: 'primevue/usetoast',
+        name: 'useToast',
+      },
+    ],
   },
 
   build: {
@@ -72,9 +78,10 @@ export default defineNuxtConfig({
       theme: {
         preset: Aura,
         options: {
+          darkModeSelector: 'light',
           cssLayer: {
             name: 'primevue',
-            order: 'tailwind-base, primevue, tailwind-utilities',
+            order: 'theme, base, primevue',
           },
         },
       },
@@ -99,19 +106,8 @@ export default defineNuxtConfig({
 
   postcss: {
     plugins: {
-      tailwindcss: {},
-      autoprefixer: {
-        overrideBrowserslist: [
-          'last 4 Chrome versions',
-          'last 4 Firefox versions',
-          'last 4 Edge versions',
-          'last 4 Safari versions',
-          'last 4 Android versions',
-          'last 4 ChromeAndroid versions',
-          'last 4 FirefoxAndroid versions',
-          'last 4 iOS versions',
-        ],
-      },
+      '@tailwindcss/postcss': {},
+      autoprefixer: {},
     },
   },
 
@@ -122,7 +118,7 @@ export default defineNuxtConfig({
     key: process.env.SUPABASE_ANON_KEY,
     clientOptions: {
       auth: {
-        flowType: 'implicit',
+        flowType: 'pkce',
         detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,

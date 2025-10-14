@@ -17,6 +17,7 @@
     reorderable-columns
     show-gridlines
     pt:tablecontainer:class="grow"
+    class="rounded-md outline outline-surface-200 outline-offset-1"
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
@@ -33,8 +34,8 @@
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
-    :rows="150"
-    :rows-per-page-options="[150, 500, 1000]"
+    :rows="rowsPerPage"
+    :rows-per-page-options="rowsPerPageOptions"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -44,9 +45,20 @@
       <div v-if="!isLoading" class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div
-          v-if="filtersStore.areToggledFilters !== 0 && contactsLength !== 0"
+          v-if="
+            contactsLength !== 0 &&
+            !(filtersStore.isDefaultFilters && !filtersStore.areToggledFilters)
+          "
         >
-          {{ t('try_clearing_filters') }}
+          <span>{{ t('try') }}</span>
+          <Button
+            size="small"
+            icon="pi pi-filter-slash"
+            class="mt-3 ml-2"
+            :label="t('clearing_filters')"
+            outlined
+            @click="filtersStore.clearFilter()"
+          />
         </div>
       </div>
     </template>
@@ -96,16 +108,25 @@
             :deselect-contacts="deselectContacts"
           />
         </div>
-        <div class="ml-2">
+        <div class="ml-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
             <template v-if="!implicitSelectAll && contactsLength">
-              {{ implicitlySelectedContactsLength.toLocaleString() }}
-              /
+              {{
+                implicitlySelectedContactsLength.toLocaleString() +
+                ($screenStore.size.md ? ' ' : '') +
+                '/' +
+                ($screenStore.size.md ? ' ' : '') +
+                contactsLength.toLocaleString()
+              }}
             </template>
-            {{ contactsLength?.toLocaleString() ?? 0 }}
+            <template v-else>
+              {{ contactsLength?.toLocaleString() ?? 0 }}
+            </template>
           </template>
-          {{ t('contacts') }}
+          <template v-if="$screenStore.size.md">
+            {{ ' ' + t('contacts') }}
+          </template>
         </div>
         <div class="grow" />
         <div>
@@ -225,11 +246,12 @@
     <!-- Select -->
     <Column
       selection-mode="multiple"
+      class="border-l-0"
       style="width: 38px"
       :pt="{
         rowCheckbox: {
           root: {
-            style: { 'z-index': 0 },
+            style: { 'z-index': 0 }, // https://github.com/primefaces/primevue/issues/5483
           },
         },
       }"
@@ -251,8 +273,8 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex items-center justify-between gap-2">
-          <div class="max-w-[70vw] flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2 w-full min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
               :src="getImageViaProxy(data.image)"
@@ -260,14 +282,16 @@
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <div class="truncate">
+
+            <div class="min-w-0">
               <div
                 v-if="data.name && visibleColumns.includes('name')"
-                class="truncate w-min cursor-pointer"
+                class="truncate cursor-pointer"
                 @click="openContactInformation(data)"
               >
                 {{ data.name }}
               </div>
+
               <div
                 class="truncate cursor-pointer"
                 :class="{
@@ -280,19 +304,40 @@
                 {{ data.email }}
               </div>
             </div>
+
+            <!-- RIGHT -->
             <div
-              v-if="data.same_as && visibleColumns.includes('same_as')"
-              class="flex md:hidden gap-2"
+              v-if="
+                (data.same_as && visibleColumns.includes('same_as')) ||
+                (data.telephone && visibleColumns.includes('telephone'))
+              "
+              class="flex md:hidden gap-2 flex-shrink-0"
             >
-              <social-links :social-links="data.same_as" :small="true" />
+              <social-links-and-phones
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
           </div>
-          <div class="flex items-center">
+
+          <div class="flex items-center gap-2 flex-shrink-0">
             <div
-              v-if="data.same_as && visibleColumns.includes('same_as')"
-              class="hidden md:flex gap-2"
+              v-if="
+                (data.same_as && visibleColumns.includes('same_as')) ||
+                (data.telephone && visibleColumns.includes('telephone'))
+              "
+              class="hidden md:flex gap-2 flex-shrink-0"
             >
-              <social-links :social-links="data.same_as" :small="true" />
+              <social-links-and-phones
+                :social-links="data.same_as"
+                :show-social-links="visibleColumns.includes('same_as')"
+                :phones="data.telephone"
+                :show-phones="visibleColumns.includes('telephone')"
+                :small="true"
+              />
             </div>
             <Button
               rounded
@@ -379,6 +424,40 @@
       </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <Column
+      v-if="visibleColumns.includes('temperature')"
+      field="temperature"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+      class="w-48"
+    >
+      <template #header>
+        <div v-tooltip.top="t('temperature_definition')">
+          {{ t('temperature') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+      <template #body="{ data }">
+        <div
+          v-if="data.temperature"
+          class="flex items-center justify-center gap-3"
+        >
+          <div
+            :style="getHeatColorStyle(data.temperature)"
+            class="w-8 h-8 rounded-full text-xs font-bold text-white"
+          >
+            <span class="flex items-center justify-center w-full h-full">
+              {{ data.temperature }}
+            </span>
+          </div>
+        </div>
       </template>
     </Column>
 
@@ -611,34 +690,6 @@
       </template>
     </Column>
 
-    <!-- Phone numbers -->
-    <Column
-      v-if="visibleColumns.includes('telephone')"
-      field="telephone"
-      sortable
-      :show-filter-operator="false"
-      :show-add-button="false"
-    >
-      <template #header>
-        <div v-tooltip.top="$t('contact.telephone_definition')">
-          {{ $t('contact.telephone') }}
-        </div>
-      </template>
-      <template #body="{ data }">
-        <div class="flex flex-wrap gap-1">
-          <Chip
-            v-for="(phone, index) in data.telephone"
-            :key="index"
-            :label="phone"
-            :href="`tel:${phone}`"
-            icon="pi pi-phone"
-            class="cursor-pointer"
-            @click="callPhoneNumber(phone)"
-          />
-        </div>
-      </template>
-    </Column>
-
     <!-- Location -->
     <Column
       v-if="visibleColumns.includes('location')"
@@ -704,12 +755,14 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="t('updated_at_definition')">
-          {{ t('updated_at') }}
+        <div v-tooltip.top="$t('contact.updated_at_definition')">
+          {{ $t('contact.updated_at') }}
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+        <div v-tooltip.bottom="data.updated_at?.toLocaleString()">
+          {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
@@ -734,11 +787,7 @@
       </template>
       <template #body="{ data }">
         <div v-tooltip.bottom="data.created_at?.toLocaleString()">
-          {{
-            data.created_at
-              ? data.created_at?.toLocaleDateString()
-              : data.created_at
-          }}
+          {{ data.created_at?.toLocaleDateString() ?? data.created_at }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -753,7 +802,6 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '@supabase/supabase-js';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
@@ -779,8 +827,8 @@ import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-const SocialLinks = defineAsyncComponent(
-  () => import('../../icons/SocialLink.vue'),
+const SocialLinksAndPhones = defineAsyncComponent(
+  () => import('../../icons/SocialLinksAndPhones.vue'),
 );
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
@@ -808,7 +856,7 @@ const emptyFunction = () => {};
 
 const $toast = useToast();
 
-const $user = useSupabaseUser() as Ref<User>;
+const $user = useSupabaseUser();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
@@ -817,8 +865,11 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
-
 const contactsLength = computed(() => $contactsStore.contactCount);
+
+const DEFAULT_ROWS_PER_PAGE = 150;
+const rowsPerPageOptions = [20, 50, 150, 500, 1000];
+const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
@@ -864,16 +915,21 @@ function toggleSettingsPanel(event: Event) {
 function onFilter($event: DataTableFilterEvent) {
   filteredContacts.value = $event.filteredValue;
 }
-
+function optimizeTableForMining() {
+  filtersStore.onNameToggle(true); // toggle on name filter on start mining
+  rowsPerPage.value = 20; // Lower rows per page for better performance
+}
 watch(
   () => $leadminerStore.activeMiningTask,
   (isActive) => {
     if (isActive) {
       $leadminerStore.cleaningFinished = false;
       filtersStore.clearFilter();
+      optimizeTableForMining();
     } else {
       $leadminerStore.cleaningFinished = true;
       filtersStore.toggleFilters();
+      rowsPerPage.value = DEFAULT_ROWS_PER_PAGE;
     }
   },
 );
@@ -960,7 +1016,7 @@ const isExportDisabled = computed(
     !implicitlySelectedContactsLength.value,
 );
 function getFileName() {
-  const { email } = $user.value;
+  const { email } = $user.value!; // skipcq: JS-0339
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;
@@ -1015,7 +1071,7 @@ async function exportTable(partialExport = false) {
           severity: 'success',
           summary: t('csv_export'),
           detail: t('contacts_exported_successfully'),
-          life: 3000,
+          life: 8000,
         });
       }
     },
@@ -1032,6 +1088,7 @@ const visibleColumnsOptions = [
   { label: t('occurrence'), value: 'occurrence' },
   { label: t('recency'), value: 'recency' },
   { label: t('replies'), value: 'replied_conversations' },
+  { label: t('temperature'), value: 'temperature' },
   { label: t('tags'), value: 'tags' },
   { label: t('reachable'), value: 'status' },
   { label: t('recipient'), value: 'recipient' },
@@ -1041,12 +1098,12 @@ const visibleColumnsOptions = [
   { label: $t('contact.family_name'), value: 'family_name' },
   { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.alternate_email'), value: 'alternate_email' },
-  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },
   { label: $t('contact.name'), value: 'name' },
   { label: $t('contact.same_as'), value: 'same_as' },
+  { label: $t('contact.telephone'), value: 'telephone' },
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
@@ -1126,23 +1183,31 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
+
+onBeforeMount(() => (isLoading.value = true));
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
     'contacts',
     'name',
     'same_as',
+    'telephone',
     'image',
-    ...($screenStore.width > 550 ? ['occurrence'] : []),
-    ...($screenStore.width > 700 ? ['recency'] : []),
-    ...($screenStore.width > 800 ? ['tags'] : []),
-    ...($screenStore.width > 950 ? ['status'] : []),
+    'temperature',
+    ...($screenStore.width > 550 ? ['tags'] : []),
+    ...($screenStore.width > 700 ? ['status'] : []),
   ];
 
   await $contactsStore.reloadContacts();
-  if (contacts?.value?.some((contact) => contact.telephone !== null)) {
-    visibleColumns.value.push('telephone');
+
+  if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
+    console.log(
+      'Data in persons table but not in refinedpersons, refining contacts...',
+    );
+    await $contactsStore.refineContacts();
+    await $contactsStore.reloadContacts();
   }
+
   $contactsStore.subscribeToRealtimeUpdates();
 
   scrollHeightObserver.value = new ResizeObserver(() => {
@@ -1158,6 +1223,18 @@ onUnmounted(() => {
   $contactsStore.$reset();
   scrollHeightObserver.value?.disconnect();
 });
+
+const getHeatColorStyle = (temp: number | null) => {
+  if (temp === null) return { backgroundColor: '#9ca3af' };
+
+  const normalized = Math.min(Math.max(temp / 100, 0), 1);
+
+  const hue = 45 - normalized * 35;
+  const saturation = 95;
+  const lightness = 35 + (1 - normalized) * 10;
+
+  return { backgroundColor: `hsl(${hue}, ${saturation}%, ${lightness}%)` };
+};
 </script>
 
 <style>
@@ -1170,7 +1247,6 @@ onUnmounted(() => {
 .fullscreenTable {
   position: fixed;
   z-index: 3;
-  background-color: white;
   max-width: 100vw;
   max-height: 100vh;
   top: 0;
@@ -1187,6 +1263,11 @@ onUnmounted(() => {
 table.p-datatable-table {
   border-collapse: separate;
 }
+
+.p-datatable-paginator-bottom,
+.p-datatable-header {
+  border: 0;
+}
 </style>
 
 <i18n lang="json">
@@ -1194,7 +1275,8 @@ table.p-datatable-table {
   "en": {
     "of": "of",
     "no_contacts_found": "No contacts found",
-    "try_clearing_filters": "Try clearing filters",
+    "try": "Try",
+    "clearing_filters": "Clearing filters",
     "select_at_least_one_contact": "Select at least one contact to {action}",
     "export_csv": "Export CSV",
     "export": "export",
@@ -1220,6 +1302,8 @@ table.p-datatable-table {
     "source": "Source",
     "occurrence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
+    "temperature_definition": "The hotter, the more replies, recent activity, and engagement — and a higher chance of future replies.",
+    "temperature": "Temperature",
     "recency": "Recency",
     "recency_definition": "When was the last time this contact was seen",
     "replies_definition": "How many times this contact replied",
@@ -1245,7 +1329,8 @@ table.p-datatable-table {
   "fr": {
     "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
-    "try_clearing_filters": "Essayez de vider les filtres",
+    "try": "Essayez de",
+    "clearing_filters": "Vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à {action}",
     "export": "exporter",
     "remove": "supprimer",
@@ -1271,6 +1356,8 @@ table.p-datatable-table {
     "source": "Source",
     "occurence_definition": "Occurrences totales de ce contact",
     "occurrence": "Occurrence",
+    "temperature_definition": "Plus la température est élevée, plus il y a de réponses, d'activité récente et d'engagement, et plus les chances d'obtenir des réponses futures sont élevées.",
+    "temperature": "Temperature",
     "recency": "Récence",
     "recency_definition": "Dernière fois que ce contact a été vu",
     "replies_definition": "Nombre de réponses de ce contact",

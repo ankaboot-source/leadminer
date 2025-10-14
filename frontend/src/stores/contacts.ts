@@ -50,7 +50,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Clears the sync interval.
    */
   function clearSyncInterval() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
+    if (syncIntervalId) {
+      clearInterval(syncIntervalId);
+      syncIntervalId = null;
+    }
   }
 
   /**
@@ -60,7 +63,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_table', { user_id: $user.value?.id });
+      .rpc('get_contacts_table', { user_id: $user.value?.sub });
 
     if (error) throw error;
     return data as Contact[];
@@ -87,7 +90,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { userid: $user.value?.id });
+      .rpc('refine_persons', { userid: $user.value?.sub });
     if (error) throw error;
   }
 
@@ -118,7 +121,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
     );
   }
 
-  function removeOldContacts(emails: string[]) {
+  function removeOldContacts(emails?: string[]) {
+    if (!emails) {
+      contactsCacheMap.clear();
+      contactsList.value = [];
+      return;
+    }
     emails.forEach((email) => {
       contactsCacheMap.delete(email);
     });
@@ -151,7 +159,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
             }, 0);
         },
       );
-
     startSyncInterval();
     realtimeChannel.subscribe();
   }
@@ -167,6 +174,27 @@ export const useContactsStore = defineStore('contacts-store', () => {
       await $supabase.removeChannel(realtimeChannel);
     }
     if (syncIntervalId) clearSyncInterval();
+  }
+
+  /**
+   * Check if there is data in persons.
+   */
+  async function hasPersons(): Promise<boolean> {
+    if (!$user.value?.sub) return false;
+
+    console.log('Checking if user has persons...');
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from('persons')
+      .select('*', { count: 'exact' })
+      .eq('user_id', $user.value.sub)
+      .limit(1);
+
+    if (error) throw error;
+
+    console.log(`User has persons: ${(data?.length ?? 0) > 0}`);
+    return (data?.length ?? 0) > 0;
   }
 
   /**
@@ -195,5 +223,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,
+    hasPersons,
   };
 });

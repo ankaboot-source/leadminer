@@ -1,8 +1,14 @@
+import { Token } from 'simple-oauth2';
+import util from 'util';
 import ENV from '../config';
-import { OAuthMiningSourceProvider } from '../db/interfaces/MiningSources';
+import {
+  OAuthMiningSourceCredentials,
+  OAuthMiningSourceProvider
+} from '../db/interfaces/MiningSources';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
+import logger from '../utils/logger';
 
 const providerScopes = {
   google: {
@@ -58,7 +64,7 @@ export function getTokenConfig(provider: OAuthMiningSourceProvider) {
   } = {
     redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/${provider}/callback`,
     scope: providerScopes[provider].scopes,
-    prompt: 'select_account'
+    prompt: 'consent select_account'
   };
 
   if (provider === 'google') {
@@ -148,4 +154,30 @@ export function validateFileContactsData(
       }
     });
   });
+}
+export async function refreshAccessToken(
+  OAuthCredentials: OAuthMiningSourceCredentials
+): Promise<Token> {
+  try {
+    const authClient = getAuthClient(OAuthCredentials.provider);
+
+    const token = {
+      access_token: OAuthCredentials.accessToken,
+      refresh_token: OAuthCredentials.refreshToken,
+      expires_at: OAuthCredentials.expiresAt
+    };
+
+    const tokenInstance = authClient.createToken(token);
+
+    const refreshed = await tokenInstance.refresh();
+    const refreshedToken = refreshed.token;
+
+    return refreshedToken;
+  } catch (error) {
+    logger.error(
+      'Failed to refresh access token',
+      util.inspect(error, { depth: null, colors: true })
+    );
+    throw error;
+  }
 }
