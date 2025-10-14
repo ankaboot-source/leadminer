@@ -460,9 +460,9 @@
         >
           <div
             :style="getTemperatureStyle(data.temperature)"
-            class="w-10 rounded-lg text-xs font-bold p-2"
+            class="w-11 rounded-lg text-xs font-bold p-2"
           >
-            <span class="flex items-center justify-center">
+            <span class="flex items-center justify-center w-full h-full">
               {{ data.temperature }}°
             </span>
           </div>
