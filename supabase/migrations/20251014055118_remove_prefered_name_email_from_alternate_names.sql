@@ -1,6 +1,3 @@
-DROP FUNCTION private.get_distinct_or_exclude_from_array;
-DROP FUNCTION private.refine_persons;
-
 -- ============================================================
 -- FUNCTION: private.get_distinct_or_exclude_from_array
 -- ============================================================
