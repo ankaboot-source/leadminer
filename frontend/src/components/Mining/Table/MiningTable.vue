@@ -457,7 +457,7 @@
         <div
           v-if="data.temperature"
           :style="getTemperatureStyle(data.temperature)"
-          class="w-11 rounded-lg text-xs font-bold p-2 text-center mx-auto"
+          class="w-11 p-2 rounded-lg text-xs font-bold text-center mx-auto"
         >
           {{ data.temperature }}°
         </div>
