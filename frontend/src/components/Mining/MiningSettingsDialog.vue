@@ -10,8 +10,16 @@
     pt:footer:class="p-4"
     :header="t('fine_tune_mining')"
   >
-    <div class="flex flex-row flex-wrap items-center gap-2 pb-4">
-      <ExtractSignatureSettings />
+    <!-- Toggle -->
+    <div class="flex flex-row items-center gap-2 pb-4">
+      <ToggleSwitch
+        v-model="$leadminerStore.extractSignatures"
+        input-id="extractSignatures"
+      />
+      <label for="extractSignatures" class="cursor-pointer flex-1">
+        {{ t('extract_signatures_option') }}
+        <span class="">{{ t('extract_signatures_sub') }}</span>
+      </label>
     </div>
 
     <div class="flex items-center gap-2">
@@ -45,7 +53,6 @@
 
 <script setup lang="ts">
 import TreeCard from '@/components/cards/TreeCard.vue';
-import ExtractSignatureSettings from './ExtractSignatureSettings.vue';
 
 const { t } = useI18n({
   useScope: 'local',

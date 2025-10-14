@@ -21,6 +21,7 @@ const schema = z.object({
   FETCHING_BATCH_SIZE_TO_SEND: number(),
   FETCHING_CHUNK_SIZE_PER_CONNECTION: number(),
   FETCHING_MAX_CONNECTIONS_PER_FOLDER: number(),
+  FETCHING_MAX_BODY_TEXT_PLAIN_SIZE: number(),
 
   /* OAUTH */
   GOOGLE_CLIENT_ID: z.string().min(1),
