@@ -459,7 +459,7 @@
           class="flex items-center justify-center gap-3"
         >
           <div
-            :style="getHeatColorStyle(data.temperature)"
+            :style="getTemperatureStyle(data.temperature)"
             class="w-9 h-9 rounded-lg text-xs font-bold p-2"
           >
             <span class="flex items-center justify-center w-full h-full">
@@ -1233,8 +1233,8 @@ onUnmounted(() => {
   scrollHeightObserver.value?.disconnect();
 });
 
-function getHeatColorStyle(temp: number | null) {
-  if (temp === null) return;
+function getTemperatureStyle(temp: number | null) {
+  if (temp === null) return null;
 
   const normalized = Math.min(Math.max(temp / 100, 0), 1);
 
