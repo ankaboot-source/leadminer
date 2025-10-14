@@ -265,7 +265,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           boxes: folders,
           miningSource,
-          extractSignatures: extractEmailSignatures
+          extractSignatures: extractEmailSignatures,
         },
       },
     );
