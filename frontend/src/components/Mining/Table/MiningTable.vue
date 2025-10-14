@@ -456,16 +456,10 @@
       <template #body="{ data }">
         <div
           v-if="data.temperature"
-          class="flex items-center justify-center gap-3"
+          :style="getTemperatureStyle(data.temperature)"
+          class="w-11 rounded-lg text-xs font-bold p-2 text-center mx-auto"
         >
-          <div
-            :style="getTemperatureStyle(data.temperature)"
-            class="w-11 rounded-lg text-xs font-bold p-2"
-          >
-            <span class="flex items-center justify-center w-full h-full">
-              {{ data.temperature }}°
-            </span>
-          </div>
+          {{ data.temperature }}°
         </div>
       </template>
     </Column>
