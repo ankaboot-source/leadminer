@@ -24,7 +24,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(false);
-  const filterBodySize = ref<number>(defaultBodySize);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
@@ -74,7 +73,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     excludedBoxes.value = new Set();
     selectedFile.value = null;
     extractSignatures.value = false;
-    filterBodySize.value = defaultBodySize;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -134,7 +132,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       boxes.value = [];
       selectedBoxes.value = [];
       extractSignatures.value = false;
-      filterBodySize.value = defaultBodySize;
       console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
@@ -269,10 +266,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           boxes: folders,
           miningSource,
           extractSignatures: extractEmailSignatures,
-          filterBodySize:
-            filterBodySize.value >= maxBodySize
-              ? undefined
-              : filterBodySize.value,
         },
       },
     );
@@ -417,7 +410,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes,
     excludedBoxes,
     extractSignatures,
-    filterBodySize,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,
