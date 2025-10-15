@@ -8,7 +8,6 @@ import ENV from '../../config';
 import SupabaseTasks from '../../db/supabase/tasks';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import logger from '../../utils/logger';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 
 interface TaskProcessProgress {
@@ -94,7 +93,7 @@ export default class TasksManagerFile {
     private readonly tasksResolver: SupabaseTasks,
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
-    private readonly emailFetcherFactory: EmailFetcherFactory,
+    private readonly emailFetcherFactory: unknown,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
     private readonly idGenerator: () => Promise<string>
   ) {

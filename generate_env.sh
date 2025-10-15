@@ -1,43 +1,48 @@
 #!/bin/bash
-
+#
 # generate_env.sh
 #
-# This script generates service-specific .env files from a master environment file.
-# It distributes variables to frontend and backend .env files based on variable name patterns.
+# This script initializes environment files for all services by
+# copying each `.env.dev` to `.env` in the specified directories.
 #
-# Usage: ./generate_env.sh <path_to_master_env_file>
+# Usage: ./generate_env.sh
 #
-# Example: ./generate_env.sh ./env_file
+# Example:
+#   ./generate_env.sh
 #
-# The script will create or overwrite .env files in the ./frontend and ./backend directories.
+# It will automatically navigate through all defined service folders
+# (e.g., frontend, backend, micro-services/email-fetching) and
+# replicate their .env.dev into .env.
+#
 
+# Exit immediately if a command exits with a non-zero status
+set -e
 
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <path_to_master_env_file>"
-    exit 1
-fi
+# Define the list of service directories
+SERVICES=(
+  "./frontend"
+  "./backend"
+  "./micro-services/emails-fetcher"
+  "./supabase/functions"
+)
 
-INPUT_FILE="$1"
-FRONTEND_ENV="./frontend/.env"
-BACKEND_ENV="./backend/.env"
+echo "Generating .env files for all services..."
 
-# Function to write a section to a file
-write_section() {
-    local section=$1
-    local output_file=$2
-    sed -n "/$section/,/# ===/p" "$INPUT_FILE" | sed '/# ===/d' >> "$output_file"
-}
+# Loop through each service directory
+for SERVICE_PATH in "${SERVICES[@]}"; do
+  ENV_DEV_PATH="$SERVICE_PATH/.env.dev"
+  ENV_PATH="$SERVICE_PATH/.env"
 
-# Clear existing .env files
-> "$FRONTEND_ENV"
-> "$BACKEND_ENV"
+  echo "- Processing: $SERVICE_PATH"
 
-# Write common variables to both files
-write_section "# ==============| Common |============= #" "$FRONTEND_ENV"
-write_section "# ==============| Common |============= #" "$BACKEND_ENV"
-# Write frontend variables
-write_section "# ==============| Frontend |============= #" "$FRONTEND_ENV"
-# Write backend variables
-write_section "# ==============| Backend |============= #" "$BACKEND_ENV"
+  # Check if .env.dev exists
+  if [ -f "$ENV_DEV_PATH" ]; then
+    cp "$ENV_DEV_PATH" "$ENV_PATH"
+    echo "- Copied $ENV_DEV_PATH → $ENV_PATH"
+  else
+    echo "- Skipped: $ENV_DEV_PATH not found."
+  fi
+done
 
-cat frontend/.env backend/.env > .env
+echo ""
+echo "🎉 Environment setup complete! All .env files are now ready."
