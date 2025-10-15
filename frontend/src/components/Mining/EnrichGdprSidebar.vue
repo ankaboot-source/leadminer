@@ -49,7 +49,7 @@
       <component :is="PrivacyPolicyButton" />
       <Button
         class="border-solid border-2 border-black"
-        :label="t('enrichButton')"
+        :label="t(`${$screenStore.size.sm ? '' : 'mobile.'}enrichButton`)"
         severity="contrast"
         @click="confirm"
       />
@@ -106,7 +106,7 @@ defineExpose({ openModal });
 <i18n lang="json">
 {
   "en": {
-    "acknowledge": "By clicking \"Enrich My Contacts\", you acknowledge and agree to the following:",
+    "acknowledge": "By clicking \"Enrich My Contacts\", you agree that:",
     "purposeOfEnrichment": "This service is intended to enrich information about your existing contacts.",
     "thirdPartyTools": "The enrichment process uses TheDig, EnrichLayer, and VoilaNorbert. Results are cached securely for 90 days to improve efficiency and ensure data integrity.",
     "yourResponsibilities": {
@@ -115,11 +115,13 @@ defineExpose({ openModal });
       "content_2": "You must inform your contacts about the use of this service and any data you enrich on their behalf.",
       "content_3": "Your contacts hold their full rights including the rights to access and delete any information about them."
     },
-    "privacyPolicyButton": "Read the data privacy policy",
-    "enrichButton": "Enrich My Contacts"
+    "enrichButton": "Enrich My Contacts",
+    "mobile": {
+      "enrichButton": "Enrich"
+    }
   },
   "fr": {
-    "acknowledge": "En cliquant sur \"Enrichir mes contacts\", vous reconnaissez et acceptez les éléments suivants :",
+    "acknowledge": "En cliquant sur \"Enrichir mes contacts\", vous acceptez que :",
     "purposeOfEnrichment": "Ce service est destiné à enrichir les informations sur vos contacts existants.",
     "thirdPartyTools": "Le processus d'enrichissement utilise TheDig, EnrichLayer et VoilaNorbert. Les résultats sont mis en cache en toute sécurité pendant 90 jours pour améliorer l'efficacité et garantir l'intégrité des données.",
     "yourResponsibilities": {
@@ -128,8 +130,10 @@ defineExpose({ openModal });
       "content_2": "Vous devez informer vos contacts de l'utilisation de ce service et de toute donnée que vous enrichissez en leur nom.",
       "content_3": "Vos contacts conservent tous leurs droits, y compris les droits d'accès et de suppression de toute information les concernant."
     },
-    "privacyPolicyButton": "Lire la politique de confidentialité des données",
-    "enrichButton": "Enrichir mes contacts"
+    "enrichButton": "Enrichir mes contacts",
+    "mobile": {
+      "enrichButton": "Enrichir"
+    }
   }
 }
 </i18n>
