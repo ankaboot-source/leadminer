@@ -16,7 +16,6 @@ import supabaseClient from './utils/supabase';
 import SupabaseTasks from './db/supabase/tasks';
 import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 import EmailFetcherClient from './services/email-fetching';
-import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -60,7 +59,7 @@ console.log(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
-    new EmailFetcherFactory(),
+    undefined,
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
