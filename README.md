@@ -80,7 +80,6 @@ Run the below commands to generate a pre-configured `.env` file with credentials
 
 ```bash
 npm run dev:generate-env
-cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
 
 <details>
@@ -94,15 +93,15 @@ External services for email verification.
 
 - **[Reacher](https://reacher.email/):** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
-  > **Note:** Refer to [.env.master.prod](./.env.master.prod) and [.env.master.dev](./.env.master.dev) according to your environment
+  > **Note:** Refer to [./backend/.env.dev](./backend/.env.dev)
 
 - **[MailerCheck](https://mailercheck.com):** Sign up, then update `MAILERCHECK_API_KEY` in the `.env` file.
 
-  > Refer to [.env.master.prod](./.env.master.prod) for guidance.
+  > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 - **[Zero bounce](https://www.zerobounce.net/):** Sign up, then update `ZEROBOUNCE_API_KEY` in the `.env` file.
 
-  > Refer to [.env.master.prod](./.env.master.prod) for guidance.
+  > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 </details>
 

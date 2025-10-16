@@ -8,7 +8,7 @@
     "install-deps:backend": "npm i --prefix ./backend",
     "install-deps:frontend": "npm i --prefix ./frontend",
     "dev:all": "./run.sh",
-    "dev:generate-env": "bash ./generate_env.sh .env.master.dev",
+    "dev:generate-env": "bash ./generate_env.sh",
     "dev:supabase": "supabase start",
     "dev:supabase-functions": "supabase functions serve",
     "dev:frontend": "npm run dev --prefix ./frontend",
@@ -16,7 +16,8 @@
     "dev:backend-worker": "npm run dev:worker --prefix ./backend",
     "dev:backend-email-worker": "npm run dev:email-worker --prefix ./backend",
     "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
-    "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend"
+    "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend",
+    "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
