@@ -129,11 +129,14 @@ export class EmailSignatureProcessor {
     body: string,
     messageDate: string
   ): Promise<void> {
-    const signature = this.extractSignature(body);
+    const signature =
+      this.extractSignature(body) ??
+      body.trim().split('\n').slice(-10).join('\n');
 
     if (!signature || !isUsefulSignatureContent(signature)) {
       this.logging.info('No signature found; skipping cache', {
         email,
+        body: signature,
         miningId
       });
       return;

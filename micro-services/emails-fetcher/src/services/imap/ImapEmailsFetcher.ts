@@ -569,7 +569,7 @@ export default class ImapEmailsFetcher {
         continue;
 
       const text = decodeQuotedPrintable(
-        msg.bodyParts?.get(partId)?.toLocaleString() ?? '',
+        msg.bodyParts?.get(partId)?.toString() ?? '',
         'utf-8'
       );
 
