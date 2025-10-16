@@ -28,5 +28,4 @@ export interface ImapEmailsFetcherOptions {
   userId: string;
   boxes: string[];
   fetchEmailBody: boolean;
-  filterBodySize: number | undefined;
 }

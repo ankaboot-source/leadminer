@@ -123,8 +123,7 @@ export default class TasksManager {
     email,
     boxes,
     fetchEmailBody,
-    userId,
-    filterBodySize
+    userId
   }: ImapEmailsFetcherOptions) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
@@ -236,8 +235,7 @@ export default class TasksManager {
           miningId,
           contactStream: messagesStream,
           signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
-          extractSignatures: fetchEmailBody,
-          filterBodySize
+          extractSignatures: fetchEmailBody
         });
       } catch (error) {
         logger.error(`Failed to start fetching task with id: ${miningId}`, {

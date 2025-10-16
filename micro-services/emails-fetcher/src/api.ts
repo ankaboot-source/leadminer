@@ -129,7 +129,6 @@ apiRoutes.post(
       signatureStream,
       extractSignatures,
       email,
-      filterBodySize,
       boxes: folders
     }: FetchPostBody = req.body;
 
@@ -217,7 +216,7 @@ apiRoutes.post(
           batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
           fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
           maxConcurrentConnections: totalApprovedImapConnections,
-          filterBodySize,
+          filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
           imapConnectionProvider
         })
       );
