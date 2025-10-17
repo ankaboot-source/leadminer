@@ -1,59 +1,14 @@
-import { transporter } from "../utils/email.ts";
-import { buildHtmlEmail } from "../utils/buildHtmlEmail.ts";
+const LOGO_URL = Deno.env.get("LOGO_URL");
+const ENRICH_URL = Deno.env.get("ENRICH_URL");
+const SITE_URL = Deno.env.get("SITE_URL");
+const CONTACTS_URL = Deno.env.get("CONTACTS_URL");
 
-export default async function mailMiningSuccess(context: Context) {
-  const { user_id, mining_id } = await context.req.json();
-  let articleId: string | null = null;
-  const supabaseClient = createSupabaseClient(
-    context.req.header("Authorization")
-  );
-
-  try {
-    const { data, error } = await supabaseClient.rpc("get_mining_stats", {
-      user_id,
-      mining_id,
-    });
-    if (error) throw error;
-    const {
-      total_contacts_mined,
-      total_reachable,
-      total_with_phone,
-      total_with_company,
-    } = data;
-
-    const html = buildHtmlEmail(subject, text, redirectUrl);
-
-    await transporter.sendMail({
-      from: `"${triggeredByEmail}" <${Deno.env.get("SMTP_USER")}>`,
-      replyTo: triggeredByEmail,
-      to: toEmail,
-      subject,
-      html,
-    });
-
-    return context.json(
-      {
-        message: "Mailed a mining success.",
-        articleId,
-      },
-      201
-    );
-  } catch (error) {
-    console.error(error);
-    return context.json(
-      {
-        message: "An error occurred while mailing a mining success",
-        error: error instanceof Error ? error.message : String(error),
-      },
-      500
-    );
-  }
-}
-
-export function buildHtmlEmail(
-  subject: string,
-  content: string,
-  redirectUrl?: string
+export default function buildHtmlEmail(
+  total_contacts_mined: number,
+  total_reachable: number,
+  total_with_phone: number,
+  total_with_company: number,
+  mining_id?: string,
 ): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -100,12 +55,12 @@ export function buildHtmlEmail(
 			<tr>
 			  <td align="center" style="padding: 20px 0">
 				<a
-				  href="https://leadminer.com"
+				  href="${SITE_URL}"
 				  target="_blank"
 				  style="display: inline-block; text-decoration: none"
 				>
 				  <img
-					src="./LogoWithIcon.png"
+					src="${LOGO_URL}"
 					alt="Leadminer"
 					title="Leadminer Logo"
 					border="0"
@@ -165,10 +120,10 @@ export function buildHtmlEmail(
 					color: #1f2937;
 				  "
 				>
-				  <li>⛏️ <strong>Total contacts mined:</strong> 1,247</li>
-				  <li>📬 <strong>Total reachable contacts:</strong> 892</li>
-				  <li>📞 <strong>With phone number:</strong> 734</li>
-				  <li>💼 <strong>With company or profession:</strong> 1,103</li>
+				  <li>⛏️ <strong>Total contacts mined:</strong> ${total_contacts_mined}</li>
+				  <li>📬 <strong>Total reachable contacts:</strong> ${total_reachable}</li>
+				  <li>📞 <strong>With phone number:</strong> ${total_with_phone}</li>
+				  <li>💼 <strong>With company or profession:</strong> ${total_with_company}</li>
 				</ul>
 
 				<table
@@ -179,7 +134,7 @@ export function buildHtmlEmail(
 				  <tr>
 					<td align="center" style="padding-right: 10px">
 					  <a
-						href="https://leadminer.com/enrich"
+						href="${ENRICH_URL}"
 						style="
 						  display: inline-block;
 						  background: #ffd23f;
@@ -196,7 +151,7 @@ export function buildHtmlEmail(
 					</td>
 					<td align="center">
 					  <a
-						href="https://leadminer.com/contacts"
+						href="${CONTACTS_URL}"
 						style="
 						  display: inline-block;
 						  background: #2563eb;
@@ -208,7 +163,7 @@ export function buildHtmlEmail(
 						  font-family: 'Lexend Deca', sans-serif;
 						"
 					  >
-						View your 1,247 contacts
+						View your ${total_contacts_mined} contacts
 					  </a>
 					</td>
 				  </tr>
@@ -230,7 +185,7 @@ export function buildHtmlEmail(
 			  >
 				<p style="margin: 0 0 4px">
 				  You received this email as a notification about your recent
-				  activity on <strong>leadminer</strong>.
+				  activity on <strong><a style="color: #6b7280; text-decoration: none" href="${SITE_URL}">leadminer</a></strong>.
 				</p>
 				<p style="margin: 6px 0 0; color: #9ca3af">
 				  Extract, clean, and enrich your contacts — effortlessly.
