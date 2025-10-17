@@ -31,13 +31,13 @@ export function isUsefulSignatureContent(signature: string): boolean {
   const text = signature.trim();
 
   // Reject if text has email reply parts
-  if (/>+\s*\w+/m.test(text)) {
+  if (/^>+\s*\w+/m.test(text)) {
     return false;
   }
 
   const words = text.split(/\s+/);
   const hasURL = /(https?:\/\/|www\.)\S+/i.test(text);
-  const hasDigits = /\d{3,}/.test(text);
+  const hasDigits = /\d{2,}(?:[\s.,:\/-]?\d+)*/.test(text);
   const hasSymbols = /[@+]/.test(text);
 
   const wordsMinMax =
