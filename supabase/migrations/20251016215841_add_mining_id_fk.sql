@@ -4,7 +4,7 @@ ADD COLUMN mining_id text;
 
 -- Update get_contacts_table()
 DROP FUNCTION private.get_contacts_table;
-CREATE  FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id uuid)
+CREATE  FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -86,7 +86,7 @@ END;
 $$;
 
 DROP FUNCTION private.get_contacts_table_by_emails;
-CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id uuid)
+CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -170,7 +170,7 @@ END;
 $$;
 
 -- Create get_mining_stats()
-CREATE OR REPLACE FUNCTION get_mining_stats(user_id UUID, mining_id UUID)
+CREATE OR REPLACE FUNCTION get_mining_stats(user_id UUID, mining_id text)
 RETURNS TABLE(
   total_contacts_mined BIGINT,
   total_reachable BIGINT, 
@@ -185,3 +185,40 @@ RETURNS TABLE(
   FROM private.get_contacts_table($1)
   WHERE mining_id = $2;
 $$ LANGUAGE sql;
+
+
+
+-- fix get_distinct_or_exclude_from_array():
+-- "code": "42804",
+-- "details": "text[] versus anyarray",
+-- "message": "arguments declared "anyarray" are not all alike"
+
+CREATE OR REPLACE FUNCTION private.get_distinct_or_exclude_from_array(
+    input_array text[],
+    exclude_array text[] DEFAULT NULL
+)
+RETURNS text[]
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN (
+        SELECT array_agg(original_value ORDER BY ord)
+        FROM (
+            SELECT
+                unnested AS original_value,
+                lower(trim(unnested)) AS normalized_value,
+                MIN(array_position(input_array, unnested)) AS ord
+            FROM unnest(input_array) unnested
+            WHERE unnested IS NOT NULL
+            GROUP BY normalized_value, original_value
+        ) dedup
+        WHERE exclude_array IS NULL
+           OR NOT EXISTS (
+                SELECT 1
+                FROM unnest(exclude_array) e
+                WHERE e IS NOT NULL
+                  AND (lower(trim(e)) = normalized_value OR normalized_value LIKE '%' || lower(trim(e)) || '%')
+            )
+    );
+END;
+$$;
