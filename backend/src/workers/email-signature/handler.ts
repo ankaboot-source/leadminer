@@ -131,7 +131,7 @@ export class EmailSignatureProcessor {
   ): Promise<void> {
     const signature =
       this.extractSignature(body) ??
-      body.trim().split('\n').slice(-10).join('\n');
+      body.trim().split('\n').filter(l => l.trim()).slice(-4).join('\n');
 
     if (!signature || !isUsefulSignatureContent(signature)) {
       this.logging.info('No signature found; skipping cache', {
