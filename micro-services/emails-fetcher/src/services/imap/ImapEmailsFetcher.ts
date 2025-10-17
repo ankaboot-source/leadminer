@@ -2,6 +2,8 @@ import { parseHeader } from 'imap';
 import { ImapFlow as Connection, MessageStructureObject } from 'imapflow';
 import PQueue from 'p-queue';
 import { decodeQuotedPrintable } from 'lettercoder';
+import iconv from 'iconv-lite';
+import Encoding from 'encoding-japanese';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
@@ -44,6 +46,48 @@ function findPlainTextNode(
   }
 
   return null;
+}
+
+function decodeTextPart(
+  buffer: Buffer<ArrayBufferLike>,
+  charset = 'utf-8',
+  transferEncoding = '7bit'
+): string {
+  const encoding = transferEncoding?.toLowerCase() ?? '7bit';
+  const charsetNorm = (charset || 'ascii').toString().trim().toLowerCase();
+
+  let bytes = buffer;
+  switch (encoding) {
+    case 'base64':
+      bytes = Buffer.from(
+        buffer.toString('ascii').trim().replace(/\s+/g, ''),
+        'base64'
+      );
+      break;
+
+    case 'quoted-printable':
+      bytes = Buffer.from(decodeQuotedPrintable(buffer.toString('latin1')));
+      break;
+
+    default:
+      break;
+  }
+
+  let text: string;
+  try {
+    if (/^jis|^iso-?2022-?jp|^eucjp/i.test(charsetNorm)) {
+      text = Encoding.convert(bytes, {
+        from: charsetNorm.toUpperCase() as Encoding.Encoding,
+        to: 'UNICODE',
+        type: 'string'
+      });
+    } else {
+      text = iconv.decode(bytes, charsetNorm);
+    }
+  } catch {
+    text = bytes.toString('utf-8');
+  }
+  return text;
 }
 
 /**
@@ -496,6 +540,7 @@ export default class ImapEmailsFetcher {
         source: false,
         envelope: true,
         headers: true,
+        bodyStructure: true,
         bodyParts: partId ? [partId] : undefined
       },
       {
@@ -568,10 +613,27 @@ export default class ImapEmailsFetcher {
       if (!this.fetchEmailBody || !partId || from?.address === this.userEmail)
         continue;
 
-      const text = decodeQuotedPrintable(
-        msg.bodyParts?.get(partId)?.toString() ?? '',
-        'utf-8'
+      const textBuffer = msg.bodyParts?.get(partId);
+      const partInfo = findPlainTextNode(msg.bodyStructure);
+
+      if (!textBuffer || !partInfo?.encoding || !partInfo.parameters?.charset) {
+        logger.warn(
+          `[${this.miningId}:${folderPath}:${msg.uid}:${connection?.id}] Skipping text/plain part: no charset or transfer encoding info available.`
+        );
+        continue;
+      }
+
+      const { encoding, parameters } = partInfo;
+      const text = decodeTextPart(
+        textBuffer,
+        parameters?.charset as BufferEncoding,
+        encoding
       );
+
+      // decodeQuotedPrintable(
+      //   msg.bodyParts?.get(partId)?.toString() ?? '',
+      //   'utf-8'
+      // );
 
       // if (headers && text?.length) {
       //   try {
