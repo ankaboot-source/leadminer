@@ -130,13 +130,7 @@ export class EmailSignatureProcessor {
     messageDate: string
   ): Promise<void> {
     const signature =
-      this.extractSignature(body) ??
-      body
-        .trim()
-        .split('\n')
-        .filter((l) => l.trim())
-        .slice(-4)
-        .join('\n');
+      this.extractSignature(body);
 
     if (!signature || !isUsefulSignatureContent(signature)) {
       this.logging.info('No signature found; skipping cache', {
@@ -217,7 +211,12 @@ export class EmailSignatureProcessor {
       const originalMessage = CleanQuotedForwardedReplies(text);
       const parsed = new EmailReplyParser().read(originalMessage);
       const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
-      return sigFrag?.getContent() ?? null;
+      return sigFrag?.getContent() ?? originalMessage.trim()
+        .split('\n')
+        .filter((l) => l.trim())
+        .slice(-4)
+        .join('\n');
+        
     } catch (err) {
       this.logging.error('Failed to parse email body for signature', err);
       return null;
