@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "hono": "npm:hono@4.7.4",
+    "nodemailer": "npm:nodemailer@^7.0.5",
+    "zod": "npm:zod@3.24.2",
+    "supabase": "https://esm.sh/@supabase/supabase-js@2"
+  }
+}
