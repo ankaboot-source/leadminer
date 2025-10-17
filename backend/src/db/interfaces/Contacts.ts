@@ -4,7 +4,8 @@ import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
 export interface Contacts {
   create(
     contact: ExtractionResult,
-    userId: string
+    userId: string,
+    miningId: string
   ): Promise<{ email: string; tags: Tag[] }[]>;
   refine(userId: string): Promise<boolean>;
   SelectRecentEmailStatus(email: string): Promise<EmailStatus | null>;

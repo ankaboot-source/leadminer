@@ -5,6 +5,7 @@ import { RedisCommand, StreamInfo, TaskClean, TaskExtract } from './types';
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import ENV from '../../config';
+import { mailMiningComplete } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import logger from '../../utils/logger';
@@ -474,7 +475,7 @@ export default class TasksManagerFile {
       task.progress.totalImported
     );
 
-    await this.handleCleaningFinished(miningId, progress, extract, clean);
+    await this.handleCleaningFinished(miningId, progress, extract, clean, task.userId);
 
     const status = await this.getCompletionStatus(miningId, extract, clean);
     return status;
@@ -496,7 +497,8 @@ export default class TasksManagerFile {
     miningId: string,
     progress: TaskProcessProgress,
     extract: TaskExtract,
-    clean: TaskClean
+    clean: TaskClean,
+    userId: string
   ) {
     if (
       !clean.stoppedAt &&
@@ -505,6 +507,7 @@ export default class TasksManagerFile {
     ) {
       await this.stopTask([clean]);
       this.notifyChanges(miningId, 'verifiedContacts', 'cleaning-finished');
+      mailMiningComplete(miningId, userId);
     }
   }
 

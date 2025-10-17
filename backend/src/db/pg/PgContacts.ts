@@ -83,8 +83,8 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13)
+    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13, $14)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
     RETURNING persons.email;`;
 
@@ -209,16 +209,17 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create(result: ExtractionResult, userId: string) {
+  async create(result: ExtractionResult, userId: string, miningId: string) {
     const results = await (result.type === 'email'
-      ? this.createContactsFromEmail(result, userId)
-      : this.createContactsFromFile(result, userId));
+      ? this.createContactsFromEmail(result, userId, miningId)
+      : this.createContactsFromFile(result, userId, miningId));
     return results;
   }
 
   private async createContactsFromFile(
     result: FileExtractionResult,
-    userId: string
+    userId: string,
+    miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
     const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
@@ -253,7 +254,8 @@ export default class PgContacts implements Contacts {
         person.identifiers,
         userId,
         person.source,
-        organizationsDB.get(person.worksFor ?? '')
+        organizationsDB.get(person.worksFor ?? ''),
+        miningId
       ]);
 
       if (tags.length) {
@@ -290,7 +292,8 @@ export default class PgContacts implements Contacts {
 
   private async createContactsFromEmail(
     { message, persons }: EmailExtractionResult,
-    userId: string
+    userId: string,
+    miningId: string
   ) {
     try {
       const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
@@ -329,7 +332,8 @@ export default class PgContacts implements Contacts {
           person.identifiers,
           userId,
           person.source,
-          person.worksFor
+          person.worksFor,
+          miningId
         ]);
 
         const tagValues = tags.map((tag) => [

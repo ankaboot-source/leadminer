@@ -801,6 +801,24 @@
         />
       </template>
     </Column>
+
+    <!-- Mining ID	 -->
+    <Column
+      v-if="visibleColumns.includes('mining_id')"
+      field="mining_id"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="$t('mining_id_definition')">
+          {{ $t('mining_id') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -1110,6 +1128,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
+  { label: $t('mining_id'), value: 'mining_id' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
