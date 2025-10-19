@@ -522,7 +522,7 @@ export default class TasksManager {
         'verifiedContacts',
         'cleaning-finished'
       );
-      mailMiningComplete(miningId, task.userId);
+      mailMiningComplete(miningId);
     }
 
     const status =

@@ -3,22 +3,25 @@ import { sendEmail } from "../utils/email.ts";
 import buildHtmlEmail from "./template.ts";
 
 export default async function mailMiningComplete(
-  userId: string,
   miningId: string,
 ) {
-  const to = await getUserEmail(userId);
   const {
+    user_id,
+    source,
     total_contacts_mined,
     total_reachable,
     total_with_phone,
     total_with_company,
-  } = await getMiningStats(userId, miningId);
+  } = await getMiningStats(miningId);
+
+  const to = await getUserEmail(user_id);
 
   const html = buildHtmlEmail(
     total_contacts_mined,
     total_reachable,
     total_with_phone,
     total_with_company,
+    source,
     miningId,
   );
 

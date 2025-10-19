@@ -5,13 +5,13 @@ const functionName = "mail";
 const app = new Hono().basePath(`/${functionName}`);
 
 app.post("/mining-complete", async (c: Context) => {
-  const { userId, miningId } = await c.req.json();
-  if (!userId || !miningId) {
-    return c.json({ error: "Missing userId or miningId" }, 400);
+  const { miningId } = await c.req.json();
+  if (!miningId) {
+    return c.json({ error: "Missing miningId" }, 400);
   }
 
   try {
-    await mailMiningComplete(userId, miningId);
+    await mailMiningComplete(miningId);
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
     console.error("Error in mining-complete:", error);

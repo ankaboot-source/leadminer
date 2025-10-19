@@ -170,21 +170,26 @@ END;
 $$;
 
 -- Create get_mining_stats()
-CREATE OR REPLACE FUNCTION get_mining_stats(user_id UUID, mining_id text)
+CREATE OR REPLACE FUNCTION get_mining_stats(mining_id text)
 RETURNS TABLE(
+  user_id text,
+  source text,
   total_contacts_mined BIGINT,
   total_reachable BIGINT, 
   total_with_phone BIGINT,
   total_with_company BIGINT
 ) AS $$
   SELECT 
-    COUNT(*) as total_contacts_mined,
-    COUNT(*) FILTER (WHERE status = 'VALID') as total_reachable,
-    COUNT(telephone) as total_with_phone,
-    COUNT(*) FILTER (WHERE job_title IS NOT NULL OR works_for IS NOT NULL) as total_with_company
-  FROM private.get_contacts_table($1)
-  WHERE mining_id = $2;
+    (SELECT p.user_id FROM persons p WHERE p.mining_id = $1 LIMIT 1) AS user_id,
+    (SELECT p.source FROM persons p WHERE p.mining_id = $1 LIMIT 1) AS source,
+    COUNT(*) AS total_contacts_mined,
+    COUNT(*) FILTER (WHERE status = 'VALID') AS total_reachable,
+    COUNT(telephone) AS total_with_phone,
+    COUNT(*) FILTER (WHERE job_title IS NOT NULL OR works_for IS NOT NULL) AS total_with_company
+  FROM private.get_contacts_table(user_id) AS contacts
+  WHERE contacts.mining_id = $1;
 $$ LANGUAGE sql;
+
 
 
 
