@@ -8,6 +8,7 @@ export default function buildHtmlEmail(
   total_reachable: number,
   total_with_phone: number,
   total_with_company: number,
+  source: string,
   mining_id?: string,
 ): string {
   return `<!DOCTYPE html>
@@ -74,8 +75,6 @@ export default function buildHtmlEmail(
 			<tr>
 			  <td
 				style="
-				  background: #ffd23f;
-				  padding: 32px 24px;
 				  text-align: center;
 				"
 			  >
@@ -98,7 +97,7 @@ export default function buildHtmlEmail(
 					color: #374151;
 				  "
 				>
-				  Your mining session has successfully finished.
+				  You successfuly mined ${total_contacts_mined} emails from ${source}
 				</p>
 			  </td>
 			</tr>
