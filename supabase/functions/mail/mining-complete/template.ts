@@ -2,14 +2,13 @@ const LOGO_URL = Deno.env.get("LOGO_URL");
 const ENRICH_URL = Deno.env.get("ENRICH_URL");
 const SITE_URL = Deno.env.get("SITE_URL");
 const CONTACTS_URL = Deno.env.get("CONTACTS_URL");
-
 export default function buildHtmlEmail(
   total_contacts_mined: number,
   total_reachable: number,
   total_with_phone: number,
   total_with_company: number,
   source: string,
-  mining_id?: string,
+  mining_id: string,
 ): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -167,6 +166,9 @@ export default function buildHtmlEmail(
 					</td>
 				  </tr>
 				</table>
+				<div style="font-size: 13px; margin: 30px 0 0; color: #9ca3af">
+					<span>Mining session:</span> UBeonS6zsD
+				</div>
 			  </td>
 			</tr>
 
