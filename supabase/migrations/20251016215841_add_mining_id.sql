@@ -170,7 +170,7 @@ END;
 $$;
 
 -- Create get_mining_stats()
-CREATE OR REPLACE FUNCTION get_mining_stats(mining_id text)
+CREATE OR REPLACE FUNCTION private.get_mining_stats(mining_id text)
 RETURNS TABLE(
   user_id UUID,
   source text,
