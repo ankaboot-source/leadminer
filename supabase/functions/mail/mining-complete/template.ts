@@ -1,5 +1,4 @@
 const LOGO_URL = Deno.env.get("LOGO_URL");
-const ENRICH_URL = Deno.env.get("ENRICH_URL");
 const SITE_URL = Deno.env.get("SITE_URL");
 const CONTACTS_URL = Deno.env.get("CONTACTS_URL");
 export default function buildHtmlEmail(
@@ -132,7 +131,7 @@ export default function buildHtmlEmail(
 				  <tr>
 					<td align="center" style="padding-right: 10px">
 					  <a
-						href="${ENRICH_URL}"
+						href="${CONTACTS_URL}?enrich"
 						style="
 						  display: inline-block;
 						  background: #ffd23f;
