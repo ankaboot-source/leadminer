@@ -902,6 +902,17 @@ const filtersStore = useFiltersStore();
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
+function getEnrichedFieldsCount(contact: Contact): number {
+  return (
+    Number(!!contact.same_as?.length) +
+    Number(!!contact.location?.length) +
+    Number(!!contact.job_title) +
+    Number(!!contact.works_for?.length) +
+    Number(!!contact.image) +
+    Number(!!contact.telephone?.length)
+  );
+}
+
 const enrichedContacts = computed(
   () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
 );
@@ -916,16 +927,6 @@ const enrichedFields = [
   'telephone',
 ];
 const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
-function getEnrichedFieldsCount(contact: Contact): number {
-  return (
-    Number(!!contact.same_as?.length) +
-    Number(!!contact.location?.length) +
-    Number(!!contact.job_title) +
-    Number(!!contact.works_for?.length) +
-    Number(!!contact.image) +
-    Number(!!contact.telephone?.length)
-  );
-}
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -1206,7 +1207,9 @@ const stopShowTableFirstTimeWatcher = watch(
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
 
-onBeforeMount(() => (isLoading.value = true));
+onBeforeMount(() => {
+  isLoading.value = true;
+});
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
