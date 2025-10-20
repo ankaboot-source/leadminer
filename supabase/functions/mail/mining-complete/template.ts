@@ -149,7 +149,7 @@ export default function buildHtmlEmail(
 					</td>
 					<td align="center">
 					  <a
-						href="${CONTACTS_URL}"
+						href="${CONTACTS_URL}?mining_id=${mining_id}"
 						style="
 						  display: inline-block;
 						  background: #2563eb;
@@ -166,9 +166,6 @@ export default function buildHtmlEmail(
 					</td>
 				  </tr>
 				</table>
-				<div style="font-size: 13px; margin: 30px 0 0; color: #9ca3af">
-					Mining session: ${mining_id}
-				</div>
 			  </td>
 			</tr>
 
