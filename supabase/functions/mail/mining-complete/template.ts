@@ -167,7 +167,7 @@ export default function buildHtmlEmail(
 				  </tr>
 				</table>
 				<div style="font-size: 13px; margin: 30px 0 0; color: #9ca3af">
-					<span>Mining session:</span> UBeonS6zsD
+					Mining session: ${mining_id}
 				</div>
 			  </td>
 			</tr>
