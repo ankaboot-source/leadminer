@@ -15,7 +15,7 @@ export default async function mailMiningComplete(
   } = await getMiningStats(miningId);
 
   const to = await getUserEmail(user_id);
-
+  const subject = "Mining Compelete";
   const html = buildHtmlEmail(
     total_contacts_mined,
     total_reachable,
@@ -24,8 +24,6 @@ export default async function mailMiningComplete(
     source,
     miningId,
   );
-
-  const subject = "Mining Compelete";
 
   await sendEmail(
     to,

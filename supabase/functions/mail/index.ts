@@ -6,6 +6,7 @@ const app = new Hono().basePath(`/${functionName}`);
 
 app.post("/mining-complete", async (c: Context) => {
   const { miningId } = await c.req.json();
+
   if (!miningId) {
     return c.json({ error: "Missing miningId" }, 400);
   }
