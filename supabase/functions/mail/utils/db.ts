@@ -12,22 +12,24 @@ type MiningStats = {
 export async function getMiningStats(miningId: string): Promise<MiningStats> {
   const { data, error } = await supabase
     .schema("private")
-    .rpc("get_mining_stats", { mining_id: miningId });
+    .rpc("get_mining_stats", { mining_id: miningId })
+    .maybeSingle();
 
   if (error) throw error;
   return data;
 }
 
 export async function getUserEmail(userId: string): Promise<string> {
-  const { data: { user }, error } = await supabase.from("profiles")
+  const { data, error } = await supabase.schema("private")
+    .from("profiles")
     .select("email")
-    .eq("id", userId)
+    .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !user.email) {
+  if (error || !data.email) {
     console.error("Error getting user email:", error.message);
     throw error;
   }
 
-  return user.email;
+  return data.email;
 }
