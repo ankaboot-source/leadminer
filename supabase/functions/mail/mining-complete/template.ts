@@ -1,6 +1,6 @@
 const LOGO_URL = Deno.env.get("LOGO_URL");
-const SITE_URL = Deno.env.get("SITE_URL");
-const CONTACTS_URL = Deno.env.get("CONTACTS_URL");
+const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST");
+
 export default function buildHtmlEmail(
   total_contacts_mined: number,
   total_reachable: number,
@@ -54,7 +54,7 @@ export default function buildHtmlEmail(
 			<tr>
 			  <td align="center" style="padding: 20px 0">
 				<a
-				  href="${SITE_URL}"
+				  href="${FRONTEND_HOST}"
 				  target="_blank"
 				  style="display: inline-block; text-decoration: none"
 				>
@@ -131,7 +131,7 @@ export default function buildHtmlEmail(
 				  <tr>
 					<td align="center" style="padding-right: 10px">
 					  <a
-						href="${CONTACTS_URL}?enrich"
+						href="${FRONTEND_HOST}/contacts?enrich"
 						style="
 						  display: inline-block;
 						  background: #ffd23f;
@@ -148,7 +148,7 @@ export default function buildHtmlEmail(
 					</td>
 					<td align="center">
 					  <a
-						href="${CONTACTS_URL}?mining_id=${mining_id}"
+						href="${FRONTEND_HOST}/contacts?mining_id=${mining_id}"
 						style="
 						  display: inline-block;
 						  background: #2563eb;
@@ -182,7 +182,7 @@ export default function buildHtmlEmail(
 			  >
 				<p style="margin: 0 0 4px">
 				  You received this email as a notification about your recent
-				  activity on <strong><a style="color: #6b7280; text-decoration: none" href="${SITE_URL}">leadminer</a></strong>.
+				  activity on <strong><a style="color: #6b7280; text-decoration: none" href="${FRONTEND_HOST}">leadminer</a></strong>.
 				</p>
 				<p style="margin: 6px 0 0; color: #9ca3af">
 				  Extract, clean, and enrich your contacts — effortlessly.
