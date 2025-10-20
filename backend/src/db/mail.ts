@@ -15,3 +15,13 @@ export async function mailMiningComplete(miningId: string) {
 		throw error;
 	}
 }
+
+/**
+ * Refines contacts in database.
+ */
+export async function refineContacts(userId: string) {
+	const { error } = await supabaseClient
+		.schema("private")
+		.rpc("refine_persons", { userid: userId });
+	if (error) throw error;
+}
