@@ -23,5 +23,6 @@ export async function sendEmail(to: string, subject: string, html: string) {
     html,
   });
 
-  console.log("Email sent:", info.envolope);
+  console.log("Email sent:", { to, messageId: info.messageId });
+  // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info)); // For local testing only
 }
