@@ -477,7 +477,7 @@ export default class TasksManagerFile {
 
     await this.handleCleaningFinished(miningId, progress, extract, clean);
 
-    const status = await this.getCompletionStatus(extract, clean);
+    const status = await TasksManagerFile.getCompletionStatus(extract, clean);
 
     if (status) {
       try {
@@ -520,7 +520,7 @@ export default class TasksManagerFile {
     }
   }
 
-  private async getCompletionStatus(
+  private static async getCompletionStatus(
     extract: TaskExtract,
     clean: TaskClean
   ) {
