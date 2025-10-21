@@ -38,16 +38,13 @@ export const SignaturePrompt = {
 
       ### OUTPUT RULES
 
-      - ALWAYS INCLUDE "@type": "Person"  
-      - "name" IS REQUIRED — IF MISSING, RETURN NOTHING  
+      - ALWAYS INCLUDE "@type": "Person" 
       - "telephone": CONVERT INTO E164 VALID FORMAT (e.g +13105550139) 
       - "sameAs": ARRAY OF VALID PRESENT SOCIAL URLS (e.g https://linkedin.com/in/jhondoe); ADD 'https://' IF MISSING  
       - "address": INCLUDE COUNTRY IF PRESENT  
       - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
 
       ### FIELDS
-
-      - REQUIRED: "name"
       - OPTIONAL:  
         - "jobTitle" : string 
         - "worksFor" : string 
