@@ -508,7 +508,7 @@ export default class TasksManagerFile {
     miningId: string,
     progress: TaskProcessProgress,
     extract: TaskExtract,
-    clean: TaskClean,
+    clean: TaskClean
   ) {
     if (
       !clean.stoppedAt &&

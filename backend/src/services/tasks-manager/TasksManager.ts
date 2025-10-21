@@ -531,10 +531,10 @@ export default class TasksManager {
 
     if (status) {
       try {
-          await this.deleteTask(miningId, null);
-          await refineContacts(task.userId);
-          await mailMiningComplete(miningId);
-        } catch (error) {
+        await this.deleteTask(miningId, null);
+        await refineContacts(task.userId);
+        await mailMiningComplete(miningId);
+      } catch (error) {
         logger.error(`Error deleting task: ${(error as Error).message}`, {
           error
         });
