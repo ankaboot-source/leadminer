@@ -801,6 +801,24 @@
         />
       </template>
     </Column>
+
+    <!-- Mining ID	 -->
+    <Column
+      v-if="visibleColumns.includes('mining_id')"
+      field="mining_id"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="$t('mining_id_definition')">
+          {{ $t('mining_id') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -884,6 +902,17 @@ const filtersStore = useFiltersStore();
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
+function getEnrichedFieldsCount(contact: Contact): number {
+  return (
+    Number(!!contact.same_as?.length) +
+    Number(!!contact.location?.length) +
+    Number(!!contact.job_title) +
+    Number(!!contact.works_for?.length) +
+    Number(!!contact.image) +
+    Number(!!contact.telephone?.length)
+  );
+}
+
 const enrichedContacts = computed(
   () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
 );
@@ -898,16 +927,6 @@ const enrichedFields = [
   'telephone',
 ];
 const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
-function getEnrichedFieldsCount(contact: Contact): number {
-  return (
-    Number(!!contact.same_as?.length) +
-    Number(!!contact.location?.length) +
-    Number(!!contact.job_title) +
-    Number(!!contact.works_for?.length) +
-    Number(!!contact.image) +
-    Number(!!contact.telephone?.length)
-  );
-}
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -1110,6 +1129,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
+  { label: $t('mining_id'), value: 'mining_id' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -1187,7 +1207,9 @@ const stopShowTableFirstTimeWatcher = watch(
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
 
-onBeforeMount(() => (isLoading.value = true));
+onBeforeMount(() => {
+  isLoading.value = true;
+});
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [

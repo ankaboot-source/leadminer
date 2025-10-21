@@ -9,6 +9,7 @@ import SupabaseTasks from '../../db/supabase/tasks';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import logger from '../../utils/logger';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
+import { mailMiningComplete, refineContacts } from '../../db/mail';
 
 interface TaskProcessProgress {
   verifiedContacts: number;
@@ -476,7 +477,18 @@ export default class TasksManagerFile {
 
     await this.handleCleaningFinished(miningId, progress, extract, clean);
 
-    const status = await this.getCompletionStatus(miningId, extract, clean);
+    const status = await TasksManagerFile.getCompletionStatus(extract, clean);
+
+    if (status) {
+      try {
+        await this.deleteTask(miningId, null);
+        await refineContacts(task.userId);
+        await mailMiningComplete(miningId);
+      } catch (error) {
+        logger.error(error);
+      }
+    }
+
     return status;
   }
 
@@ -508,22 +520,12 @@ export default class TasksManagerFile {
     }
   }
 
-  private async getCompletionStatus(
-    miningId: string,
+  private static async getCompletionStatus(
     extract: TaskExtract,
     clean: TaskClean
   ) {
     const status =
       extract.stoppedAt !== undefined && clean.stoppedAt !== undefined;
-
-    if (status) {
-      try {
-        await this.deleteTask(miningId, null);
-      } catch (error) {
-        logger.error(error);
-      }
-    }
-
     return status;
   }
 
