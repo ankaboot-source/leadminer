@@ -117,11 +117,11 @@ export const SignaturePrompt = {
             description:
               'Must always be "Person" as per schema.org type definition'
           },
-          name: {
-            type: 'string',
-            description:
-              'Full name exactly as written in the signature, preserving original spelling and capitalization'
-          },
+          // name: {
+          //   type: 'string',
+          //   description:
+          //     'Full name exactly as written in the signature, preserving original spelling and capitalization'
+          // },
           jobTitle: {
             type: 'string',
             description: 'Job title or position, only if explicitly stated'
@@ -158,7 +158,7 @@ export const SignaturePrompt = {
               'Array of social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
           }
         },
-        required: ['@type', 'name'],
+        required: ['@type'], // , 'name'
         additionalProperties: false
       }
     }
@@ -274,7 +274,7 @@ export class SignatureLLM implements ExtractSignature {
   private cleanOutput(signature: string, person: PersonLD): PersonLD | null {
     return removeFalsePositives(
       {
-        name: undefinedIfFalsy(parseString(person.name)),
+        // name: undefinedIfFalsy(parseString(person.name)),
         jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
         worksFor: undefinedIfFalsy(parseString(person.worksFor)),
         address: undefinedIfEmpty(parseStringArray(person.address) ?? []),
