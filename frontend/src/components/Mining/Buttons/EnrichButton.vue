@@ -323,9 +323,15 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   }
 }
 
+const ENRICH_PARAM = 'enrich';
+
 onMounted(async () => {
   if (startOnMounted) {
     await startEnrichment(true);
+  }
+  if (getParam(ENRICH_PARAM)) {
+    openEnrichmentConfirmationDialog();
+    removeQueryParam(ENRICH_PARAM);
   }
 });
 

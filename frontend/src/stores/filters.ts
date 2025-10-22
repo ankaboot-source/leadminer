@@ -193,6 +193,10 @@ function clearFilter() {
   $reset();
 }
 
+function filterByMiningId(miningId: string) {
+  filters.value.mining_id.constraints[0].value = miningId;
+}
+
 function $reset() {
   filters.value = structuredClone(DEFAULT_FILTERS);
 }
@@ -222,6 +226,8 @@ export const useFiltersStore = defineStore('filters', () => {
 
     toggleFilters,
     clearFilter,
+
+    filterByMiningId,
 
     $reset,
   };
