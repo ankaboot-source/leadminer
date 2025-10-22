@@ -813,8 +813,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('mining_id_definition')">
-          {{ $t('mining_id') }}
+        <div v-tooltip.top="t('mining_id_definition')">
+          {{ t('mining_id') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -873,6 +873,8 @@ const { t } = useI18n({
 const { t: $t } = useI18n({
   useScope: 'global',
 });
+
+const MINING_ID_PARAM = 'mining_id';
 
 // skipcq: JS-0321
 const emptyFunction = () => {};
@@ -1131,7 +1133,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
-  { label: $t('mining_id'), value: 'mining_id' },
+  { label: t('mining_id'), value: 'mining_id' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -1241,6 +1243,13 @@ onNuxtReady(async () => {
     scrollHeight.value = document.documentElement.scrollHeight;
   });
   scrollHeightObserver.value.observe(document.documentElement);
+
+  const miningId = getParam(MINING_ID_PARAM);
+  if (miningId) {
+    $filtersStore.filterByMiningId(miningId as string);
+    visibleColumns.value.push(MINING_ID_PARAM);
+    removeQueryParam(MINING_ID_PARAM);
+  }
 
   isLoading.value = false;
 });
