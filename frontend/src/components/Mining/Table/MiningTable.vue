@@ -830,7 +830,7 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
-import { use$filtersStore } from '@/stores/filters';
+import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import {
   CreditsDialog,
@@ -899,7 +899,7 @@ function openContactInformation(data: Contact) {
 }
 
 /* *** Filters *** */
-const $filtersStore = use$filtersStore();
+const $filtersStore = useFiltersStore();
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
