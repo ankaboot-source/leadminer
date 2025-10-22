@@ -11,7 +11,7 @@
     v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
-    v-model:filters="filtersStore.filters"
+    v-model:filters="$filtersStore.filters"
     :loading="isLoading"
     resizable-columns
     reorderable-columns
@@ -47,7 +47,9 @@
         <div
           v-if="
             contactsLength !== 0 &&
-            !(filtersStore.isDefaultFilters && !filtersStore.areToggledFilters)
+            !(
+              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+            )
           "
         >
           <span>{{ t('try') }}</span>
@@ -57,7 +59,7 @@
             class="mt-3 ml-2"
             :label="t('clearing_filters')"
             outlined
-            @click="filtersStore.clearFilter()"
+            @click="$filtersStore.clearFilter()"
           />
         </div>
       </div>
@@ -132,12 +134,12 @@
         <div>
           <Button
             :disabled="
-              filtersStore.isDefaultFilters && !filtersStore.areToggledFilters
+              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
             "
             icon="pi pi-filter-slash"
             :label="$screenStore.size.md ? t('clear') : undefined"
             outlined
-            @click="filtersStore.clearFilter()"
+            @click="$filtersStore.clearFilter()"
           />
         </div>
         <!-- Settings -->
@@ -146,8 +148,8 @@
             {{ $screenStore.size.md ? t('filter') : undefined }}
             <span class="p-button-label">
               <OverlayBadge
-                v-if="filtersStore.areToggledFilters > 0"
-                :value="filtersStore.areToggledFilters"
+                v-if="$filtersStore.areToggledFilters > 0"
+                :value="$filtersStore.areToggledFilters"
                 pt:pcbadge:root:class="bg-white text-black outline-none"
               >
                 <i class="pi pi-sliders-h" />
@@ -162,15 +164,15 @@
                 <div v-tooltip.left="toggleEnrichTooltip">
                   {{ t('toggle_enriched_label') }}
                 </div>
-                <ToggleSwitch v-model="filtersStore.enrichedToggle" />
+                <ToggleSwitch v-model="$filtersStore.enrichedToggle" />
               </li>
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.validToggle"
-                  @update:model-value="filtersStore.onValidToggle"
+                  v-model="$filtersStore.validToggle"
+                  @update:model-value="$filtersStore.onValidToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -178,23 +180,23 @@
                   {{ t('toggle_name_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.nameToggle"
-                  @update:model-value="filtersStore.onNameToggle"
+                  v-model="$filtersStore.nameToggle"
+                  @update:model-value="$filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
                 <div
                   v-tooltip.left="
                     t('toggle_recent_tooltip', {
-                      recentYearsAgo: filtersStore.recentYearsAgo,
+                      recentYearsAgo: $filtersStore.recentYearsAgo,
                     })
                   "
                 >
                   {{ t('toggle_recent_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.recentToggle"
-                  @update:model-value="filtersStore.onRecentToggle"
+                  v-model="$filtersStore.recentToggle"
+                  @update:model-value="$filtersStore.onRecentToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -202,8 +204,8 @@
                   {{ t('toggle_replies_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.repliesToggle"
-                  @update:model-value="filtersStore.onRepliesToggle"
+                  v-model="$filtersStore.repliesToggle"
+                  @update:model-value="$filtersStore.onRepliesToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -211,8 +213,8 @@
                   {{ t('toggle_phone_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.phoneToggle"
-                  @update:model-value="filtersStore.onPhoneToggle"
+                  v-model="$filtersStore.phoneToggle"
+                  @update:model-value="$filtersStore.onPhoneToggle"
                 />
               </li>
 
@@ -273,7 +275,7 @@
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
-              v-model="filtersStore.searchContactModel"
+              v-model="$filtersStore.searchContactModel"
               :placeholder="t('search_contacts')"
               class="w-full"
             />
@@ -828,7 +830,7 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
-import { useFiltersStore } from '@/stores/filters';
+import { use$filtersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import {
   CreditsDialog,
@@ -897,7 +899,7 @@ function openContactInformation(data: Contact) {
 }
 
 /* *** Filters *** */
-const filtersStore = useFiltersStore();
+const $filtersStore = use$filtersStore();
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
@@ -917,7 +919,7 @@ const enrichedContacts = computed(
   () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
 );
 
-const hardFilter = computed(() => filtersStore.enrichedToggle);
+const hardFilter = computed(() => $filtersStore.enrichedToggle);
 const enrichedFields = [
   'same_as',
   'location',
@@ -938,7 +940,7 @@ function onFilter($event: DataTableFilterEvent) {
   filteredContacts.value = $event.filteredValue;
 }
 function optimizeTableForMining() {
-  filtersStore.onNameToggle(true); // toggle on name filter on start mining
+  $filtersStore.onNameToggle(true); // toggle on name filter on start mining
   rowsPerPage.value = 20; // Lower rows per page for better performance
 }
 watch(
@@ -946,11 +948,11 @@ watch(
   (isActive) => {
     if (isActive) {
       $leadminerStore.cleaningFinished = false;
-      filtersStore.clearFilter();
+      $filtersStore.clearFilter();
       optimizeTableForMining();
     } else {
       $leadminerStore.cleaningFinished = true;
-      filtersStore.toggleFilters();
+      $filtersStore.toggleFilters();
       rowsPerPage.value = DEFAULT_ROWS_PER_PAGE;
     }
   },
