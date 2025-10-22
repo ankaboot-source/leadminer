@@ -37,24 +37,27 @@ import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
 import LegalInformation from '~/components/auth/LegalInformation.vue';
 
-import { onMounted, useRoute } from '#imports';
+import { onMounted } from '#imports';
 import { useToast } from 'primevue/usetoast';
 
 const $toast = useToast();
-const $route = useRoute();
 const { t } = useI18n({
   useScope: 'local',
 });
+
+const ERROR_PARAM = 'error';
 onMounted(async () => {
-  if ('error' in $route.query) {
+  const error = getParam(ERROR_PARAM);
+
+  if (error) {
     // #1980
     const errorTitle =
-      $route.query.error === 'invalid_request'
+      error === 'invalid_request'
         ? t('error.invalid_request.title')
         : $t('error.default.title');
 
     const errorMessage =
-      $route.query.error === 'invalid_request'
+      error === 'invalid_request'
         ? t('error.invalid_request.message')
         : $t('error.default.message');
 
@@ -65,16 +68,7 @@ onMounted(async () => {
       life: 3000,
     });
 
-    const newQuery = { ...$route.query };
-    delete newQuery.error;
-
-    navigateTo(
-      {
-        path: $route.path,
-        query: newQuery,
-      },
-      { replace: true },
-    );
+    removeQueryParam(ERROR_PARAM);
   }
 });
 </script>
