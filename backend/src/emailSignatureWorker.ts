@@ -24,7 +24,7 @@ const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
-const llmModel = LLMModels.cohere;
+const llmModel = LLMModels.googleGemini2Flash001;
 
 const signatureEngines: EngineConfig[] = [
   {
