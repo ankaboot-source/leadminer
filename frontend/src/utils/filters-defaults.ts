@@ -43,6 +43,7 @@ export const DEFAULT_FILTERS = {
       'location',
       'works_for',
       'job_title',
+      'mining_id',
     ].map((key) => [
       key,
       createOperatorFilter(createConstraint(FilterMatchMode.CONTAINS)),
