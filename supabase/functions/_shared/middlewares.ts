@@ -33,5 +33,5 @@ export async function verifyServiceRole(c: Context, next: Next) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  await next();
+  return await next();
 }
