@@ -61,6 +61,20 @@ jest.mock('../../src/utils/redis', () => {
   };
 });
 
+jest.mock('../../src/utils/supabase', () => {
+  const clientMock = {
+    on: jest.fn(),
+    subscribe: jest.fn(),
+    publish: jest.fn(),
+    xgroup: jest.fn(),
+    del: jest.fn()
+  };
+  return {
+    getClient: jest.fn(() => clientMock),
+    getSubscriberClient: jest.fn(() => clientMock)
+  };
+});
+
 jest.mock('../../src/db/supabase/tasks', () =>
   jest.fn().mockImplementation(() => ({
     create: jest.fn((task: Task) => {

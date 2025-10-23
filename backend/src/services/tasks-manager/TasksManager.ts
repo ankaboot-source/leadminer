@@ -13,12 +13,13 @@ import {
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import ENV from '../../config';
+import { mailMiningComplete, refineContacts } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
 import logger from '../../utils/logger';
+import EmailFetcherClient from '../email-fetching';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
-import EmailFetcherClient from '../email-fetching';
 
 export default class TasksManager {
   /**
@@ -531,6 +532,8 @@ export default class TasksManager {
     if (status) {
       try {
         await this.deleteTask(miningId, null);
+        await refineContacts(task.userId);
+        await mailMiningComplete(miningId);
       } catch (error) {
         logger.error(`Error deleting task: ${(error as Error).message}`, {
           error

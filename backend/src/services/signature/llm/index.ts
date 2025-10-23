@@ -144,7 +144,7 @@ export const SignaturePrompt = {
             }
           }
         },
-        required: ['@type', 'name'],
+        required: ['@type'], // , 'name'
         additionalProperties: false
       }
     }

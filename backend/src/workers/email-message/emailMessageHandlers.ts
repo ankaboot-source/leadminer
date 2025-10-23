@@ -3,7 +3,9 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
+import { createExtractor } from '../../services/extractors/Extractor';
 import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
+import { FileFormat } from '../../services/extractors/engines/FileImport';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
@@ -11,8 +13,6 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import StreamProducer from '../../utils/streams/StreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
-import { createExtractor } from '../../services/extractors/Extractor';
-import { FileFormat } from '../../services/extractors/engines/FileImport';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -57,7 +57,7 @@ async function emailMessageHandler(
 
     let emails: string[] = [];
     try {
-      emails = (await contacts.create(extractedContacts, userId))
+      emails = (await contacts.create(extractedContacts, userId, miningId))
         .filter(
           // filter out unreachable emails
           (contact) =>
