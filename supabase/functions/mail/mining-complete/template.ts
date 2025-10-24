@@ -6,9 +6,116 @@ export default function buildHtmlEmail(
   total_reachable: number,
   total_with_phone: number,
   total_with_company: number,
-  source: string,
+  source: string | null,
   mining_id: string,
 ): string {
+  const hasNoNewContacts = source === null;
+
+  const headerSubtitle = hasNoNewContacts
+    ? "No new contacts were detected during this mining session."
+    : `You successfully mined ${total_contacts_mined} emails from ${source}.`;
+
+  const bodyContent = hasNoNewContacts
+    ? `
+        <p style="font-size: 17px; margin: 0 0 16px; text-align: center;">
+          It looks like there were no new contacts added this time.
+        </p>
+
+        <table role="presentation" align="center" style="margin-top: 30px;">
+          <tr>
+            <td align="center" style="padding-right: 10px;">
+              <a
+                href="${FRONTEND_HOST}/contacts?enrich"
+                style="
+                  display: inline-block;
+                  background: #ffd23f;
+                  color: #111827;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  text-decoration: none;
+                "
+              >
+                Enrich your contacts
+              </a>
+            </td>
+            <td align="center">
+              <a
+                href="${FRONTEND_HOST}/contacts"
+                style="
+                  display: inline-block;
+                  background: #2563eb;
+                  color: #ffffff;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  text-decoration: none;
+                "
+              >
+                View your contacts
+              </a>
+            </td>
+          </tr>
+        </table>
+      `
+    : `
+        <p style="font-size: 17px; margin: 0 0 16px">
+          Here's a quick recap of your mining results:
+        </p>
+
+        <ul
+          style="
+            list-style: none;
+            padding: 0;
+            margin: 24px 0;
+            font-size: 15px;
+            line-height: 1.8;
+          "
+        >
+          <li>⛏️ <strong>Total contacts mined:</strong> ${total_contacts_mined}</li>
+          <li>📬 <strong>Total reachable contacts:</strong> ${total_reachable}</li>
+          <li>📞 <strong>With phone number:</strong> ${total_with_phone}</li>
+          <li>💼 <strong>With company or profession:</strong> ${total_with_company}</li>
+        </ul>
+
+        <table role="presentation" align="center" style="margin-top: 30px;">
+          <tr>
+            <td align="center" style="padding-right: 10px;">
+              <a
+                href="${FRONTEND_HOST}/contacts?enrich"
+                style="
+                  display: inline-block;
+                  background: #ffd23f;
+                  color: #111827;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  text-decoration: none;
+                "
+              >
+                Enrich your contacts
+              </a>
+            </td>
+            <td align="center">
+              <a
+                href="${FRONTEND_HOST}/contacts?mining_id=${mining_id}"
+                style="
+                  display: inline-block;
+                  background: #2563eb;
+                  color: #ffffff;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  text-decoration: none;
+                "
+              >
+                View your ${total_contacts_mined} contacts
+              </a>
+            </td>
+          </tr>
+        </table>
+      `;
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -30,13 +137,7 @@ export default function buildHtmlEmail(
       -webkit-font-smoothing: antialiased;
     "
   >
-    <table
-      width="100%"
-      cellpadding="0"
-      cellspacing="0"
-      role="presentation"
-      style="padding: 40px 0"
-    >
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding: 40px 0">
       <tr>
         <td align="center">
           <table
@@ -54,11 +155,7 @@ export default function buildHtmlEmail(
             <!-- Logo -->
             <tr>
               <td align="center" style="padding: 20px 0">
-                <a
-                  href="${FRONTEND_HOST}"
-                  target="_blank"
-                  style="display: inline-block; text-decoration: none"
-                >
+                <a href="${FRONTEND_HOST}" target="_blank" style="display: inline-block; text-decoration: none">
                   <img
                     src="${LOGO_URL}"
                     alt="Leadminer"
@@ -84,8 +181,7 @@ export default function buildHtmlEmail(
                   🎉 Mining Complete!
                 </h1>
                 <p style="margin: 10px 0 0; font-size: 16px; color: #374151">
-                  You successfuly mined ${total_contacts_mined} emails from
-                  ${source}
+                  ${headerSubtitle}
                 </p>
               </td>
             </tr>
@@ -93,79 +189,7 @@ export default function buildHtmlEmail(
             <!-- Body -->
             <tr>
               <td style="padding: 36px 32px">
-                <p style="font-size: 17px; margin: 0 0 16px">
-                  Here's a quick recap of your mining results:
-                </p>
-
-                <ul
-                  style="
-                    list-style: none;
-                    padding: 0;
-                    margin: 24px 0;
-                    font-size: 15px;
-                    line-height: 1.8;
-                  "
-                >
-                  <li>
-                    ⛏️
-                    <strong>Total contacts mined:</strong>
-                    ${total_contacts_mined}
-                  </li>
-                  <li>
-                    📬
-                    <strong>Total reachable contacts:</strong>
-                    ${total_reachable}
-                  </li>
-                  <li>
-                    📞 <strong>With phone number:</strong> ${total_with_phone}
-                  </li>
-                  <li>
-                    💼
-                    <strong>With company or profession:</strong>
-                    ${total_with_company}
-                  </li>
-                </ul>
-
-                <table
-                  role="presentation"
-                  align="center"
-                  style="margin-top: 30px"
-                >
-                  <tr>
-                    <td align="center" style="padding-right: 10px">
-                      <a
-                        href="${FRONTEND_HOST}/contacts?enrich"
-                        style="
-                          display: inline-block;
-                          background: #ffd23f;
-                          color: #111827;
-                          padding: 12px 24px;
-                          border-radius: 8px;
-                          font-weight: 600;
-                          text-decoration: none;
-                        "
-                      >
-                        Enrich your contacts
-                      </a>
-                    </td>
-                    <td align="center">
-                      <a
-                        href="${FRONTEND_HOST}/contacts?mining_id=${mining_id}"
-                        style="
-                          display: inline-block;
-                          background: #2563eb;
-                          color: #ffffff;
-                          padding: 12px 24px;
-                          border-radius: 8px;
-                          font-weight: 600;
-                          text-decoration: none;
-                        "
-                      >
-                        View your ${total_contacts_mined} contacts
-                      </a>
-                    </td>
-                  </tr>
-                </table>
+                ${bodyContent}
               </td>
             </tr>
 
