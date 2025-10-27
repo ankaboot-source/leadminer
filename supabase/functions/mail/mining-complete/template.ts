@@ -1,24 +1,40 @@
+import i18nData from "../i18n/messages.json" with { type: "json" };
+
 const LOGO_URL = Deno.env.get("LOGO_URL");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST");
 
-export default function buildHtmlEmail(
+/**
+ * Simple template interpolator: replaces {var} with provided values
+ */
+function t(
+  template: string,
+  vars: Record<string, string | number> = {},
+): string {
+  return template.replace(/{(\w+)}/g, (_, key) => String(vars[key] ?? ""));
+}
+
+export default function buildEmail(
   total_contacts_mined: number,
   total_reachable: number,
   total_with_phone: number,
   total_with_company: number,
   source: string | null,
   mining_id: string,
-): string {
+  language: "en" | "fr" = "en",
+): { html: string; subject: string } {
   const hasNoNewContacts = source === null;
+  // deno-lint-ignore no-explicit-any
+  const i18n = (i18nData as any)[language];
+  const subject = i18n.subject;
 
   const headerSubtitle = hasNoNewContacts
-    ? "No new contacts were detected during this mining session."
-    : `You successfully mined ${total_contacts_mined} emails from ${source}.`;
+    ? i18n.noNewContactsSubtitle
+    : t(i18n.hasNewContactsSubtitle, { total_contacts_mined, source });
 
   const bodyContent = hasNoNewContacts
     ? `
         <p style="font-size: 17px; margin: 0 0 16px; text-align: center;">
-          It looks like there were no new contacts added this time.
+          ${i18n.noNewContactsBody}
         </p>
 
         <table role="presentation" align="center" style="margin-top: 30px;">
@@ -36,7 +52,7 @@ export default function buildHtmlEmail(
                   text-decoration: none;
                 "
               >
-                Enrich your contacts
+                ${i18n.buttons.enrich}
               </a>
             </td>
             <td align="center">
@@ -52,7 +68,7 @@ export default function buildHtmlEmail(
                   text-decoration: none;
                 "
               >
-                View your contacts
+                ${i18n.buttons.viewContacts}
               </a>
             </td>
           </tr>
@@ -60,7 +76,7 @@ export default function buildHtmlEmail(
       `
     : `
         <p style="font-size: 17px; margin: 0 0 16px">
-          Here's a quick recap of your mining results:
+          ${i18n.recapIntro}
         </p>
 
         <ul
@@ -72,10 +88,10 @@ export default function buildHtmlEmail(
             line-height: 1.8;
           "
         >
-          <li>⛏️ <strong>Total contacts mined:</strong> ${total_contacts_mined}</li>
-          <li>📬 <strong>Total reachable contacts:</strong> ${total_reachable}</li>
-          <li>📞 <strong>With phone number:</strong> ${total_with_phone}</li>
-          <li>💼 <strong>With company or profession:</strong> ${total_with_company}</li>
+          <li>${i18n.stats.totalMined}: <strong>${total_contacts_mined}</strong></li>
+          <li>${i18n.stats.totalReachable}: <strong>${total_reachable}</strong></li>
+          <li>${i18n.stats.withPhone}: <strong>${total_with_phone}</strong></li>
+          <li>${i18n.stats.withCompany}: <strong>${total_with_company}</strong></li>
         </ul>
 
         <table role="presentation" align="center" style="margin-top: 30px;">
@@ -93,7 +109,7 @@ export default function buildHtmlEmail(
                   text-decoration: none;
                 "
               >
-                Enrich your contacts
+                ${i18n.buttons.enrich}
               </a>
             </td>
             <td align="center">
@@ -109,20 +125,20 @@ export default function buildHtmlEmail(
                   text-decoration: none;
                 "
               >
-                View your ${total_contacts_mined} contacts
+                ${t(i18n.buttons.viewContactsCount, { total_contacts_mined })}
               </a>
             </td>
           </tr>
         </table>
       `;
 
-  return `
+  const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${language}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mining Complete - Leadminer</title>
+    <title>${i18n.title}</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&family=Merriweather:wght@700&display=swap"
       rel="stylesheet"
@@ -178,7 +194,7 @@ export default function buildHtmlEmail(
                     font-weight: 700;
                   "
                 >
-                  🎉 Mining Complete!
+                  ${i18n.headerTitle}
                 </h1>
                 <p style="margin: 10px 0 0; font-size: 16px; color: #374151">
                   ${headerSubtitle}
@@ -205,20 +221,19 @@ export default function buildHtmlEmail(
                 "
               >
                 <p style="margin: 0 0 4px">
-                  You received this email as a notification about your recent
-                  activity on
+                  ${i18n.footer.line1}
                   <strong>
                     <a
                       style="color: #6b7280; text-decoration: none"
                       href="${FRONTEND_HOST}"
                     >
-                      leadminer
+                      ${i18n.footer.brand}
                     </a>
                   </strong>
                   .
                 </p>
                 <p style="margin: 6px 0 0; color: #9ca3af">
-                  Extract, clean, and enrich your contacts — effortlessly.
+                  ${i18n.footer.line2}
                 </p>
               </td>
             </tr>
@@ -229,4 +244,6 @@ export default function buildHtmlEmail(
   </body>
 </html>
 `;
+
+  return { html, subject };
 }

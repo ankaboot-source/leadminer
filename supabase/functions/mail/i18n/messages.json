@@ -1,0 +1,50 @@
+{
+  "en": {
+    "subject": "✅ Mining Complete",
+    "headerTitle": "🎉 Mining Complete!",
+    "noNewContactsSubtitle": "No new contacts were detected during this mining session.",
+    "hasNewContactsSubtitle": "You successfully mined {total_contacts_mined} emails from {source}.",
+    "noNewContactsBody": "It looks like there were no new contacts added this time.",
+    "recapIntro": "Here's a quick recap of your mining results:",
+    "stats": {
+      "totalMined": "⛏️ Total contacts mined",
+      "totalReachable": "📬 Total reachable contacts",
+      "withPhone": "📞 With phone number",
+      "withCompany": "💼 With company or profession"
+    },
+    "buttons": {
+      "enrich": "Enrich your contacts",
+      "viewContacts": "View your contacts",
+      "viewContactsCount": "View your {total_contacts_mined} contacts"
+    },
+    "footer": {
+      "line1": "You received this email as a notification about your recent activity on",
+      "brand": "leadminer",
+      "line2": "Extract, clean, and enrich your contacts — effortlessly."
+    }
+  },
+  "fr": {
+    "subject": "✅ Extraction terminée",
+    "headerTitle": "🎉 Extraction terminée !",
+    "noNewContactsSubtitle": "Aucun nouveau contact n’a été détecté lors de cette session d’extraction.",
+    "hasNewContactsSubtitle": "Vous avez extrait avec succès {total_contacts_mined} e-mails depuis {source}.",
+    "noNewContactsBody": "Il semble qu’aucun nouveau contact n’ait été ajouté cette fois-ci.",
+    "recapIntro": "Voici un résumé rapide de vos résultats d’extraction :",
+    "stats": {
+      "totalMined": "⛏️ Total des contacts extraits",
+      "totalReachable": "📬 Total des contacts joignables",
+      "withPhone": "📞 Avec numéro de téléphone",
+      "withCompany": "💼 Avec entreprise ou profession"
+    },
+    "buttons": {
+      "enrich": "Enrichir vos contacts",
+      "viewContacts": "Voir vos contacts",
+      "viewContactsCount": "Voir vos {total_contacts_mined} contacts"
+    },
+    "footer": {
+      "line1": "Vous recevez cet e-mail en tant que notification concernant votre récente activité sur",
+      "brand": "leadminer",
+      "line2": "Extrayez, nettoyez et enrichissez vos contacts — sans effort."
+    }
+  }
+}
