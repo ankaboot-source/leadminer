@@ -89,9 +89,21 @@ export default function buildEmail(
           "
         >
           <li>${i18n.stats.totalMined}: <strong>${total_contacts_mined}</strong></li>
-          <li>${i18n.stats.totalReachable}: <strong>${total_reachable}</strong></li>
-          <li>${i18n.stats.withPhone}: <strong>${total_with_phone}</strong></li>
-          <li>${i18n.stats.withCompany}: <strong>${total_with_company}</strong></li>
+  ${
+      total_reachable > 0
+        ? `<li>${i18n.stats.totalReachable}: <strong>${total_reachable}</strong></li>`
+        : ""
+    }
+  ${
+      total_with_phone > 0
+        ? `<li>${i18n.stats.withPhone}: <strong>${total_with_phone}</strong></li>`
+        : ""
+    }
+  ${
+      total_with_company > 0
+        ? `<li>${i18n.stats.withCompany}: <strong>${total_with_company}</strong></li>`
+        : ""
+    }
         </ul>
 
         <table role="presentation" align="center" style="margin-top: 30px;">
