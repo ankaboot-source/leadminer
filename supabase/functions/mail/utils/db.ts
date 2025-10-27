@@ -33,3 +33,12 @@ export async function getUserEmail(userId: string): Promise<string> {
 
   return data.email;
 }
+
+export async function getUserLanguage(userId: string) {
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (error) throw error;
+
+  const language = data?.user?.user_metadata?.EmailTemplate?.language || "en";
+
+  return language;
+}
