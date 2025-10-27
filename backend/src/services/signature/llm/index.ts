@@ -15,7 +15,6 @@ import {
 } from './output-checkers';
 import { LLMModelType } from './types';
 
-
 export const SignaturePrompt = {
   system: `
     <system_prompt>
@@ -275,7 +274,7 @@ export class SignatureLLM implements ExtractSignature {
 
       this.logger.debug(`extract signature content: ${content}`);
 
-      if (!content || content.toLowerCase() === "null") return null;
+      if (!content || content.toLowerCase() === 'null') return null;
 
       const parsed = JSON.parse(content);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;
