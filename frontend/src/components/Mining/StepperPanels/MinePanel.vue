@@ -203,12 +203,11 @@ onMounted(async () => {
   }
 });
 
-async function refineReloadContacts() {
+async function reloadContacts() {
   /**
    * Disable realtime; protects table from rendering multiple times
    */
   await $contactsStore.unsubscribeFromRealtimeUpdates();
-  await $contactsStore.refineContacts();
   await $contactsStore.reloadContacts();
   /**
    * Subscribe again after the table is rendered
@@ -235,7 +234,7 @@ watch(extractionFinished, async (finished) => {
       life: 3000,
     });
     $stepper.next();
-    await refineReloadContacts();
+    await reloadContacts();
   } else if (finished) {
     $toast.add({
       severity: 'info',
@@ -245,7 +244,7 @@ watch(extractionFinished, async (finished) => {
       life: 8000,
     });
     $stepper.next();
-    await refineReloadContacts();
+    await reloadContacts();
   }
 });
 

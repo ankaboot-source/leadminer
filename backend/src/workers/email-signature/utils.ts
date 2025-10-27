@@ -37,7 +37,7 @@ export function isUsefulSignatureContent(signature: string): boolean {
 
   const words = text.split(/\s+/);
   const hasURL = /(https?:\/\/|www\.)\S+/i.test(text);
-  const hasDigits = /\d{2,}(?:[\s.,:\/-]?\d+)*/.test(text);
+  const hasDigits = /\d{2,}(?:[\s.,:/-]?\d+)*/.test(text);
   const hasSymbols = /[@+]/.test(text);
 
   const wordsMinMax =

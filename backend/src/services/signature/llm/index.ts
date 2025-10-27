@@ -13,51 +13,39 @@ import {
   validatePhones,
   validateUrls
 } from './output-checkers';
-
-export enum LLMModels {
-  qwenFree = 'qwen/qwen-2.5-7b-instruct:free',
-  deepseekFree = 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-  cohere = 'cohere/command-r-08-2024',
-  cohere7b = 'cohere/command-r7b-12-2024',
-  meta = 'meta-llama/llama-3.1-8b-instruct',
-  google = 'google/gemma-2-9b-it'
-}
-
-export type LLMModelType = `${LLMModels}`;
+import { LLMModelType } from './types';
 
 export const SignaturePrompt = {
   system: `
     <system_prompt>
-      YOU ARE A DATA EXTRACTION AGENT TRAINED TO PARSE EMAIL SIGNATURES INTO STRICT, CLEAN JSON USING THE schema.org "Person" FORMAT
+      You are an information extraction model. Your task is to convert the provided email signature into a structured JSON object following schema.org "Person".
 
       ### OBJECTIVE
-
       - RETURN STRUCTURED JSON WITH FIELDS EXPLICITLY PRESENT IN THE SIGNATURE
       - OMIT EVERYTHING NOT FULLY PRESENT — NO GUESSING OR INFERENCE
       - OUTPUT NOTHING IF SIGNATURE IS EMPTY OR INVALID
 
       ### OUTPUT RULES
-
       - ALWAYS INCLUDE "@type": "Person"  
-      - "name" IS REQUIRED — IF MISSING, RETURN NOTHING  
-      - "telephone": CONVERT INTO E164 VALID FORMAT (e.g +13105550139) 
-      - "sameAs": ARRAY OF VALID PRESENT SOCIAL URLS (e.g https://linkedin.com/in/jhondoe); ADD 'https://' IF MISSING  
-      - "address": INCLUDE COUNTRY IF PRESENT  
-      - PRESERVE ORIGINAL SPELLING & CAPITALIZATION
+      - "name": REQUIRED — IF MISSING, RETURN NOTHING.
+      - "telephone": EXTRACT AND CONVERT INTO E164 VALID FORMAT (e.g +13105550139).
+      - "sameAs": EXTRACT SOCIAL OR WEBSITE URLS; ADD 'https://' IF '://' IS MISSING.  
+      - "address": EXTRACT COMPLETE ADDRESS IF COUNTRY IS PRESENT, OTHERWISE SKIP.
+      - "worksFor": EXTRACT COMPANY OR ORGANIZATION IF IT'S EXPLICITLY WRITTEN.
+      - "jobTitle": EXTRACT IF IT'S CLEARLY STATED (e.g., “Manager”, “CTO”).  
+      - PRESERVE ORIGINAL SPELLING & CAPITALIZATION FOR ALL FIELDS.
 
       ### FIELDS
-
       - REQUIRED: "name"
       - OPTIONAL:  
         - "jobTitle" : string 
         - "worksFor" : string 
         - "email" : string 
         - "telephone": string[]  
-        - "address": string 
+        - "address": string[]
         - "sameAs": string[]  
 
       ### CHAIN OF THOUGHT
-
       1. READ the signature
       2. VALIDATE it's a real structured signature
       3. EXTRACT ONLY EXPLICITLY WRITTEN FIELDS
@@ -66,7 +54,6 @@ export const SignaturePrompt = {
       6. RETURN JSON OR NOTHING — NEVER GUESS
 
       ### WHAT NOT TO DO
-
       - NEVER GUESS OR HALLUCINATE FIELDS  
       - NEVER INFER PARTIAL OR IMPLIED INFORMATION  
       - NEVER ADD COMMENTS, NOTES, OR FORMATTING  
@@ -79,21 +66,21 @@ export const SignaturePrompt = {
       CTO
       Leadminer Systems
       jhon.doe@leadminer.io
-      +1 310 555 0139
+      +1 411 553 1139
       123 Main St, Los Angeles, USA
       LinkedIn: https://linkedin.com/in/jhon
       Twitter: https://x.com/jhon_cto
 
       Linkedin1: @jhondoe
       Twitter1: @jhondoe_jh
-      
+
       **Output:**
       {
         "@type": "Person",
-        "name": "Sarah Connor",
+        "name": "Jhon Doe",
         "jobTitle": "CTO",
-        "worksFor": "Skynet Systems",
-        "email": "s.connor@skynet.ai",
+        "worksFor": "Leadminer Systems",
+        "email": "jhon.doe@leadminer.io",
         "telephone": ["+13105550139"],
         "address": "123 Main St, Los Angeles, USA",
         "sameAs": [
@@ -118,53 +105,44 @@ export const SignaturePrompt = {
               'Must always be "Person" as per schema.org type definition'
           },
           name: {
-            type: 'string',
-            description:
-              'Full name exactly as written in the signature, preserving original spelling and capitalization'
+            type: 'string'
           },
           jobTitle: {
-            type: 'string',
-            description: 'Job title or position, only if explicitly stated'
+            type: 'string'
           },
           worksFor: {
-            type: 'string',
-            description:
-              'Organization or company name, only if explicitly present'
+            type: 'string'
           },
           email: {
-            type: 'string',
-            description: 'Email address, exactly as written in the signature'
+            type: 'string'
           },
           telephone: {
             type: 'array',
             items: {
               type: 'string',
               pattern: '\\+\\d{7,15}'
-            },
-            description:
-              'List of phone numbers in E.164 format (e.g., +13105550139); only include if explicitly written'
+            }
           },
           address: {
-            type: 'string',
-            description:
-              'Full address including country, only if fully written in the signature'
+            type: 'array',
+            items: {
+              type: 'string'
+            }
           },
           sameAs: {
             type: 'array',
             items: {
               type: 'string'
-            },
-            description:
-              'Array of social profile URLs (e.g., LinkedIn, Twitter); add https:// prefix if missing'
+            }
           }
         },
-        required: ['@type', 'name'],
+        required: ['@type'], // , 'name'
         additionalProperties: false
       }
     }
   },
   buildUserPrompt: (signature: string) =>
-    `RETURN NULL IF NOT A REAL PERSON SIGNATURE:\n${signature}`
+    `Here a signature extracted from an email address. return null if not a real signature:\n\n${signature}`
 };
 
 type OpenRouterError = {
@@ -274,7 +252,7 @@ export class SignatureLLM implements ExtractSignature {
   private cleanOutput(signature: string, person: PersonLD): PersonLD | null {
     return removeFalsePositives(
       {
-        name: undefinedIfFalsy(parseString(person.name)),
+        // name: undefinedIfFalsy(parseString(person.name)),
         jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
         worksFor: undefinedIfFalsy(parseString(person.worksFor)),
         address: undefinedIfEmpty(parseStringArray(person.address) ?? []),
@@ -296,12 +274,12 @@ export class SignatureLLM implements ExtractSignature {
 
       this.logger.debug(`extract signature content: ${content}`);
 
-      if (!content) return null;
+      if (!content || content.toLowerCase() === 'null') return null;
 
       const parsed = JSON.parse(content);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;
 
-      if (person['@type'] !== 'Person') return null;
+      if (!person || person['@type'] !== 'Person') return null;
 
       return this.cleanOutput(signature, person);
     } catch (err) {

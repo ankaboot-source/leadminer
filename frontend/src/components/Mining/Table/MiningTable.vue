@@ -11,7 +11,7 @@
     v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
-    v-model:filters="filtersStore.filters"
+    v-model:filters="$filtersStore.filters"
     :loading="isLoading"
     resizable-columns
     reorderable-columns
@@ -47,7 +47,9 @@
         <div
           v-if="
             contactsLength !== 0 &&
-            !(filtersStore.isDefaultFilters && !filtersStore.areToggledFilters)
+            !(
+              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+            )
           "
         >
           <span>{{ t('try') }}</span>
@@ -57,7 +59,7 @@
             class="mt-3 ml-2"
             :label="t('clearing_filters')"
             outlined
-            @click="filtersStore.clearFilter()"
+            @click="$filtersStore.clearFilter()"
           />
         </div>
       </div>
@@ -132,12 +134,12 @@
         <div>
           <Button
             :disabled="
-              filtersStore.isDefaultFilters && !filtersStore.areToggledFilters
+              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
             "
             icon="pi pi-filter-slash"
             :label="$screenStore.size.md ? t('clear') : undefined"
             outlined
-            @click="filtersStore.clearFilter()"
+            @click="$filtersStore.clearFilter()"
           />
         </div>
         <!-- Settings -->
@@ -146,8 +148,8 @@
             {{ $screenStore.size.md ? t('filter') : undefined }}
             <span class="p-button-label">
               <OverlayBadge
-                v-if="filtersStore.areToggledFilters > 0"
-                :value="filtersStore.areToggledFilters"
+                v-if="$filtersStore.areToggledFilters > 0"
+                :value="$filtersStore.areToggledFilters"
                 pt:pcbadge:root:class="bg-white text-black outline-none"
               >
                 <i class="pi pi-sliders-h" />
@@ -162,15 +164,15 @@
                 <div v-tooltip.left="toggleEnrichTooltip">
                   {{ t('toggle_enriched_label') }}
                 </div>
-                <ToggleSwitch v-model="filtersStore.enrichedToggle" />
+                <ToggleSwitch v-model="$filtersStore.enrichedToggle" />
               </li>
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.validToggle"
-                  @update:model-value="filtersStore.onValidToggle"
+                  v-model="$filtersStore.validToggle"
+                  @update:model-value="$filtersStore.onValidToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -178,23 +180,23 @@
                   {{ t('toggle_name_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.nameToggle"
-                  @update:model-value="filtersStore.onNameToggle"
+                  v-model="$filtersStore.nameToggle"
+                  @update:model-value="$filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
                 <div
                   v-tooltip.left="
                     t('toggle_recent_tooltip', {
-                      recentYearsAgo: filtersStore.recentYearsAgo,
+                      recentYearsAgo: $filtersStore.recentYearsAgo,
                     })
                   "
                 >
                   {{ t('toggle_recent_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.recentToggle"
-                  @update:model-value="filtersStore.onRecentToggle"
+                  v-model="$filtersStore.recentToggle"
+                  @update:model-value="$filtersStore.onRecentToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -202,8 +204,8 @@
                   {{ t('toggle_replies_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.repliesToggle"
-                  @update:model-value="filtersStore.onRepliesToggle"
+                  v-model="$filtersStore.repliesToggle"
+                  @update:model-value="$filtersStore.onRepliesToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -211,8 +213,8 @@
                   {{ t('toggle_phone_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.phoneToggle"
-                  @update:model-value="filtersStore.onPhoneToggle"
+                  v-model="$filtersStore.phoneToggle"
+                  @update:model-value="$filtersStore.onPhoneToggle"
                 />
               </li>
 
@@ -273,7 +275,7 @@
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
-              v-model="filtersStore.searchContactModel"
+              v-model="$filtersStore.searchContactModel"
               :placeholder="t('search_contacts')"
               class="w-full"
             />
@@ -801,6 +803,24 @@
         />
       </template>
     </Column>
+
+    <!-- Mining ID	 -->
+    <Column
+      v-if="visibleColumns.includes('mining_id')"
+      field="mining_id"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('mining_id_definition')">
+          {{ t('mining_id') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -843,8 +863,9 @@ const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );
 
-const { showTable } = defineProps<{
+const { showTable, origin } = defineProps<{
   showTable: boolean;
+  origin: 'contacts' | 'mine';
 }>();
 
 const { t } = useI18n({
@@ -853,6 +874,8 @@ const { t } = useI18n({
 const { t: $t } = useI18n({
   useScope: 'global',
 });
+
+const MINING_ID_PARAM = 'mining_id';
 
 // skipcq: JS-0321
 const emptyFunction = () => {};
@@ -879,25 +902,11 @@ function openContactInformation(data: Contact) {
 }
 
 /* *** Filters *** */
-const filtersStore = useFiltersStore();
+const $filtersStore = useFiltersStore();
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
-const enrichedContacts = computed(
-  () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
-);
-
-const hardFilter = computed(() => filtersStore.enrichedToggle);
-const enrichedFields = [
-  'same_as',
-  'location',
-  'job_title',
-  'works_for',
-  'image',
-  'telephone',
-];
-const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
 function getEnrichedFieldsCount(contact: Contact): number {
   return (
     Number(!!contact.same_as?.length) +
@@ -909,6 +918,21 @@ function getEnrichedFieldsCount(contact: Contact): number {
   );
 }
 
+const enrichedContacts = computed(
+  () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
+);
+
+const hardFilter = computed(() => $filtersStore.enrichedToggle);
+const enrichedFields = [
+  'same_as',
+  'location',
+  'job_title',
+  'works_for',
+  'image',
+  'telephone',
+];
+const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
+
 /* *** Settings *** */
 const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
@@ -919,7 +943,7 @@ function onFilter($event: DataTableFilterEvent) {
   filteredContacts.value = $event.filteredValue;
 }
 function optimizeTableForMining() {
-  filtersStore.onNameToggle(true); // toggle on name filter on start mining
+  $filtersStore.onNameToggle(true); // toggle on name filter on start mining
   rowsPerPage.value = 20; // Lower rows per page for better performance
 }
 watch(
@@ -927,11 +951,11 @@ watch(
   (isActive) => {
     if (isActive) {
       $leadminerStore.cleaningFinished = false;
-      filtersStore.clearFilter();
+      $filtersStore.clearFilter();
       optimizeTableForMining();
     } else {
       $leadminerStore.cleaningFinished = true;
-      filtersStore.toggleFilters();
+      $filtersStore.toggleFilters();
       rowsPerPage.value = DEFAULT_ROWS_PER_PAGE;
     }
   },
@@ -1110,6 +1134,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.image'), value: 'image' },
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
+  { label: t('mining_id'), value: 'mining_id' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -1187,7 +1212,9 @@ const stopShowTableFirstTimeWatcher = watch(
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
 
-onBeforeMount(() => (isLoading.value = true));
+onBeforeMount(() => {
+  isLoading.value = true;
+});
 onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
@@ -1196,7 +1223,9 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
-    ...($screenStore.width > 550 ? ['temperature'] : []),
+    ...(origin === 'contacts' && $screenStore.width > 550
+      ? ['temperature']
+      : []),
     ...($screenStore.width > 700 ? ['tags'] : []),
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
@@ -1217,6 +1246,13 @@ onNuxtReady(async () => {
     scrollHeight.value = document.documentElement.scrollHeight;
   });
   scrollHeightObserver.value.observe(document.documentElement);
+
+  const miningId = getParam(MINING_ID_PARAM);
+  if (miningId) {
+    $filtersStore.filterByMiningId(miningId as string);
+    visibleColumns.value.push(MINING_ID_PARAM);
+    removeQueryParam(MINING_ID_PARAM);
+  }
 
   isLoading.value = false;
 });
@@ -1345,6 +1381,8 @@ table.p-datatable-table {
     "recipient": "Recipient",
     "sender": "Sender",
     "seniority": "Seniority",
+    "mining_id_definition": "The mining ID of this contact",
+    "mining_id": "Mining ID",
     "refining_contacts": "Refining contacts...",
     "syncing": "Syncing...",
     "error_verifying_export_csv": "Error when verifying export CSV",
@@ -1400,6 +1438,8 @@ table.p-datatable-table {
     "recipient": "Destinataire",
     "sender": "Expéditeur",
     "seniority": "Ancienneté",
+    "mining_id_definition": "ID d'extraction de ce contact",
+    "mining_id": "ID d'extraction",
     "refining_contacts": "Affinement des contacts...",
     "syncing": "Synchronisation...",
     "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",

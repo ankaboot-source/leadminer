@@ -630,29 +630,8 @@ export default class ImapEmailsFetcher {
         encoding
       );
 
-      // decodeQuotedPrintable(
-      //   msg.bodyParts?.get(partId)?.toString() ?? '',
-      //   'utf-8'
-      // );
-
-      // if (headers && text?.length) {
-      //   try {
-      //     const { text: parsedText } = await simpleParser(
-      //       Buffer.concat([headers, text as Uint8Array<ArrayBufferLike>]),
-      //       {
-      //         skipHtmlToText: true,
-      //         skipTextToHtml: true,
-      //         skipImageLinks: true,
-      //         skipTextLinks: true
-      //       }
-      //     );
-      //     text = parsedText?.slice(0, this.EMAIL_TEXT_MAX_LENGTH) || '';
-      //   } catch {
-      //     text = '';
-      //   }
-      // }
-
       if (text.length && from && date) {
+        const { address, name } = from;
         await redisClient.xadd(
           this.signatureStream,
           '*',
@@ -660,7 +639,12 @@ export default class ImapEmailsFetcher {
           JSON.stringify({
             type: 'email',
             data: {
-              header: { from, messageId, messageDate: date, rawHeader: header },
+              header: {
+                from: { address: address?.toLowerCase(), name },
+                messageId,
+                messageDate: date,
+                rawHeader: header
+              },
               body: text,
               seqNumber: seq,
               folderPath,

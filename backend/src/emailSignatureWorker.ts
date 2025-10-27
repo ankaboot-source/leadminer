@@ -14,17 +14,18 @@ import EmailSignatureConsumer, {
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
-import { LLMModels, SignatureLLM } from './services/signature/llm';
+import { SignatureLLM } from './services/signature/llm';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
 import { TokenBucketRateLimiter } from './services/rate-limiter/RateLimiter';
 import { SignatureRE } from './services/signature/regex';
+import { LLMModelsList } from './services/signature/llm/types';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
-const llmModel = LLMModels.cohere;
+const llmModel = LLMModelsList[1];
 
 const signatureEngines: EngineConfig[] = [
   {
