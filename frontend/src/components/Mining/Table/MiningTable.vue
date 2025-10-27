@@ -863,8 +863,9 @@ const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );
 
-const { showTable } = defineProps<{
+const { showTable, origin } = defineProps<{
   showTable: boolean;
+  origin: 'contacts' | 'mine';
 }>();
 
 const { t } = useI18n({
@@ -1222,7 +1223,9 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
-    ...($screenStore.width > 550 ? ['temperature'] : []),
+    ...(origin === 'contacts' && $screenStore.width > 550
+      ? ['temperature']
+      : []),
     ...($screenStore.width > 700 ? ['tags'] : []),
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
