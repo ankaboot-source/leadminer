@@ -23,17 +23,18 @@ export default function buildEmail(
   language: "en" | "fr" = "en",
 ): { html: string; subject: string } {
   const hasNoNewContacts = source === null;
-  const L = (i18nData as any)[language];
-  const subject = L.subject;
+  // deno-lint-ignore no-explicit-any
+  const i18n = (i18nData as any)[language];
+  const subject = i18n.subject;
 
   const headerSubtitle = hasNoNewContacts
-    ? L.noNewContactsSubtitle
-    : t(L.hasNewContactsSubtitle, { total_contacts_mined, source });
+    ? i18n.noNewContactsSubtitle
+    : t(i18n.hasNewContactsSubtitle, { total_contacts_mined, source });
 
   const bodyContent = hasNoNewContacts
     ? `
         <p style="font-size: 17px; margin: 0 0 16px; text-align: center;">
-          ${L.noNewContactsBody}
+          ${i18n.noNewContactsBody}
         </p>
 
         <table role="presentation" align="center" style="margin-top: 30px;">
@@ -51,7 +52,7 @@ export default function buildEmail(
                   text-decoration: none;
                 "
               >
-                ${L.buttons.enrich}
+                ${i18n.buttons.enrich}
               </a>
             </td>
             <td align="center">
@@ -67,7 +68,7 @@ export default function buildEmail(
                   text-decoration: none;
                 "
               >
-                ${L.buttons.viewContacts}
+                ${i18n.buttons.viewContacts}
               </a>
             </td>
           </tr>
@@ -75,7 +76,7 @@ export default function buildEmail(
       `
     : `
         <p style="font-size: 17px; margin: 0 0 16px">
-          ${L.recapIntro}
+          ${i18n.recapIntro}
         </p>
 
         <ul
@@ -87,10 +88,10 @@ export default function buildEmail(
             line-height: 1.8;
           "
         >
-          <li>${L.stats.totalMined}: <strong>${total_contacts_mined}</strong></li>
-          <li>${L.stats.totalReachable}: <strong>${total_reachable}</strong></li>
-          <li>${L.stats.withPhone}: <strong>${total_with_phone}</strong></li>
-          <li>${L.stats.withCompany}: <strong>${total_with_company}</strong></li>
+          <li>${i18n.stats.totalMined}: <strong>${total_contacts_mined}</strong></li>
+          <li>${i18n.stats.totalReachable}: <strong>${total_reachable}</strong></li>
+          <li>${i18n.stats.withPhone}: <strong>${total_with_phone}</strong></li>
+          <li>${i18n.stats.withCompany}: <strong>${total_with_company}</strong></li>
         </ul>
 
         <table role="presentation" align="center" style="margin-top: 30px;">
@@ -108,7 +109,7 @@ export default function buildEmail(
                   text-decoration: none;
                 "
               >
-                ${L.buttons.enrich}
+                ${i18n.buttons.enrich}
               </a>
             </td>
             <td align="center">
@@ -124,7 +125,7 @@ export default function buildEmail(
                   text-decoration: none;
                 "
               >
-                ${t(L.buttons.viewContactsCount, { total_contacts_mined })}
+                ${t(i18n.buttons.viewContactsCount, { total_contacts_mined })}
               </a>
             </td>
           </tr>
@@ -137,7 +138,7 @@ export default function buildEmail(
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${L.title}</title>
+    <title>${i18n.title}</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&family=Merriweather:wght@700&display=swap"
       rel="stylesheet"
@@ -193,7 +194,7 @@ export default function buildEmail(
                     font-weight: 700;
                   "
                 >
-                  ${L.headerTitle}
+                  ${i18n.headerTitle}
                 </h1>
                 <p style="margin: 10px 0 0; font-size: 16px; color: #374151">
                   ${headerSubtitle}
@@ -220,19 +221,19 @@ export default function buildEmail(
                 "
               >
                 <p style="margin: 0 0 4px">
-                  ${L.footer.line1}
+                  ${i18n.footer.line1}
                   <strong>
                     <a
                       style="color: #6b7280; text-decoration: none"
                       href="${FRONTEND_HOST}"
                     >
-                      ${L.footer.brand}
+                      ${i18n.footer.brand}
                     </a>
                   </strong>
                   .
                 </p>
                 <p style="margin: 6px 0 0; color: #9ca3af">
-                  ${L.footer.line2}
+                  ${i18n.footer.line2}
                 </p>
               </td>
             </tr>
