@@ -13,18 +13,8 @@ import {
   validatePhones,
   validateUrls
 } from './output-checkers';
+import { LLMModelType } from './types';
 
-export enum LLMModels {
-  googleGemini2Flash001 = 'google/gemini-2.0-flash-001',
-  anthropicClaude35Sonnet = 'anthropic/claude-3.5-sonnet',
-  googleGemini25FlashLite = 'google/gemini-2.5-flash-lite',
-  googleGemini25FlashPreview092025 = 'google/gemini-2.5-flash-preview-09-2025',
-  googleGemini25Flash = 'google/gemini-2.5-flash',
-  cohereCommandR7b122024 = 'cohere/command-r7b-12-2024',
-  cohereCommandR082024 = 'cohere/command-r-08-2024'
-}
-
-export type LLMModelType = `${LLMModels}`;
 
 export const SignaturePrompt = {
   system: `
@@ -53,7 +43,7 @@ export const SignaturePrompt = {
         - "worksFor" : string 
         - "email" : string 
         - "telephone": string[]  
-        - "address": string 
+        - "address": string[]
         - "sameAs": string[]  
 
       ### CHAIN OF THOUGHT
@@ -135,7 +125,10 @@ export const SignaturePrompt = {
             }
           },
           address: {
-            type: 'string'
+            type: 'array',
+            items: {
+              type: 'string'
+            }
           },
           sameAs: {
             type: 'array',
@@ -150,7 +143,7 @@ export const SignaturePrompt = {
     }
   },
   buildUserPrompt: (signature: string) =>
-    `Here a signature extracted from an email address. return NULL if not a real signature:\n\n${signature}`
+    `Here a signature extracted from an email address. return null if not a real signature:\n\n${signature}`
 };
 
 type OpenRouterError = {
@@ -282,12 +275,12 @@ export class SignatureLLM implements ExtractSignature {
 
       this.logger.debug(`extract signature content: ${content}`);
 
-      if (!content) return null;
+      if (!content || content.toLowerCase() === "null") return null;
 
       const parsed = JSON.parse(content);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;
 
-      if (person['@type'] !== 'Person') return null;
+      if (!person || person['@type'] !== 'Person') return null;
 
       return this.cleanOutput(signature, person);
     } catch (err) {
