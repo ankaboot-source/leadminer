@@ -2,6 +2,7 @@ import i18nData from "../i18n/messages.json" with { type: "json" };
 
 const LOGO_URL = Deno.env.get("LOGO_URL");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST");
+const LEADMINER_DATA_PRIVACY_URL = "https://www.leadminer.io/data-privacy";
 
 /**
  * Simple template interpolator: replaces {var} with provided values
@@ -33,11 +34,11 @@ export default function buildEmail(
 
   const bodyContent = hasNoNewContacts
     ? `
-        <p style="font-size: 17px; margin: 0 0 16px; text-align: center;">
+        <p style="font-size: 17px; margin: 0 0 15px; text-align: center;">
           ${i18n.noNewContactsBody}
         </p>
 
-        <table role="presentation" align="center" style="margin-top: 30px;">
+        <table role="presentation" align="center" style="margin-top: 15px;">
           <tr>
             <td align="center" style="padding-right: 10px;">
               <a
@@ -75,7 +76,7 @@ export default function buildEmail(
         </table>
       `
     : `
-        <p style="font-size: 17px; margin: 0 0 16px">
+        <p style="font-size: 17px; margin: 0 0 15px">
           ${i18n.recapIntro}
         </p>
 
@@ -83,7 +84,7 @@ export default function buildEmail(
           style="
             list-style: none;
             padding: 0;
-            margin: 24px 0;
+            margin: 15px 0;
             font-size: 15px;
             line-height: 1.8;
           "
@@ -106,7 +107,7 @@ export default function buildEmail(
     }
         </ul>
 
-        <table role="presentation" align="center" style="margin-top: 30px;">
+        <table role="presentation" align="center" style="margin-top: 15px;">
           <tr>
             <td align="center" style="padding-right: 10px;">
               <a
@@ -142,6 +143,11 @@ export default function buildEmail(
             </td>
           </tr>
         </table>
+        <div style="margin-top: 15px; font-size: 13px; color: #6b7280; text-align: center;">
+          <div>${i18n.start_mining_toast.summary}</div>
+          <div>${i18n.start_mining_toast.detail_1}</div>
+          <a href="${LEADMINER_DATA_PRIVACY_URL}" style="color: #6b7280;">${i18n.start_mining_toast.detail_2}</a>
+        </div>
       `;
 
   const html = `
