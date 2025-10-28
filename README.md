@@ -104,7 +104,7 @@ External services for email verification and LLM-based signature extraction.
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 - **[OpenRouter](https://openrouter.ai/):** Used for LLM-powered email signature extraction.  
-  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file, and set `SIGNATURE_USE_LLM=True` to enable it.
+  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
 
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 </details>
