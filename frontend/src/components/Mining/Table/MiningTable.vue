@@ -458,6 +458,15 @@
       <template #body="{ data }">
         <div
           v-if="data.temperature"
+          v-tooltip.top="
+            `${t('sender')}: ${data.sender}
+              ${t('recipient')}: ${data.recipient}
+              ${t('occurrence')}: ${data.occurrence}
+              ${t('replies')}: ${data.replied_conversations}
+              ${t('recency')}: ${data.recency?.toLocaleDateString()}
+              ${t('seniority')}: ${data.seniority?.toLocaleDateString()}
+            `
+          "
           :style="getTemperatureStyle(data.temperature)"
           class="w-11 p-2 rounded-lg text-xs font-bold text-center mx-auto"
         >
