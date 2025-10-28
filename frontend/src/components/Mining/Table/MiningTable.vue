@@ -26,7 +26,7 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="hardFilter ? enrichedContacts : contacts"
+    :value="hardFilter ? jobDetailsContacts : contacts"
     data-key="email"
     paginator
     filter-display="menu"
@@ -161,10 +161,10 @@
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="toggleEnrichTooltip">
-                  {{ t('toggle_enriched_label') }}
+                <div v-tooltip.left="toggleJobDetailsTooltip">
+                  {{ t('toggle_job_details_label') }}
                 </div>
-                <ToggleSwitch v-model="$filtersStore.enrichedToggle" />
+                <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
               </li>
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
@@ -916,31 +916,17 @@ const $filtersStore = useFiltersStore();
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
-function getEnrichedFieldsCount(contact: Contact): number {
-  return (
-    Number(!!contact.same_as?.length) +
-    Number(!!contact.location?.length) +
-    Number(!!contact.job_title) +
-    Number(!!contact.works_for?.length) +
-    Number(!!contact.image) +
-    Number(!!contact.telephone?.length)
-  );
+function getJobDetailsFieldsCount(contact: Contact): number {
+  return Number(!!contact.job_title) + Number(!!contact.works_for?.length);
 }
 
-const enrichedContacts = computed(
-  () => contacts.value?.filter((c) => getEnrichedFieldsCount(c) >= 2) ?? [],
+const jobDetailsContacts = computed(
+  () => contacts.value?.filter((c) => getJobDetailsFieldsCount(c) >= 1) ?? [],
 );
 
-const hardFilter = computed(() => $filtersStore.enrichedToggle);
-const enrichedFields = [
-  'same_as',
-  'location',
-  'job_title',
-  'works_for',
-  'image',
-  'telephone',
-];
-const toggleEnrichTooltip = `${t('toggle_enriched_tooltip')} (${enrichedFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
+const hardFilter = computed(() => $filtersStore.jobDetailsToggle);
+const jobDetailsFields = ['job_title', 'works_for'];
+const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -1354,8 +1340,8 @@ table.p-datatable-table {
     "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
-    "toggle_enriched_tooltip": "Has at least 2 enriched fields",
-    "toggle_enriched_label": "Only enriched contacts",
+    "toggle_job_details_tooltip": "At least one job detail",
+    "toggle_job_details_label": "Only with job details",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
@@ -1411,8 +1397,8 @@ table.p-datatable-table {
     "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
-    "toggle_enriched_tooltip": "A au moins 2 champs enrichis",
-    "toggle_enriched_label": "Contacts enrichis",
+    "toggle_job_details_tooltip": "A au moins une détail",
+    "toggle_job_details_label": "Avec les détails du poste",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
     "toggle_valid_label": "Contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",

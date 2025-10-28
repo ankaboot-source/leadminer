@@ -24,7 +24,7 @@ const validToggle = ref(false);
 const repliesToggle = ref(false);
 const recentToggle = ref(false);
 const phoneToggle = ref(false);
-const enrichedToggle = ref(false);
+const jobDetailsToggle = ref(false);
 
 const isDefaultFilters = computed(
   () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
@@ -36,7 +36,7 @@ const areToggledFilters = computed(
     Number(nameToggle.value) +
     Number(repliesToggle.value) +
     Number(phoneToggle.value) +
-    Number(enrichedToggle.value),
+    Number(jobDetailsToggle.value),
 );
 
 function checkValidStatus() {
@@ -188,7 +188,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
 
 function clearFilter() {
   searchContactModel.value = '';
-  enrichedToggle.value = false;
+  jobDetailsToggle.value = false;
   toggleFilters(false);
   $reset();
 }
@@ -213,7 +213,7 @@ export const useFiltersStore = defineStore('filters', () => {
     repliesToggle,
     recentToggle,
     phoneToggle,
-    enrichedToggle,
+    jobDetailsToggle,
 
     areToggledFilters,
     isDefaultFilters,
