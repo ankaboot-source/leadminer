@@ -145,8 +145,8 @@ export default function buildEmail(
         </table>
         <div style="margin-top: 15px; font-size: 13px; color: #6b7280; text-align: center;">
           <div>${i18n.start_mining_toast.summary}</div>
-          <div>${i18n.start_mining_toast.detail1}</div>
-          <a href="${LEADMINER_DATA_PRIVACY_URL}" style="color: #6b7280;">${i18n.start_mining_toast.detail2}</a>
+          <div>${i18n.start_mining_toast.detail_1}</div>
+          <a href="${LEADMINER_DATA_PRIVACY_URL}" style="color: #6b7280;">${i18n.start_mining_toast.detail_2}</a>
         </div>
       `;
 
