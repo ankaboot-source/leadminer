@@ -21,8 +21,14 @@
       "line1": "You received this email as a notification about your recent activity on",
       "brand": "leadminer",
       "line2": "Extract, clean, and enrich your contacts — effortlessly."
+    },
+    "start_mining_toast": {
+      "summary": "Your contacts got rights",
+      "detail_1": "You'll need your contacts consent or a legitimate interest to reach them.",
+      "detail_2": "Learn more about your contacts rights."
     }
   },
+
   "fr": {
     "subject": "✅ Extraction terminée",
     "headerTitle": "🎉 Extraction terminée !",
@@ -45,6 +51,11 @@
       "line1": "Vous recevez cet e-mail en tant que notification concernant votre récente activité sur",
       "brand": "leadminer",
       "line2": "Extrayez, nettoyez et enrichissez vos contacts — sans effort."
+    },
+    "start_mining_toast": {
+      "summary": "Vos contacts ont des droits",
+      "detail_1": "Vous aurez besoin du consentement de vos contacts ou d'un intérêt légitime pour les contacter.",
+      "detail_2": "En savoir plus sur les droits de vos contacts."
     }
   }
 }
