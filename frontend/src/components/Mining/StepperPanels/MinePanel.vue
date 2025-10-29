@@ -79,6 +79,7 @@ import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
 import ProgressCard from '@/components/ProgressCard.vue';
+import { useWebNotification } from '@vueuse/core';
 import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
@@ -225,6 +226,11 @@ const totalExtractedNotificationMessage = computed(() =>
       }),
 );
 
+const { isSupported, permissionGranted, show } = useWebNotification({
+  title: `${t('mining_done')} 🎉`,
+  icon: '/icons/pickaxe-192-192.png',
+});
+
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
@@ -243,6 +249,7 @@ watch(extractionFinished, async (finished) => {
       group: 'achievement',
       life: 8000,
     });
+    if (isSupported.value && permissionGranted.value) show();
     $stepper.next();
     await reloadContacts();
   }
