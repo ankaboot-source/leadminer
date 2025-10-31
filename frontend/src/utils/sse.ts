@@ -6,7 +6,7 @@ import {
 class SSE {
   private ctrl?: AbortController;
   private pendingCleanupTimeout: NodeJS.Timeout | null = null;
-  private cleanupDelay = 3 * 60 * 1000; // 3 minutes
+  private cleanupDelay = 10 * 60 * 1000; // 10 minutes
 
   private clearPendingCleanup() {
     if (this.pendingCleanupTimeout) {
