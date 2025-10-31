@@ -6,7 +6,7 @@ import {
 class SSE {
   private ctrl?: AbortController;
   private pendingCleanupTimeout: NodeJS.Timeout | null = null;
-  private cleanupDelay = 3 * 60 * 1000; // 3 minutes
+  private cleanupDelay = 10 * 60 * 1000; // 10 minutes
 
   private clearPendingCleanup() {
     if (this.pendingCleanupTimeout) {
@@ -35,6 +35,7 @@ class SSE {
       onCleaningDone,
       onVerifiedContacts,
       onCreatedContacts,
+      onMiningCompleted,
     }: {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
@@ -45,6 +46,7 @@ class SSE {
       onCleaningDone: (totalExtracted: number) => void;
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
+      onMiningCompleted: () => void;
     },
   ) {
     this.closeConnection();
@@ -112,6 +114,8 @@ class SSE {
             onVerifiedContacts(parseInt(data));
           } else if (event === `createdContacts-${miningId}`) {
             onCreatedContacts(parseInt(data));
+          } else if (event === 'mining-completed') {
+            onMiningCompleted();
           }
         },
         onerror: (err: unknown) => {

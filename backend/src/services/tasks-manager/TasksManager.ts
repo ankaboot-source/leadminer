@@ -57,6 +57,16 @@ export default class TasksManager {
       const { miningId, progressType, count, isCompleted, isCanceled } =
         JSON.parse(data);
 
+      if (progressType === 'signatures' && isCompleted) {
+        const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+        if (!task) return;
+
+        const { signature } = task.process;
+
+        signature.status = TaskStatus.Done;
+      }
+
       if (progressType === 'fetched' && (isCanceled || isCompleted)) {
         const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
@@ -126,8 +136,10 @@ export default class TasksManager {
     fetchEmailBody,
     userId
   }: ImapEmailsFetcherOptions) {
+    let miningTaskId: string | null = null;
     try {
       const { miningId, stream } = await this.generateTaskInformation();
+      miningTaskId = miningId;
       const {
         messagesStream,
         messagesConsumerGroup,
@@ -142,6 +154,22 @@ export default class TasksManager {
         miningId,
         progressHandlerSSE,
         process: {
+          signature: {
+            userId,
+            type: TaskType.Enrich,
+            category: TaskCategory.Enriching,
+            status: TaskStatus.Running,
+            details: {
+              miningId,
+              enabled: fetchEmailBody,
+              stream: {
+                signatureStream: 'email-signature'
+              },
+              progress: {
+                signatures: 0
+              }
+            }
+          },
           fetch: {
             userId,
             category: TaskCategory.Mining,
@@ -199,24 +227,29 @@ export default class TasksManager {
           fetched: 0,
           extracted: 0,
           verifiedContacts: 0,
-          createdContacts: 0
+          createdContacts: 0,
+          signatures: 0
         },
         startedAt: performance.now()
       };
 
       const { progress, process } = miningTask;
-      const { fetch, extract, clean } = process;
+      const { fetch, extract, clean, signature } = process;
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
       const taskFetch = await this.tasksResolver.create(fetch);
+      const taskSignature = await this.tasksResolver.create(signature);
       const taskExtract = await this.tasksResolver.create(extract);
       const taskClean = await this.tasksResolver.create(clean);
 
       miningTask.process.fetch.id = taskFetch.id;
+      miningTask.process.signature.id = taskSignature.id;
       miningTask.process.extract.id = taskExtract.id;
       miningTask.process.clean.id = taskClean.id;
+
       miningTask.process.fetch.startedAt = taskFetch.startedAt;
+      miningTask.process.signature.startedAt = taskSignature.startedAt;
       miningTask.process.extract.startedAt = taskExtract.startedAt;
       miningTask.process.clean.startedAt = taskClean.startedAt;
 
@@ -254,6 +287,9 @@ export default class TasksManager {
       return redactSensitiveData(miningTask);
     } catch (error) {
       logger.error('Error when creating task', error);
+      if (miningTaskId) {
+        await this.deleteTask(miningTaskId, null);
+      }
       throw error;
     }
   }
@@ -330,6 +366,8 @@ export default class TasksManager {
 
       if (endEntireTask) {
         this.ACTIVE_MINING_TASKS.delete(miningId);
+        // Signal to indicate the mining is completed
+        progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
         progressHandlerSSE.stop();
       }
 
@@ -373,26 +411,26 @@ export default class TasksManager {
       // eslint-disable-next-line no-param-reassign
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
-      if (task.type === 'fetch') {
-        try {
+      try {
+        if (task.type === 'fetch') {
           await this.emailFetcherAPI.stopFetch({
             miningId: task.details.miningId,
             canceled: task.status === 'canceled'
           });
-        } catch (error) {
-          logger.error(
-            `Failed to stop current active fetching with id: ${task.details.miningId}`,
-            { error }
-          );
         }
-      }
 
-      await this.pubsubSendMessage(
-        task.details.miningId,
-        'DELETE',
-        task.details.stream
-      );
-      await this.tasksResolver.update(task);
+        await this.pubsubSendMessage(
+          task.details.miningId,
+          'DELETE',
+          task.details.stream
+        );
+        await this.tasksResolver.update(task);
+      } catch (error) {
+        logger.error(
+          `Failed to stop current active task with id: ${task.details.miningId}`,
+          { error }
+        );
+      }
     });
 
     await Promise.all(stopPromises);
@@ -415,12 +453,13 @@ export default class TasksManager {
     if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
 
     const { progressHandlerSSE, process } = task;
-    const { fetch, extract, clean } = process;
+    const { fetch, extract, clean, signature } = process;
 
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...clean.details.progress
+      ...clean.details.progress,
+      ...signature.details.progress
     };
 
     const value = progress[`${progressType}`];
@@ -453,7 +492,8 @@ export default class TasksManager {
       fetched: 'fetch',
       extracted: 'extract',
       createdContacts: 'clean',
-      verifiedContacts: 'clean'
+      verifiedContacts: 'clean',
+      signatures: 'signature'
     };
 
     const taskProperty = progressMappings[progressType];
@@ -481,11 +521,12 @@ export default class TasksManager {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) return undefined;
 
-    const { fetch, extract, clean } = task.process;
+    const { fetch, extract, clean, signature } = task.process;
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...clean.details.progress
+      ...clean.details.progress,
+      ...signature.details.progress
     };
 
     if (!fetch.stoppedAt && fetch.status === TaskStatus.Done) {
@@ -494,6 +535,14 @@ export default class TasksManager {
       });
       await this.stopTask([fetch]);
       this.notifyChanges(task.miningId, 'fetched', 'fetching-finished');
+    }
+
+    if (
+      fetch.stoppedAt &&
+      !signature.stoppedAt &&
+      (signature.status === TaskStatus.Done || !signature.details.enabled)
+    ) {
+      await this.stopTask([signature]);
     }
 
     if (
@@ -527,7 +576,8 @@ export default class TasksManager {
     const status =
       fetch.stoppedAt !== undefined &&
       extract.stoppedAt !== undefined &&
-      clean.stoppedAt !== undefined;
+      clean.stoppedAt !== undefined &&
+      signature.stoppedAt !== undefined;
 
     if (status) {
       try {
