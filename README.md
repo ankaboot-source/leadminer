@@ -89,7 +89,7 @@ npm run dev:generate-env
     </strong>
 </summary>
 
-External services for email verification.
+External services for email verification and LLM-based signature extraction.
 
 - **[Reacher](https://reacher.email/):** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
@@ -103,6 +103,10 @@ External services for email verification.
 
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
+- **[OpenRouter](https://openrouter.ai/):** Used for LLM-powered email signature extraction.  
+  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
+
+  > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 </details>
 
 <div>
