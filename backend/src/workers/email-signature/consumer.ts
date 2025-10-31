@@ -22,7 +22,7 @@ export default class EmailSignatureConsumer {
     private readonly batchSize: number,
     private readonly emailProcessor: (
       data: EmailData
-    ) => Promise<Partial<Contact>[]>,
+    ) => Promise<{ finished: boolean; contacts: Partial<Contact>[] | null }>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
@@ -54,20 +54,24 @@ export default class EmailSignatureConsumer {
         this.batchSize
       );
 
-      for (const { streamName, data } of result) {
+      for (const { data } of result) {
         for (const emailData of data) {
+          const { miningId } = emailData;
           /* eslint-disable-next-line no-await-in-loop */
-          await this.emailProcessor(emailData);
+          const { finished, contacts } = await this.emailProcessor(emailData);
+
+          if (finished) {
+            this.redisClient.publish(
+              miningId,
+              JSON.stringify({
+                miningId,
+                progressType: 'signatures',
+                isCompleted: finished,
+                count: contacts ? contacts.length : 0
+              })
+            );
+          }
         }
-
-        const miningId = streamName.split('-')[1];
-        const extractionProgress = {
-          miningId,
-          progressType: 'extractedSignature',
-          count: data.length
-        };
-
-        this.redisClient.publish(miningId, JSON.stringify(extractionProgress));
       }
     } catch (err) {
       this.logger.error('Error while consuming messages from stream.', err);

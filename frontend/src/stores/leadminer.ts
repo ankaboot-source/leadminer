@@ -20,6 +20,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningType = ref<MiningType>('email');
 
   const miningTask = ref<MiningTask | undefined>();
+
   const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
@@ -46,6 +47,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
   const cleaningFinished = ref(true);
+
+  const miningCompleted = ref(false);
 
   const activeMiningTask = computed(() => miningTask.value !== undefined);
 
@@ -88,6 +91,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = true;
     extractionFinished.value = true;
     cleaningFinished.value = true;
+
+    miningCompleted.value = false;
 
     activeEnrichment.value = false;
 
@@ -206,7 +211,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         scannedEmails.value = count;
       },
       onClose: () => {
-        miningTask.value = undefined;
         sse.closeConnection();
       },
       onError: () => {
@@ -245,6 +249,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
       onCreatedContacts: (totalCreated) => {
         createdContacts.value = totalCreated;
+      },
+      onMiningCompleted: () => {
+        console.info('Mining marked as completed.');
+        miningCompleted.value = true;
+        setTimeout(() => {
+          miningTask.value = undefined;
+        }, 100);
       },
     });
   }
@@ -423,6 +434,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished,
     extractionFinished,
     cleaningFinished,
+    miningCompleted,
     activeMiningTask,
     activeTask,
     miningStartedAndFinished,
