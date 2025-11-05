@@ -103,7 +103,7 @@ export interface Contact {
   given_name?: string;
   family_name?: string;
   alternate_name?: string[];
-  location?: string[];
+  location?: string;
   works_for?: string;
   job_title?: string;
   same_as?: string[];
