@@ -106,8 +106,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     newContact.works_for = await getOrganizationName(updatedContact.works_for);
 
-    if (keepPosition)
+    if (keepPosition) {
       contactsCacheMap.set(updatedContact.email, updatedContact);
+    }
 
     // Remove and reinsert to change position in the Map
     contactsCacheMap.delete(email);
@@ -150,13 +151,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
           filter: `updated_at=gt.${new Date().toISOString()}`,
         },
         (payload: RealtimePostgresChangesPayload<Contact>) => {
-          if (payload.eventType === 'DELETE' && payload.old.email)
+          if (payload.eventType === 'DELETE' && payload.old.email) {
             removeOldContact(payload.old.email);
-          else if (payload.new as Contact)
+          } else if (payload.new as Contact) {
             setTimeout(async () => {
               await updateContactsCache(payload.new as Contact);
               updateContactList.value = true;
             }, 0);
+          }
         },
       );
     startSyncInterval();
