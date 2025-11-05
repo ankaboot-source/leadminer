@@ -147,7 +147,7 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              {{ contact.location?.join(', ') }}
+              {{ contact.location }}
             </div>
             <Textarea
               v-else
