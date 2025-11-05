@@ -2,6 +2,7 @@
 ALTER TABLE private.persons
 ADD COLUMN location_temp text DEFAULT NULL;
 
+-- Convert and clean old location data
 UPDATE private.persons
 SET location_temp = 
   CASE 
