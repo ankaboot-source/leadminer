@@ -1,3 +1,3 @@
 <template>
-  <MiningTable :show-table="true" />
+  <MiningTable :show-table="true" origin="contacts" />
 </template>
