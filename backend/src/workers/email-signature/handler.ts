@@ -74,7 +74,10 @@ export class EmailSignatureProcessor {
     );
   }
 
-  public async process(data: EmailData): Promise<Partial<Contact>[]> {
+  public async process(data: EmailData): Promise<{
+    finished: boolean;
+    contacts: Partial<Contact>[] | null;
+  }> {
     const { userId, miningId, data: payload } = data;
     const { from, messageDate } = payload.header ?? {};
 
@@ -97,29 +100,35 @@ export class EmailSignatureProcessor {
       );
     }
 
-    if (!payload.isLast) return [];
+    if (!payload.isLast)
+      return {
+        finished: false,
+        contacts: []
+      };
 
     const extracted = await this.handleBatchUpdate(userId, miningId);
 
-    if (!extracted.length) return [];
-
-    try {
-      await pushNotificationDB(this.supabase, {
-        userId,
-        type: 'signature',
-        details: {
-          extracted,
-          signatures: extracted.length
-        }
-      });
-    } catch (err) {
-      this.logging.error(
-        `Error when pushing notifications: ${(err as Error).message}`,
-        err
-      );
+    if (extracted.length) {
+      try {
+        await pushNotificationDB(this.supabase, {
+          userId,
+          type: 'signature',
+          details: {
+            extracted,
+            signatures: extracted.length
+          }
+        });
+      } catch (err) {
+        this.logging.error(
+          `Error when pushing notifications: ${(err as Error).message}`,
+          err
+        );
+      }
     }
-
-    return extracted;
+    return {
+      finished: true,
+      contacts: extracted
+    };
   }
 
   private async handleNewSignature(

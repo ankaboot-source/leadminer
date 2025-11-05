@@ -7,7 +7,8 @@ export type TaskProgressType =
   | 'fetched'
   | 'extracted'
   | 'createdContacts'
-  | 'verifiedContacts';
+  | 'verifiedContacts'
+  | 'signatures';
 
 export interface EmailStatusVerifier {
   running: boolean;
@@ -38,6 +39,7 @@ export interface TaskProgress {
   extracted: number;
   verifiedContacts: number;
   createdContacts: number;
+  signatures: number;
 }
 
 export interface Task {
@@ -116,6 +118,8 @@ export interface MiningTask {
     fetch: TaskFetch;
     extract: TaskExtract;
     clean: TaskClean;
+    // Temp solution to track signature extraction progress
+    signature: Task;
   };
   progress: TaskProgress;
   progressHandlerSSE: RealtimeSSE;

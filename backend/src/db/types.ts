@@ -121,7 +121,8 @@ export enum TaskType {
   Fetch = 'fetch',
   Extract = 'extract',
   Clean = 'clean',
-  Enrich = 'enrich'
+  Enrich = 'enrich',
+  Signature = 'signature'
 }
 
 export enum TaskCategory {

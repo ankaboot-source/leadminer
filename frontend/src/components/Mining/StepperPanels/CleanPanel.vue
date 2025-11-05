@@ -19,7 +19,7 @@
   </ProgressCard>
   <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
-      v-if="$leadminerStore.activeTask"
+      v-if="$leadminerStore.activeTask && !$leadminerStore.miningCompleted"
       class="w-full md:w-max"
       icon="pi pi-stop"
       icon-pos="right"
@@ -46,7 +46,7 @@ const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
-  () => !$leadminerStore.miningInterrupted && $leadminerStore.cleaningFinished,
+  () => !$leadminerStore.miningInterrupted && $leadminerStore.miningCompleted,
 );
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,

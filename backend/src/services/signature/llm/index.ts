@@ -161,7 +161,6 @@ type OpenRouterResponse = {
       content: string;
       refusal: string;
     };
-    logprobs: Record<string, unknown>;
     finish_reason: string;
     index: number;
   }>;

@@ -14,6 +14,7 @@ import {
   RedactedTask,
   Task,
   TaskClean,
+  TaskEnrich,
   TaskExtract,
   TaskFetch
 } from '../../src/services/tasks-manager/types';
@@ -89,6 +90,12 @@ jest.mock('../../src/db/supabase/tasks', () =>
           };
         case 'clean':
           return { id: '3-task-clean', type: 'clean', started_at: Date.now() };
+        case 'enrich':
+          return {
+            id: '4-task-enrich',
+            type: 'enrich',
+            started_at: Date.now()
+          };
         default:
           return [];
       }
@@ -101,7 +108,7 @@ const fakeRedisClient = redis.getClient();
 const tasksResolver = new SupabaseTasks({} as SupabaseClient, {} as Logger);
 
 const mockedProgressHandler = {
-  send: jest.fn(),
+  sendSSE: jest.fn(),
   stop: jest.fn()
 };
 
@@ -131,7 +138,7 @@ METHODS:
   - #notifyChanges()
   - #updateProgress()
   - #hasCompleted()
-  - #pubsubSendMessage()
+  - #pubsubSendSSEMessage()
 
  */
 
@@ -145,14 +152,16 @@ describe('Test TaskManager helper functions', () => {
         process: {
           fetch: { id: '325664dd51e0' } as TaskFetch,
           extract: { id: 'f6494f8d' } as TaskExtract,
-          clean: { id: 'a081e57d5f14' } as TaskClean
+          clean: { id: 'a081e57d5f14' } as TaskClean,
+          signature: { id: 'a081e57d5f15' } as TaskEnrich
         },
         progress: {
           totalMessages: 100,
           fetched: 50,
           extracted: 10,
           verifiedContacts: 5,
-          createdContacts: 10
+          createdContacts: 10,
+          signatures: 0
         },
         progressHandlerSSE: {} as RealtimeSSE,
         startedAt: performance.now()
@@ -164,14 +173,16 @@ describe('Test TaskManager helper functions', () => {
         processes: {
           fetch: '325664dd51e0',
           extract: 'f6494f8d',
-          clean: 'a081e57d5f14'
+          clean: 'a081e57d5f14',
+          signature: 'a081e57d5f15'
         },
         progress: {
           totalMessages: mockedTask.progress.totalMessages,
           fetched: mockedTask.progress.fetched,
           extracted: mockedTask.progress.extracted,
           verifiedContacts: mockedTask.progress.verifiedContacts,
-          createdContacts: mockedTask.progress.createdContacts
+          createdContacts: mockedTask.progress.createdContacts,
+          signatures: mockedTask.progress.signatures
         }
       };
 
@@ -311,8 +322,15 @@ describe('TasksManager', () => {
             status: TaskStatus.Running
           })
         );
+        expect(tasksResolver.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'enrich',
+            category: TaskCategory.Enriching,
+            status: TaskStatus.Running
+          })
+        );
 
-        expect(tasksResolver.create).toHaveBeenCalledTimes(3);
+        expect(tasksResolver.create).toHaveBeenCalledTimes(4);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledTimes(1);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledWith(
           task.miningId,
@@ -360,6 +378,13 @@ describe('TasksManager', () => {
           expect.objectContaining({
             type: 'fetch',
             category: TaskCategory.Mining,
+            status: TaskStatus.Canceled
+          })
+        );
+        expect(tasksResolver.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'enrich',
+            category: TaskCategory.Enriching,
             status: TaskStatus.Canceled
           })
         );
@@ -415,11 +440,14 @@ describe('TasksManager', () => {
 
           expect(tasksResolver.update).toHaveBeenCalledWith(
             expect.objectContaining({
-              type: processKey,
+              type: processKey === 'signature' ? 'enrich' : processKey,
               category:
+                // eslint-disable-next-line no-nested-ternary
                 processKey === 'clean'
                   ? TaskCategory.Cleaning
-                  : TaskCategory.Mining,
+                  : processKey === 'signature'
+                    ? TaskCategory.Enriching
+                    : TaskCategory.Mining,
               status: TaskStatus.Canceled
             })
           );
