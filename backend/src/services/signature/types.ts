@@ -3,7 +3,7 @@ export interface PersonLD {
   image?: string;
   jobTitle?: string;
   worksFor?: string;
-  address?: string[];
+  address?: string;
   telephone?: string[];
   sameAs?: string[];
 }

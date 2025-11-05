@@ -55,7 +55,7 @@ export interface Person {
   url?: string;
   name?: string;
   image?: string;
-  location?: string[];
+  location?: string;
   jobTitle?: string;
   sameAs?: string[];
   givenName?: string;

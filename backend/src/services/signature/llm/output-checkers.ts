@@ -73,6 +73,20 @@ export function parseStringArray(value: unknown): string[] | undefined {
   return cleaned.length ? [...new Set(cleaned)] : undefined;
 }
 
+export function parseLocationString(value: unknown): string | undefined {
+  if (!value) return undefined;
+
+  const combined = Array.isArray(value) ? value.join(', ') : String(value);
+
+  return (
+    combined
+      .replace(/\\n|\n/g, ', ') // replace literal or real newlines with ", "
+      .replace(/\s*,\s*/g, ', ') // normalize commas and spaces
+      .replace(/\s{2,}/g, ' ') // collapse multiple spaces
+      .trim() || undefined
+  );
+}
+
 export function removeFalsePositives(
   person: PersonLD,
   signature: string,
