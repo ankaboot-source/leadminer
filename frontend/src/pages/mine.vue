@@ -5,7 +5,7 @@
     >
       <MiningStepper />
     </div>
-    <MiningTable :show-table="showTable" />
+    <MiningTable :show-table="showTable" origin="mine" />
   </div>
 </template>
 
