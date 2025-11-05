@@ -18,7 +18,7 @@ ALTER TABLE private.persons
 RENAME COLUMN location_temp TO location;
 
 
--- Update get_contacts_table()
+-- Update get_contacts_table() `location` input type
 DROP FUNCTION private.get_contacts_table;
 CREATE  FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text, alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
     LANGUAGE plpgsql
