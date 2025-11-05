@@ -721,7 +721,9 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div>{{ data.location?.join(', ') }}</div>
+        <div>
+          {{ data.location }}
+        </div>
       </template>
     </Column>
 
