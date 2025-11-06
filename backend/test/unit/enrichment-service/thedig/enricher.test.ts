@@ -127,7 +127,7 @@ describe('Thedig', () => {
             jobTitle: 'Software Engineer',
             organization: 'Leadminer',
             identifiers: ['valid.user'],
-            location: 'country, city',
+            location: 'country, city, country, city',
             sameAs: [
               'https://linkedin.com/in/validuser',
               'https://x.com/validuser/'
