@@ -109,7 +109,7 @@ describe('Enrichments Class', () => {
             'https://linkedin.com/in/johndoe',
             'https://github.com/johndoe'
           ],
-          location: ['San Francisco, CA', 'USA'],
+          location: 'San Francisco, CA, USA',
           alternateName: ['Johnny', 'J.D.']
         }
       ];
@@ -133,7 +133,7 @@ describe('Enrichments Class', () => {
             image: 'https://example.com/image.jpg',
             same_as:
               'https://linkedin.com/in/johndoe,https://github.com/johndoe',
-            location: 'San Francisco, CA,USA'
+            location: 'San Francisco, CA, USA'
           }
         ],
         p_update_empty_fields_only: true
