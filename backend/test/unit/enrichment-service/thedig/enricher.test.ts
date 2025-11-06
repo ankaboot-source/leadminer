@@ -41,7 +41,7 @@ describe('Thedig', () => {
         organization: 'Tech Co.',
         image: 'https://example.com/pic.jpg',
         identifiers: ['jane.doe'],
-        location: 'City, State',
+        location: 'City, State, City, State',
         sameAs: ['https://linkedin.com/in/janedoe']
       }
     ],
