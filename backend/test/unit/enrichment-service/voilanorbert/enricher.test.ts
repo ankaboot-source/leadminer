@@ -144,7 +144,7 @@ describe('Voilanorbert', () => {
           {
             email: 'valid@example.com',
             name: 'Valid User',
-            location: ['country, city'],
+            location: 'country, city',
             organization: 'Leadminer',
             jobTitle: 'Senior Developer',
             sameAs: [
@@ -157,7 +157,7 @@ describe('Voilanorbert', () => {
           {
             email: 'partial@example.com',
             name: 'Partial User',
-            location: ['country, city'],
+            location: 'country, city',
             organization: 'Leadminer',
             jobTitle: 'Intern',
             sameAs: ['facebook.com/partialUser', 'linkedin.com/in/partialUser'],
