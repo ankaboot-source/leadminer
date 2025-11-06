@@ -21,8 +21,8 @@ describe('Thedig', () => {
     jobTitle: ['Software Engineer'],
     worksFor: ['Tech Co.'],
     image: ['https://example.com/pic.jpg'],
-    homeLocation: ['City, State'],
-    workLocation: ['City, State'],
+    homeLocation: 'City, State',
+    workLocation: 'City, State',
     alternateName: ['JDoe'],
     sameAs: ['https://linkedin.com/in/janedoe'],
     identifier: ['jane.doe'],
@@ -41,7 +41,7 @@ describe('Thedig', () => {
         organization: 'Tech Co.',
         image: 'https://example.com/pic.jpg',
         identifiers: ['jane.doe'],
-        location: ['City, State', 'City, State'],
+        location: 'City, State',
         sameAs: ['https://linkedin.com/in/janedoe']
       }
     ],
@@ -83,8 +83,8 @@ describe('Thedig', () => {
             'https://x.com/validuser/profile/pic.png',
             'https://linkedin.com/in/validuser/pic.png'
           ],
-          homeLocation: ['country, city'],
-          workLocation: ['country, city'],
+          homeLocation: 'country, city',
+          workLocation: 'country, city',
           alternateName: ['valid_user_123'],
           sameAs: [
             'https://linkedin.com/in/validuser',
@@ -99,7 +99,7 @@ describe('Thedig', () => {
           givenName: '',
           familyName: 'User',
           worksFor: ['Leadminer'],
-          workLocation: ['country, city'],
+          workLocation: 'country, city',
           sameAs: [
             'https://linkedin.com/in/partialuser',
             'https://x.com/partialuser/'
@@ -127,7 +127,7 @@ describe('Thedig', () => {
             jobTitle: 'Software Engineer',
             organization: 'Leadminer',
             identifiers: ['valid.user'],
-            location: ['country, city', 'country, city'],
+            location: 'country, city',
             sameAs: [
               'https://linkedin.com/in/validuser',
               'https://x.com/validuser/'
@@ -143,7 +143,7 @@ describe('Thedig', () => {
             jobTitle: undefined,
             organization: 'Leadminer',
             identifiers: undefined,
-            location: ['country, city'],
+            location: 'country, city',
             sameAs: [
               'https://linkedin.com/in/partialuser',
               'https://x.com/partialuser/'
