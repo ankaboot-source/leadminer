@@ -1,13 +1,13 @@
 import { Logger } from 'winston';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 import { Engine, EngineResult, Person } from '../Engine';
 import VoilanorbertApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from './client';
-import {
-  undefinedIfEmpty,
-  undefinedIfFalsy
-} from '../../../utils/helpers/validation';
 
 export default class Thedig implements Engine {
   readonly name = 'thedig';
@@ -111,11 +111,8 @@ export default class Thedig implements Engine {
         sameAs: undefinedIfEmpty(person.sameAs ?? []),
         identifiers: undefinedIfEmpty(person.identifier ?? []),
         alternateName: undefinedIfEmpty(person.alternateName ?? []),
-        location: undefinedIfEmpty(
-          [
-            [person.homeLocation].flat().filter(Boolean).join(','),
-            [person.workLocation].flat().filter(Boolean).join(',')
-          ].flat()
+        location: undefinedIfFalsy(
+            [person.homeLocation, person.workLocation].flat().filter(Boolean).join(', '),
         )
       }))
       .filter(

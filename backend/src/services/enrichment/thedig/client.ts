@@ -24,8 +24,8 @@ export interface EnrichPersonRequest {
   identifier?: string[];
   nationality?: string[];
   description?: string[];
-  homeLocation?: string[];
-  workLocation?: string[];
+  homeLocation?: string;
+  workLocation?: string;
   alternateName?: string[];
   knowsLanguage?: string[];
 }
@@ -39,8 +39,8 @@ export interface EnrichPersonResponse {
   image?: string[];
   jobTitle?: string[];
   worksFor?: string[];
-  homeLocation?: string[];
-  workLocation?: string[];
+  homeLocation?: string;
+  workLocation?: string;
   sameAs?: string[];
   identifier?: string[];
   description?: string[];

@@ -83,7 +83,7 @@ export class CsvXlsxContactEngine {
       familyName: undefinedIfFalsy(familyName ?? ''),
       jobTitle: undefinedIfFalsy(jobTitle ?? ''),
       image: undefinedIfFalsy(image ?? ''),
-      location: undefinedIfEmpty(location?.split(',') ?? []),
+      location: undefinedIfFalsy(location ?? ''),
       sameAs: undefinedIfEmpty(sameAs?.split(',') ?? []),
       worksFor: undefinedIfFalsy(worksFor ?? ''),
       alternateName: undefinedIfEmpty(alternateName?.split(',') ?? [])
