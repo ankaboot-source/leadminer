@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Contact } from '../../db/types';
 
 export type NotificationType = 'enrich' | 'clean' | 'extract' | 'signature';
 
@@ -8,8 +7,42 @@ export interface NotificationPayload {
   type: NotificationType;
   details: {
     signatures: number;
-    extracted: Partial<Contact>[];
   };
+}
+
+export interface SignaturePayload {
+  userId: string;
+  personEmail: string;
+  messageId: string;
+  rawSignature?: string | null;
+  extractedSignature?: Record<string, any> | null;
+  details?: Record<string, any> | null;
+}
+
+/**
+ * Bulk upsert signatures into `private.signatures`.
+ * If (user_id, person_email) already exists, updates all fields.
+ */
+export async function upsertSignaturesDB(
+  supabase: SupabaseClient,
+  signatures: SignaturePayload[]
+) {
+  const rows = signatures.map((s) => ({
+    user_id: s.userId,
+    person_email: s.personEmail,
+    message_id: s.messageId,
+    raw_signature: s.rawSignature,
+    extracted_signature: s.extractedSignature,
+    details: s.details
+  }));
+
+  const { error } = await supabase
+    .schema('private')
+    .from('signatures')
+    .upsert(rows, {
+      onConflict: 'user_id,person_email'
+    });
+  if (error) throw error;
 }
 
 /**

@@ -7,6 +7,7 @@ export interface EmailSignatureWithMetadata {
   userId: string;
   signature: string;
   email: string;
+  messageId: string;
   firstSeenDate: string;
   lastSeenDate: string;
 }
@@ -24,6 +25,7 @@ export default interface EmailSignatureCache {
     userId: string,
     email: string,
     signature: string,
+    messageId: string,
     messageDate: string,
     miningId: string
   ): Promise<void>;
