@@ -112,7 +112,10 @@ export default class Thedig implements Engine {
         identifiers: undefinedIfEmpty(person.identifier ?? []),
         alternateName: undefinedIfEmpty(person.alternateName ?? []),
         location: undefinedIfFalsy(
-            [person.homeLocation, person.workLocation].flat().filter(Boolean).join(', '),
+          [person.homeLocation, person.workLocation]
+            .flat()
+            .filter(Boolean)
+            .join(', ')
         )
       }))
       .filter(
