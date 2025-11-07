@@ -469,7 +469,11 @@ export default class ImapEmailsFetcher {
         publishedEmails = 0;
       }
 
-      if (this.fetchEmailBody && bodyParts?.length)
+      if (
+        this.fetchEmailBody &&
+        bodyParts?.length &&
+        msg.envelope?.from?.[0]?.address !== this.userEmail
+      )
         await this.publishBody({
           header,
           folder,
