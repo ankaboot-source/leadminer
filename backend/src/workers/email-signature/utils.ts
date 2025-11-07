@@ -15,8 +15,8 @@ export interface SignaturePayload {
   personEmail: string;
   messageId: string;
   rawSignature?: string | null;
-  extractedSignature?: Record<string, any> | null;
-  details?: Record<string, any> | null;
+  extractedSignature?: Record<string, string> | null;
+  details?: Record<string, unknown> | null;
 }
 
 /**

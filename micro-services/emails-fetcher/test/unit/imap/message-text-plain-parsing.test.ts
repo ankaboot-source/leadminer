@@ -166,11 +166,7 @@ describe('decodeTextPart', () => {
 
   it('should handle base64 encoding (typical email body)', () => {
     const originalText = 'Hello, this is a test email.';
-    // Real-world IMAP base64 bodies are often split across lines:
-    const base64Content = Buffer.from(originalText, 'utf-8')
-      .toString('base64')
-      .match(/.{1,76}/g)!
-      .join('\r\n');
+    const base64Content = Buffer.from(originalText, 'utf-8').toString('base64');
     const buffer = Buffer.from(base64Content, 'utf-8');
 
     const result = decodeTextPart(buffer, 'utf-8', 'base64');
@@ -188,7 +184,6 @@ describe('decodeTextPart', () => {
   });
 
   it('should handle quoted-printable with spaces and soft breaks', () => {
-    // Real-world example from an email body (soft line breaks with "=")
     const qpContent = 'This=20is=20a=20test=0AWith=20line=20breaks=2E=0A';
     const buffer = Buffer.from(qpContent, 'latin1');
 
@@ -197,8 +192,6 @@ describe('decodeTextPart', () => {
   });
 
   it('should handle ISO-2022-JP encoded text (Japanese email sample)', () => {
-    // Example from an actual ISO-2022-JP encoded subject
-    // "こんにちは" in ISO-2022-JP
     const jisBytes = Buffer.from('\x1B$B$3$s$K$A$O\x1B(B', 'binary');
     const result = decodeTextPart(jisBytes, 'iso-2022-jp', '7bit');
     expect(result).toBe('こんにちは');
@@ -221,13 +214,13 @@ describe('decodeTextPart', () => {
 
   it('should handle undefined transferEncoding', () => {
     const buffer = Buffer.from('plain');
-    const result = decodeTextPart(buffer, 'utf-8', undefined as any);
+    const result = decodeTextPart(buffer);
     expect(result).toBe('plain');
   });
 
   it('should handle undefined charset', () => {
     const buffer = Buffer.from('ascii text');
-    const result = decodeTextPart(buffer, undefined as any, '7bit');
+    const result = decodeTextPart(buffer, undefined, '7bit');
     expect(result).toBe('ascii text');
   });
 
@@ -260,7 +253,7 @@ describe('decodeTextPart', () => {
   });
 
   it('should handle Windows-1252 encoded Euro and Pound symbols', () => {
-    const euroPound = Buffer.from([0x80, 0xa3]); // €£ in Win-1252
+    const euroPound = Buffer.from([0x80, 0xa3]);
     const result = decodeTextPart(euroPound, 'windows-1252', '7bit');
     expect(result).toBe('€£');
   });

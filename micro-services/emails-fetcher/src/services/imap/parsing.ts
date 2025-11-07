@@ -53,7 +53,7 @@ export function groupMessagesByTextPart(
     if (!textPlainMap.has(key)) {
       textPlainMap.set(key, new Set());
     }
-    textPlainMap.get(key)!.add(uid);
+    textPlainMap.get(key)?.add(uid);
   }
 
   return Array.from(textPlainMap.entries()).map(([partId, uids]) => [

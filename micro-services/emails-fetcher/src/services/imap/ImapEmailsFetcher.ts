@@ -47,7 +47,7 @@ interface StreamEmailData {
   body: string;
   seqNumber: number;
   folderPath: string;
-  isLast: Boolean;
+  isLast: boolean;
 }
 
 interface StreamSignatureData {
@@ -60,7 +60,7 @@ interface StreamSignatureData {
   body: string;
   seqNumber: number;
   folderPath: string;
-  isLast: Boolean;
+  isLast: boolean;
 }
 
 interface EmailToStream {
