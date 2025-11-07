@@ -407,6 +407,16 @@ async function saveContactInformations() {
     location: contactEdit.value.location,
   };
 
+  const newLocation =
+    originalContactCopy.location !== editedContactCopy.location
+      ? editedContactCopy.location || null
+      : undefined;
+
+  let locationNormalized = null;
+  if (newLocation) {
+    locationNormalized = await normalizeLocation(newLocation);
+  }
+
   const contactToUpdate: Partial<Contact> = {
     email: editedContactCopy.email,
     alternate_name:
@@ -436,10 +446,8 @@ async function saveContactInformations() {
       originalContactCopy.family_name !== editedContactCopy.family_name
         ? editedContactCopy.family_name || null
         : undefined,
-    location:
-      originalContactCopy.location !== editedContactCopy.location
-        ? editedContactCopy.location || null
-        : undefined,
+    location: newLocation,
+    location_normalized: locationNormalized,
     works_for:
       originalContactCopy.works_for !== editedContactCopy.works_for
         ? editedContactCopy.works_for || null

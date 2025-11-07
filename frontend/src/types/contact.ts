@@ -9,7 +9,13 @@ export const EmailStatusScore: Record<EmailStatus, number> = {
   INVALID: 3,
 };
 
-export interface Contact {
+export interface NormalizedLocation {
+  lat?: string;
+  lon?: string;
+  display_name?: string;
+  address?: Record<string, any>;
+}
+  export interface Contact {
   id: string;
   user_id: string;
   email: string;
@@ -19,6 +25,7 @@ export interface Contact {
   alternate_name: string[] | null;
   telephone: string[] | null;
   location: string | null;
+  location_normalized: NormalizedLocation;
   works_for: string | null;
   job_title: string | null;
   same_as: string[] | null;
