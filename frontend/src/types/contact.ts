@@ -15,7 +15,7 @@ export interface NormalizedLocation {
   display_name?: string;
   address?: Record<string, any>;
 }
-  export interface Contact {
+export interface Contact {
   id: string;
   user_id: string;
   email: string;
@@ -25,7 +25,7 @@ export interface NormalizedLocation {
   alternate_name: string[] | null;
   telephone: string[] | null;
   location: string | null;
-  location_normalized: NormalizedLocation;
+  location_normalized: NormalizedLocation | null;
   works_for: string | null;
   job_title: string | null;
   same_as: string[] | null;
