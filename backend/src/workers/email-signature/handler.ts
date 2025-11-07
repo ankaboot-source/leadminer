@@ -7,7 +7,11 @@ import planer from 'planer';
 import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import { isUsefulSignatureContent, pushNotificationDB } from './utils';
+import {
+  isUsefulSignatureContent,
+  pushNotificationDB,
+  upsertSignaturesDB
+} from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
@@ -79,11 +83,13 @@ export class EmailSignatureProcessor {
     contacts: Partial<Contact>[] | null;
   }> {
     const { userId, miningId, data: payload } = data;
-    const { from, messageDate } = payload.header ?? {};
+    const { from, messageDate, rawHeader } = payload.header ?? {};
 
     const shouldProcess = await this.isWorthProcessing(data);
 
     if (shouldProcess) {
+      const [messageId] = rawHeader['message-id'];
+
       this.logging.debug('Processing new signature', {
         userId,
         miningId,
@@ -96,6 +102,7 @@ export class EmailSignatureProcessor {
         miningId,
         from?.address,
         payload.body,
+        messageId,
         messageDate
       );
     }
@@ -110,24 +117,36 @@ export class EmailSignatureProcessor {
 
     if (extracted.length) {
       try {
+        const signatures = extracted.map(
+          ([personEmail, messageId, rawSignature, extractedSignature]) => ({
+            userId,
+            personEmail,
+            messageId,
+            rawSignature,
+            extractedSignature,
+            details: { miningId }
+          })
+        );
+
+        await upsertSignaturesDB(this.supabase, signatures);
+
         await pushNotificationDB(this.supabase, {
           userId,
           type: 'signature',
           details: {
-            extracted,
             signatures: extracted.length
           }
         });
       } catch (err) {
         this.logging.error(
-          `Error when pushing notifications: ${(err as Error).message}`,
+          `Error when inserting signatures/notifications: ${(err as Error).message}`,
           err
         );
       }
     }
     return {
       finished: true,
-      contacts: extracted
+      contacts: extracted.map(([, , , contact]) => contact)
     };
   }
 
@@ -136,6 +155,7 @@ export class EmailSignatureProcessor {
     miningId: string,
     email: string,
     body: string,
+    messageId: string,
     messageDate: string
   ): Promise<void> {
     const signature = this.extractSignature(body);
@@ -158,7 +178,14 @@ export class EmailSignatureProcessor {
       return;
     }
 
-    await this.cache.set(userId, email, signature, messageDate, miningId);
+    await this.cache.set(
+      userId,
+      email,
+      signature,
+      messageId,
+      messageDate,
+      miningId
+    );
     this.logging.info('Cached new signature', {
       email,
       miningId,
@@ -170,7 +197,7 @@ export class EmailSignatureProcessor {
   private async handleBatchUpdate(
     userId: string,
     miningId: string
-  ): Promise<Partial<Contact>[]> {
+  ): Promise<[string, string, string, Partial<Contact>][]> {
     this.logging.debug('handleBatchUpdate()', { userId, miningId });
 
     const all = await this.cache.getAllFromMining(miningId);
@@ -180,25 +207,31 @@ export class EmailSignatureProcessor {
       return [];
     }
 
-    const contacts: (Partial<Contact> | undefined)[] = await Promise.all(
-      all.map(async ({ email, signature }) => {
-        try {
-          const contact = await this.extractContact(userId, email, signature);
-          if (contact) {
-            await this.upsertContact(contact);
-            return contact;
+    const contacts: ([string, string, string, Partial<Contact>] | undefined)[] =
+      await Promise.all(
+        all.map(async ({ email, signature, messageId }) => {
+          try {
+            const contact = await this.extractContact(userId, email, signature);
+            if (contact) {
+              await this.upsertContact(contact);
+              return [email, messageId, signature, contact];
+            }
+            return undefined;
+          } catch (err) {
+            this.logging.error('Error on extract/insert contact', err);
+            return undefined;
           }
-          return undefined;
-        } catch (err) {
-          this.logging.error('Error on extract/insert contact', err);
-          return undefined;
-        }
-      })
-    );
+        })
+      );
 
     await this.cache.clearCachedSignature(miningId);
 
-    const successfulContacts = contacts.filter(Boolean) as Contact[];
+    const successfulContacts = contacts.filter((c) => c && contacts.length) as [
+      string,
+      string,
+      string,
+      Partial<Contact>
+    ][];
 
     this.logging.info('Batch complete - cache cleared', {
       miningId,
@@ -275,7 +308,7 @@ export class EmailSignatureProcessor {
       family_name: contact.family_name ?? null,
       works_for: contact.works_for ?? null,
       same_as: (contact.same_as ?? []).join(','),
-      location: (contact.location ?? []).join(','),
+      location: contact.location ?? null,
       alternate_name: contact.alternate_name ?? null,
       telephone: Array.isArray(contact.telephone)
         ? contact.telephone.join(',')

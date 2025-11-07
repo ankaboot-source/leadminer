@@ -64,7 +64,7 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
     given_name: contact.given_name,
     family_name: contact.family_name,
     alternate_name: contact.alternate_name?.join(','),
-    location: contact.location?.join(','),
+    location: contact.location,
     works_for: contact.works_for,
     job_title: contact.job_title,
     same_as: contact.same_as?.join(','),

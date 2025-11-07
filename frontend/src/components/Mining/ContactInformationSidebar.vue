@@ -147,7 +147,7 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              {{ contact.location?.join(', ') }}
+              {{ contact.location }}
             </div>
             <Textarea
               v-else
@@ -269,7 +269,7 @@ const contactEdit = ref<ContactEdit>({
   alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
   telephone: contact.value?.telephone?.join('\n') ?? null,
   same_as: contact.value?.same_as?.join('\n') ?? null,
-  location: contact.value?.location?.join('\n') ?? null,
+  location: contact.value?.location ?? null,
 });
 
 watch(contact, (newContact) => {
@@ -278,7 +278,7 @@ watch(contact, (newContact) => {
     alternate_name: newContact?.alternate_name?.join('\n') ?? null,
     telephone: newContact?.telephone?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
-    location: newContact?.location?.join('\n') ?? null,
+    location: newContact?.location ?? null,
   };
 });
 
@@ -289,7 +289,7 @@ const skipDialog = computed(
       contact.value.family_name ||
       contact.value.alternate_name?.length ||
       contact.value.telephone?.length ||
-      contact.value.location?.length ||
+      contact.value.location ||
       contact.value.works_for ||
       contact.value.job_title ||
       contact.value.same_as?.length ||
@@ -404,7 +404,7 @@ async function saveContactInformations() {
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
     telephone: transformStringToArray(contactEdit.value.telephone),
-    location: transformStringToArray(contactEdit.value.location),
+    location: contactEdit.value.location,
   };
 
   const contactToUpdate: Partial<Contact> = {
@@ -437,8 +437,7 @@ async function saveContactInformations() {
         ? editedContactCopy.family_name || null
         : undefined,
     location:
-      JSON.stringify(originalContactCopy.location) !==
-      JSON.stringify(editedContactCopy.location)
+      originalContactCopy.location !== editedContactCopy.location
         ? editedContactCopy.location || null
         : undefined,
     works_for:

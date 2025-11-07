@@ -74,7 +74,7 @@ export default class Voilanorbert implements Engine {
         name: undefinedIfFalsy(result.fullName),
         organization: undefinedIfFalsy(result.organization),
         jobTitle: undefinedIfFalsy(result.title),
-        location: undefinedIfEmpty([result.location]),
+        location: undefinedIfFalsy(result.location),
         sameAs: undefinedIfEmpty([
           result.facebook,
           result.linkedin,

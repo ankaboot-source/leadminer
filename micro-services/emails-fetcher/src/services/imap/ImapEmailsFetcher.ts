@@ -1,9 +1,7 @@
 import { parseHeader } from 'imap';
-import { ImapFlow as Connection, MessageStructureObject } from 'imapflow';
+import { ImapFlow as Connection, FetchMessageObject } from 'imapflow';
 import PQueue from 'p-queue';
-import { decodeQuotedPrintable } from 'lettercoder';
-import iconv from 'iconv-lite';
-import Encoding from 'encoding-japanese';
+import assert from 'assert';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
@@ -11,83 +9,67 @@ import ImapConnectionProvider from './ImapConnectionProvider';
 import ENV from '../../config';
 import redis from '../../utils/redis';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
+import {
+  decodeTextPart,
+  findPlainTextNode,
+  groupMessagesByTextPart
+} from './parsing';
 
 const redisClient = redis.getClient();
 
-interface EmailJob {
+interface Worker {
   folder: string;
-  range: string;
-  isUid: boolean;
-  partId?: string;
   totalInFolder: number;
+  seqRange?: string;
+  uidRange?: string;
+  bodyParts?: string[];
 }
 
-/**
- * Recursively find the first text/plain part ID in an IMAP BODYSTRUCTURE.
- * @param node - The BODYSTRUCTURE object returned by ImapFlow
- * @returns The part ID string (e.g., "1.2") or null if not found
- */
-function findPlainTextNode(
-  node?: MessageStructureObject
-): MessageStructureObject | null {
-  if (!node) return null;
-
-  const type = (node.type || '').toLowerCase();
-
-  if (type === 'text/plain') {
-    return node || null;
-  }
-
-  if (Array.isArray(node.childNodes)) {
-    for (const child of node.childNodes) {
-      const result = findPlainTextNode(child);
-      if (result) return result;
-    }
-  }
-
-  return null;
+interface Fetch {
+  connection: Connection;
+  folder: string;
+  totalInFolder: number;
+  seqRange?: string;
+  uidRange?: string;
+  bodyParts?: string[];
 }
 
-function decodeTextPart(
-  buffer: Buffer<ArrayBufferLike>,
-  charset = 'utf-8',
-  transferEncoding = '7bit'
-): string {
-  const encoding = transferEncoding?.toLowerCase() ?? '7bit';
-  const charsetNorm = (charset || 'ascii').toString().trim().toLowerCase();
+interface PublishBody {
+  folder: string;
+  totalInFolder: number;
+  message: FetchMessageObject;
+  selectedBodyParts: string[];
+  header: Record<string, string[]>;
+}
 
-  let bytes = buffer;
-  switch (encoding) {
-    case 'base64':
-      bytes = Buffer.from(
-        buffer.toString('ascii').trim().replace(/\s+/g, ''),
-        'base64'
-      );
-      break;
+interface StreamEmailData {
+  header: Record<string, string[]>;
+  body: string;
+  seqNumber: number;
+  folderPath: string;
+  isLast: boolean;
+}
 
-    case 'quoted-printable':
-      bytes = Buffer.from(decodeQuotedPrintable(buffer.toString('latin1')));
-      break;
+interface StreamSignatureData {
+  header: {
+    from: { address?: string; name?: string };
+    messageId: string;
+    messageDate: Date;
+    rawHeader: Record<string, string[]>;
+  };
+  body: string;
+  seqNumber: number;
+  folderPath: string;
+  isLast: boolean;
+}
 
-    default:
-      break;
-  }
-
-  let text: string;
-  try {
-    if (/^jis|^iso-?2022-?jp|^eucjp/i.test(charsetNorm)) {
-      text = Encoding.convert(bytes, {
-        from: charsetNorm.toUpperCase() as Encoding.Encoding,
-        to: 'UNICODE',
-        type: 'string'
-      });
-    } else {
-      text = iconv.decode(bytes, charsetNorm);
-    }
-  } catch {
-    text = bytes.toString('utf-8');
-  }
-  return text;
+interface EmailToStream {
+  miningId: string;
+  type: 'email' | 'signature';
+  data: StreamEmailData | StreamSignatureData;
+  userId: string;
+  userEmail: string;
+  userIdentifier: string;
 }
 
 /**
@@ -111,6 +93,25 @@ async function publishFetchingProgress(
 
   // Publish a progress with how many messages we fetched.
   await redisClient.publish(miningId, JSON.stringify(progress));
+}
+
+/**
+ * Publishes an email payload to a Redis stream.
+ *
+ * @async
+ * @function publishToStream
+ * @param {string} stream - The name of the Redis stream to publish to.
+ * @param {EmailToStream} data - The email data to be published. This object is serialized to JSON.
+ * @throws {Error} If the Redis `xadd` operation fails, the error is logged and rethrown.
+ * @returns {Promise<void>} Resolves when the message has been successfully added to the stream.
+ */
+async function publishToStream(stream: string, data: EmailToStream) {
+  try {
+    await redisClient.xadd(stream, '*', 'message', JSON.stringify(data));
+  } catch (err) {
+    logger.error('Error when publishing to streams');
+    throw err;
+  }
 }
 
 /**
@@ -148,10 +149,6 @@ export default class ImapEmailsFetcher {
   private FETCHING_MAX_ERRORS: number;
 
   private FETCHING_TOTAL_ERRORS: number;
-
-  private readonly EMAIL_TEXT_MAX_LENGTH: number;
-
-  private readonly bodies: string[];
 
   private readonly emailsQueue: PQueue;
 
@@ -195,9 +192,6 @@ export default class ImapEmailsFetcher {
     this.isCanceled = false;
     this.isCompleted = false;
 
-    // Email body length to send
-    this.EMAIL_TEXT_MAX_LENGTH = 3000;
-
     // Error Tracking
     this.FETCHING_TOTAL_ERRORS = 0;
     this.FETCHING_MAX_ERRORS = maxConcurrentConnections * 1.5;
@@ -208,7 +202,6 @@ export default class ImapEmailsFetcher {
       intervalCap: 1, // only 1 job starts per interval
       interval: 300 // 200ms gap between each job starts
     });
-    this.bodies = this.fetchEmailBody ? ['TEXT'] : []; // HEADER is handled by ImapFlow;
   }
 
   /**
@@ -306,11 +299,249 @@ export default class ImapEmailsFetcher {
     return total;
   }
 
+  async publishHeader(
+    message: FetchMessageObject,
+    folder: string,
+    totalInFolder: number
+  ): Promise<Record<string, string[]> | null> {
+    try {
+      const { seq, headers } = message;
+      const header = parseHeader((headers as Buffer).toString('utf8'));
+      const messageId = getMessageId(header);
+      header['message-id'] = [messageId];
+
+      const isLastMessageInFolder = seq === totalInFolder;
+
+      const skipThisEmail =
+        !header || (this.fetchedIds.has(messageId) && !isLastMessageInFolder);
+
+      if (skipThisEmail) return null;
+
+      await publishToStream(this.contactStream, {
+        type: 'email',
+        data: {
+          header,
+          body: '',
+          seqNumber: seq,
+          folderPath: folder,
+          isLast: isLastMessageInFolder
+        } as StreamEmailData,
+        userId: this.userId,
+        userEmail: this.userEmail,
+        userIdentifier: this.userIdentifier,
+        miningId: this.miningId
+      });
+
+      return header ?? null;
+    } catch (error) {
+      logger.error('Error when publishing email header', { error });
+      throw error;
+    }
+  }
+
+  async publishBody({
+    header,
+    message,
+    folder,
+    selectedBodyParts
+  }: PublishBody) {
+    try {
+      const { uid, seq, envelope, bodyParts, bodyStructure } = message;
+
+      if (!selectedBodyParts.length) {
+        logger.warn(
+          `[${this.miningId}:${folder}:${uid}] Skipping.., bodyParts to fetch are not supplied.`
+        );
+        return;
+      }
+
+      const date = envelope?.date;
+      const from = envelope?.from?.pop();
+      const [partId] = selectedBodyParts;
+      const [messageId] = header['message-id'];
+      const textBuffer = bodyParts?.get(partId);
+      const partInfo = findPlainTextNode(bodyStructure);
+
+      if (!textBuffer || !partInfo?.encoding || !partInfo.parameters?.charset) {
+        logger.warn(
+          `[${this.miningId}:${folder}:${uid}] Skipping text/plain part: no charset or transfer encoding info available.`
+        );
+        return;
+      }
+
+      const { encoding, parameters } = partInfo;
+      const text = decodeTextPart(
+        textBuffer,
+        parameters?.charset as BufferEncoding,
+        encoding
+      );
+
+      if (text.length && from && date) {
+        const { address, name } = from;
+        await publishToStream(this.signatureStream, {
+          type: 'email',
+          data: {
+            header: {
+              from: { address: address?.toLowerCase(), name },
+              messageId,
+              messageDate: date,
+              rawHeader: header
+            },
+            body: text,
+            seqNumber: seq,
+            folderPath: folder,
+            isLast: false
+          },
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userIdentifier: this.userIdentifier,
+          miningId: this.miningId
+        });
+      }
+    } catch (error) {
+      logger.error('Error when publishing email body', { error });
+      throw error;
+    }
+  }
+
+  async fetch({
+    connection,
+    folder,
+    totalInFolder,
+    seqRange,
+    uidRange,
+    bodyParts
+  }: Fetch) {
+    let range: string;
+    let publishedEmails = 0;
+
+    const batchSize = Math.max(this.batchSize, 200);
+
+    if (seqRange) {
+      range = seqRange;
+    } else if (uidRange) {
+      range = uidRange;
+    } else {
+      throw new Error(
+        'Invalid fetch parameters: either "seqRange" or "uidRange" must be provided.'
+      );
+    }
+
+    const stream = connection.fetch(
+      range,
+      {
+        source: false,
+        envelope: true,
+        headers: true,
+        bodyStructure: true,
+        bodyParts
+      },
+      {
+        uid: Boolean(uidRange)
+      }
+    );
+
+    for await (const msg of stream) {
+      if (this.isCanceled) {
+        logger.debug(
+          `[${this.miningId}:${folder}]: Received cancellation signal, aborting... `
+        );
+        connection.close();
+        break;
+      }
+
+      const header = await this.publishHeader(msg, folder, totalInFolder);
+
+      if (!header) continue;
+
+      const [messageId] = header['message-id'];
+      this.fetchedIds.add(messageId);
+      this.totalFetched += 1;
+      publishedEmails += 1;
+
+      if (publishedEmails >= batchSize) {
+        await publishFetchingProgress(
+          this.miningId,
+          publishedEmails,
+          this.isCanceled,
+          this.isCompleted
+        );
+        publishedEmails = 0;
+      }
+
+      if (
+        this.fetchEmailBody &&
+        bodyParts?.length &&
+        msg.envelope?.from?.[0]?.address !== this.userEmail
+      )
+        await this.publishBody({
+          header,
+          folder,
+          totalInFolder,
+          message: msg,
+          selectedBodyParts: bodyParts
+        });
+    }
+
+    if (publishedEmails > 0) {
+      await publishFetchingProgress(
+        this.miningId,
+        publishedEmails,
+        this.isCanceled,
+        this.isCompleted
+      );
+      publishedEmails = 0;
+    }
+  }
+
+  async fetchWithBody({ connection, folder, totalInFolder, seqRange }: Fetch) {
+    assert(connection, 'fetchWithBody: IMAP connection must be provided.');
+    assert(folder, 'fetchWithBody: folder name must be specified.');
+    assert(seqRange, 'fetchWithBody: sequence range (seqRange) is required.');
+    assert(
+      typeof totalInFolder === 'number' && totalInFolder >= 0,
+      'fetchWithBody: totalInFolder must be a valid non-negative number.'
+    );
+
+    logger.debug(
+      `[${this.miningId}:${folder}:${seqRange}] Starting bodyStructure fetch for ${totalInFolder} emails`
+    );
+
+    const stream = await connection.fetchAll(seqRange, {
+      bodyStructure: true,
+      uid: true,
+      source: false,
+      headers: false
+    });
+
+    const filteredMessages = groupMessagesByTextPart(
+      stream,
+      this.maxBodyTextSize
+    );
+
+    filteredMessages.forEach(([bodyParts, uids]) => {
+      const uidList = Array.from(uids);
+      this.emailsQueue.add(
+        () =>
+          this.worker(
+            {
+              folder,
+              bodyParts,
+              totalInFolder,
+              uidRange: uidList.join(',')
+            },
+            this.fetch.bind(this)
+          ),
+        { priority: 1 }
+      );
+    });
+  }
+
   /**
    * Fetches all email messages in the configured boxes.
    */
   async fetchEmailMessages() {
-    const emailJobs: EmailJob[] = [];
+    const emailJobs: Worker[] = [];
 
     const foldersToProcess = this.folders.filter(
       (f) => !EXCLUDED_IMAP_FOLDERS.includes(f)
@@ -342,9 +573,8 @@ export default class ImapEmailsFetcher {
           ranges.forEach((range) => {
             emailJobs.push({
               folder,
-              range,
-              totalInFolder,
-              isUid: false
+              seqRange: range,
+              totalInFolder
             });
           });
         } catch (err) {
@@ -360,313 +590,24 @@ export default class ImapEmailsFetcher {
     );
     try {
       emailJobs.forEach((job) =>
-        this.emailsQueue.add(() => this.processEmailJob(job))
+        this.emailsQueue.add(() =>
+          this.worker(
+            job,
+            this.fetchEmailBody
+              ? this.fetchWithBody.bind(this)
+              : this.fetch.bind(this)
+          )
+        )
       );
-      await this.emailsQueue.onIdle();
-
-      this.isCompleted = true;
-
-      if (!this.isCanceled) {
-        await this.stop(false);
-      }
-
-      logger.info(`[${this.miningId}] All email jobs completed`);
-    } catch (err) {
-      logger.error(err);
-    }
-  }
-
-  /**
-   * Fetches all email messages in the configured boxes.
-   */
-  async fetchEmailMessagesWithBody() {
-    const emailJobs: {
-      range: string;
-      folder: string;
-      totalInFolder: number;
-    }[] = [];
-
-    const foldersToProcess = this.folders.filter(
-      (f) => !EXCLUDED_IMAP_FOLDERS.includes(f)
-    );
-
-    // Map folders to async jobs
-    await Promise.all(
-      foldersToProcess.map(async (folder) => {
-        const connection =
-          await this.imapConnectionProvider.acquireConnection();
-        try {
-          const mailbox = await connection.mailboxOpen(folder, {
-            readOnly: true
-          });
-          const totalInFolder = mailbox.exists;
-
-          await connection.mailboxClose();
-
-          if (totalInFolder === 0) return;
-
-          const ranges = buildSequenceRanges(
-            totalInFolder,
-            ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
-          );
-
-          logger.debug(
-            `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
-          );
-          ranges.forEach((range) => {
-            emailJobs.push({
-              folder,
-              range,
-              totalInFolder
-            });
-          });
-        } catch (err) {
-          logger.warn(
-            `Failed to process folder ${folder}: ${(err as Error).message}`
-          );
-        } finally {
-          if (connection) {
-            await this.imapConnectionProvider.releaseConnection(connection);
-          }
-        }
-      })
-    );
-
-    try {
-      /* eslint-disable no-await-in-loop */
-      for (const job of emailJobs) {
-        let connection: Connection | null = null;
-        this.emailsQueue.add(async () => {
-          if (this.isCanceled) return;
-          try {
-            connection = await this.imapConnectionProvider.acquireConnection();
-
-            const textPlainMap = new Map<string, Set<number>>();
-
-            const { range, folder, totalInFolder } = job;
-
-            logger.debug(
-              `[${this.miningId}:${folder}:${range}] Starting bodyStructure fetch for ${totalInFolder} emails`
-            );
-
-            await connection.mailboxOpen(folder, { readOnly: true });
-
-            const stream = await connection.fetchAll(range, {
-              bodyStructure: true,
-              uid: true,
-              source: false,
-              headers: false
-            });
-
-            for (const { uid, bodyStructure } of stream) {
-              const node = findPlainTextNode(bodyStructure);
-              const size = node?.size ?? 0;
-
-              let key = node?.part ? node.part : '__no_text__';
-
-              if (this.maxBodyTextSize && size > this.maxBodyTextSize)
-                key = '__no_text__';
-
-              if (!textPlainMap.has(key)) textPlainMap.set(key, new Set());
-              textPlainMap.get(key)?.add(uid);
-            }
-
-            this.emailsQueue.addAll(
-              Array.from(textPlainMap.entries()).map(([partId, uids]) => {
-                const uidList = Array.from(uids);
-                logger.debug(
-                  `[${this.miningId}:${folder}:${range}] Queuing ${uidList.length} UIDs for partId=${partId}`
-                );
-                return async () => {
-                  await this.processEmailJob({
-                    folder,
-                    partId: partId === '__no_text__' ? undefined : partId,
-                    totalInFolder,
-                    range: uidList.join(','),
-                    isUid: partId !== '__no_text__'
-                  });
-                };
-              }),
-              { priority: 1 }
-            );
-
-            await connection.mailboxClose();
-          } catch (err) {
-            logger.error(
-              `Error during bodyStructure fetch: ${(err as Error).message}`,
-              { error: err }
-            );
-          } finally {
-            if (connection?.usable)
-              await this.imapConnectionProvider.releaseConnection(connection);
-            else if (connection)
-              await this.imapConnectionProvider.destroyConnection(connection);
-          }
-        });
-      }
-      /* eslint-enable no-await-in-loop */
 
       await this.emailsQueue.onIdle();
 
       this.isCompleted = true;
-
-      if (!this.isCanceled) {
-        await this.stop(false);
-      }
+      await this.stop(this.isCanceled);
 
       logger.info(`[${this.miningId}] All email jobs completed`);
     } catch (err) {
       logger.error(err);
-    }
-  }
-
-  /**
-   * Process fetch for a range
-   */
-  private async processFetch(
-    connection: Connection,
-    range: string,
-    isUid: boolean,
-    partId: string | undefined,
-    folderPath: string,
-    totalInFolder: number
-  ) {
-    let publishedEmails = 0;
-    const batchSize = Math.max(this.batchSize, 200);
-
-    const streamGen = connection.fetch(
-      range,
-      {
-        source: false,
-        envelope: true,
-        headers: true,
-        bodyStructure: true,
-        bodyParts: partId ? [partId] : undefined
-      },
-      {
-        uid: isUid
-      }
-    );
-
-    for await (const msg of streamGen) {
-      if (this.isCanceled) {
-        logger.debug(
-          `[${this.miningId}:${folderPath}]: Received cancellation signal, aborting... `
-        );
-        connection.close();
-
-        throw new Error('Received cancellation signal, Aborting');
-      }
-
-      let header: Record<string, string[]>;
-      const { seq, headers, envelope } = msg;
-      const from = envelope?.from?.pop();
-      const date = envelope?.date?.toISOString?.();
-
-      try {
-        header = parseHeader((headers as Buffer).toString('utf8'));
-      } catch {
-        continue;
-      }
-
-      const messageId = getMessageId(header);
-      header['message-id'] = [messageId];
-
-      const isLastMessageInFolder = msg.seq === totalInFolder;
-
-      if (this.fetchedIds.has(messageId) && !isLastMessageInFolder) continue;
-
-      await redisClient.xadd(
-        this.contactStream,
-        '*',
-        'message',
-        JSON.stringify({
-          type: 'email',
-          data: {
-            header,
-            body: '',
-            seqNumber: seq,
-            folderPath,
-            isLast: isLastMessageInFolder
-          },
-          userId: this.userId,
-          userEmail: this.userEmail,
-          userIdentifier: this.userIdentifier,
-          miningId: this.miningId
-        })
-      );
-
-      this.fetchedIds.add(messageId);
-      this.totalFetched += 1;
-      publishedEmails += 1;
-
-      if (publishedEmails >= batchSize) {
-        await publishFetchingProgress(
-          this.miningId,
-          publishedEmails,
-          this.isCanceled,
-          this.isCompleted
-        );
-        publishedEmails = 0;
-      }
-
-      if (!this.fetchEmailBody || !partId || from?.address === this.userEmail)
-        continue;
-
-      const textBuffer = msg.bodyParts?.get(partId);
-      const partInfo = findPlainTextNode(msg.bodyStructure);
-
-      if (!textBuffer || !partInfo?.encoding || !partInfo.parameters?.charset) {
-        logger.warn(
-          `[${this.miningId}:${folderPath}:${msg.uid}:${connection?.id}] Skipping text/plain part: no charset or transfer encoding info available.`
-        );
-        continue;
-      }
-
-      const { encoding, parameters } = partInfo;
-      const text = decodeTextPart(
-        textBuffer,
-        parameters?.charset as BufferEncoding,
-        encoding
-      );
-
-      if (text.length && from && date) {
-        const { address, name } = from;
-        await redisClient.xadd(
-          this.signatureStream,
-          '*',
-          'message',
-          JSON.stringify({
-            type: 'email',
-            data: {
-              header: {
-                from: { address: address?.toLowerCase(), name },
-                messageId,
-                messageDate: date,
-                rawHeader: header
-              },
-              body: text,
-              seqNumber: seq,
-              folderPath,
-              isLast: false
-            },
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          })
-        );
-      }
-    }
-
-    if (publishedEmails > 0) {
-      await publishFetchingProgress(
-        this.miningId,
-        publishedEmails,
-        this.isCanceled,
-        this.isCompleted
-      );
-      publishedEmails = 0;
     }
   }
 
@@ -674,10 +615,13 @@ export default class ImapEmailsFetcher {
    * Opens a connection and fetches messages.
    * @param emailJob - The email job to process
    */
-  private async processEmailJob(emailJob: EmailJob): Promise<void> {
+  private async worker(
+    emailJob: Worker,
+    workerFn: (options: Fetch) => Promise<void>
+  ): Promise<void> {
     if (this.isCanceled) return;
 
-    const { folder, range, totalInFolder, isUid, partId } = emailJob;
+    const { folder, seqRange, uidRange, totalInFolder, bodyParts } = emailJob;
 
     let connection: Connection | null = null;
 
@@ -690,14 +634,14 @@ export default class ImapEmailsFetcher {
         `[${this.miningId}:${folder}:${connection?.id}]: Opened folder for range`
       );
 
-      await this.processFetch(
-        connection,
-        range,
-        isUid,
-        partId,
+      await workerFn({
         folder,
-        totalInFolder
-      );
+        totalInFolder,
+        connection,
+        seqRange,
+        uidRange,
+        bodyParts
+      });
 
       await connection.mailboxClose();
       logger.info(
@@ -731,15 +675,7 @@ export default class ImapEmailsFetcher {
         `[${this.miningId}:${folder}:${connection?.id}]: Pushing range again to queue for retry`
       );
 
-      this.emailsQueue.add(() =>
-        this.processEmailJob({
-          range,
-          isUid,
-          partId,
-          folder,
-          totalInFolder
-        })
-      );
+      this.emailsQueue.add(() => this.worker(emailJob, workerFn));
 
       if (
         ImapEmailsFetcher.isAuthFailure(error) &&
@@ -778,11 +714,10 @@ export default class ImapEmailsFetcher {
    * Starts fetching email messages.
    */
   start() {
-    if (this.fetchEmailBody) return this.fetchEmailMessagesWithBody();
     return this.fetchEmailMessages();
   }
 
-  private async notifySubscribers() {
+  private async notifyCompleted() {
     // Notify signature worker fetching is ended
     await redisClient.xadd(
       this.signatureStream,
@@ -843,12 +778,12 @@ export default class ImapEmailsFetcher {
       await this.emailsQueue.onIdle();
       logger.debug(`[${this.miningId}] Awaited email queue to idle`);
       await this.cleanup();
-      await this.notifySubscribers();
+      await this.notifyCompleted();
       return this.isCompleted;
     } catch (error) {
       logger.error(`[${this.miningId}] Error during stop process:`, error);
       await this.cleanup();
-      await this.notifySubscribers();
+      await this.notifyCompleted();
       throw error;
     }
   }
