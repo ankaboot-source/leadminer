@@ -43,7 +43,7 @@ export const SignaturePrompt = {
         - "worksFor" : string 
         - "email" : string 
         - "telephone": string[]  
-        - "address": string[]
+        - "address": string
         - "sameAs": string[]  
 
       ### CHAIN OF THOUGHT
@@ -125,10 +125,7 @@ export const SignaturePrompt = {
             }
           },
           address: {
-            type: 'array',
-            items: {
-              type: 'string'
-            }
+            type: 'string'
           },
           sameAs: {
             type: 'array',
