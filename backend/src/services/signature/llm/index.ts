@@ -1,12 +1,13 @@
-import { Logger } from 'winston';
 import assert from 'assert';
+import { Logger } from 'winston';
+import {
+  undefinedIfEmpty,
+  undefinedIfFalsy
+} from '../../../utils/helpers/validation';
 import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 import { ExtractSignature, PersonLD } from '../types';
 import {
-  undefinedIfFalsy,
-  undefinedIfEmpty
-} from '../../../utils/helpers/validation';
-import {
+  parseLocationString,
   parseString,
   parseStringArray,
   removeFalsePositives,
@@ -257,7 +258,7 @@ export class SignatureLLM implements ExtractSignature {
         // name: undefinedIfFalsy(parseString(person.name)),
         jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
         worksFor: undefinedIfFalsy(parseString(person.worksFor)),
-        address: undefinedIfEmpty(parseStringArray(person.address) ?? []),
+        address: undefinedIfFalsy(parseLocationString(person.address)),
         telephone: undefinedIfEmpty(
           validatePhones(signature, parseStringArray(person.telephone) ?? [])
         ),

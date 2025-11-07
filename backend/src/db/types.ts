@@ -55,7 +55,7 @@ export interface Person {
   url?: string;
   name?: string;
   image?: string;
-  location?: string[];
+  location?: string;
   jobTitle?: string;
   sameAs?: string[];
   givenName?: string;
@@ -103,7 +103,7 @@ export interface Contact {
   given_name?: string;
   family_name?: string;
   alternate_name?: string[];
-  location?: string[];
+  location?: string;
   works_for?: string;
   job_title?: string;
   same_as?: string[];

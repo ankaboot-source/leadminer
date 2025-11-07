@@ -308,7 +308,7 @@ export class EmailSignatureProcessor {
       family_name: contact.family_name ?? null,
       works_for: contact.works_for ?? null,
       same_as: (contact.same_as ?? []).join(','),
-      location: (contact.location ?? []).join(','),
+      location: contact.location ?? null,
       alternate_name: contact.alternate_name ?? null,
       telephone: Array.isArray(contact.telephone)
         ? contact.telephone.join(',')

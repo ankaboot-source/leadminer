@@ -8,7 +8,7 @@ export interface Person {
   family_name?: string;
   works_for?: string;
   alternate_name?: string[];
-  location?: string[];
+  location?: string;
   same_as?: string[];
   identifiers: string[];
 }
@@ -17,7 +17,7 @@ export interface EngineResult {
   email: string;
   name?: string;
   image?: string;
-  location?: string[];
+  location?: string;
   jobTitle?: string;
   organization?: string;
   givenName?: string;

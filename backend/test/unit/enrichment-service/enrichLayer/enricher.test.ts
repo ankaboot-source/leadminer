@@ -181,7 +181,7 @@ describe('EnrichLayer', () => {
             organization: 'Tech Inc.',
             image: 'https://example.com/pic.jpg',
             identifiers: ['john.doe'],
-            location: ['New York, NY, United States'],
+            location: 'New York, NY, United States',
             sameAs: [
               'https://linkedin.com/in/johndoe',
               'https://facebook.com/johndoe',
@@ -235,7 +235,7 @@ describe('EnrichLayer', () => {
             familyName: 'User',
             identifiers: ['partial2.user'],
             sameAs: ['https://linkedin.com/in/partial2user'],
-            location: ['city, state'],
+            location: 'city, state',
             image: undefined,
             jobTitle: undefined,
             organization: undefined,
@@ -316,7 +316,7 @@ describe('EnrichLayer', () => {
             organization: 'Tech Inc.',
             image: 'https://example.com/pic.jpg',
             identifiers: ['john.doe'],
-            location: ['New York, NY, United States'],
+            location: 'New York, NY, United States',
             sameAs: [
               'https://linkedin.com/in/johndoe',
               'https://facebook.com/johndoe',

@@ -81,7 +81,7 @@ export default class EnrichLayer implements Engine {
             Boolean(id)
           )
         ),
-        location: undefinedIfEmpty([
+        location: undefinedIfFalsy(
           [
             response?.profile?.city,
             response?.profile?.state,
@@ -89,7 +89,7 @@ export default class EnrichLayer implements Engine {
           ]
             .filter((loc): loc is string => Boolean(loc))
             .join(', ')
-        ]),
+        ),
         sameAs: undefinedIfEmpty([
           response?.linkedin_profile_url,
           response?.facebook_profile_url,

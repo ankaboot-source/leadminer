@@ -18,7 +18,7 @@ export interface Contact {
   family_name: string | null;
   alternate_name: string[] | null;
   telephone: string[] | null;
-  location: string[] | null;
+  location: string | null;
   works_for: string | null;
   job_title: string | null;
   same_as: string[] | null;
