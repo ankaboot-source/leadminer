@@ -14,6 +14,7 @@ export default class RedisEmailSignatureCache implements EmailSignatureCache {
     userId: string,
     email: string,
     signature: string,
+    messageId: string,
     messageDate: string,
     miningId: string
   ): Promise<void> {
@@ -33,6 +34,7 @@ export default class RedisEmailSignatureCache implements EmailSignatureCache {
       signature,
       firstSeenDate,
       lastSeenDate: messageDateISO,
+      messageId,
       userId,
       email
     });
@@ -77,6 +79,7 @@ export default class RedisEmailSignatureCache implements EmailSignatureCache {
         signature: data.signature,
         firstSeenDate: data.firstSeenDate,
         lastSeenDate: data.lastSeenDate,
+        messageId: data.messageId,
         userId: data.userId,
         email: data.email
       };
