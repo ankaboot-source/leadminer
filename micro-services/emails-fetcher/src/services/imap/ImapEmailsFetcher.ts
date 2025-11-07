@@ -415,8 +415,6 @@ export default class ImapEmailsFetcher {
     let range: string;
     let publishedEmails = 0;
 
-    console.log(this.batchSize);
-
     const batchSize = Math.max(this.batchSize, 200);
 
     if (seqRange) {
