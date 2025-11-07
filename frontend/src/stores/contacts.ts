@@ -36,7 +36,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     console.debug('Contacts list updated from cache');
   }
 
-
   /**
    * Clears the sync interval.
    */
