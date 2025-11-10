@@ -13,7 +13,7 @@ export interface NormalizedLocation {
   lat?: string;
   lon?: string;
   display_name?: string;
-  address?: Record<string, any>;
+  address?: Record<string, unknown>;
 }
 export interface Contact {
   id: string;

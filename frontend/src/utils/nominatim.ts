@@ -9,7 +9,7 @@ function delay(ms: number) {
 
 export async function normalizeLocation(
   location: string,
-  language: string = 'en',
+  language = 'en',
 ): Promise<NormalizedLocation> {
   try {
     const params = new URLSearchParams({
@@ -86,11 +86,9 @@ async function updateNormalizedLocationInDB(
   console.log('Updated DB for location:', location, { data, error });
 }
 
-export function getLocationUrl(location: NormalizedLocation | null) {
-  if (!location || !location.lat || !location.lon) return;
-
+export function getLocationUrl(lat: string, lon: string) {
   const url = new URL(MAP_URL);
-  url.searchParams.set('lat', location.lat);
-  url.searchParams.set('lon', location.lon);
+  url.searchParams.set('lat', lat);
+  url.searchParams.set('lon', lon);
   return url.toString();
 }

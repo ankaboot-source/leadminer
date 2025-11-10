@@ -321,6 +321,7 @@ const isValidAvatar = computed(() => {
 
 let personsSubscription: RealtimeChannel;
 
+// skipcq: JS-0321
 const enrichmentRealtimeCallback = () => {};
 
 function showNotification(
@@ -497,7 +498,7 @@ function copyContact(email: string, name?: string) {
 function goToLocation(location: NormalizedLocation | null) {
   if (!location || !location.lat || !location.lon) return;
 
-  window.open(getLocationUrl(location), '_blank');
+  window.open(getLocationUrl(location.lat, location.lon), '_blank');
 }
 </script>
 <i18n lang="json">
