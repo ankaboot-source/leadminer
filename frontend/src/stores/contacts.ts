@@ -213,6 +213,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     return [...new Set(locations)];
   }
 
+  const visibleColumns = ref(['contacts']);
+
   /**
    * Resets the store.
    */
@@ -230,6 +232,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     selectedEmails,
     selectedContactsCount,
     contactCount,
+    visibleColumns,
     $reset,
     loadContacts,
     reloadContacts,

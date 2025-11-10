@@ -110,6 +110,13 @@ function onLocationToggle(toggle?: boolean) {
       matchMode: NOT_EMPTY,
       value: toggle || null,
     };
+
+    // make column visible
+    if (!toggle) return;
+    const $contactsStore = useContactsStore();
+    if (!$contactsStore.visibleColumns.includes('location')) {
+      $contactsStore.visibleColumns.push('location');
+    }
   }
 }
 

@@ -229,7 +229,7 @@
 
               <Divider class="my-0" />
               <MultiSelect
-                v-model="visibleColumns"
+                v-model="$contactsStore.visibleColumns"
                 :options="visibleColumnsOptions"
                 :option-disabled="disabledColumns"
                 option-label="label"
@@ -237,7 +237,7 @@
                 fluid
                 option-value="value"
                 :selected-items-label="
-                  t('visible_columns', visibleColumns.length)
+                  t('visible_columns', $contactsStore.visibleColumns.length)
                 "
                 :max-selected-labels="0"
                 @change="onSelectColumnsChange"
@@ -295,7 +295,9 @@
         <div class="flex items-center justify-between gap-2 w-full min-w-0">
           <div class="flex items-center gap-2 min-w-0">
             <Image
-              v-if="data.image && visibleColumns.includes('image')"
+              v-if="
+                data.image && $contactsStore.visibleColumns.includes('image')
+              "
               :src="getImageViaProxy(data.image)"
               class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
@@ -304,7 +306,9 @@
 
             <div class="min-w-0">
               <div
-                v-if="data.name && visibleColumns.includes('name')"
+                v-if="
+                  data.name && $contactsStore.visibleColumns.includes('name')
+                "
                 class="truncate cursor-pointer"
                 @click="openContactInformation(data)"
               >
@@ -315,7 +319,7 @@
                 class="truncate cursor-pointer"
                 :class="{
                   'font-extralight': !(
-                    !data.name && visibleColumns.includes('name')
+                    !data.name && $contactsStore.visibleColumns.includes('name')
                   ),
                 }"
                 @click="openContactInformation(data)"
@@ -327,16 +331,22 @@
             <!-- RIGHT -->
             <div
               v-if="
-                (data.same_as && visibleColumns.includes('same_as')) ||
-                (data.telephone && visibleColumns.includes('telephone'))
+                (data.same_as &&
+                  $contactsStore.visibleColumns.includes('same_as')) ||
+                (data.telephone &&
+                  $contactsStore.visibleColumns.includes('telephone'))
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="visibleColumns.includes('same_as')"
+                :show-social-links="
+                  $contactsStore.visibleColumns.includes('same_as')
+                "
                 :phones="data.telephone"
-                :show-phones="visibleColumns.includes('telephone')"
+                :show-phones="
+                  $contactsStore.visibleColumns.includes('telephone')
+                "
                 :small="true"
               />
             </div>
@@ -345,16 +355,22 @@
           <div class="flex items-center gap-2 flex-shrink-0">
             <div
               v-if="
-                (data.same_as && visibleColumns.includes('same_as')) ||
-                (data.telephone && visibleColumns.includes('telephone'))
+                (data.same_as &&
+                  $contactsStore.visibleColumns.includes('same_as')) ||
+                (data.telephone &&
+                  $contactsStore.visibleColumns.includes('telephone'))
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="visibleColumns.includes('same_as')"
+                :show-social-links="
+                  $contactsStore.visibleColumns.includes('same_as')
+                "
                 :phones="data.telephone"
-                :show-phones="visibleColumns.includes('telephone')"
+                :show-phones="
+                  $contactsStore.visibleColumns.includes('telephone')
+                "
                 :small="true"
               />
             </div>
@@ -371,7 +387,7 @@
     </Column>
     <!-- Source -->
     <Column
-      v-if="visibleColumns.includes('source')"
+      v-if="$contactsStore.visibleColumns.includes('source')"
       field="source"
       sortable
       :show-filter-operator="false"
@@ -388,7 +404,7 @@
     </Column>
     <!-- Occurrence -->
     <Column
-      v-if="visibleColumns.includes('occurrence')"
+      v-if="$contactsStore.visibleColumns.includes('occurrence')"
       field="occurrence"
       sortable
       data-type="numeric"
@@ -407,7 +423,7 @@
 
     <!-- Recency -->
     <Column
-      v-if="visibleColumns.includes('recency')"
+      v-if="$contactsStore.visibleColumns.includes('recency')"
       field="recency"
       sortable
       data-type="date"
@@ -431,7 +447,7 @@
 
     <!-- Replied conversations -->
     <Column
-      v-if="visibleColumns.includes('replied_conversations')"
+      v-if="$contactsStore.visibleColumns.includes('replied_conversations')"
       field="replied_conversations"
       data-type="numeric"
       sortable
@@ -448,7 +464,7 @@
 
     <!-- Temperature -->
     <Column
-      v-if="visibleColumns.includes('temperature')"
+      v-if="$contactsStore.visibleColumns.includes('temperature')"
       field="temperature"
       data-type="numeric"
       sortable
@@ -486,7 +502,7 @@
 
     <!-- Tags -->
     <Column
-      v-if="visibleColumns.includes('tags')"
+      v-if="$contactsStore.visibleColumns.includes('tags')"
       field="tags"
       sortable
       :show-filter-operator="false"
@@ -531,7 +547,7 @@
 
     <!-- Status | Reachable -->
     <Column
-      v-if="visibleColumns.includes('status')"
+      v-if="$contactsStore.visibleColumns.includes('status')"
       field="status"
       filter-field="status"
       sortable
@@ -575,7 +591,7 @@
 
     <!-- Recipient -->
     <Column
-      v-if="visibleColumns.includes('recipient')"
+      v-if="$contactsStore.visibleColumns.includes('recipient')"
       field="recipient"
       data-type="numeric"
       sortable
@@ -594,7 +610,7 @@
 
     <!-- Sender -->
     <Column
-      v-if="visibleColumns.includes('sender')"
+      v-if="$contactsStore.visibleColumns.includes('sender')"
       field="sender"
       data-type="numeric"
       sortable
@@ -613,7 +629,7 @@
 
     <!-- Seniority -->
     <Column
-      v-if="visibleColumns.includes('seniority')"
+      v-if="$contactsStore.visibleColumns.includes('seniority')"
       field="seniority"
       sortable
       data-type="date"
@@ -637,7 +653,7 @@
 
     <!-- Given name -->
     <Column
-      v-if="visibleColumns.includes('given_name')"
+      v-if="$contactsStore.visibleColumns.includes('given_name')"
       field="given_name"
       sortable
       :show-filter-operator="false"
@@ -655,7 +671,7 @@
 
     <!-- Family name -->
     <Column
-      v-if="visibleColumns.includes('family_name')"
+      v-if="$contactsStore.visibleColumns.includes('family_name')"
       field="family_name"
       sortable
       :show-filter-operator="false"
@@ -673,7 +689,7 @@
 
     <!-- Alternate names -->
     <Column
-      v-if="visibleColumns.includes('alternate_name')"
+      v-if="$contactsStore.visibleColumns.includes('alternate_name')"
       field="alternate_name"
       sortable
       :show-filter-operator="false"
@@ -694,7 +710,7 @@
 
     <!-- Alternate emails -->
     <Column
-      v-if="visibleColumns.includes('alternate_email')"
+      v-if="$contactsStore.visibleColumns.includes('alternate_email')"
       field="alternate_email"
       sortable
       :show-filter-operator="false"
@@ -715,7 +731,7 @@
 
     <!-- Location -->
     <Column
-      v-if="visibleColumns.includes('location')"
+      v-if="$contactsStore.visibleColumns.includes('location')"
       field="location"
       sortable
       :show-filter-operator="false"
@@ -738,7 +754,7 @@
 
     <!-- Works for -->
     <Column
-      v-if="visibleColumns.includes('works_for')"
+      v-if="$contactsStore.visibleColumns.includes('works_for')"
       field="works_for"
       sortable
       :show-filter-operator="false"
@@ -756,7 +772,7 @@
 
     <!-- Job title	 -->
     <Column
-      v-if="visibleColumns.includes('job_title')"
+      v-if="$contactsStore.visibleColumns.includes('job_title')"
       field="job_title"
       sortable
       :show-filter-operator="false"
@@ -774,7 +790,7 @@
 
     <!-- Updated at -->
     <Column
-      v-if="visibleColumns.includes('updated_at')"
+      v-if="$contactsStore.visibleColumns.includes('updated_at')"
       field="updated_at"
       sortable
       data-type="date"
@@ -800,7 +816,7 @@
 
     <!-- Created at -->
     <Column
-      v-if="visibleColumns.includes('created_at')"
+      v-if="$contactsStore.visibleColumns.includes('created_at')"
       field="created_at"
       sortable
       data-type="date"
@@ -826,7 +842,7 @@
 
     <!-- Mining ID	 -->
     <Column
-      v-if="visibleColumns.includes('mining_id')"
+      v-if="$contactsStore.visibleColumns.includes('mining_id')"
       field="mining_id"
       sortable
       :show-filter-operator="false"
@@ -1113,7 +1129,6 @@ async function exportTable(partialExport = false) {
 
 const isFullscreen = ref(false);
 
-const visibleColumns = ref(['contacts']);
 const $screenStore = useScreenStore();
 const visibleColumnsOptions = [
   { label: t('emails'), value: 'contacts' },
@@ -1148,8 +1163,8 @@ function disabledColumns(column: { label: string; value: string }) {
 }
 function onSelectColumnsChange() {
   // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
-  if (!visibleColumns.value.includes('contacts')) {
-    visibleColumns.value.push('contacts');
+  if (!$contactsStore.visibleColumns.includes('contacts')) {
+    $contactsStore.visibleColumns.push('contacts');
   }
 }
 
@@ -1223,7 +1238,7 @@ onBeforeMount(() => {
 });
 onNuxtReady(async () => {
   $screenStore.init();
-  visibleColumns.value = [
+  $contactsStore.visibleColumns = [
     'contacts',
     'name',
     'same_as',
@@ -1260,7 +1275,7 @@ onNuxtReady(async () => {
   const miningId = getParam(MINING_ID_PARAM);
   if (miningId) {
     $filtersStore.filterByMiningId(miningId as string);
-    visibleColumns.value.push(MINING_ID_PARAM);
+    $contactsStore.visibleColumns.push(MINING_ID_PARAM);
     removeQueryParam(MINING_ID_PARAM);
   }
 
