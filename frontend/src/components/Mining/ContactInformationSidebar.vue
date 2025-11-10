@@ -147,6 +147,17 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
+              <i
+                v-if="contact.location"
+                class="pi pi-globe rounded-full"
+                :class="
+                  contact.location_normalized === null
+                    ? 'bg-red-400'
+                    : Object.entries(contact.location_normalized).length === 0
+                      ? 'bg-yellow-400'
+                      : 'bg-green-400'
+                "
+              />
               {{ contact.location }}
             </div>
             <Textarea
