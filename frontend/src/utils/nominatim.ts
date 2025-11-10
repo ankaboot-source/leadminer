@@ -21,7 +21,7 @@ export async function normalizeLocation(
 
     const response = await fetch(`${NOMINATIM_URL}?${params.toString()}`, {
       headers: {
-        'Accept-Language': language, // Impacts search result language
+        'Accept-Language': language, // Language of results
       },
     });
     const result = (await response.json())?.[0];
@@ -90,6 +90,7 @@ export function getLocationUrl(location: NormalizedLocation | null) {
   if (!location || !location.lat || !location.lon) return;
 
   const url = new URL(MAP_URL);
-  url.searchParams.set('query', `${location.lat},${location.lon}`);
+  url.searchParams.set('lat', location.lat);
+  url.searchParams.set('lon', location.lon);
   return url.toString();
 }
