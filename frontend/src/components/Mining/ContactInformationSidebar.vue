@@ -147,6 +147,15 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
+              <div
+                v-if="
+                  contact.location_normalized &&
+                  Object.entries(contact.location_normalized).length > 0
+                "
+                v-tooltip.top="contact.location_normalized.display_name"
+                class="pi pi-globe rounded-full bg-green-400 cursor-pointer"
+                @click="goToLocation(contact.location_normalized)"
+              />
               {{ contact.location }}
             </div>
             <Textarea
@@ -236,7 +245,7 @@
 <script setup lang="ts">
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
-import type { Contact, ContactEdit } from '@/types/contact';
+import type { Contact, ContactEdit, NormalizedLocation } from '@/types/contact';
 import {
   getStatusColor,
   getStatusLabel,
@@ -249,7 +258,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 
-const { t } = useI18n({
+const { t, getBrowserLocale } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -312,6 +321,7 @@ const isValidAvatar = computed(() => {
 
 let personsSubscription: RealtimeChannel;
 
+// skipcq: JS-0321
 const enrichmentRealtimeCallback = () => {};
 
 function showNotification(
@@ -407,6 +417,19 @@ async function saveContactInformations() {
     location: contactEdit.value.location,
   };
 
+  const newLocation =
+    originalContactCopy.location !== editedContactCopy.location
+      ? editedContactCopy.location || null
+      : undefined;
+
+  let locationNormalized = originalContactCopy.location_normalized;
+  if (newLocation) {
+    locationNormalized = await normalizeLocation(
+      newLocation,
+      getBrowserLocale(),
+    );
+  }
+
   const contactToUpdate: Partial<Contact> = {
     email: editedContactCopy.email,
     alternate_name:
@@ -436,10 +459,8 @@ async function saveContactInformations() {
       originalContactCopy.family_name !== editedContactCopy.family_name
         ? editedContactCopy.family_name || null
         : undefined,
-    location:
-      originalContactCopy.location !== editedContactCopy.location
-        ? editedContactCopy.location || null
-        : undefined,
+    location: newLocation,
+    location_normalized: locationNormalized,
     works_for:
       originalContactCopy.works_for !== editedContactCopy.works_for
         ? editedContactCopy.works_for || null
@@ -472,6 +493,12 @@ function copyContact(email: string, name?: string) {
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
+}
+
+function goToLocation(location: NormalizedLocation | null) {
+  if (!location || !location.lat || !location.lon) return;
+
+  window.open(getLocationUrl(location.lat, location.lon), '_blank');
 }
 </script>
 <i18n lang="json">

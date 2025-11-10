@@ -26,6 +26,7 @@ export const DEFAULT_TOGGLES = {
   name: false,
   replies: false,
   telephone: false,
+  location: false,
 };
 
 export const DEFAULT_FILTERS = {
