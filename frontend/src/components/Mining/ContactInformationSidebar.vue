@@ -147,16 +147,14 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              <i
-                v-if="contact.location"
-                class="pi pi-globe rounded-full"
-                :class="
-                  contact.location_normalized === null
-                    ? 'bg-red-400'
-                    : Object.entries(contact.location_normalized).length === 0
-                      ? 'bg-yellow-400'
-                      : 'bg-green-400'
+              <div
+                v-if="
+                  contact.location_normalized &&
+                  Object.entries(contact.location_normalized).length > 0
                 "
+                v-tooltip.top="contact.location_normalized.display_name"
+                class="pi pi-globe rounded-full bg-green-400 cursor-pointer"
+                @click="goToLocation(contact.location_normalized)"
               />
               {{ contact.location }}
             </div>
@@ -247,7 +245,7 @@
 <script setup lang="ts">
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
-import type { Contact, ContactEdit } from '@/types/contact';
+import type { Contact, ContactEdit, NormalizedLocation } from '@/types/contact';
 import {
   getStatusColor,
   getStatusLabel,
@@ -491,6 +489,12 @@ function copyContact(email: string, name?: string) {
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
+}
+
+function goToLocation(location: NormalizedLocation | null) {
+  if (!location || !location.lat || !location.lon) return;
+
+  window.open(getLocationUrl(location), '_blank');
 }
 </script>
 <i18n lang="json">

@@ -1,6 +1,7 @@
-import type { NormalizedLocation } from '~/types/contact';
+import type { NormalizedLocation } from "~/types/contact";
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const MAP_URL = "https://www.openstreetmap.org/search";
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,25 +13,25 @@ export async function normalizeLocation(
   try {
     const params = new URLSearchParams({
       q: location,
-      addressdetails: '1',
-      limit: '1',
-      format: 'jsonv2',
+      addressdetails: "1",
+      limit: "1",
+      format: "jsonv2",
     });
 
     const response = await fetch(`${NOMINATIM_URL}?${params.toString()}`, {
       headers: {
-        'Accept-Language': 'en', // language can be configured,
+        "Accept-Language": "en", // language can be configured,
       },
     });
     const result = (await response.json())?.[0];
 
     const normalized: NormalizedLocation = result
       ? {
-          lat: result.lat,
-          lon: result.lon,
-          display_name: result.display_name,
-          address: result.address,
-        }
+        lat: result.lat,
+        lon: result.lon,
+        display_name: result.display_name,
+        address: result.address,
+      }
       : {};
 
     return normalized;
@@ -70,8 +71,8 @@ async function updateNormalizedLocationInDB(
   const $supabase = useSupabaseClient();
   const { data, error } = await $supabase
     // @ts-expect-error: Issue with nuxt/supabase
-    .schema('private')
-    .from('persons')
+    .schema("private")
+    .from("persons")
     .update({ location_normalized })
     .match({ location });
 
@@ -79,5 +80,13 @@ async function updateNormalizedLocationInDB(
     throw error;
   }
 
-  console.log('Updated DB for location:', location, { data, error });
+  console.log("Updated DB for location:", location, { data, error });
+}
+
+export function getLocationUrl(location: NormalizedLocation | null) {
+  if (!location || !location.lat || !location.lon) return;
+
+  const url = new URL(MAP_URL);
+  url.searchParams.set("query", `${location.lat},${location.lon}`);
+  return url.toString();
 }
