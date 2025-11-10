@@ -722,6 +722,18 @@
       </template>
       <template #body="{ data }">
         <div>
+          <i
+            v-if="data.location"
+            class="pi pi-globe rounded-full"
+            :class="
+              data.location_normalized === null
+                ? 'bg-red-400'
+                : Object.entries(data.location_normalized).length === 0
+                  ? 'bg-yellow-400'
+                  : 'bg-green-400'
+            "
+          />
+
           {{ data.location }}
         </div>
       </template>
@@ -1235,6 +1247,10 @@ onNuxtReady(async () => {
     );
     await $contactsStore.refineContacts();
     await $contactsStore.reloadContacts();
+  }
+  const locationsToNormalize = $contactsStore.getLocationsToNormalize();
+  if (locationsToNormalize.length > 0) {
+    normalizeLocations(locationsToNormalize);
   }
 
   $contactsStore.subscribeToRealtimeUpdates();
