@@ -15,6 +15,7 @@ type TogglesType = {
   name: boolean;
   replies: boolean;
   telephone: boolean;
+  location: boolean;
 };
 
 const searchContactModel = ref('');
@@ -24,6 +25,7 @@ const validToggle = ref(false);
 const repliesToggle = ref(false);
 const recentToggle = ref(false);
 const phoneToggle = ref(false);
+const locationToggle = ref(false);
 const jobDetailsToggle = ref(false);
 
 const isDefaultFilters = computed(
@@ -36,6 +38,7 @@ const areToggledFilters = computed(
     Number(nameToggle.value) +
     Number(repliesToggle.value) +
     Number(phoneToggle.value) +
+    Number(locationToggle.value) +
     Number(jobDetailsToggle.value),
 );
 
@@ -98,6 +101,22 @@ function onPhoneToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     phoneToggle.value = toggle;
     filters.value.telephone.value = toggle || null;
+  }
+}
+function onLocationToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    locationToggle.value = toggle;
+    filters.value.location.constraints[0] = {
+      matchMode: NOT_EMPTY,
+      value: toggle || null,
+    };
+
+    // make column visible
+    if (!toggle) return;
+    const $contactsStore = useContactsStore();
+    if (!$contactsStore.visibleColumns.includes('location')) {
+      $contactsStore.visibleColumns.push('location');
+    }
   }
 }
 
@@ -176,6 +195,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
       name: toggles,
       replies: toggles,
       telephone: toggles,
+      location: toggles,
     };
   }
 
@@ -184,6 +204,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
   onRecentToggle(toggles.recent);
   onRepliesToggle(toggles.replies);
   onPhoneToggle(toggles.telephone);
+  onLocationToggle(toggles.location);
 }
 
 function clearFilter() {
@@ -213,6 +234,7 @@ export const useFiltersStore = defineStore('filters', () => {
     repliesToggle,
     recentToggle,
     phoneToggle,
+    locationToggle,
     jobDetailsToggle,
 
     areToggledFilters,
@@ -223,6 +245,7 @@ export const useFiltersStore = defineStore('filters', () => {
     onRecentToggle,
     onNameToggle,
     onPhoneToggle,
+    onLocationToggle,
 
     toggleFilters,
     clearFilter,
