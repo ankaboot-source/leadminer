@@ -184,7 +184,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function hasPersons(): Promise<boolean> {
     if (!$user.value?.sub) return false;
 
-    console.log('Checking if user has persons...');
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
@@ -195,8 +194,23 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (error) throw error;
 
-    console.log(`User has persons: ${(data?.length ?? 0) > 0}`);
     return (data?.length ?? 0) > 0;
+  }
+
+  /**
+   * Get unique, non-null locations that still need normalization
+   */
+  function getLocationsToNormalize(): string[] {
+    if (!contactsList.value) return [];
+
+    const locations = contactsList.value
+      .filter(
+        (contact) => contact.location && contact.location_normalized === null,
+      )
+      .map((contact) => contact.location as string);
+
+    // Remove duplicates
+    return [...new Set(locations)];
   }
 
   /**
@@ -226,5 +240,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     clearSyncInterval,
     removeOldContacts,
     hasPersons,
+    getLocationsToNormalize,
   };
 });
