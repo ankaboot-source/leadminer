@@ -422,7 +422,7 @@ async function saveContactInformations() {
       ? editedContactCopy.location || null
       : undefined;
 
-  let locationNormalized = null;
+  let locationNormalized = originalContactCopy.location_normalized;
   if (newLocation) {
     locationNormalized = await normalizeLocation(
       newLocation,
