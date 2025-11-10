@@ -258,7 +258,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 
-const { t } = useI18n({
+const { t, getBrowserLocale } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -423,7 +423,10 @@ async function saveContactInformations() {
 
   let locationNormalized = null;
   if (newLocation) {
-    locationNormalized = await normalizeLocation(newLocation);
+    locationNormalized = await normalizeLocation(
+      newLocation,
+      getBrowserLocale(),
+    );
   }
 
   const contactToUpdate: Partial<Contact> = {

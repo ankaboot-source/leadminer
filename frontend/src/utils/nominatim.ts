@@ -1,7 +1,7 @@
-import type { NormalizedLocation } from "~/types/contact";
+import type { NormalizedLocation } from '~/types/contact';
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const MAP_URL = "https://www.openstreetmap.org/search";
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const MAP_URL = 'https://www.openstreetmap.org/search';
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,29 +9,30 @@ function delay(ms: number) {
 
 export async function normalizeLocation(
   location: string,
+  language: string = 'en',
 ): Promise<NormalizedLocation> {
   try {
     const params = new URLSearchParams({
       q: location,
-      addressdetails: "1",
-      limit: "1",
-      format: "jsonv2",
+      addressdetails: '1',
+      limit: '1',
+      format: 'jsonv2',
     });
 
     const response = await fetch(`${NOMINATIM_URL}?${params.toString()}`, {
       headers: {
-        "Accept-Language": "en", // language can be configured,
+        'Accept-Language': language, // Impacts search result language
       },
     });
     const result = (await response.json())?.[0];
 
     const normalized: NormalizedLocation = result
       ? {
-        lat: result.lat,
-        lon: result.lon,
-        display_name: result.display_name,
-        address: result.address,
-      }
+          lat: result.lat,
+          lon: result.lon,
+          display_name: result.display_name,
+          address: result.address,
+        }
       : {};
 
     return normalized;
@@ -49,11 +50,13 @@ export async function normalizeLocations(
   const results: NormalizedLocation[] = [];
   const total = locations.length;
   let progress = 0;
+  const { getBrowserLocale } = useI18n();
+  const language = getBrowserLocale();
 
   for (const location of locations) {
     console.log(`Normalizing location ${++progress}/${total}: ${location}`);
 
-    const normalized = await normalizeLocation(location);
+    const normalized = await normalizeLocation(location, language);
 
     await updateNormalizedLocationInDB(location, normalized);
     results.push(normalized);
@@ -71,8 +74,8 @@ async function updateNormalizedLocationInDB(
   const $supabase = useSupabaseClient();
   const { data, error } = await $supabase
     // @ts-expect-error: Issue with nuxt/supabase
-    .schema("private")
-    .from("persons")
+    .schema('private')
+    .from('persons')
     .update({ location_normalized })
     .match({ location });
 
@@ -80,13 +83,13 @@ async function updateNormalizedLocationInDB(
     throw error;
   }
 
-  console.log("Updated DB for location:", location, { data, error });
+  console.log('Updated DB for location:', location, { data, error });
 }
 
 export function getLocationUrl(location: NormalizedLocation | null) {
   if (!location || !location.lat || !location.lon) return;
 
   const url = new URL(MAP_URL);
-  url.searchParams.set("query", `${location.lat},${location.lon}`);
+  url.searchParams.set('query', `${location.lat},${location.lon}`);
   return url.toString();
 }
