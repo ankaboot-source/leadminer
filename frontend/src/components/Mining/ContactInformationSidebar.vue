@@ -257,6 +257,8 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
+import { phone } from 'phone';
+import { HandledError } from '~/plugins/error-handler';
 
 const { t, getBrowserLocale } = useI18n({
   useScope: 'local',
@@ -392,6 +394,11 @@ function editContactInformations() {
   editingContact.value = true;
 }
 
+function transformStringToArray(string: string | null): string[] | null {
+  const array = string?.split('\n').filter((item) => item.length);
+  return array?.length ? array : null;
+}
+
 async function saveContactInformations() {
   if (!isValidSameAs.value || !isValidAvatar.value) {
     showNotification(
@@ -402,10 +409,20 @@ async function saveContactInformations() {
     return;
   }
 
-  function transformStringToArray(string: string | null): string[] | null {
-    const array = string?.split('\n').filter((item) => item.length);
-    return array?.length ? array : null;
-  }
+  const telephones =
+    transformStringToArray(contactEdit.value.telephone)?.map((phoneNumber) => {
+      const parsedPhone = phone(phoneNumber);
+      if (!parsedPhone.isValid) {
+        showNotification(
+          'error',
+          t('phone_invalid_summary'),
+          t('phone_invalid_detail', { phoneNumber }),
+        );
+        throw new HandledError(`Invalid phone number: ${phoneNumber}`);
+      }
+
+      return parsedPhone.phoneNumber;
+    }) || null;
 
   const originalContactCopy = contact.value;
   const editedContactCopy: Contact = {
@@ -413,7 +430,7 @@ async function saveContactInformations() {
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
-    telephone: transformStringToArray(contactEdit.value.telephone),
+    telephone: telephones,
     location: contactEdit.value.location,
   };
 
@@ -509,7 +526,9 @@ function goToLocation(location: NormalizedLocation | null) {
     "contact_email_copied": "This contact email address has been copied to your clipboard",
     "contact_saved": "Contact's informations saved",
     "url_invalid_summary": "Invalid URL",
-    "url_invalid_detail": "Please enter a valid URL"
+    "url_invalid_detail": "Please enter a valid URL",
+    "phone_invalid_summary": "Invalid phone number",
+    "phone_invalid_detail": "Invalid phone number: {phoneNumber}"
   },
   "fr": {
     "copy": "Copier",
@@ -517,7 +536,9 @@ function goToLocation(location: NormalizedLocation | null) {
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
     "contact_saved": "Informations du contact enregistrées",
     "url_invalid_summary": "URL invalide",
-    "url_invalid_detail": "Veuillez saisir une URL valide"
+    "url_invalid_detail": "Veuillez saisir une URL valide",
+    "phone_invalid_summary": "Numéro de téléphone invalide",
+    "phone_invalid_detail": "Numéro de téléphone invalide : {phoneNumber}"
   }
 }
 </i18n>

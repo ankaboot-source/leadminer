@@ -6,6 +6,13 @@ interface ErrorStatusMessages {
   [key: number]: string;
 }
 
+export class HandledError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'handledError';
+  }
+}
+
 const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
   400: 'Oops! Something went wrong. Please double-check your input and try again.',
   401: "Sorry, you're not authorized. Please log in and try again.",
@@ -57,7 +64,10 @@ export default defineNuxtPlugin((nuxtApp) => {
   const toastService = usePrimeVueToast();
 
   nuxtApp.vueApp.config.errorHandler = (error) => {
-    let message = ERROR_STATUS_MESSAGES[500];
+    if (error instanceof HandledError) {
+      console.warn('[HandledError]', error.message);
+      return;
+    }
 
     if (isExpectedFaultyCode(error)) return;
 
@@ -72,6 +82,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
+    let message = ERROR_STATUS_MESSAGES[500];
     message = networkErrorMessage(error) ?? otherErrorMessages(error);
 
     toastService.add({
