@@ -257,7 +257,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import { phone } from 'phone';
+import { phone as phoneLib } from 'phone';
 import { HandledError } from '~/plugins/error-handler';
 
 const { t, getBrowserLocale } = useI18n({
@@ -398,6 +398,22 @@ function transformStringToArray(string: string | null): string[] | null {
   const array = string?.split('\n').filter((item) => item.length);
   return array?.length ? array : null;
 }
+function transformPhones() {
+  return (
+    transformStringToArray(contactEdit.value.telephone)?.map((phoneNumber) => {
+      const parsedPhone = phoneLib(phoneNumber);
+      if (!parsedPhone.isValid) {
+        showNotification(
+          'error',
+          t('phone_invalid_summary'),
+          t('phone_invalid_detail', { phoneNumber }),
+        );
+        throw new HandledError(`Invalid phone number: ${phoneNumber}`);
+      }
+      return parsedPhone.phoneNumber;
+    }) || null
+  );
+}
 
 async function saveContactInformations() {
   if (!isValidSameAs.value || !isValidAvatar.value) {
@@ -409,20 +425,7 @@ async function saveContactInformations() {
     return;
   }
 
-  const telephones =
-    transformStringToArray(contactEdit.value.telephone)?.map((phoneNumber) => {
-      const parsedPhone = phone(phoneNumber);
-      if (!parsedPhone.isValid) {
-        showNotification(
-          'error',
-          t('phone_invalid_summary'),
-          t('phone_invalid_detail', { phoneNumber }),
-        );
-        throw new HandledError(`Invalid phone number: ${phoneNumber}`);
-      }
-
-      return parsedPhone.phoneNumber;
-    }) || null;
+  const telephones = transformPhones();
 
   const originalContactCopy = contact.value;
   const editedContactCopy: Contact = {
