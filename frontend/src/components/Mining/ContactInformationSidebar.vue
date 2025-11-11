@@ -147,13 +147,13 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              <div
+              <i
                 v-if="
                   contact.location_normalized &&
-                  Object.entries(contact.location_normalized).length > 0
+                  Object.keys(contact.location_normalized).length
                 "
                 v-tooltip.top="contact.location_normalized.display_name"
-                class="pi pi-globe rounded-full bg-green-400 cursor-pointer"
+                class="pi pi-map-marker text-green-500 cursor-pointer hover:text-green-600 transition-colors"
                 @click="goToLocation(contact.location_normalized)"
               />
               {{ contact.location }}
