@@ -7,7 +7,7 @@
         value: phone,
         class: 'text-xs ml-1',
       }"
-      class="pi pi-phone cursor-pointer hover:text-primary mx-1"
+      class="pi pi-phone cursor-pointer hover:text-primary mx-1 transition-colors"
       @click="callPhoneNumber(phone)"
     />
   </template>
@@ -20,7 +20,7 @@
         value: link,
         class: 'text-xs ml-1',
       }"
-      class="cursor-pointer hover:text-primary mx-1"
+      class="cursor-pointer hover:text-primary mx-1 transition-colors"
       :class="`pi pi-${getSameAsIcon(link)}`"
       @click="openLink(link)"
     />
