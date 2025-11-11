@@ -1,28 +1,20 @@
 <template>
   <template v-if="showPhones">
-    <Chip
+    <i
       v-for="(phone, index) in phones"
       :key="index"
-      v-tooltip="{
-        value: phone,
-        class: 'text-xs ml-1',
-      }"
-      icon="pi pi-phone"
-      class="cursor-pointer p-0 px-1"
+      v-tooltip="{ value: phone }"
+      class="pi pi-phone cursor-pointer hover:text-blue-500 mx-1"
       @click="callPhoneNumber(phone)"
     />
   </template>
 
   <template v-if="showSocialLinks">
-    <Chip
+    <i
       v-for="(link, index) in socialLinks"
       :key="index"
-      v-tooltip="{
-        value: link,
-        class: 'text-xs ml-1',
-      }"
-      :icon="`pi pi-${getSameAsIcon(link)}`"
-      class="cursor-pointer p-0 px-1"
+      v-tooltip="{ value: link }"
+      :class="`pi pi-${getSameAsIcon(link)} cursor-pointerhover:text-blue-500 mx-1 text-sm`"
       @click="openLink(link)"
     />
   </template>
@@ -54,7 +46,7 @@ function getSameAsIcon(url: string) {
   try {
     const domainArray = new URL(url).hostname.split('.');
     const domain = domainArray.length > 2 ? domainArray[1] : domainArray[0];
-    const match = domain.match(
+    const match = domain?.match(
       /^(twitter|linkedin|facebook|instagram|x)$/i,
     )?.[0];
     if (match === 'x') {
