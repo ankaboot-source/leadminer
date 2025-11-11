@@ -257,7 +257,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import { phone as phoneLib } from 'phone';
+import parsePhoneNumber from 'libphonenumber-js';
 import { HandledError } from '~/plugins/error-handler';
 
 const { t, getBrowserLocale } = useI18n({
@@ -401,8 +401,8 @@ function transformStringToArray(string: string | null): string[] | null {
 function transformPhones() {
   return (
     transformStringToArray(contactEdit.value.telephone)?.map((phoneNumber) => {
-      const parsedPhone = phoneLib(phoneNumber);
-      if (!parsedPhone.isValid) {
+      const parsedPhone = parsePhoneNumber(phoneNumber);
+      if (!parsedPhone?.isValid()) {
         showNotification(
           'error',
           t('phone_invalid_summary'),
@@ -410,7 +410,7 @@ function transformPhones() {
         );
         throw new HandledError(`Invalid phone number: ${phoneNumber}`);
       }
-      return parsedPhone.phoneNumber;
+      return parsedPhone.number;
     }) || null
   );
 }
