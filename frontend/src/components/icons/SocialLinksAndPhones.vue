@@ -3,8 +3,11 @@
     <i
       v-for="(phone, index) in phones"
       :key="index"
-      v-tooltip="{ value: phone }"
-      class="pi pi-phone cursor-pointer hover:text-blue-500 mx-1"
+      v-tooltip="{
+        value: phone,
+        class: 'text-xs ml-1',
+      }"
+      class="pi pi-phone cursor-pointer hover:text-primary mx-1"
       @click="callPhoneNumber(phone)"
     />
   </template>
@@ -13,8 +16,12 @@
     <i
       v-for="(link, index) in socialLinks"
       :key="index"
-      v-tooltip="{ value: link }"
-      :class="`pi pi-${getSameAsIcon(link)} cursor-pointerhover:text-blue-500 mx-1 text-sm`"
+      v-tooltip="{
+        value: link,
+        class: 'text-xs ml-1',
+      }"
+      class="cursor-pointer hover:text-primary mx-1"
+      :class="`pi pi-${getSameAsIcon(link)}`"
       @click="openLink(link)"
     />
   </template>
