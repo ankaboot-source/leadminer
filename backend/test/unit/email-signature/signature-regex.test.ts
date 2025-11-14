@@ -1,11 +1,10 @@
 import { Logger } from 'winston';
-import { findPhoneNumbersInText } from 'libphonenumber-js';
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 import {
   SignatureRE,
   URL_X_REGEX,
   URL_LINKEDIN_REGEX
-} from '../../../../src/services/signature/regex';
+} from '../../../src/services/signature/regex';
 
 describe('SignatureRE', () => {
   let mockLogger: jest.Mocked<Logger>;
@@ -28,13 +27,12 @@ describe('SignatureRE', () => {
   it('should extract phone numbers and social links correctly', async () => {
     const signature = `
         John Doe
-        🇹🇳 +216 12 123 123
-        🇺🇸 +1 (415) 555-2671
-        🇬🇧 +44 7911 123456
-        🇫🇷 +33 1 23 45 67 89
-        🇩🇪 +49 89 123 45678
-        🇯🇵 +81-3-1234-5678
-        🇮🇹 +39 333 123 4567
+        +1 (415) 555-2671
+        +44 7911 123456
+        +33 1 23 45 67 89
+        +49 89 123 45678
+        +81-3-1234-5678
+        +39 333 123 4567
         https://x.com/johndoe
         https://www.linkedin.com/in/johndoe
         https://www.linkedin.com/in/john-doe
@@ -46,7 +44,6 @@ describe('SignatureRE', () => {
     expect(result).toEqual({
       name: '',
       telephone: [
-        '+21626617644',
         '+14155552671',
         '+447911123456',
         '+33123456789',

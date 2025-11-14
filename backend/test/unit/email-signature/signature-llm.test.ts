@@ -9,12 +9,10 @@ import {
 } from '@jest/globals';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { PersonLD } from '../../../../src/services/signature/types';
-import { SignatureLLM } from '../../../../src/services/signature/llm';
-import { IRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
-import { removeFalsePositives } from '../../../../src/services/signature/llm/output-checkers';
+import { SignatureLLM } from '../../../src/services/signature/llm';
+import { IRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
 
-import { LLMModelType } from '../../../../src/services/signature/llm/types';
+import { LLMModelType } from '../../../src/services/signature/llm/types';
 
 describe('SignatureLLM', () => {
   let mockAxios: MockAdapter;

@@ -5,7 +5,7 @@ import { ExtractSignature, PersonLD } from '../types';
 export const URL_X_REGEX =
   /(?:https?:)?\/\/(?:[A-z]+\.)?(twitter|x)\.com\/@?(?!home|share|privacy|tos)(?<handle>[A-z0-9_]+)\/?/g;
 export const URL_LINKEDIN_REGEX =
-  /(?:https?:)?\/\/(?:[\w]+\.)?linkedin\.com\/in\/(?<handle>[\w\-\_À-ÿ%]+)\/?/g;
+  /(?:https?:)?\/\/(?:[\w]+\.)?linkedin\.com\/in\/(?<handle>[\w\-_À-ÿ%]+)\/?/g;
 
 export class SignatureRE implements ExtractSignature {
   private readonly active = true;

@@ -39,7 +39,9 @@ describe('Signature', () => {
       { engine: mockFallbackEngine, useAsFallback: true }
     ];
 
-    new Signature(mockLogger, engines);
+    const instance = new Signature(mockLogger, engines);
+
+    expect(instance instanceof Signature).toBe(true);
 
     expect(mockLogger.info).toHaveBeenCalledWith(
       'Signature extractor initialized',

@@ -241,7 +241,11 @@ export class SignatureLLM implements ExtractSignature {
         `SignatureExtractionLLM error: ${(err as Error).message}`,
         { error: err }
       );
-      if (err instanceof AxiosError && 'error' in err.response?.data) {
+      if (
+        err instanceof AxiosError &&
+        err?.response?.data &&
+        'error' in err.response.data
+      ) {
         this.handleResponseError((err.response?.data as OpenRouterError).error);
       }
 
@@ -277,12 +281,9 @@ export class SignatureLLM implements ExtractSignature {
       if (!content || content.toLowerCase() === 'null') return null;
 
       const parsed = JSON.parse(content);
-      console.log(parsed);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;
-      console.log(person);
 
       if (!person || person['@type'] !== 'Person') return null;
-      console.log(person);
 
       return this.cleanOutput(signature, person);
     } catch (err) {
