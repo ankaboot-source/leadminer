@@ -1,6 +1,6 @@
 import type { NormalizedLocation } from '~/types/contact';
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_URL = useRuntimeConfig().public.NOMINATIM_URL?.toString();
 const MAP_URL = 'https://www.openstreetmap.org/search';
 
 function delay(ms: number) {
