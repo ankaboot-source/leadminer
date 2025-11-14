@@ -1,6 +1,5 @@
 import type { NormalizedLocation } from '~/types/contact';
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 const MAP_URL = 'https://www.openstreetmap.org/search';
 
 function delay(ms: number) {
@@ -12,6 +11,7 @@ export async function normalizeLocation(
   language = 'en',
 ): Promise<NormalizedLocation> {
   try {
+    const { NOMINATIM_URL } = useRuntimeConfig().public;
     const params = new URLSearchParams({
       q: location,
       addressdetails: '1',
