@@ -1,5 +1,6 @@
 import assert from 'assert';
 import { Logger } from 'winston';
+import axios, { AxiosError } from 'axios';
 import {
   undefinedIfEmpty,
   undefinedIfFalsy
@@ -224,32 +225,31 @@ export class SignatureLLM implements ExtractSignature {
     throw new Error(error.message);
   }
 
-  private async sendPrompt(signature: string): Promise<string | null> {
+  async sendPrompt(signature: string): Promise<string | null> {
     try {
       const response = await this.rateLimiter.throttleRequests(() =>
-        fetch(this.LLM_ENDPOINT, {
+        axios<OpenRouterResponse>(this.LLM_ENDPOINT, {
           method: 'POST',
           headers: this.headers(),
-          body: this.body(signature)
+          data: this.body(signature)
         })
       );
-
-      const data = await response.json();
-
-      if ('error' in data)
-        this.handleResponseError((data as OpenRouterError).error);
-
+      const { data } = response;
       return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
       this.logger.error(
         `SignatureExtractionLLM error: ${(err as Error).message}`,
         { error: err }
       );
+      if (err instanceof AxiosError && 'error' in err.response?.data) {
+        this.handleResponseError((err.response?.data as OpenRouterError).error);
+      }
+
       return null;
     }
   }
 
-  private cleanOutput(signature: string, person: PersonLD): PersonLD | null {
+  cleanOutput(signature: string, person: PersonLD): PersonLD | null {
     return removeFalsePositives(
       {
         // name: undefinedIfFalsy(parseString(person.name)),
@@ -268,7 +268,7 @@ export class SignatureLLM implements ExtractSignature {
     );
   }
 
-  public async extract(signature: string): Promise<PersonLD | null> {
+  async extract(signature: string): Promise<PersonLD | null> {
     try {
       const content = await this.sendPrompt(signature);
 
@@ -277,9 +277,12 @@ export class SignatureLLM implements ExtractSignature {
       if (!content || content.toLowerCase() === 'null') return null;
 
       const parsed = JSON.parse(content);
+      console.log(parsed);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;
+      console.log(person);
 
       if (!person || person['@type'] !== 'Person') return null;
+      console.log(person);
 
       return this.cleanOutput(signature, person);
     } catch (err) {
