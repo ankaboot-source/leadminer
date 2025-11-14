@@ -747,6 +747,7 @@
       </template>
       <template #body="{ data }">
         <div>
+          <NormalizedLocation :normalized-location="data.location_normalized" />
           {{ data.location }}
         </div>
       </template>
@@ -873,6 +874,7 @@ import {
   CreditsDialogExportRef,
   openCreditsDialog,
 } from '@/utils/credits';
+import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
 import {
   getStatusColor,
