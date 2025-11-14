@@ -12,6 +12,7 @@ export default async function mailMiningComplete(
     total_reachable,
     total_with_phone,
     total_with_company,
+    total_with_location
   } = await getMiningStats(miningId);
 
   const to = await getUserEmail(user_id);
@@ -22,6 +23,7 @@ export default async function mailMiningComplete(
     total_reachable,
     total_with_phone,
     total_with_company,
+    total_with_location,
     source,
     miningId,
     language,

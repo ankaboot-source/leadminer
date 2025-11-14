@@ -10,7 +10,8 @@
       "totalMined": "⛏️ Total contacts mined",
       "totalReachable": "📬 Total reachable contacts",
       "withPhone": "📞 With phone number",
-      "withCompany": "💼 With company or profession"
+      "withCompany": "💼 With company or profession",
+      "withLocation": "📍 With location"
     },
     "buttons": {
       "enrich": "Enrich your contacts",
@@ -40,7 +41,8 @@
       "totalMined": "⛏️ Total des contacts extraits",
       "totalReachable": "📬 Total des contacts joignables",
       "withPhone": "📞 Avec numéro de téléphone",
-      "withCompany": "💼 Avec entreprise ou profession"
+      "withCompany": "💼 Avec entreprise ou profession",
+      "withLocation": "📍 Avec localisation"
     },
     "buttons": {
       "enrich": "Enrichir vos contacts",

@@ -8,6 +8,7 @@ type MiningStats = {
   total_reachable: number;
   total_with_phone: number;
   total_with_company: number;
+  total_with_location: number;
 };
 export async function getMiningStats(miningId: string): Promise<MiningStats> {
   const { data, error } = await supabase
