@@ -747,7 +747,7 @@
       </template>
       <template #body="{ data }">
         <div>
-          <NormalizedLocation :location="data.location_normalized" />
+          <NormalizedLocation :normalized-location="data.location_normalized" />
           {{ data.location }}
         </div>
       </template>

@@ -147,8 +147,9 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              <NormalizedLocation :location="contact.location_normalized" />
-
+              <NormalizedLocation
+                :normalized-location="contact.location_normalized"
+              />
               {{ contact.location }}
             </div>
             <Textarea
