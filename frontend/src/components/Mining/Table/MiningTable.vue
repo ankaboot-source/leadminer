@@ -728,6 +728,7 @@
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
+      :show-filter-match-modes="false"
     >
       <template #header>
         <div v-tooltip.top="$t('contact.location_definition')">
