@@ -36,7 +36,7 @@ BEGIN
             FROM private.tags tg
             WHERE tg.user_id = userid
             GROUP BY person_email
-            HAVING MIN(reachable) != 3;
+            HAVING MIN(reachable) != 3; -- Keeps only persons where at least one tag is reachable (Not 3) --
           )
         GROUP BY person_email;
 
