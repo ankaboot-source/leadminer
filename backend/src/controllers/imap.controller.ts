@@ -131,11 +131,11 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (error: any) {
-        logger.error("Error during inbox fetch", {
-            message: error.message,
-            stack: error.stack,
-            code: error.code,
-          });
+        logger.error('Error during inbox fetch', {
+          message: error.message,
+          stack: error.stack,
+          code: error.code
+        });
 
         if ([502, 503].includes(error?.output?.payload?.statusCode)) {
           return res
