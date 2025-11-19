@@ -1,3 +1,4 @@
+-- Keep only persons where at least one tag is reachable (Not 3) --
 CREATE OR REPLACE FUNCTION private.refine_persons(userid uuid)
 RETURNS void
 LANGUAGE plpgsql
