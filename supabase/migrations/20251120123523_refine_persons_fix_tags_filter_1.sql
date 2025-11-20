@@ -31,8 +31,18 @@ BEGIN
 		FROM private.tags tg
 		WHERE
 			tg.user_id = userid
-			AND reachable IN (1, 2)
-			AND tg.source = 'refined#email_address' -- Only if the email address is tagged as reachable --
+        -- email address must be reachable
+        AND tg.source = 'refined#email_address'
+        AND tg.reachable IN (1, 2)
+        -- at least one reachable message_header must exist
+        AND EXISTS (
+            SELECT 1
+            FROM private.tags mh
+            WHERE mh.user_id = userid
+            AND mh.person_email = tg.person_email
+            AND mh.source = 'refined#message_header'
+            AND mh.reachable IN (1, 2)
+        )
 		GROUP BY person_email;
 
     CREATE TEMP TABLE name_aggregates AS
