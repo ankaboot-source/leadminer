@@ -26,13 +26,11 @@ try {
   await $leadminer.fetchMiningSources();
   onMounted(async () => {
     const step = await $leadminer.getCurrentRunningMining();
-    if (step !== undefined) {
-      console.log(step);
+    if (step !== undefined && step > 1) {
       $stepper.go(step);
     }
   });
 } catch (error) {
-  console.log(error);
   onMounted(() => {
     throw error instanceof FetchError && error.response?.status === 401
       ? error

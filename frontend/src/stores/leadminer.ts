@@ -424,9 +424,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         clean: MiningTask;
       }>(`/imap/mine/${user?.sub}/`);
 
-      if (!redactedTask) return;
+      if (!redactedTask) return 1;
 
-      if (!fetch || !extract || !clean) return;
+      if (!fetch || !extract || !clean) return 1;
 
       miningTask.value = redactedTask;
       miningStartedAt.value = new Date(fetch.started_at).getTime();
