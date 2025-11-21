@@ -41,9 +41,9 @@ export default function initializeMiningRoutes(
     createProviderMiningSourceCallback
   );
 
+  router.get('/mine/:userId/', authMiddleware, getMiningTask);
   router.post('/mine/email/:userId', authMiddleware, startMining);
   router.post('/mine/file/:userId', authMiddleware, startMiningFile);
-  router.get('/mine/:type/:userId/:id', authMiddleware, getMiningTask);
   router.post('/mine/:type/:userId/:id', authMiddleware, stopMiningTask);
 
   return router;

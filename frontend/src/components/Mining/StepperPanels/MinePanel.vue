@@ -97,7 +97,7 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource;
 }>();
 
-const sourceType = computed(() => (miningSource ? 'boxes' : 'file'));
+const sourceType = computed(() => $leadminerStore.miningType);
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
@@ -122,28 +122,31 @@ const totalEmails = computed<number>(() => {
     return $leadminerStore.selectedFile?.contacts.length || 0;
   }
 
-  if (sourceType.value === 'boxes' && boxes.value[0]) {
-    return objectScan(['**.{total}'], {
-      joined: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      filterFn: ({ parent, property, value, context }: any) => {
-        if (
-          property === 'total' &&
-          parent.key &&
-          parent.key in selectedBoxes.value &&
-          selectedBoxes.value[parent.key].checked
-        ) {
-          context.sum += value;
-        }
-      },
-    })(boxes.value, { sum: 0 }).sum;
+  if (sourceType.value === 'email') {
+    console.log($leadminerStore.totalMessages);
+    return $leadminerStore.totalMessages > 0
+      ? $leadminerStore.totalMessages
+      : objectScan(['**.{total}'], {
+          joined: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          filterFn: ({ parent, property, value, context }: any) => {
+            if (
+              property === 'total' &&
+              parent.key &&
+              parent.key in selectedBoxes.value &&
+              selectedBoxes.value[parent.key].checked
+            ) {
+              context.sum += value;
+            }
+          },
+        })(boxes.value, { sum: 0 }).sum;
   }
 
   return 0;
 });
 
 const totalMined = computed(() =>
-  sourceType.value === 'boxes'
+  sourceType.value === 'email'
     ? totalEmails.value
     : $leadminerStore.createdContacts,
 );
@@ -217,7 +220,7 @@ async function reloadContacts() {
 }
 
 const totalExtractedNotificationMessage = computed(() =>
-  sourceType.value === 'boxes'
+  sourceType.value === 'email'
     ? t('contacts_extracted', {
         extractedEmails: extractedEmails.value,
       })
@@ -249,14 +252,14 @@ watch(extractionFinished, async (finished) => {
       group: 'achievement',
       life: 8000,
     });
-    if (isSupported.value && permissionGranted.value) show();
     $stepper.next();
+    if (isSupported.value && permissionGranted.value) show();
     await reloadContacts();
   }
 });
 
 function openMiningSettings() {
-  if (sourceType.value === 'boxes') {
+  if (sourceType.value === 'email') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
   } else if (sourceType.value === 'file') {
     importFileDialogRef.value.openModal();
@@ -311,7 +314,7 @@ async function startMiningFile() {
 }
 
 async function startMining() {
-  if (sourceType.value === 'boxes') {
+  if (sourceType.value === 'email') {
     await startMiningBoxes();
   } else if (sourceType.value === 'file') {
     await startMiningFile();

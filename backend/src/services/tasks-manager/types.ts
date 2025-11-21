@@ -111,9 +111,15 @@ export interface TaskEnrich extends Task {
   };
 }
 
+export interface MiningSource {
+  source: string;
+  type: 'email' | 'file';
+}
+
 export interface MiningTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   process: {
     fetch: TaskFetch;
     extract: TaskExtract;
@@ -132,6 +138,7 @@ export interface MiningTask {
 export interface RedactedTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   processes: {
     [K in TaskType]?: string;
   };
