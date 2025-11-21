@@ -215,6 +215,18 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   const visibleColumns = ref(['contacts']);
 
+  const combinedLocations = computed(() => {
+    return contactsList.value
+      ?.filter(
+        (contact) =>
+          contact.location && contact.location_normalized?.display_name,
+      )
+      ?.map((contact) => ({
+        location: contact.location,
+        display_name: contact.location_normalized?.display_name,
+      }));
+  });
+
   /**
    * Resets the store.
    */
@@ -233,6 +245,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     selectedContactsCount,
     contactCount,
     visibleColumns,
+    combinedLocations,
     $reset,
     loadContacts,
     reloadContacts,

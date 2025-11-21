@@ -185,13 +185,8 @@ export function getTagLabel(value: string) {
 }
 
 export function isValidURL(url: string) {
-  try {
-    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
+  if (url.includes(',')) return false;
+  return URL.canParse(url);
 }
 
 export async function removeContactsFromDatabase(

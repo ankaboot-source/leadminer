@@ -163,6 +163,7 @@ import Papa from 'papaparse';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import readXlsxFile from 'read-excel-file';
 import type { Contact } from '~/types/contact';
+import { isValidURL } from '~/utils/contacts';
 
 const SOURCE = 'file';
 const { t } = useI18n({
@@ -209,7 +210,7 @@ const options: {
   { value: 'image', label: $t('contact.image') },
 ];
 
-const URL_OPTIONS = ['image', 'same_as'];
+const URL_OPTIONS: (keyof Contact)[] = ['image', 'same_as'];
 const REST_OPTIONS = options
   .filter(
     (option) => option.value !== 'email' && !URL_OPTIONS.includes(option.value),
@@ -259,15 +260,9 @@ function getColumns(rows: Row[]) {
   keys.forEach((key, col_index) => {
     const cellValue = String(rows[0][key]).toLowerCase();
     if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(col_index);
-    if (
-      isValidURL(cellValue) ||
-      cellValue === '' ||
-      cellValue === undefined ||
-      cellValue === null
-    )
+    if (isValidURL(cellValue) || isEmptyCell(cellValue))
       urlColumnIndexes.add(col_index);
-    if (cellValue === '' || cellValue === undefined || cellValue === null)
-      emptyColumnIndexes.add(col_index);
+    if (isEmptyCell(cellValue)) emptyColumnIndexes.add(col_index);
   });
   if (emailColumnIndexes.size === 0)
     throw new Error('No email column detected in the CSV data.');
@@ -355,13 +350,24 @@ function createHeaders(rows: Row[]): {
       if (urlColumnIndexes.includes(index)) return URL_OPTIONS;
       return REST_OPTIONS;
     })();
+
+    let header: keyof Contact | null = null;
+    // Set the first email column as email
+    if (index === emailColumnIndexes[0]) {
+      header = 'email';
+    }
+    // Map to label
+    else if (
+      matchingOption &&
+      available_option.includes(matchingOption.value)
+    ) {
+      header = matchingOption.value;
+    }
+
     return {
       original_header: key,
       field: matchingOption?.value || String(index),
-      header:
-        index === emailColumnIndexes[0] // Set the first email column as email //TODO the one that has 'email' in the header is should be selected as the email column if its valid
-          ? 'email'
-          : matchingOption?.value || null, // Map to email or label or null
+      header,
       available_option,
       ...(emailFailedColumnIndexes[index] && {
         unavailable_email_rows: emailFailedColumnIndexes[index],

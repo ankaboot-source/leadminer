@@ -18,6 +18,7 @@ function createOperatorFilter(
 
 export const NOT_EMPTY = 'NOT_EMPTY';
 export const ANY_SELECTED = 'ANY_SELECTED';
+export const LOCATION_MATCH = 'LOCATION_MATCH';
 export const MAX_YEARS_AGO_TO_FILTER = 3;
 
 export const DEFAULT_TOGGLES = {
@@ -35,13 +36,13 @@ export const DEFAULT_FILTERS = {
   telephone: { value: null, matchMode: NOT_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
+  location: createOperatorFilter(createConstraint(LOCATION_MATCH)),
   ...Object.fromEntries(
     [
       'source',
       'given_name',
       'family_name',
       'alternate_name',
-      'location',
       'works_for',
       'job_title',
       'mining_id',
