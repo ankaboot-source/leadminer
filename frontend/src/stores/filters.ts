@@ -5,6 +5,7 @@ import {
   ANY_SELECTED,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
+  LOCATION_MATCH,
   MAX_YEARS_AGO_TO_FILTER,
   NOT_EMPTY,
 } from '~/utils/filters-defaults';
@@ -166,6 +167,8 @@ function watchRecencyToggle() {
 }
 
 function registerFiltersAndStartWatchers() {
+  const $contactsStore = useContactsStore();
+
   // Filter registration
   FilterService.register(ANY_SELECTED, (value, filter) =>
     !filter ? true : filter.some((item: string) => value.includes(item)),
@@ -173,6 +176,24 @@ function registerFiltersAndStartWatchers() {
   FilterService.register(NOT_EMPTY, (value, filter) =>
     filter ? !(value === undefined || value === null || value === '') : true,
   );
+
+  FilterService.register(LOCATION_MATCH, (value, filter) => {
+    if (!filter) return true;
+    if (!value) return false;
+
+    const searchTerm = filter.toLowerCase();
+    const searchValue = value.toLowerCase();
+
+    // Check original location
+    if (searchValue.includes(searchTerm)) return true;
+
+    // Check normalized display name
+    const displayName = $contactsStore.combinedLocations
+      ?.find((data) => data.location === value)
+      ?.display_name?.toLowerCase();
+
+    return displayName?.includes(searchTerm) ?? false;
+  });
 
   const debouncedUpdate = useDebounceFn((newValue: string) => {
     filters.value.global.value = newValue;

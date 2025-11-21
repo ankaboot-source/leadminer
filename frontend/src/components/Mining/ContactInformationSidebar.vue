@@ -147,14 +147,8 @@
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
-              <i
-                v-if="
-                  contact.location_normalized &&
-                  Object.keys(contact.location_normalized).length
-                "
-                v-tooltip.top="contact.location_normalized.display_name"
-                class="pi pi-map-marker text-green-500 cursor-pointer hover:text-green-600 transition-colors"
-                @click="goToLocation(contact.location_normalized)"
+              <NormalizedLocation
+                :normalized-location="contact.location_normalized"
               />
               {{ contact.location }}
             </div>
@@ -243,9 +237,11 @@
   </Drawer>
 </template>
 <script setup lang="ts">
+import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
-import type { Contact, ContactEdit, NormalizedLocation } from '@/types/contact';
+import type { Contact, ContactEdit } from '@/types/contact';
+
 import {
   getStatusColor,
   getStatusLabel,
@@ -513,12 +509,6 @@ function copyContact(email: string, name?: string) {
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
-}
-
-function goToLocation(location: NormalizedLocation | null) {
-  if (!location || !location.lat || !location.lon) return;
-
-  window.open(getLocationUrl(location.lat, location.lon), '_blank');
 }
 </script>
 <i18n lang="json">
