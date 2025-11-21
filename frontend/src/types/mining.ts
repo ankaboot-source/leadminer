@@ -10,9 +10,12 @@ export interface MiningSource {
 }
 
 export interface MiningProgress {
-  extracted: number;
-  fetched: number;
   totalMessages: number;
+  fetched: number;
+  extracted: number;
+  verifiedContacts: number;
+  createdContacts: number;
+  signatures: number;
 }
 
 export interface FetcherStatus {
@@ -25,6 +28,13 @@ export type ProcessType = 'fetch' | 'extract' | 'clean';
 export interface MiningTask {
   userId: string;
   miningId: string;
+  type: ProcessType;
+  miningSource: {
+    source: string;
+    type: 'email' | 'file';
+  };
+  status: 'running' | 'canceled' | 'done';
+  started_at: string;
   processes: {
     [key in ProcessType]: string;
   };

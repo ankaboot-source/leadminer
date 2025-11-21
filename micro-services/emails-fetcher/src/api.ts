@@ -204,9 +204,7 @@ apiRoutes.post(
               miningSourceCredentials.port
             );
 
-      EmailsFetcher.start(
-        miningId,
-        new EmailFetcherFactory().create({
+      const emailFetcher = new EmailFetcherFactory().create({
           userId,
           miningId,
           contactStream,
@@ -219,7 +217,15 @@ apiRoutes.post(
           filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
           imapConnectionProvider
         })
+
+      const totalMessages = await emailFetcher.getTotalMessages();
+
+      EmailsFetcher.start(
+        miningId,
+        emailFetcher
       );
+
+      return res.status(201).send({ data: { miningId,  totalMessages}, error: null });
     } catch (err) {
       logger.error('Failed to start fetching', err);
       if (
@@ -241,8 +247,6 @@ apiRoutes.post(
       res.status(500);
       return next(new Error(newError.message));
     }
-
-    return res.status(201).send({ error: null });
   }
 );
 

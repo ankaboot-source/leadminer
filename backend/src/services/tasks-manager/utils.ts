@@ -18,6 +18,7 @@ export function redactSensitiveData(task: MiningTask): RedactedTask {
   return {
     userId: task.userId,
     miningId: task.miningId,
+    miningSource: task.miningSource,
     processes,
     progress: {
       ...task.progress

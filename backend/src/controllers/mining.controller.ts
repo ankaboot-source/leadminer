@@ -24,6 +24,8 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
+import supabaseClient from '../utils/supabase';
+import { Task } from '../services/tasks-manager/types';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -291,7 +293,11 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const fileMiningTask = await tasksManagerFile.createTask(user.id, 1);
+        const fileMiningTask = await tasksManagerFile.createTask(
+          user.id,
+          name,
+          1
+        );
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(
@@ -364,15 +370,44 @@ export default function initializeMiningController(
       }
     },
 
-    getMiningTask(req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.User;
-
-      const { id: taskId, type: miningType } = req.params;
-
+    async getMiningTask(req: Request, res: Response, next: NextFunction) {
+      const { user } = res.locals;
       try {
-        const task = (
-          miningType === 'email' ? tasksManager : tasksManagerFile
-        ).getActiveTask(taskId);
+        const { data: userActiveTasks, error } = await supabaseClient
+          .schema('private')
+          .from('tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('started_at', { ascending: false })
+          .limit(4);
+
+        if (error || !userActiveTasks || userActiveTasks.length === 0) {
+          throw new Error('Unable to get active mining task');
+        }
+
+        const fetchTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'fetch'
+        );
+        const extractTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'extract'
+        );
+        const cleanTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'clean'
+        );
+
+        const miningId = fetchTask?.details?.miningId;
+
+        if (!miningId || !fetchTask || !extractTask || !cleanTask) {
+          throw new Error('Mining id not found');
+        }
+
+        const task =
+          tasksManager.getActiveTask(miningId) ??
+          tasksManagerFile.getActiveTask(miningId);
+
+        if (!task) {
+          throw new Error(`Task with miningId: ${miningId} not found`);
+        }
 
         if (user.id !== task.userId) {
           return res
@@ -380,7 +415,12 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        return res.status(200).send({ data: task });
+        return res.status(200).send({
+          task,
+          fetch: fetchTask,
+          extract: extractTask,
+          clean: cleanTask
+        });
       } catch (err) {
         res.status(404);
         return next(err);

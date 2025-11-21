@@ -19,6 +19,7 @@ export default function buildEmail(
   total_reachable: number,
   total_with_phone: number,
   total_with_company: number,
+  total_with_location: number,
   source: string | null,
   mining_id: string,
   language: "en" | "fr" = "en",
@@ -103,6 +104,11 @@ export default function buildEmail(
   ${
       total_with_company > 0
         ? `<li>${i18n.stats.withCompany}: <strong>${total_with_company}</strong></li>`
+        : ""
+    }
+  ${
+      total_with_location > 0
+        ? `<li>${i18n.stats.withLocation}: <strong>${total_with_location}</strong></li>`
         : ""
     }
         </ul>
