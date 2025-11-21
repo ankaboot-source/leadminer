@@ -312,7 +312,7 @@ export default class TasksManagerFile {
     const task = this.getTaskOrThrow(miningId);
     const { startedAt, progress } = task;
     try {
-      this.handleTaskDeletion(miningId, processIds, task);
+      await this.handleTaskDeletion(miningId, processIds, task);
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
@@ -338,6 +338,20 @@ export default class TasksManagerFile {
     if (endEntireTask) {
       this.ACTIVE_MINING_TASKS.delete(miningId);
       progressHandlerSSE.stop();
+    }
+
+    if (processesToStop.length) {
+      await this.stopTask(processesToStop, true);
+    }
+
+    const status = await TasksManagerFile.getCompletionStatus(
+      process.extract,
+      process.clean
+    );
+
+    if (status) {
+      await refineContacts(task.userId);
+      await mailMiningComplete(miningId);
     }
 
     await this.stopTask(processesToStop, true);

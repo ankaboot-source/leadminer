@@ -365,13 +365,26 @@ export default class TasksManager {
       );
 
       if (endEntireTask) {
-        this.ACTIVE_MINING_TASKS.delete(miningId);
         // Signal to indicate the mining is completed
         progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
         progressHandlerSSE.stop();
+        this.ACTIVE_MINING_TASKS.delete(miningId);
       }
 
-      await this.stopTask(processesToStop, true);
+      if (processesToStop.length) {
+        await this.stopTask(processesToStop, true);
+      }
+
+      const status =
+        fetch.stoppedAt !== undefined &&
+        extract.stoppedAt !== undefined &&
+        clean.stoppedAt !== undefined &&
+        signature.stoppedAt !== undefined;
+
+      if (status) {
+        await refineContacts(task.userId);
+        await mailMiningComplete(miningId);
+      }
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
@@ -582,8 +595,6 @@ export default class TasksManager {
     if (status) {
       try {
         await this.deleteTask(miningId, null);
-        await refineContacts(task.userId);
-        await mailMiningComplete(miningId);
       } catch (error) {
         logger.error(`Error deleting task: ${(error as Error).message}`, {
           error
