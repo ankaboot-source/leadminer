@@ -152,6 +152,7 @@ export default class TasksManager {
       const miningTask: MiningTask = {
         userId,
         miningId,
+        miningSource: { source: email, type: 'email' },
         progressHandlerSSE,
         process: {
           signature: {
@@ -236,8 +237,6 @@ export default class TasksManager {
       const { progress, process } = miningTask;
       const { fetch, extract, clean, signature } = process;
 
-      progress.totalMessages = fetch.details.progress.totalMessages;
-
       const taskFetch = await this.tasksResolver.create(fetch);
       const taskSignature = await this.tasksResolver.create(signature);
       const taskExtract = await this.tasksResolver.create(extract);
@@ -262,7 +261,9 @@ export default class TasksManager {
       );
 
       try {
-        await this.emailFetcherAPI.startFetch({
+        const {
+          data: { totalMessages }
+        } = await this.emailFetcherAPI.startFetch({
           boxes,
           userId,
           email,
@@ -271,6 +272,8 @@ export default class TasksManager {
           signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
           extractSignatures: fetchEmailBody
         });
+
+        progress.totalMessages = totalMessages;
       } catch (error) {
         logger.error(`Failed to start fetching task with id: ${miningId}`, {
           error
@@ -356,6 +359,8 @@ export default class TasksManager {
     }
     const task = this.getTaskOrThrow(miningId);
     const { progressHandlerSSE, startedAt, progress, process } = task;
+    const { fetch, extract, clean, signature } = process;
+
     try {
       const endEntireTask = !processIds || processIds.length === 0;
       const processesToStop = Object.values(process).filter((p) =>

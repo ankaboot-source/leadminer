@@ -39,6 +39,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const loadingStatus = ref(false);
   const loadingStatusDns = ref(false);
 
+  const totalMessages = ref(0);
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
   const verifiedContacts = ref(0);
@@ -83,6 +84,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatus.value = false;
     loadingStatusDns.value = false;
 
+    totalMessages.value = 0;
     extractedEmails.value = 0;
     scannedEmails.value = 0;
     verifiedContacts.value = 0;
@@ -312,7 +314,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * Starts the mining process.
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
-  async function startMining(source: 'boxes' | 'file') {
+  async function startMining(source: 'email' | 'file') {
     await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
 
     const user = useSupabaseUser().value;
@@ -320,12 +322,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     if (!user || !token) return;
     if (source === 'file' && !selectedBoxes.value) return;
-    if (source === 'boxes' && !activeMiningSource.value) return;
+    if (source === 'email' && !activeMiningSource.value) return;
 
     // reset, prepare states
     loadingStatus.value = true;
     loadingStatusDns.value = true;
 
+    totalMessages.value = 0;
     scannedEmails.value = 0;
     extractedEmails.value = 0;
     createdContacts.value = 0;
@@ -338,7 +341,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     try {
       isLoadingStartMining.value = true;
       const task =
-        source === 'boxes'
+        source === 'email'
           ? await startMiningEmail(
               user?.sub,
               Object.keys(selectedBoxes.value).filter(
@@ -356,6 +359,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
               selectedFile.value!.contacts,
             );
 
+      totalMessages.value = task.progress.totalMessages;
+      sse.closeConnection();
       startProgressListener(miningType.value, task.miningId);
 
       miningTask.value = task;
@@ -400,11 +405,65 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  async function getCurrentRunningMining() {
+    // 1) GET running tasks for the current user
+    try {
+      const user = useSupabaseUser().value;
+
+      if (!user) return;
+
+      const {
+        task: redactedTask,
+        fetch,
+        clean,
+        extract,
+      } = await $api<{
+        task: MiningTask;
+        fetch: MiningTask;
+        extract: MiningTask;
+        clean: MiningTask;
+      }>(`/imap/mine/${user?.sub}/`);
+
+      if (!redactedTask) return;
+
+      if (!fetch || !extract || !clean) return;
+
+      miningTask.value = redactedTask;
+      miningStartedAt.value = new Date(fetch.started_at).getTime();
+      activeMiningSource.value = miningSources.value.find(
+        ({ email }) => email === redactedTask.miningSource.source,
+      );
+      miningType.value = redactedTask.miningSource.type as MiningType;
+      const { progress } = redactedTask;
+      totalMessages.value = progress.totalMessages;
+      scannedEmails.value = progress.fetched ?? 0;
+      extractedEmails.value = progress.extracted ?? 0;
+      createdContacts.value = progress.createdContacts ?? 0;
+      verifiedContacts.value = progress.verifiedContacts ?? 0;
+
+      fetchingFinished.value =
+        fetch && ['done', 'canceled'].includes(fetch.status);
+
+      extractionFinished.value =
+        extract && ['done', 'canceled'].includes(extract.status);
+
+      cleaningFinished.value =
+        clean && ['done', 'canceled'].includes(clean.status);
+
+      startProgressListener(miningType.value, miningTask.value.miningId);
+
+      return !fetchingFinished.value || !extractionFinished.value ? 2 : 3;
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+  }
+
   return {
     fetchInbox,
     fetchMiningSources,
     getMiningSourceByEmail,
-
+    getCurrentRunningMining,
     startMining,
     stopMining,
 
@@ -427,6 +486,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     isLoadingBoxes,
     loadingStatus,
     loadingStatusDns,
+    totalMessages,
     extractedEmails,
     scannedEmails,
     createdContacts,

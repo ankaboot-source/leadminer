@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
-import { RedisCommand, StreamInfo, TaskClean, TaskExtract } from './types';
+import {
+  MiningSource,
+  RedisCommand,
+  StreamInfo,
+  TaskClean,
+  TaskExtract
+} from './types';
 // eslint-disable-next-line max-classes-per-file
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
@@ -39,6 +45,7 @@ interface Task {
 interface MiningTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   process: {
     extract: TaskExtract;
     clean: TaskClean;
@@ -54,6 +61,7 @@ interface MiningTask {
 interface RedactedTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   processes: {
     [K in TaskType]?: string;
   };
@@ -67,6 +75,7 @@ function redactSensitiveData(task: MiningTask): RedactedTask {
   return {
     userId: task.userId,
     miningId: task.miningId,
+    miningSource: task.miningSource,
     processes,
     progress: {
       ...task.progress
@@ -156,7 +165,11 @@ export default class TasksManagerFile {
    * @throws {Error} If a task with the same mining ID already exists.
    * @throws {Error} If there is an error when creating the task.
    */
-  async createTask(userId: string, totalImportedFromFile: number) {
+  async createTask(
+    userId: string,
+    fileName: string,
+    totalImportedFromFile: number
+  ) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
       const {
@@ -171,6 +184,10 @@ export default class TasksManagerFile {
       const miningTask: MiningTask = {
         userId,
         miningId,
+        miningSource: {
+          source: fileName,
+          type: 'file'
+        },
         progressHandlerSSE,
         process: {
           extract: {
@@ -496,8 +513,6 @@ export default class TasksManagerFile {
     if (status) {
       try {
         await this.deleteTask(miningId, null);
-        await refineContacts(task.userId);
-        await mailMiningComplete(miningId);
       } catch (error) {
         logger.error(error);
       }
