@@ -25,6 +25,7 @@
       icon-pos="right"
       severity="danger"
       outlined
+      :loading="$leadminerStore.isLoadingStopMining"
       :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
@@ -93,8 +94,6 @@ onMounted(() => {
 });
 
 async function haltCleaning() {
-  $leadminerStore.isLoadingStopMining = true;
-
   try {
     await $leadminerStore.stopMining(true, null);
     $toast.add({
@@ -103,9 +102,7 @@ async function haltCleaning() {
       detail: t('cleaning_canceled'),
       life: 3000,
     });
-    $leadminerStore.isLoadingStopMining = false;
   } catch (error) {
-    $leadminerStore.isLoadingStopMining = false;
     if (error instanceof FetchError && error.response?.status === 404) {
       $toast.add({
         severity: 'warn',

@@ -393,9 +393,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningTask.value = undefined;
         fetchingFinished.value = true;
         cleaningFinished.value = true;
-        isLoadingStopMining.value = false;
       }
       extractionFinished.value = true;
+      isLoadingStopMining.value = false;
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;

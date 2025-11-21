@@ -369,16 +369,7 @@ export default class TasksManager {
           : !p.stoppedAt && p.id && processIds?.includes(p.id)
       );
 
-      if (endEntireTask) {
-        // Signal to indicate the mining is completed
-        progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
-        progressHandlerSSE.stop();
-        this.ACTIVE_MINING_TASKS.delete(miningId);
-      }
-
-      if (processesToStop.length) {
-        await this.stopTask(processesToStop, true);
-      }
+      const promise = this.stopTask(processesToStop, true);
 
       const status =
         fetch.stoppedAt !== undefined &&
@@ -387,8 +378,17 @@ export default class TasksManager {
         signature.stoppedAt !== undefined;
 
       if (status) {
-        await refineContacts(task.userId);
-        await mailMiningComplete(miningId);
+        // Signal to indicate the mining is completed
+        try {
+          await promise;
+          await refineContacts(task.userId);
+          await mailMiningComplete(miningId);
+        } catch (err) {
+          logger.error('Edge-functions failed');
+        }
+        this.ACTIVE_MINING_TASKS.delete(miningId);
+        progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
+        progressHandlerSSE.stop();
       }
     } catch (error) {
       logger.error('Error when deleting task', error);

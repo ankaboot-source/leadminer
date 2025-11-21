@@ -55,7 +55,7 @@
     <Button
       v-else
       id="mine-stepper-stop-button"
-      :loading="$leadminerStore?.isLoadingStartMining"
+      :loading="$leadminerStore?.isLoadingStopMining"
       icon="pi pi-stop"
       icon-pos="right"
       severity="danger"
@@ -235,6 +235,7 @@ const { isSupported, permissionGranted, show } = useWebNotification({
 });
 
 watch(extractionFinished, async (finished) => {
+  console.log('im heeeeeeeeeeere', finished)
   if (canceled.value) {
     $toast.add({
       severity: 'info',
@@ -243,7 +244,6 @@ watch(extractionFinished, async (finished) => {
       life: 3000,
     });
     $stepper.next();
-    await reloadContacts();
   } else if (finished) {
     $toast.add({
       severity: 'info',
