@@ -1,5 +1,4 @@
-DROP FUNCTION private.get_distinct_or_exclude_from_array;
-CREATE FUNCTION private.get_distinct_or_exclude_from_array(
+CREATE OR REPLACE FUNCTION private.get_distinct_or_exclude_from_array(
     input_array text[],
     exclude_array text[] DEFAULT NULL
 )

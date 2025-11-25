@@ -8,17 +8,15 @@ RETURNS TABLE(
   total_reachable BIGINT, 
   total_with_phone BIGINT,
   total_with_company BIGINT
-  total_with_location BIGINT
 ) AS $$
 DECLARE
   user_id UUID;
 BEGIN
   -- Get the user_id first
-  SELECT pt.user_id INTO user_id 
-  FROM private.tasks pt
-  WHERE pt.details->>'miningId' = $1
-    AND pt.status = 'done'
-  ORDER BY pt.started_at DESC
+  SELECT p.user_id INTO user_id 
+  FROM private.tasks p
+  WHERE p.details->>'miningId' = $1
+    AND p.status = 'done'
   LIMIT 1;
 
   -- Return the statistics
@@ -30,7 +28,6 @@ BEGIN
     COUNT(*) FILTER (WHERE status = 'VALID') AS total_reachable,
     COUNT(telephone) AS total_with_phone,
     COUNT(*) FILTER (WHERE job_title IS NOT NULL OR works_for IS NOT NULL) AS total_with_company
-    COUNT(*) FILTER (locations IS NOT NULL AND locations <> '') AS total_with_'location'
   FROM private.get_contacts_table(user_id) AS contacts
   WHERE contacts.mining_id = $1;
 END;
