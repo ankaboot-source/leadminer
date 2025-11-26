@@ -361,17 +361,26 @@ export default class TasksManagerFile {
       await this.stopTask(processesToStop, true);
     }
 
-    const status = await TasksManagerFile.getCompletionStatus(
+    const isCompleted = await TasksManagerFile.getCompletionStatus(
       process.extract,
       process.clean
     );
 
-    if (status) {
-      await refineContacts(task.userId);
-      await mailMiningComplete(miningId);
+    if (isCompleted) {
+      try {
+        await refineContacts(task.userId);
+        await mailMiningComplete(miningId);
+      } catch (err) {
+        logger.error(
+          'Failed to trigger email notification, refine contacts',
+          err
+        );
+      } finally {
+        this.ACTIVE_MINING_TASKS.delete(miningId);
+        progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
+        progressHandlerSSE.stop();
+      }
     }
-
-    await this.stopTask(processesToStop, true);
   }
 
   private static calculateTaskDuration(
