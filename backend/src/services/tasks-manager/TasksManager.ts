@@ -369,26 +369,28 @@ export default class TasksManager {
           : !p.stoppedAt && p.id && processIds?.includes(p.id)
       );
 
-      const promise = this.stopTask(processesToStop, true);
+      if (processesToStop.length) {
+        await this.stopTask(processesToStop, true);
+      }
 
-      const status =
-        fetch.stoppedAt !== undefined &&
-        extract.stoppedAt !== undefined &&
-        clean.stoppedAt !== undefined &&
-        signature.stoppedAt !== undefined;
+      const isCompleted = [fetch, extract, clean, signature].every(
+        (p) => p.stoppedAt != null
+      );
 
-      if (status) {
-        // Signal to indicate the mining is completed
+      if (isCompleted) {
         try {
-          await promise;
           await refineContacts(task.userId);
           await mailMiningComplete(miningId);
         } catch (err) {
-          logger.error('Edge-functions failed');
+          logger.error(
+            'Failed to trigger email notification, refine contacts',
+            err
+          );
+        } finally {
+          this.ACTIVE_MINING_TASKS.delete(miningId);
+          progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
+          progressHandlerSSE.stop();
         }
-        this.ACTIVE_MINING_TASKS.delete(miningId);
-        progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
-        progressHandlerSSE.stop();
       }
     } catch (error) {
       logger.error('Error when deleting task', error);

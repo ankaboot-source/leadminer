@@ -235,7 +235,6 @@ const { isSupported, permissionGranted, show } = useWebNotification({
 });
 
 watch(extractionFinished, async (finished) => {
-  console.log('im heeeeeeeeeeere', finished)
   if (canceled.value) {
     $toast.add({
       severity: 'info',

@@ -104,6 +104,11 @@ jest.mock('../../src/db/supabase/tasks', () =>
   }))
 );
 
+jest.mock('../../src/db/mail', () => ({
+  refineContacts: jest.fn(() => undefined),
+  mailMiningComplete: jest.fn(() => undefined)
+}));
+
 const fakeRedisClient = redis.getClient();
 const tasksResolver = new SupabaseTasks({} as SupabaseClient, {} as Logger);
 
@@ -254,7 +259,7 @@ describe('TasksManager', () => {
   });
 
   describe('TasksManager.constructor', () => {
-    it('sould throw an error if constructed more than once', () => {
+    it('should throw an error if constructed more than once', () => {
       try {
         /* eslint-disable-next-line no-new */
         new TasksManager(
@@ -423,10 +428,10 @@ describe('TasksManager', () => {
 
       it('should stop process from list successfully', async () => {
         const processKeys = Object.keys(task.processes);
-        for (const processKey of processKeys) {
+        for (let index = 0; index < processKeys.length; index += 1) {
           (tasksResolver.update as jest.Mock).mockClear();
           (fakeRedisClient.xgroup as jest.Mock).mockClear();
-
+          const processKey = processKeys[index];
           const process =
             task.processes[processKey as keyof typeof task.processes];
 
@@ -438,10 +443,16 @@ describe('TasksManager', () => {
           expect(deletedTask).toBeDefined();
           expect(deletedTask).toEqual(task);
 
-          // eslint-disable-next-line @typescript-eslint/no-loop-func
-          expect(() =>
-            tasksManager.getActiveTask(deletedTask.miningId)
-          ).not.toThrow(Error);
+          const isLastProcess = index === processKeys.length - 1;
+          if (isLastProcess) {
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            expect(() => tasksManager.getActiveTask(task.miningId)).toThrow();
+          } else {
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            expect(() =>
+              tasksManager.getActiveTask(task.miningId)
+            ).not.toThrow();
+          }
 
           expect(tasksResolver.update).toHaveBeenCalledWith(
             expect.objectContaining({

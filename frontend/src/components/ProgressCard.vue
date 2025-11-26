@@ -7,7 +7,10 @@
     </div>
 
     <div id="progress-time" class="mb-3">
-      <slot name="progress-time">
+      <slot v-if="props.progressTime">
+        {{ props.progressTime }}
+      </slot>
+      <slot v-else name="progress-time">
         <div v-if="progressPercentage > 0 && progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
@@ -81,6 +84,8 @@ const props = defineProps({
   progressTitle: { type: String, default: '' },
   // skipcq: JS-0715 - Is used in the template
   progressTooltip: { type: String, default: '' },
+  // skipcq: JS-0715 - Is used in the template
+  progressTime: { type: String, default: '' },
   // skipcq: JS-0715 - Is used in the template
   mode: {
     type: String as PropType<'determinate' | 'indeterminate'>,

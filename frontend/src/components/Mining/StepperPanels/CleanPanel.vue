@@ -1,5 +1,16 @@
 <template>
   <ProgressCard
+    v-if="isPostCleaningPhase"
+    :rate="AVERAGE_CLEANING_RATE"
+    :status="$leadminerStore.activeTask"
+    :progress-time="t('processing_signatures_time')"
+    :progress-title="t('processing_signatures')"
+    :mode="isPostCleaningPhase ? 'indeterminate' : 'determinate'"
+  >
+  </ProgressCard>
+
+  <ProgressCard
+    v-else
     :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
     :current="verifiedContacts"
@@ -60,6 +71,10 @@ const progressTooltip = computed(() =>
   }),
 );
 
+const isPostCleaningPhase = computed(
+  () => $leadminerStore.cleaningFinished && !$leadminerStore.miningCompleted,
+);
+
 function cleaningDoneNotification() {
   $toast.add({
     severity: 'success',
@@ -95,7 +110,14 @@ onMounted(() => {
 
 async function haltCleaning() {
   try {
-    await $leadminerStore.stopMining(true, null);
+    if (isPostCleaningPhase.value) {
+      await $leadminerStore.stopMining(true, null);
+    } else {
+      const cleaning = [$leadminerStore.miningTask?.processes.clean].filter(
+        Boolean,
+      ) as string[];
+      await $leadminerStore.stopMining(cleaning.length === 0, cleaning ?? null);
+    }
     $toast.add({
       severity: 'info',
       summary: t('cleaning_stopped'),
@@ -133,7 +155,9 @@ async function haltCleaning() {
     "contacts_verified": "{verifiedContacts} contacts are verified.",
     "cleaning_stopped": "Cleaning Stopped",
     "cleaning_canceled": "Your cleaning is successfully canceled.",
-    "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
+    "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled.",
+    "processing_signatures": "Verifying and processing signatures from your emails",
+    "processing_signatures_time": "Signature processing may take around 10 minutes"
   },
   "fr": {
     "enrich_button_tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
@@ -147,7 +171,9 @@ async function haltCleaning() {
     "contacts_verified": "{verifiedContacts} contacts ont été vérifiés.",
     "cleaning_stopped": "Nettoyage arrêté",
     "cleaning_canceled": "Votre nettoyage a été annulé avec succès.",
-    "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée."
+    "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée.",
+    "processing_signatures": "Vérification et traitement des signatures provenant de vos e-mails",
+    "processing_signatures_time": "Le traitement des signatures peut prendre environ 10 minutes"
   }
 }
 </i18n>
