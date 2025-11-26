@@ -967,11 +967,9 @@ watch(
   () => $leadminerStore.activeMiningTask,
   (isActive) => {
     if (isActive) {
-      $leadminerStore.cleaningFinished = false;
       $filtersStore.clearFilter();
       optimizeTableForMining();
     } else {
-      $leadminerStore.cleaningFinished = true;
       $filtersStore.toggleFilters();
       rowsPerPage.value = DEFAULT_ROWS_PER_PAGE;
     }
