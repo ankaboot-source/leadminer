@@ -55,14 +55,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const activeTask = computed(
     () =>
-      activeMiningTask.value ||
-      isLoadingBoxes.value ||
-      !cleaningFinished.value ||
-      activeEnrichment.value,
+      activeMiningTask.value || isLoadingBoxes.value || activeEnrichment.value,
   );
 
   const miningStartedAndFinished = computed(() =>
-    Boolean(miningStartedAt.value && cleaningFinished.value),
+    Boolean(miningStartedAt.value && miningCompleted.value),
   );
 
   const miningInterrupted = ref(false);
@@ -394,6 +391,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         fetchingFinished.value = true;
         cleaningFinished.value = true;
       }
+      fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
     } catch (err) {
