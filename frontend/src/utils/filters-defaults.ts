@@ -7,7 +7,7 @@ export function createConstraint(matchMode: string, value: unknown = null) {
     matchMode,
   };
 }
-export function createOperatorFilter(
+function createOperatorFilter(
   ...constraints: ReturnType<typeof createConstraint>[]
 ) {
   return {
