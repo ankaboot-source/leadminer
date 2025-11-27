@@ -728,8 +728,13 @@
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
-      :show-filter-match-modes="false"
+      :filter-match-mode-options="[
+        { label: 'Contains', value: LOCATION_MATCH },
+        { label: NOT_EMPTY, value: NOT_EMPTY },
+      ]"
+      :pt="{ filterremove: { class: 'hidden' } }"
     >
+      <!-- Last :pt uses object syntax because shorthand can fail on conditional elements -->
       <template #header>
         <div v-tooltip.top="$t('contact.location_definition')">
           {{ $t('contact.location') }}
