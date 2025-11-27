@@ -734,7 +734,7 @@
         filterrule: { class: 'nth-[2]:hidden', disabled: true },
       }"
     >
-      <!-- Last :pt uses object syntax because shorthand can fail on conditional elements -->
+      <!-- Last :pt uses object syntax to not fail on conditional elements -->
       <template #header>
         <div v-tooltip.top="$t('contact.location_definition')">
           {{ $t('contact.location') }}
