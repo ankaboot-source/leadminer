@@ -168,7 +168,7 @@ function watchLocationToggle() {
   return watch(
     () => filters.value.location.constraints[1],
     (newLocationValue) => {
-      locationToggle.value = !!newLocationValue;
+      locationToggle.value = newLocationValue?.value === true;
     },
   );
 }
