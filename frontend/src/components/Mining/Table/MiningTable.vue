@@ -728,11 +728,11 @@
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
-      :filter-match-mode-options="[
-        { label: 'Contains', value: LOCATION_MATCH },
-        { label: NOT_EMPTY, value: NOT_EMPTY },
-      ]"
-      :pt="{ filterremove: { class: 'hidden' } }"
+      :show-filter-match-modes="false"
+      :pt="{
+        filterremove: 'hidden',
+        filterrule: { class: 'nth-[2]:hidden', disabled: true },
+      }"
     >
       <!-- Last :pt uses object syntax because shorthand can fail on conditional elements -->
       <template #header>
@@ -1242,6 +1242,7 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
+    'location',
     ...(origin === 'contacts' && $screenStore.width > 550
       ? ['temperature']
       : []),
