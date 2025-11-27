@@ -1,7 +1,7 @@
 import { FilterMatchMode, FilterOperator } from '@primevue/core';
 
 // Filter configuration helpers
-function createConstraint(matchMode: string, value: unknown = null) {
+export function createConstraint(matchMode: string, value: unknown = null) {
   return {
     value,
     matchMode,
@@ -58,13 +58,17 @@ export const DEFAULT_FILTERS = {
     ]),
   ),
   ...Object.fromEntries(
-    ['occurrence', 'replied_conversations', 'recipient', 'sender'].map(
-      (key) => [
-        key,
-        createOperatorFilter(
-          createConstraint(FilterMatchMode.GREATER_THAN_OR_EQUAL_TO),
-        ),
-      ],
-    ),
+    [
+      'occurrence',
+      'replied_conversations',
+      'recipient',
+      'sender',
+      'temperature',
+    ].map((key) => [
+      key,
+      createOperatorFilter(
+        createConstraint(FilterMatchMode.GREATER_THAN_OR_EQUAL_TO),
+      ),
+    ]),
   ),
 };

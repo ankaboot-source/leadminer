@@ -729,7 +729,12 @@
       :show-filter-operator="false"
       :show-add-button="false"
       :show-filter-match-modes="false"
+      :pt="{
+        filterremove: 'hidden',
+        filterrule: { class: 'nth-[2]:hidden', disabled: true },
+      }"
     >
+      <!-- Last :pt uses object syntax to not fail on conditional elements -->
       <template #header>
         <div v-tooltip.top="$t('contact.location_definition')">
           {{ $t('contact.location') }}
@@ -1237,6 +1242,7 @@ onNuxtReady(async () => {
     'same_as',
     'telephone',
     'image',
+    'location',
     ...(origin === 'contacts' && $screenStore.width > 550
       ? ['temperature']
       : []),
