@@ -164,6 +164,15 @@ function watchRecencyToggle() {
   );
 }
 
+function watchLocationToggle() {
+  return watch(
+    () => filters.value.location.constraints[1],
+    (newLocationValue) => {
+      locationToggle.value = !!newLocationValue;
+    },
+  );
+}
+
 function registerFiltersAndStartWatchers() {
   const $contactsStore = useContactsStore();
 
@@ -204,6 +213,7 @@ function registerFiltersAndStartWatchers() {
   watchStatusToggle();
   watchRepliesToggle();
   watchRecencyToggle();
+  watchLocationToggle();
 }
 
 function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
