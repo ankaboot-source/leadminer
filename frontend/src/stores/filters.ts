@@ -3,6 +3,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import {
   ANY_SELECTED,
+  createConstraint,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
   LOCATION_MATCH,
@@ -104,17 +105,14 @@ function onPhoneToggle(toggle?: boolean) {
     filters.value.telephone.value = toggle || null;
   }
 }
+
 function onLocationToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     locationToggle.value = toggle;
-    filters.value.location.constraints[0] = {
-      matchMode: NOT_EMPTY,
-      value: toggle || null,
-    };
-
-    // make column visible
+    filters.value.location.constraints[1] = createConstraint(NOT_EMPTY, toggle);
     if (!toggle) return;
     const $contactsStore = useContactsStore();
+    // make column visible
     if (!$contactsStore.visibleColumns.includes('location')) {
       $contactsStore.visibleColumns.push('location');
     }
@@ -166,6 +164,15 @@ function watchRecencyToggle() {
   );
 }
 
+function watchLocationToggle() {
+  return watch(
+    () => filters.value.location.constraints[1],
+    (newLocationValue) => {
+      locationToggle.value = newLocationValue?.value === true;
+    },
+  );
+}
+
 function registerFiltersAndStartWatchers() {
   const $contactsStore = useContactsStore();
 
@@ -206,6 +213,7 @@ function registerFiltersAndStartWatchers() {
   watchStatusToggle();
   watchRepliesToggle();
   watchRecencyToggle();
+  watchLocationToggle();
 }
 
 function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
