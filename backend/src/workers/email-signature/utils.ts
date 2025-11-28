@@ -40,7 +40,7 @@ export async function upsertSignaturesDB(
     .schema('private')
     .from('signatures')
     .upsert(rows, {
-      onConflict: 'message_id, raw_signature, extracted_signature, details'
+      onConflict: 'user_id,person_email'
     });
 
   if (error) throw error;
