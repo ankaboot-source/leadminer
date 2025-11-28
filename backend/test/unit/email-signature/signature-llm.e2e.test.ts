@@ -2,21 +2,34 @@ import { describe, beforeAll, test, expect, jest } from '@jest/globals';
 import { Logger } from 'winston';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
-import { LLMModelType } from '../../../src/services/signature/llm/types';
+import {
+  LLMModelsList,
+  LLMModelType
+} from '../../../src/services/signature/llm/types';
 
 // TO ENABLE: RUN `export .env` IN TERMINAL
 const apiKey = process.env.OPENROUTER_API_KEY;
 
-const MODELS: string[] = [
-  /** Models here */
-];
+const MODELS: string[] = LLMModelsList;
 
 const TEST_CASES: Array<{
   name: string;
   input: string;
-  expected: null | Record<string, any>;
+  expected: null | Record<string, unknown>;
 }> = [
-  /** {name: string, input: string, expected: PersonLD } */
+  {
+    name: 'Anonymous - simple signature with telephone',
+    input: `Best regards,
+  Anonymous
+  07 00 12 34 56`,
+    expected: {
+      address: undefined,
+      jobTitle: undefined,
+      sameAs: undefined,
+      telephone: ['+33700123456'],
+      worksFor: undefined
+    }
+  }
 ];
 
 (apiKey ? describe : describe.skip)(
@@ -36,6 +49,8 @@ const TEST_CASES: Array<{
       } as unknown as jest.Mocked<Logger>;
     });
 
+    if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
+
     /* eslint-disable @typescript-eslint/no-loop-func */
     for (const model of MODELS) {
       describe(`MODEL: ${model}`, () => {
@@ -49,7 +64,7 @@ const TEST_CASES: Array<{
                 rateLimiter,
                 logger,
                 model as LLMModelType,
-                apiKey!
+                apiKey
               );
 
               const result = await llm.extract(tc.input);
