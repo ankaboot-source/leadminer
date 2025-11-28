@@ -32,8 +32,8 @@ export const SignaturePrompt = {
       - "name": REQUIRED — IF MISSING, RETURN NOTHING.
       - "telephone": EXTRACT AND CONVERT INTO E164 VALID FORMAT (e.g +13105550139).
       - "sameAs": EXTRACT SOCIAL OR WEBSITE URLS; ADD 'https://' IF '://' IS MISSING.  
-      - "address": EXTRACT COMPLETE ADDRESS IF COUNTRY IS PRESENT, OTHERWISE SKIP.
-      - "worksFor": EXTRACT COMPANY OR ORGANIZATION IF IT'S EXPLICITLY WRITTEN.
+      - "address": EXTRACT COMPLETE ADDRESS LOCATION IF COUNTRY IS PRESENT, OTHERWISE SKIP.
+      - "worksFor": EXTRACT VALID COMPANY OR ORGANIZATION NAME IF IT'S EXPLICITLY WRITTEN.
       - "jobTitle": EXTRACT IF IT'S CLEARLY STATED (e.g., “Manager”, “CTO”).  
       - PRESERVE ORIGINAL SPELLING & CAPITALIZATION FOR ALL FIELDS.
 
@@ -72,9 +72,6 @@ export const SignaturePrompt = {
       123 Main St, Los Angeles, USA
       LinkedIn: https://linkedin.com/in/jhon
       Twitter: https://x.com/jhon_cto
-
-      Linkedin1: @jhondoe
-      Twitter1: @jhondoe_jh
 
       **Output:**
       {

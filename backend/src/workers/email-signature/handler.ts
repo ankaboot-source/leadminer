@@ -163,7 +163,6 @@ export class EmailSignatureProcessor {
     if (!signature || !isUsefulSignatureContent(signature)) {
       this.logging.info('No signature found; skipping cache', {
         email,
-        body: signature,
         miningId
       });
       return;
@@ -258,7 +257,7 @@ export class EmailSignatureProcessor {
           .trim()
           .split('\n')
           .filter((l) => l.trim())
-          .slice(-4)
+          .slice(-6)
           .join('\n')
       );
     } catch (err) {
