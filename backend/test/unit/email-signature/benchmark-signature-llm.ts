@@ -20,10 +20,11 @@
 /* eslint-disable no-console, no-await-in-loop */
 
 import { Logger } from 'winston';
-import * as fs from 'fs';
+import { writeFileSync } from 'fs';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
 import { LLMModelType } from '../../../src/services/signature/llm/types';
+import { PersonLD } from '../../../src/services/signature/types';
 
 const apiKey: string | undefined = process.env.SIGNATURE_OPENROUTER_API_KEY;
 
@@ -52,7 +53,7 @@ const MODELS = [
 const TEST_CASES: Array<{
   name: string;
   input: string;
-  expected: null | Record<string, unknown>;
+  expected: null | PersonLD;
 }> = [
   {
     name: 'Standard-Modern-LinkedIn',
@@ -139,8 +140,8 @@ type ModelStat = {
     test: string;
     signature: string;
     field: string;
-    expected: any;
-    received: any;
+    expected: unknown;
+    received: unknown;
   }>;
 };
 
@@ -155,15 +156,11 @@ const getMockLogger = () =>
     log: () => {}
   }) as unknown as Logger;
 
-const sortPrimitiveArrays = (obj: any): any => {
+const sortPrimitiveArrays = (
+  obj: string | string[] | undefined
+): string | string[] | undefined => {
   if (Array.isArray(obj)) {
-    if (
-      obj.length > 0 &&
-      (typeof obj[0] === 'string' || typeof obj[0] === 'number')
-    ) {
-      return [...obj].sort();
-    }
-    return obj.map(sortPrimitiveArrays);
+    return [...obj].sort();
   }
 
   return obj;
@@ -184,10 +181,11 @@ async function processInBatches<T>(
 function writeBenchmarkResults() {
   let output = '';
 
-  output += `\n================ SIGNATURE EXTRACTION BENCHMARK ================\n`;
+  output +=
+    '\n================ SIGNATURE EXTRACTION BENCHMARK ================\n';
   output += `Date: ${new Date().toISOString()}\n`;
 
-  output += `\n=== DATASET STATISTICS ===\n`;
+  output += '\n=== DATASET STATISTICS ===\n';
   output += `Total Test Cases: ${DATASET_STATS.totalCases}\n`;
   output += `With Name : ${DATASET_STATS.withName}\n`;
   output += `With Telephone : ${DATASET_STATS.withTelephone}\n`;
@@ -196,7 +194,7 @@ function writeBenchmarkResults() {
   output += `With WorksFor  : ${DATASET_STATS.withWorksFor}\n`;
   output += `With Social    : ${DATASET_STATS.withSocial}\n`;
 
-  output += `\n=== MODEL LEADERBOARD (by weighted accuracy) ===\n`;
+  output += '\n=== MODEL LEADERBOARD (by weighted accuracy) ===\n';
 
   const leaderboard = [...modelStats.entries()]
     .map(([model, stats]) => ({
@@ -221,7 +219,7 @@ function writeBenchmarkResults() {
     output += `Failures: ${stats.failures.length}\n`;
 
     if (stats.failures.length === 0) {
-      output += `Perfect extraction.\n`;
+      output += 'Perfect extraction.\n';
       continue;
     }
 
@@ -230,7 +228,7 @@ function writeBenchmarkResults() {
       failCount[f.field] = (failCount[f.field] ?? 0) + 1;
     }
 
-    output += `\nField Failure Distribution:\n`;
+    output += '\nField Failure Distribution:\n';
     const sortedFailCounts = Object.entries(failCount).sort(
       (a, b) => b[1] - a[1]
     );
@@ -251,7 +249,7 @@ function writeBenchmarkResults() {
     }
   }
 
-  fs.writeFileSync(RESULT_FILE, output, 'utf8');
+  writeFileSync(RESULT_FILE, output, 'utf8');
   console.log(`\n📄 Benchmark results successfully written to ${RESULT_FILE}`);
 }
 
@@ -272,7 +270,9 @@ async function runBenchmark() {
   const rateLimiter = new TokenBucketRateLimiter(500, 60_000);
 
   for (const model of MODELS) {
-    const stats = modelStats.get(model)!;
+    const stats = modelStats.get(model);
+
+    if (!stats) continue;
 
     const llm = new SignatureLLM(
       rateLimiter,
@@ -283,7 +283,7 @@ async function runBenchmark() {
 
     try {
       await processInBatches(TEST_CASES, 20, async (tc) => {
-        let result: any;
+        let result;
         try {
           const timeout = 100_000;
           const extractionPromise = llm.extract(tc.input);
