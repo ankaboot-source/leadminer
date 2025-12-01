@@ -278,7 +278,7 @@ async function runBenchmark() {
       rateLimiter,
       logger,
       model as LLMModelType,
-      apiKey! // Assertion safe due to initial check
+      apiKey as string
     );
 
     try {
