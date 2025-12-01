@@ -73,14 +73,21 @@ export const FORWARDED_SEPARATOR_REGEX = [
   /^\s*-{8} Переслане повідомлення -{8}\s*/m, // Thunderbird (uk)
   /^\s*-{9,10} メッセージを転送 -{9,10}\s*/mu, // HubSpot (ja)
   /^\s*-{9,10} Wiadomość przesłana dalej -{9,10}\s*/m, // HubSpot (pl)
-  /^>?\s*-{10} Original Message -{10}\s*/m // IONOS by 1 & 1 (en)
+  /^>?\s*-{10} Original Message -{10}\s*/m, // IONOS by 1 & 1 (en)
+  /^>?\s*-{5}Original Message-{5}\s*/m // IONOS by 1 & 1 (en)
 ];
 
-export const REPLY_SEPARATOR_REGEX = ['------------------------------\n'];
+export const REPLY_SEPARATOR_REGEX = [
+  '------------------------------\n',
+  /^\s*Le\s+[^\n]+a\s+écrit\s*:\s*$/im,
+  /^\s*On\s+[^\n]+wrote:\s*$/im,
+  /^\s*Le[\s\S]*?a\s*écrit\s*:\s*$/im
+];
 
 export const REPLY_MARKER_REGEX: RegExp[] = [
-  // English
-  /^(.*)\s*\s^>.+$/im
+  /^\s*>\s*[^\n]+$/im,
+  /^\s*De\s*:\s*[^\n]+$/im,
+  /^\s*Envoyé\s*:\s*[^\n]+$/im
 ];
 
 export function CleanQuotedForwardedReplies(emailText: string): string {
