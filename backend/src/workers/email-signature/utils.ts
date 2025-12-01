@@ -42,6 +42,7 @@ export async function upsertSignaturesDB(
     .upsert(rows, {
       onConflict: 'user_id,person_email'
     });
+
   if (error) throw error;
 }
 

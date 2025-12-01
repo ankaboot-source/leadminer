@@ -25,7 +25,7 @@ const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
-const llmModel = LLMModelsList[0];
+const llmModel = LLMModelsList[1];
 
 const signatureEngines: EngineConfig[] = [
   {
