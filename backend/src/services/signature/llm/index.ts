@@ -18,77 +18,6 @@ import {
 import { LLMModelType } from './types';
 
 export const SignaturePrompt = {
-  system: `
-    <system_prompt>
-      You are an information extraction model. Your task is to convert the provided email signature into a structured JSON object following schema.org "Person".
-
-      ### OBJECTIVE
-      - RETURN STRUCTURED JSON WITH FIELDS EXPLICITLY PRESENT IN THE SIGNATURE
-      - OMIT EVERYTHING NOT FULLY PRESENT — NO GUESSING OR INFERENCE
-      - OUTPUT NOTHING IF SIGNATURE IS EMPTY OR INVALID
-
-      ### OUTPUT RULES
-      - ALWAYS INCLUDE "@type": "Person"  
-      - "name": REQUIRED — IF MISSING, RETURN NOTHING.
-      - "telephone": EXTRACT AND CONVERT INTO E164 VALID FORMAT (e.g +13105550139).
-      - "sameAs": EXTRACT SOCIAL OR WEBSITE URLS; ADD 'https://' IF '://' IS MISSING.  
-      - "address": EXTRACT COMPLETE ADDRESS LOCATION IF COUNTRY IS PRESENT, OTHERWISE SKIP.
-      - "worksFor": EXTRACT VALID COMPANY OR ORGANIZATION NAME IF IT'S EXPLICITLY WRITTEN.
-      - "jobTitle": EXTRACT IF IT'S CLEARLY STATED (e.g., “Manager”, “CTO”).  
-      - PRESERVE ORIGINAL SPELLING & CAPITALIZATION FOR ALL FIELDS.
-
-      ### FIELDS
-      - REQUIRED: "name"
-      - OPTIONAL:  
-        - "jobTitle" : string 
-        - "worksFor" : string 
-        - "email" : string 
-        - "telephone": string[]  
-        - "address": string
-        - "sameAs": string[]  
-
-      ### CHAIN OF THOUGHT
-      1. READ the signature
-      2. VALIDATE it's a real structured signature
-      3. EXTRACT ONLY EXPLICITLY WRITTEN FIELDS
-      4. FORMAT phones and social URLs correctly
-      5. BUILD JSON using schema.org "Person"
-      6. RETURN JSON OR NOTHING — NEVER GUESS
-
-      ### WHAT NOT TO DO
-      - NEVER GUESS OR HALLUCINATE FIELDS  
-      - NEVER INFER PARTIAL OR IMPLIED INFORMATION  
-      - NEVER ADD COMMENTS, NOTES, OR FORMATTING  
-      - NEVER INCLUDE INVALID OR INCOMPLETE FIELDS  
-
-      ### GOOD EXAMPLE
-
-      **Input:**
-      Jhon Doe
-      CTO
-      Leadminer Systems
-      jhon.doe@leadminer.io
-      +1 411 553 1139
-      123 Main St, Los Angeles, USA
-      LinkedIn: https://linkedin.com/in/jhon
-      Twitter: https://x.com/jhon_cto
-
-      **Output:**
-      {
-        "@type": "Person",
-        "name": "Jhon Doe",
-        "jobTitle": "CTO",
-        "worksFor": "Leadminer Systems",
-        "email": "jhon.doe@leadminer.io",
-        "telephone": ["+13105550139"],
-        "address": "123 Main St, Los Angeles, USA",
-        "sameAs": [
-          "https://linkedin.com/in/jhon",
-          "https://x.com/jhon_cto"
-        ]
-      }
-    </system_prompt>
-    `,
   response_format: {
     type: 'json_schema',
     json_schema: {
@@ -132,13 +61,83 @@ export const SignaturePrompt = {
             }
           }
         },
-        required: ['@type'], // , 'name'
+        required: [
+          '@type',
+          'name',
+          'jobTitle',
+          'worksFor',
+          'email',
+          'telephone',
+          'address',
+          'sameAs'
+        ],
         additionalProperties: false
       }
     }
   },
   buildUserPrompt: (signature: string) =>
-    `Here a signature extracted from an email address. return null if not a real signature:\n\n${signature}`
+    `
+    You are a deterministic structured-data extraction engine specialized in parsing email signatures.
+    Your output is consumed by financial and enterprise systems. Accuracy is mandatory, and guessing is forbidden.
+
+    ### OUTPUT FORMAT (STRICT)
+    - Return ONLY a JSON object matching the provided JSON schema.
+    - Do NOT add fields not present in the schema.
+    - Do NOT return text outside JSON.
+
+    ### EXTRACTION RULES (STRICT)
+    - **Crucial:** Include ONLY fields that successfully conform to their specific rules and appear explicitly in the signature.
+    - Preserve case sensitivity.
+    - NEVER infer, guess, or rewrite missing information.
+
+
+    ### FIELD RULES (STRICT & UNAMBIGUOUS)
+    **@type**
+    - Always "Person".
+
+    **name**
+    - First and last name.
+    - Preserve case sensitivity.
+    - Reject usernames, emails, initials, handles, single-word names.
+
+    **email**
+    - Must contain @ and a valid domain + TLD.
+
+    **telephone**
+    - Normalize to E.164 format.
+    - Remove all spaces, dots, hyphens, parentheses.
+    - Output as an array of strings or omit entirely.
+
+    **jobTitle**
+    - Accept only explicit, formal position titles. (e.g., “Chief Technology Officer,” “Senior Analyst”).
+    - Explicitly Reject: Descriptions, slogans, quotes, certifications, degree names (e.g., "PhD," "MBA"), or ambiguous terms without a specific area (e.g., "Consultant").
+
+    **worksFor**
+    - Accept only the formal or recognized brand name of a Company, Firm, or Organization.
+    - Explicitly Reject: Divisions, departments (e.g., "Sales Division"), addresses, cities, names of publications, or titles that are not formal organization names.
+
+    **address**
+    - Can be extracted from one line or multiple lines.
+    - Remove trailing text, spaces, slashes, periods (dots), or punctuation.
+    - Reject partial addresses (street-only, city-only, country-only).
+
+    **sameAs**
+    - Extract URLs pointing to profiles or websites.
+    - If scheme missing → prepend https://
+    - URL must contain a valid domain + TLD.
+    - Remove any trailing spaces, slashes; periods (dots), or punctuation.
+
+    ### OUTPUT
+    Return ONLY the JSON defined by the JSON schema, no comments or explanation.
+
+
+    Given the following extracted email block, extract ONLY explicitly present fields into the JSON format.
+
+    Signature:
+    ---
+    ${signature}
+    ---
+  `
 };
 
 type OpenRouterError = {
@@ -205,7 +204,6 @@ export class SignatureLLM implements ExtractSignature {
     return JSON.stringify({
       model: this.model,
       messages: [
-        { role: 'system', content: SignaturePrompt.system },
         {
           role: 'user',
           content: SignaturePrompt.buildUserPrompt(signature)
@@ -234,18 +232,25 @@ export class SignatureLLM implements ExtractSignature {
       const { data } = response;
       return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
-      this.logger.error(
-        `SignatureExtractionLLM error: ${(err as Error).message}`,
-        { error: err }
-      );
+      let error: Error | OpenRouterError['error'] = err as Error;
+      let openRouterErrorData: OpenRouterError['error'] | null = null;
+
       if (
         err instanceof AxiosError &&
         err?.response?.data &&
         'error' in err.response.data
       ) {
-        this.handleResponseError((err.response?.data as OpenRouterError).error);
+        openRouterErrorData = (err.response?.data as OpenRouterError).error;
+        error = openRouterErrorData;
       }
 
+      this.logger.error(`SignaturePromptLLM error: ${error.message}`, {
+        error
+      });
+
+      if (openRouterErrorData) {
+        this.handleResponseError(openRouterErrorData);
+      }
       return null;
     }
   }
@@ -253,7 +258,7 @@ export class SignatureLLM implements ExtractSignature {
   cleanOutput(signature: string, person: PersonLD): PersonLD | null {
     return removeFalsePositives(
       {
-        // name: undefinedIfFalsy(parseString(person.name)),
+        name: undefinedIfFalsy(parseString(person.name)),
         jobTitle: undefinedIfFalsy(parseString(person.jobTitle)),
         worksFor: undefinedIfFalsy(parseString(person.worksFor)),
         address: undefinedIfFalsy(parseLocationString(person.address)),

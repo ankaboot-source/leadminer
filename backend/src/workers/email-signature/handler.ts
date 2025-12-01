@@ -279,7 +279,7 @@ export class EmailSignatureProcessor {
     const enrichedContact: Partial<Contact> = {
       email,
       user_id: userId,
-      name: contact.name,
+      // name: contact.name,
       image: contact.image,
       location: contact.address,
       telephone: contact.telephone,
@@ -299,9 +299,9 @@ export class EmailSignatureProcessor {
   private async upsertContact(contact: Partial<Contact>): Promise<void> {
     assert(contact.user_id, "upsertContact: 'user_id' is required");
     const payload = {
+      name: contact.name ?? null,
       image: contact.image ?? null,
       email: contact.email,
-      name: contact.name ?? null,
       job_title: contact.job_title ?? null,
       given_name: contact.given_name ?? null,
       family_name: contact.family_name ?? null,

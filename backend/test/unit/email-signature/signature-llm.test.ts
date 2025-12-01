@@ -106,7 +106,7 @@ describe('SignatureLLM', () => {
       const result = await instance.sendPrompt('sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('SignatureExtractionLLM error'),
+        expect.stringContaining('SignaturePromptLLM error'),
         expect.any(Object)
       );
     });
