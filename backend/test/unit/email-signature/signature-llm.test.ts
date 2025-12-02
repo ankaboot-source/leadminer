@@ -79,7 +79,10 @@ describe('SignatureLLM', () => {
         .reply(200, mockResponse);
 
       const instance = createInstance();
-      const result = await instance.sendPrompt('signature text');
+      const result = await instance.sendPrompt(
+        'test@leadminer.io',
+        'signature text'
+      );
       expect(result).toBe('{"@type":"Person","name":"John"}');
     });
 
@@ -91,9 +94,9 @@ describe('SignatureLLM', () => {
         });
 
       const instance = createInstance();
-      await expect(instance.sendPrompt('sig')).rejects.toThrow(
-        'Service Unavailable'
-      );
+      await expect(
+        instance.sendPrompt('test@leadminer.io', 'sig')
+      ).rejects.toThrow('Service Unavailable');
       expect(instance.isActive()).toBe(false);
     });
 
@@ -103,7 +106,7 @@ describe('SignatureLLM', () => {
       });
 
       const instance = createInstance();
-      const result = await instance.sendPrompt('sig');
+      const result = await instance.sendPrompt('test@leadminer.io', 'sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('SignaturePromptLLM error'),
@@ -116,7 +119,7 @@ describe('SignatureLLM', () => {
     it('should return null if LLM response is null', async () => {
       const instance = createInstance();
       jest.spyOn(instance, 'sendPrompt' as any).mockResolvedValue('null');
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
     });
 
@@ -125,7 +128,7 @@ describe('SignatureLLM', () => {
       jest
         .spyOn(instance, 'sendPrompt' as any)
         .mockResolvedValue('{"@type":"Organization"}');
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
     });
 
@@ -151,7 +154,10 @@ describe('SignatureLLM', () => {
           ]
         });
       const instance = createInstance();
-      const result = await instance.extract('John +32 2 287 62 11 Tunisia');
+      const result = await instance.extract(
+        'test@leadminer.io',
+        'John +32 2 287 62 11 Tunisia'
+      );
       expect(result).toEqual(person);
     });
 
@@ -161,7 +167,7 @@ describe('SignatureLLM', () => {
         .spyOn(instance, 'sendPrompt' as any)
         .mockResolvedValue('INVALID_JSON');
 
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('SignatureExtractionLLM error'),

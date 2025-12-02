@@ -75,7 +75,7 @@ export const SignaturePrompt = {
       }
     }
   },
-  buildUserPrompt: (signature: string) =>
+  buildUserPrompt: (email: string, signature: string) =>
     `
     You are a deterministic structured-data extraction engine specialized in parsing email signatures.
     Your output is consumed by financial and enterprise systems. Accuracy is mandatory, and guessing is forbidden.
@@ -200,13 +200,13 @@ export class SignatureLLM implements ExtractSignature {
     };
   }
 
-  private body(signature: string) {
+  private body(email: string, signature: string) {
     return JSON.stringify({
-      model: this.model,
+      model: this.models,
       messages: [
         {
           role: 'user',
-          content: SignaturePrompt.buildUserPrompt(signature)
+          content: SignaturePrompt.buildUserPrompt(email, signature)
         }
       ],
       response_format: SignaturePrompt.response_format
@@ -220,13 +220,13 @@ export class SignatureLLM implements ExtractSignature {
     throw new Error(error.message);
   }
 
-  async sendPrompt(signature: string): Promise<string | null> {
+  async sendPrompt(email: string, signature: string): Promise<string | null> {
     try {
       const response = await this.rateLimiter.throttleRequests(() =>
         axios<OpenRouterResponse>(this.LLM_ENDPOINT, {
           method: 'POST',
           headers: this.headers(),
-          data: this.body(signature)
+          data: this.body(email, signature)
         })
       );
       const { data } = response;
@@ -274,9 +274,9 @@ export class SignatureLLM implements ExtractSignature {
     );
   }
 
-  async extract(signature: string): Promise<PersonLD | null> {
+  async extract(email: string, signature: string): Promise<PersonLD | null> {
     try {
-      const content = await this.sendPrompt(signature);
+      const content = await this.sendPrompt(email, signature);
 
       this.logger.debug(`extract signature content: ${content}`);
 
