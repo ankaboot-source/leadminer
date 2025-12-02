@@ -36,7 +36,10 @@ export class SignatureRE implements ExtractSignature {
     return [...matches];
   }
 
-  public async extract(signature: string): Promise<PersonLD | null> {
+  public async extract(
+    _email: string,
+    signature: string
+  ): Promise<PersonLD | null> {
     try {
       return {
         name: '',

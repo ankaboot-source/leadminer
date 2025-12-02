@@ -12,7 +12,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { IRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
 
-import { LLMModelType } from '../../../src/services/signature/llm/types';
+import { LLMModelsList } from '../../../src/services/signature/llm/types';
 
 describe('SignatureLLM', () => {
   let mockAxios: MockAdapter;
@@ -20,9 +20,10 @@ describe('SignatureLLM', () => {
   let mockLogger: jest.Mocked<Logger>;
 
   const apiKey = 'test-key';
-  const model = 'gpt-4' as LLMModelType;
+  const models = LLMModelsList;
+
   const createInstance = () =>
-    new SignatureLLM(mockRateLimiter, mockLogger, model, apiKey);
+    new SignatureLLM(mockRateLimiter, mockLogger, models, apiKey);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -44,11 +45,11 @@ describe('SignatureLLM', () => {
   describe('constructor', () => {
     it('should throw if API key is empty', () => {
       expect(
-        () => new SignatureLLM(mockRateLimiter, mockLogger, model, '')
+        () => new SignatureLLM(mockRateLimiter, mockLogger, models, '')
       ).toThrow('API key is required and cannot be empty.');
     });
 
-    it('should throw if model is missing', () => {
+    it('should throw if models is missing', () => {
       expect(
         () =>
           new SignatureLLM(
@@ -57,7 +58,7 @@ describe('SignatureLLM', () => {
             undefined as any,
             apiKey
           )
-      ).toThrow('Model is required and cannot be null or undefined.');
+      ).toThrow('Models are required and cannot be null or undefined.');
     });
   });
 
@@ -79,7 +80,10 @@ describe('SignatureLLM', () => {
         .reply(200, mockResponse);
 
       const instance = createInstance();
-      const result = await instance.sendPrompt('signature text');
+      const result = await instance.sendPrompt(
+        'test@leadminer.io',
+        'signature text'
+      );
       expect(result).toBe('{"@type":"Person","name":"John"}');
     });
 
@@ -91,9 +95,9 @@ describe('SignatureLLM', () => {
         });
 
       const instance = createInstance();
-      await expect(instance.sendPrompt('sig')).rejects.toThrow(
-        'Service Unavailable'
-      );
+      await expect(
+        instance.sendPrompt('test@leadminer.io', 'sig')
+      ).rejects.toThrow('Service Unavailable');
       expect(instance.isActive()).toBe(false);
     });
 
@@ -103,7 +107,7 @@ describe('SignatureLLM', () => {
       });
 
       const instance = createInstance();
-      const result = await instance.sendPrompt('sig');
+      const result = await instance.sendPrompt('test@leadminer.io', 'sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('SignaturePromptLLM error'),
@@ -116,7 +120,7 @@ describe('SignatureLLM', () => {
     it('should return null if LLM response is null', async () => {
       const instance = createInstance();
       jest.spyOn(instance, 'sendPrompt' as any).mockResolvedValue('null');
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
     });
 
@@ -125,7 +129,7 @@ describe('SignatureLLM', () => {
       jest
         .spyOn(instance, 'sendPrompt' as any)
         .mockResolvedValue('{"@type":"Organization"}');
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
     });
 
@@ -151,7 +155,10 @@ describe('SignatureLLM', () => {
           ]
         });
       const instance = createInstance();
-      const result = await instance.extract('John +32 2 287 62 11 Tunisia');
+      const result = await instance.extract(
+        'test@leadminer.io',
+        'John +32 2 287 62 11 Tunisia'
+      );
       expect(result).toEqual(person);
     });
 
@@ -161,7 +168,7 @@ describe('SignatureLLM', () => {
         .spyOn(instance, 'sendPrompt' as any)
         .mockResolvedValue('INVALID_JSON');
 
-      const result = await instance.extract('sig');
+      const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('SignatureExtractionLLM error'),

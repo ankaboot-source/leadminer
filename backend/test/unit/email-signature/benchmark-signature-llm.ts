@@ -23,7 +23,7 @@ import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
-import { LLMModelType } from '../../../src/services/signature/llm/types';
+import { LLMModelsList } from '../../../src/services/signature/llm/types';
 import { PersonLD } from '../../../src/services/signature/types';
 
 const apiKey: string | undefined = process.env.SIGNATURE_OPENROUTER_API_KEY;
@@ -37,53 +37,30 @@ if (!apiKey) {
 
 const RESULT_FILE = './results.txt';
 
-const MODELS = [
-  'x-ai/grok-4-fast',
-  'google/gemini-2.5-flash',
-  'openai/gpt-4.1-nano',
-  'anthropic/claude-sonnet-4.5',
-  'google/gemini-2.0-flash-001',
-  'cohere/command-r7b-12-2024',
-  'cohere/command-r-08-2024',
-  'anthropic/claude-3-haiku',
-  'anthropic/claude-3.5-haiku',
-  'anthropic/claude-3.7-sonnet'
-];
+const MODELS = [...LLMModelsList];
 
+/**
+ * Example test case
+ {
+    name: 'Jhon doe - should correctly extract name, address',
+    input: 'raw email signature text,
+    expected: {
+      name: value or undefined,
+      address: value or undefined,
+      jobTitle: value or undefined,
+      sameAs: [value] or undefined,
+      worksFor: 'value or undefined,
+      telephone: [value] or undefined
+    },
+    email: 'contact email that the signature belongs to'
+  }
+ */
 const TEST_CASES: Array<{
   name: string;
   input: string;
+  email: string;
   expected: null | PersonLD;
-}> = [
-  {
-    name: 'Standard-Modern-LinkedIn',
-    input:
-      'Best regards,\n\nEvelyn Reed\nSenior Product Manager\nTechForge Solutions\n[LinkedIn Icon] linkedin.com/in/evelynreed\n(800) 555-1212 x345\nwww.techforgesolutions.com',
-    expected: {
-      name: 'Evelyn Reed',
-      address: undefined,
-      jobTitle: 'Senior Product Manager',
-      sameAs: ['https://linkedin.com/in/evelynreed'],
-      worksFor: 'TechForge Solutions',
-      telephone: ['+18005551212 x345']
-    }
-  },
-  {
-    name: 'Complex-Multi-Contact-Address',
-    input:
-      'Warmly,\n\nDr. Marcus V. Alistair\nChief Financial Officer (CFO)\n\nAscend Capital Group\nDirect: +44 20 7946 0999 | Mobile: +44 7700 900888\n\n14 Victoria Street, Westminster\nLondon, SW1H 0AP, United Kingdom',
-    expected: {
-      name: 'Dr. Marcus V. Alistair',
-      address:
-        '14 Victoria Street, Westminster, London, SW1H 0AP, United Kingdom',
-      jobTitle: 'Chief Financial Officer (CFO)',
-      sameAs: undefined,
-      worksFor: 'Ascend Capital Group',
-      telephone: ['+442079460999', '+447700900888']
-    }
-  }
-  // Add more test cases here to build a robust benchmark dataset
-];
+}> = [];
 
 type FieldName =
   | 'name'
@@ -277,16 +254,16 @@ async function runBenchmark() {
     const llm = new SignatureLLM(
       rateLimiter,
       logger,
-      model as LLMModelType,
+      [model],
       apiKey as string
     );
 
     try {
-      await processInBatches(TEST_CASES, 20, async (tc) => {
+      await processInBatches(TEST_CASES, 10, async (tc) => {
         let result;
         try {
-          const timeout = 100_000;
-          const extractionPromise = llm.extract(tc.input);
+          const timeout = 60_000;
+          const extractionPromise = llm.extract(tc.email, tc.input);
           const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => {
               reject(new Error('Extraction Timeout'));

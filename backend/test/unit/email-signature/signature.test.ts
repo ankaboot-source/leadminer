@@ -64,8 +64,14 @@ describe('Signature', () => {
       { engine: mockFallbackEngine, useAsFallback: true }
     ]);
 
-    const result = await signature.extract('signature text');
-    expect(mockPrimaryEngine.extract).toHaveBeenCalledWith('signature text');
+    const result = await signature.extract(
+      'test@leadminer.io',
+      'signature text'
+    );
+    expect(mockPrimaryEngine.extract).toHaveBeenCalledWith(
+      'test@leadminer.io',
+      'signature text'
+    );
     expect(result).toEqual({ name: 'John Doe' });
   });
 
@@ -81,8 +87,11 @@ describe('Signature', () => {
       { engine: mockFallbackEngine, useAsFallback: true }
     ]);
 
-    const result = await signature.extract('sig');
-    expect(mockFallbackEngine.extract).toHaveBeenCalledWith('sig');
+    const result = await signature.extract('test@leadminer.io', 'sig');
+    expect(mockFallbackEngine.extract).toHaveBeenCalledWith(
+      'test@leadminer.io',
+      'sig'
+    );
     expect(result).toEqual({ name: 'Fallback' });
   });
 
@@ -95,7 +104,7 @@ describe('Signature', () => {
       { engine: mockFallbackEngine, useAsFallback: true }
     ]);
 
-    const result = await signature.extract('sig');
+    const result = await signature.extract('test@leadminer.io', 'sig');
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       'No available engine for signature extraction'
@@ -110,7 +119,7 @@ describe('Signature', () => {
       { engine: mockPrimaryEngine, useAsFallback: false }
     ]);
 
-    const result = await signature.extract('sig');
+    const result = await signature.extract('test@leadminer.io', 'sig');
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('failed during extraction'),

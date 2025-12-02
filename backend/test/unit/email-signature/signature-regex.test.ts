@@ -39,7 +39,7 @@ describe('SignatureRE', () => {
     `;
 
     const re = new SignatureRE(mockLogger);
-    const result = await re.extract(signature);
+    const result = await re.extract('test@leadminer.io', signature);
 
     expect(result).toEqual({
       name: '',
@@ -66,7 +66,7 @@ describe('SignatureRE', () => {
   it('should return empty arrays when no matches', async () => {
     const signature = 'No phone or links here';
     const re = new SignatureRE(mockLogger);
-    const result = await re.extract(signature);
+    const result = await re.extract('test@leadminer.io', signature);
 
     expect(result?.telephone).toEqual([]);
     expect(result?.sameAs).toEqual([]);
@@ -77,7 +77,7 @@ describe('SignatureRE', () => {
       throw new Error('failed to parse phone number');
     });
     const re = new SignatureRE(mockLogger);
-    const result = await re.extract('broken');
+    const result = await re.extract('test@leadminer.io', 'broken');
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       'SignatureExtractionLLM error:',
@@ -90,7 +90,7 @@ describe('SignatureRE', () => {
       throw new Error('failed to extract social urls');
     });
     const re = new SignatureRE(mockLogger);
-    const result = await re.extract('broken');
+    const result = await re.extract('test@leadminer.io', 'broken');
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       'SignatureExtractionLLM error:',

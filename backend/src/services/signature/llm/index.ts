@@ -75,7 +75,7 @@ export const SignaturePrompt = {
       }
     }
   },
-  buildUserPrompt: (signature: string) =>
+  buildUserPrompt: (email: string, signature: string) =>
     `
     You are a deterministic structured-data extraction engine specialized in parsing email signatures.
     Your output is consumed by financial and enterprise systems. Accuracy is mandatory, and guessing is forbidden.
@@ -87,7 +87,6 @@ export const SignaturePrompt = {
 
     ### EXTRACTION RULES (STRICT)
     - **Crucial:** Include ONLY fields that successfully conform to their specific rules and appear explicitly in the signature.
-    - Preserve case sensitivity.
     - NEVER infer, guess, or rewrite missing information.
 
 
@@ -131,7 +130,7 @@ export const SignaturePrompt = {
     Return ONLY the JSON defined by the JSON schema, no comments or explanation.
 
 
-    Given the following extracted email block, extract ONLY explicitly present fields into the JSON format.
+    Given the following extracted signature text from an email address with the domain ${email.split('@').pop}, extract ONLY explicitly present fields into the JSON format.
 
     Signature:
     ---
@@ -179,14 +178,17 @@ export class SignatureLLM implements ExtractSignature {
   constructor(
     private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
-    private readonly model: LLMModelType,
+    private readonly models: LLMModelType[],
     private readonly apiKey: string
   ) {
     assert(
       apiKey && apiKey.trim() !== '',
       'API key is required and cannot be empty.'
     );
-    assert(model, 'Model is required and cannot be null or undefined.');
+    assert(
+      models?.length,
+      'Models are required and cannot be null or undefined.'
+    );
   }
 
   isActive(): boolean {
@@ -200,13 +202,13 @@ export class SignatureLLM implements ExtractSignature {
     };
   }
 
-  private body(signature: string) {
+  private body(email: string, signature: string) {
     return JSON.stringify({
-      model: this.model,
+      models: this.models.slice(0, 3),
       messages: [
         {
           role: 'user',
-          content: SignaturePrompt.buildUserPrompt(signature)
+          content: SignaturePrompt.buildUserPrompt(email, signature)
         }
       ],
       response_format: SignaturePrompt.response_format
@@ -220,13 +222,13 @@ export class SignatureLLM implements ExtractSignature {
     throw new Error(error.message);
   }
 
-  async sendPrompt(signature: string): Promise<string | null> {
+  async sendPrompt(email: string, signature: string): Promise<string | null> {
     try {
       const response = await this.rateLimiter.throttleRequests(() =>
         axios<OpenRouterResponse>(this.LLM_ENDPOINT, {
           method: 'POST',
           headers: this.headers(),
-          data: this.body(signature)
+          data: this.body(email, signature)
         })
       );
       const { data } = response;
@@ -274,9 +276,9 @@ export class SignatureLLM implements ExtractSignature {
     );
   }
 
-  async extract(signature: string): Promise<PersonLD | null> {
+  async extract(email: string, signature: string): Promise<PersonLD | null> {
     try {
-      const content = await this.sendPrompt(signature);
+      const content = await this.sendPrompt(email, signature);
 
       this.logger.debug(`extract signature content: ${content}`);
 

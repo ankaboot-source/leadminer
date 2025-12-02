@@ -273,7 +273,7 @@ export class EmailSignatureProcessor {
   ): Promise<Partial<Contact> | null> {
     this.logging.debug('extractContact()', { email, signature });
 
-    const contact = await this.signature.extract(signature);
+    const contact = await this.signature.extract(email, signature);
     if (!contact) return null;
 
     const enrichedContact: Partial<Contact> = {

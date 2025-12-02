@@ -45,7 +45,7 @@ export class Signature implements ExtractSignature {
     return fallbackEngine?.engine || null;
   }
 
-  async extract(signature: string): Promise<PersonLD | null> {
+  async extract(email: string, signature: string): Promise<PersonLD | null> {
     const primary = this.getEngine();
     const fallback = this.getFallback();
     const engine = primary ?? fallback;
@@ -65,7 +65,7 @@ export class Signature implements ExtractSignature {
       this.logger.debug(
         `Attempting extraction with engine: ${engine.constructor.name}`
       );
-      const result = await engine.extract(signature);
+      const result = await engine.extract(email, signature);
 
       this.logger.debug(
         `Engine ${engine.constructor.name} extraction completed`,
