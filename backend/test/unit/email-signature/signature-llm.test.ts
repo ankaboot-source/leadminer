@@ -12,7 +12,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { IRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
 
-import { LLMModelType } from '../../../src/services/signature/llm/types';
+import { LLMModelsList } from '../../../src/services/signature/llm/types';
 
 describe('SignatureLLM', () => {
   let mockAxios: MockAdapter;
@@ -20,9 +20,10 @@ describe('SignatureLLM', () => {
   let mockLogger: jest.Mocked<Logger>;
 
   const apiKey = 'test-key';
-  const model = 'gpt-4' as LLMModelType;
+  const models = LLMModelsList;
+
   const createInstance = () =>
-    new SignatureLLM(mockRateLimiter, mockLogger, model, apiKey);
+    new SignatureLLM(mockRateLimiter, mockLogger, models, apiKey);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -44,11 +45,11 @@ describe('SignatureLLM', () => {
   describe('constructor', () => {
     it('should throw if API key is empty', () => {
       expect(
-        () => new SignatureLLM(mockRateLimiter, mockLogger, model, '')
+        () => new SignatureLLM(mockRateLimiter, mockLogger, models, '')
       ).toThrow('API key is required and cannot be empty.');
     });
 
-    it('should throw if model is missing', () => {
+    it('should throw if models is missing', () => {
       expect(
         () =>
           new SignatureLLM(
@@ -57,7 +58,7 @@ describe('SignatureLLM', () => {
             undefined as any,
             apiKey
           )
-      ).toThrow('Model is required and cannot be null or undefined.');
+      ).toThrow('Models are required and cannot be null or undefined.');
     });
   });
 

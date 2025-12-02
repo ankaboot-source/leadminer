@@ -25,8 +25,6 @@ const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
 
-const llmModel = LLMModelsList[1];
-
 const signatureEngines: EngineConfig[] = [
   {
     engine: new SignatureRE(logger),
@@ -38,11 +36,11 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   signatureEngines.push({
     engine: new SignatureLLM(
       new TokenBucketRateLimiter(
-        llmModel.includes('free') ? 15 : 500,
+        LLMModelsList.every((m) => m.includes('free')) ? 15 : 500,
         60 * 1000
       ),
       logger,
-      llmModel,
+      LLMModelsList,
       ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''
     ),
     useAsFallback: false

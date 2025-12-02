@@ -87,7 +87,6 @@ export const SignaturePrompt = {
 
     ### EXTRACTION RULES (STRICT)
     - **Crucial:** Include ONLY fields that successfully conform to their specific rules and appear explicitly in the signature.
-    - Preserve case sensitivity.
     - NEVER infer, guess, or rewrite missing information.
 
 
@@ -131,7 +130,7 @@ export const SignaturePrompt = {
     Return ONLY the JSON defined by the JSON schema, no comments or explanation.
 
 
-    Given the following extracted email block, extract ONLY explicitly present fields into the JSON format.
+    Given the following extracted signature text from an email address with the domain ${email.split('@').pop}, extract ONLY explicitly present fields into the JSON format.
 
     Signature:
     ---
@@ -179,14 +178,17 @@ export class SignatureLLM implements ExtractSignature {
   constructor(
     private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
-    private readonly model: LLMModelType,
+    private readonly models: LLMModelType[],
     private readonly apiKey: string
   ) {
     assert(
       apiKey && apiKey.trim() !== '',
       'API key is required and cannot be empty.'
     );
-    assert(model, 'Model is required and cannot be null or undefined.');
+    assert(
+      models.length,
+      'Models are required and cannot be null or undefined.'
+    );
   }
 
   isActive(): boolean {
