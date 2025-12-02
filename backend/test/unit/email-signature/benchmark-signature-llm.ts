@@ -39,43 +39,28 @@ const RESULT_FILE = './results.txt';
 
 const MODELS = [...LLMModelsList];
 
+/**
+ * Example test case
+ {
+    name: 'Jhon doe - should correctly extract name, address',
+    input: 'raw email signature text,
+    expected: {
+      name: value or undefined,
+      address: value or undefined,
+      jobTitle: value or undefined,
+      sameAs: [value] or undefined,
+      worksFor: 'value or undefined,
+      telephone: [value] or undefined
+    },
+    email: 'contact email that the signature belongs to'
+  }
+ */
 const TEST_CASES: Array<{
   name: string;
   input: string;
   email: string;
   expected: null | PersonLD;
-}> = [
-  {
-    name: 'Standard-Modern-LinkedIn',
-    input:
-      'Best regards,\n\nEvelyn Reed\nSenior Product Manager\nTechForge Solutions\n[LinkedIn Icon] linkedin.com/in/evelynreed\n(800) 555-1212 x345\nwww.techforgesolutions.com',
-    expected: {
-      name: 'Evelyn Reed',
-      address: undefined,
-      jobTitle: 'Senior Product Manager',
-      sameAs: ['https://linkedin.com/in/evelynreed'],
-      worksFor: 'TechForge Solutions',
-      telephone: ['+18005551212 x345']
-    },
-    email: 'test@techforgesolutions.com'
-  },
-  {
-    name: 'Complex-Multi-Contact-Address',
-    input:
-      'Warmly,\n\nDr. Marcus V. Alistair\nChief Financial Officer (CFO)\n\nAscend Capital Group\nDirect: +44 20 7946 0999 | Mobile: +44 7700 900888\n\n14 Victoria Street, Westminster\nLondon, SW1H 0AP, United Kingdom',
-    expected: {
-      name: 'Dr. Marcus V. Alistair',
-      address:
-        '14 Victoria Street, Westminster, London, SW1H 0AP, United Kingdom',
-      jobTitle: 'Chief Financial Officer (CFO)',
-      sameAs: undefined,
-      worksFor: 'Ascend Capital Group',
-      telephone: ['+442079460999', '+447700900888']
-    },
-    email: 'drmarcus@gmail.com'
-  }
-  // Add more test cases here to build a robust benchmark dataset
-];
+}> = [];
 
 type FieldName =
   | 'name'
