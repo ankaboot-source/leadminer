@@ -204,7 +204,7 @@ export class SignatureLLM implements ExtractSignature {
 
   private body(email: string, signature: string) {
     return JSON.stringify({
-      models: this.models,
+      models: this.models.slice(0, 3),
       messages: [
         {
           role: 'user',
