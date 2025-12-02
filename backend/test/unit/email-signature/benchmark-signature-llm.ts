@@ -23,10 +23,7 @@ import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
-import {
-  LLMModelsList,
-  LLMModelType
-} from '../../../src/services/signature/llm/types';
+import { LLMModelsList } from '../../../src/services/signature/llm/types';
 import { PersonLD } from '../../../src/services/signature/types';
 
 const apiKey: string | undefined = process.env.SIGNATURE_OPENROUTER_API_KEY;

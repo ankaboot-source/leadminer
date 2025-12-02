@@ -186,7 +186,7 @@ export class SignatureLLM implements ExtractSignature {
       'API key is required and cannot be empty.'
     );
     assert(
-      models.length,
+      models?.length,
       'Models are required and cannot be null or undefined.'
     );
   }
