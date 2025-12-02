@@ -23,7 +23,10 @@ import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
 import { SignatureLLM } from '../../../src/services/signature/llm';
 import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
-import { LLMModelType } from '../../../src/services/signature/llm/types';
+import {
+  LLMModelsList,
+  LLMModelType
+} from '../../../src/services/signature/llm/types';
 import { PersonLD } from '../../../src/services/signature/types';
 
 const apiKey: string | undefined = process.env.SIGNATURE_OPENROUTER_API_KEY;
@@ -37,22 +40,12 @@ if (!apiKey) {
 
 const RESULT_FILE = './results.txt';
 
-const MODELS = [
-  'x-ai/grok-4-fast',
-  'google/gemini-2.5-flash',
-  'openai/gpt-4.1-nano',
-  'anthropic/claude-sonnet-4.5',
-  'google/gemini-2.0-flash-001',
-  'cohere/command-r7b-12-2024',
-  'cohere/command-r-08-2024',
-  'anthropic/claude-3-haiku',
-  'anthropic/claude-3.5-haiku',
-  'anthropic/claude-3.7-sonnet'
-];
+const MODELS = [...LLMModelsList];
 
 const TEST_CASES: Array<{
   name: string;
   input: string;
+  email: string;
   expected: null | PersonLD;
 }> = [
   {
@@ -66,7 +59,8 @@ const TEST_CASES: Array<{
       sameAs: ['https://linkedin.com/in/evelynreed'],
       worksFor: 'TechForge Solutions',
       telephone: ['+18005551212 x345']
-    }
+    },
+    email: 'test@techforgesolutions.com'
   },
   {
     name: 'Complex-Multi-Contact-Address',
@@ -80,7 +74,8 @@ const TEST_CASES: Array<{
       sameAs: undefined,
       worksFor: 'Ascend Capital Group',
       telephone: ['+442079460999', '+447700900888']
-    }
+    },
+    email: 'drmarcus@gmail.com'
   }
   // Add more test cases here to build a robust benchmark dataset
 ];
@@ -277,16 +272,16 @@ async function runBenchmark() {
     const llm = new SignatureLLM(
       rateLimiter,
       logger,
-      model as LLMModelType,
+      [model],
       apiKey as string
     );
 
     try {
-      await processInBatches(TEST_CASES, 20, async (tc) => {
+      await processInBatches(TEST_CASES, 10, async (tc) => {
         let result;
         try {
-          const timeout = 100_000;
-          const extractionPromise = llm.extract(tc.input);
+          const timeout = 60_000;
+          const extractionPromise = llm.extract(tc.email, tc.input);
           const timeoutPromise = new Promise<never>((_, reject) => {
             setTimeout(() => {
               reject(new Error('Extraction Timeout'));
