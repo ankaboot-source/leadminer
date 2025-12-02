@@ -21,7 +21,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const miningTask = ref<MiningTask | undefined>();
 
-  const miningStartedAt = ref<number | undefined>();
+  const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(false);
@@ -427,7 +427,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (!fetch || !extract || !clean) return 1;
 
       miningTask.value = redactedTask;
-      miningStartedAt.value = new Date(fetch.started_at).getTime();
+      miningStartedAt.value =
+        performance.now() - (Date.now() - new Date(fetch.started_at).getTime());
+
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === redactedTask.miningSource.source,
       );
