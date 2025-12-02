@@ -156,7 +156,7 @@ async function haltCleaning() {
     "cleaning_stopped": "Cleaning Stopped",
     "cleaning_canceled": "Your cleaning is successfully canceled.",
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled.",
-    "processing_signatures": "Verifying and processing signatures from your emails",
+    "processing_signatures": "Extracting signatures from your emails",
     "processing_signatures_time": "Signature processing may take around 10 minutes"
   },
   "fr": {
@@ -172,7 +172,7 @@ async function haltCleaning() {
     "cleaning_stopped": "Nettoyage arrêté",
     "cleaning_canceled": "Votre nettoyage a été annulé avec succès.",
     "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée.",
-    "processing_signatures": "Vérification et traitement des signatures provenant de vos e-mails",
+    "processing_signatures": "Extraction des signatures provenant de vos e-mails",
     "processing_signatures_time": "Le traitement des signatures peut prendre environ 10 minutes"
   }
 }
