@@ -15,12 +15,13 @@ const { normalizedLocation } = defineProps<{
 }>();
 
 function goToLocation() {
-  if (!normalizedLocation || !normalizedLocation.lat || !normalizedLocation.lon)
+  if (
+    !normalizedLocation ||
+    !normalizedLocation.osm_id ||
+    !normalizedLocation.osm_type
+  )
     return;
 
-  window.open(
-    getLocationUrl(normalizedLocation.lat, normalizedLocation.lon),
-    '_blank',
-  );
+  window.open(getLocationUrl(normalizedLocation), '_blank');
 }
 </script>
