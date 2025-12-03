@@ -10,6 +10,8 @@ export const EmailStatusScore: Record<EmailStatus, number> = {
 };
 
 export interface NormalizedLocation {
+  osm_type?: string;
+  osm_id?: string;
   lat?: string;
   lon?: string;
   display_name?: string;
