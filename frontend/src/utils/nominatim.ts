@@ -1,6 +1,6 @@
 import type { NormalizedLocation } from '~/types/contact';
 
-const MAP_URL = 'https://www.openstreetmap.org/search';
+const MAP_URL = 'https://www.openstreetmap.org';
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,6 +28,8 @@ export async function normalizeLocation(
 
     const normalized: NormalizedLocation = result
       ? {
+          osm_type: result.osm_type,
+          osm_id: result.osm_id,
           lat: result.lat,
           lon: result.lon,
           display_name: result.display_name,
@@ -83,9 +85,16 @@ async function updateNormalizedLocationInDB(
   }
 }
 
-export function getLocationUrl(lat: string, lon: string) {
-  const url = new URL(MAP_URL);
-  url.searchParams.set('lat', lat);
-  url.searchParams.set('lon', lon);
-  return url.toString();
+export function getLocationUrl(location: NormalizedLocation) {
+  if (location.osm_type && location.osm_id) {
+    const url = `${MAP_URL}/${location.osm_type}/${location.osm_id}`;
+    return url;
+  }
+
+  if (location.lat && location.lon) {
+    const url = new URL(`${MAP_URL}/search`);
+    url.searchParams.set('lat', location.lat);
+    url.searchParams.set('lon', location.lon);
+    return url.toString();
+  }
 }

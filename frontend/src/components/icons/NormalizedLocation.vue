@@ -18,9 +18,6 @@ function goToLocation() {
   if (!normalizedLocation || !normalizedLocation.lat || !normalizedLocation.lon)
     return;
 
-  window.open(
-    getLocationUrl(normalizedLocation.lat, normalizedLocation.lon),
-    '_blank',
-  );
+  window.open(getLocationUrl(normalizedLocation), '_blank');
 }
 </script>
