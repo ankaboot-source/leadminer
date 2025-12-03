@@ -103,34 +103,33 @@ export const SignaturePrompt = {
     - Must contain @ and a valid domain + TLD.
 
     **telephone**
-    - Normalize to E.164 format.
-    - Remove all spaces, dots, hyphens, parentheses.
-    - Output as an array of strings or omit entirely.
+    - Normalize to E.164 format (e.g., +CCNNNNNNNNN, where CC is the country code). 
+    - Remove all spaces, dots, hyphens, parentheses, and text descriptors (e.g., "Tel:", "Mobile:"). 
 
     **jobTitle**
-    - Accept only explicit, formal position titles. (e.g., “Chief Technology Officer,” “Senior Analyst”).
-    - Explicitly Reject: Descriptions, slogans, quotes, certifications, degree names (e.g., "PhD," "MBA"), or ambiguous terms without a specific area (e.g., "Consultant").
+    - Accept: only the explicit, formal position.
+    - Strictly Exclude: Locational/Qualifying Phrases, text following prepositions (de, du, au, en).
+    - reject: Slogans, descriptions, certifications (e.g., PhD, MBA).
 
     **worksFor**
-    - Accept only the formal or recognized brand name of a Company, Firm, or Organization.
-    - Explicitly Reject: Divisions, departments (e.g., "Sales Division"), addresses, cities, names of publications, or titles that are not formal organization names.
+    - The name of the company, organization, or government body.
+    - Strictly Reject: Divisions, departments (e.g., "Sales Division"), addresses, cities, names of publications, or titles that are not formal organization names.
 
     **address**
     - Can be extracted from one line or multiple lines.
     - Remove trailing text, spaces, slashes, periods (dots), or punctuation.
-    - Reject partial addresses (street-only, city-only, country-only).
 
     **sameAs**
     - Extract URLs pointing to profiles or websites.
     - If scheme missing → prepend https://
     - URL must contain a valid domain + TLD.
-    - Remove any trailing spaces, slashes; periods (dots), or punctuation.
+    - Remove any trailing spaces, slashes, periods (dots), or punctuation.
 
     ### OUTPUT
     Return ONLY the JSON defined by the JSON schema, no comments or explanation.
 
 
-    Given the following extracted signature text from an email address with the domain ${email.split('@').pop}, extract ONLY explicitly present fields into the JSON format.
+    Given the following signature text from an email address with the domain ${email.split('@').pop}, extract explicitly present fields into the JSON format.
 
     Signature:
     ---
