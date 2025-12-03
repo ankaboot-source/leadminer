@@ -90,11 +90,4 @@ export function getLocationUrl(location: NormalizedLocation) {
     const url = `${MAP_URL}/${location.osm_type}/${location.osm_id}`;
     return url;
   }
-
-  if (location.lat && location.lon) {
-    const url = new URL(`${MAP_URL}/search`);
-    url.searchParams.set('lat', location.lat);
-    url.searchParams.set('lon', location.lon);
-    return url.toString();
-  }
 }
