@@ -46,12 +46,11 @@ export async function normalizeLocation(
  */
 export async function normalizeLocations(
   locations: string[],
+  language = 'en',
 ): Promise<NormalizedLocation[]> {
   const results: NormalizedLocation[] = [];
   const total = locations.length;
   let progress = 0;
-  const { getBrowserLocale } = useI18n();
-  const language = getBrowserLocale();
 
   for (const location of locations) {
     console.log(`Normalizing location ${++progress}/${total}: ${location}`);
@@ -72,7 +71,7 @@ async function updateNormalizedLocationInDB(
   location_normalized: NormalizedLocation,
 ) {
   const $supabase = useSupabaseClient();
-  const { data, error } = await $supabase
+  const { error } = await $supabase
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('persons')
@@ -82,8 +81,6 @@ async function updateNormalizedLocationInDB(
   if (error) {
     throw error;
   }
-
-  console.log('Updated DB for location:', location, { data, error });
 }
 
 export function getLocationUrl(lat: string, lon: string) {

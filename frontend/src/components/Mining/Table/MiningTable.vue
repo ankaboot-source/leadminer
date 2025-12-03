@@ -904,7 +904,7 @@ const { showTable, origin } = defineProps<{
   origin: 'contacts' | 'mine';
 }>();
 
-const { t } = useI18n({
+const { t, getBrowserLocale } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -1260,8 +1260,9 @@ onNuxtReady(async () => {
     await $contactsStore.reloadContacts();
   }
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
+
   if (locationsToNormalize.length > 0) {
-    normalizeLocations(locationsToNormalize);
+    normalizeLocations(locationsToNormalize, getBrowserLocale());
   }
 
   $contactsStore.subscribeToRealtimeUpdates();
