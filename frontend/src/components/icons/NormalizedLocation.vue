@@ -9,18 +9,14 @@
 
 <script setup lang="ts">
 import type { NormalizedLocation } from '~/types/contact';
+import { getLocationUrl } from '~/utils/extras';
 
 const { normalizedLocation } = defineProps<{
   normalizedLocation: NormalizedLocation | null;
 }>();
 
 function goToLocation() {
-  if (
-    !normalizedLocation ||
-    !normalizedLocation.osm_id ||
-    !normalizedLocation.osm_type
-  )
-    return;
+  if (!normalizedLocation) return;
 
   window.open(getLocationUrl(normalizedLocation), '_blank');
 }

@@ -1,7 +1,5 @@
 import type { NormalizedLocation } from '~/types/contact';
 
-const MAP_URL = 'https://www.openstreetmap.org';
-
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -82,12 +80,5 @@ async function updateNormalizedLocationInDB(
 
   if (error) {
     throw error;
-  }
-}
-
-export function getLocationUrl(location: NormalizedLocation) {
-  if (location.osm_type && location.osm_id) {
-    const url = `${MAP_URL}/${location.osm_type}/${location.osm_id}`;
-    return url;
   }
 }
