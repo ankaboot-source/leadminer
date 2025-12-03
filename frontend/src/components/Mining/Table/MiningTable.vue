@@ -30,7 +30,13 @@
     data-key="email"
     paginator
     filter-display="menu"
-    :global-filter-fields="['email', 'name']"
+    :global-filter-fields="[
+      'email',
+      'name',
+      'location',
+      'works_for',
+      'job_title',
+    ]"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
