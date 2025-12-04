@@ -4,6 +4,7 @@ import { defineStore } from 'pinia';
 import {
   ANY_SELECTED,
   createConstraint,
+  DEEP_CONTAINS,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
   LOCATION_MATCH,
@@ -200,6 +201,22 @@ function registerFiltersAndStartWatchers() {
       ?.display_name?.toLowerCase();
 
     return displayName?.includes(searchTerm) ?? false;
+  });
+
+  FilterService.register(DEEP_CONTAINS, (value, filter) => {
+    if (!filter) return true;
+    if (value == null) return false;
+
+    // Handle objects
+    if (typeof value === 'object') {
+      try {
+        value = JSON.stringify(value).toLowerCase();
+      } catch {
+        return false;
+      }
+    }
+
+    return String(value).toLowerCase().includes(String(filter).toLowerCase());
   });
 
   const debouncedUpdate = useDebounceFn((newValue: string) => {

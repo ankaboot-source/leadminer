@@ -20,6 +20,7 @@ export const NOT_EMPTY = 'NOT_EMPTY';
 export const ANY_SELECTED = 'ANY_SELECTED';
 export const LOCATION_MATCH = 'LOCATION_MATCH';
 export const MAX_YEARS_AGO_TO_FILTER = 3;
+export const DEEP_CONTAINS = 'DEEP_CONTAINS'; // Contains but for objects as well as strings
 
 export const DEFAULT_TOGGLES = {
   valid: true,
@@ -31,7 +32,7 @@ export const DEFAULT_TOGGLES = {
 };
 
 export const DEFAULT_FILTERS = {
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  global: createConstraint(DEEP_CONTAINS),
   name: { value: null, matchMode: NOT_EMPTY },
   telephone: { value: null, matchMode: NOT_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
