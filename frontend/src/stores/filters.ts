@@ -207,7 +207,7 @@ function registerFiltersAndStartWatchers() {
     if (!filter) return true;
     if (value == null) return false;
 
-    // Handle location_normalized objects
+    // Handle location_normalized field
     if (typeof value === 'object') {
       try {
         value = value.display_name;
