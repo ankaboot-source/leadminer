@@ -4,9 +4,9 @@ import { defineStore } from 'pinia';
 import {
   ANY_SELECTED,
   createConstraint,
-  DEEP_CONTAINS,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
+  GLOBAL_SEARCH,
   LOCATION_MATCH,
   MAX_YEARS_AGO_TO_FILTER,
   NOT_EMPTY,
@@ -203,14 +203,14 @@ function registerFiltersAndStartWatchers() {
     return displayName?.includes(searchTerm) ?? false;
   });
 
-  FilterService.register(DEEP_CONTAINS, (value, filter) => {
+  FilterService.register(GLOBAL_SEARCH, (value, filter) => {
     if (!filter) return true;
     if (value == null) return false;
 
-    // Handle objects
+    // Handle location_normalized objects
     if (typeof value === 'object') {
       try {
-        value = JSON.stringify(value).toLowerCase();
+        value = value.display_name;
       } catch {
         return false;
       }
