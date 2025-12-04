@@ -6,6 +6,7 @@ import {
   createConstraint,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
+  GLOBAL_SEARCH,
   LOCATION_MATCH,
   MAX_YEARS_AGO_TO_FILTER,
   NOT_EMPTY,
@@ -200,6 +201,22 @@ function registerFiltersAndStartWatchers() {
       ?.display_name?.toLowerCase();
 
     return displayName?.includes(searchTerm) ?? false;
+  });
+
+  FilterService.register(GLOBAL_SEARCH, (value, filter) => {
+    if (!filter) return true;
+    if (value == null) return false;
+
+    // Handle location_normalized field
+    if (typeof value === 'object') {
+      try {
+        value = value.display_name;
+      } catch {
+        return false;
+      }
+    }
+
+    return String(value).toLowerCase().includes(String(filter).toLowerCase());
   });
 
   const debouncedUpdate = useDebounceFn((newValue: string) => {

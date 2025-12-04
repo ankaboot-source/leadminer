@@ -36,6 +36,7 @@
       'location',
       'works_for',
       'job_title',
+      'location_normalized',
     ]"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
