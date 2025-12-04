@@ -46,8 +46,11 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
         email,
         status: Status.UNKNOWN
       };
+      if (axios.isAxiosError(error) && error.response?.status === 429)
+        throw new Error('API rate limit exceeded');
+
       if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        result.details = { hasTimedOut: true };
+        result.details = { hasTimedOut: true, source: 'reacher' };
       }
       return result;
     }
