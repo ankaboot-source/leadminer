@@ -17,6 +17,7 @@ import {
   Status
 } from '../../../../src/services/email-status/EmailStatusVerifier';
 import ENV from '../../../../src/config';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
 jest.mock('../../../../src/config', () => ({
   // Add real api key from zerobounce to test with real requests.
@@ -293,6 +294,14 @@ const validResults: Record<string, EmailStatusResult> = {
   }
 };
 
+const ZEROBOUNCE_THROTTLE_REQUESTS = 1;
+const ZEROBOUNCE_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  ZEROBOUNCE_THROTTLE_REQUESTS,
+  ZEROBOUNCE_THROTTLE_INTERVAL
+);
+
 describe('ZerobounceEmailStatusVerifier', () => {
   let client: ZerobounceClient;
   let verifier: ZerobounceEmailStatusVerifier;
@@ -300,6 +309,8 @@ describe('ZerobounceEmailStatusVerifier', () => {
   beforeEach(() => {
     client = new ZerobounceClient(
       { apiToken: ENV.ZEROBOUNCE_API_KEY as string },
+      RATE_LIMITER,
+      RATE_LIMITER,
       logger
     );
 
@@ -344,6 +355,18 @@ describe('ZerobounceEmailStatusVerifier', () => {
         'Insufficient Credits.'
       );
     });
+
+    test('Throw when rate limited', async () => {
+      jest.spyOn(client, 'verifyEmail').mockRejectedValue({
+        error: 'rate limited',
+        response: { status: 429 },
+        isAxiosError: true
+      });
+
+      await expect(verifier.verify('test@example.com')).rejects.toThrow(
+        'API rate limit exceeded'
+      );
+    });
   });
 
   describe('ZerobounceEmailStatusVerifier.verifyMany()', () => {
@@ -368,6 +391,17 @@ describe('ZerobounceEmailStatusVerifier', () => {
       await expect(
         verifier.verifyMany(Object.keys(validResults))
       ).rejects.toThrow('Insufficient Credits.');
+    });
+
+    test('Throw when rate limited', async () => {
+      jest.spyOn(client, 'verifyEmailBulk').mockRejectedValue({
+        error: 'rate limited',
+        response: { status: 429 },
+        isAxiosError: true
+      });
+      await expect(verifier.verifyMany(['test@example.com'])).rejects.toThrow(
+        'API rate limit exceeded'
+      );
     });
   });
 });

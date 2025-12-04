@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+import axios from 'axios';
 import ZerobounceClient from './client';
 import zerobounceResultToEmailStatusResultMapper from './mapper';
 import {
@@ -31,7 +32,7 @@ export default class ZerobounceEmailStatusVerifier
         ip_address: ''
       });
 
-      if (result.error) {
+      if (result?.error) {
         throw new Error('Insufficient Credits.');
       }
 
@@ -40,9 +41,14 @@ export default class ZerobounceEmailStatusVerifier
         ...zerobounceResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        throw new Error('API rate limit exceeded');
+      }
+
       if (error instanceof Error && error.message === 'Insufficient Credits.') {
         throw error;
       }
+
       return {
         email,
         status: Status.UNKNOWN,
@@ -82,6 +88,10 @@ export default class ZerobounceEmailStatusVerifier
             ...zerobounceResultToEmailStatusResultMapper(emailResult)
           }));
         } catch (error) {
+          if (axios.isAxiosError(error) && error.response?.status === 429) {
+            throw new Error('API rate limit exceeded');
+          }
+
           if (
             error instanceof Error &&
             error.message === 'Insufficient Credits.'
