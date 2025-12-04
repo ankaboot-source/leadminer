@@ -60,6 +60,14 @@ describe('MailercheckEmailStatusVerifier', () => {
         'Insufficient Credits.'
       );
     });
+
+    it('should throw on rate limit errors (429)', async () => {
+      axiosAdapter.onAny().replyOnce(429);
+
+      await expect(verifier.verify('test@example.com')).rejects.toThrow(
+        'API rate limit exceeded'
+      );
+    });
   });
 
   describe('MailerCheckEmailStatusVerifier.verifyMany()', () => {
@@ -89,6 +97,14 @@ describe('MailercheckEmailStatusVerifier', () => {
       await expect(verifier.verifyMany(emails)).resolves.toEqual(
         expectedResponse
       );
+    });
+
+    it('should throw on rate limit errors (429)', async () => {
+      axiosAdapter.onAny().replyOnce(429);
+
+      await expect(
+        verifier.verifyMany(['test@example.com', 'test2@example.com'])
+      ).rejects.toThrow('API rate limit exceeded');
     });
   });
 });
