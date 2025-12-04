@@ -9,6 +9,12 @@ const mapper: Record<MailerCheckResult, { status: Status; details: Details }> =
       },
       status: Status.UNKNOWN
     },
+    unknown: {
+      details: {
+        sub_status: 'unknown'
+      },
+      status: Status.RISKY
+    },
     disposable: {
       details: {
         isDisposable: true
@@ -32,10 +38,6 @@ const mapper: Record<MailerCheckResult, { status: Status; details: Details }> =
         isRole: true
       },
       status: Status.RISKY
-    },
-    unknown: {
-      details: {},
-      status: Status.UNKNOWN
     },
     past_delivery_issues: {
       details: { hasPastDeliveryIssues: true },
