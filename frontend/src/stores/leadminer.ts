@@ -433,8 +433,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningSource: { type: mType },
       } = redactedTask;
 
-      if (mType === MiningTypes.FILE && !extract || !clean) return 1;
-      if (mType === MiningTypes.EMAIL && !fetch || !extract || !clean) return 1;
+      if ((mType === MiningTypes.FILE && !extract) || !clean) return 1;
+      if ((mType === MiningTypes.EMAIL && !fetch) || !extract || !clean)
+        return 1;
 
       miningTask.value = redactedTask;
       miningType.value = mType;
@@ -457,7 +458,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       verifiedContacts.value = progress.verifiedContacts ?? 0;
 
       fetchingFinished.value =
-        fetch && ['done', 'canceled'].includes(fetch.status);
+        miningType.value === MiningTypes.EMAIL
+          ? fetch && ['done', 'canceled'].includes(fetch.status)
+          : true;
 
       extractionFinished.value =
         extract && ['done', 'canceled'].includes(extract.status);
@@ -467,7 +470,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       startProgressListener(miningType.value, miningTask.value.miningId);
 
-      return fetchingFinished.value || extractionFinished.value ? 3 : 2;
+      return extractionFinished.value ? 3 : 2;
     } catch (err) {
       console.error(err);
       return 1;
