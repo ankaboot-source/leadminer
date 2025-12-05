@@ -398,7 +398,7 @@ export default function initializeMiningController(
         const miningId = extractTask?.details?.miningId;
 
         if (!miningId) {
-          throw new Error(`Mining with id: ${miningId} not found`);
+          throw new Error('Mining id not found');
         }
 
         let task = null;
