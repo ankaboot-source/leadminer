@@ -3,6 +3,11 @@ export type MiningSourceType = OAuthMiningSource | 'imap';
 
 export type MiningType = 'file' | 'email';
 
+export enum MiningTypes {
+  FILE = 'file',
+  EMAIL = 'email',
+}
+
 export interface MiningSource {
   type: MiningSourceType;
   email: string;
