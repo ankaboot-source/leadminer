@@ -413,7 +413,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     try {
       const user = useSupabaseUser().value;
 
-      if (!user) return;
+      if (!user) return 1;
 
       const {
         task: redactedTask,
@@ -427,13 +427,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         clean: MiningTask;
       }>(`/imap/mine/${user?.sub}/`);
 
-      if (!redactedTask) return 1;
+      if (!redactedTask || !redactedTask.miningSource.type) return 1;
 
       const {
         miningSource: { type: mType },
       } = redactedTask;
 
-      if (!mType) return 1;
       if (mType === MiningTypes.FILE && !extract && !clean) return 1;
       if (mType === MiningTypes.EMAIL && !fetch && !extract && !clean) return 1;
 
