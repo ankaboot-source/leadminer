@@ -471,7 +471,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       return fetchingFinished.value || extractionFinished.value ? 3 : 2;
     } catch (err) {
       console.error(err);
-      return;
+      return 1;
     }
   }
 
