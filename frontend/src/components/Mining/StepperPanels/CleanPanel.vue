@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import ProgressCard from '@/components/ProgressCard.vue';
 import { FetchError } from 'ofetch';
+import { MiningTypes } from '~/types/mining';
 import { AcceptNewsLetter } from '~/utils/extras';
 
 const { t } = useI18n({
@@ -72,7 +73,10 @@ const progressTooltip = computed(() =>
 );
 
 const isPostCleaningPhase = computed(
-  () => $leadminerStore.cleaningFinished && !$leadminerStore.miningCompleted,
+  () =>
+    $leadminerStore.miningType === MiningTypes.EMAIL &&
+    $leadminerStore.cleaningFinished &&
+    !$leadminerStore.miningCompleted,
 );
 
 function cleaningDoneNotification() {

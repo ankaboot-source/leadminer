@@ -323,13 +323,13 @@ export default class TasksManagerFile {
     miningId: string,
     processIds: string[] | null
   ): Promise<RedactedTask> {
-    if (!Array.isArray(processIds)) {
+    if (processIds && !Array.isArray(processIds)) {
       throw new Error('processIds must be an array of strings');
     }
     const task = this.getTaskOrThrow(miningId);
     const { startedAt, progress } = task;
     try {
-      await this.handleTaskDeletion(miningId, processIds, task);
+      await this.handleTaskDeletion(miningId, processIds ?? [], task);
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
@@ -351,11 +351,6 @@ export default class TasksManagerFile {
         ? !p.stoppedAt
         : !p.stoppedAt && p.id && processIds?.includes(p.id)
     );
-
-    if (endEntireTask) {
-      this.ACTIVE_MINING_TASKS.delete(miningId);
-      progressHandlerSSE.stop();
-    }
 
     if (processesToStop.length) {
       await this.stopTask(processesToStop, true);
@@ -508,7 +503,7 @@ export default class TasksManagerFile {
       ...progress
     });
 
-    await this.handleExtactionFinished(
+    await this.handleExtractionFinished(
       miningId,
       progress,
       extract,
@@ -530,7 +525,7 @@ export default class TasksManagerFile {
     return status;
   }
 
-  private async handleExtactionFinished(
+  private async handleExtractionFinished(
     miningId: string,
     progress: TaskProcessProgress,
     extract: TaskExtract,

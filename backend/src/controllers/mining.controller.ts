@@ -395,18 +395,46 @@ export default function initializeMiningController(
           (t) => t.type === 'clean'
         );
 
-        const miningId = fetchTask?.details?.miningId;
+        const miningId = extractTask?.details?.miningId;
 
-        if (!miningId || !fetchTask || !extractTask || !cleanTask) {
-          throw new Error('Mining id not found');
+        if (!miningId) {
+          throw new Error(`Mining with id: ${miningId} not found`);
         }
 
-        const task =
-          tasksManager.getActiveTask(miningId) ??
-          tasksManagerFile.getActiveTask(miningId);
+        let task = null;
+
+        try {
+          task = tasksManager.getActiveTask(miningId);
+        } catch (err) {
+          logger.error(
+            `Task not found in tasksManager for miningId=${miningId}`
+          );
+        }
 
         if (!task) {
-          throw new Error(`Task with miningId: ${miningId} not found`);
+          try {
+            task = tasksManagerFile.getActiveTask(miningId);
+          } catch (err) {
+            logger.error(
+              `Task not found in tasksManagerFile for miningId=${miningId}`
+            );
+          }
+        }
+
+        if (!task) {
+          throw new Error(`No active task found for miningId=${miningId}`);
+        }
+
+        if (
+          task.miningSource.type === 'email' &&
+          (!fetchTask || !extractTask || !cleanTask)
+        ) {
+          throw new Error(`Email  mining with id: ${miningId} not found`);
+        } else if (
+          task.miningSource.type === 'file' &&
+          (!extractTask || !cleanTask)
+        ) {
+          throw new Error(`File mining with id: ${miningId} not found`);
         }
 
         if (user.id !== task.userId) {

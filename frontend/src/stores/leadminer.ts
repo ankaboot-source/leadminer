@@ -4,7 +4,12 @@ import { ref } from 'vue';
 
 import { updateMiningSourcesValidity } from '@/utils/sources';
 import { startMiningNotification } from '~/utils/extras';
-import type { MiningSource, MiningTask, MiningType } from '../types/mining';
+import {
+  MiningTypes,
+  type MiningSource,
+  type MiningTask,
+  type MiningType,
+} from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
@@ -135,7 +140,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
-      extractSignatures.value = false;
+      extractSignatures.value = true;
       console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
@@ -424,16 +429,27 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       if (!redactedTask) return 1;
 
-      if (!fetch || !extract || !clean) return 1;
+      const {
+        miningSource: { type: mType },
+      } = redactedTask;
+
+      if (!mType) return 1;
+      if (mType === MiningTypes.FILE && !extract && !clean) return 1;
+      if (mType === MiningTypes.EMAIL && !fetch && !extract && !clean) return 1;
 
       miningTask.value = redactedTask;
-      miningStartedAt.value =
-        performance.now() - (Date.now() - new Date(fetch.started_at).getTime());
-
+      miningType.value = mType;
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === redactedTask.miningSource.source,
       );
-      miningType.value = redactedTask.miningSource.type as MiningType;
+
+      miningStartedAt.value =
+        miningType.value === MiningTypes.EMAIL
+          ? performance.now() -
+            (Date.now() - new Date(fetch.started_at).getTime())
+          : performance.now() -
+            (Date.now() - new Date(extract.started_at).getTime());
+
       const { progress } = redactedTask;
       totalMessages.value = progress.totalMessages;
       scannedEmails.value = progress.fetched ?? 0;
@@ -452,7 +468,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       startProgressListener(miningType.value, miningTask.value.miningId);
 
-      return !fetchingFinished.value || !extractionFinished.value ? 2 : 3;
+      return fetchingFinished.value || extractionFinished.value ? 3 : 2;
     } catch (err) {
       console.error(err);
       return;
