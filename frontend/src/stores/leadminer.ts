@@ -433,8 +433,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningSource: { type: mType },
       } = redactedTask;
 
-      if (mType === MiningTypes.FILE && !extract && !clean) return 1;
-      if (mType === MiningTypes.EMAIL && !fetch && !extract && !clean) return 1;
+      if (mType === MiningTypes.FILE && !extract || !clean) return 1;
+      if (mType === MiningTypes.EMAIL && !fetch || !extract || !clean) return 1;
 
       miningTask.value = redactedTask;
       miningType.value = mType;
