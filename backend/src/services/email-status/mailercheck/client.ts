@@ -17,7 +17,8 @@ export default class MailerCheckClient {
       baseURL: MailerCheckClient.baseURL,
       headers: {
         Authorization: `Bearer ${config.apiToken}`
-      }
+      },
+      timeout: 15_000
     });
   }
 

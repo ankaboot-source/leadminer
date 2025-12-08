@@ -122,7 +122,8 @@ export default class ZerobounceClient {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: config.url ?? ZerobounceClient.baseURL
+      baseURL: config.url ?? ZerobounceClient.baseURL,
+      timeout: 15_000
     });
   }
 

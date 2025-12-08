@@ -161,7 +161,8 @@ export default class ReacherClient {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: config.host
+      baseURL: config.host,
+      timeout: 15_000
     });
 
     if (config.timeoutMs) {
