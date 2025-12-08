@@ -3,7 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import assert from 'node:assert';
 import { logError } from '../../../utils/axios';
 import { IRateLimiter } from '../../rate-limiter/RateLimiter';
-import { TIMEOUT } from '../constants';
+import TIMEOUT from '../constants';
 
 /**
  * Configuration options for ZerobounceClient.
