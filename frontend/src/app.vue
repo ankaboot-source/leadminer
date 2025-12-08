@@ -86,6 +86,8 @@ watch(idle, (isIdle) => {
   }
 });
 
+nominatim.setLang($leadminerStore.language || 'en');
+
 watch(activeTask, () => {
   reset();
 });

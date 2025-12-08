@@ -4,6 +4,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import { convertDates } from '~/utils/contacts';
+import Normalizer from '~/utils/nominatim';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
@@ -105,6 +106,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
       : newContact;
 
     newContact.works_for = await getOrganizationName(updatedContact.works_for);
+    if (
+      updatedContact.location &&
+      updatedContact.location_normalized === null
+    ) {
+      Normalizer.add(updatedContact.location);
+    }
 
     if (keepPosition) {
       contactsCacheMap.set(updatedContact.email, updatedContact);

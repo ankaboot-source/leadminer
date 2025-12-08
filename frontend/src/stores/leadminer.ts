@@ -15,7 +15,8 @@ import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
-  const { t } = useI18n();
+  const { t, getBrowserLocale } = useI18n();
+  const language = getBrowserLocale() || 'en';
   const $toast = useToast();
   const $stepper = useMiningStepper();
 
@@ -518,5 +519,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningStartedAndFinished,
     miningInterrupted,
     errors,
+    language,
   };
 });

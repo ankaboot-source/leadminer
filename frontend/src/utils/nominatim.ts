@@ -82,3 +82,58 @@ async function updateNormalizedLocationInDB(
     throw error;
   }
 }
+
+class LocationNormalizer {
+  private queue = new Set<string>();
+  private processing = false;
+  private language: string;
+
+  constructor(language = 'en') {
+    this.language = language;
+  }
+
+  setLang(language: string) {
+    this.language = language;
+  }
+
+  // Add a single location or multiple locations
+  add(locationOrArray: string | string[]) {
+    const locations = Array.isArray(locationOrArray)
+      ? locationOrArray
+      : [locationOrArray];
+
+    for (const loc of locations) {
+      if (!this.queue.has(loc)) {
+        this.queue.add(loc);
+      }
+    }
+
+    this.processQueue();
+  }
+
+  private async processQueue() {
+    if (this.processing) return;
+    this.processing = true;
+
+    while (this.queue.size > 0) {
+      // Get the first item in the set
+      const [location] = this.queue;
+      if (!location) break;
+      this.queue.delete(location);
+
+      console.log(
+        `Normalizing location: ${location}, queue size: ${this.queue.size}`,
+      );
+
+      const normalized = await normalizeLocation(location, this.language);
+      await updateNormalizedLocationInDB(location, normalized);
+
+      await delay(1000); // 1 request per second
+    }
+
+    this.processing = false;
+  }
+}
+
+const normalizer = new LocationNormalizer();
+export default normalizer;
