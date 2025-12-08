@@ -891,6 +891,7 @@ import {
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
+import Normalizer from '~/utils/normalizer';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
@@ -1269,7 +1270,7 @@ onNuxtReady(async () => {
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (locationsToNormalize.length > 0) {
-    nominatim.add(locationsToNormalize);
+    Normalizer.add(locationsToNormalize);
   }
 
   $contactsStore.subscribeToRealtimeUpdates();

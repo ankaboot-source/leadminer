@@ -255,6 +255,7 @@ import type {
 } from '@supabase/supabase-js';
 import parsePhoneNumber from 'libphonenumber-js';
 import { HandledError } from '~/plugins/error-handler';
+import Normalizer from '~/utils/normalizer';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -440,7 +441,7 @@ async function saveContactInformations() {
 
   let locationNormalized = originalContactCopy.location_normalized;
   if (newLocation) {
-    locationNormalized = await nominatim.normalizeLocation(newLocation);
+    locationNormalized = await Normalizer.normalizeLocation(newLocation);
   }
 
   const contactToUpdate: Partial<Contact> = {

@@ -4,7 +4,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import { convertDates } from '~/utils/contacts';
-import Normalizer from '~/utils/nominatim';
+import Normalizer from '~/utils/normalizer';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();

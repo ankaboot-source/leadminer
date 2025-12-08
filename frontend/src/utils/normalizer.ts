@@ -107,5 +107,5 @@ class LocationNormalizer {
   }
 }
 
-const normalizer = new LocationNormalizer();
-export default normalizer;
+const Normalizer = new LocationNormalizer();
+export default Normalizer;
