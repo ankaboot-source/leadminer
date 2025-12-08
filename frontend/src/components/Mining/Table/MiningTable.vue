@@ -911,7 +911,7 @@ const { showTable, origin } = defineProps<{
   origin: 'contacts' | 'mine';
 }>();
 
-const { t, getBrowserLocale } = useI18n({
+const { t } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -1269,7 +1269,7 @@ onNuxtReady(async () => {
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (locationsToNormalize.length > 0) {
-    normalizeLocations(locationsToNormalize, getBrowserLocale());
+    nominatim.add(locationsToNormalize);
   }
 
   $contactsStore.subscribeToRealtimeUpdates();

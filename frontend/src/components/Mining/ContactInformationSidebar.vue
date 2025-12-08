@@ -256,7 +256,7 @@ import type {
 import parsePhoneNumber from 'libphonenumber-js';
 import { HandledError } from '~/plugins/error-handler';
 
-const { t, getBrowserLocale } = useI18n({
+const { t } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -440,10 +440,7 @@ async function saveContactInformations() {
 
   let locationNormalized = originalContactCopy.location_normalized;
   if (newLocation) {
-    locationNormalized = await normalizeLocation(
-      newLocation,
-      getBrowserLocale(),
-    );
+    locationNormalized = await nominatim.normalizeLocation(newLocation);
   }
 
   const contactToUpdate: Partial<Contact> = {
