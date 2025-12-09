@@ -891,6 +891,7 @@ import {
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
+import Normalizer from '~/utils/normalizer';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
@@ -911,7 +912,7 @@ const { showTable, origin } = defineProps<{
   origin: 'contacts' | 'mine';
 }>();
 
-const { t, getBrowserLocale } = useI18n({
+const { t } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
@@ -1269,7 +1270,7 @@ onNuxtReady(async () => {
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (locationsToNormalize.length > 0) {
-    normalizeLocations(locationsToNormalize, getBrowserLocale());
+    Normalizer.add(locationsToNormalize);
   }
 
   $contactsStore.subscribeToRealtimeUpdates();

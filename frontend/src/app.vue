@@ -65,6 +65,8 @@
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import { signOutManually } from './utils/auth';
+import Normalizer from '~/utils/normalizer';
+
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const activeTask = computed(() => $leadminerStore.activeTask);
@@ -85,6 +87,8 @@ watch(idle, (isIdle) => {
     signOut();
   }
 });
+
+Normalizer.setLang($leadminerStore.language || 'en');
 
 watch(activeTask, () => {
   reset();

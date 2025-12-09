@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import assert from 'node:assert';
 import { logError } from '../../../utils/axios';
 import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import TIMEOUT from '../constants';
 
 /**
  * Configuration options for ZerobounceClient.
@@ -122,7 +123,8 @@ export default class ZerobounceClient {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: config.url ?? ZerobounceClient.baseURL
+      baseURL: config.url ?? ZerobounceClient.baseURL,
+      timeout: TIMEOUT
     });
   }
 
