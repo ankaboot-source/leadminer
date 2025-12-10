@@ -118,7 +118,7 @@ export default class EmailVerificationConsumer {
 
     setTimeout(() => {
       this.consume();
-    }, 0);
+    }, 3000);
   }
 
   /**
