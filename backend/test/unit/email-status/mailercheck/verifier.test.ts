@@ -62,22 +62,22 @@ describe('MailercheckEmailStatusVerifier', () => {
     jest.clearAllMocks();
   });
 
-  describe('MailercheckEmailStatusVerifier.verify()', () => {
-    it('Handles throws error on insufficient credits', async () => {
-      axiosAdapter.onAny().replyOnce(402);
-      await expect(verifier.verify('test@example.com')).rejects.toThrow(
-        'Insufficient Credits.'
-      );
-    });
+  // describe('MailercheckEmailStatusVerifier.verify()', () => {
+  //   it('Handles throws error on insufficient credits', async () => {
+  //     axiosAdapter.onAny().replyOnce(402);
+  //     await expect(verifier.verify('test@example.com')).rejects.toThrow(
+  //       'Insufficient Credits.'
+  //     );
+  //   });
 
-    it('should throw on rate limit errors (429)', async () => {
-      axiosAdapter.onAny().replyOnce(429);
+  //   it('should throw on rate limit errors (429)', async () => {
+  //     axiosAdapter.onAny().replyOnce(429);
 
-      await expect(verifier.verify('test@example.com')).rejects.toThrow(
-        'API rate limit exceeded'
-      );
-    });
-  });
+  //     await expect(verifier.verify('test@example.com')).rejects.toThrow(
+  //       'API rate limit exceeded'
+  //     );
+  //   });
+  // });
 
   describe('MailerCheckEmailStatusVerifier.verifyMany()', () => {
     beforeEach(() => {

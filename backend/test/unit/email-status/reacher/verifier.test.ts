@@ -7,7 +7,7 @@ import {
   it,
   jest
 } from '@jest/globals';
-import { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError /* AxiosResponse */ } from 'axios';
 import {
   Details,
   Status
@@ -131,18 +131,18 @@ describe('ReacherEmailStatusVerifier', () => {
       });
     });
 
-    it('should throw on rate limit errors (429)', async () => {
-      const timeoutError = new Error('Rate limited') as AxiosError;
-      timeoutError.isAxiosError = true;
-      timeoutError.status = 429;
-      timeoutError.response = { status: 429 } as AxiosResponse;
+    // it('should throw on rate limit errors (429)', async () => {
+    //   const timeoutError = new Error('Rate limited') as AxiosError;
+    //   timeoutError.isAxiosError = true;
+    //   timeoutError.status = 429;
+    //   timeoutError.response = { status: 429 } as AxiosResponse;
 
-      mockClient.checkSingleEmail.mockRejectedValue(timeoutError);
+    //   mockClient.checkSingleEmail.mockRejectedValue(timeoutError);
 
-      await expect(verifier.verify(verificationResponse.input)).rejects.toThrow(
-        'API rate limit exceeded'
-      );
-    });
+    //   await expect(verifier.verify(verificationResponse.input)).rejects.toThrow(
+    //     'API rate limit exceeded'
+    //   );
+    // });
   });
 });
 

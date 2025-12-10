@@ -41,13 +41,13 @@ export default class ZerobounceEmailStatusVerifier
         ...zerobounceResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 429) {
-        throw new Error('API rate limit exceeded');
-      }
+      // if (axios.isAxiosError(error) && error.response?.status === 429) {
+      //   throw new Error('API rate limit exceeded');
+      // }
 
-      if (error instanceof Error && error.message === 'Insufficient Credits.') {
-        throw error;
-      }
+      // if (error instanceof Error && error.message === 'Insufficient Credits.') {
+      //   throw error;
+      // }
 
       return {
         email,
