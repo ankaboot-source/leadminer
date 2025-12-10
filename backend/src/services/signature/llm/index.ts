@@ -5,7 +5,7 @@ import {
   undefinedIfEmpty,
   undefinedIfFalsy
 } from '../../../utils/helpers/validation';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
 import { ExtractSignature, PersonLD } from '../types';
 import {
   parseLocationString,

@@ -17,7 +17,12 @@ import {
   Status
 } from '../../../../src/services/email-status/EmailStatusVerifier';
 import ENV from '../../../../src/config';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
+
+jest.mock('ioredis');
 
 jest.mock('../../../../src/config', () => ({
   // Add real api key from zerobounce to test with real requests.
@@ -294,13 +299,16 @@ const validResults: Record<string, EmailStatusResult> = {
   }
 };
 
-const ZEROBOUNCE_THROTTLE_REQUESTS = 1;
-const ZEROBOUNCE_THROTTLE_INTERVAL = 100;
+const ZEROBOUNCE_THROTTLE_REQUESTS = 5;
+const ZEROBOUNCE_THROTTLE_INTERVAL = 0.1;
 
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  ZEROBOUNCE_THROTTLE_REQUESTS,
-  ZEROBOUNCE_THROTTLE_INTERVAL
-);
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_zerobounce_test',
+  distribution: Distribution.Memory,
+  requests: ZEROBOUNCE_THROTTLE_REQUESTS,
+  intervalSeconds: ZEROBOUNCE_THROTTLE_INTERVAL
+});
 
 describe('ZerobounceEmailStatusVerifier', () => {
   let client: ZerobounceClient;

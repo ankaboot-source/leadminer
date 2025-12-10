@@ -2,8 +2,9 @@ import { describe, expect, it, jest } from '@jest/globals';
 import RedisMock from 'ioredis-mock';
 import RedisCatchAllDomainsCache from '../../src/services/cache/redis/RedisCatchAllDomainsCache';
 import RedisEmailStatusCache from '../../src/services/cache/redis/RedisEmailStatusCache';
-import EmailMessage from '../../src/services/extractors/engines/EmailMessage';
-import { DomainStatusVerificationFunction } from '../../src/services/extractors/types';
+import EmailMessage, {
+  DomainStatusVerificationFunction
+} from '../../src/services/extractors/engines/EmailMessage';
 import { BasicTag, TaggingEngine } from '../../src/services/tagging/types';
 import { REACHABILITY } from '../../src/utils/constants';
 

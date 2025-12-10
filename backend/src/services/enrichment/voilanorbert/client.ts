@@ -3,7 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
 import qs from 'qs';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
 
 interface Config {
   url: string;

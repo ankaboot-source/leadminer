@@ -6,9 +6,18 @@ import EnrichLayerAPI, {
   ReverseEmailLookupParams,
   ReverseEmailLookupResponse
 } from '../../../../src/services/enrichment/enrich-layer/client';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
 
 jest.mock('axios');
+
+jest.mock('ioredis');
+
+jest.mock('../../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
 
 const mockLogger: Logger = {
   info: jest.fn(),
@@ -20,13 +29,16 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-const REACHER_THROTTLE_REQUESTS = 1;
-const REACHER_THROTTLE_INTERVAL = 100;
+const ENRICH_LAYER_THROTTLE_REQUESTS = 5;
+const ENRICH_LAYER_THROTTLE_INTERVAL = 0.1;
 
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  REACHER_THROTTLE_REQUESTS,
-  REACHER_THROTTLE_INTERVAL
-);
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_enrichLayer_test',
+  distribution: Distribution.Memory,
+  requests: ENRICH_LAYER_THROTTLE_REQUESTS,
+  intervalSeconds: ENRICH_LAYER_THROTTLE_INTERVAL
+});
 
 describe('EnrichLayerAPI', () => {
   const config = {
@@ -108,15 +120,14 @@ describe('EnrichLayerAPI', () => {
       });
 
       const startTime = Date.now();
-      const requests = [
-        await enrichLayer.reverseEmailLookup(params),
-        await enrichLayer.reverseEmailLookup(params),
-        await enrichLayer.reverseEmailLookup(params)
-      ];
+      const requests = Array.from({
+        length: ENRICH_LAYER_THROTTLE_REQUESTS
+      }).map(() => enrichLayer.reverseEmailLookup(params));
+      await Promise.all(requests);
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
-        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
+        ENRICH_LAYER_THROTTLE_INTERVAL * (requests.length - 1)
       );
     });
   });

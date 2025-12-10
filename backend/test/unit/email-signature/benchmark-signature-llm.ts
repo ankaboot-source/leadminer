@@ -22,7 +22,10 @@
 import { Logger } from 'winston';
 import { writeFileSync } from 'fs';
 import { SignatureLLM } from '../../../src/services/signature/llm';
-import { TokenBucketRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../src/services/rate-limiter';
 import { LLMModelsList } from '../../../src/services/signature/llm/types';
 import { PersonLD } from '../../../src/services/signature/types';
 
@@ -244,7 +247,13 @@ async function runBenchmark() {
     });
   }
 
-  const rateLimiter = new TokenBucketRateLimiter(500, 60_000);
+  const rateLimiter = new TokenBucketRateLimiter({
+    executeEvenly: true,
+    uniqueKey: 'llm-benchmark-test',
+    distribution: Distribution.Memory,
+    requests: 200,
+    intervalSeconds: 60
+  });
 
   for (const model of MODELS) {
     const stats = modelStats.get(model);

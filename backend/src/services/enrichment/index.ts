@@ -6,7 +6,7 @@ import ThedigApi from './thedig/client';
 import Voilanorbert from './voilanorbert';
 import VoilanorbertApi from './voilanorbert/client';
 import logger from '../../utils/logger';
-import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
+import { Distribution, TokenBucketRateLimiter } from '../rate-limiter';
 import EnrichLayerAPI from './enrich-layer/client';
 import EnrichLayer from './enrich-layer';
 
@@ -25,7 +25,13 @@ if (
         url: ENV.VOILANORBERT_URL,
         username: ENV.VOILANORBERT_USERNAME,
         apiToken: ENV.VOILANORBERT_API_KEY,
-        rateLimiter: new TokenBucketRateLimiter(115, 60 * 1000)
+        rateLimiter: new TokenBucketRateLimiter({
+          executeEvenly: true,
+          uniqueKey: 'email-enrichment-voilanorbert',
+          distribution: Distribution.Memory,
+          requests: 115,
+          intervalSeconds: 60
+        })
       },
       logger
     ),
@@ -39,7 +45,13 @@ if (ENV.THEDIG_API_KEY && ENV.THEDIG_URL) {
       {
         url: ENV.THEDIG_URL,
         apiToken: ENV.THEDIG_API_KEY,
-        rateLimiter: new TokenBucketRateLimiter(55, 60 * 1000)
+        rateLimiter: new TokenBucketRateLimiter({
+          executeEvenly: true,
+          uniqueKey: 'email-enrichment-theDig',
+          distribution: Distribution.Memory,
+          requests: 55,
+          intervalSeconds: 60
+        })
       },
       logger
     ),
@@ -53,7 +65,13 @@ if (ENV.ENRICH_LAYER_API_KEY && ENV.ENRICH_LAYER_URL) {
       {
         url: ENV.ENRICH_LAYER_URL,
         apiKey: ENV.ENRICH_LAYER_API_KEY,
-        rateLimiter: new TokenBucketRateLimiter(295, 60 * 1000)
+        rateLimiter: new TokenBucketRateLimiter({
+          executeEvenly: true,
+          uniqueKey: 'email-enrichment-enrichLayer',
+          distribution: Distribution.Memory,
+          requests: 295,
+          intervalSeconds: 60
+        })
       },
       logger
     ),
