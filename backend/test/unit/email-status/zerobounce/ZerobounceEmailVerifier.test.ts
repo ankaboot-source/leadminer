@@ -8,8 +8,7 @@ import {
 } from '@jest/globals';
 import logger from '../../../../src/utils/logger';
 import ZerobounceEmailStatusVerifier from '../../../../src/services/email-status/zerobounce';
-import ZerobounceClient from /* ZerobounceEmailValidationResult */
-'../../../../src/services/email-status/zerobounce/client';
+import ZerobounceClient from '../../../../src/services/email-status/zerobounce/client';
 import sandbox from './sandbox';
 import {
   EmailStatusResult,
@@ -350,30 +349,6 @@ describe('ZerobounceEmailStatusVerifier', () => {
         expect(result.status).toEqual(emailData.status);
       }
     );
-
-    // test('Handles throws error on insufficient credits', async () => {
-    //   jest.spyOn(client, 'verifyEmail').mockImplementation(() =>
-    //     Promise.resolve({
-    //       error: 'Invalid API Key or your account ran out of credits'
-    //     } as unknown as ZerobounceEmailValidationResult)
-    //   );
-
-    //   await expect(verifier.verify('test@example.com')).rejects.toThrow(
-    //     'Insufficient Credits.'
-    //   );
-    // });
-
-    // test('Throw when rate limited', async () => {
-    //   jest.spyOn(client, 'verifyEmail').mockRejectedValue({
-    //     error: 'rate limited',
-    //     response: { status: 429 },
-    //     isAxiosError: true
-    //   });
-
-    //   await expect(verifier.verify('test@example.com')).rejects.toThrow(
-    //     'API rate limit exceeded'
-    //   );
-    // });
   });
 
   describe('ZerobounceEmailStatusVerifier.verifyMany()', () => {

@@ -41,17 +41,9 @@ export default class ZerobounceEmailStatusVerifier
         ...zerobounceResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
-      // if (axios.isAxiosError(error) && error.response?.status === 429) {
-      //   throw new Error('API rate limit exceeded');
-      // }
-
-      // if (error instanceof Error && error.message === 'Insufficient Credits.') {
-      //   throw error;
-      // }
-
       return {
         email,
-        status: Status.UNKNOWN,
+        status: null as unknown as Status,
         details: { hasTimedOut: true, source: 'zerobounce' }
       };
     }

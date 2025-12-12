@@ -111,7 +111,7 @@ describe('ReacherEmailStatusVerifier', () => {
 
       expect(result).toEqual({
         email: verificationResponse.input,
-        status: Status.UNKNOWN
+        status: null
       });
     });
 

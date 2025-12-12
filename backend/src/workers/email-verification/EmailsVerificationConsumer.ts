@@ -65,6 +65,9 @@ export default class EmailVerificationConsumer {
       await Promise.allSettled(
         result.map(async ({ streamName, data }) => {
           try {
+            this.logger.info(
+              `Consuming ${data.length} emails from stream name ${streamName}`
+            );
             const progressCallback = async (verified: number) => {
               await this.redisClient.publish(
                 streamName.split('-')[1],

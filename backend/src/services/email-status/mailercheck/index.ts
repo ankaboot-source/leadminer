@@ -37,17 +37,9 @@ export default class MailerCheckEmailStatusVerifier
         ...mailerCheckResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
-      // if (error instanceof AxiosError && error.response?.status === 402) {
-      //   throw new Error('Insufficient Credits.');
-      // }
-
-      // if (axios.isAxiosError(error) && error.response?.status === 429) {
-      //   throw new Error('API rate limit exceeded');
-      // }
-
       return {
         email,
-        status: Status.UNKNOWN,
+        status: null as unknown as Status,
         details: { hasTimedOut: true, source: 'mailercheck' }
       };
     }
