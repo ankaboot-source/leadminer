@@ -186,33 +186,6 @@ class EmailVerificationHandler {
     return results;
   }
 
-  // private async verificationPromises(
-  //   verifiers: [EmailVerifierType, [EmailStatusVerifier, string[]]][]
-  // ) {
-  //   return verifiers.map(async ([verifierName, [verifier, emails]]) => {
-  //     const batches = EmailVerificationHandler.createEmailVerificationBatches(
-  //       emails,
-  //       verifier.emailsQuota / 10,
-  //       verifierName,
-  //       verifier
-  //     );
-
-  //     logRejectedAndReturnResolved(
-  //       await Promise.allSettled(
-  //         batches.map(async ([engine, engineName, emailBatch]) => {
-  //           const verified = await this.verifyEmails(
-  //             emailBatch,
-  //             engine,
-  //             engineName
-  //           );
-  //           await this.progressCallback(verified.length);
-  //         })
-  //       ),
-  //       'Email verification failed'
-  //     );
-  //   });
-  // }
-
   async verify() {
     await this.getUpdateStatusCache();
 
@@ -222,7 +195,7 @@ class EmailVerificationHandler {
       )
     );
 
-    verifiers.map(async ([verifierName, [verifier, emails]]) => {
+    verifiers.forEach(async ([verifierName, [verifier, emails]]) => {
       const batches = EmailVerificationHandler.createEmailVerificationBatches(
         emails,
         verifier.emailsQuota / 10,
