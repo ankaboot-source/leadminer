@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 
 import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
 
 interface Config {
   url: string;

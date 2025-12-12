@@ -350,7 +350,7 @@ export default class EmailMessage {
               await this.emailStatusCache.set(person.email, {
                 email: person.email,
                 status: Status.VALID,
-                details: { isRecentFrom: true }
+                details: { source: 'email-message-class', isRecentFrom: true }
               });
             }
           } else {

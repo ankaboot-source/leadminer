@@ -1,10 +1,10 @@
 import { Logger } from 'winston';
+import PQueue from 'p-queue';
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import {
   EmailStatusResult,
-  EmailStatusVerifier,
-  EmailVerifierType
+  EmailStatusVerifier
 } from '../../services/email-status/EmailStatusVerifier';
 import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
 import logger from '../../utils/logger';
@@ -39,6 +39,8 @@ function logRejectedAndReturnResolved<T>(
 }
 
 class EmailVerificationHandler {
+  private readonly queue: PQueue;
+
   private readonly WAITING_FOR_VERIFICATION: Map<string, string>;
 
   constructor(
@@ -51,6 +53,10 @@ class EmailVerificationHandler {
     private readonly verificationData: EmailVerificationData[]
   ) {
     this.WAITING_FOR_VERIFICATION = new Map<string, string>();
+    this.queue = new PQueue({
+      concurrency: Math.floor(10),
+      interval: 100 // 100ms gap between each job starts
+    });
   }
 
   private static createEmailVerificationBatches(
@@ -168,7 +174,8 @@ class EmailVerificationHandler {
         results.map(async (result) => {
           const userId = this.WAITING_FOR_VERIFICATION.get(result.email);
           if (!userId) throw new Error('Failed to updated: userId not found');
-          await this.updateStatus(userId, result.email, result);
+          if (result.status)
+            await this.updateStatus(userId, result.email, result);
         })
       ),
       `[${this.constructor.name}.verifyEmails]: Updating email status post verification`
@@ -179,33 +186,6 @@ class EmailVerificationHandler {
     return results;
   }
 
-  private async verificationPromises(
-    verifiers: [EmailVerifierType, [EmailStatusVerifier, string[]]][]
-  ) {
-    return verifiers.map(async ([verifierName, [verifier, emails]]) => {
-      const batches = EmailVerificationHandler.createEmailVerificationBatches(
-        emails,
-        verifier.emailsQuota / 10,
-        verifierName,
-        verifier
-      );
-
-      logRejectedAndReturnResolved(
-        await Promise.allSettled(
-          batches.map(async ([engine, engineName, emailBatch]) => {
-            const verified = await this.verifyEmails(
-              emailBatch,
-              engine,
-              engineName
-            );
-            await this.progressCallback(verified.length);
-          })
-        ),
-        'Email verification failed'
-      );
-    });
-  }
-
   async verify() {
     await this.getUpdateStatusCache();
 
@@ -214,7 +194,32 @@ class EmailVerificationHandler {
         Array.from(this.WAITING_FOR_VERIFICATION.keys())
       )
     );
-    await Promise.allSettled([this.verificationPromises(verifiers)]);
+
+    verifiers.forEach(async ([verifierName, [verifier, emails]]) => {
+      const batches = EmailVerificationHandler.createEmailVerificationBatches(
+        emails,
+        verifier.emailsQuota / 10,
+        verifierName,
+        verifier
+      );
+
+      batches.forEach(([engine, engineName, emailsBatch]) => {
+        this.queue.add(async () => {
+          try {
+            await this.verifyEmails(emailsBatch, engine, engineName);
+          } catch (err) {
+            logRejectedAndReturnResolved(
+              [{ status: 'rejected', reason: err }],
+              'Email verification failed'
+            );
+          } finally {
+            await this.progressCallback(emailsBatch.length);
+          }
+        });
+      });
+    });
+
+    await this.queue.onIdle();
   }
 }
 

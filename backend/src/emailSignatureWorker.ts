@@ -16,7 +16,7 @@ import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
 import { SignatureLLM } from './services/signature/llm';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
-import { TokenBucketRateLimiter } from './services/rate-limiter/RateLimiter';
+import { Distribution, TokenBucketRateLimiter } from './services/rate-limiter';
 import { SignatureRE } from './services/signature/regex';
 import { LLMModelsList } from './services/signature/llm/types';
 
@@ -35,10 +35,13 @@ const signatureEngines: EngineConfig[] = [
 if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   signatureEngines.push({
     engine: new SignatureLLM(
-      new TokenBucketRateLimiter(
-        LLMModelsList.every((m) => m.includes('free')) ? 15 : 500,
-        60 * 1000
-      ),
+      new TokenBucketRateLimiter({
+        executeEvenly: true,
+        intervalSeconds: 60,
+        uniqueKey: 'email-signature-service',
+        distribution: Distribution.Memory,
+        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 500
+      }),
       logger,
       LLMModelsList,
       ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''

@@ -10,7 +10,7 @@ import {
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { SignatureLLM } from '../../../src/services/signature/llm';
-import { IRateLimiter } from '../../../src/services/rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../../src/services/rate-limiter';
 
 import { LLMModelsList } from '../../../src/services/signature/llm/types';
 

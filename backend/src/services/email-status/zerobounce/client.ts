@@ -2,7 +2,7 @@ import { Logger } from 'winston';
 import axios, { AxiosInstance } from 'axios';
 import assert from 'node:assert';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
 import TIMEOUT from '../constants';
 
 /**

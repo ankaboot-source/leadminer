@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Logger } from 'winston';
 import EmailStatusVerifierFactory from '../../../src/services/email-status/EmailStatusVerifierFactory';
 
+jest.mock('ioredis');
+
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   EMAILS_QUOTA_REACHER: 10,

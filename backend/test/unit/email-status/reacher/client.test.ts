@@ -10,7 +10,16 @@ import {
   jest
 } from '@jest/globals';
 import ReacherClient from '../../../../src/services/email-status/reacher/client';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
+
+jest.mock('ioredis');
+
+jest.mock('../../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
 
 // Mock logger for testing
 const mockLogger = {
@@ -23,13 +32,16 @@ const mockLogger = {
 const BASE_CONFIG = {
   host: 'https://api.reacher.com'
 };
-const REACHER_THROTTLE_REQUESTS = 1;
-const REACHER_THROTTLE_INTERVAL = 100;
+const REACHER_THROTTLE_REQUESTS = 5;
+const REACHER_THROTTLE_INTERVAL = 0.1;
 
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  REACHER_THROTTLE_REQUESTS,
-  REACHER_THROTTLE_INTERVAL
-);
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_reacher_test',
+  distribution: Distribution.Memory,
+  requests: REACHER_THROTTLE_REQUESTS,
+  intervalSeconds: REACHER_THROTTLE_INTERVAL
+});
 
 const SINGLE_VERIFICATION_ENDPOINT = ReacherClient.SINGLE_VERIFICATION_PATH;
 const BULK_VERIFICATION_ENDPOINT = ReacherClient.BULK_VERIFICATION_PATH;
@@ -225,11 +237,11 @@ describe('ReacherClient', () => {
         .reply(200, { valid: true });
 
       const startTime = Date.now();
-      const requests = [
-        await reacherClient.checkSingleEmail('test@example.com'),
-        await reacherClient.checkSingleEmail('test@example.com'),
-        await reacherClient.checkSingleEmail('test@example.com')
-      ];
+      const requests = Array.from({
+        length: REACHER_THROTTLE_REQUESTS * 2
+      }).map(() => reacherClient.checkSingleEmail('test@example.com'));
+      await Promise.allSettled(requests);
+
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
