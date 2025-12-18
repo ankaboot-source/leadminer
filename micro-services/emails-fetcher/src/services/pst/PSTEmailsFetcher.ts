@@ -95,24 +95,24 @@ export default class PSTEmailsFetcher {
 
   private readonly fetchedIds: Set<string>;
 
+  private readonly userEmail: string = '';
+
   /**
    * Constructor for EmailsFetcher.
    * @param userId - The unique identifier of the user.
-   * @param userEmail - The email address of the user.
    * @param miningId - The unique identifier of the mining process.
    * @param streamName - The name of the stream to write fetched emails.
    * @param fetchEmailBody - Whether to fetch email body or not.
    */
   constructor(
     private readonly userId: string,
-    private readonly userEmail: string,
     private readonly miningId: string,
     private readonly contactStream: string,
     private readonly signatureStream: string,
     private readonly fetchEmailBody: boolean
   ) {
     // Generate a unique identifier for the user.
-    this.userIdentifier = hashEmail(userEmail, userId);
+    this.userIdentifier = hashEmail(this.userEmail, userId);
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 

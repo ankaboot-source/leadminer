@@ -305,14 +305,11 @@ apiRoutes.post(
       extractSignatures
     }: FetchStartPayload = req.body;
 
-    const email= '';
-
     const errors = [
       validateType('userId', userId, 'string'),
       validateType('miningId', miningId, 'string'),
       validateType('contactStream', contactStream, 'string'),
       validateType('signatureStream', signatureStream, 'string'),
-      validateType('email', email, 'string'),
       validateType('extractSignatures', extractSignatures, 'boolean')
     ].filter(Boolean);
 
@@ -325,7 +322,6 @@ apiRoutes.post(
     try {
       const emailFetcher = new PSTFetcherFactory().create({
         userId,
-        email,
         miningId,
         contactStream,
         signatureStream,

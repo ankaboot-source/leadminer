@@ -1,7 +1,6 @@
 import PSTEmailsFetcher from '../services/pst/PSTEmailsFetcher'; //!
 
 interface Options {
-  email: string;
   userId: string;
   miningId: string;
   contactStream: string;
@@ -16,7 +15,6 @@ export default class PSTFetcherFactory {
   // eslint-disable-next-line class-methods-use-this
   create({
     userId,
-    email,
     miningId,
     contactStream,
     signatureStream,
@@ -24,7 +22,6 @@ export default class PSTFetcherFactory {
   }: Options) {
     return new PSTEmailsFetcher(
       userId,
-      email,
       miningId,
       contactStream,
       signatureStream,
