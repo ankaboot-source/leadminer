@@ -3,12 +3,14 @@ import initializeMiningController from '../controllers/mining.controller';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
-import TasksManager from '../services/tasks-manager/TasksManager';
 import TasksManagerFile from '../services/tasks-manager/TaskManagerFile';
+import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 
 export default function initializeMiningRoutes(
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
+  tasksManagerPST: TasksManagerPST,
   miningSource: MiningSources,
   authResolver: AuthResolver
 ) {
@@ -17,13 +19,19 @@ export default function initializeMiningRoutes(
   const {
     startMining,
     startMiningFile,
+    startMiningPST,
     stopMiningTask,
     getMiningTask,
     createProviderMiningSource,
     createProviderMiningSourceCallback,
     createImapMiningSource,
     getMiningSources
-  } = initializeMiningController(tasksManager, tasksManagerFile, miningSource);
+  } = initializeMiningController(
+    tasksManager,
+    tasksManagerFile,
+    tasksManagerPST,
+    miningSource
+  );
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
@@ -44,6 +52,7 @@ export default function initializeMiningRoutes(
   router.get('/mine/:userId/', authMiddleware, getMiningTask);
   router.post('/mine/email/:userId', authMiddleware, startMining);
   router.post('/mine/file/:userId', authMiddleware, startMiningFile);
+  router.post('/mine/pst/:userId', authMiddleware, startMiningPST);
   router.post('/mine/:type/:userId/:id', authMiddleware, stopMiningTask);
 
   return router;

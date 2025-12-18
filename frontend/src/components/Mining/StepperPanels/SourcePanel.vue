@@ -71,6 +71,13 @@
           @click="importFileDialogRef.openModal()"
         />
         <importFileDialog ref="importFileDialogRef" />
+        <Button
+          id="import-pst-file"
+          icon="pi pi-upload"
+          :label="'Import PST File'"
+          outlined
+          @click="$leadminerStore.startMining('pst')"
+        />
       </div>
     </template>
   </div>
@@ -127,7 +134,7 @@ function getIcon(type: string) {
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
-    "import_csv_excel": "Import CSV or Excel"
+    "import_csv_excel": "Import CSV, Excel or PST"
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -137,7 +144,7 @@ function getIcon(type: string) {
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
-    "import_csv_excel": "Importer CSV ou Excel"
+    "import_csv_excel": "Importer CSV, Excel ou PST"
   }
 }
 </i18n>

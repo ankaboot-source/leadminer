@@ -1,14 +1,15 @@
-import { NextFunction, Router, Request, Response } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import { ImapFlow as Connection } from 'imapflow';
-import validateType from './utils/validation';
-import PgMiningSources from './db/pg/PgMiningSources';
-import pool from './db/pg';
-import logger from './utils/logger';
 import ENV from './config';
+import pool from './db/pg';
+import PgMiningSources from './db/pg/PgMiningSources';
+import EmailsFetcher, { PSTEmailFetcher } from './emailJobs';
+import EmailFetcherFactory from './factory/EmailFetcherFactory';
+import PSTFetcherFactory from './factory/PSTFetcherFactory';
 import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
-import EmailFetcherFactory from './factory/EmailFetcherFactory';
-import EmailsFetcher from './emailJobs';
+import logger from './utils/logger';
+import validateType from './utils/validation';
 
 const apiRoutes = Router();
 
@@ -45,6 +46,15 @@ interface FetchPostBody {
   boxes: string[];
   extractSignatures: boolean;
   filterBodySize: number | undefined;
+  contactStream: string;
+  signatureStream: string;
+}
+
+interface FetchStartPayload {
+  userId: string;
+  miningId: string;
+  source: string;
+  extractSignatures: boolean;
   contactStream: string;
   signatureStream: string;
 }
@@ -90,7 +100,9 @@ async function getAvailableConnections(
           credentials
         );
         logger.debug(
-          `Server approved connection #${clients.length + 1} with id: ${conn.id}`
+          `Server approved connection #${
+            clients.length + 1
+          } with id: ${conn.id}`
         );
         clients.push(conn);
         return true;
@@ -205,27 +217,27 @@ apiRoutes.post(
             );
 
       const emailFetcher = new EmailFetcherFactory().create({
-          userId,
-          miningId,
-          contactStream,
-          signatureStream,
-          boxes: sanitizedFolders,
-          email: miningSourceCredentials.email,
-          batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
-          fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
-          maxConcurrentConnections: totalApprovedImapConnections,
-          filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
-          imapConnectionProvider
-        })
+        userId,
+        miningId,
+        contactStream,
+        signatureStream,
+        boxes: sanitizedFolders,
+        email: miningSourceCredentials.email,
+        batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
+        fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
+        maxConcurrentConnections: totalApprovedImapConnections,
+        filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
+        imapConnectionProvider
+      });
 
       const totalMessages = await emailFetcher.getTotalMessages();
 
-      EmailsFetcher.start(
-        miningId,
-        emailFetcher
-      );
+      EmailsFetcher.start(miningId, emailFetcher);
 
-      return res.status(201).send({ data: { miningId,  totalMessages}, error: null });
+      return res.status(201).send({
+        data: { miningId, totalMessages },
+        error: null
+      });
     } catch (err) {
       logger.error('Failed to start fetching', err);
       if (
@@ -274,6 +286,106 @@ apiRoutes.delete(
 
     try {
       await EmailsFetcher.stop(miningId, canceled);
+      return res.status(200).json({ error: null });
+    } catch (err) {
+      res.status(500);
+      return next(err);
+    }
+  }
+);
+
+apiRoutes.post(
+  '/pst/fetch/start',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const {
+      userId,
+      miningId,
+      contactStream,
+      signatureStream,
+      extractSignatures
+    }: FetchStartPayload = req.body;
+
+    const email= '';
+
+    const errors = [
+      validateType('userId', userId, 'string'),
+      validateType('miningId', miningId, 'string'),
+      validateType('contactStream', contactStream, 'string'),
+      validateType('signatureStream', signatureStream, 'string'),
+      validateType('email', email, 'string'),
+      validateType('extractSignatures', extractSignatures, 'boolean')
+    ].filter(Boolean);
+
+    if (errors.length) {
+      return res
+        .status(400)
+        .json({ message: `Invalid input: ${errors.join(', ')}` });
+    }
+
+    try {
+      const emailFetcher = new PSTFetcherFactory().create({
+        userId,
+        email,
+        miningId,
+        contactStream,
+        signatureStream,
+        fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY
+      });
+
+      PSTEmailFetcher.start(miningId, emailFetcher);
+
+      return res.status(201).send({
+        data: { miningId },
+        error: null
+      });
+    } catch (err) {
+      logger.error('Failed to start fetching', err);
+      if (
+        err instanceof Error &&
+        err.message.toLowerCase().startsWith('invalid credentials')
+      ) {
+        return res.status(401).json({ message: err.message });
+      }
+      if (
+        err instanceof Error &&
+        'textCode' in err &&
+        err.textCode === 'CANNOT'
+      ) {
+        return res.sendStatus(409);
+      }
+
+      const newError = generateErrorObjectFromImapError(err);
+
+      res.status(500);
+      return next(new Error(newError.message));
+    }
+  }
+);
+
+apiRoutes.delete(
+  '/pst/fetch/stop',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { miningId, canceled }: { miningId: string; canceled: boolean } =
+      req.body;
+    const errors = [
+      validateType('miningId', miningId, 'string'),
+      validateType('canceled', canceled, 'boolean')
+    ].filter(Boolean);
+
+    if (errors.length) {
+      return res
+        .status(400)
+        .json({ message: `Invalid input: ${errors.join(', ')}` });
+    }
+
+    if (!PSTEmailFetcher.exists(miningId)) {
+      return res.status(404).json({
+        message: `No current active fetching found with id: ${miningId}`
+      });
+    }
+
+    try {
+      await PSTEmailFetcher.stop(miningId, canceled);
       return res.status(200).json({ error: null });
     } catch (err) {
       res.status(500);
