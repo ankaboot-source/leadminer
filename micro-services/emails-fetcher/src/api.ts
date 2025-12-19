@@ -300,6 +300,7 @@ apiRoutes.post(
     const {
       userId,
       miningId,
+      source,
       contactStream,
       signatureStream,
       extractSignatures
@@ -325,7 +326,8 @@ apiRoutes.post(
         miningId,
         contactStream,
         signatureStream,
-        fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY
+        fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
+        source
       });
 
       PSTEmailFetcher.start(miningId, emailFetcher);

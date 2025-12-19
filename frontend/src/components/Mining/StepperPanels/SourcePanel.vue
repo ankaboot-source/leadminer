@@ -71,12 +71,17 @@
           @click="importFileDialogRef.openModal()"
         />
         <importFileDialog ref="importFileDialogRef" />
-        <Button
-          id="import-pst-file"
-          icon="pi pi-upload"
-          :label="'Import PST File'"
-          outlined
-          @click="$leadminerStore.startMining('pst')"
+
+        <FileUpload
+          class="p-button-outlined"
+          mode="basic"
+          accept=".pst,.ost"
+          :max-file-size="200000000"
+          choose-label="Import PST or OST File"
+          choose-icon="pi pi-upload"
+          custom-upload
+          auto
+          @uploader="uploadPSTAndMine"
         />
       </div>
     </template>
@@ -93,6 +98,38 @@ const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
+const $toast = useToast();
+const $supabase = useSupabaseClient();
+
+async function uploadPSTAndMine(event: any) {
+  const file: File = event.files[0];
+  if (!file) return;
+
+  const user = useSupabaseUser().value;
+  if (!user) return;
+
+  const filePath = `${user.sub}/${file.name}`;
+
+  const { error } = await $supabase.storage.from('pst').upload(filePath, file, {
+    contentType: file.type || 'application/octet-stream',
+    upsert: false,
+  });
+
+  if (error) {
+    console.error(error);
+
+    if (error.message.includes('The resource already exists')) {
+      $toast.add({
+        severity: 'info',
+        summary: 'Upload Error',
+        detail: 'The PST file already exists.',
+        life: 5000,
+      });
+    } else throw error;
+  }
+
+  $leadminerStore.startMining('pst', filePath);
+}
 
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
@@ -134,7 +171,7 @@ function getIcon(type: string) {
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
-    "import_csv_excel": "Import CSV, Excel or PST"
+    "import_csv_excel": "Import CSV or Excel"
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -144,7 +181,7 @@ function getIcon(type: string) {
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
-    "import_csv_excel": "Importer CSV, Excel ou PST"
+    "import_csv_excel": "Importer CSV ou Excel"
   }
 }
 </i18n>

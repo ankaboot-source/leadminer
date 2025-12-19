@@ -86,8 +86,7 @@
             size="small"
             scrollable
             :current-page-report-template="`{first} - {last} / {totalRecords} ${t('contacts')}`"
-            paginator-template="
-            FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+            paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
             :paginator="true"
             :rows="ROWS_SHOWN_NUMBER"
           >

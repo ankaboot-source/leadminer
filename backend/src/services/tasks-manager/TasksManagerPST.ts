@@ -267,7 +267,7 @@ export default class TasksManagerPST {
           source, // source is set here, w f taskmanager le5er esmha email raw
           extractSignatures: fetchEmailBody,
           contactStream: messagesStream,
-          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
+          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME
         });
 
         progress.totalMessages = totalMessages;

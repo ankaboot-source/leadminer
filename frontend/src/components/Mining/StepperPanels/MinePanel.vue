@@ -117,12 +117,16 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
+const sourceTypeIsEmail = computed(
+  () => sourceType.value === 'email' || sourceType.value === 'pst',
+);
+
 const totalEmails = computed<number>(() => {
   if (sourceType.value === 'file') {
     return $leadminerStore.selectedFile?.contacts.length || 0;
   }
 
-  if (sourceType.value === 'email') {
+  if (sourceTypeIsEmail.value) {
     console.log($leadminerStore.totalMessages);
     return $leadminerStore.totalMessages > 0
       ? $leadminerStore.totalMessages
@@ -146,9 +150,7 @@ const totalEmails = computed<number>(() => {
 });
 
 const totalMined = computed(() =>
-  sourceType.value === 'email'
-    ? totalEmails.value
-    : $leadminerStore.createdContacts,
+  sourceTypeIsEmail.value ? totalEmails.value : $leadminerStore.createdContacts,
 );
 const totalToMineMessage = computed(() =>
   $leadminerStore.miningType === 'email'
@@ -220,7 +222,7 @@ async function reloadContacts() {
 }
 
 const totalExtractedNotificationMessage = computed(() =>
-  sourceType.value === 'email'
+  sourceTypeIsEmail.value
     ? t('contacts_extracted', {
         extractedEmails: extractedEmails.value,
       })

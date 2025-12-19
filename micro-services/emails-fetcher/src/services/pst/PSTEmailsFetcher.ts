@@ -6,7 +6,7 @@ import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
-// import { parseHeader } from 'imap';
+import supabaseClient from '../../utils/supabase';
 
 const redisClient = redis.getClient();
 
@@ -109,7 +109,8 @@ export default class PSTEmailsFetcher {
     private readonly miningId: string,
     private readonly contactStream: string,
     private readonly signatureStream: string,
-    private readonly fetchEmailBody: boolean
+    private readonly fetchEmailBody: boolean,
+    private readonly source: string
   ) {
     // Generate a unique identifier for the user.
     this.userIdentifier = hashEmail(this.userEmail, userId);
@@ -269,27 +270,44 @@ export default class PSTEmailsFetcher {
     }
   }
 
-  start() {
-    const filename = 'Deals.pst'; // .ost
-
+  async start() {
+    console.log(`Starting PST processing for source: ${this.source}`);
     const ANSI_YELLOW = 93;
     const highlight = (str: string, code: number) =>
       '\u001b[' + code + 'm' + str + '\u001b[0m';
-    // Deals.pst have some message prints: PSTUtil::createAppropriatePSTMessageObject unknown message type: IPM.Note.EAS
 
     const start = Date.now();
-    const pstFile = new PSTFile(
-      fs.readFileSync(path.join(__dirname, filename))
-    );
+
+    const localPstPath = await downloadPSTFromSupabase(this.source);
+
+    const pstFile = new PSTFile(fs.readFileSync(localPstPath));
+
     console.log(pstFile.getMessageStore().displayName);
     this.processFolder(pstFile.getRootFolder());
 
     const end = Date.now();
     console.log(
-      highlight(
-        filename + ' processed in ' + (end - start) + ' ms',
-        ANSI_YELLOW
-      )
+      highlight(`${this.source} processed in ${end - start} ms`, ANSI_YELLOW)
     );
+
+    // optional cleanup
+    fs.unlinkSync(localPstPath);
   }
+}
+
+async function downloadPSTFromSupabase(storagePath: string): Promise<string> {
+  const { data, error } = await supabaseClient.storage
+    .from('pst')
+    .download(storagePath);
+
+  if (error) throw error;
+
+  const buffer = Buffer.from(await data.arrayBuffer());
+  const localPath = path.join(
+    '/tmp',
+    `${Date.now()}-${path.basename(storagePath)}`
+  );
+
+  fs.writeFileSync(localPath, buffer);
+  return localPath;
 }

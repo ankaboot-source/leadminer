@@ -6,6 +6,7 @@ interface Options {
   contactStream: string;
   signatureStream: string;
   fetchEmailBody: boolean;
+  source: string;
 }
 
 export default class PSTFetcherFactory {
@@ -18,14 +19,16 @@ export default class PSTFetcherFactory {
     miningId,
     contactStream,
     signatureStream,
-    fetchEmailBody
+    fetchEmailBody,
+    source
   }: Options) {
     return new PSTEmailsFetcher(
       userId,
       miningId,
       contactStream,
       signatureStream,
-      fetchEmailBody
+      fetchEmailBody,
+      source
     );
   }
 }
