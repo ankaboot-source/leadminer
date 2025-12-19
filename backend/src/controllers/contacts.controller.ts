@@ -31,10 +31,24 @@ async function validateRequest(
     throw new Error(`Invalid export type: ${exportType}`);
   }
 
-  const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
-    user.id,
-    user.email as string
-  )) as OAuthMiningSourceCredentials;
+  let googleContactsOptions: ExportOptions['googleContactsOptions'] = {
+    accessToken: undefined,
+    refreshToken: undefined,
+    updateEmptyFieldsOnly
+  };
+
+  if (exportType === ExportType.GOOGLE_CONTACTS) {
+    const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
+      user.id,
+      user.email as string
+    )) as OAuthMiningSourceCredentials;
+
+    googleContactsOptions = {
+      accessToken: oauthCredentials?.accessToken,
+      refreshToken: oauthCredentials?.refreshToken,
+      updateEmptyFieldsOnly
+    };
+  }
 
   const {
     emails,
@@ -50,11 +64,7 @@ async function validateRequest(
       exportOptions: {
         locale: localeFromHeader,
         delimiter: undefined,
-        googleContactsOptions: {
-          accessToken: oauthCredentials?.accessToken,
-          refreshToken: oauthCredentials?.refreshToken,
-          updateEmptyFieldsOnly
-        }
+        googleContactsOptions
       }
     };
   }
@@ -69,11 +79,7 @@ async function validateRequest(
     exportOptions: {
       locale: localeFromHeader,
       delimiter: delimiterOption,
-      googleContactsOptions: {
-        accessToken: oauthCredentials?.accessToken,
-        refreshToken: oauthCredentials?.refreshToken,
-        updateEmptyFieldsOnly
-      }
+      googleContactsOptions
     }
   };
 }

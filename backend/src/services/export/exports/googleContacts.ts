@@ -1,4 +1,5 @@
 import { google, people_v1 } from 'googleapis';
+import { GaxiosError } from 'gaxios';
 import { Contact } from '../../../db/types';
 import {
   ExportStrategy,
@@ -15,82 +16,106 @@ export default class GoogleContactsExport implements ExportStrategy<Contact> {
 
   readonly type = ExportType.GOOGLE_CONTACTS;
 
-  private static getPeopleService(accessToken: string, refreshToken?: string) {
-    if (!accessToken) {
-      throw new Error('Invalid credentials.');
-    }
-
-    const oauth2Client = new google.auth.OAuth2(
-      ENV.GOOGLE_CLIENT_ID,
-      ENV.GOOGLE_SECRET
-    );
-
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
-
-    return google.people({ version: 'v1', auth: oauth2Client });
-  }
-
-  private static validateCredentials(
-    accessToken: string,
-    refreshToken?: string
+  private static async getPeopleService(
+    options: ExportOptions['googleContactsOptions']
   ) {
-    const token = googleOAuth2Client.createToken({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
+    const accessToken = options?.accessToken;
+    const refreshToken = options?.refreshToken;
 
-    if (token.expired(1000) && !refreshToken) {
-      throw new Error('Invalid credentials.');
+    try {
+      if (!accessToken && !refreshToken) {
+        throw new Error('Invalid credentials.');
+      }
+
+      const oauth2Client = new google.auth.OAuth2(
+        ENV.GOOGLE_CLIENT_ID,
+        ENV.GOOGLE_SECRET
+      );
+
+      const token = googleOAuth2Client.createToken({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      if (token.expired(1000) && !refreshToken) {
+        throw new Error('Invalid credentials.');
+      }
+
+      oauth2Client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+
+      const peopleService = google.people({
+        version: 'v1',
+        auth: oauth2Client
+      });
+
+      // Update cache and validate credentials
+      await peopleService.people.searchContacts({
+        query: '',
+        readMask: 'names,emailAddresses,phoneNumbers,organizations,metadata'
+      });
+
+      return peopleService;
+    } catch (err) {
+      console.log(err, accessToken, refreshToken);
+      if (err instanceof GaxiosError) {
+        logger.error(
+          `Error creating google.people service: ${err.message}`,
+          err
+        );
+        if (err.response?.status === 401) {
+          throw new Error('Invalid credentials.');
+        }
+      } else {
+        logger.error(
+          `Error creating google.people service: ${(err as Error).message}`,
+          err
+        );
+      }
+      throw err;
     }
-
-    return {
-      accessToken: token.token.access_token as string,
-      refreshToken
-    };
   }
 
   async export(
     contacts: Contact[],
     options: ExportOptions
   ): Promise<ExportResult> {
-    if (!options.googleContactsOptions) {
+    if (!options.googleContactsOptions)
       throw new Error('Invalid contact options.');
-    }
 
-    const {
-      googleContactsOptions: {
-        accessToken: at,
-        refreshToken: rt,
-        updateEmptyFieldsOnly
-      }
-    } = options;
-    const { accessToken, refreshToken } =
-      GoogleContactsExport.validateCredentials(at, rt);
-    const peopleService = GoogleContactsExport.getPeopleService(
-      accessToken,
-      refreshToken
+    const peopleService = await GoogleContactsExport.getPeopleService(
+      options.googleContactsOptions
     );
+    const {
+      googleContactsOptions: { updateEmptyFieldsOnly }
+    } = options;
     const updateEmptyOnly = updateEmptyFieldsOnly ?? false;
 
-    contacts.forEach(async (contact) => {
-      const existing = await GoogleContactsExport.fetchGoogleContacts(
-        peopleService,
-        contact
-      );
-      if (existing) {
-        await GoogleContactsExport.updateContact(
+    /* eslint-disable no-await-in-loop */
+    for (const contact of contacts) {
+      try {
+        const existing = await GoogleContactsExport.fetchGoogleContacts(
           peopleService,
-          existing,
-          contact,
-          updateEmptyOnly
+          contact
         );
-      } else {
-        await GoogleContactsExport.createContact(peopleService, contact);
+
+        if (existing) {
+          await GoogleContactsExport.updateContact(
+            peopleService,
+            existing,
+            contact,
+            updateEmptyOnly
+          );
+        } else {
+          await GoogleContactsExport.createContact(peopleService, contact);
+        }
+      } catch (err) {
+        logger.error('Failed to create/update contact', err);
       }
-    });
+    }
+    /* eslint-disable no-await-in-loop */
 
     return {
       content: '',

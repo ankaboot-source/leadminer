@@ -23,6 +23,8 @@ export default class VCardExport implements ExportStrategy<Contact> {
   private static contactToVCard(contact: Contact): string {
     const vcard = new VCard();
 
+    vcard.addCategories(['leadminer']);
+
     if (contact.given_name?.length || contact.family_name?.length) {
       vcard.addName(contact.family_name ?? '', contact.given_name ?? '');
     } else if (contact.name) {
