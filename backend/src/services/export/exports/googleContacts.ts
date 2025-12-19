@@ -112,7 +112,7 @@ export default class GoogleContactsExport implements ExportStrategy<Contact> {
           await GoogleContactsExport.createContact(peopleService, contact);
         }
       } catch (err) {
-        logger.error(`Failed to create/update contact`, err);
+        logger.error('Failed to create/update contact', err);
       }
     }
     /* eslint-disable no-await-in-loop */
