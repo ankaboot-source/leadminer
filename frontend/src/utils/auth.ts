@@ -12,7 +12,7 @@ export async function signInWithOAuth(provider: Provider) {
       scopes:
         provider === 'azure'
           ? 'email https://outlook.office.com/IMAP.AccessAsUser.All'
-          : 'https://mail.google.com/',
+          : 'https://mail.google.com/ https://www.googleapis.com/auth/contacts',
 
       queryParams: {
         prompt: 'select_account',
@@ -33,7 +33,7 @@ export function clearPersistedData() {
 export function signOutManually() {
   sse.closeConnection();
   clearPersistedData();
-  useResetStore().all();
+  useResetStore().all?.();
   useSupabaseUser().value = null; // updates $user in AppHeader
   useSupabaseUserProfile().value = null;
   useRouter().push('/auth/login');

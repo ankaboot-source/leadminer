@@ -1,11 +1,4 @@
 <template>
-  <component
-    :is="CreditsDialog"
-    ref="CreditsDialogExportRef"
-    engagement-type="contact"
-    action-type="export"
-    @secondary-action="exportTable(true)"
-  />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
   <DataTable
     v-show="showTable"
@@ -91,16 +84,9 @@
         </div>
 
         <div>
-          <Button
-            id="export-csv"
-            v-tooltip.top="
-              isExportDisabled &&
-              t('select_at_least_one_contact', { action: t('export') })
-            "
-            icon="pi pi-external-link"
-            :label="$screenStore.size.md ? t('export_csv') : undefined"
-            :disabled="isExportDisabled"
-            @click="exportTable()"
+          <ExportContacts
+            :contacts-to-treat="contactsToTreat"
+            :disable-export="isExportDisabled"
           />
         </div>
 
@@ -438,6 +424,7 @@
       <template #filter="{ filterModel }">
         <DatePicker
           v-model="filterModel.value"
+          update-model-type="single"
           show-icon
           class="p-column-filter"
         />
@@ -644,6 +631,7 @@
       <template #filter="{ filterModel }">
         <DatePicker
           v-model="filterModel.value"
+          update-model-type="single"
           show-icon
           class="p-column-filter"
         />
@@ -814,6 +802,7 @@
       <template #filter="{ filterModel }">
         <DatePicker
           v-model="filterModel.value"
+          update-model-type="single"
           show-icon
           class="p-column-filter"
         />
@@ -840,6 +829,7 @@
       <template #filter="{ filterModel }">
         <DatePicker
           v-model="filterModel.value"
+          update-model-type="single"
           show-icon
           class="p-column-filter"
         />
@@ -874,11 +864,6 @@ import type {
 
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
-import {
-  CreditsDialog,
-  CreditsDialogExportRef,
-  openCreditsDialog,
-} from '@/utils/credits';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
 import {
@@ -889,7 +874,6 @@ import {
   statuses,
   tags,
 } from '~/utils/contacts';
-import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 import Normalizer from '~/utils/normalizer';
 
@@ -899,6 +883,9 @@ const SocialLinksAndPhones = defineAsyncComponent(
 );
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
+);
+const ExportContacts = defineAsyncComponent(
+  () => import('../Buttons/ExportContacts.vue'),
 );
 const RemoveContactButton = defineAsyncComponent(
   () => import('../Buttons/RemoveContactButton.vue'),
@@ -924,9 +911,6 @@ const MINING_ID_PARAM = 'mining_id';
 // skipcq: JS-0321
 const emptyFunction = () => {};
 
-const $toast = useToast();
-
-const $user = useSupabaseUser();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
@@ -1062,7 +1046,6 @@ watch(implicitlySelectedContactsLength, () => {
 
 /* *** Export CSV *** */
 
-const { $api } = useNuxtApp();
 const isExportDisabled = computed(
   () =>
     contactsLength.value === 0 ||
@@ -1070,68 +1053,6 @@ const isExportDisabled = computed(
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );
-function getFileName() {
-  const { email } = $user.value!; // skipcq: JS-0339
-  const currentDatetime = new Date().toISOString().slice(0, 10);
-  const fileName = `leadminer-${email}-${currentDatetime}`;
-  return fileName;
-}
-
-const openCreditModel = (
-  hasDeficientCredits: boolean,
-  {
-    total,
-    available,
-    availableAlready,
-  }: {
-    total: number;
-    available: number;
-    availableAlready: number;
-  },
-) => {
-  if (total === undefined || available === undefined) {
-    return $toast.add({
-      severity: 'error',
-      summary: t('error_verifying_export_csv'),
-      life: 3000,
-    });
-  }
-  return openCreditsDialog(
-    CreditsDialogExportRef,
-    hasDeficientCredits,
-    total,
-    available,
-    availableAlready ?? 0,
-  );
-};
-
-async function exportTable(partialExport = false) {
-  await $api('/contacts/export/csv', {
-    method: 'POST',
-    body: {
-      partialExport,
-      emails: contactsToTreat.value,
-      exportAllContacts: contactsToTreat.value === undefined,
-    },
-    onResponse({ response }) {
-      if (response.status === 402 || response.status === 266) {
-        openCreditModel(response.status === 402, response._data);
-        return;
-      }
-
-      if (response.status === 200 || response.status === 206) {
-        saveCSVFile(response._data, `${getFileName()}.csv`);
-
-        $toast.add({
-          severity: 'success',
-          summary: t('csv_export'),
-          detail: t('contacts_exported_successfully'),
-          life: 8000,
-        });
-      }
-    },
-  });
-}
 
 const isFullscreen = ref(false);
 
@@ -1371,8 +1292,6 @@ table.p-datatable-table {
     "try": "Try",
     "clearing_filters": "Clearing filters",
     "select_at_least_one_contact": "Select at least one contact to {action}",
-    "export_csv": "Export CSV",
-    "export": "export",
     "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
@@ -1428,9 +1347,7 @@ table.p-datatable-table {
     "try": "Essayez de",
     "clearing_filters": "Vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à {action}",
-    "export": "exporter",
     "remove": "supprimer",
-    "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
     "toggle_job_details_tooltip": "A au moins une détail",
