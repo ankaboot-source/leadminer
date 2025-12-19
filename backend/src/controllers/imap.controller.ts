@@ -82,6 +82,7 @@ export default function initializeImapController(miningSources: MiningSources) {
         }
         if ('accessToken' in data) {
           const { token, refreshToken, provider } = getTokenAndProvider(data);
+
           if (!refreshToken)
             return res.status(401).send({
               data: { message: 'No Refresh Token' }

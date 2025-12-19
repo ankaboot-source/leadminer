@@ -73,7 +73,10 @@ export default function initializeApp(
       authResolver
     )
   );
-  app.use('/api', initializeContactsRoutes(contacts, authResolver));
+  app.use(
+    '/api',
+    initializeContactsRoutes(contacts, authResolver, miningSources)
+  );
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 
   if (ENV.SENTRY_DSN_BACKEND) {
