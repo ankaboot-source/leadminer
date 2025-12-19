@@ -232,12 +232,22 @@ async function exportTable(
             saveFile(response._data, filename, config.mimeType);
           }
 
+          let message;
+          if (contactsToTreat.value === undefined) {
+            message = $t('contacts_exported_successfully.all');
+          } else if (contactsToTreat.value.length === 0) {
+            message = $t('contacts_exported_successfully.none');
+          } else if (contactsToTreat.value.length === 1) {
+            message = $t('contacts_exported_successfully.one');
+          } else
+            message = $t('contacts_exported_successfully.other', {
+              count: contactsToTreat.value.length,
+            });
+
           $toast.add({
             severity: 'success',
             summary: t(config.successSummaryKey),
-            detail: t('contacts_exported_successfully', {
-              count: contactsToTreat.value?.length,
-            }),
+            detail: message,
             life: 8000,
           });
         }
@@ -293,7 +303,12 @@ const exportItems = computed(() => [
     "google_export_confirmation": "Choose how your contacts should be synced with google contacts.",
     "update_empty_fields": "Update empty fields only",
     "overwrite_all_fields": "Overwrite all fields",
-    "contacts_exported_successfully": "No contacts exported | {count} contact exported successfully | {count} contacts exported successfully"
+    "contacts_exported_successfully": {
+      "all": "All contacts have been exported successfully",
+      "none": "No contacts exported",
+      "one": "contact exported successfully",
+      "other": "{count} contacts exported successfully"
+    }
   },
   "fr": {
     "export_csv": "Exporter en CSV",
@@ -303,7 +318,12 @@ const exportItems = computed(() => [
     "google_export_confirmation": "Choisissez comment vos contacts doivent être synchronisés avec Google Contacts.",
     "update_empty_fields": "Uniquement les champs vides",
     "overwrite_all_fields": "Tous les champs",
-    "contacts_exported_successfully": "Aucun contact exporté | {count} contact exporté avec succès | {count} contacts exportés avec succès"
+    "contacts_exported_successfully": {
+      "all": "Tous les contacts ont été exportés avec succès",
+      "none": "Aucun contact exporté",
+      "one": "contact exporté avec succès",
+      "other": "{count} contacts exportés avec succès"
+    }
   }
 }
 </i18n>
