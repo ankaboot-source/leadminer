@@ -8,6 +8,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import supabaseClient from '../../utils/supabase';
 
+const PST_FOLDER = 'pst';
 const redisClient = redis.getClient();
 
 interface StreamEmailData {
@@ -173,7 +174,7 @@ export default class PSTEmailsFetcher {
       '*',
       'message',
       JSON.stringify({
-        type: '',
+        type: 'email',
         data: {
           header: {},
           body: '',
@@ -278,7 +279,7 @@ export default class PSTEmailsFetcher {
 
     const start = Date.now();
 
-    const localPstPath = await downloadPSTFromSupabase(this.source);
+    const localPstPath = await this.downloadPSTFromSupabase(this.source);
 
     const pstFile = new PSTFile(fs.readFileSync(localPstPath));
 
@@ -293,21 +294,24 @@ export default class PSTEmailsFetcher {
     // optional cleanup
     fs.unlinkSync(localPstPath);
   }
-}
 
-async function downloadPSTFromSupabase(storagePath: string): Promise<string> {
-  const { data, error } = await supabaseClient.storage
-    .from('pst')
-    .download(storagePath);
+  async downloadPSTFromSupabase(storagePath: string): Promise<string> {
+    const { data, error } = await supabaseClient.storage
+      .from(PST_FOLDER)
+      .download(storagePath);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const buffer = Buffer.from(await data.arrayBuffer());
-  const localPath = path.join(
-    '/tmp',
-    `${Date.now()}-${path.basename(storagePath)}`
-  );
+    const buffer = Buffer.from(await data.arrayBuffer());
+    const localPath = path.join(
+      '/tmp',
+      `${Date.now()}-${path.basename(storagePath)}`
+    );
 
-  fs.writeFileSync(localPath, buffer);
-  return localPath;
+    this.isCompleted = true;
+    await this.stop(this.isCanceled);
+
+    fs.writeFileSync(localPath, buffer);
+    return localPath;
+  }
 }
