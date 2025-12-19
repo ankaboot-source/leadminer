@@ -58,14 +58,13 @@
     v-tooltip="t('button.tooltip')"
     :class="{ 'border-solid border-2 border-black': bordered }"
     severity="contrast"
-    icon-pos="right"
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
     :disabled="isEnrichDisabled"
     @click="onClickEnrich"
   >
     <template #icon>
-      <span class="p-button-icon p-button-icon-right">
+      <span class="p-button-icon p-button-icon-left">
         <span v-if="!$leadminerStore.activeEnrichment">💎</span>
         <i v-else class="pi pi-spin pi-spinner mr-1.5" />
       </span>
@@ -325,16 +324,6 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
 
 const ENRICH_PARAM = 'enrich';
 
-onMounted(async () => {
-  if (startOnMounted) {
-    await startEnrichment(true);
-  }
-  if (getParam(ENRICH_PARAM)) {
-    openEnrichmentConfirmationDialog();
-    removeQueryParam(ENRICH_PARAM);
-  }
-});
-
 const EnrichGdprSidebarRef = ref();
 const $profile = useSupabaseUserProfile();
 const hasAcceptedEnriching = computed(
@@ -361,6 +350,16 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
     startEnrichment(false);
   } else dialogVisible.value = true;
 }
+
+onMounted(async () => {
+  if (startOnMounted) {
+    await startEnrichment(true);
+  }
+  if (getParam(ENRICH_PARAM)) {
+    openEnrichmentConfirmationDialog();
+    removeQueryParam(ENRICH_PARAM);
+  }
+});
 
 function onAcceptEnrich() {
   const justAcceptedEnrich = true;

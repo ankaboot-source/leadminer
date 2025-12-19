@@ -204,7 +204,7 @@
     </table>
 
     <template #footer>
-      <div class="grid grid-cols-2 gap-2 items-center">
+      <div class="flex flex-wrap gap-2 justify-center items-center">
         <template v-if="!editingContact">
           <EnrichButton
             source="contact"
@@ -215,10 +215,13 @@
             :skip-dialog="skipDialog"
           />
           <Button
-            icon-pos="right"
             icon="pi pi-pen-to-square"
             :label="$t('common.edit')"
             @click="editContactInformations()"
+          />
+          <ExportContacts
+            :contacts-to-treat="[contact.email]"
+            :disable-export="isExportDisabled"
           />
         </template>
         <template v-else>
@@ -257,6 +260,10 @@ import parsePhoneNumber from 'libphonenumber-js';
 import { HandledError } from '~/plugins/error-handler';
 import Normalizer from '~/utils/normalizer';
 
+const ExportContacts = defineAsyncComponent(
+  () => import('./Buttons/ExportContacts.vue'),
+);
+
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -266,6 +273,7 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const $user = useSupabaseUser();
+const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
@@ -289,6 +297,10 @@ watch(contact, (newContact) => {
     location: newContact?.location ?? null,
   };
 });
+
+const isExportDisabled = computed(
+  () => $leadminerStore.activeMiningTask || $leadminerStore.loadingStatusDns,
+);
 
 const skipDialog = computed(
   () =>

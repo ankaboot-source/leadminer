@@ -1,8 +1,5 @@
 import { describe, expect, it, test } from '@jest/globals';
-import {
-  getLocalizedCsvSeparator,
-  getCsvStr
-} from '../../src/utils/helpers/csv';
+import CsvExport from '../../src/services/export/exports/csv';
 
 describe('getLocalizedCsvSeparator', () => {
   test.each([
@@ -14,12 +11,14 @@ describe('getLocalizedCsvSeparator', () => {
     ['en-US', ','],
     ['ja-JP', ',']
   ])('should return ; for language %s', (language, expectedSeparator) => {
-    expect(getLocalizedCsvSeparator(language)).toBe(expectedSeparator);
+    expect(CsvExport.getLocalizedCsvSeparator(language)).toBe(
+      expectedSeparator
+    );
   });
 
   it('should return default for falsy strings', () => {
-    expect(getLocalizedCsvSeparator('')).toBe(',');
-    expect(getLocalizedCsvSeparator('test')).toBe(',');
+    expect(CsvExport.getLocalizedCsvSeparator('')).toBe(',');
+    expect(CsvExport.getLocalizedCsvSeparator('test')).toBe(',');
   });
 });
 
@@ -30,7 +29,7 @@ describe('getCsvStr', () => {
       { name: 'Alice', age: 30 },
       { name: 'Bob', age: 25 }
     ];
-    const csvString = await getCsvStr(
+    const csvString = await CsvExport.getCsvStr(
       [
         { key: 'name', header: 'Name' },
         { key: 'age', header: 'Age' }

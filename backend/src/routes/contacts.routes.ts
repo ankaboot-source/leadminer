@@ -3,17 +3,22 @@ import initializeContactsController from '../controllers/contacts.controller';
 import { Contacts } from '../db/interfaces/Contacts';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
+import { MiningSources } from '../db/interfaces/MiningSources';
 
 export default function initializeContactsRoutes(
   contacts: Contacts,
-  authResolver: AuthResolver
+  authResolver: AuthResolver,
+  miningSources: MiningSources
 ) {
   const router = Router();
 
-  const { exportContactsCSV } = initializeContactsController(contacts);
+  const { exportContactsCSV } = initializeContactsController(
+    contacts,
+    miningSources
+  );
 
   router.post(
-    '/contacts/export/csv',
+    '/contacts/export/:exportType',
     initializeAuthMiddleware(authResolver),
     exportContactsCSV
   );

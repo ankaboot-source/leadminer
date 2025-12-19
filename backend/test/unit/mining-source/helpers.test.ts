@@ -17,7 +17,8 @@ describe('getTokenConfig', () => {
         'openid',
         'https://mail.google.com/',
         'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/contacts'
       ],
       prompt: 'consent select_account',
       access_type: 'offline'
