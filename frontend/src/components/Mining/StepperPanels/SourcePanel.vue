@@ -83,6 +83,11 @@
           auto
           @uploader="uploadPSTAndMine"
         />
+        <ProgressBar
+          v-if="isUploadingPST"
+          class="w-full"
+          mode="indeterminate"
+        />
       </div>
     </template>
   </div>
@@ -101,8 +106,10 @@ const { t } = useI18n({
 const $toast = useToast();
 const $supabase = useSupabaseClient();
 
-async function uploadPSTAndMine(event: any) {
-  const file: File = event.files[0];
+const isUploadingPST = ref(false);
+
+async function uploadPSTAndMine($event: any) {
+  const file: File = $event.files[0];
   if (!file) return;
 
   const user = useSupabaseUser().value;
@@ -110,10 +117,12 @@ async function uploadPSTAndMine(event: any) {
 
   const filePath = `${user.sub}/${file.name}`;
 
+  isUploadingPST.value = true;
   const { error } = await $supabase.storage.from('pst').upload(filePath, file, {
     contentType: file.type || 'application/octet-stream',
     upsert: false,
   });
+  isUploadingPST.value = false;
 
   if (error) {
     console.error(error);
