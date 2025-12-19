@@ -259,6 +259,9 @@ async function acceptAndCloseDialog(accepted: boolean) {
   );
 }
 
+const $user = useSupabaseUser();
+const isGoogleUser = computed(() => $user.value?.email.includes('@gmail.com'));
+
 const exportItems = computed(() => [
   {
     label: t('export_vcard'),
@@ -269,6 +272,7 @@ const exportItems = computed(() => [
     label: t('export_google_contacts'),
     icon: 'pi pi-google', // PrimeIcons for Google/similar
     command: () => exportToGoogle(ExportTypes.GOOGLE_CONTACTS),
+    disabled: !isGoogleUser.value,
   },
 ]);
 </script>
