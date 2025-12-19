@@ -81,6 +81,7 @@ import {
   CreditsDialogExportRef,
   openCreditsDialog,
 } from '@/utils/credits';
+import type { FetchError } from 'ofetch';
 
 enum ExportTypes {
   CSV = 'csv',
@@ -220,9 +221,6 @@ async function exportTable(
       onResponse({ response }) {
         activeExport.value = false;
 
-        if (response.status === 401) {
-          $consentSidebar.show('google', $profile.value?.email);
-        }
         if (response.status === 402 || response.status === 266) {
           openCreditModel(response.status === 402, response._data);
           return;
@@ -237,7 +235,9 @@ async function exportTable(
           $toast.add({
             severity: 'success',
             summary: t(config.successSummaryKey),
-            detail: t('contacts_exported_successfully'),
+            detail: t('contacts_exported_successfully', {
+              count: contactsToTreat.value?.length,
+            }),
             life: 8000,
           });
         }
@@ -245,6 +245,12 @@ async function exportTable(
     });
   } catch (err) {
     activeExport.value = false;
+
+    if ((err as FetchError).response?.status === 401) {
+      $consentSidebar.show('google', $profile.value?.email);
+      return;
+    }
+
     throw err;
   }
 }
@@ -281,23 +287,23 @@ const exportItems = computed(() => [
 {
   "en": {
     "export_csv": "Export as CSV",
-    "export_vcard": "Export as vcard",
-    "export_google_contacts": "Export to google contacts",
-    "confirm_google_export": "Confirm export to google contacts",
+    "export_vcard": "Export as vcards",
+    "export_google_contacts": "Synchronize to Google Contacts",
+    "confirm_google_export": "Confirm export to Google Contacts",
     "google_export_confirmation": "Choose how your contacts should be synced with google contacts.",
     "update_empty_fields": "Update empty fields only",
     "overwrite_all_fields": "Overwrite all fields",
-    "contacts_exported_successfully": "Contacts exported successfully"
+    "contacts_exported_successfully": "No contacts exported | {count} contact exported successfully | {count} contacts exported successfully"
   },
   "fr": {
     "export_csv": "Exporter en CSV",
-    "export_vcard": "Exporter en vcard",
+    "export_vcard": "Exporter en vcards",
     "export_google_contacts": "Vers google contacts",
-    "confirm_google_export": "Confirmer l’export vers Google Contacts",
+    "confirm_google_export": "Synchroniser vers Google Contacts",
     "google_export_confirmation": "Choisissez comment vos contacts doivent être synchronisés avec Google Contacts.",
     "update_empty_fields": "Uniquement les champs vides",
     "overwrite_all_fields": "Tous les champs",
-    "contacts_exported_successfully": "Contacts exportés avec succès"
+    "contacts_exported_successfully": "Aucun contact exporté | {count} contact exporté avec succès | {count} contacts exportés avec succès"
   }
 }
 </i18n>
