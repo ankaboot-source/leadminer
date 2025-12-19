@@ -18,7 +18,8 @@
     "dev:backend-email-worker": "npm run dev:email-worker --prefix ./backend",
     "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
     "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend",
-    "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher"
+    "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher",
+    "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
