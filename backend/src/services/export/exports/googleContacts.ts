@@ -109,7 +109,11 @@ export default class GoogleContactsExport implements ExportStrategy<Contact> {
       readMask: 'names,emailAddresses,phoneNumbers,organizations,metadata'
     });
 
-    return res.data.results?.map((r) => r.person!).filter(Boolean) ?? [];
+    return (
+      res.data.results
+        ?.map((r) => r.person)
+        .filter((p): p is people_v1.Schema$Person => Boolean(p)) ?? []
+    );
   }
 
   private static async contactByPhone(
@@ -201,11 +205,12 @@ export default class GoogleContactsExport implements ExportStrategy<Contact> {
       updateEmptyOnly
     );
 
-    if (Object.keys(person).length === 0) return; // nothing to update
+    if (Object.keys(person).length === 0) return;
+    if (!existing.resourceName) return;
 
     try {
       await peopleService.people.updateContact({
-        resourceName: existing.resourceName!,
+        resourceName: existing.resourceName,
         updatePersonFields: Object.keys(person).join(','),
         requestBody: {
           ...person,

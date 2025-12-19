@@ -324,22 +324,6 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
 
 const ENRICH_PARAM = 'enrich';
 
-onMounted(async () => {
-  if (startOnMounted) {
-    await startEnrichment(true);
-  }
-  if (getParam(ENRICH_PARAM)) {
-    openEnrichmentConfirmationDialog();
-    removeQueryParam(ENRICH_PARAM);
-  }
-});
-
-const EnrichGdprSidebarRef = ref();
-const $profile = useSupabaseUserProfile();
-const hasAcceptedEnriching = computed(
-  () => $profile.value?.gdpr_details.hasAcceptedEnriching,
-);
-
 /**
  * Verifies if user has accepted enriching conditions (using `hasAcceptedEnriching` of `$profile`), then proceeds to the enrichment confirmation dialog
  * @param justAcceptedEnrich : is a workaround as `hasAcceptedEnriching` of `$profile` can still be not updated from the realtime
@@ -360,6 +344,22 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
     startEnrichment(false);
   } else dialogVisible.value = true;
 }
+
+onMounted(async () => {
+  if (startOnMounted) {
+    await startEnrichment(true);
+  }
+  if (getParam(ENRICH_PARAM)) {
+    openEnrichmentConfirmationDialog();
+    removeQueryParam(ENRICH_PARAM);
+  }
+});
+
+const EnrichGdprSidebarRef = ref();
+const $profile = useSupabaseUserProfile();
+const hasAcceptedEnriching = computed(
+  () => $profile.value?.gdpr_details.hasAcceptedEnriching,
+);
 
 function onAcceptEnrich() {
   const justAcceptedEnrich = true;

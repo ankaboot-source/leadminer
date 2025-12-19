@@ -133,27 +133,12 @@ const activeExport = ref(false);
 const updateEmptyFieldsOnly = ref(false);
 const dialogVisible = ref(false);
 
-function exportToGoogle(type: ExportTypes) {
-  selectedExportType.value = type;
-  openGoogleExportConfirmationDialog();
-}
-
 function openGoogleExportConfirmationDialog() {
   dialogVisible.value = true;
 }
 
 async function closeGoogleExportConfirmationDialog() {
   dialogVisible.value = false;
-}
-
-async function acceptAndCloseDialog(accepted: boolean) {
-  dialogVisible.value = false;
-  updateEmptyFieldsOnly.value = accepted;
-  await exportTable(
-    ExportTypes.GOOGLE_CONTACTS,
-    false,
-    updateEmptyFieldsOnly.value,
-  );
 }
 
 function saveFile(
@@ -165,10 +150,10 @@ function saveFile(
 
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
+  const vcf = document.createElement('a');
+  vcf.href = url;
+  vcf.download = filename;
+  vcf.click();
 
   URL.revokeObjectURL(url);
 }
@@ -206,6 +191,11 @@ function getFileName() {
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;
+}
+
+function exportToGoogle(type: ExportTypes) {
+  selectedExportType.value = type;
+  openGoogleExportConfirmationDialog();
 }
 
 async function exportTable(
@@ -257,6 +247,16 @@ async function exportTable(
     activeExport.value = false;
     throw err;
   }
+}
+
+async function acceptAndCloseDialog(accepted: boolean) {
+  dialogVisible.value = false;
+  updateEmptyFieldsOnly.value = accepted;
+  await exportTable(
+    ExportTypes.GOOGLE_CONTACTS,
+    false,
+    updateEmptyFieldsOnly.value,
+  );
 }
 
 const exportItems = computed(() => [
