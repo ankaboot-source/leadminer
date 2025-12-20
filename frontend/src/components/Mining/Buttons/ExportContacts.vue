@@ -313,7 +313,7 @@ const exportItems = computed(() => [
   "fr": {
     "export_csv": "Exporter en CSV",
     "export_vcard": "Exporter en vcards",
-    "export_google_contacts": "Vers google contacts",
+    "export_google_contacts": "synchroniser google contacts",
     "confirm_google_export": "Synchroniser vers Google Contacts",
     "google_export_confirmation": "Choisissez comment vos contacts doivent être synchronisés avec Google Contacts.",
     "update_empty_fields": "Uniquement les champs vides",
