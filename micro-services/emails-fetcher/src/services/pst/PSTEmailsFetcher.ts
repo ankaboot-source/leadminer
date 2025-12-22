@@ -156,6 +156,13 @@ export default class PSTEmailsFetcher {
         miningId: this.miningId
       });
 
+      await publishFetchingProgress(
+        this.miningId,
+        seq,
+        this.isCanceled,
+        this.isCompleted
+      );
+
       return header ?? null;
     } catch (error) {
       logger.error('Error when publishing email header', { error });
@@ -291,7 +298,8 @@ export default class PSTEmailsFetcher {
       highlight(`${this.source} processed in ${end - start} ms`, ANSI_YELLOW)
     );
 
-    // optional cleanup
+    this.isCompleted = true;
+    await this.stop(this.isCanceled);
     fs.unlinkSync(localPstPath);
   }
 
@@ -307,9 +315,6 @@ export default class PSTEmailsFetcher {
       '/tmp',
       `${Date.now()}-${path.basename(storagePath)}`
     );
-
-    this.isCompleted = true;
-    await this.stop(this.isCanceled);
 
     fs.writeFileSync(localPath, buffer);
     return localPath;
