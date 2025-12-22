@@ -49,7 +49,7 @@
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="!isUploadingPST">
       <div class="text-3xl">{{ t('title_add_new') }}</div>
 
       <div class="flex flex-col lg:flex-row flex-wrap gap-2">
@@ -83,12 +83,12 @@
           auto
           @uploader="uploadPSTAndMine"
         />
-        <ProgressBar
-          v-if="isUploadingPST"
-          class="w-full"
-          mode="indeterminate"
-        />
       </div>
+    </template>
+
+    <template v-else>
+      <div class="text-3xl">Uploading file...</div>
+      <ProgressBar class="w-full" mode="indeterminate" />
     </template>
   </div>
 </template>
@@ -123,6 +123,7 @@ async function uploadPSTAndMine($event: any) {
     upsert: false,
   });
   isUploadingPST.value = false;
+  $stepper.next();
 
   if (error) {
     console.error(error);
