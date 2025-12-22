@@ -185,7 +185,7 @@ const progressTooltip = computed(() =>
 );
 
 onMounted(async () => {
-  if (sourceType.value === 'file') {
+  if (sourceType.value === 'file' || sourceType.value === 'pst') {
     return;
   }
 

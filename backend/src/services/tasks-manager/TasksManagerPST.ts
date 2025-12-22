@@ -150,7 +150,7 @@ export default class TasksManagerPST {
       const miningTask: MiningTask = {
         userId,
         miningId,
-        miningSource: { source, type: 'pst' },
+        miningSource: { source, type: 'email' },
         progressHandlerSSE,
         process: {
           signature: {

@@ -316,7 +316,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fileName: string,
     extractEmailSignatures = false,
   ) {
-    miningType.value = 'email'; //!
+    miningType.value = 'pst'; //!
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,
