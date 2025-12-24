@@ -292,13 +292,15 @@ export default class PSTEmailsFetcher {
 
     const start = Date.now();
 
-    const localPstPath = await this.downloadPSTFromSupabase(this.source);
+    // Pre-scan PST to compute total messages before processing
+    const total = await this.getTotalMessages();
+    console.log('total messages', total);
 
+    const localPstPath = await this.downloadPSTFromSupabase(this.source);
     const pstFile = new PSTFile(fs.readFileSync(localPstPath));
 
     console.log(pstFile.getMessageStore().displayName);
     await this.processFolder(pstFile.getRootFolder());
-    console.log('total messages', this.totalMessages);
 
     const end = Date.now();
     console.log(
@@ -308,6 +310,8 @@ export default class PSTEmailsFetcher {
     this.isCompleted = true;
     await this.stop(this.isCanceled);
     fs.unlinkSync(localPstPath);
+
+    return total;
   }
 
   async downloadPSTFromSupabase(storagePath: string): Promise<string> {

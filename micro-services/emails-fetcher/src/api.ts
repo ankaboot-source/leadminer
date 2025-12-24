@@ -330,8 +330,8 @@ apiRoutes.post(
         source
       });
 
-      await PSTEmailFetcher.start(miningId, emailFetcher);
-      const totalMessages = emailFetcher.getTotalMessages();
+      const totalMessages = await emailFetcher.getTotalMessages();
+      PSTEmailFetcher.start(miningId, emailFetcher);
       return res.status(201).send({
         data: { miningId, totalMessages },
         error: null
