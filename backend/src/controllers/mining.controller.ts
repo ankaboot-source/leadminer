@@ -62,10 +62,18 @@ export default function initializeMiningController(
     async createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
+      const { redirect } = req.body;
+
+      console.log(redirect);
+
+      const stateObj = JSON.stringify({
+        userId: user.id,
+        afterCallbackRedirect: redirect ?? '/'
+      });
 
       const authorizationUri = getAuthClient(provider).authorizeURL({
         ...getTokenConfig(provider),
-        state: user.id // This will allow us in the callback to associate the authorized account with the user
+        state: Buffer.from(stateObj).toString('base64')
       });
 
       return res.json({ authorizationUri });
@@ -74,12 +82,20 @@ export default function initializeMiningController(
     async createProviderMiningSourceCallback(req: Request, res: Response) {
       const { code, state } = req.query as { code: string; state: string };
       const provider = req.params.provider as OAuthMiningSourceProvider;
-
       try {
+        const {
+          userId,
+          afterCallbackRedirect
+        }: {
+          userId: string;
+          afterCallbackRedirect: string;
+        } = JSON.parse(
+          Buffer.from(state as string, 'base64').toString('utf-8')
+        );
         const exchangedTokens = await exchangeForToken(code, provider);
 
         await miningSources.upsert({
-          userId: state,
+          userId,
           email: exchangedTokens.email,
           credentials: {
             ...exchangedTokens,
@@ -87,10 +103,10 @@ export default function initializeMiningController(
           },
           type: provider
         });
-        res.redirect(
-          301,
-          `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
-        );
+        const redirect = afterCallbackRedirect.startsWith('/mine')
+          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
+          : afterCallbackRedirect;
+        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
       } catch (error) {
         logger.error(error);
         res.redirect(

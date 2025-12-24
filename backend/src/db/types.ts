@@ -111,6 +111,33 @@ export interface Contact {
   telephone?: string[];
 }
 
+export interface ContactFrontend {
+  id: string;
+  user_id: string;
+  email: string;
+  engagement?: number;
+  name?: string;
+  sender?: string;
+  recipient?: string;
+  conversations?: number;
+  replied_conversations?: number;
+  status?: Status;
+  occurrence?: number;
+  personid?: string;
+  recency?: Date;
+  seniority?: Date;
+  tags?: string[];
+  given_name?: string;
+  family_name?: string;
+  alternate_name?: string[];
+  location?: string;
+  works_for?: string;
+  job_title?: string;
+  same_as?: string[];
+  image?: string;
+  telephone?: string[];
+}
+
 export interface Profile {
   email: string;
   name: string;
