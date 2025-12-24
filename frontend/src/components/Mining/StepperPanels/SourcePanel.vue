@@ -75,8 +75,9 @@
         <FileUpload
           class="p-button-outlined"
           mode="basic"
+          accept=".pst,.ost"
           :max-file-size="PST_FILE_SIZE_LIMIT"
-          choose-label="Import PST or OST File"
+          :choose-label="t('choose_pst_file')"
           choose-icon="pi pi-upload"
           custom-upload
           auto
@@ -86,7 +87,9 @@
     </template>
 
     <template v-else>
-      <div class="text-3xl">Uploading file... {{ uploadProgress }}%</div>
+      <div class="text-3xl">
+        {{ t('uploading_file', uploadProgress) }}
+      </div>
       <ProgressBar class="w-full" :value="uploadProgress" />
     </template>
   </div>
@@ -95,6 +98,7 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
+import type { FileUploadUploaderEvent } from 'primevue/fileupload';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
@@ -108,8 +112,8 @@ const $supabase = useSupabaseClient();
 const isUploadingPST = ref(false);
 const uploadProgress = ref(0);
 
-async function uploadPSTAndMine($event: any) {
-  const file: File = $event.files[0];
+async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
+  const file = ($event.files as File[])[0];
   if (!file) return;
 
   const user = useSupabaseUser().value;
@@ -146,13 +150,13 @@ async function uploadPSTAndMine($event: any) {
       xhr.send(file);
     });
 
-    // $stepper.next();
-    // $leadminerStore.startMining('pst', filePath);
+    $stepper.next();
+    $leadminerStore.startMining('pst', filePath);
   } catch (err: any) {
     const msg = err?.message || String(err);
     $toast.add({
       severity: msg.includes('already exists') ? 'info' : 'error',
-      summary: 'Upload',
+      summary: t('upload'),
       detail: msg,
       life: 5000,
     });
@@ -204,7 +208,11 @@ function getIcon(type: string) {
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
-    "import_csv_excel": "Import CSV or Excel"
+    "import_csv_excel": "Import CSV or Excel",
+    "choose_pst_file": "Import PST or OST File",
+    "uploading_file": "Uploading file... {n}%",
+    "upload": "Upload",
+    "upload_exists": "The PST file already exists."
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -214,7 +222,11 @@ function getIcon(type: string) {
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
-    "import_csv_excel": "Importer CSV ou Excel"
+    "import_csv_excel": "Importer CSV ou Excel",
+    "choose_pst_file": "Importer PST ou OST",
+    "uploading_file": "Téléversement... {n}%",
+    "upload": "Téléversement",
+    "upload_exists": "Le fichier PST existe déjà."
   }
 }
 </i18n>

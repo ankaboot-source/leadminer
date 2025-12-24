@@ -182,7 +182,9 @@ export default class PSTEmailsFetcher {
 
   private async notifyCompleted() {
     if (this.hasNotifiedCompleted) {
-      logger.debug(`[${this.miningId}] notifyCompleted already called; skipping duplicate call.`);
+      logger.debug(
+        `[${this.miningId}] notifyCompleted already called; skipping duplicate call.`
+      );
       return;
     }
     this.hasNotifiedCompleted = true;
