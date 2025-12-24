@@ -43,6 +43,7 @@
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
     v-model:provider="$consentSidebar.provider"
+    v-model:authorize-redirect="$consentSidebar.authorizedRedirect"
   />
 </template>
 
@@ -82,7 +83,7 @@ if (selectedSource) {
 
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {
-    $consentSidebar.show(provider as MiningSourceType);
+    $consentSidebar.show(provider as MiningSourceType, undefined, '/mine');
   }
   $router.replace({ query: undefined });
 });

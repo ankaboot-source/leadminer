@@ -53,11 +53,17 @@
       <div class="text-3xl">{{ t('title_add_new') }}</div>
 
       <div class="flex flex-col lg:flex-row flex-wrap gap-2">
-        <oauth-source icon="pi pi-google" label="Google" source="google" />
+        <oauth-source
+          icon="pi pi-google"
+          label="Google"
+          source="google"
+          redirectUri="/mine"
+        />
         <oauth-source
           icon="pi pi-microsoft"
           :label="t('microsoft_or_outlook')"
           source="azure"
+          redirectUri="/mine"
         />
         <imap-source
           v-model:source="sourceModel"

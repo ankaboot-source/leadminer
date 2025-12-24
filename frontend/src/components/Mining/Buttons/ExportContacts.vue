@@ -73,6 +73,7 @@
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
     v-model:provider="$consentSidebar.provider"
+    v-model:authorize-redirect="$consentSidebar.authorizedRedirect"
   />
 </template>
 <script setup lang="ts">
@@ -257,7 +258,7 @@ async function exportTable(
     activeExport.value = false;
 
     if ((err as FetchError).response?.status === 401) {
-      $consentSidebar.show('google', $profile.value?.email);
+      $consentSidebar.show('google', $profile.value?.email, '/contacts');
       return;
     }
 

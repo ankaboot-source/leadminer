@@ -1,11 +1,17 @@
 import type { OAuthMiningSource } from '@/types/mining';
 
-export async function addOAuthAccount(provider: OAuthMiningSource) {
+export async function addOAuthAccount(
+  provider: OAuthMiningSource,
+  redirect: string,
+) {
   const { $api } = useNuxtApp();
   const { authorizationUri } = await $api<{ authorizationUri: string }>(
     `/imap/mine/sources/${provider}`,
     {
       method: 'POST',
+      body: {
+        redirect,
+      },
     },
   );
 
