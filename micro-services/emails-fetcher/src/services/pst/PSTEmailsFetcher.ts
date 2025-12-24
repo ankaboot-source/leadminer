@@ -352,6 +352,27 @@ export default class PSTEmailsFetcher {
     await this.stop(this.isCanceled);
     fs.unlinkSync(localPstPath);
 
+    // attempt to delete the uploaded PST from storage after mining
+    try {
+      const { error: removeErr } = await supabaseClient.storage
+        .from(PST_FOLDER)
+        .remove([this.source]);
+
+      if (removeErr) {
+        logger.warn(
+          `[${this.miningId}] Failed to remove PST from storage: ${this.source}`,
+          { error: removeErr }
+        );
+      } else {
+        logger.info(`[${this.miningId}] Removed PST from storage: ${this.source}`);
+      }
+    } catch (err) {
+      logger.warn(`[${this.miningId}] Unexpected error while removing PST`, {
+        error: err,
+        path: this.source
+      });
+    }
+
     return total;
   }
 
