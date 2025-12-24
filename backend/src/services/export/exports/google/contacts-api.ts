@@ -47,15 +47,11 @@ export default class GoogleContactsSession {
     await Promise.all(
       Array.from(tagsToEnsure.values()).map(async (tag) => {
         if (!this.labelMap.has(tag)) {
-          try {
-            const newGroup = await this.service.contactGroups.create({
-              requestBody: { contactGroup: { name: tag } }
-            });
-            if (newGroup.data.resourceName)
-              this.labelMap.set(tag, newGroup.data.resourceName);
-          } catch (e: any) {
-            if (e.code !== 409) logger.error(`Label creation error: ${tag}`, e);
-          }
+          const newGroup = await this.service.contactGroups.create({
+            requestBody: { contactGroup: { name: tag } }
+          });
+          if (newGroup.data.resourceName)
+            this.labelMap.set(tag, newGroup.data.resourceName);
         }
       })
     );

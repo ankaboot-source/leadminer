@@ -1,5 +1,6 @@
 import { google, people_v1 } from 'googleapis';
 import { jest, describe, beforeEach, it, expect } from '@jest/globals';
+import { AxiosError } from 'axios';
 import { ExportOptions } from '../../../src/services/export/types';
 import { ContactFrontend } from '../../../src/db/types';
 import logger from '../../../src/utils/logger';
@@ -25,7 +26,10 @@ jest.mock('googleapis', () => {
           connections: { list: mockList }
         },
         contactGroups: {
-          list: jest.fn().mockReturnValue({ data: {} })
+          list: jest.fn().mockReturnValue({ data: { contactGroups: [] } }),
+          create: jest
+            .fn()
+            .mockReturnValue({ data: { resourceName: 'contactGroups/new_id' } })
         }
       })
     }
@@ -226,7 +230,7 @@ describe('GoogleContactsExport', () => {
 
   it('should throw and log error if the People Service initialization fails (e.g. 401)', async () => {
     const authError = new Error('Unauthorized');
-    (authError as any).status = 401;
+    (authError as AxiosError).status = 401;
     (google.people as jest.Mock).mockImplementationOnce(() => {
       throw authError;
     });
@@ -267,8 +271,15 @@ describe('GoogleContactsExport', () => {
       }
     } as unknown as jest.Mocked<people_v1.People>;
 
+    interface MockableExporter {
+      getPeopleService: (options: ExportOptions) => Promise<people_v1.People>;
+    }
+
     jest
-      .spyOn(GoogleContactsExport as any, 'getPeopleService')
+      .spyOn(
+        GoogleContactsExport as unknown as MockableExporter,
+        'getPeopleService'
+      )
       .mockResolvedValue(mockService);
 
     const instance = new GoogleContactsExport();
