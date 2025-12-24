@@ -75,8 +75,7 @@
         <FileUpload
           class="p-button-outlined"
           mode="basic"
-          accept=".pst,.ost"
-          :max-file-size="200000000"
+          :max-file-size="PST_FILE_SIZE_LIMIT"
           choose-label="Import PST or OST File"
           choose-icon="pi pi-upload"
           custom-upload
@@ -87,8 +86,8 @@
     </template>
 
     <template v-else>
-      <div class="text-3xl">Uploading file...</div>
-      <ProgressBar class="w-full" mode="indeterminate" />
+      <div class="text-3xl">Uploading file... {{ uploadProgress }}%</div>
+      <ProgressBar class="w-full" :value="uploadProgress" />
     </template>
   </div>
 </template>
@@ -107,6 +106,7 @@ const $toast = useToast();
 const $supabase = useSupabaseClient();
 
 const isUploadingPST = ref(false);
+const uploadProgress = ref(0);
 
 async function uploadPSTAndMine($event: any) {
   const file: File = $event.files[0];
@@ -116,30 +116,53 @@ async function uploadPSTAndMine($event: any) {
   if (!user) return;
 
   const filePath = `${user.sub}/${file.name}`;
-
+  uploadProgress.value = 0;
   isUploadingPST.value = true;
-  const { error } = await $supabase.storage.from('pst').upload(filePath, file, {
-    contentType: file.type || 'application/octet-stream',
-    upsert: false,
-  });
-  isUploadingPST.value = false;
-  $stepper.next();
 
-  if (error) {
-    console.error(error);
+  try {
+    const { data, error } = await $supabase.storage
+      .from('pst')
+      .createSignedUploadUrl(filePath);
+    if (error || !data?.signedUrl)
+      throw error || new Error('Could not create signed URL');
 
-    if (error.message.includes('The resource already exists')) {
-      $toast.add({
-        severity: 'info',
-        summary: 'Upload Error',
-        detail: 'The PST file already exists.',
-        life: 5000,
-      });
-    } else throw error;
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', data.signedUrl, true);
+      if (data.token) xhr.setRequestHeader('x-signature', data.token);
+      xhr.setRequestHeader(
+        'Content-Type',
+        file.type || 'application/octet-stream',
+      );
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable)
+          uploadProgress.value = Math.round((e.loaded / e.total) * 100);
+      };
+      xhr.onload = () =>
+        xhr.status === 200 || xhr.status === 201
+          ? resolve()
+          : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+
+    // $stepper.next();
+    // $leadminerStore.startMining('pst', filePath);
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    $toast.add({
+      severity: msg.includes('already exists') ? 'info' : 'error',
+      summary: 'Upload',
+      detail: msg,
+      life: 5000,
+    });
+  } finally {
+    isUploadingPST.value = false;
+    uploadProgress.value = 0;
   }
-
-  $leadminerStore.startMining('pst', filePath);
 }
+
+const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
 
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
