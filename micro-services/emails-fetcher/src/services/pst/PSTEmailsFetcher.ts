@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { parseHeader } from 'imap';
 import path from 'path';
 import { PSTFile, PSTFolder, PSTMessage } from 'pst-extractor';
+import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
@@ -90,6 +91,10 @@ export default class PSTEmailsFetcher {
 
   private totalFetched: number;
 
+  private publishedEmails: number;
+
+  private readonly batchSize: number;
+
   private readonly processSetKey: string;
 
   private readonly userIdentifier: string;
@@ -99,6 +104,8 @@ export default class PSTEmailsFetcher {
   private readonly userEmail: string = '';
 
   public totalMessages = 0;
+
+  private hasNotifiedCompleted = false;
 
   /**
    * Constructor for EmailsFetcher.
@@ -122,6 +129,8 @@ export default class PSTEmailsFetcher {
 
     // Fetching state
     this.totalFetched = 0;
+    this.publishedEmails = 0;
+    this.batchSize = ENV.FETCHING_BATCH_SIZE_TO_SEND;
     this.isCanceled = false;
     this.isCompleted = false;
 
@@ -137,7 +146,6 @@ export default class PSTEmailsFetcher {
     try {
       const messageId = getMessageId(header);
       header['message-id'] = [messageId];
-      this.fetchedIds.add(messageId);
 
       const skipThisEmail =
         !header || (this.fetchedIds.has(messageId) && !isLastMessageInFolder);
@@ -159,12 +167,7 @@ export default class PSTEmailsFetcher {
         miningId: this.miningId
       });
 
-      await publishFetchingProgress(
-        this.miningId,
-        seq,
-        this.isCanceled,
-        this.isCompleted
-      );
+      return header ?? null;
 
       return header ?? null;
     } catch (error) {
@@ -178,6 +181,11 @@ export default class PSTEmailsFetcher {
    */
 
   private async notifyCompleted() {
+    if (this.hasNotifiedCompleted) {
+      logger.debug(`[${this.miningId}] notifyCompleted already called; skipping duplicate call.`);
+      return;
+    }
+    this.hasNotifiedCompleted = true;
     // Notify signature worker fetching is ended
     await redisClient.xadd(
       this.signatureStream,
@@ -202,6 +210,17 @@ export default class PSTEmailsFetcher {
     logger.info(
       `[${this.miningId}] Notified signature stream: This is the last published message.`
     );
+
+    // flush any remaining published emails count
+    if (this.publishedEmails > 0) {
+      await publishFetchingProgress(
+        this.miningId,
+        this.publishedEmails,
+        this.isCanceled,
+        this.isCompleted
+      );
+      this.publishedEmails = 0;
+    }
 
     await publishFetchingProgress(
       this.miningId,
@@ -271,13 +290,33 @@ export default class PSTEmailsFetcher {
         const headers = parseHeader(transportMessageHeaders);
         const isLastMessageInFolder = seq === folder.emailCount; // .contentCount
 
-        this.totalFetched += 1;
-        await this.publishHeader(
+        const header = await this.publishHeader(
           headers,
           seq,
           isLastMessageInFolder,
           folder.displayName
         );
+
+        if (!header) {
+          email = folder.getNextChild();
+          continue;
+        }
+
+        // mirror IMAP behaviour: add id and increment counters after successful publish
+        const [messageId] = header['message-id'];
+        this.fetchedIds.add(messageId);
+        this.totalFetched += 1;
+        this.publishedEmails += 1;
+
+        if (this.publishedEmails >= this.batchSize) {
+          await publishFetchingProgress(
+            this.miningId,
+            this.publishedEmails,
+            this.isCanceled,
+            this.isCompleted
+          );
+          this.publishedEmails = 0;
+        }
 
         email = folder.getNextChild();
       }
