@@ -25,10 +25,20 @@ export const useMiningConsentSidebar = defineStore(
   () => {
     const status = ref(false);
     const provider = ref<MiningSourceType>();
+    const authorizedRedirect = ref('/mine');
 
-    function show(sourceType: MiningSourceType, email?: string) {
+    function show(
+      sourceType: MiningSourceType,
+      email?: string,
+      redirect?: string,
+    ) {
       status.value = true;
       provider.value = sourceType;
+
+      if (redirect) {
+        authorizedRedirect.value = redirect;
+      }
+
       if (email) {
         useImapDialog().imapEmail = email;
       }
@@ -37,11 +47,13 @@ export const useMiningConsentSidebar = defineStore(
     function $reset() {
       status.value = false;
       provider.value = undefined;
+      authorizedRedirect.value = '/mine';
     }
 
     return {
       status,
       provider,
+      authorizedRedirect,
       show,
       $reset,
     };

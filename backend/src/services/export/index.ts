@@ -1,6 +1,6 @@
 import CsvExport from './exports/csv';
+import GoogleContactsExport from './exports/google';
 import VCardExport from './exports/vcard';
-import GoogleContactsExport from './exports/googleContacts';
 import { ExportType, ExportStrategy } from './types';
 
 class Factory {

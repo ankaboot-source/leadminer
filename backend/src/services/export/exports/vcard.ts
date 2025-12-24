@@ -1,6 +1,7 @@
 import VCard from 'vcard-creator';
 import { Contact } from '../../../db/types';
 import { ExportStrategy, ExportType, ExportResult } from '../types';
+import ENV from '../../../config';
 
 export default class VCardExport implements ExportStrategy<Contact> {
   readonly contentType = 'text/vcard';
@@ -23,7 +24,7 @@ export default class VCardExport implements ExportStrategy<Contact> {
   private static contactToVCard(contact: Contact): string {
     const vcard = new VCard();
 
-    vcard.addCategories(['leadminer']);
+    vcard.addCategories([ENV.APP_NAME]);
 
     if (contact.given_name?.length || contact.family_name?.length) {
       vcard.addName(contact.family_name ?? '', contact.given_name ?? '');

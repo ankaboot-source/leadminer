@@ -45,11 +45,15 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const show = defineModel<boolean>('show');
 const $screenStore = useScreenStore();
 const $imapDialogStore = useImapDialog();
 const $stepper = useMiningStepper();
+
+const show = defineModel<boolean>('show');
 const provider = defineModel<MiningSourceType>('provider');
+const authorizeRedirect = defineModel<string>('authorize-redirect', {
+  required: true,
+});
 
 function close() {
   show.value = false;
@@ -64,7 +68,10 @@ function refreshOAuth() {
   if (provider.value === 'imap') {
     showImapDialog();
   } else {
-    addOAuthAccount(provider.value as OAuthMiningSource);
+    addOAuthAccount(
+      provider.value as OAuthMiningSource,
+      authorizeRedirect.value,
+    );
   }
 }
 </script>

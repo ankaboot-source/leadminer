@@ -202,7 +202,7 @@ onMounted(async () => {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
     } else {
-      $consentSidebar.show(miningSource.type, miningSource.email);
+      $consentSidebar.show(miningSource.type, miningSource.email, '/mine');
     }
   }
 });
@@ -292,6 +292,7 @@ async function startMiningBoxes() {
       $consentSidebar.show(
         $leadminerStore.activeMiningSource.type,
         $leadminerStore.activeMiningSource.email,
+        '/mine',
       );
     } else {
       $toast.add({

@@ -73,6 +73,7 @@
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
     v-model:provider="$consentSidebar.provider"
+    v-model:authorize-redirect="$consentSidebar.authorizedRedirect"
   />
 </template>
 <script setup lang="ts">
@@ -257,7 +258,7 @@ async function exportTable(
     activeExport.value = false;
 
     if ((err as FetchError).response?.status === 401) {
-      $consentSidebar.show('google', $profile.value?.email);
+      $consentSidebar.show('google', $profile.value?.email, '/contacts');
       return;
     }
 
@@ -297,9 +298,9 @@ const exportItems = computed(() => [
 {
   "en": {
     "export_csv": "Export as CSV",
-    "export_vcard": "Export as vcards",
+    "export_vcard": "Export as vCards",
     "export_google_contacts": "Synchronize to Google Contacts",
-    "confirm_google_export": "Confirm export to Google Contacts",
+    "confirm_google_export": "Synchronize to Google Contacts",
     "google_export_confirmation": "Choose how your contacts should be synced with google contacts.",
     "update_empty_fields": "Update empty fields only",
     "overwrite_all_fields": "Overwrite all fields",
@@ -312,8 +313,8 @@ const exportItems = computed(() => [
   },
   "fr": {
     "export_csv": "Exporter en CSV",
-    "export_vcard": "Exporter en vcards",
-    "export_google_contacts": "Vers google contacts",
+    "export_vcard": "Exporter en vCards",
+    "export_google_contacts": "Synchroniser vers Google Contacts",
     "confirm_google_export": "Synchroniser vers Google Contacts",
     "google_export_confirmation": "Choisissez comment vos contacts doivent être synchronisés avec Google Contacts.",
     "update_empty_fields": "Uniquement les champs vides",
