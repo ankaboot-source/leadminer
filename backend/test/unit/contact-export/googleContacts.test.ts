@@ -239,7 +239,7 @@ describe('GoogleContactsExport', () => {
       'Unauthorized'
     );
     expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Error creating google.people service'),
+      expect.stringContaining('Export error: Unauthorized'),
       expect.anything()
     );
   });
