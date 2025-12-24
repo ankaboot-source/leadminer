@@ -54,7 +54,7 @@ onMounted(async () => {
     ['oauth-permissions', 'access_denied'].includes(error ?? '') &&
     provider
   ) {
-    useMiningConsentSidebar().show(provider as MiningSourceType);
+    useMiningConsentSidebar().show(provider as MiningSourceType, undefined, navigateToPage ?? undefined);
   } else {
     showOAuthErrorNotification();
   }

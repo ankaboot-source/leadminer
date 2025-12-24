@@ -64,8 +64,6 @@ export default function initializeMiningController(
       const provider = req.params.provider as OAuthMiningSourceProvider;
       const { redirect } = req.body;
 
-      console.log(redirect);
-
       const stateObj = JSON.stringify({
         userId: user.id,
         afterCallbackRedirect: redirect ?? '/'
@@ -82,6 +80,7 @@ export default function initializeMiningController(
     async createProviderMiningSourceCallback(req: Request, res: Response) {
       const { code, state } = req.query as { code: string; state: string };
       const provider = req.params.provider as OAuthMiningSourceProvider;
+      let redirect = '/';
       try {
         const {
           userId,
@@ -92,6 +91,8 @@ export default function initializeMiningController(
         } = JSON.parse(
           Buffer.from(state as string, 'base64').toString('utf-8')
         );
+
+        redirect = afterCallbackRedirect;
         const exchangedTokens = await exchangeForToken(code, provider);
 
         await miningSources.upsert({
@@ -103,7 +104,7 @@ export default function initializeMiningController(
           },
           type: provider
         });
-        const redirect = afterCallbackRedirect.startsWith('/mine')
+        redirect = afterCallbackRedirect.startsWith('/mine')
           ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
           : afterCallbackRedirect;
         res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
@@ -111,7 +112,7 @@ export default function initializeMiningController(
         logger.error(error);
         res.redirect(
           301,
-          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`
+          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
         );
       }
     },
