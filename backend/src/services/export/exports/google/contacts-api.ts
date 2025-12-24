@@ -45,7 +45,7 @@ export default class GoogleContactsSession {
     contacts.forEach((c) => c.tags?.forEach((t) => tagsToEnsure.add(t)));
 
     await Promise.all(
-      tagsToEnsure.values().map(async (tag) => {
+      Array.from(tagsToEnsure.values()).map(async (tag) => {
         if (!this.labelMap.has(tag)) {
           try {
             const newGroup = await this.service.contactGroups.create({
