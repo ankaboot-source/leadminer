@@ -98,6 +98,8 @@ export default class PSTEmailsFetcher {
 
   private readonly userEmail: string = '';
 
+  public totalMessages = 0;
+
   /**
    * Constructor for EmailsFetcher.
    * @param userId - The unique identifier of the user.
@@ -135,6 +137,7 @@ export default class PSTEmailsFetcher {
     try {
       const messageId = getMessageId(header);
       header['message-id'] = [messageId];
+      this.fetchedIds.add(messageId);
 
       const skipThisEmail =
         !header || (this.fetchedIds.has(messageId) && !isLastMessageInFolder);
@@ -247,16 +250,18 @@ export default class PSTEmailsFetcher {
    * Walk the folder tree recursively and process emails.
    * @param {PSTFolder} folder
    */
-  processFolder(folder: PSTFolder): void {
+  async processFolder(folder: PSTFolder) {
     // go through the folders...
+    this.totalMessages += folder.emailCount;
     if (folder.hasSubfolders) {
       const childFolders: PSTFolder[] = folder.getSubFolders();
       for (const childFolder of childFolders) {
-        this.processFolder(childFolder);
+        await this.processFolder(childFolder);
       }
     }
 
     // and now the emails for this folder
+
     if (folder.contentCount > 0) {
       let seq = 0;
       let email: PSTMessage = folder.getNextChild();
@@ -266,7 +271,8 @@ export default class PSTEmailsFetcher {
         const headers = parseHeader(transportMessageHeaders);
         const isLastMessageInFolder = seq === folder.emailCount; // .contentCount
 
-        this.publishHeader(
+        this.totalFetched += 1;
+        await this.publishHeader(
           headers,
           seq,
           isLastMessageInFolder,
@@ -291,7 +297,8 @@ export default class PSTEmailsFetcher {
     const pstFile = new PSTFile(fs.readFileSync(localPstPath));
 
     console.log(pstFile.getMessageStore().displayName);
-    this.processFolder(pstFile.getRootFolder());
+    await this.processFolder(pstFile.getRootFolder());
+    console.log('total messages', this.totalMessages);
 
     const end = Date.now();
     console.log(
@@ -318,5 +325,54 @@ export default class PSTEmailsFetcher {
 
     fs.writeFileSync(localPath, buffer);
     return localPath;
+  }
+
+  /**
+   * Walk the folder tree recursively and count emails only (no publishing).
+   * @param {PSTFolder} folder
+   */
+  private scanFolderCount(folder: PSTFolder): number {
+    let count = folder.emailCount || 0;
+    if (folder.hasSubfolders) {
+      const childFolders: PSTFolder[] = folder.getSubFolders();
+      for (const childFolder of childFolders) {
+        count += this.scanFolderCount(childFolder);
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Performs a pre-scan of the PST file to count all emails across folders.
+   * Downloads the PST from supabase, scans it and returns the total.
+   */
+  async getTotalMessages(): Promise<number> {
+    let localPstPath = '';
+    try {
+      localPstPath = await this.downloadPSTFromSupabase(this.source);
+      const pstFile = new PSTFile(fs.readFileSync(localPstPath));
+      const total = this.scanFolderCount(pstFile.getRootFolder());
+      this.totalMessages = total;
+      logger.debug(`[${this.miningId}] PST total messages pre-scan: ${total}`);
+      return total;
+    } catch (err) {
+      logger.error('Failed during PST pre-scan for total messages', {
+        miningId: this.miningId,
+        source: this.source,
+        error: err
+      });
+      throw err;
+    } finally {
+      try {
+        if (localPstPath && fs.existsSync(localPstPath)) {
+          fs.unlinkSync(localPstPath);
+        }
+      } catch (e) {
+        logger.warn('Could not remove temporary PST file after scan', {
+          path: localPstPath,
+          error: e
+        });
+      }
+    }
   }
 }
