@@ -326,27 +326,21 @@ export default class PSTEmailsFetcher {
   }
 
   async start() {
-    console.log(`Starting PST processing for source: ${this.source}`);
-    const ANSI_YELLOW = 93;
-    const highlight = (str: string, code: number) =>
-      '\u001b[' + code + 'm' + str + '\u001b[0m';
+    logger.info(`Starting PST processing for source: ${this.source}`);
 
     const start = Date.now();
 
     // Pre-scan PST to compute total messages before processing
     const total = await this.getTotalMessages();
-    console.log('total messages', total);
 
     const localPstPath = await this.downloadPSTFromSupabase(this.source);
     const pstFile = new PSTFile(fs.readFileSync(localPstPath));
 
-    console.log(pstFile.getMessageStore().displayName);
     await this.processFolder(pstFile.getRootFolder());
 
     const end = Date.now();
-    console.log(
-      highlight(`${this.source} processed in ${end - start} ms`, ANSI_YELLOW)
-    );
+
+    logger.info(`${this.source} processed in ${end - start} ms`);
 
     this.isCompleted = true;
     await this.stop(this.isCanceled);
@@ -364,7 +358,9 @@ export default class PSTEmailsFetcher {
           { error: removeErr }
         );
       } else {
-        logger.info(`[${this.miningId}] Removed PST from storage: ${this.source}`);
+        logger.info(
+          `[${this.miningId}] Removed PST from storage: ${this.source}`
+        );
       }
     } catch (err) {
       logger.warn(`[${this.miningId}] Unexpected error while removing PST`, {

@@ -310,16 +310,17 @@ function getColumns(rows: Row[]) {
 }
 
 const unavailableEmailRows = ref<number[]>();
-function handleSelectChangeEvent(value: string | null) {
-  if (value === 'email' || value === null) {
-    updateUnavailableEmailRows();
-  }
-}
 
 function updateUnavailableEmailRows() {
   unavailableEmailRows.value = columns.value.find(
     (col) => col.header === 'email',
   )?.unavailable_email_rows;
+}
+
+function handleSelectChangeEvent(value: string | null) {
+  if (value === 'email' || value === null) {
+    updateUnavailableEmailRows();
+  }
 }
 
 function createHeaders(rows: Row[]): {

@@ -109,8 +109,38 @@ const { t } = useI18n({
 const $toast = useToast();
 const $supabase = useSupabaseClient();
 
+const $stepper = useMiningStepper();
+const $leadminerStore = useLeadminerStore();
+const $imapDialogStore = useImapDialog();
+const $sourcePanelStore = useStepperSourcePanel();
+const sourceOptions = computed(() => useLeadminerStore().miningSources);
+const sourceModel = ref<MiningSource | undefined>(sourceOptions?.value[0]);
+
+function extractContacts(miningSource?: MiningSource) {
+  if (miningSource) {
+    $leadminerStore.boxes = [];
+    $leadminerStore.selectedBoxes = [];
+    $leadminerStore.activeMiningSource = miningSource;
+    $stepper.next();
+  }
+}
+
+$sourcePanelStore.showOtherSourcesByDefault();
+
+function getIcon(type: string) {
+  switch (type) {
+    case 'google':
+      return 'pi pi-google';
+    case 'azure':
+      return 'pi pi-microsoft';
+    default:
+      return 'pi pi-inbox';
+  }
+}
+
 const isUploadingPST = ref(false);
 const uploadProgress = ref(0);
+const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
 
 async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
   const file = ($event.files as File[])[0];
@@ -163,37 +193,6 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
   } finally {
     isUploadingPST.value = false;
     uploadProgress.value = 0;
-  }
-}
-
-const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
-
-const $stepper = useMiningStepper();
-const $leadminerStore = useLeadminerStore();
-const $imapDialogStore = useImapDialog();
-const $sourcePanelStore = useStepperSourcePanel();
-const sourceOptions = computed(() => useLeadminerStore().miningSources);
-const sourceModel = ref<MiningSource | undefined>(sourceOptions?.value[0]);
-
-function extractContacts(miningSource?: MiningSource) {
-  if (miningSource) {
-    $leadminerStore.boxes = [];
-    $leadminerStore.selectedBoxes = [];
-    $leadminerStore.activeMiningSource = miningSource;
-    $stepper.next();
-  }
-}
-
-$sourcePanelStore.showOtherSourcesByDefault();
-
-function getIcon(type: string) {
-  switch (type) {
-    case 'google':
-      return 'pi pi-google';
-    case 'azure':
-      return 'pi pi-microsoft';
-    default:
-      return 'pi pi-inbox';
   }
 }
 </script>
