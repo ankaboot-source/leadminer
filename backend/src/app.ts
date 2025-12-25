@@ -22,12 +22,14 @@ import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 import TasksManager from './services/tasks-manager/TasksManager';
+import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import Billing from './utils/billing-plugin';
 
 export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
+  tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
@@ -62,13 +64,19 @@ export default function initializeApp(
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
   app.use(
     '/api/imap',
-    initializeStreamRouter(tasksManager, tasksManagerFile, authResolver)
+    initializeStreamRouter(
+      tasksManager,
+      tasksManagerFile,
+      tasksManagerPST,
+      authResolver
+    )
   );
   app.use(
     '/api/imap',
     initializeMiningRoutes(
       tasksManager,
       tasksManagerFile,
+      tasksManagerPST,
       miningSources,
       authResolver
     )

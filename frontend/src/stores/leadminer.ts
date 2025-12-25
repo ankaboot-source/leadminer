@@ -5,10 +5,10 @@ import { ref } from 'vue';
 import { updateMiningSourcesValidity } from '@/utils/sources';
 import { startMiningNotification } from '~/utils/extras';
 import {
-  MiningTypes,
   type MiningSource,
   type MiningTask,
   type MiningType,
+  MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
@@ -271,7 +271,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningSource: MiningSource,
     extractEmailSignatures = false,
   ) {
-    // Set current miningType: file or email
     miningType.value = 'email';
 
     const { data: task } = await $api<{ data: MiningTask }>(
@@ -294,7 +293,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fileName: string,
     importedContacts: Record<string, string>[],
   ) {
-    // Set current miningType: file or email
     miningType.value = 'file';
     fetchingFinished.value = true;
     scannedEmails.value = 1;
@@ -313,11 +311,34 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return task;
   }
 
+  async function startMiningPST(
+    userId: string,
+    fileName: string,
+    extractEmailSignatures = false,
+  ) {
+    miningType.value = 'pst'; //!
+
+    const { data: task } = await $api<{ data: MiningTask }>(
+      `/imap/mine/pst/${userId}`,
+      {
+        method: 'POST',
+        body: {
+          name: fileName,
+          extractSignatures: extractEmailSignatures,
+        },
+      },
+    );
+
+    return task;
+  }
+
   /**
    * Starts the mining process.
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
-  async function startMining(source: 'email' | 'file') {
+  async function startMining(source: MiningType, storagePath?: string) {
+    // storagePath for PST file storage path
+    console.log(source, storagePath);
     await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
 
     const user = useSupabaseUser().value;
@@ -356,11 +377,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
               activeMiningSource.value!,
               extractSignatures.value,
             )
-          : await startMiningFile(
-              user.sub,
-              selectedFile.value!.name,
-              selectedFile.value!.contacts,
-            );
+          : source === 'file'
+            ? await startMiningFile(
+                user.sub,
+                selectedFile.value!.name,
+                selectedFile.value!.contacts,
+              )
+            : await startMiningPST(user.sub, storagePath!);
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();
@@ -435,8 +458,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       } = redactedTask;
 
       if ((mType === MiningTypes.FILE && !extract) || !clean) return 1;
-      if ((mType === MiningTypes.EMAIL && !fetch) || !extract || !clean)
+      if ((mType === MiningTypes.EMAIL && !fetch) || !extract || !clean) {
         return 1;
+      }
 
       miningTask.value = redactedTask;
       miningType.value = mType;

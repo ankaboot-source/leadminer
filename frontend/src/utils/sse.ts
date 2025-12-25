@@ -2,6 +2,7 @@ import {
   type EventSourceMessage,
   fetchEventSource,
 } from '@microsoft/fetch-event-source';
+import type { MiningType } from '~/types/mining';
 
 class SSE {
   private ctrl?: AbortController;
@@ -23,7 +24,7 @@ class SSE {
   }
 
   initConnection(
-    miningType: 'file' | 'email',
+    miningType: MiningType,
     miningId: string,
     {
       onFetchedUpdate,
@@ -53,9 +54,7 @@ class SSE {
     this.ctrl = new AbortController();
 
     return fetchEventSource(
-      `${
-        useRuntimeConfig().public.SERVER_ENDPOINT
-      }/api/imap/mine/${miningType}/${miningId}/progress/`,
+      `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
         fetch: async (input, init) => {
           const token = useSupabaseSession().value?.access_token;
@@ -130,7 +129,9 @@ class SSE {
             }, this.cleanupDelay);
           }
           console.warn(
-            `[SSE] Temporary error: ${(err as Error).message}. Connection will retry automatically.`,
+            `[SSE] Temporary error: ${
+              (err as Error).message
+            }. Connection will retry automatically.`,
           );
         },
         signal: this.ctrl.signal,

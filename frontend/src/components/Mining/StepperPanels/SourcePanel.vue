@@ -49,7 +49,7 @@
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="!isUploadingPST">
       <div class="text-3xl">{{ t('title_add_new') }}</div>
 
       <div class="flex flex-col lg:flex-row flex-wrap gap-2">
@@ -77,7 +77,26 @@
           @click="importFileDialogRef.openModal()"
         />
         <importFileDialog ref="importFileDialogRef" />
+
+        <FileUpload
+          class="p-button-outlined"
+          mode="basic"
+          accept=".pst,.ost"
+          :max-file-size="PST_FILE_SIZE_LIMIT"
+          :choose-label="t('choose_pst_file')"
+          choose-icon="pi pi-upload"
+          custom-upload
+          auto
+          @uploader="uploadPSTAndMine"
+        />
       </div>
+    </template>
+
+    <template v-else>
+      <div class="text-3xl">
+        {{ t('uploading_file', uploadProgress) }}
+      </div>
+      <ProgressBar class="w-full" :value="uploadProgress" />
     </template>
   </div>
 </template>
@@ -85,6 +104,7 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
+import type { FileUploadUploaderEvent } from 'primevue/fileupload';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
@@ -92,6 +112,8 @@ const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
+const $toast = useToast();
+const $supabase = useSupabaseClient();
 
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
@@ -121,6 +143,64 @@ function getIcon(type: string) {
       return 'pi pi-inbox';
   }
 }
+
+const isUploadingPST = ref(false);
+const uploadProgress = ref(0);
+const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
+
+async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
+  const file = ($event.files as File[])[0];
+  if (!file) return;
+
+  const user = useSupabaseUser().value;
+  if (!user) return;
+
+  const filePath = `${user.sub}/${file.name}`;
+  uploadProgress.value = 0;
+  isUploadingPST.value = true;
+
+  try {
+    const { data, error } = await $supabase.storage
+      .from('pst')
+      .createSignedUploadUrl(filePath);
+    if (error || !data?.signedUrl)
+      throw error || new Error('Could not create signed URL');
+
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', data.signedUrl, true);
+      if (data.token) xhr.setRequestHeader('x-signature', data.token);
+      xhr.setRequestHeader(
+        'Content-Type',
+        file.type || 'application/octet-stream',
+      );
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable)
+          uploadProgress.value = Math.round((e.loaded / e.total) * 100);
+      };
+      xhr.onload = () =>
+        xhr.status === 200 || xhr.status === 201
+          ? resolve()
+          : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(file);
+    });
+
+    $stepper.next();
+    $leadminerStore.startMining('pst', filePath);
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    $toast.add({
+      severity: msg.includes('already exists') ? 'info' : 'error',
+      summary: t('upload'),
+      detail: msg,
+      life: 5000,
+    });
+  } finally {
+    isUploadingPST.value = false;
+    uploadProgress.value = 0;
+  }
+}
 </script>
 
 <i18n lang="json">
@@ -133,7 +213,11 @@ function getIcon(type: string) {
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
-    "import_csv_excel": "Import CSV or Excel"
+    "import_csv_excel": "Import CSV or Excel",
+    "choose_pst_file": "Import PST or OST File",
+    "uploading_file": "Uploading file... {n}%",
+    "upload": "Upload",
+    "upload_exists": "The PST file already exists."
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -143,7 +227,11 @@ function getIcon(type: string) {
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
-    "import_csv_excel": "Importer CSV ou Excel"
+    "import_csv_excel": "Importer CSV ou Excel",
+    "choose_pst_file": "Importer PST ou OST",
+    "uploading_file": "Téléversement... {n}%",
+    "upload": "Téléversement",
+    "upload_exists": "Le fichier PST existe déjà."
   }
 }
 </i18n>

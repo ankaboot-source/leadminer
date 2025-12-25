@@ -74,7 +74,8 @@ const progressTooltip = computed(() =>
 
 const isPostCleaningPhase = computed(
   () =>
-    $leadminerStore.miningType === MiningTypes.EMAIL &&
+    ($leadminerStore.miningType === MiningTypes.EMAIL ||
+      $leadminerStore.miningType === MiningTypes.PST) &&
     $leadminerStore.cleaningFinished &&
     !$leadminerStore.miningCompleted,
 );

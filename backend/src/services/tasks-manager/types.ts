@@ -113,7 +113,7 @@ export interface TaskEnrich extends Task {
 
 export interface MiningSource {
   source: string;
-  type: 'email' | 'file';
+  type: 'email' | 'file' | 'pst';
 }
 
 export interface MiningTask {

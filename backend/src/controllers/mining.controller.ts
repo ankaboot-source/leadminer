@@ -9,10 +9,13 @@ import {
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
+import { Task } from '../services/tasks-manager/types';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
+import supabaseClient from '../utils/supabase';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
@@ -24,8 +27,6 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
-import supabaseClient from '../utils/supabase';
-import { Task } from '../services/tasks-manager/types';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -56,6 +57,7 @@ async function exchangeForToken(
 export default function initializeMiningController(
   tasksManager: TasksManager,
   tasksManagerFile: TaskManagerFile,
+  tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources
 ) {
   return {
@@ -340,6 +342,55 @@ export default function initializeMiningController(
       }
     },
 
+    async startMiningPST(req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      const {
+        name,
+        extractSignatures
+      }: {
+        name: string;
+        extractSignatures: boolean;
+        // file
+      } = req.body;
+
+      const errors = [
+        validateType('name', name, 'string'),
+        validateType('extractSignatures', extractSignatures, 'boolean')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
+      }
+      try {
+        const miningTask = await tasksManagerPST.createTask(
+          user.id,
+          name,
+          extractSignatures
+        );
+        return res.status(201).send({ error: null, data: miningTask });
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+        if (
+          err instanceof Error &&
+          'textCode' in err &&
+          err.textCode === 'CANNOT'
+        ) {
+          return res.sendStatus(409);
+        }
+
+        res.status(500);
+        return next(err);
+      }
+    },
+
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {
       const { type: miningType } = req.params;
       const { user } = res.locals;
@@ -349,7 +400,14 @@ export default function initializeMiningController(
         return next(new Error('user does not exists.'));
       }
 
-      const manager = miningType === 'file' ? tasksManagerFile : tasksManager;
+      let manager;
+      if (miningType === 'file') {
+        manager = tasksManagerFile;
+      } else if (miningType === 'pst') {
+        manager = tasksManagerPST;
+      } else {
+        manager = tasksManager;
+      }
 
       const { id: taskId } = req.params;
       const {
@@ -452,6 +510,11 @@ export default function initializeMiningController(
           (!extractTask || !cleanTask)
         ) {
           throw new Error(`File mining with id: ${miningId} not found`);
+        } else if (
+          task.miningSource.type === 'pst' &&
+          (!extractTask || !cleanTask)
+        ) {
+          throw new Error(`PST mining with id: ${miningId} not found`);
         }
 
         if (user.id !== task.userId) {

@@ -11,8 +11,9 @@ class EmailsFetchers {
   async start(miningId: string, fetcher: ImapEmailsFetcher) {
     const existingFetcher = this.ACTIVE_FETCHERS.get(miningId);
 
-    if (existingFetcher)
+    if (existingFetcher) {
       throw new Error('Cannot start another fetching using same ID');
+    }
 
     this.ACTIVE_FETCHERS.set(miningId, fetcher);
 
@@ -35,5 +36,45 @@ class EmailsFetchers {
 }
 
 const EmailsFetcher = new EmailsFetchers();
-
 export default EmailsFetcher;
+
+import PSTEmailsFetcher from './services/pst/PSTEmailsFetcher';
+
+class PSTEmailsFetchers {
+  private readonly ACTIVE_FETCHERS = new Map<string, PSTEmailsFetcher>();
+
+  exists(miningId: string) {
+    const fetcher = this.ACTIVE_FETCHERS.get(miningId);
+    return fetcher !== undefined;
+  }
+
+  async start(miningId: string, fetcher: PSTEmailsFetcher) {
+    const existingFetcher = this.ACTIVE_FETCHERS.get(miningId);
+
+    if (existingFetcher) {
+      throw new Error('Cannot start another fetching using same ID');
+    }
+
+    this.ACTIVE_FETCHERS.set(miningId, fetcher);
+
+    return fetcher.start();
+  }
+
+  async stop(miningId: string, canceled: boolean) {
+    const existingFetcher = this.ACTIVE_FETCHERS.get(miningId);
+
+    if (!existingFetcher) {
+      throw new Error('No active fetcher found with this ID');
+    }
+
+    if (!existingFetcher.isCompleted && !existingFetcher.isCanceled) {
+      await existingFetcher.stop(canceled);
+    }
+
+    this.ACTIVE_FETCHERS.delete(miningId);
+  }
+}
+
+const PSTEmailFetcher = new PSTEmailsFetchers();
+
+export { PSTEmailFetcher };

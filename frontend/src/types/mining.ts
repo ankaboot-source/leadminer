@@ -1,11 +1,12 @@
 export type OAuthMiningSource = 'azure' | 'google';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
-export type MiningType = 'file' | 'email';
+export type MiningType = 'file' | 'email' | 'pst';
 
 export enum MiningTypes {
   FILE = 'file',
   EMAIL = 'email',
+  PST = 'pst',
 }
 
 export interface MiningSource {
@@ -36,7 +37,7 @@ export interface MiningTask {
   type: ProcessType;
   miningSource: {
     source: string;
-    type: 'email' | 'file';
+    type: MiningType;
   };
   status: 'running' | 'canceled' | 'done';
   started_at: string;
