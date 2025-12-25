@@ -383,12 +383,14 @@ export default function initializeMiningController(
         return next(new Error('user does not exists.'));
       }
 
-      const manager =
-        miningType === 'file'
-          ? tasksManagerFile
-          : miningType === 'pst'
-            ? tasksManagerPST
-            : tasksManager;
+      let manager;
+      if (miningType === 'file') {
+        manager = tasksManagerFile;
+      } else if (miningType === 'pst') {
+        manager = tasksManagerPST;
+      } else {
+        manager = tasksManager;
+      }
 
       const { id: taskId } = req.params;
       const {
