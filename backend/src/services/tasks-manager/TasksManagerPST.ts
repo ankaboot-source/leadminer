@@ -16,7 +16,7 @@ import ENV from '../../config';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
 import logger from '../../utils/logger';
-import PSTFetcherClient from '../email-fetching/pst';
+import PSTFetcherClientClass from '../email-fetching/pst';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { redactSensitiveData } from './utils';
 
@@ -39,7 +39,7 @@ export default class TasksManagerPST {
     private readonly tasksResolver: SupabaseTasks,
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
-    private readonly PSTFetcherClient: PSTFetcherClient,
+    private readonly PSTFetcherClient: PSTFetcherClientClass,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
     private readonly idGenerator: () => Promise<string>
   ) {
@@ -131,7 +131,7 @@ export default class TasksManagerPST {
    */
   async createTask(
     userId: string,
-    source: string, //filename
+    source: string, // filename
     fetchEmailBody: boolean
   ) {
     let miningTaskId: string | null = null;

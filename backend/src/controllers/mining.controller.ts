@@ -347,7 +347,6 @@ export default function initializeMiningController(
           .status(400)
           .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
-      console.log('startMiningPST', name, extractSignatures);
       try {
         const miningTask = await tasksManagerPST.createTask(
           user.id,
@@ -370,7 +369,8 @@ export default function initializeMiningController(
           return res.sendStatus(409);
         }
 
-        return res.status(500);
+        res.status(500);
+        return next(err);
       }
     },
 

@@ -16,12 +16,14 @@ export default function initializeStreamController(
     streamProgress: (req: Request, res: Response) => {
       const { id: taskId, type: miningType } = req.params;
 
-      const manager =
-        miningType === 'file'
-          ? tasksManagerFile
-          : miningType === 'pst'
-            ? tasksManagerPST
-            : tasksManager;
+      let manager;
+      if (miningType === 'file') {
+        manager = tasksManagerFile;
+      } else if (miningType === 'pst') {
+        manager = tasksManagerPST;
+      } else {
+        manager = tasksManager;
+      }
 
       try {
         const task = manager.getActiveTask(taskId);
