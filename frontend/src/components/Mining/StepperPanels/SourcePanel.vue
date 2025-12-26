@@ -194,7 +194,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
 
     if (error && !uploadAlreadyExists) throw error;
 
-    if (data && data.signedUrl) {
+    if (data?.signedUrl) {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', data.signedUrl, true);
