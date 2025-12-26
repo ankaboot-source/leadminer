@@ -49,7 +49,7 @@
       </div>
     </template>
 
-    <template v-else-if="!isUploadingPST">
+    <template v-else-if="!sourceIsPst">
       <div class="text-3xl">{{ t('title_add_new') }}</div>
 
       <div class="flex flex-col lg:flex-row flex-wrap gap-2">
@@ -87,7 +87,7 @@
           choose-icon="pi pi-upload"
           custom-upload
           auto
-          @uploader="uploadPSTAndMine"
+          @uploader="uploadPST"
         />
       </div>
     </template>
@@ -95,19 +95,28 @@
     <template v-else>
       <div class="text-3xl">
         {{ t('uploading_file', uploadProgress) }}
+        {{ fileName }}
       </div>
       <ProgressBar class="w-full" :value="uploadProgress" />
+
+      <div class="flex flex-row items-center gap-2">
+        <ToggleSwitch
+          v-model="$leadminerStore.extractSignatures"
+          input-id="extractSignatures"
+        />
+        <label for="extractSignatures" class="cursor-pointer flex-1">
+          {{ $t('mining.extract_signatures_option') }}
+          <span>{{ $t('mining.extract_signatures_sub') }}</span>
+        </label>
+      </div>
+
+      <Button
+        v-if="!$leadminerStore.activeMiningTask"
+        :disabled="uploadProgress !== 100"
+        :label="$t('common.start_mining_now')"
+        @click="minePst"
+      />
     </template>
-  </div>
-  <div class="flex flex-row items-center gap-2 pb-4">
-    <ToggleSwitch
-      v-model="$leadminerStore.extractSignatures"
-      input-id="extractSignatures"
-    />
-    <label for="extractSignatures" class="cursor-pointer flex-1">
-      {{ t('extract_signatures_option') }}
-      <span class="">{{ t('extract_signatures_sub') }}</span>
-    </label>
   </div>
 </template>
 
@@ -155,24 +164,31 @@ function getIcon(type: string) {
 }
 
 const isUploadingPST = ref(false);
+const sourceIsPst = ref(false);
+const fileName = ref('');
+const pstFilePath = computed(
+  () => `${useSupabaseUser()?.value?.sub}/${fileName.value}`,
+);
+
 const uploadProgress = ref(0);
 const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
 
-async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
+async function uploadPST($event: FileUploadUploaderEvent) {
+  sourceIsPst.value = true;
   const file = ($event.files as File[])[0];
   if (!file) return;
 
   const user = useSupabaseUser().value;
   if (!user) return;
 
-  const filePath = `${user.sub}/${file.name}`;
+  fileName.value = file.name;
   uploadProgress.value = 0;
   isUploadingPST.value = true;
 
   try {
     const { data, error } = await $supabase.storage
       .from('pst')
-      .createSignedUploadUrl(filePath);
+      .createSignedUploadUrl(pstFilePath.value);
 
     const uploadAlreadyExists = error?.message.includes('already exists');
 
@@ -203,12 +219,10 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     $toast.add({
       severity: uploadAlreadyExists ? 'info' : 'success',
       summary: t('upload'),
-      detail: uploadAlreadyExists ? t('upload_exists') : 'success',
+      detail: uploadAlreadyExists ? t('upload_exists') : t('upload_success'),
       life: 5000,
     });
-
-    $stepper.next();
-    $leadminerStore.startMining('pst', filePath);
+    uploadProgress.value = 100;
   } catch (error) {
     console.error('PST Upload Error:', error);
     $toast.add({
@@ -217,10 +231,19 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
       detail: t('upload_failed'),
       life: 5000,
     });
-  } finally {
-    isUploadingPST.value = false;
-    uploadProgress.value = 0;
+    resetPst();
   }
+}
+
+function resetPst() {
+  fileName.value = '';
+  uploadProgress.value = 0;
+  isUploadingPST.value = false;
+}
+async function minePst() {
+  $stepper.next();
+  $leadminerStore.startMining('pst', pstFilePath.value);
+  resetPst();
 }
 </script>
 
@@ -239,7 +262,7 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     "uploading_file": "Uploading file... {n}%",
     "upload": "Upload",
     "upload_exists": "The PST file already exists.",
-    "upload_success": "Upload successful.",
+    "upload_success": "The file has been uploaded successfully.",
     "upload_failed": "Upload failed."
   },
   "fr": {
@@ -255,7 +278,7 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     "uploading_file": "Téléversement... {n}%",
     "upload": "Téléversement",
     "upload_exists": "Le fichier PST existe déjà.",
-    "upload_success": "Téléversement réussi.",
+    "upload_success": "Le fichier a été téléversé avec succès.",
     "upload_failed": "Échec du téléversement."
   }
 }

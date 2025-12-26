@@ -17,8 +17,8 @@
         input-id="extractSignatures"
       />
       <label for="extractSignatures" class="cursor-pointer flex-1">
-        {{ t('extract_signatures_option') }}
-        <span class="">{{ t('extract_signatures_sub') }}</span>
+        {{ $t('mining.extract_signatures_option') }}
+        <span>{{ $t('mining.extract_signatures_sub') }}</span>
       </label>
     </div>
 
@@ -102,16 +102,12 @@ defineExpose({
   "en": {
     "fine_tune_mining": "Fine-tune your mining",
     "select_folders_to_mine": "Select folders to mine",
-    "email_messages_selected": "Email messages selected",
-    "extract_signatures_option": "Extract contact details from signatures",
-    "extract_signatures_sub": "( this may take more time )"
+    "email_messages_selected": "Email messages selected"
   },
   "fr": {
     "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
-    "email_messages_selected": "E-mails sélectionnés",
-    "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-    "extract_signatures_sub": "(l'extraction prendra plus de temps)"
+    "email_messages_selected": "E-mails sélectionnés"
   }
 }
 </i18n>
