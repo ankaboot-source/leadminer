@@ -269,7 +269,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     userId: string,
     folders: string[],
     miningSource: MiningSource,
-    extractEmailSignatures = false,
   ) {
     miningType.value = 'email';
 
@@ -280,7 +279,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           boxes: folders,
           miningSource,
-          extractSignatures: extractEmailSignatures,
+          extractSignatures: extractSignatures.value,
         },
       },
     );
@@ -311,11 +310,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return task;
   }
 
-  async function startMiningPST(
-    userId: string,
-    fileName: string,
-    extractEmailSignatures = false,
-  ) {
+  async function startMiningPST(userId: string, fileName: string) {
     miningType.value = 'pst'; //!
 
     const { data: task } = await $api<{ data: MiningTask }>(
@@ -324,7 +319,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         method: 'POST',
         body: {
           name: fileName,
-          extractSignatures: extractEmailSignatures,
+          extractSignatures: extractSignatures.value,
         },
       },
     );
@@ -375,7 +370,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
                   key !== '',
               ),
               activeMiningSource.value!,
-              extractSignatures.value,
             )
           : source === 'file'
             ? await startMiningFile(

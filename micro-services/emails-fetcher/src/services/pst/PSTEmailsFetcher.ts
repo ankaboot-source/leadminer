@@ -176,6 +176,49 @@ export default class PSTEmailsFetcher {
     }
   }
 
+  async publishBody(
+    body: string,
+    header: Record<string, string[]>,
+    seq: number,
+    isLastMessageInFolder: boolean,
+    folder: string,
+    email: PSTMessage
+  ) {
+    const [messageId] = header['message-id'];
+
+    const {
+      senderEmailAddress: address,
+      senderName: name,
+      clientSubmitTime: messageDate
+    } = email;
+
+    try {
+      await publishToStream(this.signatureStream, {
+        type: 'signature',
+        data: {
+          header: {
+            from: { address, name },
+            messageId,
+            messageDate,
+            rawHeader: header
+          },
+          body,
+          seqNumber: seq,
+          folderPath: folder,
+          isLast: isLastMessageInFolder
+        } as StreamSignatureData,
+        userId: this.userId,
+        userEmail: this.userEmail,
+        userIdentifier: this.userIdentifier,
+        miningId: this.miningId
+      });
+    } catch (err) {
+      logger.error('Error when publishing signature to stream', {
+        error: err
+      });
+    }
+  }
+
   /**
    * Starts fetching email messages.
    */
@@ -302,6 +345,18 @@ export default class PSTEmailsFetcher {
         if (!header) {
           email = folder.getNextChild();
           continue;
+        }
+
+        // If configured, also fetch the email body and publish a signature payload
+        if (this.fetchEmailBody) {
+          await this.publishBody(
+            body,
+            header,
+            seq,
+            isLastMessageInFolder,
+            folder.displayName,
+            email
+          );
         }
 
         // mirror IMAP behaviour: add id and increment counters after successful publish
