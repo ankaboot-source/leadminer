@@ -101,7 +101,7 @@ export default class PSTEmailsFetcher {
 
   private readonly fetchedIds: Set<string>;
 
-  private readonly userEmail: string = '';
+  private readonly userEmail: string;
 
   public totalMessages = 0;
 
@@ -120,9 +120,12 @@ export default class PSTEmailsFetcher {
     private readonly contactStream: string,
     private readonly signatureStream: string,
     private readonly fetchEmailBody: boolean,
-    private readonly source: string
+    private readonly source: string // userid/filename.ext
   ) {
-    // Generate a unique identifier for the user.
+    // Set the userEmail to the filename messages and extractors receive the original filename as the identifier.
+    this.userEmail = this.source.split('/')[1];
+
+    // Generate a unique identifier for the user using the filename.
     this.userIdentifier = hashEmail(this.userEmail, userId);
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
@@ -166,8 +169,6 @@ export default class PSTEmailsFetcher {
         userIdentifier: this.userIdentifier,
         miningId: this.miningId
       });
-
-      return header ?? null;
 
       return header ?? null;
     } catch (error) {
