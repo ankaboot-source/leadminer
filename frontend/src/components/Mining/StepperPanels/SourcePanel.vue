@@ -57,13 +57,13 @@
           icon="pi pi-google"
           label="Google"
           source="google"
-          redirectUri="/mine"
+          redirect-uri="/mine"
         />
         <oauth-source
           icon="pi pi-microsoft"
           :label="t('microsoft_or_outlook')"
           source="azure"
-          redirectUri="/mine"
+          redirect-uri="/mine"
         />
         <imap-source
           v-model:source="sourceModel"
@@ -98,6 +98,16 @@
       </div>
       <ProgressBar class="w-full" :value="uploadProgress" />
     </template>
+  </div>
+  <div class="flex flex-row items-center gap-2 pb-4">
+    <ToggleSwitch
+      v-model="$leadminerStore.extractSignatures"
+      input-id="extractSignatures"
+    />
+    <label for="extractSignatures" class="cursor-pointer flex-1">
+      {{ t('extract_signatures_option') }}
+      <span class="">{{ t('extract_signatures_sub') }}</span>
+    </label>
   </div>
 </template>
 
@@ -163,37 +173,48 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     const { data, error } = await $supabase.storage
       .from('pst')
       .createSignedUploadUrl(filePath);
-    if (error || !data?.signedUrl)
-      throw error || new Error('Could not create signed URL');
 
-    await new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', data.signedUrl, true);
-      if (data.token) xhr.setRequestHeader('x-signature', data.token);
-      xhr.setRequestHeader(
-        'Content-Type',
-        file.type || 'application/octet-stream',
-      );
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable)
-          uploadProgress.value = Math.round((e.loaded / e.total) * 100);
-      };
-      xhr.onload = () =>
-        xhr.status === 200 || xhr.status === 201
-          ? resolve()
-          : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
-      xhr.onerror = () => reject(new Error('Network error'));
-      xhr.send(file);
+    const uploadAlreadyExists = error?.message.includes('already exists');
+
+    if (error && !uploadAlreadyExists) throw error;
+
+    if (data && data.signedUrl) {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', data.signedUrl, true);
+        if (data.token) xhr.setRequestHeader('x-signature', data.token);
+        xhr.setRequestHeader(
+          'Content-Type',
+          file.type || 'application/octet-stream',
+        );
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable)
+            uploadProgress.value = Math.round((e.loaded / e.total) * 100);
+        };
+        xhr.onload = () =>
+          xhr.status === 200 || xhr.status === 201
+            ? resolve()
+            : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
+      });
+    }
+
+    $toast.add({
+      severity: uploadAlreadyExists ? 'info' : 'success',
+      summary: t('upload'),
+      detail: uploadAlreadyExists ? t('upload_exists') : 'success',
+      life: 5000,
     });
 
     $stepper.next();
     $leadminerStore.startMining('pst', filePath);
-  } catch (err: any) {
-    const msg = err?.message || String(err);
+  } catch (error) {
+    console.error('PST Upload Error:', error);
     $toast.add({
-      severity: msg.includes('already exists') ? 'info' : 'error',
+      severity: 'error',
       summary: t('upload'),
-      detail: msg,
+      detail: t('upload_failed'),
       life: 5000,
     });
   } finally {
@@ -217,7 +238,9 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     "choose_pst_file": "Import PST or OST File",
     "uploading_file": "Uploading file... {n}%",
     "upload": "Upload",
-    "upload_exists": "The PST file already exists."
+    "upload_exists": "The PST file already exists.",
+    "upload_success": "Upload successful.",
+    "upload_failed": "Upload failed."
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -231,7 +254,9 @@ async function uploadPSTAndMine($event: FileUploadUploaderEvent) {
     "choose_pst_file": "Importer PST ou OST",
     "uploading_file": "Téléversement... {n}%",
     "upload": "Téléversement",
-    "upload_exists": "Le fichier PST existe déjà."
+    "upload_exists": "Le fichier PST existe déjà.",
+    "upload_success": "Téléversement réussi.",
+    "upload_failed": "Échec du téléversement."
   }
 }
 </i18n>
