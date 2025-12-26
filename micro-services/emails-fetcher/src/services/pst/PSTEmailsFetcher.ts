@@ -122,11 +122,10 @@ export default class PSTEmailsFetcher {
     private readonly fetchEmailBody: boolean,
     private readonly source: string // userid/filename.ext
   ) {
-    // Set the userEmail to the filename messages and extractors receive the original filename as the identifier.
+    // Source workaround: Set the userEmail to the filename messages and extractors receive the original filename as the identifier.
     this.userEmail = this.source.split('/')[1];
-
-    // Generate a unique identifier for the user using the filename.
     this.userIdentifier = hashEmail(this.userEmail, userId);
+
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
