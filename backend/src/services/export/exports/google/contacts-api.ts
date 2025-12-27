@@ -229,7 +229,10 @@ export default class GoogleContactsSession {
 
       if (potentialMatches.size === 1) {
         const existing = Array.from(potentialMatches.values())[0];
-        update.set(existing.resourceName!, { existing, incoming: contact });
+        update.set(existing.resourceName as string, {
+          existing,
+          incoming: contact
+        });
       } else {
         create.set(contact.email, contact);
         if (potentialMatches.size > 1) {
@@ -462,7 +465,7 @@ export default class GoogleContactsSession {
           .filter(Boolean)
           .map((groupResourceName) => ({
             contactGroupMembership: {
-              contactGroupResourceName: groupResourceName!
+              contactGroupResourceName: groupResourceName
             }
           }))
       ]
