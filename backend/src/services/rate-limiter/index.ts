@@ -10,6 +10,7 @@ import pool from '../../db/pg';
 export interface IRateLimiter {
   throttleRequests<T>(callback: () => Promise<T>): Promise<T>;
   remainingRequests(): Promise<number>;
+  removeTokens(tokens: number): Promise<number>;
 }
 
 export enum Distribution {
@@ -83,7 +84,7 @@ export class TokenBucketRateLimiter implements IRateLimiter {
   }
 
   /**
-   * Executes a request and consumes 1 token.
+   * Executes a request and consumes 1 tokens.
    */
   async throttleRequests<T>(callback: () => Promise<T>): Promise<T> {
     await this.limiter.removeTokens(1);
@@ -94,6 +95,14 @@ export class TokenBucketRateLimiter implements IRateLimiter {
    * Returns number of tokens available in current window.
    */
   async remainingRequests(): Promise<number> {
+    return this.limiter.getTokensRemaining();
+  }
+
+  /**
+   * Removes n tokens from bucket and returns remaining
+   */
+  async removeTokens(tokens: number): Promise<number> {
+    await this.limiter.removeTokens(tokens);
     return this.limiter.getTokensRemaining();
   }
 }

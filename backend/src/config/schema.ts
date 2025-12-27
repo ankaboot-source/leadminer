@@ -117,6 +117,31 @@ const schema = z.object({
   ENRICH_LAYER_URL: z.string().min(1).optional(),
   ENRICH_LAYER_API_KEY: z.string().min(1).optional(),
 
+  /** GOOGLE CONTACTS SYNC */
+  GOOGLE_CONTACTS_CRITICAL_READ_REQUESTS: z.coerce
+    .number()
+    .positive()
+    .default(80),
+  GOOGLE_CONTACTS_CRITICAL_READ_INTERVAL: z.coerce
+    .number()
+    .positive()
+    .default(60),
+
+  GOOGLE_CONTACTS_CRITICAL_WRITE_REQUESTS: z.coerce
+    .number()
+    .positive()
+    .default(80),
+  GOOGLE_CONTACTS_CRITICAL_WRITE_INTERVAL: z.coerce
+    .number()
+    .positive()
+    .default(60),
+
+  GOOGLE_CONTACTS_READ_REQUESTS: z.coerce.number().positive().default(110),
+  GOOGLE_CONTACTS_READ_INTERVAL: z.coerce.number().positive().default(60),
+
+  GOOGLE_CONTACTS_WRITE_REQUESTS: z.coerce.number().positive().default(80),
+  GOOGLE_CONTACTS_WRITE_INTERVAL: z.coerce.number().positive().default(60),
+
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });
 

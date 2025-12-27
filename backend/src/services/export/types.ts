@@ -8,6 +8,7 @@ export interface ExportOptions {
   delimiter?: string;
   locale?: string;
   googleContactsOptions?: {
+    userId: string;
     accessToken?: string;
     refreshToken?: string;
     updateEmptyFieldsOnly?: boolean;
