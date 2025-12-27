@@ -1,6 +1,10 @@
 import { people_v1 } from 'googleapis';
 import { ContactFrontend } from '../../../../db/types';
 import logger from '../../../../utils/logger';
+import { Distribution, TokenBucketRateLimiter } from '../../../rate-limiter';
+import ENV from '../../../../config';
+
+export type QuotaType = 'criticalRead' | 'criticalWrite' | 'read' | 'write';
 
 export default class GoogleContactsSession {
   private labelMap = new Map<string, string>();
@@ -9,9 +13,51 @@ export default class GoogleContactsSession {
 
   private appName: string;
 
-  constructor(service: people_v1.People, appName: string) {
+  constructor(
+    service: people_v1.People,
+    private readonly appName: string,
+    private readonly userId: string
+  ) {
     this.service = service;
-    this.appName = appName;
+
+    const config = {
+      criticalRead: {
+        requests: ENV.GOOGLE_CONTACTS_CRITICAL_READ_REQUESTS,
+        intervalSeconds: ENV.GOOGLE_CONTACTS_CRITICAL_READ_INTERVAL,
+        uniqueKey: `crit-read-${this.userId}`,
+        executeEvenly: true,
+        distribution: Distribution.Memory
+      }, // Limit is 90
+      criticalWrite: {
+        requests: ENV.GOOGLE_CONTACTS_CRITICAL_WRITE_REQUESTS,
+        intervalSeconds: ENV.GOOGLE_CONTACTS_CRITICAL_WRITE_INTERVAL,
+        uniqueKey: `crit-write-${this.userId}`,
+        executeEvenly: true,
+        distribution: Distribution.Memory
+      }, // Limit is 90
+      read: {
+        requests: ENV.GOOGLE_CONTACTS_READ_REQUESTS,
+        intervalSeconds: ENV.GOOGLE_CONTACTS_READ_INTERVAL,
+        uniqueKey: `read-${this.userId}`,
+        executeEvenly: true,
+        distribution: Distribution.Memory
+      }, // Limit is 120 (Groups)
+      write: {
+        requests: ENV.GOOGLE_CONTACTS_WRITE_REQUESTS,
+        intervalSeconds: ENV.GOOGLE_CONTACTS_WRITE_INTERVAL,
+        uniqueKey: `write-${this.userId}`,
+        executeEvenly: true,
+        distribution: Distribution.Memory
+      } // Limit is 90 (Groups/Delete)
+    };
+
+    this.limiters = {
+      criticalRead: new TokenBucketRateLimiter(config.criticalRead),
+      criticalWrite: new TokenBucketRateLimiter(config.criticalWrite),
+      read: new TokenBucketRateLimiter(config.read),
+      write: new TokenBucketRateLimiter(config.write)
+    };
+  }
   }
 
   async run(contacts: ContactFrontend[], updateEmptyOnly: boolean) {
