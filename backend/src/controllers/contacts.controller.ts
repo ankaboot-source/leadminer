@@ -32,6 +32,7 @@ async function validateRequest(
   }
 
   let googleContactsOptions: ExportOptions['googleContactsOptions'] = {
+    userId: user.id,
     accessToken: undefined,
     refreshToken: undefined,
     updateEmptyFieldsOnly
@@ -44,9 +45,9 @@ async function validateRequest(
     )) as OAuthMiningSourceCredentials;
 
     googleContactsOptions = {
+      ...googleContactsOptions,
       accessToken: oauthCredentials?.accessToken,
-      refreshToken: oauthCredentials?.refreshToken,
-      updateEmptyFieldsOnly
+      refreshToken: oauthCredentials?.refreshToken
     };
   }
 

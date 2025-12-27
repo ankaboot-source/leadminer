@@ -84,7 +84,11 @@ export default class GoogleContactsExport
     try {
       const opts = options.googleContactsOptions;
       const service = await GoogleContactsExport.getPeopleService(opts);
-      const session = new GoogleContactsSession(service, ENV.APP_NAME);
+      const session = new GoogleContactsSession(
+        service,
+        ENV.APP_NAME,
+        opts.userId
+      );
       await session.run(contacts, opts.updateEmptyFieldsOnly ?? false);
     } catch (err) {
       if (err instanceof GaxiosError) {

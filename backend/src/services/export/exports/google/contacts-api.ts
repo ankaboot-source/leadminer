@@ -7,11 +7,16 @@ import ENV from '../../../../config';
 export type QuotaType = 'criticalRead' | 'criticalWrite' | 'read' | 'write';
 
 export default class GoogleContactsSession {
+  private readonly PERSON_FIELDS =
+    'names,emailAddresses,phoneNumbers,organizations,addresses,nicknames,urls,memberships';
+
+  private readonly FULL_READ_MASK = `${this.PERSON_FIELDS},metadata`;
+
   private labelMap = new Map<string, string>();
 
   private service: people_v1.People;
 
-  private appName: string;
+  private limiters: Record<QuotaType, TokenBucketRateLimiter>;
 
   constructor(
     service: people_v1.People,
@@ -58,132 +63,315 @@ export default class GoogleContactsSession {
       write: new TokenBucketRateLimiter(config.write)
     };
   }
+
+  private async useQuota<T>(
+    requirements: { type: QuotaType; weight: number }[],
+    callback: () => Promise<T>
+  ): Promise<T> {
+    await Promise.all(
+      requirements.map((q) => this.limiters[q.type].removeTokens(q.weight))
+    );
+    return callback();
+  }
+
+  private static batchPerLimit<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
   }
 
   async run(contacts: ContactFrontend[], updateEmptyOnly: boolean) {
-    // Sync and Create Labels (tags) once for this session
     try {
-      await this.prepareLabels(contacts);
-      await Promise.all(
-        contacts.map(async (contact) => {
-          const existing = await this.findExisting(contact);
-          if (existing) {
-            await this.update(existing, contact, updateEmptyOnly);
-          } else {
-            await this.create(contact);
-          }
-        })
+      logger.debug('GoogleContactsSession.run(): Starting sync process', {
+        userId: this.userId,
+        contactCount: contacts.length,
+        updateEmptyOnly
+      });
+
+      const existingLabels = await this.listLabels();
+
+      logger.debug('GoogleContactsSession.run(): Fetched labels fetched', {
+        labelCount: existingLabels.size,
+        labels: Array.from(existingLabels.keys())
+      });
+
+      const contactsLabels = [{ tags: [ENV.APP_NAME] }, ...contacts]
+        .map(({ tags }) => tags)
+        .flat()
+        .filter((tag): tag is string => Boolean(tag));
+
+      logger.debug('GoogleContactsSession.run(): Extracted contact tags', {
+        uniqueTagCount: new Set(contactsLabels).size,
+        tags: [...new Set(contactsLabels)]
+      });
+
+      const created = await this.createLabels(existingLabels, contactsLabels);
+
+      this.labelMap = new Map([...existingLabels, ...created]);
+
+      logger.debug(
+        'GoogleContactsSession.run(): Created missing labels and build labelMap',
+        {
+          newLabelCount: created.size,
+          newLabels: Array.from(created.keys()),
+          totalLabels: this.labelMap.size
+        }
       );
+
+      const { create, update } = await this.contactsToCreateUpdate(contacts);
+
+      const createBatches = GoogleContactsSession.batchPerLimit(
+        Array.from(create.values()),
+        200
+      );
+      const updateBatches = GoogleContactsSession.batchPerLimit(
+        Array.from(update.values()),
+        200
+      );
+
+      logger.debug('GoogleContactsSession.run(): Batches prepared', {
+        createBatches: createBatches.length,
+        updateBatches: updateBatches.length
+      });
+
+      /* eslint-disable no-await-in-loop */
+      for (let i = 0; i < createBatches.length; i += 1) {
+        const batch = createBatches[i];
+        logger.debug(
+          `GoogleContactsSession.run(): Processing create batch ${i + 1}/${createBatches.length}`,
+          {
+            batchSize: batch.length
+          }
+        );
+
+        await this.useQuota(
+          [
+            { type: 'criticalRead', weight: 6 },
+            { type: 'criticalWrite', weight: 6 }
+          ],
+          async () => {
+            await this.executeBatchCreate(batch);
+          }
+        );
+
+        logger.debug(
+          `GoogleContactsSession.run(): Create batch ${i + 1}/${createBatches.length} completed`
+        );
+      }
+
+      /* eslint-disable no-await-in-loop */
+      for (let i = 0; i < updateBatches.length; i += 1) {
+        const batch = updateBatches[i];
+        logger.debug(
+          `GoogleContactsSession.run(): Processing update batch ${i + 1}/${updateBatches.length}`,
+          {
+            batchSize: batch.length
+          }
+        );
+
+        await this.useQuota(
+          [
+            { type: 'criticalRead', weight: 6 },
+            { type: 'criticalWrite', weight: 6 }
+          ],
+          async () => {
+            await this.executeBatchUpdate(batch, updateEmptyOnly);
+          }
+        );
+
+        logger.debug(
+          `GoogleContactsSession.run(): Update batch ${i + 1}/${updateBatches.length} completed`
+        );
+      }
+
+      logger.info('GoogleContactsSession.run(): Sync completed successfully', {
+        totalContacts: contacts.length,
+        created: create.size,
+        updated: update.size
+      });
     } catch (err) {
-      logger.error(`Error when running export: ${(err as Error).message}`, err);
+      logger.error(
+        `GoogleContactsSession.run(): Error during sync: ${(err as Error).message}`,
+        err
+      );
       throw err;
     }
   }
 
-  private async prepareLabels(contacts: ContactFrontend[]) {
-    const res = await this.service.contactGroups.list({ groupFields: 'name' });
-    (res.data.contactGroups || []).forEach((g) => {
-      if (g.name && g.resourceName)
-        this.labelMap.set(g.name.toLowerCase(), g.resourceName);
+  private async contactsToCreateUpdate(contacts: ContactFrontend[]) {
+    const create: Map<string, ContactFrontend> = new Map();
+    const update: Map<
+      string,
+      { existing: people_v1.Schema$Person; incoming: ContactFrontend }
+    > = new Map();
+
+    const { emailMap, phoneMap } = await this.getUserContacts();
+
+    for (const contact of contacts) {
+      const potentialMatches = new Map<string, people_v1.Schema$Person>();
+
+      const emailMatches = emailMap.get(contact.email.toLowerCase()) || [];
+      emailMatches.forEach((p) => {
+        if (p.resourceName) potentialMatches.set(p.resourceName, p);
+      });
+
+      if (!emailMatches.length && contact.telephone) {
+        for (const phone of contact.telephone) {
+          const normalizedPhone = phone.replace(/\s+/g, '');
+          const phoneMatches = phoneMap.get(normalizedPhone) || [];
+          phoneMatches.forEach((p) => {
+            if (p.resourceName) potentialMatches.set(p.resourceName, p);
+          });
+        }
+      }
+
+      if (potentialMatches.size === 1) {
+        const existing = Array.from(potentialMatches.values())[0];
+        update.set(existing.resourceName!, { existing, incoming: contact });
+      } else {
+        create.set(contact.email, contact);
+        if (potentialMatches.size > 1) {
+          logger.warn(
+            `Ambiguous match for ${contact.email}: Found ${potentialMatches.size} contacts. Creating new record to avoid corruption.`
+          );
+        }
+      }
+    }
+    return { create, update };
+  }
+
+  private async listLabels(): Promise<Map<string, string>> {
+    const labels = new Map<string, string>();
+    await this.useQuota([{ type: 'read', weight: 1 }], async () => {
+      const res = await this.service.contactGroups.list({
+        groupFields: 'name'
+      });
+      (res.data.contactGroups || []).forEach((g) => {
+        if (g.name && g.resourceName)
+          labels.set(g.name.toLowerCase(), g.resourceName);
+      });
     });
+    return labels;
+  }
 
-    const tagsToEnsure = new Set<string>([this.appName]);
-    contacts.forEach((c) => c.tags?.forEach((t) => tagsToEnsure.add(t)));
-
-    await Promise.all(
-      Array.from(tagsToEnsure.values()).map(async (tag) => {
-        if (!this.labelMap.has(tag)) {
+  private async createLabels(
+    existing: Map<string, string>,
+    labels: string[]
+  ): Promise<Map<string, string>> {
+    const labelsMap = new Map<string, string>();
+    const toCreate = [...new Set(labels)].filter(
+      (label) => !existing.has(label?.toLowerCase())
+    );
+    const tasks = toCreate.map(async (tag) => {
+      await this.useQuota(
+        [
+          { type: 'write', weight: 1 },
+          { type: 'read', weight: 1 }
+        ],
+        async () => {
           const newGroup = await this.service.contactGroups.create({
             requestBody: { contactGroup: { name: tag } }
           });
+
           if (newGroup.data.resourceName)
-            this.labelMap.set(tag, newGroup.data.resourceName);
+            labelsMap.set(tag.toLowerCase(), newGroup.data.resourceName);
         }
-      })
-    );
+      );
+    });
+
+    await Promise.all(tasks);
+
+    return labelsMap;
   }
 
-  private async findExisting(
-    contact: ContactFrontend
-  ): Promise<people_v1.Schema$Person | null> {
-    const map = new Map<string, people_v1.Schema$Person>();
-    const queries = [contact.email].concat(contact.telephone ?? []);
-
-    const contacts = (
-      await Promise.all(
-        queries.map(async (query) => {
-          const uniqueContacts = new Map<string, people_v1.Schema$Person>();
-          const res = await this.service.people.searchContacts({
-            query,
-            readMask: 'names,emailAddresses,phoneNumbers,organizations,metadata'
-          });
-
-          for (const r of res?.data?.results ?? []) {
-            const { person } = r;
-            if (person?.resourceName) {
-              uniqueContacts.set(person.resourceName, person);
-            }
-          }
-          const person = uniqueContacts.values().next().value;
-          return uniqueContacts.size === 1 && person ? person : undefined;
-        })
-      )
-    ).filter((p): p is people_v1.Schema$Person => Boolean(p));
-
-    for (const person of contacts) {
-      if (person.resourceName) {
-        map.set(person.resourceName, person);
-      }
-    }
-
-    const merged = [...map.values()];
-
-    return (
-      merged.find((p) =>
-        p.metadata?.sources?.some((s) => s.type === 'CONTACT')
-      ) ?? null
-    );
-  }
-
-  private async create(contact: ContactFrontend) {
-    const person = this.mapToPerson(contact);
-    try {
-      await this.service.people.createContact({
-        requestBody: person
-      });
-    } catch (err) {
-      logger.error('Error creating Google contact', {
-        error: (err as Error).message
-      });
-      throw err;
-    }
-  }
-
-  private async update(
-    existing: people_v1.Schema$Person,
-    contact: ContactFrontend,
+  private async executeBatchUpdate(
+    batch: { existing: people_v1.Schema$Person; incoming: ContactFrontend }[],
     updateEmptyOnly: boolean
   ) {
-    const person = this.mapToPerson(contact, existing, updateEmptyOnly);
+    const contactsMap: { [key: string]: people_v1.Schema$Person } = {};
 
-    if (Object.keys(person).length === 0) return;
-    if (!existing.resourceName) return;
-
-    try {
-      await this.service.people.updateContact({
-        resourceName: existing.resourceName,
-        updatePersonFields: Object.keys(person).join(','),
-        requestBody: {
+    batch.forEach((item) => {
+      const person = this.mapToPerson(
+        item.incoming,
+        item.existing,
+        updateEmptyOnly
+      );
+      if (item.existing.resourceName) {
+        contactsMap[item.existing.resourceName] = {
           ...person,
-          etag: existing.etag
-        }
-      });
-    } catch (err) {
-      logger.error('Error updating Google contact', {
-        error: (err as Error).message
-      });
-      throw err;
-    }
+          etag: item.existing.etag
+        };
+      }
+    });
+
+    if (Object.keys(contactsMap).length === 0) return;
+
+    await this.service.people.batchUpdateContacts({
+      requestBody: {
+        contacts: contactsMap,
+        updateMask: this.PERSON_FIELDS
+      }
+    });
+    logger.info(`Batch updated ${batch.length} contacts.`);
+  }
+
+  private async executeBatchCreate(batch: ContactFrontend[]) {
+    const res = await this.service.people.batchCreateContacts({
+      requestBody: {
+        contacts: batch.map((c) => ({ contactPerson: this.mapToPerson(c) }))
+      }
+    });
+    logger.info(`Batch created ${batch.length} contacts.`);
+    return res.data;
+  }
+
+  private async getUserContacts(): Promise<{
+    emailMap: Map<string, people_v1.Schema$Person[]>;
+    phoneMap: Map<string, people_v1.Schema$Person[]>;
+  }> {
+    const emailMap = new Map<string, people_v1.Schema$Person[]>();
+    const phoneMap = new Map<string, people_v1.Schema$Person[]>();
+    let pageToken: string | undefined;
+
+    do {
+      const currentPageToken = pageToken;
+      const res = await this.useQuota(
+        [{ type: 'criticalRead', weight: 1 }],
+        async () =>
+          this.service.people.connections.list({
+            resourceName: 'people/me',
+            pageSize: 1000,
+            pageToken: currentPageToken,
+            personFields: this.FULL_READ_MASK
+          })
+      );
+
+      const connections = (res.data.connections || []).filter((p) =>
+        p.metadata?.sources?.some((s) => s.type === 'CONTACT')
+      );
+
+      for (const person of connections) {
+        person.emailAddresses?.forEach((e) => {
+          if (!e.value) return;
+          const key = e.value.toLowerCase();
+          const existing = emailMap.get(key) || [];
+          emailMap.set(key, [...existing, person]);
+        });
+
+        person.phoneNumbers?.forEach((p) => {
+          if (!p.value) return;
+          const key = p.value.replace(/\s+/g, '');
+          const existing = phoneMap.get(key) || [];
+          phoneMap.set(key, [...existing, person]);
+        });
+      }
+
+      pageToken = res.data.nextPageToken ?? undefined;
+    } while (pageToken);
+
+    return { emailMap, phoneMap };
   }
 
   private mapToPerson(
@@ -191,94 +379,94 @@ export default class GoogleContactsSession {
     existing?: people_v1.Schema$Person,
     updateEmptyOnly = false
   ): people_v1.Schema$Person {
-    const person: Partial<people_v1.Schema$Person> = {};
+    const existingUrls = existing?.urls || [];
+    const existingNames = existing?.names || [];
+    const existingOrgs = existing?.organizations || [];
+    const existingAddresses = existing?.addresses || [];
+    const existingPhones = existing?.phoneNumbers || [];
+    const existingEmails = existing?.emailAddresses || [];
+    const existingMemberships = existing?.memberships || [];
+    const labels = [this.appName, ...(contact.tags ?? [])].filter(Boolean);
 
-    const existingName = existing?.names?.[0];
+    const person: people_v1.Schema$Person = {
+      names: updateEmptyOnly
+        ? existingNames
+        : [
+            ...existingNames.filter(
+              (n) =>
+                n.givenName !== contact.given_name ||
+                n.familyName !== contact.family_name
+            ),
+            {
+              givenName: contact.given_name,
+              familyName: contact.family_name,
+              unstructuredName: contact.name
+            }
+          ],
+      emailAddresses: updateEmptyOnly
+        ? existingEmails
+        : [
+            ...existingEmails.filter((e) => e.value !== contact.email),
+            { value: contact.email }
+          ],
 
-    // Check if we should update names:
-    // 1. Not in "empty only" mode
-    // 2. OR the whole name is missing
-    // 3. OR the specific family name we have is missing from Google
-    const shouldUpdateName =
-      !updateEmptyOnly ||
-      !existingName ||
-      (contact.family_name && !existingName.familyName) ||
-      (contact.given_name && !existingName.givenName);
+      phoneNumbers: updateEmptyOnly
+        ? existingPhones
+        : [
+            ...existingPhones.filter(
+              (p) => !contact.telephone?.includes(p.value ?? '')
+            ),
+            ...(contact.telephone?.map((tel) => ({ value: tel })) || [])
+          ],
 
-    if (shouldUpdateName) {
-      person.names = [
-        {
-          givenName: contact.given_name ?? existingName?.givenName ?? null,
-          familyName: contact.family_name ?? existingName?.familyName ?? null,
-          unstructuredName:
-            contact.name ?? existingName?.unstructuredName ?? null
-        }
-      ];
-    }
+      organizations: updateEmptyOnly
+        ? existingOrgs
+        : [
+            ...existingOrgs.filter(
+              (o) =>
+                o.name !== contact.works_for || o.title !== contact.job_title
+            ),
+            {
+              name: contact.works_for,
+              title: contact.job_title
+            }
+          ],
 
-    const existingEmail = existing?.emailAddresses?.[0];
-    if (!updateEmptyOnly || !existingEmail?.value) {
-      person.emailAddresses = [{ value: contact.email }];
-    }
-
-    if (!updateEmptyOnly || !existing?.phoneNumbers?.length) {
-      if (contact.telephone?.length) {
-        person.phoneNumbers = contact.telephone.map((tel) => ({ value: tel }));
-      }
-    }
-
-    const existingOrg = existing?.organizations?.[0];
-    if (!updateEmptyOnly || !existingOrg?.name) {
-      person.organizations = [
-        {
-          name: contact.works_for ?? '',
-          title: contact.job_title ?? ''
-        }
-      ];
-    }
-
-    const existingAddr = existing?.addresses?.[0];
-    if (!updateEmptyOnly || !existingAddr?.streetAddress) {
-      if (contact.location) {
-        person.addresses = [{ streetAddress: contact.location }];
-      }
-    }
-
-    const existingNicknames = existing?.nicknames?.map((n) => n.value) ?? [];
-    if (!updateEmptyOnly || existingNicknames.length === 0) {
-      if (contact.alternate_name?.length) {
-        person.nicknames = contact.alternate_name.map((alt) => ({
-          value: alt
-        }));
-      }
-    }
-
-    const existingURLs = existing?.urls?.map((u) => u.value) ?? [];
-    if (!updateEmptyOnly || existingURLs.length === 0) {
-      if (contact.same_as?.length) {
-        person.urls = contact.same_as.map((url) => ({ value: url }));
-      }
-    }
-
-    if (!updateEmptyOnly || !existing?.photos?.length) {
-      if (contact.image) {
-        person.photos = [{ url: contact.image }];
-      }
-    }
-
-    if (!updateEmptyOnly || !existing?.memberships?.length) {
-      const memberships: people_v1.Schema$Membership[] = [];
-      const labels = [this.appName].concat(contact.tags ?? []).filter(Boolean);
-
-      labels.forEach((l) => {
-        const id = this.labelMap.get(l.toLowerCase());
-        if (id)
-          memberships.push({
-            contactGroupMembership: { contactGroupResourceName: id }
-          });
-      });
-      if (memberships.length > 0) person.memberships = memberships;
-    }
+      urls: updateEmptyOnly
+        ? existingUrls
+        : [
+            ...existingUrls.filter(
+              (u) => !contact.same_as?.includes(u.value ?? '')
+            ),
+            ...(contact.same_as?.map((url) => ({ value: url })) || [])
+          ],
+      addresses: updateEmptyOnly
+        ? existingAddresses
+        : [
+            ...existingAddresses.filter(
+              (a) => a.streetAddress !== contact.location
+            ),
+            ...(contact.location ? [{ streetAddress: contact.location }] : [])
+          ],
+      memberships: [
+        ...existingMemberships.filter(
+          (m) =>
+            !labels.some(
+              (l) =>
+                this.labelMap.get(l.toLowerCase()) ===
+                m.contactGroupMembership?.contactGroupResourceName
+            )
+        ),
+        ...labels
+          .map((l) => this.labelMap.get(l.toLowerCase()))
+          .filter(Boolean)
+          .map((groupResourceName) => ({
+            contactGroupMembership: {
+              contactGroupResourceName: groupResourceName!
+            }
+          }))
+      ]
+    };
 
     return person;
   }
