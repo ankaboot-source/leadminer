@@ -7,8 +7,6 @@
     :dismissable-mask="!isUploadingPST"
     :close-on-escape="!isUploadingPST"
   >
-    <a class="link" :href="learnExportLink">{{ t('learn_export') }}</a>
-
     <FileUpload
       ref="fileUpload"
       class="p-button-outlined"
@@ -61,6 +59,7 @@
         <template v-else> {{ null }}</template>
       </template>
     </FileUpload>
+    <a class="link" :href="learnExportLink">{{ t('learn_export') }}</a>
   </Dialog>
 </template>
 
@@ -72,7 +71,7 @@ const { t } = useI18n({
 });
 const fileUpload = ref();
 
-const visible = ref(true);
+const visible = ref(false);
 const ACCEPTED_FILES = '.pst,.ost';
 
 const openModal = () => {
