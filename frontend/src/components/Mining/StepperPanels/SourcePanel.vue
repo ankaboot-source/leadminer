@@ -78,30 +78,23 @@
         />
         <importFileDialog ref="importFileDialogRef" />
 
-        <FileUpload
-          class="p-button-outlined"
-          mode="basic"
-          accept=".pst,.ost"
-          :max-file-size="PST_FILE_SIZE_LIMIT"
-          :choose-label="t('choose_pst_file')"
-          custom-upload
-          auto
-          @uploader="uploadPST"
+        <Button
+          id="import-pst"
+          icon="pi pi-upload"
+          :label="t('choose_pst_file')"
+          outlined
+          @click="importPstRef.openModal()"
         >
-          <template #chooseicon>
+          <template #icon>
             <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
           </template>
-        </FileUpload>
+        </Button>
+
+        <ImportPst ref="importPstRef" />
       </div>
     </template>
 
     <template v-else>
-      <div class="text-3xl">
-        {{ t('uploading_file', uploadProgress) }}
-        {{ fileName }}
-      </div>
-      <ProgressBar class="w-full" :value="uploadProgress" />
-
       <div class="flex flex-row items-center gap-2">
         <ToggleSwitch
           v-model="$leadminerStore.extractSignatures"
@@ -115,7 +108,6 @@
 
       <Button
         v-if="!$leadminerStore.activeMiningTask"
-        :disabled="uploadProgress !== 100"
         :label="$t('common.start_mining_now')"
         @click="minePst"
       />
@@ -126,17 +118,16 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import type { FileUploadUploaderEvent } from 'primevue/fileupload';
+import ImportPst from '~/components/cards/ImportPst.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
 const importFileDialogRef = ref();
+const importPstRef = ref();
+
 const { t } = useI18n({
   useScope: 'local',
 });
-const $toast = useToast();
-const $supabase = useSupabaseClient();
-
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
@@ -166,82 +157,14 @@ function getIcon(type: string) {
   }
 }
 
-const isUploadingPST = ref(false);
 const sourceIsPst = ref(false);
 const fileName = ref('');
 const pstFilePath = computed(
   () => `${useSupabaseUser()?.value?.sub}/${fileName.value}`,
 );
 
-const uploadProgress = ref(0);
-const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
-
-async function uploadPST($event: FileUploadUploaderEvent) {
-  sourceIsPst.value = true;
-  const file = ($event.files as File[])[0];
-  if (!file) return;
-
-  const user = useSupabaseUser().value;
-  if (!user) return;
-
-  fileName.value = file.name;
-  uploadProgress.value = 0;
-  isUploadingPST.value = true;
-
-  try {
-    const { data, error } = await $supabase.storage
-      .from('pst')
-      .createSignedUploadUrl(pstFilePath.value);
-
-    const uploadAlreadyExists = error?.message.includes('already exists');
-
-    if (error && !uploadAlreadyExists) throw error;
-
-    if (data?.signedUrl) {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', data.signedUrl, true);
-        if (data.token) xhr.setRequestHeader('x-signature', data.token);
-        xhr.setRequestHeader(
-          'Content-Type',
-          file.type || 'application/octet-stream',
-        );
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable)
-            uploadProgress.value = Math.round((e.loaded / e.total) * 100);
-        };
-        xhr.onload = () =>
-          xhr.status === 200 || xhr.status === 201
-            ? resolve()
-            : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.send(file);
-      });
-    }
-
-    $toast.add({
-      severity: uploadAlreadyExists ? 'info' : 'success',
-      summary: t('upload'),
-      detail: uploadAlreadyExists ? t('upload_exists') : t('upload_success'),
-      life: 5000,
-    });
-    uploadProgress.value = 100;
-  } catch (error) {
-    console.error('PST Upload Error:', error);
-    $toast.add({
-      severity: 'error',
-      summary: t('upload'),
-      detail: t('upload_failed'),
-      life: 5000,
-    });
-    resetPst();
-  }
-}
-
 function resetPst() {
   fileName.value = '';
-  uploadProgress.value = 0;
-  isUploadingPST.value = false;
 }
 async function minePst() {
   $stepper.next();
@@ -261,8 +184,7 @@ async function minePst() {
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
     "import_csv_excel": "Import CSV or Excel",
-    "choose_pst_file": "Import PST or OST File",
-    "uploading_file": "Uploading file... {n}%",
+    "choose_pst_file": "Import Outlook Data File (PST or OST)",
     "upload": "Upload",
     "upload_exists": "The PST file already exists.",
     "upload_success": "The file has been uploaded successfully.",
@@ -277,8 +199,7 @@ async function minePst() {
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
     "import_csv_excel": "Importer CSV ou Excel",
-    "choose_pst_file": "Importer PST ou OST",
-    "uploading_file": "Téléversement... {n}%",
+    "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)",
     "upload": "Téléversement",
     "upload_exists": "Le fichier PST existe déjà.",
     "upload_success": "Le fichier a été téléversé avec succès.",
