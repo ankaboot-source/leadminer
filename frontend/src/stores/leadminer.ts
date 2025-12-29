@@ -327,6 +327,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return task;
   }
 
+  const pstFilePath = ref('');
+
   /**
    * Starts the mining process.
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
@@ -538,5 +540,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningInterrupted,
     errors,
     language,
+    pstFilePath,
   };
 });

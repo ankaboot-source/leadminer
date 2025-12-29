@@ -33,7 +33,7 @@
           <div class="flex flex-col items-center">
             <Button
               id="import-pst"
-              v-tooltip.bottom="t('upload_tooltip', { PST_FILE_SIZE_LIMIT })"
+              v-tooltip.bottom="t('upload_tooltip', PST_FILE_SIZE_LIMIT)"
               class="my-1"
               icon="pi pi-upload"
               outlined
@@ -79,25 +79,25 @@ const openModal = () => {
 };
 defineExpose({ openModal });
 
-const $leadminer = useLeadminerStore();
+const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
 const learnExportLink = computed(
   () =>
-    `https://support.microsoft.com/${$leadminer.language}/office/14252b52-3075-4e9b-be4e-ff9ef1068f91`,
+    `https://support.microsoft.com/${$leadminerStore.language}/office/14252b52-3075-4e9b-be4e-ff9ef1068f91`,
 );
 
 const isUploadingPST = ref(false);
-const sourceIsPst = ref(false);
 const fileName = ref('');
-const pstFilePath = computed(
-  () => `${useSupabaseUser()?.value?.sub}/${fileName.value}`,
-);
+
+const sourceIsPst = ref(false);
+
 const $toast = useToast();
 const uploadProgress = ref(0);
 const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
 
 function resetPst() {
   fileName.value = '';
+  $leadminerStore.pstFilePath = '';
   uploadProgress.value = 0;
   isUploadingPST.value = false;
 }
@@ -115,9 +115,11 @@ async function uploadPST($event: FileUploadUploaderEvent) {
   isUploadingPST.value = true;
 
   try {
+    $leadminerStore.pstFilePath = `${useSupabaseUser()?.value?.sub}/${fileName.value}`;
+
     const { data, error } = await $supabase.storage
       .from('pst')
-      .createSignedUploadUrl(pstFilePath.value);
+      .createSignedUploadUrl($leadminerStore.pstFilePath);
 
     const uploadAlreadyExists = error?.message.includes('already exists');
 
@@ -173,7 +175,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "uploading_file": "Uploading file... {n}%",
     "drag_and_drop": "Drag and drop files here.",
     "select_file_label": "Upload your file",
-    "upload_tooltip": ".pst or .ost file max {maxSizeInMB}MB",
+    "upload_tooltip": ".pst or .ost file max {n}MB",
     "upload": "Upload",
     "upload_exists": "The PST file already exists.",
     "upload_success": "The file has been uploaded successfully.",
@@ -184,7 +186,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "uploading_file": "Téléversement... {n}%",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "select_file_label": "Téléchargez votre fichier",
-    "upload_tooltip": "Fichier .pst ou .ost max {maxSizeInMB} Mo",
+    "upload_tooltip": "Fichier .pst ou .ost max {n} Mo",
     "upload": "Téléversement",
     "upload_exists": "Le fichier PST existe déjà.",
     "upload_success": "Le fichier a été téléversé avec succès.",

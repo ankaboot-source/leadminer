@@ -90,11 +90,16 @@
           </template>
         </Button>
 
-        <ImportPst ref="importPstRef" />
+        <ImportPst ref="importPstRef" v-model:source-is-pst="sourceIsPst" />
       </div>
     </template>
 
     <template v-else>
+      <div class="text-3xl">
+        {{ $leadminerStore.pstFilePath.split('/')[1] }}
+      </div>
+      <ProgressBar class="w-full" :value="100" />
+
       <div class="flex flex-row items-center gap-2">
         <ToggleSwitch
           v-model="$leadminerStore.extractSignatures"
@@ -157,19 +162,12 @@ function getIcon(type: string) {
   }
 }
 
-const sourceIsPst = ref(false);
-const fileName = ref('');
-const pstFilePath = computed(
-  () => `${useSupabaseUser()?.value?.sub}/${fileName.value}`,
-);
+const sourceIsPst = computed(() => $leadminerStore.pstFilePath !== '');
 
-function resetPst() {
-  fileName.value = '';
-}
 async function minePst() {
   $stepper.next();
-  $leadminerStore.startMining('pst', pstFilePath.value);
-  resetPst();
+  $leadminerStore.startMining('pst', $leadminerStore.pstFilePath);
+  $leadminerStore.pstFilePath = '';
 }
 </script>
 
@@ -184,11 +182,7 @@ async function minePst() {
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
     "import_csv_excel": "Import CSV or Excel",
-    "choose_pst_file": "Import Outlook Data File (PST or OST)",
-    "upload": "Upload",
-    "upload_exists": "The PST file already exists.",
-    "upload_success": "The file has been uploaded successfully.",
-    "upload_failed": "Upload failed."
+    "choose_pst_file": "Import Outlook Data File (PST or OST)"
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -199,11 +193,7 @@ async function minePst() {
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
     "import_csv_excel": "Importer CSV ou Excel",
-    "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)",
-    "upload": "Téléversement",
-    "upload_exists": "Le fichier PST existe déjà.",
-    "upload_success": "Le fichier a été téléversé avec succès.",
-    "upload_failed": "Échec du téléversement."
+    "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)"
   }
 }
 </i18n>
