@@ -84,11 +84,14 @@
           accept=".pst,.ost"
           :max-file-size="PST_FILE_SIZE_LIMIT"
           :choose-label="t('choose_pst_file')"
-          choose-icon="pi pi-upload"
           custom-upload
           auto
           @uploader="uploadPST"
-        />
+        >
+          <template #chooseicon>
+            <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
+          </template>
+        </FileUpload>
       </div>
     </template>
 
