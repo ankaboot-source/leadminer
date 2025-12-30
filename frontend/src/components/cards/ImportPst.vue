@@ -29,7 +29,7 @@
           <i
             class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
           />
-          <p>{{ t('drag_and_drop') }}</p>
+          <p>{{ $t('upload.drag_and_drop') }}</p>
           <div class="flex flex-col items-center">
             <Button
               id="import-pst"
@@ -37,7 +37,7 @@
               class="my-1"
               icon="pi pi-upload"
               outlined
-              :label="t('select_file_label')"
+              :label="$t('upload.select_file_label')"
               :loading="isUploadingPST"
               @click="fileUpload.choose()"
             >
@@ -158,7 +158,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
 
     $toast.add({
       severity: uploadAlreadyExists ? 'info' : 'success',
-      summary: t('upload'),
+      summary: $t('upload.upload'),
       detail: uploadAlreadyExists ? t('upload_exists') : t('upload_success'),
       life: 5000,
     });
@@ -171,7 +171,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     console.error('PST Upload Error:', error);
     $toast.add({
       severity: 'error',
-      summary: t('upload'),
+      summary: $t('upload.upload'),
       detail: t('upload_failed'),
       life: 5000,
     });
@@ -185,10 +185,8 @@ async function uploadPST($event: FileUploadUploaderEvent) {
   "en": {
     "learn_export": "Learn how to export a file from Outlook Desktop",
     "uploading_file": "Uploading file... {n}%",
-    "drag_and_drop": "Drag and drop files here.",
-    "select_file_label": "Upload your file",
+
     "upload_tooltip": ".pst or .ost file max {n}GB",
-    "upload": "Upload",
     "upload_exists": "The PST file already exists.",
     "upload_success": "The file has been uploaded successfully.",
     "upload_failed": "Upload failed."
@@ -196,10 +194,8 @@ async function uploadPST($event: FileUploadUploaderEvent) {
   "fr": {
     "learn_export": "Apprenez comment à exporter un fichier depuis Outlook Desktop",
     "uploading_file": "Téléversement... {n}%",
-    "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
-    "select_file_label": "Téléchargez votre fichier",
+
     "upload_tooltip": "Fichier .pst ou .ost max {n} Go",
-    "upload": "Téléversement",
     "upload_exists": "Le fichier PST existe déjà.",
     "upload_success": "Le fichier a été téléversé avec succès.",
     "upload_failed": "Échec du téléversement."

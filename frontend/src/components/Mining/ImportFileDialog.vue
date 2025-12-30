@@ -16,7 +16,7 @@
       pt:root:class="h-full"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
-      :choose-label="t('select_file_label')"
+      :choose-label="$t('upload.select_file_label')"
       :pt:header:class="{ hidden: !contentJson }"
       :pt:content:class="{
         'flex flex-col ': true,
@@ -54,13 +54,13 @@
           <i
             class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
           />
-          <p>{{ t('drag_and_drop') }}</p>
+          <p>{{ $t('upload.drag_and_drop') }}</p>
 
           <Button
             v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
             class="my-1"
             icon="pi pi-upload"
-            :label="t('select_file_label')"
+            :label="$t('upload.select_file_label')"
             :loading="uploadLoading"
             @click="fileUpload.choose()"
           />
@@ -501,8 +501,6 @@ async function startMining() {
     "select_file_label": "Upload your file",
     "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {ROWS_SHOWN_NUMBER} rows.",
     "contacts": "contacts",
-    "drag_and_drop": "Drag and drop files here.",
-    "upload_your_file": "Upload your file",
     "start_mining_now": "Start mining now!",
     "upload_tooltip": ".csv or .xlsx file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
@@ -516,8 +514,6 @@ async function startMining() {
     "select_file_label": "Téléchargez votre fichier",
     "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {ROWS_SHOWN_NUMBER} premières lignes.",
     "contacts": "contacts",
-    "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
-    "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
     "upload_error": "Votre fichier doit être au format .csv ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv ou .xlsx max {maxSizeInMB} Mo",
