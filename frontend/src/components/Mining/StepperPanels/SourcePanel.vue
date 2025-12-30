@@ -83,14 +83,14 @@
           icon="pi pi-upload"
           :label="t('choose_pst_file')"
           outlined
-          @click="importPstRef.openModal()"
+          @click="importPstDialogRef.openModal()"
         >
           <template #icon>
             <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
           </template>
         </Button>
       </div>
-      <ImportPst ref="importPstRef" />
+      <ImportPstDialog ref="importPstDialogRef" />
     </template>
   </div>
 </template>
@@ -98,12 +98,12 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import ImportPst from '@/components/cards/ImportPst.vue';
+import ImportPstDialog from '@/components/Mining/ImportPstDialog.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
 const importFileDialogRef = ref();
-const importPstRef = ref();
+const importPstDialogRef = ref();
 
 const { t } = useI18n({
   useScope: 'local',
