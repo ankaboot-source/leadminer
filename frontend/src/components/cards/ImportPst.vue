@@ -59,7 +59,12 @@
         <template v-else> {{ null }}</template>
       </template>
     </FileUpload>
-    <a class="link" target="_blank" :href="learnExportLink">
+    <a
+      class="link"
+      target="_blank"
+      rel="noopener noreferrer"
+      :href="learnExportLink"
+    >
       {{ t('learn_export') }}
     </a>
   </Dialog>
