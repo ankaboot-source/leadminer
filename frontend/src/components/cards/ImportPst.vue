@@ -33,7 +33,7 @@
           <div class="flex flex-col items-center">
             <Button
               id="import-pst"
-              v-tooltip.bottom="t('upload_tooltip', PST_FILE_SIZE_LIMIT)"
+              v-tooltip.bottom="t('upload_tooltip', PST_FILE_SIZE_LIMIT_GB)"
               class="my-1"
               icon="pi pi-upload"
               outlined
@@ -59,9 +59,9 @@
         <template v-else> {{ null }}</template>
       </template>
     </FileUpload>
-    <a class="link" target="_blank" :href="learnExportLink">{{
-      t('learn_export')
-    }}</a>
+    <a class="link" target="_blank" :href="learnExportLink">
+      {{ t('learn_export') }}
+    </a>
   </Dialog>
 </template>
 
@@ -97,6 +97,7 @@ const sourceIsPst = ref(false);
 const $toast = useToast();
 const uploadProgress = ref(0);
 const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
+const PST_FILE_SIZE_LIMIT_GB = PST_FILE_SIZE_LIMIT / (1024 * 1024 * 1024);
 
 function resetPst() {
   fileName.value = '';
@@ -181,7 +182,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "uploading_file": "Uploading file... {n}%",
     "drag_and_drop": "Drag and drop files here.",
     "select_file_label": "Upload your file",
-    "upload_tooltip": ".pst or .ost file max {n}MB",
+    "upload_tooltip": ".pst or .ost file max {n}GB",
     "upload": "Upload",
     "upload_exists": "The PST file already exists.",
     "upload_success": "The file has been uploaded successfully.",
@@ -192,7 +193,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "uploading_file": "Téléversement... {n}%",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "select_file_label": "Téléchargez votre fichier",
-    "upload_tooltip": "Fichier .pst ou .ost max {n} Mo",
+    "upload_tooltip": "Fichier .pst ou .ost max {n} Go",
     "upload": "Téléversement",
     "upload_exists": "Le fichier PST existe déjà.",
     "upload_success": "Le fichier a été téléversé avec succès.",

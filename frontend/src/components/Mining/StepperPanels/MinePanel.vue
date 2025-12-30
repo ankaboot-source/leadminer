@@ -11,12 +11,12 @@
     :mode="sourceType === 'file' ? 'indeterminate' : 'determinate'"
   >
     <template #progress-title>
-      <div v-if="$leadminerStore.isLoadingBoxes">
+      <div v-if="sourceType === 'pst'">
+        {{ $leadminerStore.pstFilePath.split('/')[1] }}
+      </div>
+      <div v-else-if="$leadminerStore.isLoadingBoxes">
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
-      </div>
-      <div v-else-if="sourceIsPst && !$leadminerStore.activeMiningTask">
-        {{ $leadminerStore.pstFilePath.split('/')[1] }}
       </div>
       <div v-else-if="!$leadminerStore.activeMiningTask">
         {{ totalMined.toLocaleString() }}
@@ -47,9 +47,10 @@
       v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
       :disabled="
-        $leadminerStore.isLoadingBoxes ||
-        $leadminerStore.isLoadingStartMining ||
-        (!sourceIsPst && totalEmails === 0)
+        sourceType === 'email' &&
+        ($leadminerStore.isLoadingBoxes ||
+          $leadminerStore.isLoadingStartMining ||
+          totalEmails === 0)
       "
       :loading="$leadminerStore.isLoadingStartMining"
       :label="$t('common.start_mining_now')"
@@ -357,8 +358,6 @@ async function haltMining() {
     }
   }
 }
-
-const sourceIsPst = computed(() => $leadminerStore.pstFilePath !== '');
 
 async function minePst() {
   $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
