@@ -49,7 +49,7 @@
       </div>
     </template>
 
-    <template v-else-if="!sourceIsPst">
+    <template v-else>
       <div class="text-3xl">{{ t('title_add_new') }}</div>
 
       <div class="flex flex-col lg:flex-row flex-wrap gap-2">
@@ -89,33 +89,8 @@
             <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
           </template>
         </Button>
-
-        <ImportPst ref="importPstRef" v-model:source-is-pst="sourceIsPst" />
       </div>
-    </template>
-
-    <template v-else>
-      <div class="text-3xl">
-        {{ $leadminerStore.pstFilePath.split('/')[1] }}
-      </div>
-      <ProgressBar class="w-full" :value="100" />
-
-      <div class="flex flex-row items-center gap-2">
-        <ToggleSwitch
-          v-model="$leadminerStore.extractSignatures"
-          input-id="extractSignatures"
-        />
-        <label for="extractSignatures" class="cursor-pointer flex-1">
-          {{ $t('mining.extract_signatures_option') }}
-          <span>{{ $t('mining.extract_signatures_sub') }}</span>
-        </label>
-      </div>
-
-      <Button
-        v-if="!$leadminerStore.activeMiningTask"
-        :label="$t('common.start_mining_now')"
-        @click="minePst"
-      />
+      <ImportPst ref="importPstRef" />
     </template>
   </div>
 </template>
@@ -123,7 +98,7 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import ImportPst from '~/components/cards/ImportPst.vue';
+import ImportPst from '@/components/cards/ImportPst.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
 
@@ -160,14 +135,6 @@ function getIcon(type: string) {
     default:
       return 'pi pi-inbox';
   }
-}
-
-const sourceIsPst = computed(() => $leadminerStore.pstFilePath !== '');
-
-async function minePst() {
-  $stepper.next();
-  $leadminerStore.startMining('pst', $leadminerStore.pstFilePath);
-  $leadminerStore.pstFilePath = '';
 }
 </script>
 

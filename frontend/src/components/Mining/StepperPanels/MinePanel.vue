@@ -15,6 +15,9 @@
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
       </div>
+      <div v-else-if="sourceIsPst && !$leadminerStore.activeMiningTask">
+        {{ $leadminerStore.pstFilePath.split('/')[1] }}
+      </div>
       <div v-else-if="!$leadminerStore.activeMiningTask">
         {{ totalMined.toLocaleString() }}
         {{ extractionProgress < 1 ? totalToMineMessage : totalMinedMessage }}
@@ -46,7 +49,7 @@
       :disabled="
         $leadminerStore.isLoadingBoxes ||
         $leadminerStore.isLoadingStartMining ||
-        totalEmails === 0
+        (!sourceIsPst && totalEmails === 0)
       "
       :loading="$leadminerStore.isLoadingStartMining"
       :label="$t('common.start_mining_now')"
@@ -260,7 +263,7 @@ watch(extractionFinished, async (finished) => {
 });
 
 function openMiningSettings() {
-  if (sourceType.value === 'email') {
+  if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
   } else if (sourceType.value === 'file') {
     importFileDialogRef.value.openModal();
@@ -320,6 +323,8 @@ async function startMining() {
     await startMiningBoxes();
   } else if (sourceType.value === 'file') {
     await startMiningFile();
+  } else if (sourceType.value === 'pst') {
+    await minePst();
   }
 }
 
@@ -351,6 +356,13 @@ async function haltMining() {
       throw error;
     }
   }
+}
+
+const sourceIsPst = computed(() => $leadminerStore.pstFilePath !== '');
+
+async function minePst() {
+  $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
+  $leadminerStore.pstFilePath = '';
 }
 </script>
 

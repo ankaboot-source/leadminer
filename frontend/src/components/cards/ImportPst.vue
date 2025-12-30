@@ -75,6 +75,7 @@ const fileUpload = ref();
 
 const visible = ref(false);
 const ACCEPTED_FILES = '.pst,.ost';
+const $stepper = useMiningStepper();
 
 const openModal = () => {
   visible.value = true;
@@ -155,6 +156,9 @@ async function uploadPST($event: FileUploadUploaderEvent) {
       detail: uploadAlreadyExists ? t('upload_exists') : t('upload_success'),
       life: 5000,
     });
+    $stepper.next();
+    $leadminerStore.miningType = 'pst';
+
     isUploadingPST.value = false;
     visible.value = false;
   } catch (error) {

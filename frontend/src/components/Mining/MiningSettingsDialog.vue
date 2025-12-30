@@ -22,7 +22,10 @@
       </label>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div
+      v-if="$leadminerStore.miningType === 'email'"
+      class="flex items-center gap-2"
+    >
       <div class="text-h6">{{ t('select_folders_to_mine') }}</div>
       <Button
         rounded
