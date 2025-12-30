@@ -135,6 +135,11 @@
         "title": "Unexpected error",
         "message": "An unexpected error occurred. Please try again."
       }
+    },
+    "upload": {
+      "drag_and_drop": "Drag and drop files here.",
+      "select_file_label": "Upload your file",
+      "upload": "Upload"
     }
   },
   "fr": {
@@ -273,6 +278,11 @@
         "title": "Erreur inattendue",
         "message": "Une erreur inattendue s'est produite. Veuillez réessayer."
       }
+    },
+    "upload": {
+      "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
+      "select_file_label": "Téléchargez votre fichier",
+      "upload": "Téléversement"
     }
   }
 }

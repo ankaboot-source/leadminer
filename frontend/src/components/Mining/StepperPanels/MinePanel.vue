@@ -11,7 +11,10 @@
     :mode="sourceType === 'file' ? 'indeterminate' : 'determinate'"
   >
     <template #progress-title>
-      <div v-if="$leadminerStore.isLoadingBoxes">
+      <div v-if="sourceType === 'pst'">
+        {{ $leadminerStore.pstFilePath.split('/')[1] }}
+      </div>
+      <div v-else-if="$leadminerStore.isLoadingBoxes">
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
       </div>
@@ -44,9 +47,10 @@
       v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
       :disabled="
-        $leadminerStore.isLoadingBoxes ||
-        $leadminerStore.isLoadingStartMining ||
-        totalEmails === 0
+        sourceType === 'email' &&
+        ($leadminerStore.isLoadingBoxes ||
+          $leadminerStore.isLoadingStartMining ||
+          totalEmails === 0)
       "
       :loading="$leadminerStore.isLoadingStartMining"
       :label="$t('common.start_mining_now')"
@@ -260,7 +264,7 @@ watch(extractionFinished, async (finished) => {
 });
 
 function openMiningSettings() {
-  if (sourceType.value === 'email') {
+  if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
   } else if (sourceType.value === 'file') {
     importFileDialogRef.value.openModal();
@@ -320,6 +324,8 @@ async function startMining() {
     await startMiningBoxes();
   } else if (sourceType.value === 'file') {
     await startMiningFile();
+  } else if (sourceType.value === 'pst') {
+    await minePst();
   }
 }
 
@@ -351,6 +357,11 @@ async function haltMining() {
       throw error;
     }
   }
+}
+
+async function minePst() {
+  $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
+  $leadminerStore.pstFilePath = '';
 }
 </script>
 

@@ -45,9 +45,11 @@
     v-model:provider="$consentSidebar.provider"
     v-model:authorize-redirect="$consentSidebar.authorizedRedirect"
   />
+  <ImportPstDialog ref="importPstDialogRef" />
 </template>
 
 <script setup lang="ts">
+import ImportPstDialog from '@/components/Mining/ImportPstDialog.vue';
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
@@ -65,6 +67,8 @@ const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
+
+const importPstDialogRef = ref();
 
 const { error, provider, source } = $route.query;
 
@@ -84,6 +88,7 @@ if (selectedSource) {
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {
     $consentSidebar.show(provider as MiningSourceType, undefined, '/mine');
+    if (provider === 'azure') importPstDialogRef.value.openModal();
   }
   $router.replace({ query: undefined });
 });
