@@ -311,7 +311,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   async function startMiningPST(userId: string, fileName: string) {
-    miningType.value = 'pst'; //!
+    miningType.value = 'pst';
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,

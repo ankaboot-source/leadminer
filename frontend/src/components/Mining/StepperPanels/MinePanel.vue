@@ -47,10 +47,9 @@
       v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
       :disabled="
-        sourceType === 'email' &&
-        ($leadminerStore.isLoadingBoxes ||
-          $leadminerStore.isLoadingStartMining ||
-          totalEmails === 0)
+        (sourceType === 'email' &&
+          ($leadminerStore.isLoadingBoxes || totalEmails === 0)) ||
+        $leadminerStore.isLoadingStartMining
       "
       :loading="$leadminerStore.isLoadingStartMining"
       :label="$t('common.start_mining_now')"
@@ -361,7 +360,6 @@ async function haltMining() {
 
 async function minePst() {
   $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
-  $leadminerStore.pstFilePath = '';
 }
 </script>
 

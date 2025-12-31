@@ -20,7 +20,15 @@
       :progress="uploadProgress"
       @uploader="uploadPST"
     >
-      <template #header>{{ null }}</template>
+      <template #header>
+        <div v-if="!uploadProgress">
+          {{ null }}
+        </div>
+        <template v-else>
+          {{ t('uploading_file', uploadProgress) }}
+          {{ fileName }}
+        </template>
+      </template>
       <template #chooseicon>
         <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
       </template>
@@ -49,13 +57,13 @@
         </div>
       </template>
       <template #content>
-        <div v-if="uploadProgress > 0" class="w-full mt-3">
-          <div>
-            {{ t('uploading_file', uploadProgress) }}
-            {{ fileName }}
-          </div>
-          <ProgressBar :value="uploadProgress" style="height: 12px" />
-        </div>
+        <ProgressBar
+          v-if="uploadProgress > 0"
+          :value="uploadProgress"
+          :show-value="false"
+          :mode="uploadProgress === 100 ? 'indeterminate' : 'determinate'"
+          class="w-full mt-3 h-3"
+        />
         <template v-else> {{ null }}</template>
       </template>
     </FileUpload>
@@ -145,8 +153,9 @@ async function uploadPST($event: FileUploadUploaderEvent) {
         );
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable)
-            uploadProgress.value = Math.round((e.loaded / e.total) * 100);
+            uploadProgress.value = Math.floor((e.loaded / e.total) * 100);
         };
+
         xhr.onload = () =>
           xhr.status === 200 || xhr.status === 201
             ? resolve()
