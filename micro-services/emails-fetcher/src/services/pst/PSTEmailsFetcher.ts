@@ -400,7 +400,8 @@ export default class PSTEmailsFetcher {
 
     // Pre-scan PST to compute total messages before processing
     const total = await this.getTotalMessages();
-
+    
+    // skipcq: JS-0339 non null assertion is safe as pstFile is on class creation
     await this.processFolder(this.pstFile!.getRootFolder());
 
     const end = Date.now();
@@ -476,6 +477,7 @@ export default class PSTEmailsFetcher {
    */
   async getTotalMessages(): Promise<number> {
     try {
+      // skipcq: JS-0339 non null assertion is safe as pstFile is on class creation
       const total = this.scanFolderCount(this.pstFile!.getRootFolder());
       this.totalMessages = total;
       logger.debug(`[${this.miningId}] PST total messages pre-scan: ${total}`);
@@ -493,7 +495,6 @@ export default class PSTEmailsFetcher {
 
   removeFile() {
     try {
-      this.pstFile = undefined;
       if (this.localPstFilePath && fs.existsSync(this.localPstFilePath)) {
         fs.unlinkSync(this.localPstFilePath);
       }
