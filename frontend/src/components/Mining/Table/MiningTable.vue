@@ -154,27 +154,12 @@
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="toggleJobDetailsTooltip">
-                  {{ t('toggle_job_details_label') }}
-                </div>
-                <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
-              </li>
-              <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
                 </div>
                 <ToggleSwitch
                   v-model="$filtersStore.validToggle"
                   @update:model-value="$filtersStore.onValidToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_name_tooltip')">
-                  {{ t('toggle_name_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.nameToggle"
-                  @update:model-value="$filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -202,12 +187,12 @@
                 />
               </li>
               <li class="flex justify-between gap-2">
-                <div>
-                  {{ t('toggle_phone_label') }}
+                <div v-tooltip.left="t('toggle_name_tooltip')">
+                  {{ t('toggle_name_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="$filtersStore.phoneToggle"
-                  @update:model-value="$filtersStore.onPhoneToggle"
+                  v-model="$filtersStore.nameToggle"
+                  @update:model-value="$filtersStore.onNameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -219,7 +204,21 @@
                   @update:model-value="$filtersStore.onLocationToggle"
                 />
               </li>
-
+              <li class="flex justify-between gap-2">
+                <div v-tooltip.left="toggleJobDetailsTooltip">
+                  {{ t('toggle_job_details_label') }}
+                </div>
+                <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
+              </li>
+              <li class="flex justify-between gap-2">
+                <div>
+                  {{ t('toggle_phone_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="$filtersStore.phoneToggle"
+                  @update:model-value="$filtersStore.onPhoneToggle"
+                />
+              </li>
               <Divider class="my-0" />
               <MultiSelect
                 v-model="$contactsStore.visibleColumns"

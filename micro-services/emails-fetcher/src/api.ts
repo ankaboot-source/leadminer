@@ -321,7 +321,7 @@ apiRoutes.post(
     }
 
     try {
-      const emailFetcher = new PSTFetcherFactory().create({
+      const emailFetcher = await new PSTFetcherFactory().create({
         userId,
         miningId,
         contactStream,
