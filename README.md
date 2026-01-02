@@ -18,9 +18,10 @@
 
 ## ✨ Features
 
-- ⛏️📧 Extract contacts from your mailbox
+- ⛏️📧 Extract contacts from your emails
 - 🧹💌 Clean your email list
 - 💎✒️ Enrich contacts details with signature extraction
+- 📤📇 Export your contacts to CSV, VCards or Google Contacts
 
 ## 📑 Table of contents
 
