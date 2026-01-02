@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import { parseHeader } from 'imap';
 import path from 'path';
-import { PSTFile, PSTFolder, PSTMessage } from 'pst-extractor';
+import {
+  PSTFile,
+  PSTFolder,
+  PSTMessage
+} from '../../../../pst-extractor-feat-support-slblock-entry/src';
 import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -103,6 +107,10 @@ export default class PSTEmailsFetcher {
 
   private readonly userEmail: string;
 
+  private localPstFilePath?: string;
+
+  private pstFile?: PSTFile;
+
   public totalMessages = 0;
 
   private hasNotifiedCompleted = false;
@@ -137,6 +145,11 @@ export default class PSTEmailsFetcher {
     this.isCompleted = false;
 
     this.fetchedIds = new Set<string>();
+  }
+
+  async init() {
+    await this.downloadPSTFromSupabase(this.source);
+    return this;
   }
 
   async publishHeader(
@@ -388,10 +401,7 @@ export default class PSTEmailsFetcher {
     // Pre-scan PST to compute total messages before processing
     const total = await this.getTotalMessages();
 
-    const localPstPath = await this.downloadPSTFromSupabase(this.source);
-    const pstFile = new PSTFile(fs.readFileSync(localPstPath));
-
-    await this.processFolder(pstFile.getRootFolder());
+    await this.processFolder(this.pstFile!.getRootFolder());
 
     const end = Date.now();
 
@@ -399,7 +409,8 @@ export default class PSTEmailsFetcher {
 
     this.isCompleted = true;
     await this.stop(this.isCanceled);
-    fs.unlinkSync(localPstPath);
+
+    this.removeFile();
 
     // attempt to delete the uploaded PST from storage after mining
     try {
@@ -427,7 +438,7 @@ export default class PSTEmailsFetcher {
     return total;
   }
 
-  async downloadPSTFromSupabase(storagePath: string): Promise<string> {
+  async downloadPSTFromSupabase(storagePath: string) {
     const { data, error } = await supabaseClient.storage
       .from(PST_FOLDER)
       .download(storagePath);
@@ -435,13 +446,13 @@ export default class PSTEmailsFetcher {
     if (error) throw error;
 
     const buffer = Buffer.from(await data.arrayBuffer());
-    const localPath = path.join(
+    this.localPstFilePath = path.join(
       '/tmp',
       `${Date.now()}-${path.basename(storagePath)}`
     );
 
-    fs.writeFileSync(localPath, buffer);
-    return localPath;
+    fs.writeFileSync(this.localPstFilePath, buffer);
+    this.pstFile = new PSTFile(fs.readFileSync(this.localPstFilePath));
   }
 
   /**
@@ -464,11 +475,8 @@ export default class PSTEmailsFetcher {
    * Downloads the PST from supabase, scans it and returns the total.
    */
   async getTotalMessages(): Promise<number> {
-    let localPstPath = '';
     try {
-      localPstPath = await this.downloadPSTFromSupabase(this.source);
-      const pstFile = new PSTFile(fs.readFileSync(localPstPath));
-      const total = this.scanFolderCount(pstFile.getRootFolder());
+      const total = this.scanFolderCount(this.pstFile!.getRootFolder());
       this.totalMessages = total;
       logger.debug(`[${this.miningId}] PST total messages pre-scan: ${total}`);
       return total;
@@ -478,18 +486,22 @@ export default class PSTEmailsFetcher {
         source: this.source,
         error: err
       });
+      this.removeFile();
       throw err;
-    } finally {
-      try {
-        if (localPstPath && fs.existsSync(localPstPath)) {
-          fs.unlinkSync(localPstPath);
-        }
-      } catch (e) {
-        logger.warn('Could not remove temporary PST file after scan', {
-          path: localPstPath,
-          error: e
-        });
+    }
+  }
+
+  removeFile() {
+    try {
+      this.pstFile = undefined;
+      if (this.localPstFilePath && fs.existsSync(this.localPstFilePath)) {
+        fs.unlinkSync(this.localPstFilePath);
       }
+    } catch (e) {
+      logger.warn('Could not remove temporary PST file after scan', {
+        path: this.localPstFilePath,
+        error: e
+      });
     }
   }
 }

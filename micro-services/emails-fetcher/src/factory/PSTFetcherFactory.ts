@@ -14,7 +14,7 @@ export default class PSTFetcherFactory {
    * Creates a new EmailFetcher instance.
    */
   // eslint-disable-next-line class-methods-use-this
-  create({
+  async create({
     userId,
     miningId,
     contactStream,
@@ -29,6 +29,6 @@ export default class PSTFetcherFactory {
       signatureStream,
       fetchEmailBody,
       source
-    );
+    ).init();
   }
 }
