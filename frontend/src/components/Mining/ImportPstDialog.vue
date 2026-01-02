@@ -16,7 +16,6 @@
       ref="fileUpload"
       pt:root:class="h-full"
       pt:content:class="h-full w-full"
-      pt:empty:class="flex flex-col h-full w-full items-center justify-center gap-3"
       pt:header:class="hidden"
       :accept="ACCEPTED_FILES"
       :max-file-size="PST_FILE_SIZE_LIMIT"
