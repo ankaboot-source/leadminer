@@ -178,6 +178,9 @@ async function uploadPST($event: FileUploadUploaderEvent) {
         },
         onSuccess: () => resolve(),
         onError: (error) => reject(error),
+        onShouldRetry: (error) => {
+          return !error.message.includes('The resource already exists'); // Do not retry if file already exists
+        },
       });
 
       pstTusUpload.value.findPreviousUploads().then((previousUploads) => {
