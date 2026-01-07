@@ -118,6 +118,7 @@ const fileName = ref('');
 const isUploadingPST = ref(false);
 const sourceIsPst = ref(false);
 const uploadProgress = ref(0);
+const pstTusUpload = ref<Upload | null>(null);
 
 function cancelUpload() {
   if (pstTusUpload.value) {
@@ -131,8 +132,11 @@ function cancelUpload() {
   isUploadingPST.value = false;
   fileUpload.value?.clear();
 }
-
-const pstTusUpload = ref<Upload | null>(null);
+function prepareMining() {
+  $stepper.next();
+  $leadminerStore.miningType = 'pst';
+  visible.value = false;
+}
 const SAAS_SUPABASE_PROJECT_URL =
   useRuntimeConfig().public.SAAS_SUPABASE_PROJECT_URL?.toString();
 const SUPABASE_UPLOAD_URL = `${SAAS_SUPABASE_PROJECT_URL}/storage/v1/upload/resumable`;
@@ -176,7 +180,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
         onError: (error) => reject(error),
       });
 
-      pstTusUpload.value.findPreviousUploads().then(function (previousUploads) {
+      pstTusUpload.value.findPreviousUploads().then((previousUploads) => {
         // Found previous uploads so we select the first one.
         if (previousUploads?.[0]) {
           pstTusUpload.value?.resumeFromPreviousUpload(previousUploads[0]);
@@ -193,12 +197,9 @@ async function uploadPST($event: FileUploadUploaderEvent) {
       life: 5000,
     });
 
-    $stepper.next();
-    $leadminerStore.miningType = 'pst';
-    visible.value = false;
+    prepareMining();
   } catch (error) {
-    console.error('PST Upload Error:', error);
-    if (error?.message?.includes('already exists')) {
+    if (error instanceof Error && error.message?.includes('already exists')) {
       $toast.add({
         severity: 'info',
         summary: $t('upload.upload'),
@@ -206,12 +207,11 @@ async function uploadPST($event: FileUploadUploaderEvent) {
         life: 5000,
       });
 
-      $stepper.next();
-      $leadminerStore.miningType = 'pst';
-      visible.value = false;
+      prepareMining();
       return;
     }
 
+    console.error('PST Upload Error:', error);
     cancelUpload();
 
     $toast.add({
