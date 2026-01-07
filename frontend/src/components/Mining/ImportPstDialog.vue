@@ -44,7 +44,7 @@
             class="mt-4"
             label="Cancel"
             outlined
-            @click="pstUploadXhr!.abort()"
+            @click="cancelUpload()"
           />
         </div>
         <div
@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
 import type { FileUploadUploaderEvent } from 'primevue/fileupload';
+import { Upload } from 'tus-js-client';
 
 const ACCEPTED_FILES = '.pst,.ost';
 const PST_FILE_SIZE_LIMIT = 5368709120; // 5 GB
@@ -117,19 +118,28 @@ const fileName = ref('');
 const isUploadingPST = ref(false);
 const sourceIsPst = ref(false);
 const uploadProgress = ref(0);
-const pstUploadXhr = ref<XMLHttpRequest | null>(null);
 
-function resetPst() {
+function cancelUpload() {
+  if (pstTusUpload.value) {
+    pstTusUpload.value.abort();
+    pstTusUpload.value = null;
+  }
+
   fileName.value = '';
   $leadminerStore.pstFilePath = '';
   uploadProgress.value = 0;
   isUploadingPST.value = false;
-  pstUploadXhr.value = null;
   fileUpload.value?.clear();
 }
 
+const pstTusUpload = ref<Upload | null>(null);
+const SAAS_SUPABASE_PROJECT_URL =
+  useRuntimeConfig().public.SAAS_SUPABASE_PROJECT_URL?.toString();
+const SUPABASE_UPLOAD_URL = `${SAAS_SUPABASE_PROJECT_URL}/storage/v1/upload/resumable`;
+
 async function uploadPST($event: FileUploadUploaderEvent) {
   sourceIsPst.value = true;
+
   const file = ($event.files as File[])[0];
   if (!file) return;
 
@@ -141,62 +151,77 @@ async function uploadPST($event: FileUploadUploaderEvent) {
   isUploadingPST.value = true;
 
   try {
-    $leadminerStore.pstFilePath = `${useSupabaseUser()?.value?.sub}/${fileName.value}`;
+    $leadminerStore.pstFilePath = `${user.sub}/${file.name}`;
+    const {
+      data: { session },
+    } = await $supabase.auth.getSession();
 
-    const { data, error } = await $supabase.storage
-      .from('pst')
-      .createSignedUploadUrl($leadminerStore.pstFilePath);
-
-    const uploadAlreadyExists = error?.message.includes('already exists');
-
-    if (error && !uploadAlreadyExists) throw error;
-
-    if (data?.signedUrl) {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        pstUploadXhr.value = xhr;
-        xhr.open('PUT', data.signedUrl, true);
-        if (data.token) xhr.setRequestHeader('x-signature', data.token);
-        xhr.setRequestHeader(
-          'Content-Type',
-          file.type || 'application/octet-stream',
-        );
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable)
-            uploadProgress.value = Math.floor((e.loaded / e.total) * 100);
-        };
-
-        xhr.onload = () =>
-          xhr.status === 200 || xhr.status === 201
-            ? resolve()
-            : reject(new Error(xhr.responseText || `Status ${xhr.status}`));
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.onabort = () => reject(new Error('Upload canceled'));
-        xhr.send(file);
+    await new Promise<void>((resolve, reject) => {
+      pstTusUpload.value = new Upload(file, {
+        endpoint: SUPABASE_UPLOAD_URL,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          bucketName: 'pst',
+          objectName: $leadminerStore.pstFilePath,
+          contentType: file.type || 'application/octet-stream',
+        },
+        headers: {
+          authorization: `Bearer ${session?.access_token}`,
+        },
+        chunkSize: 6 * 1024 * 1024,
+        onProgress: (uploadedBytes, totalBytes) => {
+          uploadProgress.value = Math.floor((uploadedBytes / totalBytes) * 100);
+        },
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error),
       });
-    }
+
+      pstTusUpload.value.findPreviousUploads().then(function (previousUploads) {
+        // Found previous uploads so we select the first one.
+        if (previousUploads?.[0]) {
+          pstTusUpload.value?.resumeFromPreviousUpload(previousUploads[0]);
+        }
+        // Start the upload
+        pstTusUpload.value?.start();
+      });
+    });
 
     $toast.add({
-      severity: uploadAlreadyExists ? 'info' : 'success',
+      severity: 'success',
       summary: $t('upload.upload'),
-      detail: uploadAlreadyExists ? t('upload_exists') : t('upload_success'),
+      detail: t('upload_success'),
       life: 5000,
     });
+
     $stepper.next();
     $leadminerStore.miningType = 'pst';
-
-    isUploadingPST.value = false;
     visible.value = false;
   } catch (error) {
-    resetPst();
-    if (error instanceof Error && error.message === 'Upload canceled') return;
     console.error('PST Upload Error:', error);
+    if (error?.message?.includes('already exists')) {
+      $toast.add({
+        severity: 'info',
+        summary: $t('upload.upload'),
+        detail: t('upload_exists'),
+        life: 5000,
+      });
+
+      $stepper.next();
+      $leadminerStore.miningType = 'pst';
+      visible.value = false;
+      return;
+    }
+
+    cancelUpload();
+
     $toast.add({
       severity: 'error',
       summary: $t('upload.upload'),
       detail: t('upload_failed'),
       life: 5000,
     });
+  } finally {
+    isUploadingPST.value = false;
   }
 }
 </script>
