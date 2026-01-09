@@ -8,6 +8,7 @@ import {
   Contact,
   EmailExtractionResult,
   EmailStatus,
+  ExportService,
   ExtractionResult,
   FileExtractionResult,
   Tag
@@ -26,7 +27,7 @@ export default class PgContacts implements Contacts {
       JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
@@ -35,7 +36,7 @@ export default class PgContacts implements Contacts {
       LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     WHERE e.email IS NULL;
     `;
 
@@ -51,7 +52,7 @@ export default class PgContacts implements Contacts {
       JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS = `
@@ -60,7 +61,7 @@ export default class PgContacts implements Contacts {
       LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     WHERE e.email IS NULL;
     `;
 
@@ -71,7 +72,7 @@ export default class PgContacts implements Contacts {
     WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO private.engagement (user_id, email, engagement_type) VALUES %L ON  CONFLICT (email, user_id, engagement_type) DO NOTHING;';
+    'INSERT INTO private.engagement (user_id, email, engagement_type, service) VALUES %L ON  CONFLICT (email, user_id, engagement_type, service) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -452,10 +453,11 @@ export default class PgContacts implements Contacts {
 
   async registerExportedContacts(
     contactIds: string[],
+    service: ExportService,
     userId: string
   ): Promise<void> {
     try {
-      const values = contactIds.map((id) => [userId, id, 'CSV']);
+      const values = contactIds.map((id) => [userId, id, 'EXPORT', service]);
       await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
     } catch (error) {
       this.logger.error(error);

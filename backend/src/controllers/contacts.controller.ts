@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { Contacts } from '../db/interfaces/Contacts';
-import { Contact } from '../db/types';
+import { Contact, ExportService } from '../db/types';
 import Billing from '../utils/billing-plugin';
 import { ExportOptions, ExportType } from '../services/export/types';
 import ExportFactory from '../services/export';
@@ -146,6 +146,7 @@ async function verifyCredits(
 
 async function registerAndDeductCredits(
   userId: string,
+  exportType: ExportType,
   availableUnits: number,
   contacts: Contacts,
   availableContacts: Contact[]
@@ -153,6 +154,7 @@ async function registerAndDeductCredits(
   if (availableContacts.length) {
     await contacts.registerExportedContacts(
       availableContacts.map(({ email }) => email),
+      exportType as unknown as ExportService,
       userId
     );
     await Billing!.deductCustomerCredits(userId, availableUnits);
@@ -181,9 +183,10 @@ async function respondWithConfirmedContacts(
 
     await registerAndDeductCredits(
       userId,
+      exportType,
       availableUnits,
       contacts,
-      availableContacts
+      selectedContacts
     );
 
     return res

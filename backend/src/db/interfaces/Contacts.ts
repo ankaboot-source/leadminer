@@ -1,5 +1,11 @@
 import { Status } from '../../services/email-status/EmailStatusVerifier';
-import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
+import {
+  Contact,
+  EmailStatus,
+  ExportService,
+  ExtractionResult,
+  Tag
+} from '../types';
 
 export interface Contacts {
   create(
@@ -18,5 +24,9 @@ export interface Contacts {
   getUnverifiedContacts(userId: string, emails: string[]): Promise<Contact[]>;
   getExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
   getNonExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
-  registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
+  registerExportedContacts(
+    contactIds: string[],
+    exportService: ExportService,
+    userId: string
+  ): Promise<void>;
 }
