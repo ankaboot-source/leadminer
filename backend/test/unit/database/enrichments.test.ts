@@ -217,11 +217,14 @@ describe('Enrichments Class', () => {
           name: 'hello'
         }
       ]);
-      expect(mockEngagements.register).toHaveBeenCalledWith(
-        userId,
-        ['test@example.com'],
-        'ENRICH'
-      );
+      expect(mockEngagements.register).toHaveBeenCalledWith([
+        {
+          email: 'test@example.com',
+          engagement_type: 'ENRICH',
+          service: 'test',
+          user_id: 'user-id'
+        }
+      ]);
       expect(task.details.total_enriched).toBe(1);
     });
   });

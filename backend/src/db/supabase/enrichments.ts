@@ -153,18 +153,26 @@ export default class Enrichments {
     try {
       const task = this.ensureTask();
 
-      const enriched = result.map(({ data }) => data).flat();
+      const enriched = result
+        .map(({ data, engine }) => ({ data, engine }))
+        .flat();
       task.details.total_enriched += enriched.length;
+
       this.mergeTaskDetailsResult(result);
 
       await this.tasks.update(task);
 
       if (enriched.length) {
-        await this.updateContacts(enriched);
+        await this.updateContacts(enriched.map(({ data }) => data).flat());
         await this.engagements.register(
-          task.userId,
-          enriched.map((contact) => contact.email as string),
-          'ENRICH'
+          enriched.flatMap(({ data, engine }) =>
+            data.map((contact) => ({
+              email: contact.email as string,
+              user_id: task.userId,
+              engagement_type: 'ENRICH',
+              service: engine
+            }))
+          )
         );
       }
     } catch (err) {

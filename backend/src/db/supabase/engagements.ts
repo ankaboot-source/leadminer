@@ -9,17 +9,19 @@ export default class Engagements {
     private readonly logger: Logger
   ) {}
 
-  async register(userId: string, emails: string[], type: EngagementType) {
+  async register(
+    enriched: {
+      email: string;
+      user_id: string;
+      engagement_type: EngagementType;
+      service: string;
+    }[]
+  ) {
     try {
-      const data = emails.map((email) => ({
-        email,
-        user_id: userId,
-        engagement_type: type
-      }));
       const { error } = await this.client
         .schema('private')
         .from('engagement')
-        .upsert(data);
+        .upsert(enriched);
       if (error) throw error;
     } catch (err) {
       const message = (err as Error).message || 'Unexpected error.';
