@@ -190,3 +190,9 @@ export type Organization = {
   founder?: string;
   _domain?: string;
 };
+
+export enum ExportService {
+  CSV = 'csv',
+  VCARD = 'vcard',
+  GOOGLE_CONTACTS = 'google_contacts'
+}
