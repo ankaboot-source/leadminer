@@ -42,7 +42,7 @@
 
           <Button
             class="mt-4"
-            label="Cancel"
+            :label="$t('common.cancel')"
             outlined
             @click="cancelUpload()"
           />
