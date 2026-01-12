@@ -315,7 +315,10 @@ async function startMiningFile() {
 }
 
 async function startMiningPst() {
-  await $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
+  await $leadminerStore.startMining(
+    sourceType.value,
+    $leadminerStore.pstFilePath,
+  );
 }
 
 async function startMining() {
