@@ -311,11 +311,11 @@ async function startMiningBoxes() {
 }
 
 async function startMiningFile() {
-  try {
-    await $leadminerStore.startMining(sourceType.value);
-  } catch (error) {
-    console.error(error);
-  }
+  await $leadminerStore.startMining(sourceType.value);
+}
+
+async function startMiningPst() {
+  await $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
 }
 
 async function startMining() {
@@ -324,7 +324,7 @@ async function startMining() {
   } else if (sourceType.value === 'file') {
     await startMiningFile();
   } else if (sourceType.value === 'pst') {
-    await minePst();
+    await startMiningPst();
   }
 }
 
@@ -356,10 +356,6 @@ async function haltMining() {
       throw error;
     }
   }
-}
-
-async function minePst() {
-  $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath);
 }
 </script>
 
