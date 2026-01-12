@@ -53,7 +53,7 @@
         t('select_at_least_one_contact', { action: t('export_csv') })
       "
       :label="$screenStore.size.md ? t('export_csv') : undefined"
-      icon="pi pi-file"
+      icon="pi pi-file-export"
       :model="exportItems"
       :disabled="disableExport"
       :spinner="true"
@@ -64,7 +64,7 @@
     >
       <template #icon>
         <span class="p-button-icon p-button-icon-left">
-          <i v-if="!activeExport" class="pi pi-file"></i>
+          <i v-if="!activeExport" class="pi pi-file-export"></i>
           <i v-else class="pi pi-spin pi-spinner mr-1.5" />
         </span>
       </template>
