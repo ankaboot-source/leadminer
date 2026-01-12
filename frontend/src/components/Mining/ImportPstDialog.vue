@@ -196,7 +196,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     $toast.add({
       severity: 'success',
       summary: $t('upload.upload'),
-      detail: t('upload_success',{ file_name: fileName.value }),
+      detail: t('upload_success', { file_name: fileName.value }),
       life: 5000,
     });
 
