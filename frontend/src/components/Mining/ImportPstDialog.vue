@@ -206,7 +206,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
       $toast.add({
         severity: 'info',
         summary: $t('upload.upload'),
-        detail: t('upload_exists'),
+        detail: t('upload_exists', { file_name: fileName.value }),
         life: 5000,
       });
 
@@ -235,7 +235,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "learn_export": "Learn how to export your emails from Outlook",
     "uploading_file": "Uploading file... {n}%",
     "upload_tooltip": ".pst or .ost file max {n}GB",
-    "upload_exists": "The PST file already exists.",
+    "upload_exists": "'{file_name}' file already exists.",
     "upload_success": "'{file_name}' has been uploaded successfully.",
     "upload_failed": "Upload failed.",
     "choose_pst_file": "Import Outlook Data File (PST or OST)"
@@ -244,7 +244,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
     "learn_export": "Apprenez comment à exporter vos emails depuis Outlook",
     "uploading_file": "Téléversement... {n}%",
     "upload_tooltip": "Fichier .pst ou .ost max {n} Go",
-    "upload_exists": "Le fichier PST existe déjà.",
+    "upload_exists": "« {file_name} » existe déjà.",
     "upload_success": "« {file_name} » a été téléversé avec succès.",
     "upload_failed": "Échec du téléversement.",
     "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)"
