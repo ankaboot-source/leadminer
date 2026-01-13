@@ -5,7 +5,7 @@ import {
   PSTFile,
   PSTFolder,
   PSTMessage
-} from '../../../../pst-extractor-feat-support-slblock-entry/src';
+} from 'pst-extractor';
 import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
