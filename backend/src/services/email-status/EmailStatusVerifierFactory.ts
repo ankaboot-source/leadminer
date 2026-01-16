@@ -203,7 +203,7 @@ export default class EmailStatusVerifierFactory {
         }
       },
       new TokenBucketRateLimiter({
-        executeEvenly: false,
+        executeEvenly: true,
         uniqueKey: 'email-verification-reacher',
         distribution: Distribution.Memory,
         requests: config.REACHER_RATE_LIMITER_REQUESTS,
@@ -225,7 +225,7 @@ export default class EmailStatusVerifierFactory {
     const client = new MailerCheckClient(
       { apiToken: MAILERCHECK_API_KEY },
       new TokenBucketRateLimiter({
-        executeEvenly: false,
+        executeEvenly: true,
         uniqueKey: 'email-verification-mailercheck',
         distribution: Distribution.Memory,
         requests: 60,
@@ -247,14 +247,14 @@ export default class EmailStatusVerifierFactory {
     const client = new ZerobounceClient(
       { apiToken: ZEROBOUNCE_API_KEY },
       new TokenBucketRateLimiter({
-        executeEvenly: false,
+        executeEvenly: true,
         uniqueKey: 'email-verification-zerobounce-single',
         distribution: Distribution.Memory,
         requests: ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
         intervalSeconds: 60
       }),
       new TokenBucketRateLimiter({
-        executeEvenly: false,
+        executeEvenly: true,
         uniqueKey: 'email-verification-zerobounce-bulk',
         distribution: Distribution.Memory,
         requests: ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,

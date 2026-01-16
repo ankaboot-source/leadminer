@@ -2,10 +2,7 @@ import { Redis } from 'ioredis';
 import { Logger } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
-import {
-  EmailVerificationData,
-  EmailVerificationHandler
-} from './emailVerificationHandlers';
+import { EmailVerificationData } from './emailVerificationHandlers';
 
 export interface PubSubMessage {
   miningId: string;
@@ -23,7 +20,10 @@ export default class EmailVerificationConsumer {
     private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailVerificationData>,
     private readonly batchSize: number,
-    private readonly streamsHandler: EmailVerificationHandler,
+    private readonly emailProcessor: (
+      data: EmailVerificationData[],
+      progressCallback: (verified: number) => Promise<void>
+    ) => Promise<void>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
@@ -34,10 +34,8 @@ export default class EmailVerificationConsumer {
         if (emailsStream) {
           if (command === 'REGISTER') {
             this.activeStreams.add(emailsStream);
-            this.streamsHandler.registerStream(emailsStream);
           } else {
             this.activeStreams.delete(emailsStream);
-            this.streamsHandler.unregisterStream(emailsStream);
           }
         }
 
@@ -70,11 +68,17 @@ export default class EmailVerificationConsumer {
             this.logger.info(
               `Consuming ${data.length} emails from stream name ${streamName}`
             );
-
-            const processed = await this.streamsHandler.handle(
-              streamName,
-              data
-            );
+            const progressCallback = async (verified: number) => {
+              await this.redisClient.publish(
+                streamName.split('-')[1],
+                JSON.stringify({
+                  miningId: streamName.split('-')[1],
+                  progressType: 'verifiedContacts',
+                  count: verified
+                })
+              );
+            };
+            const processed = await this.emailProcessor(data, progressCallback);
 
             if (!this.activeStreams.has(streamName)) {
               return null;
@@ -117,7 +121,7 @@ export default class EmailVerificationConsumer {
 
     setTimeout(() => {
       this.consume();
-    }, 10000);
+    }, 3000);
   }
 
   /**
