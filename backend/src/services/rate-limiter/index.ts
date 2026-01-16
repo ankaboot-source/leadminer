@@ -98,8 +98,7 @@ export class TokenBucketRateLimiter implements IRateLimiter {
    */
   async throttleRequests<T>(callback: () => Promise<T>): Promise<T> {
     logger.debug('Rate limiter: queueing request', {
-      instance: this.options.uniqueKey,
-      queueSize: this.limiter.getTokensRemaining() // Useful if your limiter library supports this
+      instance: this.options.uniqueKey
     });
 
     const startTime = performance.now();
