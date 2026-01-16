@@ -23,12 +23,10 @@ const emailStatusVerifier = new EmailStatusVerifierFactory(ENV, logger);
 const emailStatusCache = new RedisEmailStatusCache(redisClient);
 const contacts = new PgContacts(pool, logger);
 
-const streamsHandler = initializeEmailVerificationProcessor(
+const { processStreamData } = initializeEmailVerificationProcessor(
   contacts,
   emailStatusCache,
-  emailStatusVerifier,
-  redisClient,
-  logger
+  emailStatusVerifier
 );
 
 const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
@@ -49,7 +47,7 @@ const emailsStreamConsumer = new EmailVerificationConsumer(
   tasksManagementSubscriber,
   emailStreamsConsumer,
   ENV.REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE,
-  streamsHandler,
+  processStreamData,
   redisClient,
   logger
 );

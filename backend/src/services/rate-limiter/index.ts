@@ -6,7 +6,6 @@ import {
 } from 'rate-limiter-flexible';
 import redis from '../../utils/redis';
 import pool from '../../db/pg';
-import logger from '../../utils/logger';
 
 export interface IRateLimiter {
   throttleRequests<T>(callback: () => Promise<T>): Promise<T>;
@@ -31,8 +30,6 @@ export interface RateLimiterOptions {
 export class TokenBucketRateLimiter implements IRateLimiter {
   private readonly limiter: RateLimiterQueue;
 
-  private readonly options: RateLimiterOptions;
-
   constructor({
     intervalSeconds,
     requests,
@@ -40,13 +37,6 @@ export class TokenBucketRateLimiter implements IRateLimiter {
     executeEvenly,
     distribution
   }: RateLimiterOptions) {
-    this.options = {
-      intervalSeconds,
-      requests,
-      uniqueKey,
-      executeEvenly,
-      distribution
-    };
     const baseLimiter = TokenBucketRateLimiter.createLimiter({
       intervalSeconds,
       requests,
@@ -97,20 +87,7 @@ export class TokenBucketRateLimiter implements IRateLimiter {
    * Executes a request and consumes 1 tokens.
    */
   async throttleRequests<T>(callback: () => Promise<T>): Promise<T> {
-    logger.debug('Rate limiter: queueing request', {
-      instance: this.options.uniqueKey
-    });
-
-    const startTime = performance.now();
     await this.limiter.removeTokens(1);
-    const waitTimeMs = (performance.now() - startTime).toFixed(2);
-
-    logger.debug('Rate limiter: request granted', {
-      instance: this.options.uniqueKey,
-      metrics: {
-        waitTimeMs
-      }
-    });
     return callback();
   }
 
