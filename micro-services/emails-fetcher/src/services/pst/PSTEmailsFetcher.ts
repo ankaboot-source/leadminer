@@ -12,6 +12,9 @@ import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import supabaseClient from '../../utils/supabase';
+import { createWriteStream } from 'fs';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 
 const PST_FOLDER = 'pst';
 const redisClient = redis.getClient();
@@ -446,14 +449,14 @@ export default class PSTEmailsFetcher {
 
     if (error) throw error;
 
-    const buffer = Buffer.from(await data.arrayBuffer());
     this.localPstFilePath = path.join(
       '/tmp',
       `${Date.now()}-${path.basename(storagePath)}`
     );
 
-    fs.writeFileSync(this.localPstFilePath, buffer);
-    this.pstFile = new PSTFile(fs.readFileSync(this.localPstFilePath));
+    const writeStream = fs.createWriteStream(this.localPstFilePath);
+    await pipeline(data.stream(), writeStream);
+    this.pstFile = new PSTFile(this.localPstFilePath);
   }
 
   /**
