@@ -1,4 +1,4 @@
-import PSTEmailsFetcher from '../services/pst/PSTEmailsFetcher'; //!
+import PSTEmailsFetcher from '../services/pst/PSTEmailsFetcher';
 
 interface Options {
   userId: string;
