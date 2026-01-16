@@ -71,7 +71,13 @@ export class EmailVerificationHandler {
       Array.from(emailToUserIdMap.keys())
     );
 
-    if (!this.streamActiveJobs.has(streamId)) return;
+    if (!this.streamActiveJobs.has(streamId)) {
+      this.logger.debug(
+        '[EmailVerificationHandler.handle]: Aborting ingestion: stream was unregistered',
+        { streamId }
+      );
+      return;
+    }
 
     /* eslint-disable no-await-in-loop */
     for (const [engineName, [engine, emails]] of verifierGroups) {
@@ -81,8 +87,11 @@ export class EmailVerificationHandler {
         await this.applyBackpressure();
 
         if (!this.streamActiveJobs.has(streamId)) {
-          this.logger.debug('Aborting job ingestion: stream was unregistered');
-          return;
+          this.logger.debug(
+            '[EmailVerificationHandler.handle]: Aborting ingestion: stream was unregistered',
+            { streamId }
+          );
+          break;
         }
 
         const userId = emailToUserIdMap.get(email);
@@ -119,7 +128,7 @@ export class EmailVerificationHandler {
   private async applyBackpressure() {
     if (this.queue.size < MAX_QUEUE_SIZE) return;
 
-    this.logger.warn('Queue limit reached. Applying backpressure...', {
+    this.logger.debug('Queue limit reached. Applying backpressure...', {
       currentSize: this.queue.size,
       limit: MAX_QUEUE_SIZE,
       waitThreshold: DRAIN_THRESHOLD
@@ -151,7 +160,10 @@ export class EmailVerificationHandler {
     let cacheHit = false;
 
     if (!this.streamActiveJobs.has(streamId)) {
-      this.logger.debug('Aborting job ingestion: stream was unregistered');
+      this.logger.debug(
+        '[EmailVerificationHandler.verifySingle]: Aborting job: stream was unregistered',
+        { streamId }
+      );
       return;
     }
 
@@ -160,18 +172,18 @@ export class EmailVerificationHandler {
       let result = await this.isExistingStatus(email);
       cacheLookupTime = performance.now() - t0;
 
-      if (result) {
+      if (result?.status) {
         cacheHit = true;
       } else {
         const t1 = performance.now();
         result = await engine.verify(email);
         engineVerifyTime = performance.now() - t1;
+      }
 
-        if (result?.status) {
-          const t2 = performance.now();
-          await this.updateStatus(userId, email, result);
-          persistenceTime = performance.now() - t2;
-        }
+      if (result?.status) {
+        const t2 = performance.now();
+        await this.updateStatus(userId, email, result);
+        persistenceTime = performance.now() - t2;
       }
 
       this.logger.info('Verification completed', {
@@ -259,10 +271,10 @@ export class EmailVerificationHandler {
   }
 
   private async isExistingStatus(email: string) {
-    return (
+    const existingStatus =
       (await this.emailStatusCache.get(email)) ??
-      (await this.contacts.SelectRecentEmailStatus(email))
-    );
+      (await this.contacts.SelectRecentEmailStatus(email));
+    return existingStatus;
   }
 
   private async updateStatus(
@@ -280,19 +292,15 @@ export class EmailVerificationHandler {
   }
 
   private incrementActive(streamId: string) {
-    this.streamActiveJobs.set(
-      streamId,
-      (this.streamActiveJobs.get(streamId) ?? 0) + 1
-    );
+    const jobs = this.streamActiveJobs.get(streamId);
+    if (!jobs) return;
+    this.streamActiveJobs.set(streamId, jobs + 1);
   }
 
   private decrementActive(streamId: string) {
-    const next = (this.streamActiveJobs.get(streamId) ?? 1) - 1;
-    if (next <= 0) {
-      this.streamActiveJobs.delete(streamId);
-    } else {
-      this.streamActiveJobs.set(streamId, next);
-    }
+    const jobs = this.streamActiveJobs.get(streamId);
+    if (!jobs) return;
+    this.streamActiveJobs.set(streamId, jobs - 1);
   }
 }
 
