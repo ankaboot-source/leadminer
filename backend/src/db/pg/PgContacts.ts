@@ -311,11 +311,12 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        const { rowCount: selectResults } = await this.pool.query(
-          'SELECT email FROM private.persons WHERE user_id = $1 AND email = $2;',
+        const { rowCount, rows } = await this.pool.query(
+          'SELECT email, status FROM private.persons WHERE user_id = $1 AND email = $2;',
           [userId, person.email]
         );
-        if (selectResults === 0) {
+
+        if (rowCount === 0 || rows[0]?.status === null) {
           insertedContacts.add({ email: person.email, tags });
         }
 
