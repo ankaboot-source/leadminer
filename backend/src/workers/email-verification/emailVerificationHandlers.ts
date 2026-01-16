@@ -1,7 +1,6 @@
 import { Logger } from 'winston';
 import PQueue from 'p-queue';
 import Redis from 'ioredis';
-import { setMaxListeners } from 'node:events';
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import {
@@ -186,13 +185,12 @@ export class EmailVerificationHandler {
           totalMs: (performance.now() - startTime).toFixed(2)
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       const totalTimeSoFar = performance.now() - startTime;
       this.logger.error('Verification step failed', {
+        error,
         streamId,
         engineName,
-        error: error.message,
-        stack: error.stack,
         context: {
           cacheHit,
           timeBeforeFailureMs: totalTimeSoFar.toFixed(2),
