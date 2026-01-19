@@ -3,11 +3,6 @@ import { parseHeader } from 'imap';
 import path from 'path';
 import { PSTFile, PSTFolder, PSTMessage } from 'pst-extractor';
 import { pipeline } from 'stream/promises';
-import {
-  PSTFile,
-  PSTFolder,
-  PSTMessage
-} from 'pst-extractor';
 import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
