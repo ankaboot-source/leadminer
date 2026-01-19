@@ -264,7 +264,7 @@ export default class TasksManagerPST {
         } = await this.PSTFetcherClient.startFetch({
           userId,
           miningId,
-          source, // source is set here, w f taskmanager le5er esmha email raw
+          source, // source is set here, in the imap taskmanager its called 'email'
           extractSignatures: fetchEmailBody,
           contactStream: messagesStream,
           signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME

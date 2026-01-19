@@ -1,11 +1,8 @@
 import * as fs from 'fs';
 import { parseHeader } from 'imap';
 import path from 'path';
-import {
-  PSTFile,
-  PSTFolder,
-  PSTMessage
-} from 'pst-extractor';
+import { PSTFile, PSTFolder, PSTMessage } from 'pst-extractor';
+import { pipeline } from 'stream/promises';
 import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -400,7 +397,7 @@ export default class PSTEmailsFetcher {
 
     // Pre-scan PST to compute total messages before processing
     const total = await this.getTotalMessages();
-    
+
     // skipcq: JS-0339 non null assertion is safe as pstFile is on class creation
     await this.processFolder(this.pstFile!.getRootFolder());
 
@@ -446,14 +443,14 @@ export default class PSTEmailsFetcher {
 
     if (error) throw error;
 
-    const buffer = Buffer.from(await data.arrayBuffer());
     this.localPstFilePath = path.join(
       '/tmp',
       `${Date.now()}-${path.basename(storagePath)}`
     );
 
-    fs.writeFileSync(this.localPstFilePath, buffer);
-    this.pstFile = new PSTFile(fs.readFileSync(this.localPstFilePath));
+    const writeStream = fs.createWriteStream(this.localPstFilePath);
+    await pipeline(data.stream(), writeStream);
+    this.pstFile = new PSTFile(this.localPstFilePath);
   }
 
   /**
