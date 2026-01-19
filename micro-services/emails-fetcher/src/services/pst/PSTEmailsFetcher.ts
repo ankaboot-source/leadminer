@@ -1,20 +1,14 @@
 import * as fs from 'fs';
 import { parseHeader } from 'imap';
 import path from 'path';
-import {
-  PSTFile,
-  PSTFolder,
-  PSTMessage
-} from 'pst-extractor';
+import { PSTFile, PSTFolder, PSTMessage } from 'pst-extractor';
+import { pipeline } from 'stream/promises';
 import ENV from '../../config';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import supabaseClient from '../../utils/supabase';
-import { createWriteStream } from 'fs';
-import { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
 
 const PST_FOLDER = 'pst';
 const redisClient = redis.getClient();
@@ -403,7 +397,7 @@ export default class PSTEmailsFetcher {
 
     // Pre-scan PST to compute total messages before processing
     const total = await this.getTotalMessages();
-    
+
     // skipcq: JS-0339 non null assertion is safe as pstFile is on class creation
     await this.processFolder(this.pstFile!.getRootFolder());
 
