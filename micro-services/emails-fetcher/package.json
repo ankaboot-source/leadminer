@@ -6,11 +6,11 @@
   "license": "GNU AGPL v3",
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
+    "dev": "bun --watch src/server.ts",
+    "inspect": "bun --inspect src/server.ts",
     "test:unit": "jest ./test/unit",
     "test:integration": "jest ./test/integration",
     "test-ci:unit": "jest ./test/unit --coverage",
-    "dev": "nodemon src/server.ts",
-    "inspect": "node --inspect -r ts-node/register src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
     "prettier": "prettier --check .",
@@ -22,7 +22,7 @@
     "fetcher",
     "redis",
     "microservice",
-    "nodejs",
+    "bun",
     "express",
     "leadminer"
   ],
@@ -42,7 +42,6 @@
     "ioredis": "^5.7.0",
     "lettercoder": "^0.1.1",
     "mailparser": "^3.7.4",
-    "nodemon": "^3.1.10",
     "p-queue": "^9.0.0",
     "pg": "^8.16.3",
     "pg-format": "^1.0.4",
@@ -54,10 +53,8 @@
     "zod": "^3.25.76",
     "zod-error": "^1.5.0"
   },
-  "overrides": {
-    "imap": {
-      "semver": "^7.6.3"
-    }
+  "resolutions": {
+    "semver": "^7.6.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -86,10 +83,9 @@
     "prettier": "3.4.2",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   },
   "engines": {
-    "node": ">=15.0.0"
+    "bun": ">=1.1.0"
   }
 }
