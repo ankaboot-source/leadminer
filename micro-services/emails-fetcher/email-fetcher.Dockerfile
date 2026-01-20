@@ -1,20 +1,21 @@
-# Build
-FROM node:lts-alpine as build-stage
+# Build stage
+FROM oven/bun:alpine AS build-stage
 WORKDIR /leadminer-email-fetcher-service
-COPY package*.json ./
+COPY package.json bun.lock ./
 COPY tsconfig*.json ./
 COPY src ./src
-RUN npm install
-RUN npm run build
+RUN bun install
+RUN bun run build
 
-# Run
-FROM node:lts-alpine as app-stage
+
+# Runtime stage
+FROM oven/bun:alpine AS app-stage
 WORKDIR /leadminer-email-fetcher-service
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY package.json bun.lock ./
+RUN bun install --production
 COPY --from=build-stage /leadminer-email-fetcher-service/dist .
 
 EXPOSE 8083
 EXPOSE 8023
 
-CMD ["node", "--max-old-space-size=2048", "server.js"]
+CMD ["bun", "server.js"]
