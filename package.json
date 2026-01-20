@@ -7,7 +7,7 @@
     "install-deps": "npm i && npm run install-deps:backend && npm run install-deps:frontend && npm run install-deps:micro-services-emails-fetcher",
     "install-deps:frontend": "npm i --prefix ./frontend",
     "install-deps:backend": "npm i --prefix ./backend",
-    "install-deps:micro-services-emails-fetcher": "npm i --prefix ./micro-services/emails-fetcher",
+    "install-deps:micro-services-emails-fetcher": "cd ./micro-services/emails-fetcher && bun install",
     "dev:all": "./run.sh",
     "dev:generate-env": "bash ./generate_env.sh",
     "dev:supabase": "supabase start",
