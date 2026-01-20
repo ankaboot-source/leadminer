@@ -53,6 +53,7 @@ To give it a try without the hassle of installation, [simply use leadminer.io](h
 ```
 node -v
 npm -v
+bun -v
 docker -v
 docker-compose -v
 ```
