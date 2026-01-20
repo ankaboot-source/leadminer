@@ -1,5 +1,5 @@
 # Build stage
-FROM oven/bun:1.1.7-alpine AS build-stage
+FROM oven/bun:alpine AS build-stage
 WORKDIR /leadminer-email-fetcher-service
 COPY package.json bun.lockb ./
 COPY tsconfig*.json ./
@@ -9,7 +9,7 @@ RUN bun run build
 
 
 # Runtime stage
-FROM oven/bun:1.1.7-alpine AS app-stage
+FROM oven/bun:alpine AS app-stage
 WORKDIR /leadminer-email-fetcher-service
 COPY package.json bun.lockb ./
 RUN bun install --production
