@@ -74,14 +74,6 @@ export default class TasksManagerPST {
         const { fetch } = task.process;
 
         fetch.status = isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
-
-        if (
-          !fetch.stoppedAt &&
-          [TaskStatus.Done, TaskStatus.Canceled].includes(fetch.status)
-        ) {
-          await this.stopTask([fetch], isCanceled);
-          this.notifyChanges(miningId, 'fetched', 'fetching-finished');
-        }
       }
 
       if (count > 0) {
@@ -547,8 +539,11 @@ export default class TasksManagerPST {
     };
 
     if (!fetch.stoppedAt && fetch.status === TaskStatus.Done) {
-      logger.debug('Task progress update', {
-        ...progress
+      logger.debug('[Progress update]: stopping fetching task', {
+        status: fetch.status,
+        started_at: fetch.startedAt,
+        stopped_at: fetch.stoppedAt,
+        progress
       });
       await this.stopTask([fetch]);
       this.notifyChanges(task.miningId, 'fetched', 'fetching-finished');
@@ -559,6 +554,12 @@ export default class TasksManagerPST {
       !signature.stoppedAt &&
       (signature.status === TaskStatus.Done || !signature.details.enabled)
     ) {
+      logger.debug('[Progress update]: stopping signature task', {
+        status: signature.status,
+        started_at: signature.startedAt,
+        stopped_at: signature.stoppedAt,
+        progress
+      });
       await this.stopTask([signature]);
     }
 
@@ -567,8 +568,11 @@ export default class TasksManagerPST {
       fetch.stoppedAt &&
       progress.extracted >= progress.fetched
     ) {
-      logger.debug('Task progress update', {
-        ...progress
+      logger.debug('[Progress update]: stopping extracting task', {
+        status: extract.status,
+        started_at: extract.startedAt,
+        stopped_at: extract.stoppedAt,
+        progress
       });
       await this.stopTask([extract]);
       this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
@@ -579,8 +583,11 @@ export default class TasksManagerPST {
       extract.stoppedAt &&
       progress.verifiedContacts >= progress.createdContacts
     ) {
-      logger.debug('Task progress update', {
-        ...progress
+      logger.debug('[Progress update]: stopping cleaning task', {
+        status: clean.status,
+        started_at: clean.startedAt,
+        stopped_at: clean.stoppedAt,
+        progress
       });
       await this.stopTask([clean]);
       this.notifyChanges(
