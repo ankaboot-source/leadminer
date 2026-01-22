@@ -69,7 +69,7 @@ export default class EmailVerificationConsumer {
           try {
             if (!this.activeStreams.has(streamName)) {
               this.logger.info(
-                `Aborting data will not be processed, stream was removed from activeStreams`
+                'Aborting data will not be processed, stream was removed from activeStreams'
               );
               return null;
             }
