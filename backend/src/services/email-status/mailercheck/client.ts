@@ -32,7 +32,7 @@ export default class MailerCheckClient {
       );
       return data.status;
     } catch (error) {
-      logError(error, '[MailerCheck:verifyEmail]', this.logger);
+      logError(error, `[MailerCheck:verifyEmail:${email}]`, this.logger);
       throw error;
     }
   }

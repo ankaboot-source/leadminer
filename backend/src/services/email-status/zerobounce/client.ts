@@ -150,7 +150,11 @@ export default class ZerobounceClient {
       );
       return response.data;
     } catch (error) {
-      logError(error, `[${this.constructor.name}:verifyEmail]`, this.logger);
+      logError(
+        error,
+        `[${this.constructor.name}:verifyEmail:${email}]`,
+        this.logger
+      );
       throw error;
     }
   }
