@@ -22,6 +22,16 @@
       </label>
     </div>
 
+    <div class="flex flex-row items-center gap-2 pb-4">
+      <ToggleSwitch
+        v-model="$leadminerStore.cleanUnverifiedContacts"
+        input-id="cleanUnverifiedContacts"
+      />
+      <label for="cleanUnverifiedContacts" class="cursor-pointer flex-1">
+        {{ $t('mining.verify_previously_unverified_emails') }}
+      </label>
+    </div>
+
     <div
       v-if="$leadminerStore.miningType === 'email'"
       class="flex items-center gap-2"

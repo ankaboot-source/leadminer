@@ -128,7 +128,8 @@
       "toast_canceled_title": "Mining canceled",
       "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue.",
       "extract_signatures_option": "Extract contact details from signatures",
-      "extract_signatures_sub": "( this may take more time )"
+      "extract_signatures_sub": "( this may take more time )",
+      "verify_previously_unverified_emails": "Verify email status of unverified contacts"
     },
     "error": {
       "default": {
@@ -271,7 +272,8 @@
       "toast_canceled_title": "Extraction annulée",
       "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction.",
       "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-      "extract_signatures_sub": "(l'extraction prendra plus de temps)"
+      "extract_signatures_sub": "(l'extraction prendra plus de temps)",
+      "verify_previously_unverified_emails": "Vérifier le statut des contacts non traités"
     },
     "error": {
       "default": {
