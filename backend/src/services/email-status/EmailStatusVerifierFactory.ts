@@ -205,7 +205,7 @@ export default class EmailStatusVerifierFactory {
       new TokenBucketRateLimiter({
         executeEvenly: false,
         uniqueKey: 'email-verification-reacher',
-        distribution: Distribution.Memory,
+        distribution: Distribution.Redis,
         requests: config.REACHER_RATE_LIMITER_REQUESTS,
         intervalSeconds: config.REACHER_RATE_LIMITER_INTERVAL
       }),
@@ -227,7 +227,7 @@ export default class EmailStatusVerifierFactory {
       new TokenBucketRateLimiter({
         executeEvenly: false,
         uniqueKey: 'email-verification-mailercheck',
-        distribution: Distribution.Memory,
+        distribution: Distribution.Redis,
         requests: 60,
         intervalSeconds: 60
       }),
@@ -249,14 +249,14 @@ export default class EmailStatusVerifierFactory {
       new TokenBucketRateLimiter({
         executeEvenly: false,
         uniqueKey: 'email-verification-zerobounce-single',
-        distribution: Distribution.Memory,
+        distribution: Distribution.Redis,
         requests: ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
         intervalSeconds: 60
       }),
       new TokenBucketRateLimiter({
         executeEvenly: false,
         uniqueKey: 'email-verification-zerobounce-bulk',
-        distribution: Distribution.Memory,
+        distribution: Distribution.Redis,
         requests: ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,
         intervalSeconds: 60
       }),
