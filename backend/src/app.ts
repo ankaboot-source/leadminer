@@ -78,7 +78,8 @@ export default function initializeApp(
       tasksManagerFile,
       tasksManagerPST,
       miningSources,
-      authResolver
+      authResolver,
+      contacts
     )
   );
   app.use(

@@ -6,13 +6,15 @@ import AuthResolver from '../services/auth/AuthResolver';
 import TasksManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
+import { Contacts } from '../db/interfaces/Contacts';
 
 export default function initializeMiningRoutes(
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
   tasksManagerPST: TasksManagerPST,
   miningSource: MiningSources,
-  authResolver: AuthResolver
+  authResolver: AuthResolver,
+  contactsDB: Contacts
 ) {
   const router = Router();
 
@@ -30,7 +32,8 @@ export default function initializeMiningRoutes(
     tasksManager,
     tasksManagerFile,
     tasksManagerPST,
-    miningSource
+    miningSource,
+    contactsDB
   );
 
   const authMiddleware = initializeAuthMiddleware(authResolver);

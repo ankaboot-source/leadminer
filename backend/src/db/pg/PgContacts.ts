@@ -46,6 +46,9 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
     'SELECT * FROM private.get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
 
+  private static readonly SELECT_CONTACTS_UNVERIFIED =
+    'SELECT * FROM private.get_contacts_table($1) WHERE status IS NULL';
+
   private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
     FROM private.get_contacts_table_by_emails($1,$2) contacts
@@ -403,8 +406,10 @@ export default class PgContacts implements Contacts {
   ): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED,
-        [userId, emails]
+        emails.length
+          ? PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED
+          : PgContacts.SELECT_CONTACTS_UNVERIFIED,
+        emails.length ? [userId, emails] : [userId]
       );
       return rows;
     } catch (error) {

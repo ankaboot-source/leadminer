@@ -271,7 +271,7 @@ export default class TasksManagerFile {
    * @param miningId - The mining ID of the task to retrieve.
    * @returns Returns the task, otherwise throws error.
    */
-  private getTaskOrThrow(miningId: string) {
+  getTaskOrThrow(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) {
       throw new Error(`Task with mining ID ${miningId} does not exist.`);

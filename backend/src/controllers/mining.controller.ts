@@ -27,6 +27,10 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
+import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
+import { EmailVerificationData } from '../workers/email-verification/emailVerificationHandlers';
+import { Contacts } from '../db/interfaces/Contacts';
+import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -54,11 +58,79 @@ async function exchangeForToken(
   };
 }
 
+async function publishPreviouslyUnverifiedEmailsToCleaning(
+  contacts: Contacts,
+  userId: string,
+  miningId: string,
+  emailStream: string
+) {
+  const redisClient = redis.getClient();
+  const queuedEmailsCache = new RedisQueuedEmailsCache(redisClient, miningId);
+  const producer = new RedisStreamProducer<EmailVerificationData>(
+    redisClient,
+    emailStream,
+    logger
+  );
+  logger.debug('Starting re-publication of unverified contacts', {
+    userId,
+    miningId,
+    emailStream
+  });
+  let emailsToVerify = 0;
+  try {
+    const unverifiedContacts = await contacts.getUnverifiedContacts(userId, []);
+
+    if (!unverifiedContacts || unverifiedContacts.length === 0) {
+      logger.debug('No unverified contacts found to re-publish', {
+        userId,
+        miningId
+      });
+      return emailsToVerify;
+    }
+
+    const toPublish = (
+      await queuedEmailsCache.addMany(
+        unverifiedContacts.map(({ email }) => email)
+      )
+    ).addedElements.map((e) => ({
+      email: e,
+      userId,
+      miningId
+    }));
+
+    emailsToVerify += toPublish.length;
+
+    logger.debug('Publishing unverified contacts to cleaning stream', {
+      userId,
+      miningId,
+      count: toPublish.length
+    });
+
+    await producer.produce(toPublish);
+
+    logger.debug('Successfully re-published contacts for cleaning', {
+      userId,
+      miningId,
+      count: toPublish.length
+    });
+
+    return emailsToVerify;
+  } catch (error) {
+    logger.error('Failed to re-publish unverified contacts', {
+      userId,
+      miningId,
+      error
+    });
+    throw error; // Re-throw to handle failure at the caller level
+  }
+}
+
 export default function initializeMiningController(
   tasksManager: TasksManager,
   tasksManagerFile: TaskManagerFile,
   tasksManagerPST: TasksManagerPST,
-  miningSources: MiningSources
+  miningSources: MiningSources,
+  contactsDB: Contacts
 ) {
   return {
     async createProviderMiningSource(req: Request, res: Response) {
@@ -221,6 +293,7 @@ export default function initializeMiningController(
 
       const {
         extractSignatures,
+        cleanUnverifiedContacts,
         miningSource: { email },
         boxes: folders
       }: {
@@ -229,12 +302,18 @@ export default function initializeMiningController(
         };
         boxes: string[];
         extractSignatures: boolean;
+        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       const errors = [
         validateType('email', email, 'string'),
         validateType('boxes', folders, 'string[]'),
-        validateType('extractSignatures', extractSignatures, 'boolean')
+        validateType('extractSignatures', extractSignatures, 'boolean'),
+        validateType(
+          'cleanUnverifiedContacts',
+          cleanUnverifiedContacts,
+          'boolean'
+        )
       ].filter(Boolean);
 
       if (errors.length) {
@@ -267,6 +346,23 @@ export default function initializeMiningController(
           email: miningSourceCredentials.email,
           fetchEmailBody: extractSignatures
         });
+
+        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+
+        if (cleanUnverifiedContacts) {
+          const totalPublished =
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              taskObject.process.clean.details.stream.emailsStream
+            );
+          taskObject.progress.createdContacts += totalPublished;
+          taskObject.process.clean.details.progress.createdContacts +=
+            totalPublished;
+        }
+
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
         if (
@@ -295,10 +391,12 @@ export default function initializeMiningController(
 
       const {
         name,
-        contacts
+        contacts,
+        cleanUnverifiedContacts
       }: {
         name: string;
         contacts: Partial<ContactFormat[]>;
+        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       try {
@@ -312,11 +410,42 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
+        const errors = [
+          validateType('name', name, 'string'),
+          validateType(
+            'cleanUnverifiedContacts',
+            cleanUnverifiedContacts,
+            'boolean'
+          )
+        ].filter(Boolean);
+
+        if (errors.length) {
+          return res
+            .status(400)
+            .json({ message: `Invalid input: ${errors.join(', ')}` });
+        }
+
         const fileMiningTask = await tasksManagerFile.createTask(
           user.id,
           name,
           1
         );
+
+        const taskObject = tasksManager.getTaskOrThrow(fileMiningTask.miningId);
+        const { userId, miningId } = taskObject;
+
+        if (cleanUnverifiedContacts) {
+          const totalPublished =
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              taskObject.process.clean.details.stream.emailsStream
+            );
+          taskObject.progress.createdContacts += totalPublished;
+          taskObject.process.clean.details.progress.createdContacts +=
+            totalPublished;
+        }
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(
@@ -335,7 +464,10 @@ export default function initializeMiningController(
           })
         );
 
-        return res.status(201).send({ error: null, data: fileMiningTask });
+        return res.status(201).send({
+          error: null,
+          data: fileMiningTask
+        });
       } catch (err) {
         res.status(500);
         return next(err);
@@ -347,16 +479,23 @@ export default function initializeMiningController(
 
       const {
         name,
-        extractSignatures
+        extractSignatures,
+        cleanUnverifiedContacts
       }: {
         name: string;
         extractSignatures: boolean;
         // file
+        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       const errors = [
         validateType('name', name, 'string'),
-        validateType('extractSignatures', extractSignatures, 'boolean')
+        validateType('extractSignatures', extractSignatures, 'boolean'),
+        validateType(
+          'cleanUnverifiedContacts',
+          cleanUnverifiedContacts,
+          'boolean'
+        )
       ].filter(Boolean);
 
       if (errors.length) {
@@ -370,6 +509,23 @@ export default function initializeMiningController(
           name,
           extractSignatures
         );
+
+        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+
+        if (cleanUnverifiedContacts) {
+          const totalPublished =
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              taskObject.process.clean.details.stream.emailsStream
+            );
+          taskObject.progress.createdContacts += totalPublished;
+          taskObject.process.clean.details.progress.createdContacts +=
+            totalPublished;
+        }
+
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
         if (
