@@ -265,7 +265,7 @@ export default class PSTEmailsFetcher {
       this.isCanceled,
       this.isCompleted
     );
-    
+
     this.publishedEmails = 0;
 
     logger.info(
@@ -329,20 +329,20 @@ export default class PSTEmailsFetcher {
         const headers = parseHeader(transportMessageHeaders);
         const isLastMessageInFolder = seq === folder.emailCount; // .contentCount
 
-
         if (!headers) {
-          logger.debug("Skipping this PST email as it lacks header")
+          logger.debug('Skipping this PST email as it lacks header');
           email = folder.getNextChild();
-          continue
+          continue;
         }
 
-        const messageId = getMessageId(headers); 
+        const messageId = getMessageId(headers);
         headers['message-id'] = [messageId];
 
-        const skipThisEmail = this.fetchedIds.has(messageId) && !isLastMessageInFolder;
+        const skipThisEmail =
+          this.fetchedIds.has(messageId) && !isLastMessageInFolder;
 
         if (skipThisEmail) {
-          logger.debug("Skipping this PST email as it is duplicated")
+          logger.debug('Skipping this PST email as it is duplicated');
           email = folder.getNextChild();
           continue;
         }
