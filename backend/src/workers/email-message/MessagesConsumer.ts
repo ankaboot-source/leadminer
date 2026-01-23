@@ -166,7 +166,7 @@ export default class MessagesConsumer {
 
     setTimeout(() => {
       this.consume();
-    }, 0);
+    }, 1000);
   }
 
   /**

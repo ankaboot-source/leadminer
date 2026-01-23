@@ -67,6 +67,13 @@ export default class EmailVerificationConsumer {
       await Promise.allSettled(
         result.map(async ({ streamName, data }) => {
           try {
+            if (!this.activeStreams.has(streamName)) {
+              this.logger.info(
+                'Aborting data will not be processed, stream was removed from activeStreams'
+              );
+              return null;
+            }
+
             this.logger.info(
               `Consuming ${data.length} emails from stream name ${streamName}`
             );
@@ -75,10 +82,6 @@ export default class EmailVerificationConsumer {
               streamName,
               data
             );
-
-            if (!this.activeStreams.has(streamName)) {
-              return null;
-            }
 
             return processed;
           } catch (err) {

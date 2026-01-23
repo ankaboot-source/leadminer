@@ -156,14 +156,6 @@ export default class PSTEmailsFetcher {
     folder: string
   ): Promise<Record<string, string[]> | null> {
     try {
-      const messageId = getMessageId(header);
-      header['message-id'] = [messageId];
-
-      const skipThisEmail =
-        !header || (this.fetchedIds.has(messageId) && !isLastMessageInFolder);
-
-      if (skipThisEmail) return null;
-
       await publishToStream(this.contactStream, {
         type: 'email',
         data: {
@@ -267,22 +259,14 @@ export default class PSTEmailsFetcher {
     );
 
     // flush any remaining published emails count
-    if (this.publishedEmails > 0) {
-      await publishFetchingProgress(
-        this.miningId,
-        this.publishedEmails,
-        this.isCanceled,
-        this.isCompleted
-      );
-      this.publishedEmails = 0;
-    }
-
     await publishFetchingProgress(
       this.miningId,
-      0,
+      this.publishedEmails,
       this.isCanceled,
       this.isCompleted
     );
+
+    this.publishedEmails = 0;
 
     logger.info(
       `[${this.miningId}] Notified progress: Fetching is ${
@@ -345,6 +329,24 @@ export default class PSTEmailsFetcher {
         const headers = parseHeader(transportMessageHeaders);
         const isLastMessageInFolder = seq === folder.emailCount; // .contentCount
 
+        if (!headers) {
+          logger.debug('Skipping this PST email as it lacks header');
+          email = folder.getNextChild();
+          continue;
+        }
+
+        const messageId = getMessageId(headers);
+        headers['message-id'] = [messageId];
+
+        const skipThisEmail =
+          this.fetchedIds.has(messageId) && !isLastMessageInFolder;
+
+        if (skipThisEmail) {
+          logger.debug('Skipping this PST email as it is duplicated');
+          email = folder.getNextChild();
+          continue;
+        }
+
         const header = await this.publishHeader(
           headers,
           seq,
@@ -352,13 +354,7 @@ export default class PSTEmailsFetcher {
           folder.displayName
         );
 
-        if (!header) {
-          email = folder.getNextChild();
-          continue;
-        }
-
-        // If configured, also fetch the email body and publish a signature payload
-        if (this.fetchEmailBody) {
+        if (header && this.fetchEmailBody) {
           await this.publishBody(
             body,
             header,
@@ -369,8 +365,6 @@ export default class PSTEmailsFetcher {
           );
         }
 
-        // mirror IMAP behaviour: add id and increment counters after successful publish
-        const [messageId] = header['message-id'];
         this.fetchedIds.add(messageId);
         this.totalFetched += 1;
         this.publishedEmails += 1;

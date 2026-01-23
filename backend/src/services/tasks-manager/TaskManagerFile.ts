@@ -271,7 +271,7 @@ export default class TasksManagerFile {
    * @param miningId - The mining ID of the task to retrieve.
    * @returns Returns the task, otherwise throws error.
    */
-  private getTaskOrThrow(miningId: string) {
+  getTaskOrThrow(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) {
       throw new Error(`Task with mining ID ${miningId} does not exist.`);
@@ -532,6 +532,12 @@ export default class TasksManagerFile {
     totalImported: number
   ) {
     if (!extract.stoppedAt && progress.extracted >= totalImported) {
+      logger.debug('[Progress update]: stopping extracting task', {
+        status: extract.status,
+        started_at: extract.startedAt,
+        stopped_at: extract.stoppedAt,
+        progress
+      });
       await this.stopTask([extract]);
       this.notifyChanges(miningId, 'extracted', 'extracting-finished');
     }
@@ -548,6 +554,12 @@ export default class TasksManagerFile {
       extract.stoppedAt &&
       progress.verifiedContacts >= progress.createdContacts
     ) {
+      logger.debug('[Progress update]: stopping cleaning task', {
+        status: clean.status,
+        started_at: clean.startedAt,
+        stopped_at: clean.stoppedAt,
+        progress
+      });
       await this.stopTask([clean]);
       this.notifyChanges(miningId, 'verifiedContacts', 'cleaning-finished');
     }

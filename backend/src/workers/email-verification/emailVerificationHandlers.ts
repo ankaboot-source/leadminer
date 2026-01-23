@@ -60,17 +60,19 @@ export class EmailVerificationHandler {
     this.queue = new PQueue({ concurrency: 10, interval: 100, intervalCap: 1 });
   }
 
+  static generateEmailId(email: string, userId: string) {
+    return `${email}:${userId}`;
+  }
+
+  static decodeEmailId(emailId: string) {
+    const [email, userId] = emailId.split(':');
+    return { email, userId };
+  }
+
   /**
    * Processes jobs and manages queue priority
    */
   public async handle(streamId: string, jobs: EmailVerificationData[]) {
-    const emailToUserIdMap = new Map(
-      jobs.map(({ email, userId }) => [email, userId])
-    );
-    const verifierGroups = this.emailStatusVerifier.getEmailVerifiers(
-      Array.from(emailToUserIdMap.keys())
-    );
-
     if (!this.streamActiveJobs.has(streamId)) {
       this.logger.debug(
         '[EmailVerificationHandler.handle]: Aborting ingestion: stream was unregistered',
@@ -78,6 +80,19 @@ export class EmailVerificationHandler {
       );
       return;
     }
+
+    const emailToEmailIdsMap = new Map<string, string[]>();
+
+    for (const { email, userId } of jobs) {
+      const id = EmailVerificationHandler.generateEmailId(email, userId);
+      const ids = emailToEmailIdsMap.get(email) || [];
+      ids.push(id);
+      emailToEmailIdsMap.set(email, ids);
+    }
+
+    const verifierGroups = this.emailStatusVerifier.getEmailVerifiers(
+      Array.from(emailToEmailIdsMap.keys())
+    );
 
     /* eslint-disable no-await-in-loop */
     for (const [engineName, [engine, emails]] of verifierGroups) {
@@ -94,32 +109,42 @@ export class EmailVerificationHandler {
           break;
         }
 
-        const userId = emailToUserIdMap.get(email);
-        if (!userId) continue;
+        const emailIds = emailToEmailIdsMap.get(email);
+        if (!emailIds || emailIds.length === 0) continue;
 
-        this.incrementActive(streamId);
+        if (emailIds.length > 1) {
+          this.logger.debug(
+            `[EmailVerificationHandler.handle]: Email ${email} has ${emailIds.length} duplicates will be pushed to queue`,
+            { streamId }
+          );
+        }
 
-        this.queue
-          .add(
-            async () => {
-              await this.verifySingle(
-                streamId,
-                email,
-                userId,
-                engine,
-                engineName
-              );
-            },
-            { priority }
-          )
-          .catch((error) => {
-            if (error.name !== 'AbortError' && error.name !== 'DOMException') {
+        emailIds.forEach((emailId) => {
+          const { email: emailToVerify, userId } =
+            EmailVerificationHandler.decodeEmailId(emailId);
+
+          this.incrementActive(streamId);
+
+          this.queue
+            .add(
+              async () => {
+                await this.verifySingle(
+                  streamId,
+                  emailToVerify,
+                  userId,
+                  engine,
+                  engineName
+                );
+              },
+              { priority }
+            )
+            .catch((error) => {
               this.logger.error('Queue error', { error: error.message, email });
-            }
-          })
-          .finally(() => {
-            this.decrementActive(streamId);
-          });
+            })
+            .finally(() => {
+              this.decrementActive(streamId);
+            });
+        });
       }
     }
     /* eslint-disable no-await-in-loop */
