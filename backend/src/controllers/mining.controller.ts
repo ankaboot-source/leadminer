@@ -347,10 +347,9 @@ export default function initializeMiningController(
           fetchEmailBody: extractSignatures
         });
 
-        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
-        const { userId, miningId } = taskObject;
-
         if (cleanUnverifiedContacts) {
+          const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
+          const { userId, miningId } = taskObject;
           const totalPublished =
             await publishPreviouslyUnverifiedEmailsToCleaning(
               contactsDB,
@@ -431,10 +430,12 @@ export default function initializeMiningController(
           1
         );
 
-        const taskObject = tasksManager.getTaskOrThrow(fileMiningTask.miningId);
-        const { userId, miningId } = taskObject;
-
         if (cleanUnverifiedContacts) {
+          const taskObject = tasksManagerFile.getTaskOrThrow(
+            fileMiningTask.miningId
+          );
+          const { userId, miningId } = taskObject;
+
           const totalPublished =
             await publishPreviouslyUnverifiedEmailsToCleaning(
               contactsDB,
@@ -510,10 +511,11 @@ export default function initializeMiningController(
           extractSignatures
         );
 
-        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
-        const { userId, miningId } = taskObject;
-
         if (cleanUnverifiedContacts) {
+          const taskObject = tasksManagerPST.getTaskOrThrow(
+            miningTask.miningId
+          );
+          const { userId, miningId } = taskObject;
           const totalPublished =
             await publishPreviouslyUnverifiedEmailsToCleaning(
               contactsDB,
