@@ -104,6 +104,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     miningInterrupted.value = false;
 
+    miningType.value = 'email';
+
     errors.value = {};
   }
 
