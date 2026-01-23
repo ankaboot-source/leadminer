@@ -117,8 +117,7 @@ const sourceModel = ref<MiningSource | undefined>(sourceOptions?.value[0]);
 
 function extractContacts(miningSource?: MiningSource) {
   if (miningSource) {
-    $leadminerStore.boxes = [];
-    $leadminerStore.selectedBoxes = [];
+    $leadminerStore.$resetMining();
     $leadminerStore.activeMiningSource = miningSource;
     $stepper.next();
   }
