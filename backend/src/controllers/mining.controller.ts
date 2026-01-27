@@ -293,7 +293,6 @@ export default function initializeMiningController(
 
       const {
         extractSignatures,
-        cleanUnverifiedContacts,
         miningSource: { email },
         boxes: folders
       }: {
@@ -302,18 +301,12 @@ export default function initializeMiningController(
         };
         boxes: string[];
         extractSignatures: boolean;
-        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       const errors = [
         validateType('email', email, 'string'),
         validateType('boxes', folders, 'string[]'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType(
-          'cleanUnverifiedContacts',
-          cleanUnverifiedContacts,
-          'boolean'
-        )
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -347,20 +340,18 @@ export default function initializeMiningController(
           fetchEmailBody: extractSignatures
         });
 
-        if (cleanUnverifiedContacts) {
-          const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
-          const { userId, miningId } = taskObject;
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              taskObject.process.clean.details.stream.emailsStream
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
@@ -390,12 +381,10 @@ export default function initializeMiningController(
 
       const {
         name,
-        contacts,
-        cleanUnverifiedContacts
+        contacts
       }: {
         name: string;
         contacts: Partial<ContactFormat[]>;
-        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       try {
@@ -409,14 +398,7 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const errors = [
-          validateType('name', name, 'string'),
-          validateType(
-            'cleanUnverifiedContacts',
-            cleanUnverifiedContacts,
-            'boolean'
-          )
-        ].filter(Boolean);
+        const errors = [validateType('name', name, 'string')].filter(Boolean);
 
         if (errors.length) {
           return res
@@ -430,23 +412,21 @@ export default function initializeMiningController(
           1
         );
 
-        if (cleanUnverifiedContacts) {
-          const taskObject = tasksManagerFile.getTaskOrThrow(
-            fileMiningTask.miningId
-          );
-          const { userId, miningId } = taskObject;
+        const taskObject = tasksManagerFile.getTaskOrThrow(
+          fileMiningTask.miningId
+        );
+        const { userId, miningId } = taskObject;
 
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              taskObject.process.clean.details.stream.emailsStream
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(
@@ -480,23 +460,16 @@ export default function initializeMiningController(
 
       const {
         name,
-        extractSignatures,
-        cleanUnverifiedContacts
+        extractSignatures
       }: {
         name: string;
         extractSignatures: boolean;
         // file
-        cleanUnverifiedContacts: boolean;
       } = req.body;
 
       const errors = [
         validateType('name', name, 'string'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType(
-          'cleanUnverifiedContacts',
-          cleanUnverifiedContacts,
-          'boolean'
-        )
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -511,22 +484,18 @@ export default function initializeMiningController(
           extractSignatures
         );
 
-        if (cleanUnverifiedContacts) {
-          const taskObject = tasksManagerPST.getTaskOrThrow(
-            miningTask.miningId
+        const taskObject = tasksManagerPST.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
           );
-          const { userId, miningId } = taskObject;
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              taskObject.process.clean.details.stream.emailsStream
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {

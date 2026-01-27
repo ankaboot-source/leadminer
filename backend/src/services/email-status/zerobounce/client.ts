@@ -108,7 +108,7 @@ export default class ZerobounceClient {
 
   static readonly BATCH_VALIDATION_PER_MINUTE = 5;
 
-  static readonly SINGLE_VALIDATION_PER_10_SECONDS = 50000;
+  static readonly SINGLE_VALIDATION_PER_10_SECONDS = 80000;
 
   private readonly api: AxiosInstance;
 

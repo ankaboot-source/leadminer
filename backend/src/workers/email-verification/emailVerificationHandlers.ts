@@ -57,7 +57,7 @@ export class EmailVerificationHandler {
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
-    this.queue = new PQueue({ concurrency: 10, interval: 100, intervalCap: 1 });
+    this.queue = new PQueue({ concurrency: 10, interval: 10, intervalCap: 1 });
   }
 
   static generateEmailId(email: string, userId: string) {
