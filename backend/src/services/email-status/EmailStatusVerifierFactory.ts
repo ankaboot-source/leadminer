@@ -225,7 +225,7 @@ export default class EmailStatusVerifierFactory {
     const client = new MailerCheckClient(
       { apiToken: MAILERCHECK_API_KEY },
       new TokenBucketRateLimiter({
-        executeEvenly: false,
+        executeEvenly: true,
         uniqueKey: 'email-verification-mailercheck',
         distribution: Distribution.Redis,
         requests: 60,
@@ -251,7 +251,7 @@ export default class EmailStatusVerifierFactory {
         uniqueKey: 'email-verification-zerobounce-single',
         distribution: Distribution.Redis,
         requests: ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
-        intervalSeconds: 60
+        intervalSeconds: 10
       }),
       new TokenBucketRateLimiter({
         executeEvenly: false,
