@@ -31,7 +31,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(true);
-  const cleanUnverifiedContacts = ref(false);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
@@ -81,7 +80,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     excludedBoxes.value = new Set();
     selectedFile.value = null;
     extractSignatures.value = true;
-    cleanUnverifiedContacts.value = false;
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
@@ -143,7 +141,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       boxes.value = [];
       selectedBoxes.value = [];
       extractSignatures.value = true;
-      cleanUnverifiedContacts.value = false;
 
       console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
@@ -283,7 +280,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           boxes: folders,
           miningSource,
           extractSignatures: extractSignatures.value,
-          cleanUnverifiedContacts: cleanUnverifiedContacts.value,
         },
       },
     );
@@ -307,7 +303,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           contacts: importedContacts,
-          cleanUnverifiedContacts: cleanUnverifiedContacts.value,
         },
       },
     );
@@ -325,7 +320,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           extractSignatures: extractSignatures.value,
-          cleanUnverifiedContacts: cleanUnverifiedContacts.value,
         },
       },
     );
@@ -525,7 +519,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes,
     excludedBoxes,
     extractSignatures,
-    cleanUnverifiedContacts,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,
