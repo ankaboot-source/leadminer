@@ -433,9 +433,15 @@ export default class PSTEmailsFetcher {
   async downloadPSTFromSupabase(storagePath: string) {
     const { data, error } = await supabaseClient.storage
       .from(PST_FOLDER)
-      .download(storagePath);
+      .createSignedUrl(storagePath, 3600); // 1 hour timeout
 
     if (error) throw error;
+
+    const res = await fetch(data.signedUrl);
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Failed to download PST: ${res.status}`);
+    }
 
     this.localPstFilePath = path.join(
       '/tmp',
@@ -443,7 +449,7 @@ export default class PSTEmailsFetcher {
     );
 
     const writeStream = fs.createWriteStream(this.localPstFilePath);
-    await pipeline(data.stream(), writeStream);
+    await pipeline(res.body, writeStream);
     this.pstFile = new PSTFile(this.localPstFilePath);
   }
 
