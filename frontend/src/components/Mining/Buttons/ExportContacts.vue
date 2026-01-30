@@ -8,6 +8,46 @@
       exportTable(ExportTypes.GOOGLE_CONTACTS, true, updateEmptyFieldsOnly)
     "
   />
+  <!-- Google Account Selection Dialog -->
+  <Dialog
+    v-model:visible="accountSelectionDialogVisible"
+    modal
+    :draggable="false"
+    :header="t('select_google_account_title')"
+    :style="{ width: '35rem' }"
+    pt:content:class="p-6 pt-2"
+    pt:footer:class="p-6 pt-0"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="text-surface-600">
+        {{ t('select_google_account_description') }}
+      </p>
+      <Select
+        v-model="selectedGoogleAccount"
+        :options="googleMiningSources"
+        option-label="email"
+        option-value="email"
+        :placeholder="t('select_google_account_placeholder')"
+      />
+    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <Button
+          :label="t('cancel')"
+          severity="secondary"
+          text
+          @click="closeAccountSelectionDialog"
+        />
+        <Button
+          :label="t('continue')"
+          :disabled="!selectedGoogleAccount"
+          @click="onAccountSelected"
+        />
+      </div>
+    </template>
+  </Dialog>
+
   <Dialog
     v-model:visible="dialogVisible"
     modal
@@ -134,6 +174,13 @@ const EXPORT_CONFIG: Record<
 const activeExport = ref(false);
 const updateEmptyFieldsOnly = ref(false);
 const dialogVisible = ref(false);
+const accountSelectionDialogVisible = ref(false);
+const selectedGoogleAccount = ref<string | null>(null);
+const $leadminerStore = useLeadminerStore();
+
+const googleMiningSources = computed(() =>
+  $leadminerStore.miningSources.filter((source) => source.type === 'google'),
+);
 
 function openGoogleExportConfirmationDialog() {
   dialogVisible.value = true;
@@ -141,6 +188,23 @@ function openGoogleExportConfirmationDialog() {
 
 async function closeGoogleExportConfirmationDialog() {
   dialogVisible.value = false;
+}
+
+function openAccountSelectionDialog() {
+  // Fetch mining sources if not already loaded
+  if (!$leadminerStore.miningSources.length) {
+    $leadminerStore.fetchMiningSources();
+  }
+  accountSelectionDialogVisible.value = true;
+}
+
+function closeAccountSelectionDialog() {
+  accountSelectionDialogVisible.value = false;
+}
+
+function onAccountSelected() {
+  closeAccountSelectionDialog();
+  openGoogleExportConfirmationDialog();
 }
 
 function saveFile(
@@ -197,7 +261,7 @@ function getFileName() {
 
 function exportToGoogle(type: ExportTypes) {
   selectedExportType.value = type;
-  openGoogleExportConfirmationDialog();
+  openAccountSelectionDialog();
 }
 
 async function exportTable(
@@ -218,6 +282,10 @@ async function exportTable(
         emails: contactsToTreat.value,
         exportAllContacts: contactsToTreat.value === undefined,
         updateEmptyFieldsOnly: emptyFieldsOnly,
+        targetEmail:
+          type === ExportTypes.GOOGLE_CONTACTS
+            ? selectedGoogleAccount.value
+            : undefined,
       },
       onResponse({ response }) {
         activeExport.value = false;
@@ -258,11 +326,18 @@ async function exportTable(
     activeExport.value = false;
 
     if ((err as FetchError).response?.status === 401) {
-      $consentSidebar.show('google', $profile.value?.email, '/contacts');
+      $consentSidebar.show(
+        'google',
+        selectedGoogleAccount.value || $profile.value?.email,
+        '/contacts',
+      );
       return;
     }
 
     throw err;
+  } finally {
+    // Reset selected account after export attempt
+    selectedGoogleAccount.value = null;
   }
 }
 
@@ -309,7 +384,12 @@ const exportItems = computed(() => [
       "none": "No contacts exported",
       "one": "contact exported successfully",
       "other": "{count} contacts exported successfully"
-    }
+    },
+    "select_google_account_title": "Select Google Account",
+    "select_google_account_description": "Choose which Google account to export contacts to:",
+    "select_google_account_placeholder": "Select a Google account",
+    "continue": "Continue",
+    "cancel": "Cancel"
   },
   "fr": {
     "export_csv": "Exporter en CSV",
@@ -324,7 +404,12 @@ const exportItems = computed(() => [
       "none": "Aucun contact exporté",
       "one": "contact exporté avec succès",
       "other": "{count} contacts exportés avec succès"
-    }
+    },
+    "select_google_account_title": "Sélectionner un compte Google",
+    "select_google_account_description": "Choisissez vers quel compte Google exporter les contacts :",
+    "select_google_account_placeholder": "Sélectionnez un compte Google",
+    "continue": "Continuer",
+    "cancel": "Annuler"
   }
 }
 </i18n>

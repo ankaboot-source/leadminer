@@ -39,9 +39,10 @@ async function validateRequest(
   };
 
   if (exportType === ExportType.GOOGLE_CONTACTS) {
+    const targetEmail = req.body.targetEmail || user.email;
     const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
       user.id,
-      user.email as string
+      targetEmail as string
     )) as OAuthMiningSourceCredentials;
 
     googleContactsOptions = {

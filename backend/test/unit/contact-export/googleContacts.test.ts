@@ -830,6 +830,169 @@ describe('GoogleContactsSession', () => {
       expect(person?.phoneNumbers).toHaveLength(1);
       expect(person?.phoneNumbers?.[0]?.value).toBe('123456789');
     });
+
+    it('should replace existing name when updating (singleton behavior)', async () => {
+      const existing: people_v1.Schema$Person = {
+        ...createMockPerson('people/c1', 'test@test.com'),
+        names: [
+          {
+            givenName: 'Old',
+            familyName: 'Name',
+            unstructuredName: 'Old Name'
+          }
+        ]
+      };
+
+      mockService.people.connections.list.mockResolvedValue(
+        createMockRes({ connections: [existing] })
+      );
+
+      const incoming = createMockContact({
+        email: 'test@test.com',
+        given_name: 'New',
+        family_name: 'Name',
+        name: 'New Name'
+      });
+
+      await session.run([incoming], false);
+
+      const callArgs = mockService.people.batchUpdateContacts.mock.calls[0];
+      if (!callArgs) {
+        throw new Error('Expected batchUpdateContacts to be called');
+      }
+
+      const params = callArgs[0];
+      const person = params.requestBody?.contacts?.['people/c1'];
+
+      // Should have only ONE name (singleton), not append
+      expect(person?.names).toHaveLength(1);
+      expect(person?.names?.[0]).toMatchObject({
+        givenName: 'New',
+        familyName: 'Name',
+        unstructuredName: 'New Name'
+      });
+    });
+
+    it('should add phone numbers when updateEmptyOnly=true and no existing phones', async () => {
+      const existing: people_v1.Schema$Person = {
+        ...createMockPerson('people/c1', 'test@test.com'),
+        phoneNumbers: []
+      };
+
+      mockService.people.connections.list.mockResolvedValue(
+        createMockRes({ connections: [existing] })
+      );
+
+      const incoming = createMockContact({
+        email: 'test@test.com',
+        telephone: ['123456789']
+      });
+
+      await session.run([incoming], true);
+
+      const callArgs = mockService.people.batchUpdateContacts.mock.calls[0];
+      if (!callArgs) {
+        throw new Error('Expected batchUpdateContacts to be called');
+      }
+
+      const params = callArgs[0];
+      const person = params.requestBody?.contacts?.['people/c1'];
+
+      // Should add phone number even with updateEmptyOnly=true when no existing phones
+      expect(person?.phoneNumbers).toHaveLength(1);
+      expect(person?.phoneNumbers?.[0]?.value).toBe('123456789');
+    });
+
+    it('should not create name entry with only null values', async () => {
+      const contact = createMockContact({
+        email: 'test@example.com',
+        name: null as unknown as undefined,
+        given_name: null as unknown as undefined,
+        family_name: null as unknown as undefined
+      });
+
+      await session.run([contact], false);
+
+      const callArgs = mockService.people.batchCreateContacts.mock.calls[0];
+      if (!callArgs) {
+        throw new Error('Expected batchCreateContacts to be called');
+      }
+
+      const params = callArgs[0];
+      const person = params.requestBody?.contacts?.[0]?.contactPerson;
+
+      // Should not have names array if all name fields are null/empty
+      expect(person?.names).toHaveLength(0);
+    });
+
+    it('should deduplicate URLs correctly', async () => {
+      const existing: people_v1.Schema$Person = {
+        ...createMockPerson('people/c1', 'test@test.com'),
+        urls: [{ value: 'https://example.com' }]
+      };
+
+      mockService.people.connections.list.mockResolvedValue(
+        createMockRes({ connections: [existing] })
+      );
+
+      const incoming = createMockContact({
+        email: 'test@test.com',
+        same_as: ['https://example.com', 'https://newsite.com']
+      });
+
+      await session.run([incoming], false);
+
+      const callArgs = mockService.people.batchUpdateContacts.mock.calls[0];
+      if (!callArgs) {
+        throw new Error('Expected batchUpdateContacts to be called');
+      }
+
+      const params = callArgs[0];
+      const person = params.requestBody?.contacts?.['people/c1'];
+
+      // Should have both URLs without duplication
+      expect(person?.urls).toHaveLength(2);
+      expect(person?.urls?.some((u) => u.value === 'https://example.com')).toBe(
+        true
+      );
+      expect(person?.urls?.some((u) => u.value === 'https://newsite.com')).toBe(
+        true
+      );
+    });
+
+    it('should deduplicate organizations correctly', async () => {
+      const existing: people_v1.Schema$Person = {
+        ...createMockPerson('people/c1', 'test@test.com'),
+        organizations: [{ name: 'ACME Corp', title: 'Engineer' }]
+      };
+
+      mockService.people.connections.list.mockResolvedValue(
+        createMockRes({ connections: [existing] })
+      );
+
+      const incoming = createMockContact({
+        email: 'test@test.com',
+        works_for: 'ACME Corp',
+        job_title: 'Engineer'
+      });
+
+      await session.run([incoming], false);
+
+      const callArgs = mockService.people.batchUpdateContacts.mock.calls[0];
+      if (!callArgs) {
+        throw new Error('Expected batchUpdateContacts to be called');
+      }
+
+      const params = callArgs[0];
+      const person = params.requestBody?.contacts?.['people/c1'];
+
+      // Should have only one organization (deduplicated)
+      expect(person?.organizations).toHaveLength(1);
+      expect(person?.organizations?.[0]).toMatchObject({
+        name: 'ACME Corp',
+        title: 'Engineer'
+      });
+    });
   });
 
   describe('System Safety & Pagination', () => {
