@@ -19,7 +19,9 @@
     pt:footer:class="p-6 pt-0"
   >
     <div class="flex flex-col gap-4">
-      <p class="text-surface-600">{{ t('select_google_account_description') }}</p>
+      <p class="text-surface-600">
+        {{ t('select_google_account_description') }}
+      </p>
       <Select
         v-model="selectedGoogleAccount"
         :options="googleMiningSources"
