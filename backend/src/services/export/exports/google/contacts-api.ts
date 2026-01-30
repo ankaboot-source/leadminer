@@ -391,66 +391,97 @@ export default class GoogleContactsSession {
     const existingMemberships = existing?.memberships || [];
     const labels = [this.appName, ...(contact.tags ?? [])].filter(Boolean);
 
-    const person: people_v1.Schema$Person = {
-      names: updateEmptyOnly
-        ? existingNames
-        : [
-            ...existingNames.filter(
-              (n) =>
-                n.givenName !== contact.given_name ||
-                n.familyName !== contact.family_name
-            ),
-            {
-              givenName: contact.given_name,
-              familyName: contact.family_name,
-              unstructuredName: contact.name
-            }
-          ],
-      emailAddresses: updateEmptyOnly
-        ? existingEmails
-        : [
+    // Helper function to check if a field is empty
+    const isEmpty = (val: string | null | undefined) =>
+      val === null || val === undefined || val === '';
+
+    let names: people_v1.Schema$Name[] = existingNames;
+    if (!updateEmptyOnly || existingNames.length === 0) {
+      const newName: people_v1.Schema$Name = {};
+      if (!isEmpty(contact.given_name)) {
+        newName.givenName = contact.given_name;
+      }
+      if (!isEmpty(contact.family_name)) {
+        newName.familyName = contact.family_name;
+      }
+      if (!isEmpty(contact.name)) {
+        newName.unstructuredName = contact.name;
+      }
+
+      if (newName.givenName || newName.familyName || newName.unstructuredName) {
+        names = [newName];
+      }
+    }
+
+    const emailAddresses =
+      !updateEmptyOnly || existingEmails.length === 0
+        ? [
             ...existingEmails.filter((e) => e.value !== contact.email),
             { value: contact.email }
-          ],
+          ]
+        : existingEmails;
 
-      phoneNumbers: updateEmptyOnly
-        ? existingPhones
-        : [
-            ...existingPhones.filter(
-              (p) => !contact.telephone?.includes(p.value ?? '')
-            ),
-            ...(contact.telephone?.map((tel) => ({ value: tel })) || [])
-          ],
+    let phoneNumbers: people_v1.Schema$PhoneNumber[] = existingPhones;
+    const newPhones =
+      contact.telephone
+        ?.filter((tel) => !isEmpty(tel))
+        .map((tel) => ({ value: tel })) || [];
+    if (newPhones.length > 0) {
+      const existingValues = new Set(existingPhones.map((p) => p.value));
+      const uniqueNewPhones = newPhones.filter((p) => !existingValues.has(p.value));
+      if (uniqueNewPhones.length > 0) {
+        phoneNumbers = [...existingPhones, ...uniqueNewPhones];
+      }
+    }
 
-      organizations: updateEmptyOnly
-        ? existingOrgs
-        : [
-            ...existingOrgs.filter(
-              (o) =>
-                o.name !== contact.works_for || o.title !== contact.job_title
-            ),
-            {
-              name: contact.works_for,
-              title: contact.job_title
-            }
-          ],
+    let organizations: people_v1.Schema$Organization[] = existingOrgs;
+    const newOrg: people_v1.Schema$Organization = {};
+    if (!isEmpty(contact.works_for)) {
+      newOrg.name = contact.works_for;
+    }
+    if (!isEmpty(contact.job_title)) {
+      newOrg.title = contact.job_title;
+    }
+    if (newOrg.name || newOrg.title) {
+      const isDuplicate = existingOrgs.some(
+        (o) => o.name === newOrg.name && o.title === newOrg.title
+      );
+      if (!isDuplicate) {
+        organizations = [...existingOrgs, newOrg];
+      }
+    }
 
-      urls: updateEmptyOnly
-        ? existingUrls
-        : [
-            ...existingUrls.filter(
-              (u) => !contact.same_as?.includes(u.value ?? '')
-            ),
-            ...(contact.same_as?.map((url) => ({ value: url })) || [])
-          ],
-      addresses: updateEmptyOnly
-        ? existingAddresses
-        : [
-            ...existingAddresses.filter(
-              (a) => a.streetAddress !== contact.location
-            ),
-            ...(contact.location ? [{ streetAddress: contact.location }] : [])
-          ],
+    let urls: people_v1.Schema$Url[] = existingUrls;
+    const newUrls =
+      contact.same_as
+        ?.filter((url) => !isEmpty(url))
+        .map((url) => ({ value: url })) || [];
+    if (newUrls.length > 0) {
+      const existingValues = new Set(existingUrls.map((u) => u.value));
+      const uniqueNewUrls = newUrls.filter((u) => !existingValues.has(u.value));
+      if (uniqueNewUrls.length > 0) {
+        urls = [...existingUrls, ...uniqueNewUrls];
+      }
+    }
+
+    let addresses: people_v1.Schema$Address[] = existingAddresses;
+    if (!isEmpty(contact.location)) {
+      const newAddress = { streetAddress: contact.location };
+      const isDuplicate = existingAddresses.some(
+        (a) => a.streetAddress === newAddress.streetAddress
+      );
+      if (!isDuplicate) {
+        addresses = [...existingAddresses, newAddress];
+      }
+    }
+
+    const person: people_v1.Schema$Person = {
+      names,
+      emailAddresses,
+      phoneNumbers,
+      organizations,
+      urls,
+      addresses,
       memberships: [
         ...existingMemberships.filter(
           (m) =>
