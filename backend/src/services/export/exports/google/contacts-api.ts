@@ -428,7 +428,9 @@ export default class GoogleContactsSession {
         .map((tel) => ({ value: tel })) || [];
     if (newPhones.length > 0) {
       const existingValues = new Set(existingPhones.map((p) => p.value));
-      const uniqueNewPhones = newPhones.filter((p) => !existingValues.has(p.value));
+      const uniqueNewPhones = newPhones.filter(
+        (p) => !existingValues.has(p.value)
+      );
       if (uniqueNewPhones.length > 0) {
         phoneNumbers = [...existingPhones, ...uniqueNewPhones];
       }

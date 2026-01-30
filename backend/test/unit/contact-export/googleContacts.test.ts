@@ -834,11 +834,13 @@ describe('GoogleContactsSession', () => {
     it('should replace existing name when updating (singleton behavior)', async () => {
       const existing: people_v1.Schema$Person = {
         ...createMockPerson('people/c1', 'test@test.com'),
-        names: [{
-          givenName: 'Old',
-          familyName: 'Name',
-          unstructuredName: 'Old Name'
-        }]
+        names: [
+          {
+            givenName: 'Old',
+            familyName: 'Name',
+            unstructuredName: 'Old Name'
+          }
+        ]
       };
 
       mockService.people.connections.list.mockResolvedValue(
@@ -950,8 +952,12 @@ describe('GoogleContactsSession', () => {
 
       // Should have both URLs without duplication
       expect(person?.urls).toHaveLength(2);
-      expect(person?.urls?.some((u) => u.value === 'https://example.com')).toBe(true);
-      expect(person?.urls?.some((u) => u.value === 'https://newsite.com')).toBe(true);
+      expect(person?.urls?.some((u) => u.value === 'https://example.com')).toBe(
+        true
+      );
+      expect(person?.urls?.some((u) => u.value === 'https://newsite.com')).toBe(
+        true
+      );
     });
 
     it('should deduplicate organizations correctly', async () => {
