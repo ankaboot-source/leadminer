@@ -6,8 +6,8 @@ export interface ImapMiningSourceCredentials {
   tls: boolean;
 }
 
-export type OAuthMiningSourceProvider = "azure" | "google";
-export type MiningSourceType = OAuthMiningSourceProvider | "imap";
+export type OAuthMiningSourceProvider = 'azure' | 'google';
+export type MiningSourceType = OAuthMiningSourceProvider | 'imap';
 
 export interface OAuthMiningSourceCredentials {
   email: string;
@@ -36,7 +36,7 @@ export interface MiningSources {
   >;
   getCredentialsBySourceEmail(
     userId: string,
-    email: string,
+    email: string
   ): Promise<
     (OAuthMiningSourceCredentials | ImapMiningSourceCredentials) | undefined
   >;
