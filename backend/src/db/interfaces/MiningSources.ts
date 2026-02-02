@@ -31,6 +31,7 @@ export interface MiningSources {
       email: string;
       type: MiningSourceType;
       credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
+      auto_extract: boolean;
     }[]
   >;
   getCredentialsBySourceEmail(

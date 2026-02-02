@@ -13,6 +13,7 @@ export interface MiningSource {
   type: MiningSourceType;
   email: string;
   isValid?: boolean;
+  auto_extract: boolean;
 }
 
 export interface MiningProgress {

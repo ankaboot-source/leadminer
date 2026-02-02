@@ -59,13 +59,16 @@
       </div>
     </template>
   </Toast>
+
+  <AutoExtractDialog />
 </template>
 
 <script setup lang="ts">
+import AutoExtractDialog from '@/components/Mining/AutoExtractDialog.vue';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
-import { signOutManually } from './utils/auth';
 import Normalizer from '~/utils/normalizer';
+import { signOutManually } from './utils/auth';
 
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();

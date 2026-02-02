@@ -64,6 +64,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningTask.value || isLoadingBoxes.value || activeEnrichment.value,
   );
 
+  const autoExtractDialog = ref(false);
+
   const miningStartedAndFinished = computed(() =>
     Boolean(miningStartedAt.value && miningCompleted.value),
   );
@@ -103,6 +105,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningInterrupted.value = false;
 
     miningType.value = 'email';
+
+    autoExtractDialog.value = false;
 
     errors.value = {};
   }
@@ -538,6 +542,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningCompleted,
     activeMiningTask,
     activeTask,
+    autoExtractDialog,
     miningStartedAndFinished,
     miningInterrupted,
     errors,
