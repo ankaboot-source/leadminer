@@ -14,7 +14,7 @@
         <Button
           :label="t('yes_enable')"
           class="w-full sm:w-auto"
-          @click="enableAutoExtract()"
+          @click="enablePassiveMining()"
         />
         <Button
           :label="$t('common.cancel')"
@@ -52,7 +52,7 @@ function closePassiveMiningDialog() {
   $leadminerStore.passiveMiningDialog = false;
 }
 
-async function enableAutoExtract() {
+async function enablePassiveMining() {
   if (miningSource.value) {
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
