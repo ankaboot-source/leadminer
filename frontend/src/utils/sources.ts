@@ -17,7 +17,7 @@ export function updateMiningSourcesValidity(
    * @param {MiningSource} current - The current mining source being processed.
    * @returns {MiningSource} The updated mining source.
    */
-  function updateValidity(current: MiningSource) {
+  function updateValidity(current: MiningSource): MiningSource {
     if (current.email === activeMiningSource?.email) {
       current.isValid = isValid;
     }
