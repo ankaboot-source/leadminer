@@ -2,18 +2,17 @@
   <Dialog
     v-model:visible="$leadminerStore.autoExtractDialog"
     modal
-    :header="'Continuous Contact Extraction'"
+    :header="t('header')"
     class="w-full sm:w-[35rem]"
   >
     <p>
-      Enable continuous contact extraction from future emails?
-      <br />
-      New contacts found in incoming emails will be automatically saved.
+      {{ t('paragraph_1') }} <br />
+      {{ t('paragraph_2') }}
     </p>
     <template #footer>
       <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
         <Button
-          label="Yes, enable"
+          :label="t('yes_enable')"
           class="w-full sm:w-auto"
           @click="enableAutoExtract()"
         />
@@ -36,6 +35,10 @@ const miningSource = ref<MiningSource>();
 const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
 
+const { t } = useI18n({
+  useScope: 'local',
+});
+
 watch(
   () => $leadminerStore.autoExtractDialog,
   (newVal) => {
@@ -51,8 +54,6 @@ function closeAutoExtractDialog() {
 
 async function enableAutoExtract() {
   if (miningSource.value) {
-    console.log('Enabling auto extract for', miningSource.value);
-
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
@@ -67,3 +68,20 @@ async function enableAutoExtract() {
   closeAutoExtractDialog();
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "header": "Continuous Contact Extraction",
+    "paragraph_1": "Enable continuous contact extraction from future emails?",
+    "paragraph_2": "New contacts found in incoming emails will be automatically saved.",
+    "yes_enable": "Yes, enable"
+  },
+  "fr": {
+    "header": "Extraction continue des contacts",
+    "paragraph_1": "Activer l'extraction continue des contacts à partir des futurs e-mails ?",
+    "paragraph_2": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
+    "yes_enable": "Oui, activer"
+  }
+}
+</i18n>
