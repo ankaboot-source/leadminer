@@ -249,8 +249,8 @@ watch(extractionFinished, async (finished) => {
     });
     $stepper.next();
   } else if (finished) {
-    if (miningSource && !miningSource.auto_extract)
-      $leadminerStore.autoExtractDialog = true;
+    if (miningSource && !miningSource.passive_mining)
+      $leadminerStore.passiveMiningDialog = true;
     $toast.add({
       severity: 'info',
       summary: t('mining_done'),

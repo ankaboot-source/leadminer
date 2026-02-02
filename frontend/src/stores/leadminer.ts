@@ -1,29 +1,29 @@
-import { defineStore } from 'pinia';
-import type { TreeSelectionKeys } from 'primevue/tree';
-import { ref } from 'vue';
+import { defineStore } from "pinia";
+import type { TreeSelectionKeys } from "primevue/tree";
+import { ref } from "vue";
 
-import { updateMiningSourcesValidity } from '@/utils/sources';
-import { startMiningNotification } from '~/utils/extras';
+import { updateMiningSourcesValidity } from "@/utils/sources";
+import { startMiningNotification } from "~/utils/extras";
 import {
   type MiningSource,
   type MiningTask,
   type MiningType,
   MiningTypes,
-} from '../types/mining';
-import type { BoxNode } from '../utils/boxes';
-import { sse } from '../utils/sse';
+} from "../types/mining";
+import type { BoxNode } from "../utils/boxes";
+import { sse } from "../utils/sse";
 
-export const useLeadminerStore = defineStore('leadminer', () => {
+export const useLeadminerStore = defineStore("leadminer", () => {
   const { $api } = useNuxtApp();
   const { t, getBrowserLocale } = useI18n();
-  const language = getBrowserLocale() || 'en';
+  const language = getBrowserLocale() || "en";
   const $toast = useToast();
   const $stepper = useMiningStepper();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
 
-  const miningType = ref<MiningType>('email');
+  const miningType = ref<MiningType>("email");
 
   const miningTask = ref<MiningTask | undefined>();
 
@@ -33,10 +33,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const extractSignatures = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
-  const selectedFile = ref<{
-    name: string;
-    contacts: Record<string, string>[];
-  } | null>(null);
+  const selectedFile = ref<
+    {
+      name: string;
+      contacts: Record<string, string>[];
+    } | null
+  >(null);
 
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
@@ -64,10 +66,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningTask.value || isLoadingBoxes.value || activeEnrichment.value,
   );
 
-  const autoExtractDialog = ref(false);
+  const passiveMiningDialog = ref(false);
 
   const miningStartedAndFinished = computed(() =>
-    Boolean(miningStartedAt.value && miningCompleted.value),
+    Boolean(miningStartedAt.value && miningCompleted.value)
   );
 
   const miningInterrupted = ref(false);
@@ -104,9 +106,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     miningInterrupted.value = false;
 
-    miningType.value = 'email';
+    miningType.value = "email";
 
-    autoExtractDialog.value = false;
+    passiveMiningDialog.value = false;
 
     errors.value = {};
   }
@@ -132,7 +134,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const { sources } = await $api<{
       message: string;
       sources: MiningSource[];
-    }>('/imap/mine/sources');
+    }>("/imap/mine/sources");
 
     miningSources.value = sources ?? [];
   }
@@ -148,11 +150,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       selectedBoxes.value = [];
       extractSignatures.value = true;
 
-      console.log('Fetching inbox for: ', activeMiningSource.value);
+      console.log("Fetching inbox for: ", activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
-      }>('/imap/boxes', {
-        method: 'POST',
+      }>("/imap/boxes", {
+        method: "POST",
         body: {
           ...activeMiningSource.value,
         },
@@ -162,8 +164,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (folders) {
         boxes.value = [...folders];
 
-        const { defaultFolders, excludedKeys } =
-          getDefaultAndExcludedFolders(folders);
+        const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(
+          folders,
+        );
 
         selectedBoxes.value = defaultFolders;
         excludedBoxes.value = excludedKeys;
@@ -202,7 +205,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const res = await $api(
       `/imap/mine/${miningType.value}/${user.sub}/${miningId}`,
       {
-        method: 'POST',
+        method: "POST",
         body: {
           endEntireTask,
           processes,
@@ -230,13 +233,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           try {
             await stopMiningApi(true, []);
           } catch (err) {
-            console.error('[SSE] error: ', (err as Error).message);
+            console.error("[SSE] error: ", (err as Error).message);
           }
           $resetMining();
           $toast.add({
-            severity: 'warn',
-            summary: t('mining.toast_canceled_title'),
-            detail: t('mining.toast_canceled_by_connection_detail'),
+            severity: "warn",
+            summary: t("mining.toast_canceled_title"),
+            detail: t("mining.toast_canceled_by_connection_detail"),
             life: 5000,
           });
           $stepper.go(1);
@@ -262,7 +265,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         createdContacts.value = totalCreated;
       },
       onMiningCompleted: () => {
-        console.info('Mining marked as completed.');
+        console.info("Mining marked as completed.");
         miningCompleted.value = true;
         setTimeout(() => {
           miningTask.value = undefined;
@@ -276,12 +279,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     folders: string[],
     miningSource: MiningSource,
   ) {
-    miningType.value = 'email';
+    miningType.value = "email";
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
-        method: 'POST',
+        method: "POST",
         body: {
           boxes: folders,
           miningSource,
@@ -298,14 +301,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fileName: string,
     importedContacts: Record<string, string>[],
   ) {
-    miningType.value = 'file';
+    miningType.value = "file";
     fetchingFinished.value = true;
     scannedEmails.value = 1;
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
-        method: 'POST',
+        method: "POST",
         body: {
           name: fileName,
           contacts: importedContacts,
@@ -317,12 +320,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   async function startMiningPST(userId: string, fileName: string) {
-    miningType.value = 'pst';
+    miningType.value = "pst";
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,
       {
-        method: 'POST',
+        method: "POST",
         body: {
           name: fileName,
           extractSignatures: extractSignatures.value,
@@ -333,7 +336,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return task;
   }
 
-  const pstFilePath = ref('');
+  const pstFilePath = ref("");
 
   /**
    * Starts the mining process.
@@ -348,8 +351,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const token = useSupabaseSession().value?.access_token;
 
     if (!user || !token) return;
-    if (source === 'file' && !selectedBoxes.value) return;
-    if (source === 'email' && !activeMiningSource.value) return;
+    if (source === "file" && !selectedBoxes.value) return;
+    if (source === "email" && !activeMiningSource.value) return;
 
     // reset, prepare states
     loadingStatus.value = true;
@@ -367,25 +370,24 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
-      const task =
-        source === 'email'
-          ? await startMiningEmail(
-              user?.sub,
-              Object.keys(selectedBoxes.value).filter(
-                (key) =>
-                  selectedBoxes.value[key].checked &&
-                  !excludedBoxes.value.has(key) &&
-                  key !== '',
-              ),
-              activeMiningSource.value!,
-            )
-          : source === 'file'
-            ? await startMiningFile(
-                user.sub,
-                selectedFile.value!.name,
-                selectedFile.value!.contacts,
-              )
-            : await startMiningPST(user.sub, storagePath!);
+      const task = source === "email"
+        ? await startMiningEmail(
+          user?.sub,
+          Object.keys(selectedBoxes.value).filter(
+            (key) =>
+              selectedBoxes.value[key].checked &&
+              !excludedBoxes.value.has(key) &&
+              key !== "",
+          ),
+          activeMiningSource.value!,
+        )
+        : source === "file"
+        ? await startMiningFile(
+          user.sub,
+          selectedFile.value!.name,
+          selectedFile.value!.contacts,
+        )
+        : await startMiningPST(user.sub, storagePath!);
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();
@@ -470,12 +472,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         ({ email }) => email === redactedTask.miningSource.source,
       );
 
-      miningStartedAt.value =
-        miningType.value === MiningTypes.EMAIL
-          ? performance.now() -
-            (Date.now() - new Date(fetch.started_at).getTime())
-          : performance.now() -
-            (Date.now() - new Date(extract.started_at).getTime());
+      miningStartedAt.value = miningType.value === MiningTypes.EMAIL
+        ? performance.now() -
+          (Date.now() - new Date(fetch.started_at).getTime())
+        : performance.now() -
+          (Date.now() - new Date(extract.started_at).getTime());
 
       const { progress } = redactedTask;
       totalMessages.value = progress.totalMessages;
@@ -484,16 +485,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       createdContacts.value = progress.createdContacts ?? 0;
       verifiedContacts.value = progress.verifiedContacts ?? 0;
 
-      fetchingFinished.value =
-        miningType.value === MiningTypes.EMAIL
-          ? fetch && ['done', 'canceled'].includes(fetch.status)
-          : true;
+      fetchingFinished.value = miningType.value === MiningTypes.EMAIL
+        ? fetch && ["done", "canceled"].includes(fetch.status)
+        : true;
 
-      extractionFinished.value =
-        extract && ['done', 'canceled'].includes(extract.status);
+      extractionFinished.value = extract &&
+        ["done", "canceled"].includes(extract.status);
 
-      cleaningFinished.value =
-        clean && ['done', 'canceled'].includes(clean.status);
+      cleaningFinished.value = clean &&
+        ["done", "canceled"].includes(clean.status);
 
       startProgressListener(miningType.value, miningTask.value.miningId);
 
@@ -542,7 +542,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningCompleted,
     activeMiningTask,
     activeTask,
-    autoExtractDialog,
+    passiveMiningDialog,
     miningStartedAndFinished,
     miningInterrupted,
     errors,

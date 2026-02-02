@@ -60,11 +60,11 @@
     </template>
   </Toast>
 
-  <AutoExtractDialog />
+  <PassiveMiningDialog />
 </template>
 
 <script setup lang="ts">
-import AutoExtractDialog from '@/components/Mining/AutoExtractDialog.vue';
+import PassiveMiningDialog from '@/components/Mining/PassiveMiningDialog.vue';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import Normalizer from '~/utils/normalizer';

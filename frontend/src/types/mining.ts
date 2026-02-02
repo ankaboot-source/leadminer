@@ -1,19 +1,19 @@
-export type OAuthMiningSource = 'azure' | 'google';
-export type MiningSourceType = OAuthMiningSource | 'imap';
+export type OAuthMiningSource = "azure" | "google";
+export type MiningSourceType = OAuthMiningSource | "imap";
 
-export type MiningType = 'file' | 'email' | 'pst';
+export type MiningType = "file" | "email" | "pst";
 
 export enum MiningTypes {
-  FILE = 'file',
-  EMAIL = 'email',
-  PST = 'pst',
+  FILE = "file",
+  EMAIL = "email",
+  PST = "pst",
 }
 
 export interface MiningSource {
   type: MiningSourceType;
   email: string;
   isValid?: boolean;
-  auto_extract: boolean;
+  passive_mining: boolean;
 }
 
 export interface MiningProgress {
@@ -30,7 +30,7 @@ export interface FetcherStatus {
   status: string;
 }
 
-export type ProcessType = 'fetch' | 'extract' | 'clean';
+export type ProcessType = "fetch" | "extract" | "clean";
 
 export interface MiningTask {
   userId: string;
@@ -40,7 +40,7 @@ export interface MiningTask {
     source: string;
     type: MiningType;
   };
-  status: 'running' | 'canceled' | 'done';
+  status: "running" | "canceled" | "done";
   started_at: string;
   processes: {
     [key in ProcessType]: string;

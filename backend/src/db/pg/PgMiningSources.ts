@@ -1,12 +1,12 @@
-import { Pool } from 'pg';
-import { Logger } from 'winston';
+import { Pool } from "pg";
+import { Logger } from "winston";
 import {
   ImapMiningSourceCredentials,
   MiningSource,
   MiningSources,
   MiningSourceType,
-  OAuthMiningSourceCredentials
-} from '../interfaces/MiningSources';
+  OAuthMiningSourceCredentials,
+} from "../interfaces/MiningSources";
 
 export default class PgMiningSources implements MiningSources {
   private static readonly UPSERT_SQL = `
@@ -16,7 +16,7 @@ export default class PgMiningSources implements MiningSources {
     DO UPDATE SET credentials=excluded.credentials,type=excluded.type;`;
 
   private static readonly GET_BY_USER_SQL = `
-    SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials, auto_extract
+    SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials, passive_mining
     FROM private.mining_sources
     WHERE user_id = $2;`;
 
@@ -29,14 +29,14 @@ export default class PgMiningSources implements MiningSources {
   constructor(
     private readonly client: Pool,
     private readonly logger: Logger,
-    private readonly encryptionKey: string
+    private readonly encryptionKey: string,
   ) {}
 
   async upsert({
     userId,
     credentials,
     email,
-    type
+    type,
   }: MiningSource): Promise<void> {
     try {
       await this.client.query(PgMiningSources.UPSERT_SQL, [
@@ -44,11 +44,11 @@ export default class PgMiningSources implements MiningSources {
         email,
         type,
         JSON.stringify(credentials),
-        this.encryptionKey
+        this.encryptionKey,
       ]);
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed upserting credentials', error);
+        this.logger.error("Failed upserting credentials", error);
       }
       throw error;
     }
@@ -59,23 +59,23 @@ export default class PgMiningSources implements MiningSources {
       email: string;
       type: MiningSourceType;
       credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-      auto_extract: boolean;
+      passive_mining: boolean;
     }[]
   > {
     try {
       const { rows } = await this.client.query(
         PgMiningSources.GET_BY_USER_SQL,
-        [this.encryptionKey, userId]
+        [this.encryptionKey, userId],
       );
       return rows as {
         email: string;
         type: MiningSourceType;
         credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-        auto_extract: boolean;
+        passive_mining: boolean;
       }[];
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed retrieving credentials', error);
+        this.logger.error("Failed retrieving credentials", error);
       }
       return [];
     }
@@ -83,14 +83,14 @@ export default class PgMiningSources implements MiningSources {
 
   async getCredentialsBySourceEmail(
     userId: string,
-    email: string
+    email: string,
   ): Promise<
     (OAuthMiningSourceCredentials | ImapMiningSourceCredentials) | undefined
   > {
     try {
       const { rows } = await this.client.query(
         PgMiningSources.GET_BY_EMAIL_AND_USERID_SQL,
-        [this.encryptionKey, email, userId]
+        [this.encryptionKey, email, userId],
       );
       if (rows.length > 0) {
         return JSON.parse(rows[0].credentials) as
@@ -100,7 +100,7 @@ export default class PgMiningSources implements MiningSources {
       return undefined;
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed retrieving credentials', error);
+        this.logger.error("Failed retrieving credentials", error);
       }
       return undefined;
     }

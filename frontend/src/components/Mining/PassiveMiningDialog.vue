@@ -1,6 +1,6 @@
 <template>
   <Dialog
-    v-model:visible="$leadminerStore.autoExtractDialog"
+    v-model:visible="$leadminerStore.passiveMiningDialog"
     modal
     :header="t('header')"
     class="w-full sm:w-[35rem]"
@@ -20,7 +20,7 @@
           :label="$t('common.cancel')"
           class="w-full sm:w-auto"
           severity="secondary"
-          @click="closeAutoExtractDialog()"
+          @click="closePassiveMiningDialog()"
         />
       </div>
     </template>
@@ -40,7 +40,7 @@ const { t } = useI18n({
 });
 
 watch(
-  () => $leadminerStore.autoExtractDialog,
+  () => $leadminerStore.passiveMiningDialog,
   (newVal) => {
     if (newVal) {
       miningSource.value = $leadminerStore.activeMiningSource;
@@ -48,8 +48,8 @@ watch(
   },
 );
 
-function closeAutoExtractDialog() {
-  $leadminerStore.autoExtractDialog = false;
+function closePassiveMiningDialog() {
+  $leadminerStore.passiveMiningDialog = false;
 }
 
 async function enableAutoExtract() {
@@ -58,14 +58,14 @@ async function enableAutoExtract() {
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('mining_sources')
-      .update({ auto_extract: true })
+      .update({ passive_mining: true })
       .match({ email: miningSource.value.email });
 
     if (error) {
       throw error;
     }
   }
-  closeAutoExtractDialog();
+  closePassiveMiningDialog();
 }
 </script>
 
