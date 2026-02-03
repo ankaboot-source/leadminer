@@ -163,7 +163,7 @@
               "
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
-              @keypress.enter="loginWithEmailAndPassword"
+              @keypress.enter="signInWithEmailAndPassword"
             />
             <template v-if="invalidEmail">
               <small id="password-help" class="text-red-400 text-left pl-4">
@@ -200,7 +200,7 @@
               "
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
-              @keypress.enter="loginWithEmailAndPassword"
+              @keypress.enter="signInWithEmailAndPassword"
             />
 
             <template v-if="invalidPassword">
@@ -228,7 +228,7 @@
           :label="$t('auth.sign_in')"
           class="w-full"
           size="large"
-          @click="loginWithEmailAndPassword"
+          @click="signInWithEmailAndPassword"
         />
       </div>
     </template>
@@ -309,14 +309,12 @@ function checkRequiredFields(): boolean {
   return !email.value || !password.value;
 }
 
-async function loginWithEmailAndPassword() {
+async function signInWithEmailAndPassword() {
   isLoading.value = true;
 
   setInvalidInputs(false);
 
-  if (checkRequiredFields()) {
-    return;
-  }
+  if (checkRequiredFields()) return;
 
   try {
     const { error } = await $supabase.auth.signInWithPassword({
