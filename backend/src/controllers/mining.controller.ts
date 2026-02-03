@@ -2,10 +2,12 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
 import ENV from '../config';
+import { Contacts } from '../db/interfaces/Contacts';
 import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
@@ -15,7 +17,9 @@ import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
+import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
 import supabaseClient from '../utils/supabase';
+import { EmailVerificationData } from '../workers/email-verification/emailVerificationHandlers';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
@@ -27,10 +31,6 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
-import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
-import { EmailVerificationData } from '../workers/email-verification/emailVerificationHandlers';
-import { Contacts } from '../db/interfaces/Contacts';
-import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -275,7 +275,8 @@ export default function initializeMiningController(
 
         const sources = sourcesData.map((s) => ({
           email: s.email,
-          type: s.type
+          type: s.type,
+          passive_mining: s.passive_mining
         }));
 
         return res.status(200).send({

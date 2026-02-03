@@ -94,7 +94,7 @@ const { t: $t } = useI18n({
 });
 
 const { miningSource } = defineProps<{
-  miningSource: MiningSource;
+  miningSource: MiningSource | undefined;
 }>();
 
 const sourceType = computed(() => $leadminerStore.miningType);
@@ -203,7 +203,7 @@ onMounted(async () => {
   } catch (error: any) {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
-    } else {
+    } else if (miningSource) {
       $consentSidebar.show(miningSource.type, miningSource.email, '/mine');
     }
   }
@@ -246,10 +246,12 @@ watch(extractionFinished, async (finished) => {
     });
     $stepper.next();
   } else if (finished) {
+    if (miningSource && !miningSource.passive_mining)
+      $leadminerStore.passiveMiningDialog = true;
     $toast.add({
       severity: 'info',
       summary: t('mining_done'),
-      detail: totalExtractedNotificationMessage,
+      detail: totalExtractedNotificationMessage.value,
       group: 'achievement',
       life: 8000,
     });
