@@ -76,7 +76,7 @@
           outlined
           @click="importFileDialogRef.openModal()"
         />
-        <importFileDialog ref="importFileDialogRef" />
+        <ImportFileDialog ref="importFileDialogRef" />
 
         <Button
           id="import-pst"
@@ -100,7 +100,7 @@ import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import ImportPstDialog from '@/components/Mining/ImportPstDialog.vue';
 import type { MiningSource } from '~/types/mining';
-import importFileDialog from '../ImportFileDialog.vue';
+import ImportFileDialog from '../ImportFileDialog.vue';
 
 const importFileDialogRef = ref();
 const importPstDialogRef = ref();
