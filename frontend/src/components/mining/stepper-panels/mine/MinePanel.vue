@@ -127,7 +127,6 @@ const totalEmails = computed<number>(() => {
   }
 
   if (sourceTypeIsEmail.value) {
-    console.log($leadminerStore.totalMessages);
     return $leadminerStore.totalMessages > 0
       ? $leadminerStore.totalMessages
       : objectScan(['**.{total}'], {
