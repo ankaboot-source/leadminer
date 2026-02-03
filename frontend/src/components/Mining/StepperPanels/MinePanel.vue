@@ -68,7 +68,6 @@
     />
   </div>
 
-  <importFileDialog ref="importFileDialogRef" />
   <MiningSettingsDialog
     ref="miningSettingsDialogRef"
     :total-emails="totalEmails"
@@ -85,9 +84,7 @@ import ProgressCard from '@/components/ProgressCard.vue';
 import { useWebNotification } from '@vueuse/core';
 import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
-import importFileDialog from '../ImportFileDialog.vue';
 
-const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -265,8 +262,6 @@ watch(extractionFinished, async (finished) => {
 function openMiningSettings() {
   if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else if (sourceType.value === 'file') {
-    importFileDialogRef.value.openModal();
   }
 }
 
