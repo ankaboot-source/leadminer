@@ -136,7 +136,7 @@
 
     <template v-if="contentJson" #footer>
       <Button
-        :label="t('upload_your_file')"
+        :label="t('upload.select_file_label')"
         severity="secondary"
         icon="pi pi-arrow-left"
         @click="reset()"
@@ -498,7 +498,6 @@ async function startMining() {
 {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
-    "select_file_label": "Upload your file",
     "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {ROWS_SHOWN_NUMBER} rows.",
     "contacts": "contacts",
     "start_mining_now": "Start mining now!",
@@ -511,7 +510,6 @@ async function startMining() {
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
-    "select_file_label": "Téléchargez votre fichier",
     "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {ROWS_SHOWN_NUMBER} premières lignes.",
     "contacts": "contacts",
     "start_mining_now": "Commencer l'extraction de vos contacts",
