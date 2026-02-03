@@ -13,6 +13,7 @@ export interface MiningSource {
   type: MiningSourceType;
   email: string;
   isValid?: boolean;
+  passive_mining: boolean;
 }
 
 export interface MiningProgress {

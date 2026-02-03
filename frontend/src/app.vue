@@ -59,13 +59,16 @@
       </div>
     </template>
   </Toast>
+
+  <PassiveMiningDialog />
 </template>
 
 <script setup lang="ts">
+import PassiveMiningDialog from '@/components/Mining/PassiveMiningDialog.vue';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
-import { signOutManually } from './utils/auth';
 import Normalizer from '~/utils/normalizer';
+import { signOutManually } from './utils/auth';
 
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
