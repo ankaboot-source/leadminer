@@ -881,7 +881,7 @@ const SocialLinksAndPhones = defineAsyncComponent(
   () => import('../../icons/SocialLinksAndPhones.vue'),
 );
 const EnrichButton = defineAsyncComponent(
-  () => import('../Buttons/EnrichButton.vue'),
+  () => import('@/components/Mining/enrich/EnrichButton.vue'),
 );
 const ExportContacts = defineAsyncComponent(
   () => import('../Buttons/ExportContacts.vue'),
