@@ -43,8 +43,8 @@
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
-    <TreeCard
-      v-if="shouldShowTreeCard"
+    <EmailFoldersTree
+      v-if="shouldShowEmailFoldersTree"
       :class="{ disabled: $leadminerStore.activeMiningTask }"
     />
 
@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import TreeCard from '@/components/cards/TreeCard.vue';
+import EmailFoldersTree from '@/components/Mining/EmailFoldersTree.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -72,7 +72,7 @@ const $screenStore = useScreenStore();
 
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 const boxes = computed(() => $leadminerStore.boxes);
-const shouldShowTreeCard = computed(
+const shouldShowEmailFoldersTree = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes,
 );
 
