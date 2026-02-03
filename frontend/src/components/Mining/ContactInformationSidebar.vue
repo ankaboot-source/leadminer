@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
-import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
+import EnrichButton from '@/components/Mining/Enrich/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 
 import {
