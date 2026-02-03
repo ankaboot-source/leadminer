@@ -884,10 +884,10 @@ const EnrichButton = defineAsyncComponent(
   () => import('@/components/Mining/enrich/EnrichButton.vue'),
 );
 const ExportContacts = defineAsyncComponent(
-  () => import('../Buttons/ExportContacts.vue'),
+  () => import('../buttons/ExportContacts.vue'),
 );
 const RemoveContactButton = defineAsyncComponent(
-  () => import('../Buttons/RemoveContactButton.vue'),
+  () => import('../buttons/RemoveContactButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),

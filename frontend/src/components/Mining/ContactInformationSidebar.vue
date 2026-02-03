@@ -261,7 +261,7 @@ import { HandledError } from '~/plugins/error-handler';
 import Normalizer from '~/utils/normalizer';
 
 const ExportContacts = defineAsyncComponent(
-  () => import('./Buttons/ExportContacts.vue'),
+  () => import('./buttons/ExportContacts.vue'),
 );
 
 const { t } = useI18n({
