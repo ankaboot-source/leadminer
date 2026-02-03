@@ -44,7 +44,7 @@
   <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
-import ProgressCard from '@/components/ProgressCard.vue';
+import ProgressCard from '@/components/Mining/ProgressCard.vue';
 import { FetchError } from 'ofetch';
 import { MiningTypes } from '~/types/mining';
 import { AcceptNewsLetter } from '~/utils/extras';
