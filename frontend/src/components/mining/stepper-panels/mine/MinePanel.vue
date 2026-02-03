@@ -80,10 +80,10 @@ import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
-import ProgressCard from '@/components/Mining/ProgressCard.vue';
+import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { useWebNotification } from '@vueuse/core';
-import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
+import MiningSettingsDialog from './MiningSettingsDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',
