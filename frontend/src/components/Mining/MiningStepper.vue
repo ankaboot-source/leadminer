@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import ImportPstDialog from '@/components/Mining/ImportPstDialog.vue';
+import ImportPstDialog from '@/components/Mining/Source/ImportPstDialog.vue';
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';

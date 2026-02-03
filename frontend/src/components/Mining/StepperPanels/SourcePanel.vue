@@ -96,11 +96,11 @@
 </template>
 
 <script setup lang="ts">
-import ImapSource from '@/components/Mining/AddSourceImap.vue';
-import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import ImportPstDialog from '@/components/Mining/ImportPstDialog.vue';
 import type { MiningSource } from '~/types/mining';
-import ImportFileDialog from '../ImportFileDialog.vue';
+import ImapSource from '../Source/AddSourceImap.vue';
+import OauthSource from '../Source/AddSourceOauth.vue';
+import ImportFileDialog from '../Source/ImportFileDialog.vue';
+import ImportPstDialog from '../Source/ImportPstDialog.vue';
 
 const importFileDialogRef = ref();
 const importPstDialogRef = ref();
