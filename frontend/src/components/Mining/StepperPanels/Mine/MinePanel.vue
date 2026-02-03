@@ -82,7 +82,7 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 
 import ProgressCard from '@/components/ProgressCard.vue';
 import { useWebNotification } from '@vueuse/core';
-import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
+import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
 
 const { t } = useI18n({

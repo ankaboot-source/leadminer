@@ -97,10 +97,10 @@
 
 <script setup lang="ts">
 import type { MiningSource } from '~/types/mining';
-import ImapSource from '../Source/AddSourceImap.vue';
-import OauthSource from '../Source/AddSourceOauth.vue';
-import ImportFileDialog from '../Source/ImportFileDialog.vue';
-import ImportPstDialog from '../Source/ImportPstDialog.vue';
+import ImapSource from './AddSourceImap.vue';
+import OauthSource from './AddSourceOauth.vue';
+import ImportFileDialog from './ImportFileDialog.vue';
+import ImportPstDialog from './ImportPstDialog.vue';
 
 const importFileDialogRef = ref();
 const importPstDialogRef = ref();

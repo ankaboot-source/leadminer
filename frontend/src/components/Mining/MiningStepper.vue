@@ -49,12 +49,12 @@
 </template>
 
 <script setup lang="ts">
-import ImportPstDialog from '@/components/Mining/Source/ImportPstDialog.vue';
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
-import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
-import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
-import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
+import MinePanel from '@/components/Mining/StepperPanels/Mine/MinePanel.vue';
+import ImportPstDialog from '@/components/Mining/StepperPanels/Source/ImportPstDialog.vue';
+import SourcePanel from '@/components/Mining/StepperPanels/Source/SourcePanel.vue';
 import StepWithPopover from '@/components/Mining/StepperPanels/StepWithPopover.vue';
+import CleanPanel from '~/components/Mining/StepperPanels/Clean/CleanPanel.vue';
 import type { MiningSourceType } from '~/types/mining';
 
 const { t } = useI18n({

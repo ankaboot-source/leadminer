@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import EmailFoldersTree from '@/components/Mining/EmailFoldersTree.vue';
+import EmailFoldersTree from './EmailFoldersTree.vue';
 
 const { t } = useI18n({
   useScope: 'local',
