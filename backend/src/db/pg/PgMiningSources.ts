@@ -3,8 +3,8 @@ import { Logger } from 'winston';
 import {
   ImapMiningSourceCredentials,
   MiningSource,
-  MiningSourceType,
   MiningSources,
+  MiningSourceType,
   OAuthMiningSourceCredentials
 } from '../interfaces/MiningSources';
 
@@ -16,7 +16,7 @@ export default class PgMiningSources implements MiningSources {
     DO UPDATE SET credentials=excluded.credentials,type=excluded.type;`;
 
   private static readonly GET_BY_USER_SQL = `
-    SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials
+    SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials, passive_mining
     FROM private.mining_sources
     WHERE user_id = $2;`;
 
@@ -59,6 +59,7 @@ export default class PgMiningSources implements MiningSources {
       email: string;
       type: MiningSourceType;
       credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
+      passive_mining: boolean;
     }[]
   > {
     try {
@@ -70,6 +71,7 @@ export default class PgMiningSources implements MiningSources {
         email: string;
         type: MiningSourceType;
         credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
+        passive_mining: boolean;
       }[];
     } catch (error) {
       if (error instanceof Error) {

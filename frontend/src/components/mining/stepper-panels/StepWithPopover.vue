@@ -35,6 +35,7 @@ const { stepNumber, isActive, title } = defineProps<{
 
 const titlePopover = ref();
 const $leadminerStore = useLeadminerStore();
+const $sourcePanelStore = useStepperSourcePanel();
 
 const isAbleToSwitchStep = computed(
   () =>
@@ -45,10 +46,9 @@ const isAbleToSwitchStep = computed(
 const toggle = (event: MouseEvent) => {
   titlePopover.value.toggle(event);
   setTimeout(() => titlePopover.value.hide(), 5000);
+  if (stepNumber === 1) $sourcePanelStore.hideOtherSources();
 
-  if (isAbleToSwitchStep.value) {
-    $stepper.go(stepNumber);
-  }
+  if (isAbleToSwitchStep.value) $stepper.go(stepNumber);
 };
 </script>
 

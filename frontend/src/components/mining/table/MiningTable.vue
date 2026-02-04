@@ -878,16 +878,16 @@ import Normalizer from '~/utils/normalizer';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
-  () => import('../../icons/SocialLinksAndPhones.vue'),
+  () => import('@/components/icons/SocialLinksAndPhones.vue'),
 );
 const EnrichButton = defineAsyncComponent(
-  () => import('../Buttons/EnrichButton.vue'),
+  () => import('../enrich/EnrichButton.vue'),
 );
 const ExportContacts = defineAsyncComponent(
-  () => import('../Buttons/ExportContacts.vue'),
+  () => import('../buttons/ExportContacts.vue'),
 );
 const RemoveContactButton = defineAsyncComponent(
-  () => import('../Buttons/RemoveContactButton.vue'),
+  () => import('../buttons/RemoveContactButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),

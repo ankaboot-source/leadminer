@@ -68,7 +68,6 @@
     />
   </div>
 
-  <importFileDialog ref="importFileDialogRef" />
   <MiningSettingsDialog
     ref="miningSettingsDialogRef"
     :total-emails="totalEmails"
@@ -109,13 +108,11 @@ import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
-import ProgressCard from '@/components/ProgressCard.vue';
+import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { useWebNotification } from '@vueuse/core';
-import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
-import importFileDialog from '../ImportFileDialog.vue';
+import MiningSettingsDialog from './MiningSettingsDialog.vue';
 
-const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -125,7 +122,7 @@ const { t: $t } = useI18n({
 });
 
 const { miningSource } = defineProps<{
-  miningSource: MiningSource;
+  miningSource: MiningSource | undefined;
 }>();
 
 function closeAutoExtractDialog(){
@@ -165,7 +162,6 @@ const totalEmails = computed<number>(() => {
   }
 
   if (sourceTypeIsEmail.value) {
-    console.log($leadminerStore.totalMessages);
     return $leadminerStore.totalMessages > 0
       ? $leadminerStore.totalMessages
       : objectScan(['**.{total}'], {
@@ -241,7 +237,7 @@ onMounted(async () => {
   } catch (error: any) {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
-    } else {
+    } else if (miningSource) {
       $consentSidebar.show(miningSource.type, miningSource.email, '/mine');
     }
   }
@@ -284,11 +280,12 @@ watch(extractionFinished, async (finished) => {
     });
     $stepper.next();
   } else if (finished) {
-    autoExtractDialog.value = true; // miningSource.autoExtract ? false : true;
+    if (miningSource && !miningSource.passive_mining)
+      $leadminerStore.passiveMiningDialog = true;
     $toast.add({
       severity: 'info',
       summary: t('mining_done'),
-      detail: totalExtractedNotificationMessage,
+      detail: totalExtractedNotificationMessage.value,
       group: 'achievement',
       life: 8000,
     });
@@ -301,8 +298,6 @@ watch(extractionFinished, async (finished) => {
 function openMiningSettings() {
   if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else if (sourceType.value === 'file') {
-    importFileDialogRef.value.openModal();
   }
 }
 

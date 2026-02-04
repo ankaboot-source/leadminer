@@ -64,6 +64,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningTask.value || isLoadingBoxes.value || activeEnrichment.value,
   );
 
+  const passiveMiningDialog = ref(false);
+
   const miningStartedAndFinished = computed(() =>
     Boolean(miningStartedAt.value && miningCompleted.value),
   );
@@ -103,6 +105,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningInterrupted.value = false;
 
     miningType.value = 'email';
+
+    passiveMiningDialog.value = false;
 
     errors.value = {};
   }
@@ -144,7 +148,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       selectedBoxes.value = [];
       extractSignatures.value = true;
 
-      console.log('Fetching inbox for: ', activeMiningSource.value);
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
       }>('/imap/boxes', {
@@ -336,8 +339,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
   async function startMining(source: MiningType, storagePath?: string) {
-    // storagePath for PST file storage path
-    console.log(source, storagePath);
     await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
 
     const user = useSupabaseUser().value;
@@ -538,6 +539,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningCompleted,
     activeMiningTask,
     activeTask,
+    passiveMiningDialog,
     miningStartedAndFinished,
     miningInterrupted,
     errors,
