@@ -89,7 +89,7 @@ import {
 } from '@/utils/credits';
 import type { FetchResponse } from 'ofetch';
 import type { Contact } from '~/types/contact';
-import EnrichGdprSidebar from '../EnrichGdprSidebar.vue';
+import EnrichGdprSidebar from './EnrichGdprSidebar.vue';
 
 const { t } = useI18n({
   useScope: 'local',

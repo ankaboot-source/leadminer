@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import PassiveMiningDialog from '@/components/Mining/PassiveMiningDialog.vue';
+import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import Normalizer from '~/utils/normalizer';

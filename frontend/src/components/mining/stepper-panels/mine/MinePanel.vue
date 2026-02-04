@@ -68,7 +68,6 @@
     />
   </div>
 
-  <importFileDialog ref="importFileDialogRef" />
   <MiningSettingsDialog
     ref="miningSettingsDialogRef"
     :total-emails="totalEmails"
@@ -81,13 +80,11 @@ import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
-import ProgressCard from '@/components/ProgressCard.vue';
+import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { useWebNotification } from '@vueuse/core';
-import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
-import importFileDialog from '../ImportFileDialog.vue';
+import MiningSettingsDialog from './MiningSettingsDialog.vue';
 
-const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -130,7 +127,6 @@ const totalEmails = computed<number>(() => {
   }
 
   if (sourceTypeIsEmail.value) {
-    console.log($leadminerStore.totalMessages);
     return $leadminerStore.totalMessages > 0
       ? $leadminerStore.totalMessages
       : objectScan(['**.{total}'], {
@@ -267,8 +263,6 @@ watch(extractionFinished, async (finished) => {
 function openMiningSettings() {
   if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else if (sourceType.value === 'file') {
-    importFileDialogRef.value.openModal();
   }
 }
 
