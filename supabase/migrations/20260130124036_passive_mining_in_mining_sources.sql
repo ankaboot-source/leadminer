@@ -21,14 +21,6 @@ select vault.create_secret(
   'URL to be used for calling edge functions. This is set here to support development with database-triggered webhooks across environments.'
 );
 
--- prequisite: Add anon_key to the vault --
--- select vault.create_secret(
---   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
---   'anon_key',
---   'URL to be used for calling edge functions. This is set here to support development with database-triggered webhooks across environments.'
--- );
-
-
 CREATE FUNCTION invoke_edge_function(edge_function_name TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -54,7 +46,6 @@ BEGIN
         url:= project_url || '/functions/v1/' || edge_function_name,
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-			-- 'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'anon_key')
         )
     );
 
