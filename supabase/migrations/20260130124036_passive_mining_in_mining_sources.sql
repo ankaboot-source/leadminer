@@ -55,8 +55,8 @@ $$;
 
 
 
--- SELECT cron.schedule(
---   'passive-cron-job',
---   '0 * * * *',   -- every hour
---   $$ SELECT execute_edge_function('passive-mining'); $$
--- );
+SELECT cron.schedule(
+  'passive-cron-job',
+  '0 2 * * *',   -- At 02:00 AM
+  $$ SELECT execute_edge_function('passive-mining'); $$
+);
