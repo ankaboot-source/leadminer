@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
-import { updateMiningSourcesValidity } from '@/utils/sources';
+import { getMiningSources, updateMiningSourcesValidity } from '@/utils/sources';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -129,12 +129,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
   async function fetchMiningSources() {
-    const { sources } = await $api<{
-      message: string;
-      sources: MiningSource[];
-    }>('/imap/mine/sources');
-
-    miningSources.value = sources ?? [];
+    miningSources.value = (await getMiningSources()) ?? [];
   }
 
   async function fetchInbox() {

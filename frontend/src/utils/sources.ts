@@ -1,5 +1,4 @@
 import type { MiningSource } from '~/types/mining';
-
 /**
  * Updates the validity of mining sources based on the provided active mining source.
  * @param miningSources - An array of mining sources.
@@ -25,4 +24,19 @@ export function updateMiningSourcesValidity(
   }
 
   return miningSources.map(updateValidity);
+}
+
+export async function getMiningSources(): Promise<MiningSource[]> {
+  const { data, error } = await useSupabaseClient()
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
+    .from('mining_sources')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching mining sources:', error.message);
+    throw error;
+  }
+
+  return data;
 }

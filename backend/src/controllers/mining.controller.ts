@@ -267,28 +267,6 @@ export default function initializeMiningController(
       }
     },
 
-    async getMiningSources(_req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.user as User;
-
-      try {
-        const sourcesData = await miningSources.getByUser(user.id);
-
-        const sources = sourcesData.map((s) => ({
-          email: s.email,
-          type: s.type,
-          passive_mining: s.passive_mining
-        }));
-
-        return res.status(200).send({
-          message: 'Mining sources retrieved successfully',
-          sources
-        });
-      } catch (error) {
-        res.status(500);
-        return next(error);
-      }
-    },
-
     async startMining(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 

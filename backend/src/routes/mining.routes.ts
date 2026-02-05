@@ -26,8 +26,7 @@ export default function initializeMiningRoutes(
     getMiningTask,
     createProviderMiningSource,
     createProviderMiningSourceCallback,
-    createImapMiningSource,
-    getMiningSources
+    createImapMiningSource
   } = initializeMiningController(
     tasksManager,
     tasksManagerFile,
@@ -37,8 +36,6 @@ export default function initializeMiningRoutes(
   );
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
-
-  router.get('/mine/sources', authMiddleware, getMiningSources);
 
   router.post('/mine/sources/imap', authMiddleware, createImapMiningSource);
 
