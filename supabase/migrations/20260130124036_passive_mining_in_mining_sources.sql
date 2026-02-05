@@ -52,9 +52,8 @@ BEGIN
     -- Perform HTTP POST to Edge Function
     response := net.http_post(
         url:= project_url || '/functions/v1/' || edge_function_name,
-        headers := jsonb_build_object(select project_url from vault.decrypted_secrets;
+        headers := jsonb_build_object(
             'Content-Type', 'application/json',
-			'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 			-- 'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'anon_key')
         )
     );
