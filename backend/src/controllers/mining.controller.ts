@@ -512,10 +512,13 @@ export default function initializeMiningController(
         ) {
           return res.sendStatus(409);
         }
-        
-        if (err instanceof Error && err.message  === 'Failed to parse PST file') {
+
+        if (
+          err instanceof Error &&
+          err.message === 'Failed to parse PST file'
+        ) {
           return res.status(422).json({ message: err.message });
-        } 
+        }
 
         return next(err);
       }

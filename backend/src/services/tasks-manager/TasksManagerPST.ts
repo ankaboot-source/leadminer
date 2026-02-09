@@ -267,7 +267,7 @@ export default class TasksManagerPST {
         logger.error(`Failed to start fetching task with id: ${miningId}`, {
           error
         });
-        throw(error)
+        throw error;
       }
 
       this.redisSubscriber.subscribe(miningId, (err) => {
