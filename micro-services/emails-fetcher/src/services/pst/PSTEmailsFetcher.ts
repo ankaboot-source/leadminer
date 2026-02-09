@@ -450,7 +450,11 @@ export default class PSTEmailsFetcher {
 
     const writeStream = fs.createWriteStream(this.localPstFilePath);
     await pipeline(res.body, writeStream);
-    this.pstFile = new PSTFile(this.localPstFilePath);
+    try {
+      this.pstFile = new PSTFile(this.localPstFilePath);
+    } catch (err) {
+      throw new Error('Failed to parse PST file', { cause: err });
+    }
   }
 
   /**
