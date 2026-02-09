@@ -44,6 +44,15 @@ class PSTFetcherClient {
         error,
         payload
       });
+      if (
+        axios.isAxiosError(error) &&
+        error.response &&
+        error.response.status === 422 &&
+        error.response.data.message === 'Failed to parse PST file'
+      ) {
+        throw new Error(error.response.data.message);
+      }
+
       throw error;
     }
   }
