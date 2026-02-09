@@ -18,6 +18,7 @@ const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
   401: "Sorry, you're not authorized. Please log in and try again.",
   403: 'Access denied. Please contact support if you need assistance.',
   404: "what you're looking for couldn't be found.",
+  422: "We couldn't process this file, Please try another one.",
   500: 'Something went wrong on our end. Please try again later.',
   502: 'Our server is having issues. Please try again later.',
   503: 'Service is temporarily unavailable. Please check your connection or try again later.',
@@ -53,6 +54,9 @@ function networkErrorMessage(err: unknown) {
 
 function otherErrorMessages(err: unknown) {
   if (isFetchError(err) && err.response) {
+    if (err.response.status === 422) {
+      return ERROR_STATUS_MESSAGES[err.response.status];
+    }
     return (
       err.response._data.message ?? ERROR_STATUS_MESSAGES[err.response.status]
     );
