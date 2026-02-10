@@ -334,6 +334,11 @@ async function exportTable(
             });
 
           if (type === ExportTypes.GOOGLE_CONTACTS) {
+            const labelId = response._data?.labelId ?? null;
+            const googleContactsUrl = labelId
+              ? `https://contacts.google.com/label/${labelId}`
+              : 'https://contacts.google.com';
+
             $toast.add({
               severity: 'success',
               summary: t(config.successSummaryKey),
@@ -343,7 +348,7 @@ async function exportTable(
                   text: t('view_in_google_contacts'),
                   action: () => {
                     window.open(
-                      'https://contacts.google.com',
+                      googleContactsUrl,
                       '_blank',
                       'noopener noreferrer',
                     );
