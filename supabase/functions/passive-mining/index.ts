@@ -64,6 +64,7 @@ async function startMiningEmail(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
       },
       body: JSON.stringify({
         source: miningSource.email,
