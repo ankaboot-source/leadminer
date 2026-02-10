@@ -429,7 +429,6 @@ export default function initializeMiningController(
           data: fileMiningTask
         });
       } catch (err) {
-        res.status(500);
         return next(err);
       }
     },
@@ -492,7 +491,13 @@ export default function initializeMiningController(
           return res.sendStatus(409);
         }
 
-        res.status(500);
+        if (
+          err instanceof Error &&
+          err.message === 'Failed to parse PST file'
+        ) {
+          return res.status(422).json({ message: err.message });
+        }
+
         return next(err);
       }
     },

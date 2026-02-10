@@ -340,6 +340,12 @@ apiRoutes.post(
       logger.error('Failed to start fetching', err);
       if (
         err instanceof Error &&
+        err.stack?.includes('Failed to parse PST file')
+      ) {
+        return res.status(422).json({ message: 'Failed to parse PST file' });
+      }
+      if (
+        err instanceof Error &&
         err.message.toLowerCase().startsWith('invalid credentials')
       ) {
         return res.status(401).json({ message: err.message });
@@ -352,10 +358,8 @@ apiRoutes.post(
         return res.sendStatus(409);
       }
 
-      const newError = generateErrorObjectFromImapError(err);
-
       res.status(500);
-      return next(new Error(newError.message));
+      return next(err);
     }
   }
 );
