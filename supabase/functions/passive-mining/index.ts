@@ -2,6 +2,8 @@ import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 const supabase = createSupabaseAdmin();
 
+const SERVER_ENDPOINT = "postgresql://authenticator:postgres@db:8081";
+
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
 
@@ -52,14 +54,19 @@ async function getMiningSources() {
   return data;
 }
 async function startMiningEmail(miningSource: any) {
-  const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
+  // const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
 
-  if (!SERVER_ENDPOINT) {
-    throw new Error("SERVER_ENDPOINT is not defined");
-  }
+  console.log(`${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`);
+
+  const boxes = await getBoxes(miningSource);
+  console.log(JSON.stringify({
+    miningSource: { email: miningSource.email },
+    boxes,
+    extractSignatures: false,
+  }));
 
   const res = await fetch(
-    `${SERVER_ENDPOINT}/imap/mine/email/${miningSource.user_id}`,
+    `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
     {
       method: "POST",
       headers: {
@@ -67,7 +74,8 @@ async function startMiningEmail(miningSource: any) {
         Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
       },
       body: JSON.stringify({
-        source: miningSource.email,
+        miningSource: { email: miningSource.email },
+        boxes,
         extractSignatures: false,
       }),
     },
@@ -81,4 +89,29 @@ async function startMiningEmail(miningSource: any) {
 
   const json = await res.json();
   return json?.data ?? json;
+}
+
+async function getBoxes(miningSource: any) {
+  // const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
+  console.log(
+    JSON.stringify(
+      `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+    ),
+  );
+  const res = await fetch(
+    `${SERVER_ENDPOINT}/api/imap/boxes`, //! not found pbbly due edge fucntion localhost probel
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+      },
+      body: JSON.stringify({ type: "email", email: miningSource.email }),
+    },
+  );
+
+  console.log("boxes", res);
+
+  const { folders } = (await res.json()).data || {};
+  return [...folders];
 }
