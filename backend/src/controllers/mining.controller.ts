@@ -637,7 +637,7 @@ export default function initializeMiningController(
           task.miningSource.type === 'email' &&
           (!fetchTask || !extractTask || !cleanTask)
         ) {
-          throw new Error(`Email  mining with id: ${miningId} not found`);
+          throw new Error(`Email mining with id: ${miningId} not found`);
         } else if (
           task.miningSource.type === 'file' &&
           (!extractTask || !cleanTask)
@@ -663,7 +663,7 @@ export default function initializeMiningController(
           clean: cleanTask
         });
       } catch (err) {
-        res.status(404);
+        res.status(204);
         return next(err);
       }
     }
