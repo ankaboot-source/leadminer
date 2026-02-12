@@ -190,11 +190,16 @@ async function closeGoogleExportConfirmationDialog() {
   dialogVisible.value = false;
 }
 
-function openAccountSelectionDialog() {
-  // Fetch mining sources if not already loaded
-  if (!$leadminerStore.miningSources.length) {
-    $leadminerStore.fetchMiningSources();
+async function openAccountSelectionDialog() {
+  // Preselect user's email if it exists in Google mining sources
+  const userEmail = $profile.value?.email;
+  if (
+    userEmail &&
+    googleMiningSources.value.some((s) => s.email === userEmail)
+  ) {
+    selectedGoogleAccount.value = userEmail;
   }
+
   accountSelectionDialogVisible.value = true;
 }
 
@@ -259,9 +264,23 @@ function getFileName() {
   return fileName;
 }
 
-function exportToGoogle(type: ExportTypes) {
+async function exportToGoogle(type: ExportTypes) {
   selectedExportType.value = type;
-  openAccountSelectionDialog();
+
+  // Fetch mining sources if not already loaded
+  if (!$leadminerStore.miningSources.length) {
+    await $leadminerStore.fetchMiningSources();
+  }
+
+  if (
+    googleMiningSources.value.length === 1 &&
+    googleMiningSources?.value[0]?.email
+  ) {
+    selectedGoogleAccount.value = googleMiningSources.value[0].email;
+    openGoogleExportConfirmationDialog();
+  } else {
+    await openAccountSelectionDialog();
+  }
 }
 
 async function exportTable(
@@ -313,12 +332,39 @@ async function exportTable(
               count: contactsToTreat.value.length,
             });
 
-          $toast.add({
-            severity: 'success',
-            summary: t(config.successSummaryKey),
-            detail: message,
-            life: 8000,
-          });
+          if (type === ExportTypes.GOOGLE_CONTACTS) {
+            const labelId = response._data?.labelId ?? null;
+            const googleContactsUrl = labelId
+              ? `https://contacts.google.com/label/${labelId}`
+              : 'https://contacts.google.com';
+
+            $toast.add({
+              severity: 'success',
+              summary: t(config.successSummaryKey),
+              detail: {
+                message,
+                button: {
+                  text: t('view_in_google_contacts'),
+                  action: () => {
+                    window.open(
+                      googleContactsUrl,
+                      '_blank',
+                      'noopener noreferrer',
+                    );
+                  },
+                },
+              },
+              group: 'has-links',
+              life: 8000,
+            });
+          } else {
+            $toast.add({
+              severity: 'success',
+              summary: t(config.successSummaryKey),
+              detail: message,
+              life: 8000,
+            });
+          }
         }
       },
     });
@@ -363,7 +409,7 @@ const exportItems = computed(() => [
   {
     label: t('export_google_contacts'),
     icon: 'pi pi-google', // PrimeIcons for Google/similar
-    command: () => exportToGoogle(ExportTypes.GOOGLE_CONTACTS),
+    command: async () => await exportToGoogle(ExportTypes.GOOGLE_CONTACTS),
     disabled: !isGoogleUser.value,
   },
 ]);
@@ -389,7 +435,8 @@ const exportItems = computed(() => [
     "select_google_account_description": "Choose which Google account to export contacts to:",
     "select_google_account_placeholder": "Select a Google account",
     "continue": "Continue",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "view_in_google_contacts": "View in Google Contacts"
   },
   "fr": {
     "export_csv": "Exporter en CSV",
@@ -409,7 +456,8 @@ const exportItems = computed(() => [
     "select_google_account_description": "Choisissez vers quel compte Google exporter les contacts :",
     "select_google_account_placeholder": "Sélectionnez un compte Google",
     "continue": "Continuer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "view_in_google_contacts": "Voir dans Google Contacts"
   }
 }
 </i18n>

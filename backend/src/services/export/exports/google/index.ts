@@ -89,7 +89,17 @@ export default class GoogleContactsExport
         ENV.APP_NAME,
         opts.userId
       );
-      await session.run(contacts, opts.updateEmptyFieldsOnly ?? false);
+      const { labelId } = await session.run(
+        contacts,
+        opts.updateEmptyFieldsOnly ?? false
+      );
+
+      return {
+        content: JSON.stringify({ labelId }),
+        contentType: this.contentType,
+        charset: '',
+        extension: ''
+      };
     } catch (err) {
       if (err instanceof GaxiosError) {
         logger.error(`Export error: ${err.message}`, err);
@@ -104,12 +114,5 @@ export default class GoogleContactsExport
       }
       throw err;
     }
-
-    return {
-      content: '',
-      contentType: this.contentType,
-      charset: '',
-      extension: ''
-    };
   }
 }

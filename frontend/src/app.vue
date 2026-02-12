@@ -31,31 +31,29 @@
 
   <Toast group="has-links">
     <template #message="slotProps">
-      <i class="pi pi-info-circle" />
-      <div class="p-toast-message-text" data-pc-section="messagetext">
-        <span class="p-toast-summary" data-pc-section="summary">
-          {{ slotProps.message.summary }}
-        </span>
-        <div class="p-toast-detail" data-pc-section="detail">
-          <template
-            v-for="(detail, index) in (slotProps.message
-              .detail as ToastHasLinksGroupDetail[]) ?? []"
-            :key="index"
-          >
-            <a
-              v-if="detail.link"
-              :href="detail.link"
-              class="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {{ detail.text }}
-            </a>
-            <div v-else>
-              {{ detail.text }}
-            </div>
-          </template>
+      <div class="flex flex-col gap-2 items-start flex-auto w-full">
+        <div class="flex items-center gap-2">
+          <i class="text-md pi pi-info-circle" />
+          <p class="text-sm md:text-base font-medium">
+            {{ slotProps.message.summary }}
+          </p>
         </div>
+        <div class="text-sm md:text-base">
+          {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
+        </div>
+        <Button
+          v-if="
+            (slotProps.message.detail as ToastHasLinksGroupDetail).button.action
+          "
+          class="mt-2"
+          size="small"
+          :label="
+            (slotProps.message.detail as ToastHasLinksGroupDetail).button.text
+          "
+          @click="
+            (slotProps.message.detail as ToastHasLinksGroupDetail).button.action
+          "
+        ></Button>
       </div>
     </template>
   </Toast>
@@ -64,6 +62,15 @@
 </template>
 
 <script setup lang="ts">
+type ToastHasLinksGroupDetail = {
+  message: string;
+  link?: string;
+  button: {
+    text: string;
+    action?: () => void;
+  };
+};
+
 import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
@@ -96,9 +103,4 @@ Normalizer.setLang($leadminerStore.language || 'en');
 watch(activeTask, () => {
   reset();
 });
-
-type ToastHasLinksGroupDetail = {
-  text: string;
-  link?: string;
-};
 </script>
