@@ -12,6 +12,7 @@ import {
 // eslint-disable-next-line max-classes-per-file
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
+import { AxiosError } from 'axios';
 import ENV from '../../config';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
@@ -20,7 +21,6 @@ import EmailFetcherClient from '../email-fetching';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
-
 export default class TasksManager {
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
@@ -122,12 +122,10 @@ export default class TasksManager {
    * @throws {Error} If a task with the same mining ID already exists.
    * @throws {Error} If there is an error when creating the task.
    */
-  async createTask({
-    email,
-    boxes,
-    fetchEmailBody,
-    userId
-  }: ImapEmailsFetcherOptions) {
+  async createTask(
+    { email, boxes, fetchEmailBody, userId }: ImapEmailsFetcherOptions,
+    passive_mining = false
+  ): Promise<RedactedTask> {
     let miningTaskId: string | null = null;
     try {
       const { miningId, stream } = await this.generateTaskInformation();
@@ -160,7 +158,8 @@ export default class TasksManager {
               },
               progress: {
                 signatures: 0
-              }
+              },
+              passive_mining
             }
           },
           fetch: {
@@ -177,7 +176,8 @@ export default class TasksManager {
                 totalMessages: 0,
                 folders: boxes,
                 fetched: 0
-              }
+              },
+              passive_mining
             }
           },
           extract: {
@@ -194,7 +194,8 @@ export default class TasksManager {
               },
               progress: {
                 extracted: 0
-              }
+              },
+              passive_mining
             }
           },
           clean: {
@@ -211,7 +212,8 @@ export default class TasksManager {
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
-              }
+              },
+              passive_mining
             }
           }
         },
@@ -270,6 +272,9 @@ export default class TasksManager {
         logger.error(`Failed to start fetching task with id: ${miningId}`, {
           error
         });
+        if (error instanceof AxiosError) {
+          throw new Error(`Failed to start fetching: ${error.message}`);
+        }
         throw new Error('Failed to start fetching');
       }
 
