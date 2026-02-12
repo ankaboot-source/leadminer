@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { ImapFlow as Connection } from 'imapflow';
+import { AuthenticationFailure, ImapFlow as Connection } from 'imapflow';
 import ENV from './config';
 import pool from './db/pg';
 import PgMiningSources from './db/pg/PgMiningSources';
@@ -240,12 +240,27 @@ apiRoutes.post(
       });
     } catch (err) {
       logger.error('Failed to start fetching', err);
+
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'authenticationFailed' in err &&
+        (err as AuthenticationFailure).response
+          ?.toLowerCase()
+          .includes('invalid credentials')
+      ) {
+        return res.status(401).json({ message: (err as any)?.responseText });
+      }
+
       if (
         err instanceof Error &&
-        err.message.toLowerCase().startsWith('invalid credentials')
+        err.stack?.includes('Connection not available')
       ) {
-        return res.status(401).json({ message: err.message });
+        return res.status(503).json({
+          message: 'Connection not available, Please try again later'
+        });
       }
+
       if (
         err instanceof Error &&
         'textCode' in err &&

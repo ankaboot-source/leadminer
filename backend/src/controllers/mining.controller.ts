@@ -268,11 +268,11 @@ export default function initializeMiningController(
     },
 
     async startMining(req: Request, res: Response, next: NextFunction) {
-      console.log('StartMining')
-      // const user = res.locals.user as User; //! why not /:userId directly?
+      console.log('StartMining', req.body);
+      const user = res.locals.user as User; //! why not /:userId directly?
 
-      const { userId: user_id } = req.params; //! can use this instead
-      const user = {id: user_id};
+      // const { userId: user_id } = req.params; //! can use this instead
+      // const user = {id: user_id};
 
       const {
         extractSignatures,
@@ -286,11 +286,17 @@ export default function initializeMiningController(
         extractSignatures: boolean;
       } = req.body;
 
+      user.email = email; // used when user is not provided (edge function req)
+      // const folders = [
+      //   "[Gmail]/All Mail",
+      // ];
       const errors = [
         validateType('email', email, 'string'),
         validateType('boxes', folders, 'string[]'),
         validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
+
+      console.log('Validation errors:', errors);
 
       if (errors.length) {
         return res
@@ -301,6 +307,12 @@ export default function initializeMiningController(
       const sanitizedEmail = sanitizeImapInput(email);
       const sanitizedFolders = folders.map((folder) =>
         sanitizeImapInput(folder)
+      );
+
+      console.log(
+        'Sanitized email and folders:',
+        sanitizedEmail,
+        sanitizedFolders
       );
 
       const miningSourceCredentials =
@@ -340,16 +352,30 @@ export default function initializeMiningController(
       } catch (err) {
         if (
           err instanceof Error &&
-          err.message.toLowerCase().startsWith('invalid credentials')
-        ) {
-          return res.status(401).json({ message: err.message });
-        }
-        if (
-          err instanceof Error &&
           'textCode' in err &&
           err.textCode === 'CANNOT'
         ) {
           return res.sendStatus(409);
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 401')
+        ) {
+          res
+            .status(401)
+            .send('Failed to start fetching: Invalid credentials 401');
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 503')
+        ) {
+          res
+            .status(503)
+            .send(
+              'Failed to start fetching: Connection not available, please try again later 503'
+            );
         }
 
         const newError = generateErrorObjectFromImapError(err);
@@ -357,6 +383,11 @@ export default function initializeMiningController(
         res.status(500);
         return next(new Error(newError.message));
       }
+    },
+
+    //! matnsech bech tsecureha
+    async startMiningPassive(req: Request, res: Response, next: NextFunction) {
+      // mines all passive
     },
 
     async startMiningFile(req: Request, res: Response, next: NextFunction) {
