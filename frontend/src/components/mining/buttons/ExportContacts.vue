@@ -191,11 +191,6 @@ async function closeGoogleExportConfirmationDialog() {
 }
 
 async function openAccountSelectionDialog() {
-  // Fetch mining sources if not already loaded
-  if (!$leadminerStore.miningSources.length) {
-    await $leadminerStore.fetchMiningSources();
-  }
-
   // Preselect user's email if it exists in Google mining sources
   const userEmail = $profile.value?.email;
   if (
@@ -272,7 +267,11 @@ function getFileName() {
 async function exportToGoogle(type: ExportTypes) {
   selectedExportType.value = type;
 
-  // Skip account selection dialog if only one Google account exists
+  // Fetch mining sources if not already loaded
+  if (!$leadminerStore.miningSources.length) {
+    await $leadminerStore.fetchMiningSources();
+  }
+
   if (
     googleMiningSources.value.length === 1 &&
     googleMiningSources?.value[0]?.email
