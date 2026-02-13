@@ -90,6 +90,9 @@
           />
         </div>
 
+        <div>
+          <CampaignButton :contacts="contactsToTreat"/>
+        </div>
         <div
           v-tooltip.top="
             (isExportDisabled || !selectedContactsLength) &&
@@ -860,7 +863,7 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-
+import { CampaignButton } from '@/utils/extras'
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
