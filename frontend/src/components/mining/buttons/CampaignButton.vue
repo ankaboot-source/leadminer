@@ -31,6 +31,8 @@
 
 <script setup lang="ts">
 const $toast = useToast();
+const $user = useSupabaseUser();
+
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -39,27 +41,31 @@ const { t: $t } = useI18n({
 });
 const $screenStore = useScreenStore();
 const props = defineProps<{
-  contacts?: string[];
+  contactsCount?: number;
 }>();
 
 const visibleDialog = ref(false);
 
-const contacts = computed(() => props.contacts);
+const contactsCount = computed(() => props.contactsCount);
 
 async function sendEmailCampaign() {
   await notifyLeadminer();
-  visibleDialog.value = true;
-}
-
-async function notifyLeadminer() {
-  // email to contact@leadminer.io "Send an Email Campaign - The user {email} wants to send an email campaign to X contacts" (reply-to is the user's email)
-
-  // email, contacts (emails)
   $toast.add({
     summary: t('toast_summary'),
     detail: t('toast_detail'),
     severity: 'info',
     life: 3000,
+  });
+  visibleDialog.value = true;
+}
+
+async function notifyLeadminer() {
+  await useNuxtApp().$saasEdgeFunctions('mail/campaign/notify-leadminer', {
+    method: 'POST',
+    body: {
+      email: $user.value?.email,
+      contactsCount: contactsCount.value,
+    },
   });
 }
 </script>
