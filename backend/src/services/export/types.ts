@@ -20,6 +20,7 @@ export interface ExportResult {
   contentType: string;
   charset: string;
   extension: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ExportStrategy<T> {
