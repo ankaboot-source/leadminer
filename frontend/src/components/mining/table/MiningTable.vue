@@ -91,7 +91,7 @@
         </div>
 
         <div>
-          <CampaignButton :contacts="contactsToTreat"/>
+          <CampaignButton :contacts-count="implicitlySelectedContactsLength"/>
         </div>
         <div
           v-tooltip.top="
