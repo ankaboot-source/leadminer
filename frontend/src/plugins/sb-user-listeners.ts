@@ -35,11 +35,15 @@ async function getCurrentUserProfile(client: SupabaseClient) {
 async function addMiningSourceFromProviderToken(
   provider: string,
   providerToken: string,
-  providerRefreshToken: string
+  providerRefreshToken: string,
 ): Promise<void> {
   await useNuxtApp().$saasEdgeFunctions('add-mining-source', {
     method: 'POST',
-    body: { provider, provider_token: providerToken, provider_refresh_token: providerRefreshToken },
+    body: {
+      provider,
+      provider_token: providerToken,
+      provider_refresh_token: providerRefreshToken,
+    },
   });
 }
 
@@ -103,7 +107,11 @@ async function handleFirstTimeSignIn() {
   }
 
   if (provider && providerToken && providerRefreshToken) {
-    await addMiningSourceFromProviderToken(provider, providerToken, providerRefreshToken);
+    await addMiningSourceFromProviderToken(
+      provider,
+      providerToken,
+      providerRefreshToken,
+    );
   }
 
   if (language && (!emailTemplate || emailTemplate.language !== language)) {
