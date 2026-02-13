@@ -6,7 +6,12 @@ const user = Deno.env.get("SMTP_USER");
 const pass = Deno.env.get("SMTP_PASS");
 const from = `"leadminer" <${user}>`;
 
-export async function sendEmail(to: string, subject: string, html: string) {
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  replyTo?: string,
+) {
   const transporter = nodemailer.createTransport({
     host,
     port,
@@ -21,8 +26,9 @@ export async function sendEmail(to: string, subject: string, html: string) {
     to,
     subject,
     html,
+    replyTo,
   });
 
   console.log("Email sent:", { to, messageId: info.messageId });
-  // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info)); // For local testing only
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info)); // For local testing only
 }
