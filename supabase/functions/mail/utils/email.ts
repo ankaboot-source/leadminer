@@ -4,9 +4,19 @@ const host = Deno.env.get("SMTP_HOST");
 const port = Deno.env.get("SMTP_PORT");
 const user = Deno.env.get("SMTP_USER");
 const pass = Deno.env.get("SMTP_PASS");
-const from = `"leadminer" <${user}>`;
+const defaultFrom = `"leadminer" <${user}>`;
 
-export async function sendEmail(to: string, subject: string, html: string) {
+type SendEmailOptions = {
+  from?: string;
+  replyTo?: string;
+};
+
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  options: SendEmailOptions = {},
+) {
   const transporter = nodemailer.createTransport({
     host,
     port,
@@ -17,10 +27,11 @@ export async function sendEmail(to: string, subject: string, html: string) {
   });
 
   const info = await transporter.sendMail({
-    from,
+    from: options.from ?? defaultFrom,
     to,
     subject,
     html,
+    replyTo: options.replyTo,
   });
 
   console.log("Email sent:", { to, messageId: info.messageId });

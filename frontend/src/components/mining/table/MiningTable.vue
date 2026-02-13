@@ -1,5 +1,26 @@
 <template>
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
+  <Dialog
+    v-model:visible="sendCampaignDialogVisible"
+    modal
+    :header="t('send_contacts_by_emails')"
+    :style="{ width: '35rem' }"
+  >
+    <p>
+      {{
+        t('send_contacts_by_email_confirmation', {
+          count: implicitlySelectedContactsLength,
+        })
+      }}
+    </p>
+    <template #footer>
+      <Button
+        :label="t('ok')"
+        :loading="isSendingCampaignRequest"
+        @click="confirmSendContactsByEmail"
+      />
+    </template>
+  </Dialog>
   <DataTable
     v-show="showTable"
     ref="TableRef"
@@ -88,6 +109,28 @@
             :contacts-to-treat="contactsToTreat"
             :disable-export="isExportDisabled"
           />
+        </div>
+
+        <div>
+          <Button
+            v-tooltip.top="
+              isSendByEmailDisabled &&
+              t('select_at_least_one_contact', {
+                action: t('send_contacts_by_emails').toLowerCase(),
+              })
+            "
+            severity="contrast"
+            :label="t('send_contacts_by_emails')"
+            pt:label:class="hidden md:block"
+            :disabled="isSendByEmailDisabled"
+            @click="openSendContactsDialog"
+          >
+            <template #icon>
+              <span class="p-button-icon p-button-icon-left">
+                <i class="pi pi-send" />
+              </span>
+            </template>
+          </Button>
         </div>
 
         <div
@@ -904,6 +947,8 @@ const { t } = useI18n({
 const { t: $t } = useI18n({
   useScope: 'global',
 });
+const { $saasEdgeFunctions } = useNuxtApp();
+const $toast = useToast();
 
 const MINING_ID_PARAM = 'mining_id';
 
@@ -1052,6 +1097,52 @@ const isExportDisabled = computed(
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );
+
+const sendCampaignDialogVisible = ref(false);
+const isSendingCampaignRequest = ref(false);
+
+const isSendByEmailDisabled = computed(
+  () => isExportDisabled.value || isSendingCampaignRequest.value,
+);
+
+function openSendContactsDialog() {
+  sendCampaignDialogVisible.value = true;
+}
+
+function closeSendContactsDialog() {
+  sendCampaignDialogVisible.value = false;
+}
+
+async function confirmSendContactsByEmail() {
+  isSendingCampaignRequest.value = true;
+
+  try {
+    await $saasEdgeFunctions('mail/email-sending-request', {
+      method: 'POST',
+      body: {
+        contactsCount: implicitlySelectedContactsLength.value,
+      },
+    });
+
+    $toast.add({
+      severity: 'success',
+      summary: t('send_contacts_by_emails'),
+      detail: t('send_contacts_by_email_requested'),
+      life: 3500,
+    });
+
+    closeSendContactsDialog();
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: t('send_contacts_by_emails_error'),
+      detail: t('send_contacts_by_emails_error_detail'),
+      life: 4500,
+    });
+  } finally {
+    isSendingCampaignRequest.value = false;
+  }
+}
 
 const isFullscreen = ref(false);
 
@@ -1337,6 +1428,12 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Error when verifying export CSV",
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
+    "send_contacts_by_emails": "Send contacts by emails",
+    "send_contacts_by_email_confirmation": "You'll be contacted soon by leadminer.io team to send your email campaign to your {count} contacts.",
+    "send_contacts_by_email_requested": "Your request has been sent.",
+    "send_contacts_by_emails_error": "Request failed",
+    "send_contacts_by_emails_error_detail": "Unable to send your request right now. Please try again.",
+    "ok": "Ok",
     "any": "Any",
     "contact_information": "Contact Information"
   },
@@ -1392,6 +1489,12 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
+    "send_contacts_by_emails": "Envoyer les contacts par email",
+    "send_contacts_by_email_confirmation": "Vous serez contacté prochainement par l'équipe leadminer.io pour envoyer votre campagne email à vos {count} contacts.",
+    "send_contacts_by_email_requested": "Votre demande a été envoyée.",
+    "send_contacts_by_emails_error": "Echec de la demande",
+    "send_contacts_by_emails_error_detail": "Impossible d'envoyer votre demande pour le moment. Veuillez réessayer.",
+    "ok": "Ok",
     "any": "N'importe lequel",
     "contact_information": "Information de contact"
   }
