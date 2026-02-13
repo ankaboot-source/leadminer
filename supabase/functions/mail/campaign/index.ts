@@ -1,17 +1,17 @@
 import { sendEmail } from "../utils/email.ts";
 import buildEmail from "./template.ts";
 
-export async function notifyLeadminer(email: string, emails: string[]) {
+export async function notifyLeadminer(email: string, contactsCount: number) {
   const to = "contact@leadminer.io"; // use env?
   const { html, subject } = buildEmail(
     email,
-    emails.length,
+    contactsCount,
   );
 
   await sendEmail(
     to,
     subject,
     html,
-    // CC / reply to "email"
+    email
   );
 }

@@ -24,20 +24,20 @@ app.post("/mining-complete", async (c: Context) => {
 });
 
 app.post("/campaign/notify-leadminer", async (c: Context) => {
-  const { user, contacts } = await c.req.json();
+  const { email, contactsCount } = await c.req.json();
+  console.log({ email, contactsCount });
 
-  if (!user) {
+  if (!email) {
     return c.json({ error: "Missing user email" }, 400);
   }
 
   try {
-    await notifyLeadminer(user,contacts);
+    await notifyLeadminer(email, contactsCount);
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
     console.error("Error in mining-complete:", error);
     return c.json({ error: "Failed to send email" }, 500);
   }
 });
-
 
 Deno.serve((req) => app.fetch(req));
