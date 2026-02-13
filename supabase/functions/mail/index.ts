@@ -66,7 +66,7 @@ app.post("/email-sending-request", async (c: Context) => {
 
   const subject = "Email sending request";
   const safeUserEmail = escapeHtml(user.email);
-  const html = `<p>The user ${safeUserEmail} wants to send his ${contactsCount} contacts by email</p>`;
+  const html = `<p>The user ${safeUserEmail} wants to export ${contactsCount} contacts</p>`;
 
   try {
     await sendEmail(
