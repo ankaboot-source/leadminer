@@ -16,6 +16,7 @@ export async function signInWithOAuth(provider: Provider) {
 
       queryParams: {
         prompt: 'select_account',
+        access_type: 'offline',
       },
     },
   });

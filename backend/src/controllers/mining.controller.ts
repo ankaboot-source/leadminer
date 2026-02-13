@@ -451,7 +451,6 @@ export default function initializeMiningController(
           data: fileMiningTask
         });
       } catch (err) {
-        res.status(500);
         return next(err);
       }
     },
@@ -514,7 +513,13 @@ export default function initializeMiningController(
           return res.sendStatus(409);
         }
 
-        res.status(500);
+        if (
+          err instanceof Error &&
+          err.message === 'Failed to parse PST file'
+        ) {
+          return res.status(422).json({ message: err.message });
+        }
+
         return next(err);
       }
     },
@@ -632,7 +637,7 @@ export default function initializeMiningController(
           task.miningSource.type === 'email' &&
           (!fetchTask || !extractTask || !cleanTask)
         ) {
-          throw new Error(`Email  mining with id: ${miningId} not found`);
+          throw new Error(`Email mining with id: ${miningId} not found`);
         } else if (
           task.miningSource.type === 'file' &&
           (!extractTask || !cleanTask)
@@ -658,7 +663,7 @@ export default function initializeMiningController(
           clean: cleanTask
         });
       } catch (err) {
-        res.status(404);
+        res.status(204);
         return next(err);
       }
     }
