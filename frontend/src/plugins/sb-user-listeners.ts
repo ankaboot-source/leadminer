@@ -98,9 +98,12 @@ async function handleFirstTimeSignIn() {
   const emailTemplate = user.user_metadata.EmailTemplate;
   const language = navigator.language.split('-')[0];
 
-  if (!firstTimeSignin && provider && providerToken) {
-    await addMiningSourceFromProviderToken(provider, providerToken, providerRefreshToken);
+  if (!firstTimeSignin) {
     await updateFirstTimeSignIn();
+  }
+
+  if (provider && providerToken && providerRefreshToken) {
+    await addMiningSourceFromProviderToken(provider, providerToken, providerRefreshToken);
   }
 
   if (language && (!emailTemplate || emailTemplate.language !== language)) {
