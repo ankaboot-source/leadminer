@@ -1,8 +1,8 @@
 import PQueue from "p-queue";
 import { createSupabaseAdmin } from "../../_shared/supabase.ts";
+import weeklyMiningReportEmail from "../email-templates/weekly-report.ts";
 import { getMiningStats, getUserEmail, getUserLanguage } from "../utils/db.ts";
 import { sendEmail } from "../utils/email.ts";
-import buildEmail from "./template.ts";
 
 const supabase = createSupabaseAdmin();
 
@@ -153,13 +153,13 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
           getUserLanguage(userId)
         ]);
         
-        const { html, subject } = buildEmail(
+        const { html, subject } = weeklyMiningReportEmail(
           stats.totalContacts,
           stats.totalReachable,
           stats.totalWithPhone,
           stats.totalWithCompany,
           stats.totalWithLocation,
-          'fr',
+          language,
         );
         
         await sendEmail(email, subject, html);

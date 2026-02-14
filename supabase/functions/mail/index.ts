@@ -1,7 +1,7 @@
 import { Context, Hono } from "hono";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
-import mailMiningComplete from "./mining-complete/index.ts";
 import sendWeeklyPassiveMiningReports from "./weekly-passive-report/index.ts";
+import mailMiningComplete from "./mining-complete/index.ts";
 
 const functionName = "mail";
 const app = new Hono().basePath(`/${functionName}`);
