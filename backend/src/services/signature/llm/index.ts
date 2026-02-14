@@ -217,6 +217,9 @@ export class SignatureLLM implements ExtractSignature {
   private handleResponseError(error: OpenRouterError['error']) {
     if ([402, 502, 503].includes(error.code)) {
       this.active = false;
+      this.logger.warn(
+        'LLM engine down — check credits balance or expired/invalid API token'
+      );
     }
     throw new Error(error.message);
   }

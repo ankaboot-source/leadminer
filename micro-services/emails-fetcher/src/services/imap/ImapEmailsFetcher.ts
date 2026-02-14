@@ -150,6 +150,8 @@ export default class ImapEmailsFetcher {
 
   private FETCHING_TOTAL_ERRORS: number;
 
+  private totalSignaturesPublished: number;
+
   private readonly emailsQueue: PQueue;
 
   private readonly processSetKey: string;
@@ -195,6 +197,9 @@ export default class ImapEmailsFetcher {
     // Error Tracking
     this.FETCHING_TOTAL_ERRORS = 0;
     this.FETCHING_MAX_ERRORS = maxConcurrentConnections * 1.5;
+
+    // Signature counter
+    this.totalSignaturesPublished = 0;
 
     this.fetchedIds = new Set<string>();
     this.emailsQueue = new PQueue({
@@ -377,6 +382,7 @@ export default class ImapEmailsFetcher {
       );
 
       if (text.length && from && date) {
+        // Increment counter for each signature-worthy email published        
         const { address, name } = from;
         await publishToStream(this.signatureStream, {
           type: 'email',
@@ -397,6 +403,7 @@ export default class ImapEmailsFetcher {
           userIdentifier: this.userIdentifier,
           miningId: this.miningId
         });
+        this.totalSignaturesPublished++;
       }
     } catch (error) {
       logger.error('Error when publishing email body', { error });
@@ -730,7 +737,8 @@ export default class ImapEmailsFetcher {
           body: '',
           seqNumber: -1,
           folderPath: '',
-          isLast: true
+          isLast: true,
+          totalSignatures: this.totalSignaturesPublished
         },
         userId: this.userId,
         userEmail: this.userEmail,
@@ -740,7 +748,7 @@ export default class ImapEmailsFetcher {
     );
 
     logger.info(
-      `[${this.miningId}] Notified signature stream: This is the last published message.`
+      `[${this.miningId}] Notified signature stream: This is the last published message with ${this.totalSignaturesPublished} total signatures.`
     );
 
     await publishFetchingProgress(

@@ -54,6 +54,15 @@ export class TokenBucketRateLimiter implements IRateLimiter {
       executeEvenly,
       distribution
     });
+
+    logger.debug('Token bucket rate limiter initialized', {
+      intervalSeconds,
+      requests,
+      executeEvenly,
+      distribution,
+      uniqueKey
+    });
+
     this.limiter = new RateLimiterQueue(baseLimiter);
   }
 
