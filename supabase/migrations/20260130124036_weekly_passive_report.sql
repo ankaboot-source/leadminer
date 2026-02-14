@@ -54,8 +54,3 @@ SELECT cron.schedule(
     ) as request_id;
   $$
 );
-
-COMMENT ON JOB 'weekly-passive-mining-reports' IS 
-'Weekly passive mining email reports. Runs every Monday at 9 AM UTC.
-Invokes the edge function which handles all logic: queries mining_sources with passive_mining=true,
-fetches mining IDs from tasks, aggregates stats, and sends emails.';
