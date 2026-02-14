@@ -12,6 +12,16 @@
         }"
         @click="navigateTo(contactsPath)"
       />
+      <Button
+        icon="pi pi-megaphone"
+        :label="$t('common.campaigns')"
+        outlined
+        class="ml-2 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
+        :class="{
+          'border-primary': $router.currentRoute.value.path === campaignsPath,
+        }"
+        @click="navigateTo(campaignsPath)"
+      />
       <div class="grow" />
       <div id="desktop-navbar" class="hidden lg:flex lg:items-center lg:gap-1">
         <Button
@@ -66,6 +76,21 @@
             />
 
             <Button
+              icon="pi pi-megaphone"
+              :label="$t('common.campaigns')"
+              outlined
+              class="border-l-4 border-0 rounded-sm"
+              :class="{
+                'border-primary bg-primary-50':
+                  $router.currentRoute.value.path === campaignsPath,
+              }"
+              @click="
+                navigateTo(campaignsPath);
+                closeCallback();
+              "
+            />
+
+            <Button
               type="button"
               :label="$t('common.start_mining')"
               @click="
@@ -108,6 +133,7 @@ const $sourcePanelStore = useStepperSourcePanel();
 const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
 const contactsPath = '/contacts';
+const campaignsPath = '/campaigns';
 const minePath = '/mine';
 const homePath = $user
   ? '/'

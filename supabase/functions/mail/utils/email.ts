@@ -9,7 +9,38 @@ const defaultFrom = `"leadminer" <${user}>`;
 type SendEmailOptions = {
   from?: string;
   replyTo?: string;
+  text?: string;
+  transport?: {
+    host: string;
+    port: number;
+    secure: boolean;
+    auth: {
+      user: string;
+      pass?: string;
+      type?: "OAuth2";
+      accessToken?: string;
+    };
+  };
 };
+
+function getDefaultTransport() {
+  return {
+    host,
+    port,
+    secure: Number(port) === 465,
+    auth: {
+      user,
+      pass,
+    },
+  };
+}
+
+export async function verifyTransport(transport?: SendEmailOptions["transport"]) {
+  const transporter = nodemailer.createTransport(
+    transport ?? getDefaultTransport(),
+  );
+  await transporter.verify();
+}
 
 export async function sendEmail(
   to: string,
@@ -17,20 +48,16 @@ export async function sendEmail(
   html: string,
   options: SendEmailOptions = {},
 ) {
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    auth: {
-      user,
-      pass,
-    },
-  });
+  const transporter = nodemailer.createTransport(
+    options.transport ?? getDefaultTransport(),
+  );
 
   const info = await transporter.sendMail({
     from: options.from ?? defaultFrom,
     to,
     subject,
     html,
+    text: options.text,
     replyTo: options.replyTo,
   });
 
