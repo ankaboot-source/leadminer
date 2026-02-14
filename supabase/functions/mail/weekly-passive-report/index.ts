@@ -4,8 +4,6 @@ import weeklyMiningReportEmail from "../email-templates/weekly-report.ts";
 import { getMiningStats, getUserEmail, getUserLanguage } from "../utils/db.ts";
 import { sendEmail } from "../utils/email.ts";
 
-const supabase = createSupabaseAdmin();
-
 interface ProcessingResult {
   userId: string;
   sent: boolean;
@@ -22,6 +20,8 @@ interface MiningTaskStats {
   totalWithCompany: number;
   totalWithLocation: number;
 }
+
+const supabase = createSupabaseAdmin();
 
 /**
  * Get mining IDs from passive mining tasks for a user in a given week
@@ -43,12 +43,16 @@ async function getMiningIdsForUser(
     .lt('stopped_at', weekEndStr);
 
   if (error) {
+    console.error(`[getMiningIdsForUser] Failed to fetch mining IDs for user ${userId}: ${error.message}`);
     throw new Error(`Failed to fetch mining IDs: ${error.message}`);
   }
   
-  return (data as {miningId: string}[])
+  const miningIds = (data as {miningId: string}[])
     ?.map(({ miningId }) => miningId)
     .filter(Boolean) || [];
+  
+  console.debug(`[getMiningIdsForUser] Found ${miningIds.length} mining IDs for user ${userId}`);
+  return miningIds;
 }
 
 /**
@@ -63,6 +67,8 @@ async function aggregateMiningStats(miningIds: string[]): Promise<MiningTaskStat
     totalWithLocation: 0
   };
   
+  console.debug(`[aggregateMiningStats] Aggregating stats for ${miningIds.length} mining IDs`);
+  
   for (const miningId of miningIds) {
     try {
       const miningStats = await getMiningStats(miningId);
@@ -73,10 +79,11 @@ async function aggregateMiningStats(miningIds: string[]): Promise<MiningTaskStat
       stats.totalWithCompany += miningStats.total_with_company || 0;
       stats.totalWithLocation += miningStats.total_with_location || 0;
     } catch (error) {
-      console.error(`Failed to get stats for mining ${miningId}:`, error);
+      console.error(`[aggregateMiningStats] Failed to get stats for mining ${miningId}:`, error);
     }
   }
   
+  console.debug(`[aggregateMiningStats] Aggregated stats: ${JSON.stringify(stats)}`);
   return stats;
 }
 
@@ -92,50 +99,54 @@ async function getUsersWithPassiveMining(): Promise<string[]> {
     .limit(1000);
   
   if (error) {
-    console.error('Failed to fetch users with passive_mining:', error);
+    console.error('[getUsersWithPassiveMining] Failed to fetch users with passive_mining:', error);
     throw error;
   }
   
   if (!data || data.length === 0) {
+    console.log('[getUsersWithPassiveMining] No users with passive_mining enabled found');
     return [];
   }
 
-  const miningSources = data as {user_id: string}[]
-  return [...new Set(miningSources.map(u => u.user_id))];
+  const miningSources = data as {user_id: string}[];
+  const uniqueUserIds = [...new Set(miningSources.map(u => u.user_id))];
+  console.log(`[getUsersWithPassiveMining] Found ${uniqueUserIds.length} unique users with passive_mining enabled`);
+  return uniqueUserIds;
 }
 
 /**
  * Send weekly passive mining reports to all users with passive_mining enabled
  */
 export default async function sendWeeklyPassiveMiningReports(weekStart: string) {
-  console.log(`Starting weekly passive mining report job for week starting ${weekStart}`);
-  
+  console.log(`[sendWeeklyPassiveMiningReports] Starting weekly passive mining report job for week starting ${weekStart}`);
+
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
   const weekEndStr = weekEnd.toISOString().split('T')[0];
-  
-  // Get all users with passive_mining enabled
+  console.debug(`[sendWeeklyPassiveMiningReports] Reporting period: ${weekStart} to ${weekEndStr}`);
+
   const uniqueUserIds = await getUsersWithPassiveMining();
   
   if (uniqueUserIds.length === 0) {
-    console.log('No users with passive_mining enabled');
+    console.log('[sendWeeklyPassiveMiningReports] No users with passive_mining enabled');
     return { processed: 0, emailsSent: 0, results: [] };
   }
   
-  console.log(`Found ${uniqueUserIds.length} unique users with passive_mining enabled`);
-  
-  const results: ProcessingResult[] = [];
+  console.log(`[sendWeeklyPassiveMiningReports] Processing ${uniqueUserIds.length} users`);
+
   let emailsSent = 0;
-  
+  const results: ProcessingResult[] = [];
   const queue = new PQueue({ concurrency: 5 });
   
   for (const userId of uniqueUserIds) {
     queue.add(async () => {
+      console.debug(`[sendWeeklyPassiveMiningReports] Processing user ${userId}`);
+      
       try {
         const miningIds = await getMiningIdsForUser(userId, weekStart, weekEndStr);
         
         if (miningIds.length === 0) {
-          console.log(`No passive mining tasks for user ${userId} this week`);
+          console.log(`[sendWeeklyPassiveMiningReports] No passive mining tasks for user ${userId} this week`);
           results.push({ userId, sent: false, reason: 'no_tasks' });
           return;
         }
@@ -143,7 +154,7 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
         const stats = await aggregateMiningStats(miningIds);
         
         if (stats.totalContacts === 0) {
-          console.log(`No contacts mined for user ${userId} this week`);
+          console.log(`[sendWeeklyPassiveMiningReports] No contacts mined for user ${userId} this week`);
           results.push({ userId, sent: false, reason: 'no_contacts' });
           return;
         }
@@ -152,6 +163,12 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
           getUserEmail(userId),
           getUserLanguage(userId)
         ]);
+        
+        if (!email) {
+          console.warn(`[sendWeeklyPassiveMiningReports] No email found for user ${userId}`);
+          results.push({ userId, sent: false, reason: 'no_email' });
+          return;
+        }
         
         const { html, subject } = weeklyMiningReportEmail(
           stats.totalContacts,
@@ -164,8 +181,8 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
         
         await sendEmail(email, subject, html);
         
-        console.log(`Weekly passive report sent to ${email} (${stats.totalContacts} contacts)`);
-        results.push({ 
+        console.log(`[sendWeeklyPassiveMiningReports] Weekly passive report sent to ${email} (${stats.totalContacts} contacts)`);
+        results.push({
           userId, 
           sent: true, 
           email,
@@ -174,7 +191,7 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
         emailsSent++;
         
       } catch (error) {
-        console.error(`Failed to process user ${userId}:`, error);
+        console.error(`[sendWeeklyPassiveMiningReports] Failed to process user ${userId}:`, error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         results.push({ 
           userId, 
@@ -187,7 +204,7 @@ export default async function sendWeeklyPassiveMiningReports(weekStart: string) 
   
   await queue.onIdle();
   
-  console.log(`Weekly passive mining report job completed. Emails sent: ${emailsSent}/${uniqueUserIds.length}`);
+  console.log(`[sendWeeklyPassiveMiningReports] Weekly passive mining report job completed. Processed: ${uniqueUserIds.length}, Emails sent: ${emailsSent}`);
   
   return {
     processed: uniqueUserIds.length,
