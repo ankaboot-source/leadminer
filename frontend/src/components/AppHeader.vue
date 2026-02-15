@@ -13,7 +13,7 @@
         @click="navigateTo(contactsPath)"
       />
       <Button
-        icon="pi pi-megaphone"
+        icon="pi pi-send"
         :label="$t('common.campaigns')"
         outlined
         class="ml-2 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
@@ -76,7 +76,7 @@
             />
 
             <Button
-              icon="pi pi-megaphone"
+              icon="pi pi-send"
               :label="$t('common.campaigns')"
               outlined
               class="border-l-4 border-0 rounded-sm"

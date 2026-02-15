@@ -134,6 +134,12 @@ type Status = {
   color: 'success' | 'warn' | 'danger' | 'secondary';
 };
 
+type Consent = {
+  value: 'legitimate_interest' | 'opt_out' | 'opt_in';
+  label: string;
+  color: 'info' | 'danger' | 'success';
+};
+
 export const statuses = () => {
   const { t } = useNuxtApp().$i18n;
   return [
@@ -161,6 +167,34 @@ export function getStatusLabel(value: Status['value']): Status['label'] {
     t('contact.unverified')
   );
 }
+
+export const consentStatuses = () => {
+  const { t } = useNuxtApp().$i18n;
+  return [
+    {
+      value: 'legitimate_interest',
+      label: t('contact.consent.legitimate_interest'),
+      color: 'info',
+    },
+    { value: 'opt_out', label: t('contact.consent.opt_out'), color: 'danger' },
+    { value: 'opt_in', label: t('contact.consent.opt_in'), color: 'success' },
+  ] as Consent[];
+};
+
+export function getConsentColor(value: Consent['value']): Consent['color'] {
+  return (
+    consentStatuses().find((consent) => consent.value === value)?.color ?? 'info'
+  );
+}
+
+export function getConsentLabel(value: Consent['value']): Consent['label'] {
+  const { t } = useNuxtApp().$i18n;
+  return (
+    consentStatuses().find((consent) => consent.value === value)?.label ??
+    t('contact.consent.legitimate_interest')
+  );
+}
+
 export function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
@@ -193,14 +227,15 @@ export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
   const $user = useSupabaseUser();
-  if (!$user.value?.sub) return;
+  const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  if (!userId) return;
 
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('delete_contacts', {
-      user_id: $user.value.sub,
+      user_id: userId,
       emails: emails ?? null,
       deleteallcontacts: emails === undefined,
     });

@@ -28,21 +28,37 @@ SERVICES=(
 
 echo "Generating .env files for all services..."
 
+MISSING_ENV_DEV=()
+
 # Loop through each service directory
 for SERVICE_PATH in "${SERVICES[@]}"; do
   ENV_DEV_PATH="$SERVICE_PATH/.env.dev"
+  ENV_EXAMPLE_PATH="$SERVICE_PATH/.env.example"
   ENV_PATH="$SERVICE_PATH/.env"
+  ENV_TEMPLATE_PATH="$ENV_DEV_PATH"
 
   echo "- Processing: $SERVICE_PATH"
 
-  # Check if .env.dev exists
-  if [ -f "$ENV_DEV_PATH" ]; then
-    cp "$ENV_DEV_PATH" "$ENV_PATH"
-    echo "- Copied $ENV_DEV_PATH → $ENV_PATH"
+  if [ ! -f "$ENV_TEMPLATE_PATH" ] && [ -f "$ENV_EXAMPLE_PATH" ]; then
+    ENV_TEMPLATE_PATH="$ENV_EXAMPLE_PATH"
+  fi
+
+  if [ -f "$ENV_TEMPLATE_PATH" ]; then
+    cp "$ENV_TEMPLATE_PATH" "$ENV_PATH"
+    echo "- Copied $ENV_TEMPLATE_PATH → $ENV_PATH"
   else
-    echo "- Skipped: $ENV_DEV_PATH not found."
+    echo "- Skipped: $ENV_DEV_PATH or $ENV_EXAMPLE_PATH not found."
+    MISSING_ENV_DEV+=("$ENV_DEV_PATH")
   fi
 done
 
 echo ""
+if [ ${#MISSING_ENV_DEV[@]} -gt 0 ]; then
+  echo "❌ Environment setup incomplete. Missing templates:"
+  for MISSING_PATH in "${MISSING_ENV_DEV[@]}"; do
+    echo "- $MISSING_PATH"
+  done
+  exit 1
+fi
+
 echo "🎉 Environment setup complete! All .env files are now ready."

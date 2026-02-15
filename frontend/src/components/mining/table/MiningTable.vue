@@ -99,11 +99,11 @@
             v-tooltip.top="
               isSendByEmailDisabled &&
               t('select_at_least_one_contact', {
-                action: t('send_contacts_by_emails').toLowerCase(),
+                action: t('send_email_campaign').toLowerCase(),
               })
             "
             severity="contrast"
-            :label="t('send_contacts_by_emails')"
+            :label="t('send_email_campaign')"
             pt:label:class="hidden md:block"
             :disabled="isSendByEmailDisabled"
             @click="openSendContactsDialog"
@@ -186,6 +186,15 @@
                 <ToggleSwitch
                   v-model="$filtersStore.validToggle"
                   @update:model-value="$filtersStore.onValidToggle"
+                />
+              </li>
+              <li class="flex justify-between gap-2">
+                <div v-tooltip.left="t('toggle_hide_unsubscribed_tooltip')">
+                  {{ t('toggle_hide_unsubscribed_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="$filtersStore.hideUnsubscribedToggle"
+                  @update:model-value="$filtersStore.onHideUnsubscribedToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -600,6 +609,50 @@
       </template>
     </Column>
 
+    <!-- Consent -->
+    <Column
+      v-if="$contactsStore.visibleColumns.includes('consent_status')"
+      field="consent_status"
+      filter-field="consent_status"
+      sortable
+      :show-filter-operator="false"
+      :show-filter-match-modes="false"
+      :show-add-button="false"
+      :filter-menu-style="{ width: '14rem' }"
+    >
+      <template #header>
+        <div v-tooltip.top="t('consent_definition')">
+          {{ t('consent') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        <Tag
+          class="font-normal"
+          :value="getConsentLabel(data.consent_status)"
+          :severity="getConsentColor(data.consent_status)"
+        />
+      </template>
+      <template #filter="{ filterModel }">
+        <MultiSelect
+          v-model="filterModel.value"
+          :options="consentStatuses()"
+          option-value="value"
+          option-label="label"
+          :placeholder="t('any')"
+          class="p-column-filter"
+          display="chip"
+        >
+          <template #option="{ option }">
+            <Tag
+              :value="option.label"
+              :severity="option.color"
+              class="font-normal"
+            />
+          </template>
+        </MultiSelect>
+      </template>
+    </Column>
+
     <!-- Recipient -->
     <Column
       v-if="$contactsStore.visibleColumns.includes('recipient')"
@@ -892,6 +945,9 @@ import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
 import {
+  consentStatuses,
+  getConsentColor,
+  getConsentLabel,
   getStatusColor,
   getStatusLabel,
   getTagColor,
@@ -1104,6 +1160,7 @@ const visibleColumnsOptions = [
   { label: t('temperature'), value: 'temperature' },
   { label: t('tags'), value: 'tags' },
   { label: t('reachable'), value: 'status' },
+  { label: t('consent'), value: 'consent_status' },
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
@@ -1337,6 +1394,8 @@ table.p-datatable-table {
     "toggle_job_details_label": "Only with job details",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Hide unreachable contacts",
+    "toggle_hide_unsubscribed_tooltip": "Hide contacts who opted out from receiving your campaign emails",
+    "toggle_hide_unsubscribed_label": "Hide unsubscribed contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
     "toggle_replies_label": "At least one reply",
     "toggle_phone_label": "Only with phone number",
@@ -1363,6 +1422,12 @@ table.p-datatable-table {
     "categorize_contacts": "Categorize your contacts",
     "reachable_definition": "How reachable is your contact",
     "reachable": "Reachable",
+    "consent_definition": "Legal basis used to contact this person",
+    "consent": "Consent",
+    "consent_legitimate_interest": "Legitimate interest",
+    "consent_opt_out": "Opt-out",
+    "consent_opt_in": "Opt-in",
+    "consent_all": "All",
     "recipient_definition": "How many times the contact has received emails",
     "sender_definition": "How many times the contact has sent emails",
     "seniority_definition": "Oldest date this contact has been seen",
@@ -1376,7 +1441,7 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Error when verifying export CSV",
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
-    "send_contacts_by_emails": "Send contacts by emails",
+    "send_email_campaign": "Send email campaign",
     "any": "Any",
     "contact_information": "Contact Information"
   },
@@ -1393,6 +1458,8 @@ table.p-datatable-table {
     "toggle_job_details_label": "Avec les détails du poste",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
     "toggle_valid_label": "Cacher les contacts injoignables",
+    "toggle_hide_unsubscribed_tooltip": "Masquer les contacts qui se sont désinscrits de vos campagnes email",
+    "toggle_hide_unsubscribed_label": "Cacher les contacts désinscrits",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
     "toggle_phone_label": "Avec numéro de téléphone",
@@ -1419,6 +1486,12 @@ table.p-datatable-table {
     "categorize_contacts": "Catégoriser vos contacts",
     "reachable_definition": "Délivrabilité du contact",
     "reachable": "Joignable",
+    "consent_definition": "Base légale utilisée pour contacter cette personne",
+    "consent": "Consentement",
+    "consent_legitimate_interest": "Intérêt légitime",
+    "consent_opt_out": "Opposition (opt-out)",
+    "consent_opt_in": "Consentement (opt-in)",
+    "consent_all": "Tous",
     "recipient_definition": "Nombre de fois que le contact a reçu des emails",
     "sender_definition": "Nombre de fois que le contact a envoyé des emails",
     "seniority_definition": "La date la plus ancienne où ce contact a été vu",
@@ -1432,7 +1505,7 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
-    "send_contacts_by_emails": "Envoyer les contacts par email",
+    "send_email_campaign": "Envoyer une campagne email",
     "any": "N'importe lequel",
     "contact_information": "Information de contact"
   }

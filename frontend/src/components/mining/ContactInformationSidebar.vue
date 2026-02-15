@@ -386,7 +386,10 @@ watch(show, async (value) => {
   contact.value.works_for = await getOrganizationName(contact.value.works_for);
 
   if (value && $user.value) {
-    startRealtimePersons($user.value.sub, contact.value.email);
+    const userId =
+      $user.value.id || ($user.value as { sub?: string } | null)?.sub;
+    if (!userId) return;
+    startRealtimePersons(userId, contact.value.email);
     return;
   }
   if (personsSubscription) {
@@ -500,8 +503,9 @@ async function saveContactInformations() {
         ? editedContactCopy.image || null
         : undefined,
   };
-  if (!$user.value?.sub) return;
-  await updateContact($user.value.sub, contactToUpdate);
+  const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  if (!userId) return;
+  await updateContact(userId, contactToUpdate);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }

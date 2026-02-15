@@ -10,16 +10,21 @@ const functionName = "mail";
 const app = new Hono().basePath(`/${functionName}`);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const LEADMINER_HASH_SECRET = Deno.env.get("LEADMINER_HASH_SECRET") as string;
-const FALLBACK_SENDER_EMAIL = Deno.env.get("TRY_SENDER_EMAIL") || "try@leadminer.io";
+const SMTP_USER = (Deno.env.get("SMTP_USER") || "").trim().toLowerCase();
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
 const AZURE_DOMAINS = ["outlook", "hotmail", "live", "windowslive", "dbmail", "msn"];
 const GOOGLE_DOMAINS = ["gmail", "googlemail", "google"];
+const UNSUBSCRIBE_TEXT_SUFFIX = "Click here to unsubscribe";
+const COMPLIANCE_SEPARATOR = "---";
 
-type CampaignStatus = "queued" | "processing" | "completed" | "failed";
+type CampaignStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
+type ConsentStatus = "legitimate_interest" | "opt_out" | "opt_in";
+type BounceType = "hard" | "soft" | "technical";
 
 type CampaignCreatePayload = {
   selectedEmails?: string[];
@@ -34,23 +39,55 @@ type CampaignCreatePayload = {
   trackClick?: boolean;
   plainTextOnly?: boolean;
   onlyValidContacts?: boolean;
+  footerTextTemplate?: string;
 };
 
 type ContactSnapshot = {
   email: string;
   status: string | null;
+  consent_status: ConsentStatus;
   name: string | null;
   given_name: string | null;
   family_name: string | null;
   location: string | null;
   works_for: string | null;
   job_title: string | null;
+  alternate_name: string[] | null;
+  telephone: string[] | null;
+  recency: string | null;
+  seniority: string | null;
+  occurrence: number | null;
+  sender: number | null;
+  recipient: number | null;
+  conversations: number | null;
+  replied_conversations: number | null;
 };
 
 type SenderOption = {
   email: string;
   available: boolean;
   reason?: string;
+};
+
+type ContactRow = {
+  email: string;
+  status: string | null;
+  consent_status: ConsentStatus;
+  name: string | null;
+  given_name: string | null;
+  family_name: string | null;
+  location: string | null;
+  works_for: string | null;
+  job_title: string | null;
+  alternate_name: string[] | null;
+  telephone: string[] | null;
+  recency: string | null;
+  seniority: string | null;
+  occurrence: number | null;
+  sender: number | null;
+  recipient: number | null;
+  conversations: number | null;
+  replied_conversations: number | null;
 };
 
 type Transport = {
@@ -97,6 +134,13 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function requireFallbackSenderEmail() {
+  if (!SMTP_USER) {
+    throw new Error("SMTP_USER is not configured");
+  }
+  return SMTP_USER;
+}
+
 function parseErrorCode(error: unknown): string {
   if (typeof error === "object" && error && "responseCode" in error) {
     return String(error.responseCode);
@@ -105,6 +149,69 @@ function parseErrorCode(error: unknown): string {
     return String(error.code);
   }
   return "UNKNOWN";
+}
+
+function getSmtpResponseCode(error: unknown): number | null {
+  if (typeof error === "object" && error && "responseCode" in error) {
+    const value = Number(error.responseCode);
+    return Number.isFinite(value) ? value : null;
+  }
+  return null;
+}
+
+function getErrorText(error: unknown): string {
+  const message = extractErrorMessage(error);
+  const response = typeof error === "object" && error && "response" in error
+    ? String(error.response || "")
+    : "";
+  const code = typeof error === "object" && error && "code" in error
+    ? String(error.code || "")
+    : "";
+
+  return `${message} ${response} ${code}`.trim().toLowerCase();
+}
+
+function classifyBounceType(error: unknown): BounceType {
+  const smtpCode = getSmtpResponseCode(error);
+  const technicalCode = typeof error === "object" && error && "code" in error
+    ? String(error.code || "").toUpperCase()
+    : "";
+  const text = getErrorText(error);
+
+  const technicalCodes = new Set([
+    "ENOTFOUND",
+    "ETIMEDOUT",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "EHOSTUNREACH",
+    "ESOCKET",
+    "EAUTH",
+  ]);
+
+  if (technicalCodes.has(technicalCode)) {
+    return "technical";
+  }
+
+  if (
+    /5\.[0-9]\.[0-9]/.test(text) ||
+    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(text)
+  ) {
+    return "hard";
+  }
+
+  if (
+    /4\.[0-9]\.[0-9]/.test(text) ||
+    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(text)
+  ) {
+    return "soft";
+  }
+
+  if (smtpCode !== null) {
+    if (smtpCode >= 500) return "hard";
+    if (smtpCode >= 400) return "soft";
+  }
+
+  return "technical";
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -123,18 +230,125 @@ function normalizeBodyText(bodyText: string, bodyHtml: string, plainTextOnly: bo
   return bodyText;
 }
 
-function renderTemplate(template: string, contact: ContactSnapshot): string {
-  const replacements: Record<string, string> = {
-    name: contact.name ?? "",
-    given_name: contact.given_name ?? "",
-    family_name: contact.family_name ?? "",
-    email: contact.email,
-    location: contact.location ?? "",
-    works_for: contact.works_for ?? "",
-    job_title: contact.job_title ?? "",
+function toHtmlFromText(template: string): string {
+  if (!template.trim()) return "";
+
+  const linkify = (value: string) =>
+    value.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
+  return template
+    .split(/\n\n+/)
+    .map((part) => {
+      if (part.trim() === COMPLIANCE_SEPARATOR) {
+        return `<hr style="margin: 12px 0; border: 0; border-top: 1px solid #d1d5db;" />`;
+      }
+      return `<p>${linkify(escapeHtml(part).replaceAll("\n", "<br />"))}</p>`;
+    })
+    .join("");
+}
+
+function buildUnsubscribeUrl(token: string): string {
+  return `${SUPABASE_URL}/functions/v1/mail/unsubscribe/${token}`;
+}
+
+async function triggerCampaignProcessorFromEdge() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return;
+  }
+
+  await fetch(`${SUPABASE_URL}/functions/v1/mail/campaigns/process`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+    },
+    body: "{}",
+  });
+}
+
+function defaultFooterTemplate(ownerEmail: string): string {
+  return `${COMPLIANCE_SEPARATOR}\n\nYou received this email because ${ownerEmail} used leadminer.io to extract contacts from their mailbox. Try https://leadminer.io yourself.\n\n${UNSUBSCRIBE_TEXT_SUFFIX}: {{unsubscribeUrl}}`;
+}
+
+function ensureUnsubscribeText(footerText: string, unsubscribeUrl: string): string {
+  const normalized = footerText.trim();
+  const line = `${UNSUBSCRIBE_TEXT_SUFFIX}: ${unsubscribeUrl}`;
+
+  if (!normalized) {
+    return line;
+  }
+
+  if (normalized.includes(unsubscribeUrl)) {
+    return normalized;
+  }
+
+  return `${normalized}\n\n${line}`;
+}
+
+function ensureUnsubscribeHtml(footerHtml: string, unsubscribeUrl: string): string {
+  const normalized = footerHtml.trim();
+  const link = `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
+
+  if (!normalized) {
+    return link;
+  }
+
+  if (normalized.includes(unsubscribeUrl)) {
+    return normalized;
+  }
+
+  return `${normalized}${link}`;
+}
+
+function renderTemplate(
+  template: string,
+  contact: ContactSnapshot,
+  extraReplacements: Record<string, string> = {},
+  options: { escapeValues?: boolean } = {},
+): string {
+  const givenName = contact.given_name ?? "";
+  const familyName = contact.family_name ?? "";
+  const fullName = contact.name || `${givenName} ${familyName}`.trim();
+  const emailDomain = contact.email.split("@")[1] ?? "";
+  const worksFor = contact.works_for ?? "";
+  const jobTitle = contact.job_title ?? "";
+  const alternateName = (contact.alternate_name ?? []).join(", ");
+  const telephone = (contact.telephone ?? []).join(", ");
+
+  const toValue = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined) return "";
+    return String(value);
   };
 
-  return template.replace(/{{\s*([a-z_]+)\s*}}/g, (_, key: string) => replacements[key] ?? "");
+  const replacements: Record<string, string> = {
+    name: fullName,
+    fullName,
+    givenName,
+    familyName,
+    email: contact.email,
+    emailDomain,
+    location: contact.location ?? "",
+    worksFor,
+    jobTitle,
+    alternateName,
+    telephone,
+    recency: toValue(contact.recency),
+    seniority: toValue(contact.seniority),
+    occurrence: toValue(contact.occurrence),
+    sender: toValue(contact.sender),
+    recipient: toValue(contact.recipient),
+    conversations: toValue(contact.conversations),
+    repliedConversations: toValue(contact.replied_conversations),
+    ...extraReplacements,
+  };
+
+  return template.replace(/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g, (_, key: string) => {
+    const value = replacements[key] ?? "";
+    return options.escapeValues ? escapeHtml(value) : value;
+  });
 }
 
 function getCurrentUtcDayStart(): string {
@@ -266,9 +480,10 @@ async function buildUserTransport(
 }
 
 async function resolveSenderOptions(authorization: string, userEmail: string) {
+  const fallbackSenderEmail = requireFallbackSenderEmail();
   const options: SenderOption[] = [];
   const transportBySender: Record<string, Transport | null> = {
-    [FALLBACK_SENDER_EMAIL]: null,
+    [fallbackSenderEmail]: null,
   };
   const sources = await getUserMiningSources(authorization);
   const matchingSource = sources.find((source) => source.email === userEmail);
@@ -294,11 +509,14 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     }
   }
 
-  options.push({ email: FALLBACK_SENDER_EMAIL, available: true });
+  if (!options.some((option) => option.email === fallbackSenderEmail)) {
+    options.push({ email: fallbackSenderEmail, available: true });
+  }
 
   return {
     options,
     transportBySender,
+    fallbackSenderEmail,
   };
 }
 
@@ -314,44 +532,145 @@ async function getSelectedContacts(
   userId: string,
   selectedEmails?: string[],
 ) {
-  const baseQuery = supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .schema("private")
-    .from("persons")
-    .select("email, status, name, given_name, family_name, location, works_for, job_title")
-    .eq("user_id", userId);
-
-  const { data, error } = selectedEmails?.length
-    ? await baseQuery.in("email", selectedEmails)
-    : await baseQuery;
+    .rpc("get_contacts_table", {
+      user_id: userId,
+    });
 
   if (error) {
     throw new Error(`Unable to fetch contacts for campaign: ${error.message}`);
   }
 
-  const unique = new Map<string, ContactSnapshot>();
-  (data ?? []).forEach((contact) => {
-    if (!unique.has(contact.email)) {
-      unique.set(contact.email, contact as ContactSnapshot);
-    }
-  });
+  const selectedSet = selectedEmails?.length ? new Set(selectedEmails.map((email) => email.toLowerCase())) : null;
 
-  return Array.from(unique.values());
+  const contacts = (data ?? [])
+    .filter((row: ContactRow) => !selectedSet || selectedSet.has(row.email.toLowerCase()))
+    .map((row: ContactRow) => ({
+      email: row.email,
+      status: row.status,
+      consent_status: row.consent_status || "legitimate_interest",
+      name: row.name,
+      given_name: row.given_name,
+      family_name: row.family_name,
+      location: row.location,
+      works_for: row.works_for,
+      job_title: row.job_title,
+      alternate_name: row.alternate_name,
+      telephone: row.telephone,
+      recency: row.recency,
+      seniority: row.seniority,
+      occurrence: row.occurrence,
+      sender: row.sender,
+      recipient: row.recipient,
+      conversations: row.conversations,
+      replied_conversations: row.replied_conversations,
+    }));
+
+  return contacts;
+}
+
+async function getContactsByEmails(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  userId: string,
+  emails: string[],
+) {
+  if (!emails.length) return [] as ContactSnapshot[];
+
+  const { data, error } = await supabaseAdmin
+    .schema("private")
+    .rpc("get_contacts_table_by_emails", {
+      user_id: userId,
+      emails,
+    });
+
+  if (error) {
+    throw new Error(`Unable to fetch contacts for campaign: ${error.message}`);
+  }
+
+  return (data ?? []).map((row: ContactRow) => ({
+    email: row.email,
+    status: row.status,
+    consent_status: row.consent_status || "legitimate_interest",
+    name: row.name,
+    given_name: row.given_name,
+    family_name: row.family_name,
+    location: row.location,
+    works_for: row.works_for,
+    job_title: row.job_title,
+    alternate_name: row.alternate_name,
+    telephone: row.telephone,
+    recency: row.recency,
+    seniority: row.seniority,
+    occurrence: row.occurrence,
+    sender: row.sender,
+    recipient: row.recipient,
+    conversations: row.conversations,
+    replied_conversations: row.replied_conversations,
+  }));
+}
+
+function isContactEligible(contact: ContactSnapshot, onlyValidContacts: boolean) {
+  if (contact.consent_status === "opt_out") {
+    return false;
+  }
+
+  const status = contact.status;
+  if (status === "RISKY" || status === "INVALID") {
+    return false;
+  }
+
+  if (onlyValidContacts) {
+    return status === "VALID";
+  }
+
+  return true;
 }
 
 function filterEligibleContacts(
   contacts: ContactSnapshot[],
   onlyValidContacts: boolean,
 ) {
-  return contacts.filter((contact) => {
-    const status = contact.status;
-    if (status === "RISKY" || status === "INVALID") {
-      return false;
-    }
-    if (onlyValidContacts) {
-      return status === "VALID";
-    }
-    return true;
+  return contacts.filter((contact) => isContactEligible(contact, onlyValidContacts));
+}
+
+function buildRenderedContent(
+  contact: ContactSnapshot,
+  payload: {
+    subjectTemplate: string;
+    bodyHtmlTemplate: string;
+    bodyTextTemplate: string;
+    footerTextTemplate: string;
+    ownerEmail: string;
+    unsubscribeUrl: string;
+    senderName: string;
+    plainTextOnly: boolean;
+  },
+) {
+  const extra = {
+    ownerEmail: payload.ownerEmail,
+    unsubscribeUrl: payload.unsubscribeUrl,
+    senderName: payload.senderName,
+  };
+
+  const renderedBodyHtml = renderTemplate(payload.bodyHtmlTemplate, contact, extra, {
+    escapeValues: true,
   });
+  const renderedBodyText = renderTemplate(payload.bodyTextTemplate, contact, extra);
+
+  const rawFooterText = renderTemplate(payload.footerTextTemplate, contact, extra);
+  const footerText = ensureUnsubscribeText(rawFooterText, payload.unsubscribeUrl);
+  const footerHtml = ensureUnsubscribeHtml(toHtmlFromText(rawFooterText), payload.unsubscribeUrl);
+
+  const html = payload.plainTextOnly ? "" : `${renderedBodyHtml}${footerHtml}`;
+  const text = `${renderedBodyText}\n\n${footerText}`.trim();
+  const subject = renderTemplate(payload.subjectTemplate, contact, extra);
+
+  return {
+    subject,
+    html,
+    text,
+  };
 }
 
 async function recordClickLink(
@@ -420,7 +739,7 @@ async function setCampaignStatus(
 ) {
   const payload: Record<string, unknown> = { status };
   if (status === "processing") payload.started_at = new Date().toISOString();
-  if (status === "completed" || status === "failed") {
+  if (status === "completed" || status === "failed" || status === "cancelled") {
     payload.completed_at = new Date().toISOString();
   }
 
@@ -429,6 +748,46 @@ async function setCampaignStatus(
     .from("email_campaigns")
     .update(payload)
     .eq("id", campaignId);
+}
+
+async function countRecipientsByStatus(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  campaignId: string,
+  status: RecipientStatus,
+) {
+  const { count, error } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_recipients")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaignId)
+    .eq("send_status", status);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Number(count || 0);
+}
+
+async function finalizeCampaignStatusIfDone(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  campaignId: string,
+) {
+  const [pendingCount, sentCount, failedCount] = await Promise.all([
+    countRecipientsByStatus(supabaseAdmin, campaignId, "pending"),
+    countRecipientsByStatus(supabaseAdmin, campaignId, "sent"),
+    countRecipientsByStatus(supabaseAdmin, campaignId, "failed"),
+  ]);
+
+  if (pendingCount > 0) {
+    return;
+  }
+
+  const finalStatus: CampaignStatus = sentCount === 0 && failedCount > 0
+    ? "failed"
+    : "completed";
+
+  await setCampaignStatus(supabaseAdmin, campaignId, finalStatus);
 }
 
 async function updateContactDeliverability(
@@ -467,15 +826,22 @@ app.post("/campaigns/sender-options", async (c: Context) => {
 
   try {
     const authorization = c.req.header("authorization") as string;
-    const { options } = await resolveSenderOptions(authorization, auth.user.email as string);
+    const { options, fallbackSenderEmail } = await resolveSenderOptions(
+      authorization,
+      auth.user.email as string,
+    );
     return c.json({
       options,
-      fallbackSenderEmail: FALLBACK_SENDER_EMAIL,
+      fallbackSenderEmail,
       defaultDailyLimit: DEFAULT_SENDER_DAILY_LIMIT,
       maxDailyLimit: MAX_SENDER_DAILY_LIMIT,
     });
   } catch (error) {
-    return c.json({ error: extractErrorMessage(error) }, 500);
+    const message = extractErrorMessage(error);
+    const code = /SMTP_USER/i.test(message)
+      ? "SMTP_SENDER_NOT_CONFIGURED"
+      : "SENDER_OPTIONS_FAILED";
+    return c.json({ error: message, code }, 500);
   }
 });
 
@@ -491,63 +857,105 @@ app.post("/campaigns/preview", async (c: Context) => {
   const plainTextOnly = Boolean(payload.plainTextOnly);
   const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
   const bodyTextTemplate = String(payload.bodyTextTemplate || "");
+  const ownerEmail = auth.user.email as string;
+  const footerTextTemplate = String(payload.footerTextTemplate || defaultFooterTemplate(ownerEmail));
 
   if (!senderName || !senderEmail || !subject || (!bodyHtmlTemplate && !bodyTextTemplate)) {
-    return c.json({ error: "Missing required campaign fields" }, 400);
+    return c.json({
+      error: "Missing required campaign fields",
+      code: "MISSING_REQUIRED_FIELDS",
+    }, 400);
   }
 
   const authorization = c.req.header("authorization") as string;
-  const { options, transportBySender } = await resolveSenderOptions(
-    authorization,
-    auth.user.email as string,
-  );
+  let options: SenderOption[] = [];
+  let fallbackSenderEmail = "";
+  let transportBySender: Record<string, Transport | null> = {};
+
+  try {
+    const senderOptions = await resolveSenderOptions(authorization, ownerEmail);
+    options = senderOptions.options;
+    fallbackSenderEmail = senderOptions.fallbackSenderEmail;
+    transportBySender = senderOptions.transportBySender;
+  } catch (error) {
+    return c.json(
+      {
+        error: extractErrorMessage(error),
+        code: "SMTP_SENDER_NOT_CONFIGURED",
+      },
+      500,
+    );
+  }
 
   if (!ensureAllowedSender(senderEmail, options)) {
     return c.json(
       {
         error: "Selected sender is not available",
         code: "SENDER_NOT_ALLOWED",
-        fallbackSenderEmail: FALLBACK_SENDER_EMAIL,
+        fallbackSenderEmail,
       },
       400,
     );
   }
 
   const supabaseAdmin = createSupabaseAdmin();
-  const contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, selectedEmails);
+  let contacts: ContactSnapshot[] = [];
+  try {
+    contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, selectedEmails);
+  } catch (error) {
+    return c.json(
+      {
+        error: extractErrorMessage(error),
+        code: "CONTACTS_FETCH_FAILED",
+      },
+      500,
+    );
+  }
   const eligibleContacts = filterEligibleContacts(contacts, Boolean(payload.onlyValidContacts));
 
   if (!eligibleContacts.length) {
-    return c.json({ error: "No eligible contacts available for preview" }, 400);
+    return c.json({
+      error: "No eligible contacts available for preview",
+      code: "NO_ELIGIBLE_CONTACTS",
+    }, 400);
   }
 
   const randomContact = eligibleContacts[Math.floor(Math.random() * eligibleContacts.length)];
-  const renderedHtml = renderTemplate(bodyHtmlTemplate, randomContact);
-  const renderedText = renderTemplate(
-    normalizeBodyText(bodyTextTemplate, bodyHtmlTemplate, plainTextOnly),
-    randomContact,
-  );
+  const { subject: renderedSubject, html, text } = buildRenderedContent(randomContact, {
+    subjectTemplate: subject,
+    bodyHtmlTemplate,
+    bodyTextTemplate: normalizeBodyText(bodyTextTemplate, bodyHtmlTemplate, plainTextOnly),
+    footerTextTemplate,
+    ownerEmail,
+    unsubscribeUrl: buildUnsubscribeUrl(crypto.randomUUID()),
+    senderName,
+    plainTextOnly,
+  });
 
   try {
     const from = `"${escapeHtml(senderName)}" <${senderEmail}>`;
     await sendEmail(
-      auth.user.email as string,
-      `[Preview] ${subject}`,
-      plainTextOnly ? "" : renderedHtml,
+      ownerEmail,
+      `[Preview] ${renderedSubject}`,
+      plainTextOnly ? "" : html,
       {
         from,
-        replyTo: auth.user.email as string,
-        text: renderedText,
+        replyTo: ownerEmail,
+        text,
         transport: transportBySender[senderEmail] ?? undefined,
       },
     );
-    return c.json({ msg: "Preview sent successfully" });
+    return c.json({
+      msg: "Preview sent successfully",
+      selectedContactEmail: randomContact.email,
+      sentToEmail: ownerEmail,
+    });
   } catch (error) {
     return c.json(
       {
         error: extractErrorMessage(error),
         code: "SENDER_SMTP_FAILED",
-        fallbackSenderEmail: FALLBACK_SENDER_EMAIL,
+        fallbackSenderEmail,
       },
       422,
     );
@@ -565,13 +973,18 @@ app.post("/campaigns/create", async (c: Context) => {
   const subject = String(payload.subject || "").trim();
   const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
   const bodyTextTemplate = String(payload.bodyTextTemplate || "");
+  const ownerEmail = auth.user.email as string;
+  const footerTextTemplate = String(payload.footerTextTemplate || defaultFooterTemplate(ownerEmail));
   const plainTextOnly = Boolean(payload.plainTextOnly);
   const onlyValidContacts = Boolean(payload.onlyValidContacts);
   const trackOpen = payload.trackOpen !== false;
   const trackClick = payload.trackClick !== false;
 
   if (!senderName || !senderEmail || !subject || (!bodyHtmlTemplate && !bodyTextTemplate)) {
-    return c.json({ error: "Missing required campaign fields" }, 400);
+    return c.json({
+      error: "Missing required campaign fields",
+      code: "MISSING_REQUIRED_FIELDS",
+    }, 400);
   }
 
   const senderDailyLimit = Math.min(
@@ -580,23 +993,37 @@ app.post("/campaigns/create", async (c: Context) => {
   );
 
   const authorization = c.req.header("authorization") as string;
-  const { options, transportBySender } = await resolveSenderOptions(
-    authorization,
-    auth.user.email as string,
-  );
+  let options: SenderOption[] = [];
+  let fallbackSenderEmail = "";
+  let transportBySender: Record<string, Transport | null> = {};
+
+  try {
+    const senderOptions = await resolveSenderOptions(authorization, ownerEmail);
+    options = senderOptions.options;
+    fallbackSenderEmail = senderOptions.fallbackSenderEmail;
+    transportBySender = senderOptions.transportBySender;
+  } catch (error) {
+    return c.json(
+      {
+        error: extractErrorMessage(error),
+        code: "SMTP_SENDER_NOT_CONFIGURED",
+      },
+      500,
+    );
+  }
 
   if (!ensureAllowedSender(senderEmail, options)) {
     return c.json(
       {
         error: "Selected sender is not available",
         code: "SENDER_NOT_ALLOWED",
-        fallbackSenderEmail: FALLBACK_SENDER_EMAIL,
+        fallbackSenderEmail,
       },
       400,
     );
   }
 
-  if (senderEmail !== FALLBACK_SENDER_EMAIL) {
+  if (senderEmail !== fallbackSenderEmail) {
     try {
       await verifyTransport(transportBySender[senderEmail] ?? undefined);
     } catch (error) {
@@ -604,7 +1031,7 @@ app.post("/campaigns/create", async (c: Context) => {
         {
           error: extractErrorMessage(error),
           code: "SENDER_SMTP_FAILED",
-          fallbackSenderEmail: FALLBACK_SENDER_EMAIL,
+          fallbackSenderEmail,
         },
         422,
       );
@@ -612,11 +1039,25 @@ app.post("/campaigns/create", async (c: Context) => {
   }
 
   const supabaseAdmin = createSupabaseAdmin();
-  const contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, payload.selectedEmails);
+  let contacts: ContactSnapshot[] = [];
+  try {
+    contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, payload.selectedEmails);
+  } catch (error) {
+    return c.json(
+      {
+        error: extractErrorMessage(error),
+        code: "CONTACTS_FETCH_FAILED",
+      },
+      500,
+    );
+  }
   const eligibleContacts = filterEligibleContacts(contacts, onlyValidContacts);
 
   if (!eligibleContacts.length) {
-    return c.json({ error: "No eligible contacts to send" }, 400);
+    return c.json({
+      error: "No eligible contacts to send",
+      code: "NO_ELIGIBLE_CONTACTS",
+    }, 400);
   }
 
   const { data: campaignData, error: campaignError } = await supabaseAdmin
@@ -624,12 +1065,15 @@ app.post("/campaigns/create", async (c: Context) => {
     .from("email_campaigns")
     .insert({
       user_id: auth.user.id,
+      owner_email: ownerEmail,
       sender_name: senderName,
       sender_email: senderEmail,
       reply_to: replyTo,
       subject,
       body_html_template: bodyHtmlTemplate,
       body_text_template: normalizeBodyText(bodyTextTemplate, bodyHtmlTemplate, plainTextOnly),
+      footer_html_template: toHtmlFromText(footerTextTemplate),
+      footer_text_template: footerTextTemplate,
       sender_daily_limit: senderDailyLimit,
       track_open: trackOpen,
       track_click: trackClick,
@@ -642,7 +1086,10 @@ app.post("/campaigns/create", async (c: Context) => {
     .single();
 
   if (campaignError || !campaignData?.id) {
-    return c.json({ error: campaignError?.message || "Unable to create campaign" }, 500);
+    return c.json({
+      error: campaignError?.message || "Unable to create campaign",
+      code: "CAMPAIGN_CREATE_FAILED",
+    }, 500);
   }
 
   const campaignId = campaignData.id as string;
@@ -651,13 +1098,6 @@ app.post("/campaigns/create", async (c: Context) => {
     user_id: auth.user.id,
     sender_email: senderEmail,
     contact_email: contact.email,
-    status: contact.status,
-    name: contact.name,
-    given_name: contact.given_name,
-    family_name: contact.family_name,
-    location: contact.location,
-    works_for: contact.works_for,
-    job_title: contact.job_title,
     send_status: "pending" as RecipientStatus,
   }));
 
@@ -667,8 +1107,15 @@ app.post("/campaigns/create", async (c: Context) => {
     .insert(recipientRows);
 
   if (recipientsError) {
-    return c.json({ error: recipientsError.message }, 500);
+    return c.json({
+      error: recipientsError.message,
+      code: "CAMPAIGN_RECIPIENTS_CREATE_FAILED",
+    }, 500);
   }
+
+  void triggerCampaignProcessorFromEdge().catch(() => {
+    // Cron remains as fallback if immediate trigger fails.
+  });
 
   return c.json({
     msg: "Campaign queued",
@@ -698,13 +1145,103 @@ app.get("/campaigns/:id/status", async (c: Context) => {
   return c.json(data);
 });
 
+app.post("/campaigns/:id/stop", async (c: Context) => {
+  const auth = await getAuthenticatedUser(c);
+  if ("error" in auth) return auth.error;
+
+  const campaignId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { data: campaign, error: campaignError } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaigns")
+    .select("id, status")
+    .eq("id", campaignId)
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (campaignError || !campaign) {
+    return c.json({ error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" }, 404);
+  }
+
+  if (["completed", "failed", "cancelled"].includes(String(campaign.status))) {
+    return c.json({
+      error: "Campaign is already in a terminal state",
+      code: "CAMPAIGN_ALREADY_TERMINAL",
+    }, 400);
+  }
+
+  await setCampaignStatus(supabaseAdmin, campaignId, "cancelled");
+
+  await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_recipients")
+    .update({
+      send_status: "skipped",
+      last_error: "Campaign cancelled by user",
+    })
+    .eq("campaign_id", campaignId)
+    .eq("send_status", "pending");
+
+  return c.json({ msg: "Campaign stopped", campaignId });
+});
+
+app.delete("/campaigns/:id", async (c: Context) => {
+  const auth = await getAuthenticatedUser(c);
+  if ("error" in auth) return auth.error;
+
+  const campaignId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { data: campaign, error: campaignError } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaigns")
+    .select("id, status")
+    .eq("id", campaignId)
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (campaignError || !campaign) {
+    return c.json({ error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" }, 404);
+  }
+
+  if (campaign.status === "processing") {
+    return c.json({
+      error: "Campaign is currently processing. Stop it first.",
+      code: "CAMPAIGN_PROCESSING_DELETE_FORBIDDEN",
+    }, 409);
+  }
+
+  const { error: deleteError } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaigns")
+    .delete()
+    .eq("id", campaignId)
+    .eq("user_id", auth.user.id);
+
+  if (deleteError) {
+    return c.json({ error: deleteError.message, code: "CAMPAIGN_DELETE_FAILED" }, 500);
+  }
+
+  return c.json({ msg: "Campaign deleted", campaignId });
+});
+
 app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
+  let fallbackSenderEmail = "";
+  try {
+    fallbackSenderEmail = requireFallbackSenderEmail();
+  } catch (error) {
+    return c.json({
+      error: extractErrorMessage(error),
+      code: "SMTP_SENDER_NOT_CONFIGURED",
+    }, 500);
+  }
   const dayStart = getCurrentUtcDayStart();
   const { data: campaigns, error: campaignsError } = await supabaseAdmin
     .schema("private")
     .from("email_campaigns")
-    .select("id, user_id, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, sender_daily_limit, track_open, track_click, plain_text_only")
+    .select("id, user_id, owner_email, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, footer_html_template, footer_text_template, sender_daily_limit, track_open, track_click, plain_text_only, only_valid_contacts")
     .in("status", ["queued", "processing"])
     .order("created_at", { ascending: true })
     .limit(30);
@@ -739,7 +1276,7 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
     const { data: recipients, error: recipientsError } = await supabaseAdmin
       .schema("private")
       .from("email_campaign_recipients")
-      .select("id, user_id, contact_email, open_token, name, given_name, family_name, location, works_for, job_title, attempt_count")
+      .select("id, user_id, contact_email, open_token, unsubscribe_token, attempt_count")
       .eq("campaign_id", campaign.id)
       .eq("send_status", "pending")
       .order("created_at", { ascending: true })
@@ -751,29 +1288,16 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
     }
 
     if (!recipients?.length) {
-      const { count: pendingCount } = await supabaseAdmin
-        .schema("private")
-        .from("email_campaign_recipients")
-        .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaign.id)
-        .eq("send_status", "pending");
-
-      if (!pendingCount) {
-        await setCampaignStatus(supabaseAdmin, campaign.id, "completed");
+      try {
+        await finalizeCampaignStatusIfDone(supabaseAdmin, campaign.id);
+      } catch {
+        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
       }
       continue;
     }
 
     let senderTransport: Transport | undefined;
-    if (campaign.sender_email !== FALLBACK_SENDER_EMAIL) {
-      const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(campaign.user_id);
-      const senderEmail = userInfo.user?.email;
-
-      if (!senderEmail || senderEmail !== campaign.sender_email) {
-        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-        continue;
-      }
-
+    if (campaign.sender_email !== fallbackSenderEmail) {
       const serviceClient = createSupabaseAdmin();
       const { data: rows, error } = await serviceClient
         .schema("private")
@@ -787,34 +1311,84 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
         continue;
       }
 
-      const matchingSource = (rows ?? []).find((row: { email: string }) => row.email === senderEmail);
+      const matchingSource = (rows ?? []).find((row: { email: string }) => row.email === campaign.sender_email);
       if (!matchingSource) {
         await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
         continue;
       }
 
       try {
-        senderTransport = await buildUserTransport(senderEmail, matchingSource.credentials as Record<string, unknown>);
+        senderTransport = await buildUserTransport(
+          campaign.sender_email,
+          matchingSource.credentials as Record<string, unknown>,
+        );
       } catch {
         await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
         continue;
       }
     }
 
-    for (const recipient of recipients) {
-      const snapshot: ContactSnapshot = {
-        email: recipient.contact_email,
-        status: null,
-        name: recipient.name,
-        given_name: recipient.given_name,
-        family_name: recipient.family_name,
-        location: recipient.location,
-        works_for: recipient.works_for,
-        job_title: recipient.job_title,
-      };
+    const recipientEmails = recipients.map((recipient) => recipient.contact_email);
+    let liveContacts: ContactSnapshot[] = [];
+    try {
+      liveContacts = await getContactsByEmails(supabaseAdmin, campaign.user_id, recipientEmails);
+    } catch {
+      await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+      continue;
+    }
 
-      const renderedHtml = renderTemplate(campaign.body_html_template || "", snapshot);
-      const renderedText = renderTemplate(campaign.body_text_template || "", snapshot);
+    const liveContactByEmail = new Map<string, ContactSnapshot>();
+    liveContacts.forEach((contact) => {
+      liveContactByEmail.set(contact.email.toLowerCase(), contact);
+    });
+
+    for (const recipient of recipients) {
+      const { data: recipientState } = await supabaseAdmin
+        .schema("private")
+        .from("email_campaign_recipients")
+        .select("send_status")
+        .eq("id", recipient.id)
+        .single();
+
+      if (recipientState?.send_status !== "pending") {
+        continue;
+      }
+
+      const snapshot = liveContactByEmail.get(recipient.contact_email.toLowerCase());
+      if (!snapshot) {
+        await supabaseAdmin
+          .schema("private")
+          .from("email_campaign_recipients")
+          .update({
+            send_status: "skipped",
+            last_error: "Recipient not found in live contact table",
+          })
+          .eq("id", recipient.id);
+        continue;
+      }
+
+      if (!isContactEligible(snapshot, Boolean(campaign.only_valid_contacts))) {
+        await supabaseAdmin
+          .schema("private")
+          .from("email_campaign_recipients")
+          .update({
+            send_status: "skipped",
+            last_error: "Recipient no longer eligible",
+          })
+          .eq("id", recipient.id);
+        continue;
+      }
+
+      const { subject: renderedSubject, html, text } = buildRenderedContent(snapshot, {
+        subjectTemplate: campaign.subject,
+        bodyHtmlTemplate: campaign.body_html_template || "",
+        bodyTextTemplate: campaign.body_text_template || "",
+        footerTextTemplate: campaign.footer_text_template || defaultFooterTemplate(campaign.owner_email),
+        ownerEmail: campaign.owner_email,
+        unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
+        senderName: campaign.sender_name,
+        plainTextOnly: campaign.plain_text_only,
+      });
 
       try {
         const htmlWithTracking = campaign.plain_text_only
@@ -824,19 +1398,19 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
             campaign.id,
             recipient.id,
             recipient.open_token,
-            renderedHtml,
+            html,
             campaign.track_click,
             campaign.track_open,
           );
 
         await sendEmail(
           recipient.contact_email,
-          campaign.subject,
+          renderedSubject,
           campaign.plain_text_only ? "" : htmlWithTracking,
           {
             from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
             replyTo: campaign.reply_to,
-            text: renderedText,
+            text,
             transport: senderTransport,
           },
         );
@@ -848,6 +1422,7 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
             send_status: "sent",
             sent_at: new Date().toISOString(),
             attempt_count: recipient.attempt_count ? recipient.attempt_count + 1 : 1,
+            bounce_type: null,
             smtp_code: null,
             last_error: null,
           })
@@ -858,7 +1433,7 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
       } catch (error) {
         const message = extractErrorMessage(error);
         const smtpCode = parseErrorCode(error);
-        const isInvalidMailbox = /5\.1\.1|550|invalid mailbox|user unknown/i.test(message);
+        const bounceType = classifyBounceType(error);
 
         await supabaseAdmin
           .schema("private")
@@ -866,33 +1441,91 @@ app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
           .update({
             send_status: "failed",
             attempt_count: recipient.attempt_count ? recipient.attempt_count + 1 : 1,
+            bounce_type: bounceType,
             smtp_code: smtpCode,
             last_error: message,
           })
           .eq("id", recipient.id);
 
-        await updateContactDeliverability(
-          supabaseAdmin,
-          recipient.user_id,
-          recipient.contact_email,
-          isInvalidMailbox ? "INVALID" : "RISKY",
-        );
+        if (bounceType === "hard" || bounceType === "soft") {
+          await updateContactDeliverability(
+            supabaseAdmin,
+            recipient.user_id,
+            recipient.contact_email,
+            bounceType === "hard" ? "INVALID" : "RISKY",
+          );
+        }
       }
     }
 
-    const { count: pendingCount } = await supabaseAdmin
-      .schema("private")
-      .from("email_campaign_recipients")
-      .select("id", { count: "exact", head: true })
-      .eq("campaign_id", campaign.id)
-      .eq("send_status", "pending");
-
-    if (!pendingCount) {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "completed");
+    try {
+      await finalizeCampaignStatusIfDone(supabaseAdmin, campaign.id);
+    } catch {
+      await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
     }
   }
 
   return c.json({ processedRecipients });
+});
+
+app.get("/unsubscribe/:token", async (c: Context) => {
+  const token = c.req.param("token");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { data: recipient, error } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_recipients")
+    .select("id, campaign_id, user_id, contact_email")
+    .eq("unsubscribe_token", token)
+    .single();
+
+  if (error || !recipient) {
+    return new Response(
+      "<html><body><h1>Invalid unsubscribe link</h1><p>This link is not valid anymore.</p></body></html>",
+      {
+        status: 404,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      },
+    );
+  }
+
+  await supabaseAdmin
+    .schema("private")
+    .from("refinedpersons")
+    .update({ consent_status: "opt_out" })
+    .eq("user_id", recipient.user_id)
+    .eq("email", recipient.contact_email);
+
+  await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_recipients")
+    .update({
+      send_status: "skipped",
+      last_error: "Recipient unsubscribed",
+    })
+    .eq("user_id", recipient.user_id)
+    .eq("contact_email", recipient.contact_email)
+    .eq("send_status", "pending");
+
+  await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_events")
+    .insert({
+      campaign_id: recipient.campaign_id,
+      recipient_id: recipient.id,
+      event_type: "unsubscribe",
+    });
+
+  const html = "<html><body><h1>You are unsubscribed</h1><p>You will no longer receive campaign emails from this sender.</p></body></html>";
+  return new Response(html, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/html; charset=utf-8",
+    },
+  });
 });
 
 app.get("/track/open/:token", async (c: Context) => {
@@ -969,12 +1602,21 @@ app.post("/email-sending-request", async (c: Context) => {
   }
 
   const subject = "Email sending request";
+  let fallbackSenderEmail = "";
+  try {
+    fallbackSenderEmail = requireFallbackSenderEmail();
+  } catch (error) {
+    return c.json({
+      error: extractErrorMessage(error),
+      code: "SMTP_SENDER_NOT_CONFIGURED",
+    }, 500);
+  }
   const safeUserEmail = escapeHtml(auth.user.email as string);
   const html = `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
 
   try {
-    await sendEmail("contact@leadminer.io", subject, html, {
-      from: "contact@leadminer.io",
+    await sendEmail(fallbackSenderEmail, subject, html, {
+      from: `"leadminer" <${fallbackSenderEmail}>`,
       replyTo: auth.user.email as string,
     });
 

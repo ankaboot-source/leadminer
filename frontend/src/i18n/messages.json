@@ -114,6 +114,11 @@
         "unknown": "UNKNOWN",
         "unverified": "UNVERIFIED"
       },
+      "consent": {
+        "legitimate_interest": "Legitimate interest",
+        "opt_out": "Opt-out",
+        "opt_in": "Opt-in"
+      },
       "tag": {
         "professional": "Professional",
         "newsletter": "Newsletter",
@@ -257,6 +262,11 @@
         "invalid": "INVALIDE",
         "unknown": "INCONNU",
         "unverified": "NON VÉRIFIÉ"
+      },
+      "consent": {
+        "legitimate_interest": "Intérêt légitime",
+        "opt_out": "Opposition (opt-out)",
+        "opt_in": "Consentement (opt-in)"
       },
       "tag": {
         "professional": "Professionnel",
