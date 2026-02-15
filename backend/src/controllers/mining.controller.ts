@@ -58,6 +58,39 @@ async function exchangeForToken(
   };
 }
 
+function getSafeRedirectPath(path: unknown) {
+  if (
+    typeof path !== 'string' ||
+    !path.startsWith('/') ||
+    path.startsWith('//')
+  ) {
+    return '/';
+  }
+
+  return path;
+}
+
+function parseOAuthState(state: string | undefined) {
+  if (!state) {
+    throw new Error('Missing OAuth state.');
+  }
+
+  const decoded = Buffer.from(state, 'base64').toString('utf-8');
+  const parsed = JSON.parse(decoded) as {
+    userId?: string;
+    afterCallbackRedirect?: string;
+  };
+
+  if (!parsed.userId) {
+    throw new Error('Invalid OAuth state payload.');
+  }
+
+  return {
+    userId: parsed.userId,
+    afterCallbackRedirect: getSafeRedirectPath(parsed.afterCallbackRedirect)
+  };
+}
+
 async function publishPreviouslyUnverifiedEmailsToCleaning(
   contacts: Contacts,
   userId: string,
@@ -137,10 +170,11 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
       const { redirect } = req.body;
+      const afterCallbackRedirect = getSafeRedirectPath(redirect);
 
       const stateObj = JSON.stringify({
         userId: user.id,
-        afterCallbackRedirect: redirect ?? '/'
+        afterCallbackRedirect
       });
 
       const authorizationUri = getAuthClient(provider).authorizeURL({
@@ -156,15 +190,7 @@ export default function initializeMiningController(
       const provider = req.params.provider as OAuthMiningSourceProvider;
       let redirect = '/';
       try {
-        const {
-          userId,
-          afterCallbackRedirect
-        }: {
-          userId: string;
-          afterCallbackRedirect: string;
-        } = JSON.parse(
-          Buffer.from(state as string, 'base64').toString('utf-8')
-        );
+        const { userId, afterCallbackRedirect } = parseOAuthState(state);
 
         redirect = afterCallbackRedirect;
         const exchangedTokens = await exchangeForToken(code, provider);

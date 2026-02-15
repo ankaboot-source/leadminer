@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { EngineResponse, EngineResult } from '../services/enrichment/Engine';
 
 import Billing from '../utils/billing-plugin';
@@ -81,20 +80,18 @@ export async function prepareForEnrichment(
   userId: string,
   enrichAll: boolean,
   updateEmptyFieldsOnly: boolean,
-  contacts: Contact[],
-  res: Response
+  contacts: Contact[]
 ) {
   const toEnrich = await getContactsToEnrich(userId, enrichAll, contacts);
   const { total, available } = await restrictOrDecline(userId, toEnrich.length);
-
-  if (available === 0) {
-    return res.status(402).json({ total, available });
-  }
+  const selectedContacts = toEnrich.slice(0, available);
 
   return {
+    total,
+    available,
     updateEmptyFieldsOnly,
-    contacts: toEnrich.slice(0, available),
-    contact: toEnrich.slice(0, available)[0]
+    contacts: selectedContacts,
+    contact: selectedContacts[0]
   };
 }
 
@@ -178,7 +175,7 @@ export async function enrichPersonSync(
     enriched.add(result.data[0].email);
   }
 
-  if (enriched.size > 1) {
+  if (enriched.size > 0) {
     await Billing?.deductCustomerCredits(task.userId, enriched.size);
   }
 

@@ -193,14 +193,16 @@ export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
   const $user = useSupabaseUser();
-  if (!$user.value?.sub) return;
+  const userId =
+    $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  if (!userId) return;
 
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('delete_contacts', {
-      user_id: $user.value.sub,
+      user_id: userId,
       emails: emails ?? null,
       deleteallcontacts: emails === undefined,
     });

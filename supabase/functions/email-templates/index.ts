@@ -75,21 +75,25 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    const currentTemplate = user!.user_metadata?.EmailTemplate;
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!currentTemplate || currentTemplate.lang !== language) {
-      const { error: updateError } = await supabaseAdmin.auth.admin
-        .updateUserById(
-          user!.id,
-          {
-            user_metadata: {
-              EmailTemplate: {
-                language,
-                ...supabaseEmailsI18n.get(language),
-              },
+    const currentTemplate = user.user_metadata?.EmailTemplate;
+
+    if (!currentTemplate || currentTemplate.language !== language) {
+      const { error: updateError } =
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          user_metadata: {
+            EmailTemplate: {
+              language,
+              ...supabaseEmailsI18n.get(language),
             },
           },
-        );
+        });
 
       if (updateError) {
         throw updateError;

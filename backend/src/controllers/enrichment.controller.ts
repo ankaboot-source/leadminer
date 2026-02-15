@@ -20,19 +20,27 @@ async function preEnrichmentMiddleware(
   const { contact, enrichAllContacts, updateEmptyFieldsOnly } = req.body;
   const contacts = [...(req.body.contacts ?? []), contact].filter(Boolean);
 
-  if (!enrichAllContacts && !Array.isArray(contacts)) {
+  if (!enrichAllContacts && contacts.length === 0) {
     const msg = 'Missing parameter contact or contacts';
     return res.status(400).json({ message: msg });
   }
 
   try {
-    res.locals.enrichment = await prepareForEnrichment(
+    const enrichment = await prepareForEnrichment(
       user.id,
       enrichAllContacts ?? false,
       updateEmptyFieldsOnly,
-      contacts,
-      res
+      contacts
     );
+
+    if (enrichment.available === 0) {
+      return res.status(402).json({
+        total: enrichment.total,
+        available: enrichment.available
+      });
+    }
+
+    res.locals.enrichment = enrichment;
     return next();
   } catch (error) {
     return next(error);

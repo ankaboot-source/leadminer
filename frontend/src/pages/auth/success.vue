@@ -68,7 +68,8 @@ const COOLDOWN_DEFAULT = 45;
 const cooldown = ref(COOLDOWN_DEFAULT);
 
 onBeforeMount(() => {
-  const unauthorized = window.history.state.back !== '/auth/signup' || !email;
+  const previousPath = window.history.state?.back;
+  const unauthorized = previousPath !== '/auth/signup' || !email;
   if (unauthorized) {
     const $router = useRouter();
     $router.replace('/auth');
