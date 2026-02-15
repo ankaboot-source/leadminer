@@ -191,15 +191,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     processes: string[] | null,
   ) {
     const user = useSupabaseUser().value;
+    const userId = user?.id || (user as { sub?: string } | null)?.sub;
 
-    if (!user || !miningTask.value) {
+    if (!userId || !miningTask.value) {
       return null;
     }
 
     const { miningId } = miningTask.value;
 
     const res = await $api(
-      `/imap/mine/${miningType.value}/${user.sub}/${miningId}`,
+      `/imap/mine/${miningType.value}/${userId}/${miningId}`,
       {
         method: 'POST',
         body: {
@@ -343,8 +344,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     const user = useSupabaseUser().value;
     const token = useSupabaseSession().value?.access_token;
+    const userId = user?.id || (user as { sub?: string } | null)?.sub;
 
-    if (!user || !token) return;
+    if (!userId || !token) return;
     if (source === 'file' && !selectedBoxes.value) return;
     if (source === 'email' && !activeMiningSource.value) return;
 
@@ -367,7 +369,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const task =
         source === 'email'
           ? await startMiningEmail(
-              user?.sub,
+              userId,
               Object.keys(selectedBoxes.value).filter(
                 (key) =>
                   selectedBoxes.value[key].checked &&
@@ -378,11 +380,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             )
           : source === 'file'
             ? await startMiningFile(
-                user.sub,
+                userId,
                 selectedFile.value!.name,
                 selectedFile.value!.contacts,
               )
-            : await startMiningPST(user.sub, storagePath!);
+            : await startMiningPST(userId, storagePath!);
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();
@@ -435,15 +437,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     // 1) GET running tasks for the current user
     try {
       const user = useSupabaseUser().value;
+      const userId = user?.id || (user as { sub?: string } | null)?.sub;
 
-      if (!user) return 1;
+      if (!userId) return 1;
 
       const response = await $api<{
         task: MiningTask;
         fetch: MiningTask;
         extract: MiningTask;
         clean: MiningTask;
-      }>(`/imap/mine/${user?.sub}/`);
+      }>(`/imap/mine/${userId}/`);
 
       if (!response) return 1;
 

@@ -149,13 +149,15 @@ async function uploadPST($event: FileUploadUploaderEvent) {
 
   const user = useSupabaseUser().value;
   if (!user) return;
+  const userId = user.id || (user as { sub?: string }).sub;
+  if (!userId) return;
 
   fileName.value = file.name;
   uploadProgress.value = 0;
   isUploadingPST.value = true;
 
   try {
-    $leadminerStore.pstFilePath = `${user.sub}/${file.name}`;
+    $leadminerStore.pstFilePath = `${userId}/${file.name}`;
     const {
       data: { session },
     } = await $supabase.auth.getSession();

@@ -29,6 +29,7 @@ export const DEFAULT_TOGGLES = {
   replies: false,
   telephone: false,
   location: false,
+  hideUnsubscribed: true,
 };
 
 export const DEFAULT_FILTERS = {
@@ -37,6 +38,10 @@ export const DEFAULT_FILTERS = {
   telephone: { value: null, matchMode: NOT_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
+  consent_status: {
+    value: ['legitimate_interest', 'opt_in'],
+    matchMode: FilterMatchMode.IN,
+  },
   location: createOperatorFilter(createConstraint(LOCATION_MATCH)),
   ...Object.fromEntries(
     [

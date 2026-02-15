@@ -25,23 +25,25 @@
 
 ## 📑 Table of contents
 
-- [📦 How to run?](#-how-to-run)
+- [📦 How to run locally?](#-how-to-run-locally)
   - [Prerequisites](#prerequisites)
   - [Clone the repository](#clone-repo)
   - [Generate environment variables](#generate-env)
-  - [Setup third-party services (optional)](#setup-third-party-services)
-  - [Running with Supabase](#running-with-supabase)
+  - [Start Supabase locally](#running-with-supabase-locally)
+  - [Start Redis](#start-redis)
+  - [Start all services](#start-services)
   - [Launch the app](#launch-app)
+  - [Setup third-party services (optional)](#setup-third-party-services)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
 - [📜 License](#-license)
 
-## 📦 How to run?
+## 📦 How to run locally?
 
-To give it a try without the hassle of installation, [simply use leadminer.io](https://app.leadminer.io/auth/signup). For development purposes, jump directly to [Running with Supabase locally](#running-with-supabase-locally).
+This section describes the recommended local setup only.
 
-> Note that this project integrates with third-party services for email cleaning and enrichment.
+> Note: this project integrates with third-party services for email cleaning and enrichment. You can run locally with mocks first, then plug real providers later.
 
 <div>
     <strong style="display: inline-block;" id="prerequisites">
@@ -72,22 +74,60 @@ npm run install-deps
 
 <div>
     <strong style="display: inline-block;" id="generate-env">
-     2. Generate environment variables:
+      2. Generate environment variables:
     </strong>
 </div>
 
-Run the below commands to generate a pre-configured `.env` file with credentials and API mocks, optimized for local development and testing. Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
+Run the command below to generate pre-configured `.env` files for local development.
 
-> If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
+- The script copies `.env.dev` when available.
+- If `.env.dev` is missing, it falls back to `.env.example`.
+- It prepares `.env` files for `./frontend`, `./backend`, `./micro-services/emails-fetcher`, and `./supabase/functions`.
 
 ```bash
 npm run dev:generate-env
 ```
 
+<strong style="display: inline-block;" id="running-with-supabase-locally">
+  3. Start Supabase locally:
+</strong>
+
+```sh
+npm run dev:supabase
+```
+
+<div>
+<strong style="display: inline-block;" id="start-redis">
+  4. Start Redis:
+</strong>
+
+If you prefer to run a Redis container, use the command below. Otherwise, ensure Redis is installed on your machine and skip this step.
+
+> Note: if you encounter issues connecting to the Redis container, update `REDIS_HOST` in your backend `.env`.
+
+```sh
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+</div>
+
+<div>
+<strong style="display: inline-block;" id="start-services">
+  5. Start all services:
+</strong>
+
+Start frontend, backend, workers, micro-service fetcher, and Supabase edge functions:
+
+```sh
+npm run dev:all
+```
+
+</div>
+
 <details>
 <summary>
     <strong style="display: inline-block;" id="setup-third-party-services">
-      3. Setup third-party services (optional)
+      6. Setup third-party services (optional)
     </strong>
 </summary>
 
@@ -111,96 +151,11 @@ External services for email verification and LLM-based signature extraction.
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 </details>
 
-<div>
-<strong style="display: inline-block;" id="running-with-supabase">
-  4. Running with Supabase
-</strong>
-    <br>
-    You could either set-up leadminer using Supabase locally or Supabase SaaS. We recommend Supabase locally for now.
-<details>
-<summary><strong style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</strong></summary>
-
-
-1. **Setup Supabase Instance:**
-
-   - Create an account [here](https://supabase.com/dashboard/sign-up) and create a project.
-
-   - Obtain the following values from your dashboard:
-
-     - **Project URL**: Found under Settings -> API in the "Project URL" section.
-     - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
-     - **Project Anon key**: Found under Settings -> API in the "Project API keys" section. Use the `anon` `public` key.
-     - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
-
-   - Configuring authentication with OAuth:
-
-     > **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
-
-     - Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
-     - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
-     - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://localhost:8081/api/imap/mine/sources/PROVIDER_NAME/callback`.
-
-2. **Deploy secrets, migrations, edge-functions:**
-
-   Configure the variables inside `./supabase/functions/.env` with supabase credentials from step 1, for other variables reference the backend, frontend .env files to copy the value.
-
-   > - https://supabase.com/docs/reference/cli/supabase-login
-   > - https://supabase.com/docs/reference/cli/supabase-link
-   > - https://supabase.com/docs/reference/cli/supabase-db-push
-   > - https://supabase.com/docs/guides/functions/deploy
-   > - https://supabase.com/docs/guides/functions/secrets
-
-   ```bash
-   npx supabase login
-   npx supabase link --project-ref <supabase_project_id>
-   npx supabase secrets set --env-file ./supabase/functions/.env
-   npx supabase db push
-   npx supabase functions deploy
-   ```
-
-3. **Start docker-compose :**
-
-   ```shell
-   docker-compose up --build --force-recreate -d
-   ```
-</details>
-
-<details open>
-<summary><strong style="display:inline-block" id="running-with-supabase-locally">Running with Supabase locally</strong></summary>
-
-
-
-1. **Start Supabase services:**
-
-   ```sh
-   npm run dev:supabase
-   ```
-
-2. **Start Redis services:**
-
-   If you prefer to run a Redis container, use the command below. Otherwise, ensure Redis is installed on your machine and skip this step.
-
-   > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
-
-   ```shell
-   docker-compose -f docker-compose.dev.yml up -d
-   ```
-
-3. **Start your environment:**
-
-   Start frontend, backend and supabase edge-functions services:
-
-   ```sh
-   npm run dev:all
-   ```
-      </details>
-   </div>
-
 <strong style="display: inline-block;" id="launch-app">
-5. Launch the app:
+7. Launch the app:
 </strong>
 
-Finally, launch the app at: http://localhost:8082/
+Finally, open: http://localhost:8082/
 
 ## 🤝 Contributing
 

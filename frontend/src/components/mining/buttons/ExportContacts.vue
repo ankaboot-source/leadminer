@@ -62,7 +62,7 @@
     <template #footer>
       <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
         <Button
-          :label="$t('common.cancel')"
+          :label="t('common.cancel')"
           severity="secondary"
           class="w-full sm:w-auto order-3 sm:order-1"
           @click="closeGoogleExportConfirmationDialog"
@@ -140,7 +140,7 @@ const { $api } = useNuxtApp();
 const $consentSidebar = useMiningConsentSidebar();
 const $profile = useSupabaseUserProfile();
 const $screenStore = useScreenStore();
-const { t } = useI18n({ useScope: 'local' });
+const { t } = useI18n();
 
 const selectedExportType = ref<ExportTypes>(ExportTypes.CSV);
 
@@ -322,13 +322,13 @@ async function exportTable(
 
           let message;
           if (contactsToTreat.value === undefined) {
-            message = $t('contacts_exported_successfully.all');
+            message = t('contacts_exported_successfully.all');
           } else if (contactsToTreat.value.length === 0) {
-            message = $t('contacts_exported_successfully.none');
+            message = t('contacts_exported_successfully.none');
           } else if (contactsToTreat.value.length === 1) {
-            message = $t('contacts_exported_successfully.one');
+            message = t('contacts_exported_successfully.one');
           } else
-            message = $t('contacts_exported_successfully.other', {
+            message = t('contacts_exported_successfully.other', {
               count: contactsToTreat.value.length,
             });
 

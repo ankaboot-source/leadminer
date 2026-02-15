@@ -1,6 +1,7 @@
 export type Tag = 'professional' | 'newsletter' | 'personal' | 'group' | 'chat';
 
 export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
+export type ConsentStatus = 'legitimate_interest' | 'opt_out' | 'opt_in';
 
 export const EmailStatusScore: Record<EmailStatus, number> = {
   VALID: 0,
@@ -38,6 +39,7 @@ export interface Contact {
   conversations?: number;
   replied_conversations?: number;
   status: EmailStatus | null;
+  consent_status?: ConsentStatus;
   occurrence?: number;
   temperature: number | null;
   personid?: string;
