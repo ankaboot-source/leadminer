@@ -117,7 +117,28 @@ export default class TasksManagerFile {
 
     // Set up the Redis subscriber to listen for updates
     this.redisSubscriber.on('message', async (_channel, data) => {
-      const { miningId, progressType, count } = JSON.parse(data);
+      let message: {
+        miningId?: string;
+        progressType?: keyof TaskProcessProgress;
+        count?: number;
+      };
+
+      try {
+        message = JSON.parse(data);
+      } catch (error) {
+        logger.warn('Ignoring malformed Redis progress payload.', {
+          data,
+          error
+        });
+        return;
+      }
+
+      const { miningId, progressType, count } = message;
+
+      if (!miningId || !progressType || typeof count !== 'number') {
+        logger.warn('Ignoring incomplete Redis progress payload.', { data });
+        return;
+      }
 
       if (count > 0) {
         this.updateProgress(miningId, progressType, count);

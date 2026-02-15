@@ -398,7 +398,9 @@ async function acceptAndCloseDialog(accepted: boolean) {
 }
 
 const $user = useSupabaseUser();
-const isGoogleUser = computed(() => $user.value?.email.includes('@gmail.com'));
+const isGoogleUser = computed(
+  () => $user.value?.email?.includes('@gmail.com') ?? false,
+);
 
 const exportItems = computed(() => [
   {

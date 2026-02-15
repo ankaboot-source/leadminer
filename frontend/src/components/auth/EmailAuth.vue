@@ -324,7 +324,7 @@ async function signInWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    await navigateTo({ path: '/mine' });
+    await navigateTo({ path: '/' });
   } catch (error) {
     if (error instanceof Error) {
       setInvalidInputs(true);

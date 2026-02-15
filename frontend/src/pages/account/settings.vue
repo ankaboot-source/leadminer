@@ -187,7 +187,7 @@ const showDeleteModal = ref(false);
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const isSocialLogin = ref(user?.app_metadata.provider === 'email');
+const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
   () =>

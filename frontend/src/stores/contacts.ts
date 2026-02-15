@@ -57,14 +57,20 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }, 2000);
   }
 
+  function getCurrentUserId() {
+    return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  }
+
   /**
    * Load contacts from database to store.
    */
-  async function loadContacts() {
+  async function loadContacts(userId = getCurrentUserId()) {
+    if (!userId) return [];
+
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_table', { user_id: $user.value?.sub });
+      .rpc('get_contacts_table', { user_id: userId });
 
     if (error) throw error;
     return data as Contact[];
@@ -88,10 +94,13 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Refines contacts in database.
    */
   async function refineContacts() {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { userid: $user.value?.sub });
+      .rpc('refine_persons', { userid: userId });
     if (error) throw error;
   }
 
@@ -188,15 +197,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
   /**
    * Check if there is data in persons.
    */
-  async function hasPersons(): Promise<boolean> {
-    if (!$user.value?.sub) return false;
+  async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
+    if (!userId) return false;
 
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('persons')
       .select('*', { count: 'exact' })
-      .eq('user_id', $user.value.sub)
+      .eq('user_id', userId)
       .limit(1);
 
     if (error) throw error;

@@ -1,8 +1,8 @@
 <template>
   <template v-if="showPhones">
     <i
-      v-for="(phone, index) in phones"
-      :key="index"
+      v-for="phone in phones"
+      :key="phone"
       v-tooltip="{
         value: phone,
         class: 'text-xs ml-1',
@@ -14,8 +14,8 @@
 
   <template v-if="showSocialLinks">
     <i
-      v-for="(link, index) in socialLinks"
-      :key="index"
+      v-for="link in socialLinks"
+      :key="link"
       v-tooltip="{
         value: link,
         class: 'text-xs ml-1',

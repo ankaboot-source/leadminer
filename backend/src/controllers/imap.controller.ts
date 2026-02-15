@@ -67,6 +67,10 @@ export default function initializeImapController(miningSources: MiningSources) {
           .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
 
+      let imapConnection: Awaited<
+        ReturnType<typeof ImapConnectionProvider.getSingleConnection>
+      > | null = null;
+
       try {
         const userId = (res.locals.user as User).id;
         const data = await miningSources.getCredentialsBySourceEmail(
@@ -103,7 +107,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           }
         }
 
-        const imapConnection = await ImapConnectionProvider.getSingleConnection(
+        imapConnection = await ImapConnectionProvider.getSingleConnection(
           email,
           'accessToken' in data
             ? {
@@ -119,8 +123,6 @@ export default function initializeImapController(miningSources: MiningSources) {
 
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnection, logger);
         const tree: any = await imapBoxesFetcher.getTree(data.email);
-
-        await imapConnection.logout();
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
@@ -149,6 +151,17 @@ export default function initializeImapController(miningSources: MiningSources) {
           return res.status(generatedError.status).send(generatedError);
         }
         return next(generatedError);
+      } finally {
+        if (imapConnection) {
+          try {
+            await imapConnection.logout();
+          } catch (logoutError) {
+            logger.warn(
+              'Unable to close IMAP connection cleanly.',
+              logoutError
+            );
+          }
+        }
       }
     }
   };

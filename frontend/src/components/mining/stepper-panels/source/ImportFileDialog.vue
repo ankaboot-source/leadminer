@@ -481,7 +481,8 @@ async function startMining() {
     ?.sort((a, b) => b - a)
     ?.forEach((index) => parsedDataWithMappedHeaders.splice(index, 1));
 
-  if (!Object.keys(parsedDataWithMappedHeaders[0]).includes('email')) {
+  const firstMappedRow = parsedDataWithMappedHeaders[0];
+  if (!firstMappedRow || !Object.keys(firstMappedRow).includes('email')) {
     throw Error('An email field should be selected.');
   }
   $leadminerStore.selectedFile = {

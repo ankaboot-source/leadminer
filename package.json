@@ -19,11 +19,19 @@
     "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
     "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend",
     "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher",
-    "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher"
+    "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher",
+    "prepare": "husky",
+    "precommit:check": "lint-staged"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.1",
     "supabase": "^2.19.7"
+  },
+  "lint-staged": {
+    "**/*.{js,cjs,mjs,ts,tsx,jsx,vue,json,yml,yaml,md,css,scss}": "prettier --write --ignore-unknown"
   }
 }

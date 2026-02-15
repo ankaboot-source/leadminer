@@ -51,7 +51,9 @@
             (slotProps.message.detail as ToastHasLinksGroupDetail).button.text
           "
           @click="
-            (slotProps.message.detail as ToastHasLinksGroupDetail).button.action
+            (
+              slotProps.message.detail as ToastHasLinksGroupDetail
+            ).button.action?.()
           "
         ></Button>
       </div>

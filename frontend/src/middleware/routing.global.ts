@@ -3,8 +3,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { session } = (await $supabase.auth.getSession()).data;
 
   const homePath = '/';
+  const minePath = '/mine';
+  const contactsPath = '/contacts';
 
-  if (to.path === homePath)
+  if (to.path === homePath) {
     if (!session) {
       if ('error' in to.query) {
         // #1980
@@ -15,12 +17,25 @@ export default defineNuxtRouteMiddleware(async (to) => {
       }
 
       return navigateTo({ name: 'auth-login' });
-    } else {
-      const $contactsStore = useContactsStore();
-      await $contactsStore.reloadContacts();
-      const path = $contactsStore.contactCount ? '/contacts' : '/mine';
-      return navigateTo(path);
     }
+
+    const userId =
+      session.user.id || (session.user as { sub?: string } | null)?.sub;
+
+    if (!userId) {
+      return navigateTo(minePath);
+    }
+
+    const $contactsStore = useContactsStore();
+    let hasContacts = false;
+    try {
+      hasContacts = await $contactsStore.hasPersons(userId);
+    } catch {
+      return navigateTo(minePath);
+    }
+
+    return navigateTo(hasContacts ? contactsPath : minePath);
+  }
 
   if (session && to.path.startsWith('/auth')) {
     return navigateTo(homePath);

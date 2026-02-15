@@ -156,7 +156,11 @@ export default defineNuxtPlugin({
 
         $currentProfile.value = await getCurrentUserProfile($supabaseClient);
         await handleFirstTimeSignIn();
-        channel = createUserProfileRealtimeChannel($user.value?.sub as string);
+        const userId =
+          $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+        if (!userId) return;
+
+        channel = createUserProfileRealtimeChannel(userId);
         channel.subscribe();
       });
     }

@@ -53,8 +53,31 @@ export default class TasksManagerPST {
 
     // Set up the Redis subscriber to listen for updates
     this.redisSubscriber.on('message', async (_channel, data) => {
+      let message: {
+        miningId?: string;
+        progressType?: TaskProgressType;
+        count?: number;
+        isCompleted?: boolean;
+        isCanceled?: boolean;
+      };
+
+      try {
+        message = JSON.parse(data);
+      } catch (error) {
+        logger.warn('Ignoring malformed Redis progress payload.', {
+          data,
+          error
+        });
+        return;
+      }
+
       const { miningId, progressType, count, isCompleted, isCanceled } =
-        JSON.parse(data);
+        message;
+
+      if (!miningId || !progressType || typeof count !== 'number') {
+        logger.warn('Ignoring incomplete Redis progress payload.', { data });
+        return;
+      }
 
       if (progressType === 'signatures' && isCompleted) {
         const task = this.ACTIVE_MINING_TASKS.get(miningId);
