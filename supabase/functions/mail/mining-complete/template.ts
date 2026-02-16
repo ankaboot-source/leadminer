@@ -1,5 +1,5 @@
 import i18nData from "../i18n/messages.json" with { type: "json" };
-import { fillTemplate, t } from "../utils/template.ts";
+import { fillTemplate, t } from "../../_shared/mailing/template.ts";
 
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST");
 const LEADMINER_DATA_PRIVACY_URL = "https://www.leadminer.io/data-privacy";

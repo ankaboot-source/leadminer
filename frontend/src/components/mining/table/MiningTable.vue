@@ -91,7 +91,7 @@
         </div>
 
         <div>
-          <CampaignButton :contacts-count="implicitlySelectedContactsLength"/>
+          <CampaignButton :contacts-count="implicitlySelectedContactsLength" />
         </div>
         <div
           v-tooltip.top="
@@ -863,7 +863,7 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-import { CampaignButton } from '@/utils/extras'
+import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';

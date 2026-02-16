@@ -1,4 +1,4 @@
-import { sendEmail } from "../utils/email.ts";
+import { sendEmail } from "../../_shared/mailing/email.ts";
 import buildEmail from "./template.ts";
 
 export async function notifyLeadminerOfCampaign(

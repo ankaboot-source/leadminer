@@ -60,7 +60,7 @@ async function sendEmailCampaign() {
 }
 
 async function notifyLeadminerOfCampaign() {
-  await useNuxtApp().$saasEdgeFunctions('mail/campaign/notify-leadminer', {
+  await useNuxtApp().$saasEdgeFunctions('campaign/notify-leadminer', {
     method: 'POST',
     body: {
       email: $user.value?.email,

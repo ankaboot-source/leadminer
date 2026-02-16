@@ -1,4 +1,4 @@
-import i18nData from "../i18n/messages.json" with { type: "json" };
+import i18nData from "./messages.json" with { type: "json" };
 
 const LOGO_URL = Deno.env.get("LOGO_URL");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST");
@@ -27,7 +27,7 @@ export function fillTemplate(
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${i18n.title}</title>
+    <title>${headerTitle}</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;600;700&family=Merriweather:wght@700&display=swap"
       rel="stylesheet"

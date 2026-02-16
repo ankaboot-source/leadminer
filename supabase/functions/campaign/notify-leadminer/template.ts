@@ -1,4 +1,4 @@
-import { fillTemplate } from "../utils/template.ts";
+import { fillTemplate } from "../../_shared/mailing/template.ts";
 
 export default function buildEmail(
   email: string,
