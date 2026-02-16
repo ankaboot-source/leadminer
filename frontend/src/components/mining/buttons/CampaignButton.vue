@@ -41,7 +41,7 @@ const { t: $t } = useI18n({
 });
 const $screenStore = useScreenStore();
 const props = defineProps<{
-  contactsCount?: number;
+  contactsCount: number;
 }>();
 
 const visibleDialog = ref(false);
