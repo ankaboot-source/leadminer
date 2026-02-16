@@ -49,6 +49,7 @@ const visibleDialog = ref(false);
 const contactsCount = computed(() => props.contactsCount);
 
 async function sendEmailCampaign() {
+  visibleDialog.value = true;
   await notifyLeadminerOfCampaign();
   $toast.add({
     summary: t('toast_summary'),
@@ -56,7 +57,6 @@ async function sendEmailCampaign() {
     severity: 'info',
     life: 3000,
   });
-  visibleDialog.value = true;
 }
 
 async function notifyLeadminerOfCampaign() {
