@@ -21,6 +21,8 @@ type TogglesType = {
   location: boolean;
 };
 
+const VALID_STATUSES = ['VALID', 'UNKNOWN', null /*'UNVERIFIED'*/];
+
 const searchContactModel = ref('');
 const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
 const nameToggle = ref(false);
@@ -45,17 +47,17 @@ const areToggledFilters = computed(
     Number(jobDetailsToggle.value),
 );
 
-function checkValidStatus() {
+function checkValidStatus(statusValue = filters.value.status.value) {
   return Boolean(
-    filters.value.status.value.length === 1 &&
-      filters.value.status.value[0] === 'VALID',
+    statusValue.length === VALID_STATUSES.length &&
+      statusValue.every((status: string) => VALID_STATUSES.includes(status)),
   );
 }
 
 function updatedStatusValue() {
   const isValidStatus = checkValidStatus();
   if (!isValidStatus && validToggle.value) {
-    return ['VALID'];
+    return VALID_STATUSES;
   } else if (isValidStatus && !validToggle.value) {
     return [];
   }
@@ -130,9 +132,8 @@ function onNameToggle(toggle?: boolean) {
 function watchStatusToggle() {
   return watch(
     () => filters.value.status.value,
-    (newStatusValue) => {
-      validToggle.value =
-        newStatusValue?.length === 1 && newStatusValue[0] === 'VALID';
+    () => {
+      validToggle.value = checkValidStatus();
     },
   );
 }

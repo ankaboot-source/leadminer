@@ -82,7 +82,10 @@ export default class GoogleContactsSession {
     return chunks;
   }
 
-  async run(contacts: ContactFrontend[], updateEmptyOnly: boolean) {
+  async run(
+    contacts: ContactFrontend[],
+    updateEmptyOnly: boolean
+  ): Promise<{ labelId: string | null }> {
     try {
       logger.debug('GoogleContactsSession.run(): Starting sync process', {
         userId: this.userId,
@@ -191,6 +194,15 @@ export default class GoogleContactsSession {
         created: create.size,
         updated: update.size
       });
+
+      const appLabelResourceName = this.labelMap.get(
+        ENV.APP_NAME.toLowerCase()
+      );
+      const labelId = appLabelResourceName
+        ? appLabelResourceName.replace('contactGroups/', '')
+        : null;
+
+      return { labelId };
     } catch (err) {
       logger.error(
         `GoogleContactsSession.run(): Error during sync: ${(err as Error).message}`,

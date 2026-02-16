@@ -443,17 +443,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       if (!user) return 1;
 
-      const {
-        task: redactedTask,
-        fetch,
-        clean,
-        extract,
-      } = await $api<{
+      const response = await $api<{
         task: MiningTask;
         fetch: MiningTask;
         extract: MiningTask;
         clean: MiningTask;
       }>(`/imap/mine/${user?.sub}/`);
+
+      if (!response) return 1;
+
+      const { task: redactedTask, fetch, clean, extract } = response;
 
       if (!redactedTask || !redactedTask.miningSource.type) return 1;
 
