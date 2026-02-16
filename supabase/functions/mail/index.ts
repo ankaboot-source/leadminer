@@ -1,13 +1,14 @@
 import { Context, Hono } from "hono";
+import { cors } from "hono/cors";
 import mailMiningComplete from "./mining-complete/index.ts";
-import { notifyLeadminer } from "./campaign/index.ts";
+import { notifyLeadminerOfCampaign } from "./campaign/index.ts";
+import { verifyServiceRole } from "../_shared/middlewares.ts";
 
 const functionName = "mail";
 const app = new Hono().basePath(`/${functionName}`);
 
-// app.use("*", verifyServiceRole);
-
-app.post("/mining-complete", async (c: Context) => {
+app.options("/mining-complete", verifyServiceRole); // From Backend only
+app.post("/mining-complete", verifyServiceRole, async (c: Context) => {
   const { miningId } = await c.req.json();
 
   if (!miningId) {
@@ -23,7 +24,8 @@ app.post("/mining-complete", async (c: Context) => {
   }
 });
 
-app.post("/campaign/notify-leadminer", async (c: Context) => {
+app.options("/campaign/notify-leadminer", cors()); // From Frontend
+app.post("/campaign/notify-leadminer", cors(), async (c: Context) => {
   const { email, contactsCount } = await c.req.json();
   console.log({ email, contactsCount });
 
@@ -32,7 +34,7 @@ app.post("/campaign/notify-leadminer", async (c: Context) => {
   }
 
   try {
-    await notifyLeadminer(email, contactsCount);
+    await notifyLeadminerOfCampaign(email, contactsCount);
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
     console.error("Error in mining-complete:", error);
@@ -40,4 +42,4 @@ app.post("/campaign/notify-leadminer", async (c: Context) => {
   }
 });
 
-Deno.serve((req) => app.fetch(req));
+Deno.serve((req: Request) => app.fetch(req));

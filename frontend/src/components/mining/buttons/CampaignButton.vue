@@ -49,7 +49,7 @@ const visibleDialog = ref(false);
 const contactsCount = computed(() => props.contactsCount);
 
 async function sendEmailCampaign() {
-  await notifyLeadminer();
+  await notifyLeadminerOfCampaign();
   $toast.add({
     summary: t('toast_summary'),
     detail: t('toast_detail'),
@@ -59,7 +59,7 @@ async function sendEmailCampaign() {
   visibleDialog.value = true;
 }
 
-async function notifyLeadminer() {
+async function notifyLeadminerOfCampaign() {
   await useNuxtApp().$saasEdgeFunctions('mail/campaign/notify-leadminer', {
     method: 'POST',
     body: {

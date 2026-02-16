@@ -1,8 +1,11 @@
 import { sendEmail } from "../utils/email.ts";
 import buildEmail from "./template.ts";
 
-export async function notifyLeadminer(email: string, contactsCount: number) {
-  const to = "contact@leadminer.io"; // use env?
+export async function notifyLeadminerOfCampaign(
+  email: string,
+  contactsCount: number,
+) {
+  const to = "contact@leadminer.io";
   const { html, subject } = buildEmail(
     email,
     contactsCount,
@@ -12,6 +15,6 @@ export async function notifyLeadminer(email: string, contactsCount: number) {
     to,
     subject,
     html,
-    email
+    email,
   );
 }
