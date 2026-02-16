@@ -27,8 +27,8 @@ export async function getUserEmail(userId: string): Promise<string> {
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data.email) {
-    console.error("Error getting user email:", error.message);
+  if (error || !data?.email) {
+    console.error("Error getting user email:", error?.message);
     throw error;
   }
 

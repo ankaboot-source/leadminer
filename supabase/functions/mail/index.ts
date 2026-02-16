@@ -1,13 +1,12 @@
 import { Context, Hono } from "hono";
-import { verifyServiceRole } from "../_shared/middlewares.ts";
 import mailMiningComplete from "./mining-complete/index.ts";
+import { verifyServiceRole } from "../_shared/middlewares.ts";
 
 const functionName = "mail";
 const app = new Hono().basePath(`/${functionName}`);
 
-app.use("*", verifyServiceRole);
-
-app.post("/mining-complete", async (c: Context) => {
+app.options("/mining-complete", verifyServiceRole); // From Backend only
+app.post("/mining-complete", verifyServiceRole, async (c: Context) => {
   const { miningId } = await c.req.json();
 
   if (!miningId) {
@@ -23,4 +22,4 @@ app.post("/mining-complete", async (c: Context) => {
   }
 });
 
-Deno.serve((req) => app.fetch(req));
+Deno.serve((req: Request) => app.fetch(req));
