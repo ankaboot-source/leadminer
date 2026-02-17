@@ -17,7 +17,7 @@ export async function getMiningStats(miningId: string): Promise<MiningStats> {
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data as MiningStats;
 }
 
 export async function getUserEmail(userId: string): Promise<string> {

@@ -1,5 +1,5 @@
 import { getMiningStats, getUserEmail, getUserLanguage } from "../utils/db.ts";
-import { sendEmail } from "../utils/email.ts";
+import { sendEmail } from "../../_shared/mailing/email.ts";
 import buildEmail from "./template.ts";
 
 export default async function mailMiningComplete(
@@ -12,7 +12,7 @@ export default async function mailMiningComplete(
     total_reachable,
     total_with_phone,
     total_with_company,
-    total_with_location
+    total_with_location,
   } = await getMiningStats(miningId);
 
   const to = await getUserEmail(user_id);
