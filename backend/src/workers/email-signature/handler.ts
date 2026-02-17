@@ -21,12 +21,6 @@ import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 
-// Constants
-const MAX_QUEUE_SIZE = 1000;
-const DRAIN_THRESHOLD = 700;
-const MAX_RETRIES = 10;
-
-// Types
 export interface EmailData {
   type: 'email';
   userIdentifier: string;
@@ -57,6 +51,12 @@ const IGNORED_TAGS: ReadonlyArray<string> = [
  * Uses a persistent queue for concurrent processing with backpressure
  */
 export class EmailSignatureHandler {
+  private MAX_QUEUE_SIZE = 1000;
+
+  private DRAIN_THRESHOLD = 700;
+
+  private MAX_RETRIES = 10;
+
   private readonly queue: PQueue;
 
   private readonly streamProgressDelta = new Map<string, number>();
@@ -76,6 +76,45 @@ export class EmailSignatureHandler {
     });
   }
 
+  private async hasReachedRetryCount(data: EmailData) {
+    const { data: payload } = data;
+    const { retryCount = 0, isLast } = payload;
+
+    if (isLast && retryCount >= this.MAX_RETRIES) {
+      return true;
+    }
+    return false;
+  }
+
+  private async hasReleasedLastPayload(
+    signatureStream: string,
+    data: EmailData
+  ) {
+    const { miningId, data: payload } = data;
+    const { totalSignatures = 0, retryCount = 0, isLast } = payload;
+    const { received } = await this.cache.getProgress(miningId);
+
+    if (isLast && received < totalSignatures) {
+      this.logger.debug('Re-adding last payload to stream', {
+        miningId,
+        retryCount: retryCount + 1
+      });
+
+      await this.redisClient.xadd(
+        signatureStream,
+        '*',
+        'message',
+        JSON.stringify({
+          ...data,
+          data: { ...data.data, retryCount: retryCount + 1 }
+        })
+      );
+
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Main entry point - processes a batch of email messages
    * Called by the consumer for each batch from the stream
@@ -85,89 +124,92 @@ export class EmailSignatureHandler {
     messages: EmailData[]
   ): Promise<void> {
     for (const message of messages) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.applyBackpressure();
-      // eslint-disable-next-line no-await-in-loop
-      await this.processMessage(signatureStream, message);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this.applyBackpressure();
+
+        if (message.data.isLast) {
+          this.logger.info(
+            `Detected final payload for signature mining, checking guards for ${message.miningId}`,
+            {
+              miningId: message.miningId,
+              retryCount: message.data?.retryCount ?? 0,
+              maxRetries: this.MAX_RETRIES
+            }
+          );
+          // eslint-disable-next-line no-await-in-loop
+          const reachedRetryCount = await this.hasReachedRetryCount(message);
+          if (reachedRetryCount) {
+            this.logger.info(
+              `Retry limit reached, forcing completion for signature mining with id: ${message.miningId}`,
+              {
+                miningId: message.miningId,
+                retryCount: message.data?.retryCount,
+                maxRetries: this.MAX_RETRIES
+              }
+            );
+            // eslint-disable-next-line no-await-in-loop
+            await this.completed(message.miningId);
+            return;
+          }
+          // eslint-disable-next-line no-await-in-loop
+          if (await this.hasReleasedLastPayload(signatureStream, message))
+            continue;
+        }
+
+        // eslint-disable-next-line no-await-in-loop
+        await this.processMessage(message);
+      } catch (error) {
+        const {
+          data: { isLast },
+          miningId
+        } = message;
+
+        if (isLast) {
+          this.logger.error(
+            'Signature processing failed on final payload — forcing completion',
+            {
+              miningId,
+              isLast,
+              error
+            }
+          );
+          // eslint-disable-next-line no-await-in-loop
+          await this.completed(miningId);
+        } else {
+          this.logger.error('Signature processing failed', {
+            miningId,
+            isLast,
+            error
+          });
+        }
+      }
     }
   }
 
   /**
    * Processes a single email message
    */
-  private async processMessage(
-    signatureStream: string,
-    data: EmailData
-  ): Promise<void> {
+  private async processMessage(data: EmailData): Promise<void> {
     try {
-      const { miningId, data: payload } = data;
-      const { totalSignatures = 0, retryCount = 0 } = payload;
-
-      if (data.data.isLast) {
-        const { received } = await this.cache.getProgress(miningId);
-
-        // return if max retries is reached
-        if (retryCount >= MAX_RETRIES) {
-          this.logger.error('Max retries reached for batch processing', {
-            miningId,
-            retryCount
-          });
-          return;
-        }
-
-        // if processed < total signature, publish message again to stream
-        if (received < totalSignatures) {
-          this.logger.debug('Re-adding last payload to stream', {
-            miningId,
-            retryCount: retryCount + 1
-          });
-
-          await this.redisClient.xadd(
-            signatureStream,
-            '*',
-            'message',
-            JSON.stringify({
-              ...data,
-              data: { ...data.data, retryCount: retryCount + 1 }
-            })
-          );
-          return;
-        }
-      }
-
-      const shouldProcess = await this.isWorthProcessing(data);
-
-      if (shouldProcess) {
-        await this.handleNewSignature(data);
-      }
-
-      if (data.data.isLast) {
-        await this.handleLastPayload(data);
-      }
-    } catch (err) {
       const {
-        data: { isLast },
+        data: { isLast }
+      } = data;
+      const shouldProcess = await this.isWorthProcessing(data);
+      if (shouldProcess) await this.handleNewSignature(data);
+      if (isLast) await this.handleLastPayload(data);
+    } catch (error) {
+      const {
+        data: { isLast, retryCount = 0 },
         miningId
       } = data;
-
-      if (isLast) {
-        this.logger.error(
-          'Signature processing failed on final payload — forcing completion',
-          {
-            miningId,
-            isLast,
-            error: err
-          }
-        );
-
-        await this.completed(miningId);
-      } else {
-        this.logger.error('Signature processing failed', {
-          miningId,
-          isLast,
-          error: err
-        });
-      }
+      this.logger.error('Failed to process signature message', {
+        miningId,
+        isLast,
+        retryCount,
+        error
+      });
+      throw error;
     } finally {
       const { miningId } = data;
       await this.cache.incrementReceived(miningId);
@@ -218,7 +260,7 @@ export class EmailSignatureHandler {
     const signature = this.extractSignature(body);
 
     if (!signature || !isUsefulSignatureContent(signature)) {
-      this.logger.info('No useful signature found; skipping cache', {
+      this.logger.debug('No useful signature found; skipping cache', {
         email,
         miningId
       });
@@ -227,7 +269,7 @@ export class EmailSignatureHandler {
 
     const isNew = await this.cache.isNewer(userId, email, messageDate);
     if (!isNew) {
-      this.logger.info('Signature not newer than cached; skipping', {
+      this.logger.debug('Signature not newer than cached; skipping', {
         email,
         messageDate
       });
@@ -443,16 +485,16 @@ export class EmailSignatureHandler {
    * Applies backpressure when queue is full
    */
   private async applyBackpressure(): Promise<void> {
-    if (this.queue.size < MAX_QUEUE_SIZE) return;
+    if (this.queue.size < this.MAX_QUEUE_SIZE) return;
 
     this.logger.debug('Queue limit reached, applying backpressure', {
       currentSize: this.queue.size,
-      limit: MAX_QUEUE_SIZE,
-      threshold: DRAIN_THRESHOLD
+      limit: this.MAX_QUEUE_SIZE,
+      threshold: this.DRAIN_THRESHOLD
     });
 
     const startTime = performance.now();
-    await this.queue.onSizeLessThan(DRAIN_THRESHOLD);
+    await this.queue.onSizeLessThan(this.DRAIN_THRESHOLD);
 
     const duration = performance.now() - startTime;
     this.logger.debug('Backpressure released', {
@@ -481,8 +523,8 @@ export class EmailSignatureHandler {
     failed: boolean
   ): Promise<void> {
     // Publish to Redis
-    this.redisClient
-      .publish(
+    try {
+      await this.redisClient.publish(
         miningId,
         JSON.stringify({
           miningId,
@@ -491,13 +533,13 @@ export class EmailSignatureHandler {
           count,
           failed
         })
-      )
-      .catch((err) => {
-        this.logger.error('Failed to publish completion', {
-          miningId,
-          error: err
-        });
+      );
+    } catch (error) {
+      this.logger.error('Failed to publish completion', {
+        miningId,
+        error
       });
+    }
   }
 }
 
