@@ -79,11 +79,7 @@ export class EmailSignatureHandler {
   private async hasReachedRetryCount(data: EmailData) {
     const { data: payload } = data;
     const { retryCount = 0, isLast } = payload;
-
-    if (isLast && retryCount >= this.MAX_RETRIES) {
-      return true;
-    }
-    return false;
+    return isLast && retryCount >= this.MAX_RETRIES;
   }
 
   private async hasReleasedLastPayload(
