@@ -369,25 +369,36 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
-      const task =
-        source === 'email'
-          ? await startMiningEmail(
-              userId,
-              Object.keys(selectedBoxes.value).filter(
-                (key) =>
-                  selectedBoxes.value[key].checked &&
-                  !excludedBoxes.value.has(key) &&
-                  key !== '',
-              ),
-              activeMiningSource.value!,
-            )
-          : source === 'file'
-            ? await startMiningFile(
-                userId,
-                selectedFile.value!.name,
-                selectedFile.value!.contacts,
-              )
-            : await startMiningPST(userId, storagePath!);
+
+      let task;
+      switch (source) {
+        case 'email':
+          task = await startMiningEmail(
+            userId,
+            Object.keys(selectedBoxes.value).filter(
+              (key) =>
+                selectedBoxes.value[key].checked &&
+                !excludedBoxes.value.has(key) &&
+                key !== '',
+            ),
+            activeMiningSource.value!,
+          );
+          break;
+        case 'file':
+          task = await startMiningFile(
+            userId,
+            selectedFile.value!.name,
+            selectedFile.value!.contacts,
+          );
+          break;
+        case 'pst':
+          if (!storagePath)
+            throw new Error('Storage path is required for mining PST');
+          task = await startMiningPST(userId, storagePath);
+          break;
+        default:
+          throw new Error(`Unknown mining source: ${source}`);
+      }
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();

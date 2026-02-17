@@ -67,21 +67,6 @@ const email = $route.query.email as string;
 const COOLDOWN_DEFAULT = 45;
 const cooldown = ref(COOLDOWN_DEFAULT);
 
-onBeforeMount(() => {
-  const previousPath = window.history.state?.back;
-  const unauthorized = previousPath !== '/auth/signup' || !email;
-  if (unauthorized) {
-    const $router = useRouter();
-    $router.replace('/auth');
-  }
-
-  startCooldown();
-});
-
-watch($session, (activeSession) => {
-  if (activeSession) navigateTo('/');
-});
-
 async function resendConfirmationEmail() {
   const { error } = await $supabaseClient.auth.resend({
     type: 'signup',
@@ -109,4 +94,19 @@ function startCooldown() {
     if (cooldown.value <= 0) clearInterval(timer);
   }, 1000);
 }
+
+onBeforeMount(() => {
+  const previousPath = window.history.state?.back;
+  const unauthorized = previousPath !== '/auth/signup' || !email;
+  if (unauthorized) {
+    const $router = useRouter();
+    $router.replace('/auth');
+  }
+
+  startCooldown();
+});
+
+watch($session, (activeSession) => {
+  if (activeSession) navigateTo('/');
+});
 </script>
