@@ -263,6 +263,7 @@ export default class TasksManagerPST {
         });
 
         progress.totalMessages = totalMessages;
+        process.fetch.details.progress.totalMessages = totalMessages;
       } catch (error) {
         logger.error(`Failed to start fetching task with id: ${miningId}`, {
           error
