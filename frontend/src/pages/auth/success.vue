@@ -67,6 +67,14 @@ const email = $route.query.email as string;
 const COOLDOWN_DEFAULT = 45;
 const cooldown = ref(COOLDOWN_DEFAULT);
 
+function startCooldown() {
+  cooldown.value = COOLDOWN_DEFAULT;
+  const timer = setInterval(() => {
+    cooldown.value--;
+    if (cooldown.value <= 0) clearInterval(timer);
+  }, 1000);
+}
+
 async function resendConfirmationEmail() {
   const { error } = await $supabaseClient.auth.resend({
     type: 'signup',
@@ -85,14 +93,6 @@ async function resendConfirmationEmail() {
   });
 
   startCooldown();
-}
-
-function startCooldown() {
-  cooldown.value = COOLDOWN_DEFAULT;
-  const timer = setInterval(() => {
-    cooldown.value--;
-    if (cooldown.value <= 0) clearInterval(timer);
-  }, 1000);
 }
 
 onBeforeMount(() => {
