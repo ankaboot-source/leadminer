@@ -373,6 +373,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       let task;
       switch (source) {
         case 'email':
+          if (!activeMiningSource.value)
+            throw new Error('activeMiningSource is required for mining EMAIL');
           task = await startMiningEmail(
             userId,
             Object.keys(selectedBoxes.value).filter(
@@ -381,14 +383,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
                 !excludedBoxes.value.has(key) &&
                 key !== '',
             ),
-            activeMiningSource.value!,
+            activeMiningSource.value,
           );
           break;
         case 'file':
+          if (!selectedFile.value)
+            throw new Error('selectedFile is required for mining FILE');
           task = await startMiningFile(
             userId,
-            selectedFile.value!.name,
-            selectedFile.value!.contacts,
+            selectedFile.value.name,
+            selectedFile.value.contacts,
           );
           break;
         case 'pst':
