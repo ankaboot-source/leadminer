@@ -36,11 +36,11 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   signatureEngines.push({
     engine: new SignatureLLM(
       new TokenBucketRateLimiter({
-        executeEvenly: true,
+        executeEvenly: false,
         intervalSeconds: 60,
         uniqueKey: 'email-signature-service',
         distribution: Distribution.Memory,
-        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 500
+        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 1000
       }),
       logger,
       LLMModelsList,
