@@ -30,7 +30,8 @@ describe('SignatureLLM', () => {
     mockAxios = new MockAdapter(axios);
     mockLogger = {
       debug: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
+      warn: jest.fn()
     } as unknown as jest.Mocked<Logger>;
 
     mockRateLimiter = {

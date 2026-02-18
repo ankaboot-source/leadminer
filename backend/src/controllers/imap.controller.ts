@@ -94,7 +94,10 @@ export default function initializeImapController(miningSources: MiningSources) {
             await upsertMiningSource(
               miningSources,
               userId,
-              newToken,
+              {
+                ...newToken,
+                refresh_token: newToken.refresh_token ?? refreshToken
+              },
               provider,
               data.email
             );

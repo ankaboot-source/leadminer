@@ -172,6 +172,8 @@ type OpenRouterResponse = {
 export class SignatureLLM implements ExtractSignature {
   LLM_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
+  MAX_OUTPUT_TOKENS = 1000;
+
   private active = true;
 
   constructor(
@@ -210,13 +212,17 @@ export class SignatureLLM implements ExtractSignature {
           content: SignaturePrompt.buildUserPrompt(email, signature)
         }
       ],
-      response_format: SignaturePrompt.response_format
+      response_format: SignaturePrompt.response_format,
+      max_tokens: this.MAX_OUTPUT_TOKENS
     });
   }
 
   private handleResponseError(error: OpenRouterError['error']) {
     if ([402, 502, 503].includes(error.code)) {
       this.active = false;
+      this.logger.warn(
+        'LLM engine down — check credits balance or expired/invalid API token'
+      );
     }
     throw new Error(error.message);
   }
@@ -279,9 +285,15 @@ export class SignatureLLM implements ExtractSignature {
     try {
       const content = await this.sendPrompt(email, signature);
 
-      this.logger.debug(`extract signature content: ${content}`);
+      if (!content || content.toLowerCase() === 'null') {
+        this.logger.debug('Received empty or null response. skipping parse');
+        return null;
+      }
 
-      if (!content || content.toLowerCase() === 'null') return null;
+      if (content.length > this.MAX_OUTPUT_TOKENS) {
+        this.logger.debug('Model response was too large, skipping parse');
+        return null;
+      }
 
       const parsed = JSON.parse(content);
       const person = Array.isArray(parsed) ? parsed[0] : parsed;

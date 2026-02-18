@@ -110,6 +110,8 @@ export default class PSTEmailsFetcher {
 
   public totalMessages = 0;
 
+  private totalSignaturesPublished = 0;
+
   private hasNotifiedCompleted = false;
 
   /**
@@ -214,6 +216,7 @@ export default class PSTEmailsFetcher {
         userIdentifier: this.userIdentifier,
         miningId: this.miningId
       });
+      this.totalSignaturesPublished++;
     } catch (err) {
       logger.error('Error when publishing signature to stream', {
         error: err
@@ -245,7 +248,8 @@ export default class PSTEmailsFetcher {
           body: '',
           seqNumber: -1,
           folderPath: '',
-          isLast: true
+          isLast: true,
+          totalSignatures: this.totalSignaturesPublished
         },
         userId: this.userId,
         userEmail: this.userEmail,
@@ -255,7 +259,7 @@ export default class PSTEmailsFetcher {
     );
 
     logger.info(
-      `[${this.miningId}] Notified signature stream: This is the last published message.`
+      `[${this.miningId}] Notified signature stream: This is the last published message with ${this.totalSignaturesPublished} total signatures.`
     );
 
     // flush any remaining published emails count
