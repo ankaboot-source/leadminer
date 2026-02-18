@@ -10,6 +10,7 @@ type MiningStats = {
   total_with_company: number;
   total_with_location: number;
 };
+
 export async function getMiningStats(miningId: string): Promise<MiningStats> {
   const { data, error } = await supabase
     .schema("private")
@@ -28,8 +29,8 @@ export async function getUserEmail(userId: string): Promise<string> {
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) {
-    console.error("Error getting user email:", error.message);
+  if (error || !data?.email) {
+    console.error("Error getting user email:", error?.message);
     throw error;
   }
 

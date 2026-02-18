@@ -27,6 +27,30 @@
       "summary": "Your contacts got rights",
       "detail_1": "You'll need your contacts consent or a legitimate interest to reach them.",
       "detail_2": "Learn more about your contacts rights."
+    },
+    "weeklyReport": {
+      "subject": "Your weekly contact extraction report",
+      "headerTitle": "📊 Weekly Report",
+      "headerSubtitle": "Here's what we extracted this week",
+      "greeting": "Hello,",
+      "intro": "This week, Leadminer extracted and saved new contacts from your incoming emails:",
+      "stats": {
+        "totalMined": "⛏️ Total new contacts",
+        "totalReachable": "📬 Reachable contacts",
+        "withPhone": "📞 With phone number",
+        "withCompany": "💼 With company or profession",
+        "withLocation": "📍 With location"
+      },
+      "viewInDashboard": "You can view them in your dashboard.",
+      "signature": "— Leadminer",
+      "buttons": {
+        "viewContacts": "View your contacts"
+      },
+      "footer": {
+        "line1": "You received this email as a weekly summary of your passive mining activity on",
+        "brand": "leadminer",
+        "line2": "Extract, clean, and enrich your contacts — effortlessly."
+      }
     }
   },
 
@@ -58,6 +82,30 @@
       "summary": "Vos contacts ont des droits",
       "detail_1": "Vous aurez besoin du consentement de vos contacts ou d'un intérêt légitime pour les contacter.",
       "detail_2": "En savoir plus sur les droits de vos contacts."
+    },
+    "weeklyReport": {
+      "subject": "Votre rapport hebdomadaire d'extraction de contacts",
+      "headerTitle": "📊 Rapport Hebdomadaire",
+      "headerSubtitle": "Voici ce que nous avons extrait cette semaine",
+      "greeting": "Bonjour,",
+      "intro": "Cette semaine, Leadminer a extrait et enregistré de nouveaux contacts de vos e-mails entrants :",
+      "stats": {
+        "totalMined": "⛏️ Total de nouveaux contacts",
+        "totalReachable": "📬 Contacts joignables",
+        "withPhone": "📞 Avec numéro de téléphone",
+        "withCompany": "💼 Avec entreprise ou profession",
+        "withLocation": "📍 Avec localisation"
+      },
+      "viewInDashboard": "Vous pouvez les consulter dans votre tableau de bord.",
+      "signature": "— Leadminer",
+      "buttons": {
+        "viewContacts": "Voir vos contacts"
+      },
+      "footer": {
+        "line1": "Vous recevez cet e-mail en tant que résumé hebdomadaire de votre activité d'extraction passive sur",
+        "brand": "leadminer",
+        "line2": "Extrayez, nettoyez et enrichissez vos contacts — sans effort."
+      }
     }
   }
 }
