@@ -22,19 +22,17 @@ const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );
 
-try {
-  await $leadminer.fetchMiningSources();
-  onMounted(async () => {
+onMounted(async () => {
+  try {
+    await $leadminer.fetchMiningSources();
     const step = await $leadminer.getCurrentRunningMining();
     if (step !== undefined && step > 1) {
       $stepper.go(step);
     }
-  });
-} catch (error) {
-  onMounted(() => {
+  } catch (error) {
     throw error instanceof FetchError && error.response?.status === 401
       ? error
       : new Error(t('fetch_sources_failed'));
-  });
-}
+  }
+});
 </script>

@@ -17,19 +17,24 @@ export async function getMiningStats(miningId: string): Promise<MiningStats> {
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data as MiningStats;
 }
 
 export async function getUserEmail(userId: string): Promise<string> {
-  const { data, error } = await supabase.schema("private")
+  const { data, error } = await supabase
+    .schema("private")
     .from("profiles")
     .select("email")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data?.email) {
-    console.error("Error getting user email:", error?.message);
+  if (error) {
+    console.error("Error getting user email:", error.message);
     throw error;
+  }
+
+  if (!data?.email) {
+    throw new Error(`No email found for user ${userId}`);
   }
 
   return data.email;

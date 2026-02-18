@@ -73,6 +73,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningInterrupted = ref(false);
   const errors = ref({});
 
+  function getCurrentUserId() {
+    const user = useSupabaseUser().value;
+    return user?.id || (user as { sub?: string } | null)?.sub;
+  }
+
   function $resetMining() {
     miningTask.value = undefined;
     miningStartedAt.value = undefined;
@@ -190,16 +195,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     endEntireTask: boolean,
     processes: string[] | null,
   ) {
-    const user = useSupabaseUser().value;
+    const userId = getCurrentUserId();
 
-    if (!user || !miningTask.value) {
+    if (!userId || !miningTask.value) {
       return null;
     }
 
     const { miningId } = miningTask.value;
 
     const res = await $api(
-      `/imap/mine/${miningType.value}/${user.sub}/${miningId}`,
+      `/imap/mine/${miningType.value}/${userId}/${miningId}`,
       {
         method: 'POST',
         body: {
@@ -341,10 +346,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function startMining(source: MiningType, storagePath?: string) {
     await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
 
-    const user = useSupabaseUser().value;
+    const userId = getCurrentUserId();
     const token = useSupabaseSession().value?.access_token;
 
-    if (!user || !token) return;
+    if (!userId || !token) return;
     if (source === 'file' && !selectedBoxes.value) return;
     if (source === 'email' && !activeMiningSource.value) return;
 
@@ -364,25 +369,40 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
-      const task =
-        source === 'email'
-          ? await startMiningEmail(
-              user?.sub,
-              Object.keys(selectedBoxes.value).filter(
-                (key) =>
-                  selectedBoxes.value[key].checked &&
-                  !excludedBoxes.value.has(key) &&
-                  key !== '',
-              ),
-              activeMiningSource.value!,
-            )
-          : source === 'file'
-            ? await startMiningFile(
-                user.sub,
-                selectedFile.value!.name,
-                selectedFile.value!.contacts,
-              )
-            : await startMiningPST(user.sub, storagePath!);
+
+      let task;
+      switch (source) {
+        case 'email':
+          if (!activeMiningSource.value)
+            throw new Error('activeMiningSource is required for mining EMAIL');
+          task = await startMiningEmail(
+            userId,
+            Object.keys(selectedBoxes.value).filter(
+              (key) =>
+                selectedBoxes.value[key].checked &&
+                !excludedBoxes.value.has(key) &&
+                key !== '',
+            ),
+            activeMiningSource.value,
+          );
+          break;
+        case 'file':
+          if (!selectedFile.value)
+            throw new Error('selectedFile is required for mining FILE');
+          task = await startMiningFile(
+            userId,
+            selectedFile.value.name,
+            selectedFile.value.contacts,
+          );
+          break;
+        case 'pst':
+          if (!storagePath)
+            throw new Error('Storage path is required for mining PST');
+          task = await startMiningPST(userId, storagePath);
+          break;
+        default:
+          throw new Error(`Unknown mining source: ${source}`);
+      }
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();
@@ -434,16 +454,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function getCurrentRunningMining() {
     // 1) GET running tasks for the current user
     try {
-      const user = useSupabaseUser().value;
+      const userId = getCurrentUserId();
 
-      if (!user) return 1;
+      if (!userId) return 1;
 
       const response = await $api<{
         task: MiningTask;
         fetch: MiningTask;
         extract: MiningTask;
         clean: MiningTask;
-      }>(`/imap/mine/${user?.sub}/`);
+      }>(`/imap/mine/${userId}/`);
 
       if (!response) return 1;
 

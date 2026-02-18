@@ -16,6 +16,4 @@ const { label, icon, source, redirectUri } = defineProps<{
   source: OAuthMiningSource;
   redirectUri: string;
 }>();
-
-console.log(redirectUri);
 </script>
