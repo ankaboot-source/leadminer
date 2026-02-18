@@ -74,10 +74,10 @@
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
   />
 
-    <Dialog
+  <Dialog
     v-model:visible="autoExtractDialog"
     modal
-    :header="'Continuous Contact Extraction'"
+    header="Continuous Contact Extraction"
     class="w-full sm:w-[35rem]"
   >
     <p>
@@ -95,7 +95,7 @@
         <Button
           :label="$t('common.cancel')"
           class="w-full sm:w-auto"
-          severity="secondary"      
+          severity="secondary"
           @click="closeAutoExtractDialog()"
         />
       </div>
@@ -125,12 +125,6 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource | undefined;
 }>();
 
-function closeAutoExtractDialog(){
-  autoExtractDialog.value = false;
-}
-function enableAutoExtract() {
-  closeAutoExtractDialog();
-}
 const autoExtractDialog = ref(false); // mining_source.autoExtract
 const sourceType = computed(() => $leadminerStore.miningType);
 const $toast = useToast();
@@ -138,6 +132,13 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
+
+function closeAutoExtractDialog() {
+  autoExtractDialog.value = false;
+}
+function enableAutoExtract() {
+  closeAutoExtractDialog();
+}
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
