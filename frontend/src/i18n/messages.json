@@ -26,7 +26,8 @@
       "the_plural": "the",
       "of": "of",
       "email_required": "Email is required",
-      "password_required": "Password is required"
+      "password_required": "Password is required",
+      "close": "Close"
     },
     "auth": {
       "sign_in": "Sign in",
@@ -169,7 +170,8 @@
       "the_plural": "les",
       "of": "sur",
       "email_required": "Email est obligatoire",
-      "password_required": "Mot de passe est obligatoire"
+      "password_required": "Mot de passe est obligatoire",
+      "close": "Fermer"
     },
     "auth": {
       "sign_in": "Se connecter",

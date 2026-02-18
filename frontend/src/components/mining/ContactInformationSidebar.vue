@@ -61,8 +61,8 @@
           </div>
           <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
             <Tag
-              v-for="(tag, index) in contact.tags"
-              :key="index"
+              v-for="tag in contact.tags"
+              :key="tag"
               :value="getTagLabel(tag)"
               :severity="getTagColor(tag)"
             />
@@ -125,8 +125,8 @@
           <td>
             <div v-if="!editingContact" class="flex flex-wrap gap-1">
               <Chip
-                v-for="(phone, index) in contact.telephone"
-                :key="index"
+                v-for="phone in contact.telephone"
+                :key="phone"
                 :label="phone"
                 :href="`tel:${phone}`"
                 icon="pi pi-phone"
@@ -276,6 +276,10 @@ const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
+function getCurrentUserId() {
+  return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+}
+
 const show = defineModel<boolean>('show');
 
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
@@ -384,9 +388,10 @@ function startRealtimePersons(userId: string, email: string) {
 
 watch(show, async (value) => {
   contact.value.works_for = await getOrganizationName(contact.value.works_for);
+  const userId = getCurrentUserId();
 
-  if (value && $user.value) {
-    startRealtimePersons($user.value.sub, contact.value.email);
+  if (value && userId) {
+    startRealtimePersons(userId, contact.value.email);
     return;
   }
   if (personsSubscription) {
@@ -500,8 +505,9 @@ async function saveContactInformations() {
         ? editedContactCopy.image || null
         : undefined,
   };
-  if (!$user.value?.sub) return;
-  await updateContact($user.value.sub, contactToUpdate);
+  const userId = getCurrentUserId();
+  if (!userId) return;
+  await updateContact(userId, contactToUpdate);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }

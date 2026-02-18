@@ -63,8 +63,6 @@ class SSE {
             throw new Error('[SSE] No access token available.');
           }
 
-          console.debug(`[SSE] Setting up headers with x-sb-jwt: ${token}`);
-
           return fetch(input, {
             ...init,
             headers: {
@@ -120,7 +118,7 @@ class SSE {
         onerror: (err: unknown) => {
           if (!this.pendingCleanupTimeout) {
             console.warn(
-              '[SSE] Connection lost, scheduling cleanup in 1 minute.',
+              '[SSE] Connection lost, scheduling cleanup in 10 minutes.',
             );
             this.pendingCleanupTimeout = setTimeout(() => {
               console.error('[SSE] Cleanup triggered after connection loss.');
