@@ -323,7 +323,16 @@ export class EmailSignatureHandler {
     const signatures = await this.cache.getAllFromMining(miningId);
 
     if (signatures.length === 0) {
+      const progress = this.streamProgressDelta.get(miningId) ?? 0;
       this.logger.info('No signatures to process for batch', { miningId });
+      await pushNotificationDB(this.supabase, {
+        userId,
+        type: 'signature',
+        details: {
+          signatures: progress
+        }
+      });
+      await this.completed(miningId);
       return;
     }
 
