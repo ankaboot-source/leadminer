@@ -31,31 +31,49 @@
 
   <Toast group="has-links">
     <template #message="slotProps">
-      <div class="flex flex-col gap-2 items-start flex-auto w-full">
-        <div class="flex items-center gap-2">
-          <i class="text-md pi pi-info-circle" />
-          <p class="text-sm md:text-base font-medium">
-            {{ slotProps.message.summary }}
-          </p>
-        </div>
-        <div class="text-sm md:text-base">
+      <i class="pi pi-info-circle" />
+      <div class="p-toast-message-text" data-pc-section="messagetext">
+        <p class="p-toast-summary" data-pc-section="summary">
+          {{ slotProps.message.summary }}
+        </p>
+
+        <div class="p-toast-detail">
           {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
+          <Button
+            v-if="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                ?.action
+            "
+            class="mt-2"
+            size="small"
+            :label="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                ?.text
+            "
+            @click="
+              (
+                slotProps.message.detail as ToastHasLinksGroupDetail
+              ).button?.action?.()
+            "
+          ></Button>
+          <Button
+            v-else-if="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link
+            "
+            class="-ml-3"
+            size="small"
+            as="a"
+            variant="link"
+            :label="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.text
+            "
+            :href="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
+            "
+            target="_blank"
+            rel="noopener"
+          />
         </div>
-        <Button
-          v-if="
-            (slotProps.message.detail as ToastHasLinksGroupDetail).button.action
-          "
-          class="mt-2"
-          size="small"
-          :label="
-            (slotProps.message.detail as ToastHasLinksGroupDetail).button.text
-          "
-          @click="
-            (
-              slotProps.message.detail as ToastHasLinksGroupDetail
-            ).button.action?.()
-          "
-        ></Button>
       </div>
     </template>
   </Toast>
@@ -66,8 +84,11 @@
 <script setup lang="ts">
 type ToastHasLinksGroupDetail = {
   message: string;
-  link?: string;
-  button: {
+  link?: {
+    text: string;
+    url: string;
+  };
+  button?: {
     text: string;
     action?: () => void;
   };
