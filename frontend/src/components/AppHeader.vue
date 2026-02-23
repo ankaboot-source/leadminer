@@ -20,7 +20,7 @@
           'border-primary': $router.currentRoute.value.path === sourcesPath,
         }"
         type="button"
-        :label="'Sources'"
+        :label="$t('common.sources')"
         @click="navigateTo(sourcesPath)"
       />
       <div class="grow" />
