@@ -4,8 +4,8 @@ import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
-import TasksManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 
 export default function initializeMiningRoutes(

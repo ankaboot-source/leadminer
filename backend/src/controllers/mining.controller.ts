@@ -9,8 +9,8 @@ import {
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 import { Task } from '../services/tasks-manager/types';
 import { ImapAuthError } from '../utils/errors';
@@ -160,7 +160,7 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
-  tasksManagerFile: TaskManagerFile,
+  tasksManagerFile: TasksManagerFile,
   tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources,
   contactsDB: Contacts
