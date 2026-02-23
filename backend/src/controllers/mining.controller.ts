@@ -294,11 +294,7 @@ export default function initializeMiningController(
     },
 
     async startMining(req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.user as User; //! why not /:userId directly?
-
-      // const { userId: user_id } = req.params; //! can use this instead
-      // const user = {id: user_id};
-
+      const user = res.locals.user as User;
       const {
         extractSignatures,
         miningSource: { email },
