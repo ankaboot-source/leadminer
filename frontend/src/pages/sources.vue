@@ -27,7 +27,7 @@
               </span>
             </div>
             <div v-else>
-              <span class="inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+              <span class="inline-flex h-3 w-3 rounded-full bg-gray-500"></span>
             </div>
           </template>
         </Column>
