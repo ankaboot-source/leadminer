@@ -1,8 +1,9 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
+import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
 
-const SERVER_ENDPOINT = "postgresql://authenticator:postgres@db:8081";
+const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
 
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
@@ -10,15 +11,23 @@ const app = new Hono().basePath(`/${functionName}`);
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
-
+    console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
-      const miningTask = await startMiningEmail(
-        miningSource,
-      );
-      console.log(
-        `Started mining task for source ${miningSource.id}:`,
-        miningTask,
-      );
+      try {
+        const miningTask = await startMiningEmail(
+          miningSource,
+        );
+        console.log(
+          `Started mining task for source ${miningSource.email}:`,
+          miningTask,
+        );
+      } catch (error) {
+        console.error(
+          `Error starting mining for source ${miningSource.email}:`,
+          error,
+        );
+        // feedback to sources that passive mining failed, passive_mining.enabled=false, error="string" else null
+      }
     }
 
     return c.json({ msg: "Started passive-mining" });
@@ -54,14 +63,16 @@ async function getMiningSources() {
   return data;
 }
 async function startMiningEmail(miningSource: any) {
-  // const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
-
   console.log(`${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`);
 
+  // Get default folders
+  // we should save checked boxes from the frontend in miningSource later on
   const boxes = await getBoxes(miningSource);
+  const folders = getFolders(boxes);
+
   console.log(JSON.stringify({
     miningSource: { email: miningSource.email },
-    boxes,
+    boxes: folders,
     extractSignatures: false,
   }));
 
@@ -75,7 +86,7 @@ async function startMiningEmail(miningSource: any) {
       },
       body: JSON.stringify({
         miningSource: { email: miningSource.email },
-        boxes,
+        boxes: folders,
         extractSignatures: false,
       }),
     },
@@ -92,21 +103,16 @@ async function startMiningEmail(miningSource: any) {
 }
 
 async function getBoxes(miningSource: any) {
-  // const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
-  console.log(
-    JSON.stringify(
-      `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
-    ),
-  );
   const res = await fetch(
-    `${SERVER_ENDPOINT}/api/imap/boxes`, //! not found pbbly due edge fucntion localhost probel
+    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`, // http://localhost:8081/api/imap/boxes
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+        "Authorization": `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+        // originally its x-sb-jwt
       },
-      body: JSON.stringify({ type: "email", email: miningSource.email }),
+      body: JSON.stringify({ email: miningSource.email }),
     },
   );
 
