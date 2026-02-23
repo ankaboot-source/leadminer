@@ -294,7 +294,6 @@ export default function initializeMiningController(
     },
 
     async startMining(req: Request, res: Response, next: NextFunction) {
-      console.log('StartMining', req.body);
       const user = res.locals.user as User; //! why not /:userId directly?
 
       // const { userId: user_id } = req.params; //! can use this instead
