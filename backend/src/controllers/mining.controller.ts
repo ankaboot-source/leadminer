@@ -313,16 +313,12 @@ export default function initializeMiningController(
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
-      // const folders = [
-      //   "[Gmail]/All Mail",
-      // ];
+
       const errors = [
         validateType('email', email, 'string'),
         validateType('boxes', folders, 'string[]'),
         validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
-
-      console.log('Validation errors:', errors);
 
       if (errors.length) {
         return res
@@ -333,12 +329,6 @@ export default function initializeMiningController(
       const sanitizedEmail = sanitizeImapInput(email);
       const sanitizedFolders = folders.map((folder) =>
         sanitizeImapInput(folder)
-      );
-
-      console.log(
-        'Sanitized email and folders:',
-        sanitizedEmail,
-        sanitizedFolders
       );
 
       const miningSourceCredentials =

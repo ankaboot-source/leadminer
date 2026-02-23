@@ -166,16 +166,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
         selectedBoxes.value = defaultFolders;
         excludedBoxes.value = excludedKeys;
-
-        console.log(
-          'fetchInbox',
-          Object.keys(selectedBoxes.value).filter(
-            (key) =>
-              selectedBoxes.value[key].checked &&
-              !excludedBoxes.value.has(key) &&
-              key !== '',
-          ),
-        );
       }
 
       miningSources.value = updateMiningSourcesValidity(
