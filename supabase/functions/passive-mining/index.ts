@@ -62,6 +62,25 @@ async function getMiningSources() {
 
   return data;
 }
+
+async function getBoxes(miningSource: any) {
+  const res = await fetch(
+    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+        // originally its x-sb-jwt
+      },
+      body: JSON.stringify({ email: miningSource.email }),
+    },
+  );
+
+  const { folders } = (await res.json()).data || {};
+  return [...folders];
+}
+
 async function startMiningEmail(miningSource: any) {
   // Get default folders
   // we should save checked boxes from the frontend in miningSource later on
@@ -92,22 +111,4 @@ async function startMiningEmail(miningSource: any) {
 
   const json = await res.json();
   return json?.data ?? json;
-}
-
-async function getBoxes(miningSource: any) {
-  const res = await fetch(
-    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
-        // originally its x-sb-jwt
-      },
-      body: JSON.stringify({ email: miningSource.email }),
-    },
-  );
-
-  const { folders } = (await res.json()).data || {};
-  return [...folders];
 }
