@@ -20,8 +20,8 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
-import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 import TasksManager from './services/tasks-manager/TasksManager';
+import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import Billing from './utils/billing-plugin';
 
