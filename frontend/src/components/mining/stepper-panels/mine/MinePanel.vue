@@ -73,6 +73,34 @@
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
   />
+
+  <Dialog
+    v-model:visible="autoExtractDialog"
+    modal
+    header="Continuous Contact Extraction"
+    class="w-full sm:w-[35rem]"
+  >
+    <p>
+      Enable continuous contact extraction from future emails?
+      <br />
+      New contacts found in incoming emails will be automatically saved.
+    </p>
+    <template #footer>
+      <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
+        <Button
+          label="Yes, enable"
+          class="w-full sm:w-auto"
+          @click="enableAutoExtract()"
+        />
+        <Button
+          :label="$t('common.cancel')"
+          class="w-full sm:w-auto"
+          severity="secondary"
+          @click="closeAutoExtractDialog()"
+        />
+      </div>
+    </template>
+  </Dialog>
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -97,12 +125,20 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource | undefined;
 }>();
 
+const autoExtractDialog = ref(false); // mining_source.autoExtract
 const sourceType = computed(() => $leadminerStore.miningType);
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
+
+function closeAutoExtractDialog() {
+  autoExtractDialog.value = false;
+}
+function enableAutoExtract() {
+  closeAutoExtractDialog();
+}
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;

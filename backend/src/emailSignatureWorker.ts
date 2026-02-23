@@ -36,11 +36,11 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   signatureEngines.push({
     engine: new SignatureLLM(
       new TokenBucketRateLimiter({
-        executeEvenly: true,
+        executeEvenly: false,
         intervalSeconds: 60,
         uniqueKey: 'email-signature-service',
         distribution: Distribution.Memory,
-        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 500
+        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 1000
       }),
       logger,
       LLMModelsList,
@@ -50,7 +50,7 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   });
 }
 
-const { processStreamData } = initializeEmailSignatureProcessor(
+const { processStreamData, handler } = initializeEmailSignatureProcessor(
   supabaseClient,
   new Signature(logger, signatureEngines),
   emailSignatureCache,
@@ -78,7 +78,8 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
   ENV.REDIS_EMAIL_SIGNATURE_CONSUMER_BATCH_SIZE,
   processStreamData,
   redisClient,
-  logger
+  logger,
+  handler
 );
 
 (async () => {

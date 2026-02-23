@@ -138,21 +138,12 @@ export function validateFileContactsData(
       throw new Error('Invalid email found in the contacts data');
     }
 
-    const URL_LIST = [
-      contact.image?.split('@'),
-      contact.same_as?.split('@')
-    ].filter((list) => list?.filter(Boolean)?.length);
+    const URL_LIST = [contact.image?.split(','), contact.same_as?.split(',')]
+      .map((list) => list?.map((url) => url.trim()).filter(Boolean))
+      .filter((list) => list?.length);
     URL_LIST.forEach((list) => {
-      if (list?.length) {
-        if (typeof list === 'string') {
-          if (!isValidURL(list)) {
-            throw new Error('Invalid URL found in the contacts data');
-          }
-        } else if (Array.isArray(list)) {
-          if (!list.every((url) => isValidURL(url))) {
-            throw new Error('Invalid URL found in the contacts data');
-          }
-        }
+      if (list?.length && !list.every((url) => isValidURL(url))) {
+        throw new Error('Invalid URL found in the contacts data');
       }
     });
   });

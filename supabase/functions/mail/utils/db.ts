@@ -10,6 +10,7 @@ type MiningStats = {
   total_with_company: number;
   total_with_location: number;
 };
+
 export async function getMiningStats(miningId: string): Promise<MiningStats> {
   const { data, error } = await supabase
     .schema("private")
@@ -17,11 +18,12 @@ export async function getMiningStats(miningId: string): Promise<MiningStats> {
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data as MiningStats;
 }
 
 export async function getUserEmail(userId: string): Promise<string> {
-  const { data, error } = await supabase.schema("private")
+  const { data, error } = await supabase
+    .schema("private")
     .from("profiles")
     .select("email")
     .eq("user_id", userId)
@@ -30,6 +32,10 @@ export async function getUserEmail(userId: string): Promise<string> {
   if (error || !data?.email) {
     console.error("Error getting user email:", error?.message);
     throw error;
+  }
+
+  if (!data?.email) {
+    throw new Error(`No email found for user ${userId}`);
   }
 
   return data.email;

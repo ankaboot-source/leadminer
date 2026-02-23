@@ -19,7 +19,14 @@ export default class RedisSubscriber<T> implements Subscriber<T> {
         this.logger.info(`Subscribed to redis channel ${this.channel}`);
       });
       this.redisClient.on('message', (_, data: string) => {
-        onMessage(JSON.parse(data) as T);
+        try {
+          onMessage(JSON.parse(data) as T);
+        } catch (error) {
+          this.logger.warn(
+            `Ignoring malformed Redis message on channel ${this.channel}`,
+            error
+          );
+        }
       });
     } catch (error) {
       this.logger.error(
