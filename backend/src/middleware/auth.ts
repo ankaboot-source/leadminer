@@ -6,11 +6,8 @@ import AuthResolver from '../services/auth/AuthResolver';
 export default function initializeAuthMiddleware(authResolver: AuthResolver) {
   const verifyJWT = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log('Received request !!');
       const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
-
-      console.log('Yes', token === ENV.SUPABASE_SECRET_PROJECT_TOKEN);
       // Check for service role authentication
       if (
         ENV.SUPABASE_SECRET_PROJECT_TOKEN &&

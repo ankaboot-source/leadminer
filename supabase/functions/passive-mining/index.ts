@@ -63,18 +63,10 @@ async function getMiningSources() {
   return data;
 }
 async function startMiningEmail(miningSource: any) {
-  console.log(`${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`);
-
   // Get default folders
   // we should save checked boxes from the frontend in miningSource later on
   const boxes = await getBoxes(miningSource);
   const folders = getFolders(boxes);
-
-  console.log(JSON.stringify({
-    miningSource: { email: miningSource.email },
-    boxes: folders,
-    extractSignatures: false,
-  }));
 
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
@@ -104,7 +96,7 @@ async function startMiningEmail(miningSource: any) {
 
 async function getBoxes(miningSource: any) {
   const res = await fetch(
-    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`, // http://localhost:8081/api/imap/boxes
+    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
     {
       method: "POST",
       headers: {
@@ -115,8 +107,6 @@ async function getBoxes(miningSource: any) {
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
-
-  console.log("boxes", res);
 
   const { folders } = (await res.json()).data || {};
   return [...folders];
