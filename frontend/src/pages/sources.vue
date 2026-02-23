@@ -4,8 +4,8 @@
       class="flex flex-col grow border border-surface-200 rounded-md px-2 pt-6"
     >
       <DataTable :value="$leadminer.miningSources">
-        <Column field="email" header="Email"> </Column>
-        <Column field="type" header="Type">
+        <Column field="email" :header="t('email')"> </Column>
+        <Column field="type" :header="t('type')">
           <template #body="slotProps">
             <i
               :class="getIcon(slotProps.data.type)"
@@ -14,7 +14,7 @@
             <span class="ml-2">{{ slotProps.data.type }}</span>
           </template>
         </Column>
-        <Column field="passive_mining" header="Passive mining">
+        <Column field="passive_mining" :header="t('passive_mining')">
           <template #body="slotProps">
             <div v-if="slotProps.data.passive_mining">
               <span class="relative flex h-3 w-3">
@@ -38,6 +38,9 @@
 
 <script setup lang="ts">
 const $leadminer = useLeadminerStore();
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 function getIcon(type: string) {
   switch (type) {
@@ -53,3 +56,18 @@ onMounted(async () => {
   await $leadminer.fetchMiningSources();
 });
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "email": "Email",
+    "type": "Type",
+    "passive_mining": "Passive mining"
+  },
+  "fr": {
+    "email": "Email",
+    "type": "Type",
+    "passive_mining": "Extraction passive"
+  }
+}
+</i18n>
