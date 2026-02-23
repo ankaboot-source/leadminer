@@ -382,7 +382,7 @@ export default class ImapEmailsFetcher {
       );
 
       if (text.length && from && date) {
-        // Increment counter for each signature-worthy email published        
+        // Increment counter for each signature-worthy email published
         const { address, name } = from;
         await publishToStream(this.signatureStream, {
           type: 'email',

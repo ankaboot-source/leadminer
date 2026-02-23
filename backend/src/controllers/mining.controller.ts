@@ -411,11 +411,6 @@ export default function initializeMiningController(
       }
     },
 
-    //! matnsech bech tsecureha
-    async startMiningPassive(req: Request, res: Response, next: NextFunction) {
-      // mines all passive
-    },
-
     async startMiningFile(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 

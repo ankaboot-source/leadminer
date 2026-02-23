@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import {
@@ -10,12 +11,10 @@ import {
   TaskProgressType
 } from './types';
 // eslint-disable-next-line max-classes-per-file
-import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
-
-import { AxiosError } from 'axios';
 import ENV from '../../config';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
+import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 import logger from '../../utils/logger';
 import EmailFetcherClient from '../email-fetching';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
