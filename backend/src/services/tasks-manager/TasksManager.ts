@@ -20,6 +20,7 @@ import EmailFetcherClient from '../email-fetching';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
+
 export default class TasksManager {
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
