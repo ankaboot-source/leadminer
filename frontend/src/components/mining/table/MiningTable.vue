@@ -130,39 +130,39 @@
             :deselect-contacts="deselectContacts"
           />
         </div>
-        
+
         <div class="ml-2 leading-none">
-        <i v-if="isLoading" class="pi pi-spin pi-spinner" />
-        <template v-else>
-          <template v-if="!implicitSelectAll && contactsLength">
-            {{
-              implicitlySelectedContactsLength.toLocaleString() +
-              ($screenStore.size.md ? ' ' : '') +
-              '/' +
-              ($screenStore.size.md ? ' ' : '') +
-              contactsLength.toLocaleString()
-            }}
-          </template>
+          <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
-            {{ contactsLength?.toLocaleString() ?? 0 }}
+            <template v-if="!implicitSelectAll && contactsLength">
+              {{
+                implicitlySelectedContactsLength.toLocaleString() +
+                ($screenStore.size.md ? ' ' : '') +
+                '/' +
+                ($screenStore.size.md ? ' ' : '') +
+                contactsLength.toLocaleString()
+              }}
+            </template>
+            <template v-else>
+              {{ contactsLength?.toLocaleString() ?? 0 }}
+            </template>
           </template>
-        </template>
-        <template v-if="$screenStore.size.md">
-          {{ ' ' + t('contacts') }}
-        </template>
-      </div>
-      <div class="grow" />
-      <div>
-        <Button
-          :disabled="
-            $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
-          "
-          icon="pi pi-filter-slash"
-          :label="$screenStore.size.md ? t('clear') : undefined"
-          outlined
-          @click="$filtersStore.clearFilter()"
-        />
-      </div>
+          <template v-if="$screenStore.size.md">
+            {{ ' ' + t('contacts') }}
+          </template>
+        </div>
+        <div class="grow" />
+        <div>
+          <Button
+            :disabled="
+              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+            "
+            icon="pi pi-filter-slash"
+            :label="$screenStore.size.md ? t('clear') : undefined"
+            outlined
+            @click="$filtersStore.clearFilter()"
+          />
+        </div>
         <!-- Settings -->
         <div>
           <Button @click="toggleSettingsPanel">
@@ -280,7 +280,7 @@
             @click="isFullscreen = !isFullscreen"
           />
         </div>
-    </div>
+      </div>
     </template>
 
     <!-- Select -->
@@ -941,7 +941,7 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-import { CampaignButton } from '@/utils/extras';
+// import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
