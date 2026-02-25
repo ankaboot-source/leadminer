@@ -227,7 +227,8 @@ export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
   const $user = useSupabaseUser();
-  const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  const userId =
+    $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
   if (!userId) return;
 
   const $supabaseClient = useSupabaseClient();

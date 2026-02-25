@@ -15,8 +15,8 @@ export async function signInWithOAuth(provider: Provider) {
           : 'https://mail.google.com/ https://www.googleapis.com/auth/contacts',
 
       queryParams: {
-        prompt: 'select_account',
         access_type: 'offline',
+        prompt: 'consent',
       },
     },
   });

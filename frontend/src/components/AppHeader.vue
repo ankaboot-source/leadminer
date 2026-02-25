@@ -1,6 +1,6 @@
 <template>
   <div class="py-3.5 flex justify-between bg-white lg:bg-transparent">
-    <template v-if="$user">
+    <template v-if="showAuthenticatedNavigation">
       <AppLogo class="cursor-pointer" @click="navigateHome()" />
       <Button
         icon="pi pi-users"
@@ -126,6 +126,7 @@
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
 const $user = useSupabaseUser();
+const $route = useRoute();
 const $router = useRouter();
 const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
@@ -135,11 +136,13 @@ const visible = ref(false);
 const contactsPath = '/contacts';
 const campaignsPath = '/campaigns';
 const minePath = '/mine';
-const homePath = $user
-  ? '/'
-  : $contactsStore.contactCount
-    ? contactsPath
-    : minePath;
+const isAuthRoute = computed(() => $route.path.startsWith('/auth'));
+const showAuthenticatedNavigation = computed(
+  () => Boolean($user.value) && !isAuthRoute.value,
+);
+const homePath = computed(() =>
+  $user.value ? '/' : $contactsStore.contactCount ? contactsPath : minePath,
+);
 
 function navigateToMine() {
   // If finished a mining or if already on the mining page, reset the stepper and mining store
@@ -155,10 +158,10 @@ function navigateToMine() {
   navigateTo(minePath);
 }
 function navigateHome() {
-  if ($router.currentRoute.value.path === homePath) {
+  if ($router.currentRoute.value.path === homePath.value) {
     $router.go(0); // reload the page
   } else {
-    $router.push(homePath);
+    $router.push(homePath.value);
   }
 }
 </script>

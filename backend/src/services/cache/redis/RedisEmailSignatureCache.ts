@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import EmailSignatureCache, {
-  EmailSignatureWithMetadata
+  EmailSignatureWithMetadata,
+  SignatureProgress
 } from '../EmailSignatureCache';
 
 export default class RedisEmailSignatureCache implements EmailSignatureCache {
@@ -101,5 +102,36 @@ export default class RedisEmailSignatureCache implements EmailSignatureCache {
     } else {
       await this.client.del(miningKey);
     }
+  }
+
+  /**
+   * Increments the received message count for a mining operation
+   * Uses Redis INCR for atomicity
+   */
+  public async incrementReceived(miningId: string): Promise<number> {
+    const key = `mining:${miningId}:received`;
+    const count = await this.client.incr(key);
+    return count;
+  }
+
+  /**
+   * Gets current progress state without modifying it
+   */
+  public async getProgress(miningId: string): Promise<SignatureProgress> {
+    const [received] = await this.client.mget(`mining:${miningId}:received`);
+
+    return {
+      received: parseInt(received || '0', 10)
+    };
+  }
+
+  /**
+   * Clears all progress tracking keys for a mining operation
+   */
+  public async clearProgress(miningId: string): Promise<void> {
+    await this.client.del(
+      `mining:${miningId}:received`,
+      `mining:${miningId}:total`
+    );
   }
 }

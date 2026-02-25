@@ -73,6 +73,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningInterrupted = ref(false);
   const errors = ref({});
 
+  function getCurrentUserId() {
+    const user = useSupabaseUser().value;
+    return user?.id || (user as { sub?: string } | null)?.sub;
+  }
+
   function $resetMining() {
     miningTask.value = undefined;
     miningStartedAt.value = undefined;
@@ -190,8 +195,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     endEntireTask: boolean,
     processes: string[] | null,
   ) {
-    const user = useSupabaseUser().value;
-    const userId = user?.id || (user as { sub?: string } | null)?.sub;
+    const userId = getCurrentUserId();
 
     if (!userId || !miningTask.value) {
       return null;
@@ -342,9 +346,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function startMining(source: MiningType, storagePath?: string) {
     await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
 
-    const user = useSupabaseUser().value;
+    const userId = getCurrentUserId();
     const token = useSupabaseSession().value?.access_token;
-    const userId = user?.id || (user as { sub?: string } | null)?.sub;
 
     if (!userId || !token) return;
     if (source === 'file' && !selectedBoxes.value) return;
@@ -366,25 +369,40 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
-      const task =
-        source === 'email'
-          ? await startMiningEmail(
-              userId,
-              Object.keys(selectedBoxes.value).filter(
-                (key) =>
-                  selectedBoxes.value[key].checked &&
-                  !excludedBoxes.value.has(key) &&
-                  key !== '',
-              ),
-              activeMiningSource.value!,
-            )
-          : source === 'file'
-            ? await startMiningFile(
-                userId,
-                selectedFile.value!.name,
-                selectedFile.value!.contacts,
-              )
-            : await startMiningPST(userId, storagePath!);
+
+      let task;
+      switch (source) {
+        case 'email':
+          if (!activeMiningSource.value)
+            throw new Error('activeMiningSource is required for mining EMAIL');
+          task = await startMiningEmail(
+            userId,
+            Object.keys(selectedBoxes.value).filter(
+              (key) =>
+                selectedBoxes.value[key].checked &&
+                !excludedBoxes.value.has(key) &&
+                key !== '',
+            ),
+            activeMiningSource.value,
+          );
+          break;
+        case 'file':
+          if (!selectedFile.value)
+            throw new Error('selectedFile is required for mining FILE');
+          task = await startMiningFile(
+            userId,
+            selectedFile.value.name,
+            selectedFile.value.contacts,
+          );
+          break;
+        case 'pst':
+          if (!storagePath)
+            throw new Error('Storage path is required for mining PST');
+          task = await startMiningPST(userId, storagePath);
+          break;
+        default:
+          throw new Error(`Unknown mining source: ${source}`);
+      }
 
       totalMessages.value = task.progress.totalMessages;
       sse.closeConnection();
@@ -436,8 +454,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function getCurrentRunningMining() {
     // 1) GET running tasks for the current user
     try {
-      const user = useSupabaseUser().value;
-      const userId = user?.id || (user as { sub?: string } | null)?.sub;
+      const userId = getCurrentUserId();
 
       if (!userId) return 1;
 

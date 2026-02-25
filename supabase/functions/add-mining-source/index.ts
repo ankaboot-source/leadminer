@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
   const admin = createSupabaseAdmin();
   const client = createSupabaseClient(authorization);
 
-  const { provider, provider_token: providerToken } = await req.json();
+  const { provider, provider_token: providerToken, provider_refresh_token: providerRefreshToken } = await req.json();
 
   if (!providerToken) {
     return new Response(null, {
@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
         _credentials: JSON.stringify({
           email: user.email as string,
           accessToken: providerToken,
-          refreshToken: "",
+          refreshToken: providerRefreshToken ?? "",
           provider,
           expiresAt,
         }),

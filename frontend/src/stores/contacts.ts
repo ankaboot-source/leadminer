@@ -57,11 +57,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }, 2000);
   }
 
+  function getCurrentUserId() {
+    return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  }
+
   /**
    * Load contacts from database to store.
    */
-  async function loadContacts() {
-    const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  async function loadContacts(userId = getCurrentUserId()) {
     if (!userId) return [];
 
     const { data, error } = await $supabase
@@ -91,7 +94,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Refines contacts in database.
    */
   async function refineContacts() {
-    const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+    const userId = getCurrentUserId();
     if (!userId) return;
 
     const { error } = await $supabase
@@ -194,8 +197,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   /**
    * Check if there is data in persons.
    */
-  async function hasPersons(): Promise<boolean> {
-    const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
     if (!userId) return false;
 
     const { data, error } = await $supabase

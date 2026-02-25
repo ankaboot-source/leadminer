@@ -148,8 +148,7 @@ async function uploadPST($event: FileUploadUploaderEvent) {
   if (!file) return;
 
   const user = useSupabaseUser().value;
-  if (!user) return;
-  const userId = user.id || (user as { sub?: string }).sub;
+  const userId = user?.id || (user as { sub?: string } | null)?.sub;
   if (!userId) return;
 
   fileName.value = file.name;

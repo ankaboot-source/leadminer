@@ -14,8 +14,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   let subscription: ReturnType<typeof supabase.channel> | null = null;
 
+  function getCurrentUserId() {
+    return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  }
+
   function subscribe(callback?: (notification: Notification) => void) {
-    const userId = $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+    const userId = getCurrentUserId();
     if (!userId) return;
 
     if (subscription) {
