@@ -1,3 +1,6 @@
+-- ENABLE PG_CRYPTO
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 CREATE TYPE private.email_campaign_status AS ENUM (
   'queued',
   'processing',
@@ -242,7 +245,7 @@ BEGIN
   SELECT
     ms.email,
     ms.type::TEXT,
-    pgp_sym_decrypt(ms.credentials, _encryption_key)::JSONB AS credentials
+    extensions.pgp_sym_decrypt(ms.credentials, _encryption_key)::JSONB AS credentials
   FROM private.mining_sources ms
   WHERE ms.user_id = auth.uid();
 END;
@@ -262,7 +265,7 @@ BEGIN
   SELECT
     ms.email,
     ms.type::TEXT,
-    pgp_sym_decrypt(ms.credentials, _encryption_key)::JSONB AS credentials
+    extensions.pgp_sym_decrypt(ms.credentials, _encryption_key)::JSONB AS credentials
   FROM private.mining_sources ms
   WHERE ms.user_id = _user_id;
 END;
