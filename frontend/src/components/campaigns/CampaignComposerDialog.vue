@@ -706,7 +706,7 @@ function resolveErrorMessage(error: unknown, fallbackKey: string) {
 function startCampaignCompletionWatcher(campaignId: string) {
   const timer = setInterval(async () => {
     try {
-      const data = await $saasEdgeFunctions(`mail/campaigns/${campaignId}/status`, {
+      const data = await $saasEdgeFunctions(`email-campaigns/campaigns/${campaignId}/status`, {
         method: 'GET',
       });
       if (data?.status !== 'completed' && data?.status !== 'failed') return;
@@ -759,7 +759,7 @@ function normalizeBodyText() {
 async function loadSenderOptions() {
   isLoadingSenderOptions.value = true;
   try {
-    const data = await $saasEdgeFunctions('mail/campaigns/sender-options', {
+    const data = await $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
       method: 'POST',
     });
 
@@ -805,7 +805,7 @@ async function sendPreview() {
 
   isSendingPreview.value = true;
   try {
-    const data = await $saasEdgeFunctions('mail/campaigns/preview', {
+    const data = await $saasEdgeFunctions('email-campaigns/campaigns/preview', {
       method: 'POST',
       body: {
         selectedEmails: selectedEmails.value,
@@ -859,7 +859,7 @@ async function submit() {
 
   isSubmitting.value = true;
   try {
-    const data = await $saasEdgeFunctions('mail/campaigns/create', {
+    const data = await $saasEdgeFunctions('email-campaigns/campaigns/create', {
       method: 'POST',
       body: {
         selectedEmails: selectedEmails.value,

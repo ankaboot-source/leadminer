@@ -287,7 +287,7 @@ BEGIN
   END IF;
 
   PERFORM net.http_post(
-    url := supabase_url || '/functions/v1/mail/campaigns/process',
+    url := supabase_url || '/functions/v1/email-campaigns/campaigns/process',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || service_role_key,

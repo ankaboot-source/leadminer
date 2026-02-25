@@ -249,7 +249,7 @@ function toHtmlFromText(template: string): string {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  return `${SUPABASE_URL}/functions/v1/mail/unsubscribe/${token}`;
+  return `${SUPABASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
 }
 
 async function triggerCampaignProcessorFromEdge() {
@@ -257,7 +257,7 @@ async function triggerCampaignProcessorFromEdge() {
     return;
   }
 
-  await fetch(`${SUPABASE_URL}/functions/v1/mail/campaigns/process`, {
+  await fetch(`${SUPABASE_URL}/functions/v1/email-campaigns/campaigns/process`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -718,13 +718,13 @@ async function injectTrackers(
       }
 
       const token = await recordClickLink(supabaseAdmin, campaignId, recipientId, originalUrl);
-      const trackedUrl = `${SUPABASE_URL}/functions/v1/mail/track/click/${token}`;
+      const trackedUrl = `${SUPABASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
       updatedHtml = updatedHtml.replace(`href="${originalUrl}"`, `href="${trackedUrl}"`);
     }
   }
 
   if (trackOpen) {
-    const pixelUrl = `${SUPABASE_URL}/functions/v1/mail/track/open/${openToken}`;
+    const pixelUrl = `${SUPABASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
     updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 

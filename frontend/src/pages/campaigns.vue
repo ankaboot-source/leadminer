@@ -289,7 +289,7 @@ async function confirmActionDialog() {
 
   try {
     if (actionDialogType.value === 'stop') {
-      await $saasEdgeFunctions(`mail/campaigns/${campaign.id}/stop`, {
+      await $saasEdgeFunctions(`email-campaigns/campaigns/${campaign.id}/stop`, {
         method: 'POST',
       });
       $toast.add({
@@ -299,7 +299,7 @@ async function confirmActionDialog() {
         life: 3500,
       });
     } else {
-      await $saasEdgeFunctions(`mail/campaigns/${campaign.id}`, {
+      await $saasEdgeFunctions(`email-campaigns/campaigns/${campaign.id}`, {
         method: 'DELETE',
       });
       $toast.add({
