@@ -218,11 +218,15 @@ function syncTogglesWithFilters() {
     filters.value.recency.constraints.length === 1 &&
     filters.value.recency.constraints[0].value?.toLocaleDateString() ===
       new Date(
-        new Date().setFullYear(new Date().getFullYear() - MAX_YEARS_AGO_TO_FILTER),
+        new Date().setFullYear(
+          new Date().getFullYear() - MAX_YEARS_AGO_TO_FILTER,
+        ),
       ).toLocaleDateString();
   nameToggle.value = Boolean(filters.value.name.value);
   phoneToggle.value = Boolean(filters.value.telephone.value);
-  locationToggle.value = Boolean(filters.value.location.constraints?.[1]?.value);
+  locationToggle.value = Boolean(
+    filters.value.location.constraints?.[1]?.value,
+  );
 
   const consentValues = filters.value.consent_status.value ?? [];
   const consentSet = new Set(consentValues);

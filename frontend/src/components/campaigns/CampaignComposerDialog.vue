@@ -17,7 +17,11 @@
         class="border border-blue-200 border-t border-t-blue-200 bg-blue-50"
       >
         <div class="flex items-center gap-3">
-          <img src="/icons/gdpr.png" alt="GDPR" class="w-8 h-8 sm:w-10 sm:h-10 shrink-0" />
+          <img
+            src="/icons/gdpr.png"
+            alt="GDPR"
+            class="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
+          />
           <span>{{ t('gdpr_notice') }}</span>
         </div>
       </Message>
@@ -43,7 +47,10 @@
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </label>
-          <InputText v-model="form.senderName" @blur="markTouched('senderName')" />
+          <InputText
+            v-model="form.senderName"
+            @blur="markTouched('senderName')"
+          />
           <small v-if="showFieldError('senderName')" class="text-red-500">
             {{ validationErrors.senderName }}
           </small>
@@ -140,28 +147,37 @@
         >
           <template #toolbar>
             <div class="campaign-editor-toolbar">
-            <span class="ql-formats">
-              <select class="ql-font"></select>
-              <select class="ql-size"></select>
-            </span>
-            <span class="ql-formats">
-              <button class="ql-bold" :aria-label="t('bold')"></button>
-              <button class="ql-italic" :aria-label="t('italic')"></button>
-              <button class="ql-underline" :aria-label="t('underline')"></button>
-            </span>
-            <span class="ql-formats">
-              <select class="ql-color"></select>
-              <select class="ql-background"></select>
-            </span>
-            <span class="ql-formats">
-              <button class="ql-list" value="ordered"></button>
-              <button class="ql-list" value="bullet"></button>
-            </span>
-            <span class="ql-formats">
-              <button class="ql-link" :aria-label="t('insert_link')"></button>
-              <button class="ql-image" :aria-label="t('insert_image')"></button>
-              <button class="ql-clean" :aria-label="t('clear_formatting')"></button>
-            </span>
+              <span class="ql-formats">
+                <select class="ql-font"></select>
+                <select class="ql-size"></select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-bold" :aria-label="t('bold')"></button>
+                <button class="ql-italic" :aria-label="t('italic')"></button>
+                <button
+                  class="ql-underline"
+                  :aria-label="t('underline')"
+                ></button>
+              </span>
+              <span class="ql-formats">
+                <select class="ql-color"></select>
+                <select class="ql-background"></select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-list" value="ordered"></button>
+                <button class="ql-list" value="bullet"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-link" :aria-label="t('insert_link')"></button>
+                <button
+                  class="ql-image"
+                  :aria-label="t('insert_image')"
+                ></button>
+                <button
+                  class="ql-clean"
+                  :aria-label="t('clear_formatting')"
+                ></button>
+              </span>
             </div>
           </template>
         </Editor>
@@ -187,7 +203,10 @@
           @click="showAdvanced = !showAdvanced"
         />
 
-        <div v-if="showAdvanced" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+        <div
+          v-if="showAdvanced"
+          class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2"
+        >
           <div class="flex flex-col gap-1 md:col-span-2">
             <label class="text-sm font-medium flex items-center gap-1">
               <span>{{ t('sender_daily_limit') }}</span>
@@ -200,7 +219,11 @@
           </div>
 
           <div class="flex items-center gap-2 md:col-span-2">
-            <Checkbox v-model="form.onlyValidContacts" binary input-id="valid-only" />
+            <Checkbox
+              v-model="form.onlyValidContacts"
+              binary
+              input-id="valid-only"
+            />
             <label for="valid-only">{{ t('only_valid_contacts') }}</label>
             <i
               v-tooltip.top="t('only_valid_contacts_help')"
@@ -227,7 +250,11 @@
           </div>
 
           <div class="flex items-center gap-2 md:col-span-2">
-            <Checkbox v-model="form.plainTextOnly" binary input-id="plain-text" />
+            <Checkbox
+              v-model="form.plainTextOnly"
+              binary
+              input-id="plain-text"
+            />
             <label for="plain-text">{{ t('plain_text_only') }}</label>
             <i
               v-tooltip.top="t('plain_text_only_help')"
@@ -243,15 +270,23 @@
                 class="pi pi-info-circle text-xs text-surface-500"
               />
             </label>
-            <Textarea v-model="form.footerTextTemplate" rows="4" class="w-full" />
-            <small class="text-surface-500">{{ t('footer_template_notice') }}</small>
+            <Textarea
+              v-model="form.footerTextTemplate"
+              rows="4"
+              class="w-full"
+            />
+            <small class="text-surface-500">{{
+              t('footer_template_notice')
+            }}</small>
           </div>
         </div>
       </div>
     </div>
 
     <template #footer>
-      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full">
+      <div
+        class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full"
+      >
         <Button
           class="w-full sm:w-auto"
           :label="t('send_preview')"
@@ -260,8 +295,19 @@
           @click="sendPreview"
         />
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button outlined class="w-full sm:w-auto" :label="globalT('common.cancel')" @click="isVisible = false" />
-          <Button class="w-full sm:w-auto" :label="t('send_campaign')" :loading="isSubmitting" :disabled="isActionDisabled" @click="submit" />
+          <Button
+            outlined
+            class="w-full sm:w-auto"
+            :label="globalT('common.cancel')"
+            @click="isVisible = false"
+          />
+          <Button
+            class="w-full sm:w-auto"
+            :label="t('send_campaign')"
+            :loading="isSubmitting"
+            :disabled="isActionDisabled"
+            @click="submit"
+          />
         </div>
       </div>
     </template>
@@ -285,8 +331,17 @@ const $screenStore = useScreenStore();
 const $toast = useToast();
 const $user = useSupabaseUser();
 
-const editorRef = ref<{ quill?: { focus: () => void; getSelection: () => { index: number } | null; insertText: (index: number, text: string) => void; setSelection: (index: number, length: number) => void } }>();
-const subjectInputRef = ref<{ $el?: HTMLInputElement } | HTMLInputElement | null>(null);
+const editorRef = ref<{
+  quill?: {
+    focus: () => void;
+    getSelection: () => { index: number } | null;
+    insertText: (index: number, text: string) => void;
+    setSelection: (index: number, length: number) => void;
+  };
+}>();
+const subjectInputRef = ref<
+  { $el?: HTMLInputElement } | HTMLInputElement | null
+>(null);
 const attributesMenu = ref();
 
 const showAdvanced = ref(false);
@@ -297,10 +352,13 @@ const editorReady = ref(false);
 const imageResizeAvailable = ref(false);
 
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
-const QUILL_IMAGE_RESIZE_REGISTERED_KEY = '__leadminer_quill_image_resize_registered__';
+const QUILL_IMAGE_RESIZE_REGISTERED_KEY =
+  '__leadminer_quill_image_resize_registered__';
 
 const replyTo = computed(() => $user.value?.email ?? '');
-const selectedEmails = computed(() => props.selectedContacts.map((item) => item.email));
+const selectedEmails = computed(() =>
+  props.selectedContacts.map((item) => item.email),
+);
 const dialogHeader = computed(() =>
   t('send_email_campaign_with_count', { count: selectedEmails.value.length }),
 );
@@ -309,10 +367,13 @@ const availableSenderEmails = ref<string[]>([]);
 const fallbackSenderEmail = ref('');
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
-const DEFAULT_PROJECT_IMAGE_SRC = 'https://placehold.co/360x560?text=Project+photo';
+const DEFAULT_PROJECT_IMAGE_SRC =
+  'https://placehold.co/360x560?text=Project+photo';
 
 const DEFAULT_BODY_HTML = () => {
-  const greeting = t('default_body_greeting', { givenNameToken: '{{fullName}}' });
+  const greeting = t('default_body_greeting', {
+    givenNameToken: '{{fullName}}',
+  });
   return [
     `<p>${greeting}</p>`,
     `<p>${t('default_body_intro')}</p>`,
@@ -323,7 +384,9 @@ const DEFAULT_BODY_HTML = () => {
 };
 
 const DEFAULT_BODY_TEXT = () => {
-  const greeting = t('default_body_greeting', { givenNameToken: '{{fullName}}' });
+  const greeting = t('default_body_greeting', {
+    givenNameToken: '{{fullName}}',
+  });
   return [
     greeting,
     t('default_body_intro'),
@@ -394,21 +457,28 @@ const touched = reactive<Record<FormField, boolean>>({
 });
 
 const validationErrors = computed<Record<FormField, string>>(() => {
-  const htmlText = form.bodyHtmlTemplate.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+  const htmlText = form.bodyHtmlTemplate
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
   const hasBody = form.plainTextOnly
     ? form.bodyTextTemplate.trim().length > 0
     : htmlText.length > 0 || form.bodyTextTemplate.trim().length > 0;
 
   return {
     senderName: form.senderName.trim().length ? '' : t('sender_name_required'),
-    senderEmail: form.senderEmail.trim().length ? '' : t('sender_email_required'),
+    senderEmail: form.senderEmail.trim().length
+      ? ''
+      : t('sender_email_required'),
     replyTo: replyTo.value.trim().length ? '' : t('reply_to_required'),
     subject: form.subject.trim().length ? '' : t('subject_required'),
     body: hasBody ? '' : t('body_required'),
   };
 });
 
-const isFormValid = computed(() => Object.values(validationErrors.value).every((value) => !value));
+const isFormValid = computed(() =>
+  Object.values(validationErrors.value).every((value) => !value),
+);
 const isActionDisabled = computed(
   () =>
     !selectedEmails.value.length ||
@@ -421,7 +491,31 @@ const isActionDisabled = computed(
 const editorModules = computed(() => ({
   uploader: {
     mimetypes: ['image/png', 'image/jpeg'],
-    handler(this: { quill?: { scroll?: { query: (name: string) => unknown }; getSelection: (focus?: boolean) => { index: number; length: number } | null; getLength: () => number; deleteText: (index: number, length: number, source?: string) => void; insertEmbed: (index: number, type: string, value: string, source?: string) => void; setSelection: (index: number, length: number, source?: string) => void } }, range: { index: number; length: number }, files: FileList) {
+    handler(
+      this: {
+        quill?: {
+          scroll?: { query: (name: string) => unknown };
+          getSelection: (
+            focus?: boolean,
+          ) => { index: number; length: number } | null;
+          getLength: () => number;
+          deleteText: (index: number, length: number, source?: string) => void;
+          insertEmbed: (
+            index: number,
+            type: string,
+            value: string,
+            source?: string,
+          ) => void;
+          setSelection: (
+            index: number,
+            length: number,
+            source?: string,
+          ) => void;
+        };
+      },
+      range: { index: number; length: number },
+      files: FileList,
+    ) {
       const { quill } = this;
       if (!quill?.scroll?.query('image')) {
         return;
@@ -435,7 +529,9 @@ const editorModules = computed(() => ({
         return;
       }
 
-      const oversized = images.filter((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+      const oversized = images.filter(
+        (file) => file.size > MAX_IMAGE_SIZE_BYTES,
+      );
       if (oversized.length) {
         $toast.add({
           severity: 'error',
@@ -445,7 +541,9 @@ const editorModules = computed(() => ({
         });
       }
 
-      const validImages = images.filter((file) => file.size <= MAX_IMAGE_SIZE_BYTES);
+      const validImages = images.filter(
+        (file) => file.size <= MAX_IMAGE_SIZE_BYTES,
+      );
       if (!validImages.length) {
         return;
       }
@@ -460,7 +558,8 @@ const editorModules = computed(() => ({
             }),
         ),
       ).then((encodedImages) => {
-        const selection = range ?? quill.getSelection(true) ?? { index: quill.getLength(), length: 0 };
+        const selection = range ??
+          quill.getSelection(true) ?? { index: quill.getLength(), length: 0 };
         const { index: selectionIndex, length: selectionLength } = selection;
         let index = selectionIndex;
         quill.deleteText(selectionIndex, selectionLength, 'user');
@@ -476,10 +575,10 @@ const editorModules = computed(() => ({
   },
   ...(imageResizeAvailable.value
     ? {
-      imageResize: {
-        modules: ['Resize', 'DisplaySize', 'Toolbar'],
-      },
-    }
+        imageResize: {
+          modules: ['Resize', 'DisplaySize', 'Toolbar'],
+        },
+      }
     : {}),
 }));
 
@@ -568,9 +667,11 @@ async function ensureQuillImageResizeModule() {
     }
 
     const resizeModule = await import('quill-image-resize-module');
-    const ImageResize = (resizeModule as { ImageResize?: unknown; default?: unknown }).ImageResize
-      || (resizeModule as { default?: unknown }).default
-      || globalWindow.ImageResize;
+    const ImageResize =
+      (resizeModule as { ImageResize?: unknown; default?: unknown })
+        .ImageResize ||
+      (resizeModule as { default?: unknown }).default ||
+      globalWindow.ImageResize;
 
     if (ImageResize && globalWindow.Quill?.register) {
       globalWindow.Quill.register('modules/imageResize', ImageResize);
@@ -590,8 +691,14 @@ async function ensureQuillImageResizeModule() {
 function insertVariable(attribute: string, target: AttributeTarget = 'body') {
   if (target === 'subject') {
     const token = `{{${attribute}}}`;
-    const start = Math.max(0, Math.min(subjectSelectionStart.value, form.subject.length));
-    const end = Math.max(start, Math.min(subjectSelectionEnd.value, form.subject.length));
+    const start = Math.max(
+      0,
+      Math.min(subjectSelectionStart.value, form.subject.length),
+    );
+    const end = Math.max(
+      start,
+      Math.min(subjectSelectionEnd.value, form.subject.length),
+    );
     form.subject = `${form.subject.slice(0, start)}${token}${form.subject.slice(end)}`;
     touched.subject = true;
 
@@ -706,9 +813,12 @@ function resolveErrorMessage(error: unknown, fallbackKey: string) {
 function startCampaignCompletionWatcher(campaignId: string) {
   const timer = setInterval(async () => {
     try {
-      const data = await $saasEdgeFunctions(`email-campaigns/campaigns/${campaignId}/status`, {
-        method: 'GET',
-      });
+      const data = await $saasEdgeFunctions(
+        `email-campaigns/campaigns/${campaignId}/status`,
+        {
+          method: 'GET',
+        },
+      );
       if (data?.status !== 'completed' && data?.status !== 'failed') return;
 
       clearInterval(timer);
@@ -753,15 +863,20 @@ function normalizeBodyText() {
   if (form.plainTextOnly) {
     return form.bodyTextTemplate;
   }
-  return form.bodyTextTemplate || form.bodyHtmlTemplate.replace(/<[^>]*>/g, ' ');
+  return (
+    form.bodyTextTemplate || form.bodyHtmlTemplate.replace(/<[^>]*>/g, ' ')
+  );
 }
 
 async function loadSenderOptions() {
   isLoadingSenderOptions.value = true;
   try {
-    const data = await $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
-      method: 'POST',
-    });
+    const data = await $saasEdgeFunctions(
+      'email-campaigns/campaigns/sender-options',
+      {
+        method: 'POST',
+      },
+    );
 
     fallbackSenderEmail.value = data.fallbackSenderEmail || '';
     form.senderDailyLimit = Number(data.defaultDailyLimit || 1000);
@@ -834,7 +949,8 @@ async function sendPreview() {
     const parsedError = error as EdgeResponseError;
     const code = parsedError?.data?.code;
     if (code === 'SENDER_SMTP_FAILED' && fallbackSenderEmail.value) {
-      form.senderEmail = parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
+      form.senderEmail =
+        parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
     }
 
     $toast.add({
@@ -894,7 +1010,8 @@ async function submit() {
     const parsedError = error as EdgeResponseError;
     const code = parsedError?.data?.code;
     if (code === 'SENDER_SMTP_FAILED' && fallbackSenderEmail.value) {
-      form.senderEmail = parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
+      form.senderEmail =
+        parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
     }
 
     $toast.add({
@@ -915,7 +1032,8 @@ watch(
     resetTouched();
 
     if (!form.senderName) {
-      form.senderName = ($user.value?.email || '').split('@')[0] || 'Leadminer user';
+      form.senderName =
+        ($user.value?.email || '').split('@')[0] || 'Leadminer user';
     }
     if (!form.bodyHtmlTemplate) {
       form.bodyHtmlTemplate = DEFAULT_BODY_HTML();

@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4">
+  <div
+    class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
+  >
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
       <Button
@@ -11,9 +13,16 @@
       />
     </div>
 
-    <DataView :value="$campaignsStore.campaigns" data-key="id" :paginator="true" :rows="10">
+    <DataView
+      :value="$campaignsStore.campaigns"
+      data-key="id"
+      :paginator="true"
+      :rows="10"
+    >
       <template #empty>
-        <div class="text-center py-8 text-surface-500">{{ t('no_campaigns') }}</div>
+        <div class="text-center py-8 text-surface-500">
+          {{ t('no_campaigns') }}
+        </div>
       </template>
       <template #list="slotProps">
         <div class="grid gap-3">
@@ -50,7 +59,10 @@
                   :loading="isActionLoading(campaign.id, 'delete')"
                   @click="openDeleteDialog(campaign)"
                 />
-                <Tag :value="statusLabel(campaign.status)" :severity="statusSeverity(campaign.status)" />
+                <Tag
+                  :value="statusLabel(campaign.status)"
+                  :severity="statusSeverity(campaign.status)"
+                />
               </div>
             </div>
 
@@ -117,7 +129,9 @@
             </div>
 
             <div v-if="campaign.link_clicks?.length" class="mt-4">
-              <div class="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1">
+              <div
+                class="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1"
+              >
                 <span>{{ t('top_clicked_links') }}</span>
                 <i
                   v-tooltip.top="t('top_clicked_links_tooltip')"
@@ -140,7 +154,9 @@
                     {{ link.url }}
                   </a>
                   <span class="text-surface-600 shrink-0">
-                    {{ t('unique_clicks_count', { count: link.unique_clicks }) }}
+                    {{
+                      t('unique_clicks_count', { count: link.unique_clicks })
+                    }}
                   </span>
                 </div>
               </div>
@@ -153,11 +169,17 @@
     <Dialog
       v-model:visible="actionDialogVisible"
       modal
-      :header="actionDialogType === 'stop' ? t('stop_campaign') : t('delete_campaign')"
+      :header="
+        actionDialogType === 'stop' ? t('stop_campaign') : t('delete_campaign')
+      "
       :style="{ width: '28rem', maxWidth: '95vw' }"
     >
       <div class="text-sm text-surface-700">
-        {{ actionDialogType === 'stop' ? t('stop_campaign_confirm') : t('delete_campaign_confirm') }}
+        {{
+          actionDialogType === 'stop'
+            ? t('stop_campaign_confirm')
+            : t('delete_campaign_confirm')
+        }}
       </div>
 
       <template #footer>
@@ -165,7 +187,11 @@
           <Button outlined :label="t('cancel')" @click="closeActionDialog" />
           <Button
             :severity="actionDialogType === 'stop' ? 'warning' : 'danger'"
-            :label="actionDialogType === 'stop' ? t('stop_campaign') : t('delete_campaign')"
+            :label="
+              actionDialogType === 'stop'
+                ? t('stop_campaign')
+                : t('delete_campaign')
+            "
             :loading="isDialogSubmitting"
             @click="confirmActionDialog"
           />
@@ -289,9 +315,12 @@ async function confirmActionDialog() {
 
   try {
     if (actionDialogType.value === 'stop') {
-      await $saasEdgeFunctions(`email-campaigns/campaigns/${campaign.id}/stop`, {
-        method: 'POST',
-      });
+      await $saasEdgeFunctions(
+        `email-campaigns/campaigns/${campaign.id}/stop`,
+        {
+          method: 'POST',
+        },
+      );
       $toast.add({
         severity: 'success',
         summary: t('campaign_stopped'),
@@ -315,7 +344,10 @@ async function confirmActionDialog() {
   } catch (error: unknown) {
     $toast.add({
       severity: 'error',
-      summary: actionDialogType.value === 'stop' ? t('campaign_stop_failed') : t('campaign_delete_failed'),
+      summary:
+        actionDialogType.value === 'stop'
+          ? t('campaign_stop_failed')
+          : t('campaign_delete_failed'),
       detail: parseActionError(error),
       life: 4500,
     });

@@ -1,4 +1,9 @@
-export type CampaignStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type CampaignStatus =
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 export interface CampaignLinkClick {
   url: string;

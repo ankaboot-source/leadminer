@@ -183,7 +183,8 @@ export const consentStatuses = () => {
 
 export function getConsentColor(value: Consent['value']): Consent['color'] {
   return (
-    consentStatuses().find((consent) => consent.value === value)?.color ?? 'info'
+    consentStatuses().find((consent) => consent.value === value)?.color ??
+    'info'
   );
 }
 
