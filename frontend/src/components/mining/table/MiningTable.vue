@@ -116,170 +116,169 @@
           </Button>
         </div>
 
-          <CampaignButton :contacts-count="implicitlySelectedContactsLength" />
-        </div>
-        <div
-          v-tooltip.top="
-            (isExportDisabled || !selectedContactsLength) &&
-            t('select_at_least_one_contact', { action: t('remove') })
-          "
-        >
-          <RemoveContactButton
-            :contacts-to-delete="contactsToTreat"
-            :contacts-to-delete-length="selectedContactsLength"
-            :is-remove-disabled="isExportDisabled || !selectedContactsLength"
-            :deselect-contacts="deselectContacts"
-          />
-        </div>
-        <div class="ml-2 leading-none">
-          <i v-if="isLoading" class="pi pi-spin pi-spinner" />
+        <CampaignButton :contacts-count="implicitlySelectedContactsLength" />
+      </div>
+      <div
+        v-tooltip.top="
+          (isExportDisabled || !selectedContactsLength) &&
+          t('select_at_least_one_contact', { action: t('remove') })
+        "
+      >
+        <RemoveContactButton
+          :contacts-to-delete="contactsToTreat"
+          :contacts-to-delete-length="selectedContactsLength"
+          :is-remove-disabled="isExportDisabled || !selectedContactsLength"
+          :deselect-contacts="deselectContacts"
+        />
+      </div>
+      <div class="ml-2 leading-none">
+        <i v-if="isLoading" class="pi pi-spin pi-spinner" />
+        <template v-else>
+          <template v-if="!implicitSelectAll && contactsLength">
+            {{
+              implicitlySelectedContactsLength.toLocaleString() +
+              ($screenStore.size.md ? ' ' : '') +
+              '/' +
+              ($screenStore.size.md ? ' ' : '') +
+              contactsLength.toLocaleString()
+            }}
+          </template>
           <template v-else>
-            <template v-if="!implicitSelectAll && contactsLength">
-              {{
-                implicitlySelectedContactsLength.toLocaleString() +
-                ($screenStore.size.md ? ' ' : '') +
-                '/' +
-                ($screenStore.size.md ? ' ' : '') +
-                contactsLength.toLocaleString()
-              }}
-            </template>
-            <template v-else>
-              {{ contactsLength?.toLocaleString() ?? 0 }}
-            </template>
+            {{ contactsLength?.toLocaleString() ?? 0 }}
           </template>
-          <template v-if="$screenStore.size.md">
-            {{ ' ' + t('contacts') }}
-          </template>
-        </div>
-        <div class="grow" />
-        <div>
-          <Button
-            :disabled="
-              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
-            "
-            icon="pi pi-filter-slash"
-            :label="$screenStore.size.md ? t('clear') : undefined"
-            outlined
-            @click="$filtersStore.clearFilter()"
-          />
-        </div>
-        <!-- Settings -->
-        <div>
-          <Button @click="toggleSettingsPanel">
-            {{ $screenStore.size.md ? t('filter') : undefined }}
-            <span class="p-button-label">
-              <OverlayBadge
-                v-if="$filtersStore.areToggledFilters > 0"
-                :value="$filtersStore.areToggledFilters"
-                pt:pcbadge:root:class="bg-white text-black outline-none"
-              >
-                <i class="pi pi-sliders-h" />
-              </OverlayBadge>
+        </template>
+        <template v-if="$screenStore.size.md">
+          {{ ' ' + t('contacts') }}
+        </template>
+      </div>
+      <div class="grow" />
+      <div>
+        <Button
+          :disabled="
+            $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+          "
+          icon="pi pi-filter-slash"
+          :label="$screenStore.size.md ? t('clear') : undefined"
+          outlined
+          @click="$filtersStore.clearFilter()"
+        />
+      </div>
+      <!-- Settings -->
+      <div>
+        <Button @click="toggleSettingsPanel">
+          {{ $screenStore.size.md ? t('filter') : undefined }}
+          <span class="p-button-label">
+            <OverlayBadge
+              v-if="$filtersStore.areToggledFilters > 0"
+              :value="$filtersStore.areToggledFilters"
+              pt:pcbadge:root:class="bg-white text-black outline-none"
+            >
+              <i class="pi pi-sliders-h" />
+            </OverlayBadge>
 
-              <i v-else class="pi pi-sliders-h" />
-            </span>
-          </Button>
-          <Popover ref="settingsPanel">
-            <ul class="list-none p-0 m-0 flex flex-col gap-3">
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_valid_tooltip')">
-                  {{ t('toggle_valid_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.validToggle"
-                  @update:model-value="$filtersStore.onValidToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_hide_unsubscribed_tooltip')">
-                  {{ t('toggle_hide_unsubscribed_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.hideUnsubscribedToggle"
-                  @update:model-value="$filtersStore.onHideUnsubscribedToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div
-                  v-tooltip.left="
-                    t('toggle_recent_tooltip', {
-                      recentYearsAgo: $filtersStore.recentYearsAgo,
-                    })
-                  "
-                >
-                  {{ t('toggle_recent_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.recentToggle"
-                  @update:model-value="$filtersStore.onRecentToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_replies_tooltip')">
-                  {{ t('toggle_replies_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.repliesToggle"
-                  @update:model-value="$filtersStore.onRepliesToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_name_tooltip')">
-                  {{ t('toggle_name_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.nameToggle"
-                  @update:model-value="$filtersStore.onNameToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div>
-                  {{ t('toggle_location_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.locationToggle"
-                  @update:model-value="$filtersStore.onLocationToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="toggleJobDetailsTooltip">
-                  {{ t('toggle_job_details_label') }}
-                </div>
-                <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div>
-                  {{ t('toggle_phone_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.phoneToggle"
-                  @update:model-value="$filtersStore.onPhoneToggle"
-                />
-              </li>
-              <Divider class="my-0" />
-              <MultiSelect
-                v-model="$contactsStore.visibleColumns"
-                :options="visibleColumnsOptions"
-                :option-disabled="disabledColumns"
-                option-label="label"
-                class="min-w-56"
-                fluid
-                option-value="value"
-                :selected-items-label="
-                  t('visible_columns', $contactsStore.visibleColumns.length)
-                "
-                :max-selected-labels="0"
-                @change="onSelectColumnsChange"
+            <i v-else class="pi pi-sliders-h" />
+          </span>
+        </Button>
+        <Popover ref="settingsPanel">
+          <ul class="list-none p-0 m-0 flex flex-col gap-3">
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="t('toggle_valid_tooltip')">
+                {{ t('toggle_valid_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.validToggle"
+                @update:model-value="$filtersStore.onValidToggle"
               />
-            </ul>
-          </Popover>
-        </div>
-        <div>
-          <Button
-            :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
-            @click="isFullscreen = !isFullscreen"
-          />
-        </div>
+            </li>
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="t('toggle_hide_unsubscribed_tooltip')">
+                {{ t('toggle_hide_unsubscribed_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.hideUnsubscribedToggle"
+                @update:model-value="$filtersStore.onHideUnsubscribedToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div
+                v-tooltip.left="
+                  t('toggle_recent_tooltip', {
+                    recentYearsAgo: $filtersStore.recentYearsAgo,
+                  })
+                "
+              >
+                {{ t('toggle_recent_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.recentToggle"
+                @update:model-value="$filtersStore.onRecentToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="t('toggle_replies_tooltip')">
+                {{ t('toggle_replies_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.repliesToggle"
+                @update:model-value="$filtersStore.onRepliesToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="t('toggle_name_tooltip')">
+                {{ t('toggle_name_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.nameToggle"
+                @update:model-value="$filtersStore.onNameToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div>
+                {{ t('toggle_location_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.locationToggle"
+                @update:model-value="$filtersStore.onLocationToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="toggleJobDetailsTooltip">
+                {{ t('toggle_job_details_label') }}
+              </div>
+              <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div>
+                {{ t('toggle_phone_label') }}
+              </div>
+              <ToggleSwitch
+                v-model="$filtersStore.phoneToggle"
+                @update:model-value="$filtersStore.onPhoneToggle"
+              />
+            </li>
+            <Divider class="my-0" />
+            <MultiSelect
+              v-model="$contactsStore.visibleColumns"
+              :options="visibleColumnsOptions"
+              :option-disabled="disabledColumns"
+              option-label="label"
+              class="min-w-56"
+              fluid
+              option-value="value"
+              :selected-items-label="
+                t('visible_columns', $contactsStore.visibleColumns.length)
+              "
+              :max-selected-labels="0"
+              @change="onSelectColumnsChange"
+            />
+          </ul>
+        </Popover>
+      </div>
+      <div>
+        <Button
+          :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
+          @click="isFullscreen = !isFullscreen"
+        />
       </div>
     </template>
 
@@ -1142,9 +1141,7 @@ const isExportDisabled = computed(
 
 const sendCampaignDialogVisible = ref(false);
 
-const isSendByEmailDisabled = computed(
-  () => isExportDisabled.value,
-);
+const isSendByEmailDisabled = computed(() => isExportDisabled.value);
 
 function openSendContactsDialog() {
   sendCampaignDialogVisible.value = true;
