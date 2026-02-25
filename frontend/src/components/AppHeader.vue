@@ -12,6 +12,17 @@
         }"
         @click="navigateTo(contactsPath)"
       />
+      <Button
+        icon="pi pi-envelope"
+        outlined
+        class="ml-4 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
+        :class="{
+          'border-primary': $router.currentRoute.value.path === sourcesPath,
+        }"
+        type="button"
+        :label="$t('common.sources')"
+        @click="navigateTo(sourcesPath)"
+      />
       <div class="grow" />
       <div id="desktop-navbar" class="hidden lg:flex lg:items-center lg:gap-1">
         <Button
@@ -110,6 +121,7 @@ const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
 const contactsPath = '/contacts';
 const minePath = '/mine';
+const sourcesPath = '/sources';
 const isAuthRoute = computed(() => $route.path.startsWith('/auth'));
 const showAuthenticatedNavigation = computed(
   () => Boolean($user.value) && !isAuthRoute.value,

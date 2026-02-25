@@ -9,8 +9,8 @@ import {
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 import { Task } from '../services/tasks-manager/types';
 import { ImapAuthError } from '../utils/errors';
@@ -160,7 +160,7 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
-  tasksManagerFile: TaskManagerFile,
+  tasksManagerFile: TasksManagerFile,
   tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources,
   contactsDB: Contacts
@@ -293,31 +293,8 @@ export default function initializeMiningController(
       }
     },
 
-    async getMiningSources(_req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.user as User;
-
-      try {
-        const sourcesData = await miningSources.getByUser(user.id);
-
-        const sources = sourcesData.map((s) => ({
-          email: s.email,
-          type: s.type,
-          passive_mining: s.passive_mining
-        }));
-
-        return res.status(200).send({
-          message: 'Mining sources retrieved successfully',
-          sources
-        });
-      } catch (error) {
-        res.status(500);
-        return next(error);
-      }
-    },
-
     async startMining(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
-
       const {
         extractSignatures,
         miningSource: { email },
@@ -329,6 +306,8 @@ export default function initializeMiningController(
         boxes: string[];
         extractSignatures: boolean;
       } = req.body;
+
+      user.email = email; // used when user is not provided (edge function req)
 
       const errors = [
         validateType('email', email, 'string'),
@@ -384,16 +363,30 @@ export default function initializeMiningController(
       } catch (err) {
         if (
           err instanceof Error &&
-          err.message.toLowerCase().startsWith('invalid credentials')
-        ) {
-          return res.status(401).json({ message: err.message });
-        }
-        if (
-          err instanceof Error &&
           'textCode' in err &&
           err.textCode === 'CANNOT'
         ) {
           return res.sendStatus(409);
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 401')
+        ) {
+          res
+            .status(401)
+            .send('Failed to start fetching: Invalid credentials 401');
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 503')
+        ) {
+          res
+            .status(503)
+            .send(
+              'Failed to start fetching: Connection not available, please try again later 503'
+            );
         }
 
         const newError = generateErrorObjectFromImapError(err);

@@ -1,5 +1,5 @@
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import ImapEmailsFetcher from '../services/imap/ImapEmailsFetcher'; //!
+import ImapEmailsFetcher from '../services/imap/ImapEmailsFetcher';
 
 interface Options {
   email: string;

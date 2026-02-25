@@ -66,6 +66,7 @@ export interface TaskFetch extends Task {
       fetched: number;
       folders: string[];
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -78,6 +79,7 @@ export interface TaskExtract extends Task {
     progress: {
       extracted: number;
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -91,6 +93,7 @@ export interface TaskClean extends Task {
       verifiedContacts: number;
       createdContacts: number;
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -108,6 +111,7 @@ export interface TaskEnrich extends Task {
       data: Array<Partial<Contact>>;
       raw_data: Array<unknown>;
     }[];
+    passive_mining?: boolean;
   };
 }
 
@@ -130,6 +134,7 @@ export interface MiningTask {
   progress: TaskProgress;
   progressHandlerSSE: RealtimeSSE;
   startedAt: number;
+  passive_mining?: boolean;
 }
 
 /**
