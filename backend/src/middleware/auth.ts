@@ -18,8 +18,7 @@ export default function initializeAuthMiddleware(authResolver: AuthResolver) {
 
         if (userId) {
           // Create a service user object with the extracted userId
-          const user = (await supabase.auth.admin.getUserById(userId)).data
-            .user;
+          const { user } = (await supabase.auth.admin.getUserById(userId)).data;
 
           if (!user) {
             return res.status(404).json({
