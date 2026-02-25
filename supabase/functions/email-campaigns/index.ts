@@ -5,7 +5,7 @@ import { verifyServiceRole } from "../_shared/middlewares.ts";
 import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 
-const functionName = "mail";
+const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
@@ -100,6 +100,24 @@ type Transport = {
     accessToken?: string;
   };
 };
+
+
+async function authMiddleware(c: Context, next: () => Promise<void>) {
+  const authorization = c.req.header("authorization");
+  if (!authorization) {
+    return c.json({ error: "Missing authorization header" }, 401);
+  }
+
+  const supabase = createSupabaseClient(authorization);
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user?.id || !user.email) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  c.set("user", user);
+  await next();
+}
 
 app.use("*", async (c, next) => {
   await next();
@@ -803,7 +821,7 @@ async function updateContactDeliverability(
     .eq("email", email);
 }
 
-app.post("/campaigns/sender-options", async (c: Context) => {
+app.post("/campaigns/sender-options", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -828,7 +846,7 @@ app.post("/campaigns/sender-options", async (c: Context) => {
   }
 });
 
-app.post("/campaigns/preview", async (c: Context) => {
+app.post("/campaigns/preview",authMiddleware,  async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -945,7 +963,7 @@ app.post("/campaigns/preview", async (c: Context) => {
   }
 });
 
-app.post("/campaigns/create", async (c: Context) => {
+app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -1107,7 +1125,7 @@ app.post("/campaigns/create", async (c: Context) => {
   });
 });
 
-app.get("/campaigns/:id/status", async (c: Context) => {
+app.get("/campaigns/:id/status", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -1128,7 +1146,7 @@ app.get("/campaigns/:id/status", async (c: Context) => {
   return c.json(data);
 });
 
-app.post("/campaigns/:id/stop", async (c: Context) => {
+app.post("/campaigns/:id/stop", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -1169,7 +1187,7 @@ app.post("/campaigns/:id/stop", async (c: Context) => {
   return c.json({ msg: "Campaign stopped", campaignId });
 });
 
-app.delete("/campaigns/:id", async (c: Context) => {
+app.delete("/campaigns/:id", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -1209,7 +1227,7 @@ app.delete("/campaigns/:id", async (c: Context) => {
   return c.json({ msg: "Campaign deleted", campaignId });
 });
 
-app.post("/campaigns/process", verifyServiceRole, async (c: Context) => {
+app.post("/campaigns/process", authMiddleware, verifyServiceRole, async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
   let fallbackSenderEmail = "";
   try {
@@ -1575,7 +1593,7 @@ app.get("/track/click/:token", async (c: Context) => {
   return c.redirect(link.url, 302);
 });
 
-app.post("/email-sending-request", async (c: Context) => {
+app.post("/email-sending-request", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
