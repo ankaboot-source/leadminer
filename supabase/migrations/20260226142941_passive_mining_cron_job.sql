@@ -1,10 +1,3 @@
--- prequisite: Add project_url to the vault --
-select vault.create_secret(
-  'http://host.docker.internal:54321',
-  'project_url',
-  'URL to be used for calling edge functions. This is set here to support development with database-triggered webhooks across environments.'
-);
-
 CREATE FUNCTION invoke_edge_function(edge_function_name TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
