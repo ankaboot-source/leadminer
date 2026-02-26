@@ -2,6 +2,30 @@ import { createLogger, format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
 import ENV from '../config';
 
+function safeStringify(value: unknown): string {
+  const seen = new WeakSet<object>();
+
+  return JSON.stringify(value, (_key, currentValue: unknown) => {
+    if (currentValue instanceof Error) {
+      return {
+        name: currentValue.name,
+        message: currentValue.message,
+        stack: currentValue.stack
+      };
+    }
+
+    if (typeof currentValue === 'object' && currentValue !== null) {
+      if (seen.has(currentValue)) {
+        return '[Circular]';
+      }
+
+      seen.add(currentValue);
+    }
+
+    return currentValue;
+  });
+}
+
 function initLogger() {
   const commonFormat = format.combine(
     format.timestamp({
@@ -43,7 +67,7 @@ function initLogger() {
           format.cli(),
           format.printf(
             ({ timestamp, level, message, ...args }) =>
-              `[${timestamp}] ${level}: ${message} | ${JSON.stringify(args)}`
+              `[${timestamp}] ${level}: ${message} | ${safeStringify(args)}`
           )
         )
       })
