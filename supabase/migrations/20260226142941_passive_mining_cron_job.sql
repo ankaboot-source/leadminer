@@ -22,7 +22,7 @@ BEGIN
     response := net.http_post(
         url:= project_url || '/functions/v1/' || edge_function_name,
         headers := jsonb_build_object(
-            'Content-Type', 'application/json',
+            'Content-Type', 'application/json'
         )
     );
 
