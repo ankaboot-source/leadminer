@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
+import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
-import TasksManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
-import { Contacts } from '../db/interfaces/Contacts';
 
 export default function initializeMiningRoutes(
   tasksManager: TasksManager,
@@ -26,8 +26,7 @@ export default function initializeMiningRoutes(
     getMiningTask,
     createProviderMiningSource,
     createProviderMiningSourceCallback,
-    createImapMiningSource,
-    getMiningSources
+    createImapMiningSource
   } = initializeMiningController(
     tasksManager,
     tasksManagerFile,
@@ -37,8 +36,6 @@ export default function initializeMiningRoutes(
   );
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
-
-  router.get('/mine/sources', authMiddleware, getMiningSources);
 
   router.post('/mine/sources/imap', authMiddleware, createImapMiningSource);
 

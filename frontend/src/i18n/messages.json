@@ -14,6 +14,8 @@
       "cancel": "Cancel",
       "mine": "Mine",
       "contacts": "Contacts",
+      "sources": "Sources",
+      "campaigns": "Campaigns",
       "clean": "Clean",
       "enrich": "Enrich",
       "edit": "Edit",
@@ -114,6 +116,11 @@
         "unknown": "UNKNOWN",
         "unverified": "UNVERIFIED"
       },
+      "consent": {
+        "legitimate_interest": "Legitimate interest",
+        "opt_out": "Opt-out",
+        "opt_in": "Opt-in"
+      },
       "tag": {
         "professional": "Professional",
         "newsletter": "Newsletter",
@@ -158,6 +165,8 @@
       "cancel": "Annuler",
       "mine": "Extraire",
       "contacts": "Contacts",
+      "campaigns": "Campagnes",
+      "sources": "Sources",
       "clean": "Nettoyer",
       "enrich": "Enrichir",
       "edit": "Modifier",
@@ -257,6 +266,11 @@
         "invalid": "INVALIDE",
         "unknown": "INCONNU",
         "unverified": "NON VÉRIFIÉ"
+      },
+      "consent": {
+        "legitimate_interest": "Intérêt légitime",
+        "opt_out": "Opposition (opt-out)",
+        "opt_in": "Consentement (opt-in)"
       },
       "tag": {
         "professional": "Professionnel",

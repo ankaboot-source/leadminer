@@ -12,15 +12,15 @@
     <template #footer>
       <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
         <Button
-          :label="t('yes_enable')"
-          class="w-full sm:w-auto"
-          @click="enablePassiveMining()"
-        />
-        <Button
           :label="$t('common.cancel')"
           class="w-full sm:w-auto"
           severity="secondary"
           @click="closePassiveMiningDialog()"
+        />
+        <Button
+          :label="t('yes_enable')"
+          class="w-full sm:w-auto"
+          @click="enablePassiveMining()"
         />
       </div>
     </template>
@@ -73,14 +73,15 @@ async function enablePassiveMining() {
 {
   "en": {
     "header": "Continuous Contact Extraction",
-    "paragraph_1": "Enable continuous contact extraction from future emails?",
-    "paragraph_2": "New contacts found in incoming emails will be automatically saved.",
+    "paragraph_1": "New contacts found in incoming emails will be automatically saved.",
+    "paragraph_2": "Enable continuous contact extraction from future emails?",
     "yes_enable": "Yes, enable"
   },
   "fr": {
     "header": "Extraction continue des contacts",
-    "paragraph_1": "Activer l'extraction continue des contacts à partir des futurs e-mails ?",
-    "paragraph_2": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
+    "paragraph_1": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
+    "paragraph_2": "Activer l'extraction continue des contacts à partir des futurs e-mails ?",
+
     "yes_enable": "Oui, activer"
   }
 }

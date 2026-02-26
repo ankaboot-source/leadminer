@@ -89,7 +89,7 @@ export default defineNuxtConfig({
       },
     },
     components: {
-      exclude: ['Editor', 'Chart'],
+      exclude: ['Chart'],
     },
   },
 
@@ -113,7 +113,29 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['primeicons/primeicons.css', '~/assets/css/tailwind.css'],
+  vite: {
+    resolve: {
+      alias: {
+        cookie: 'cookie-es',
+      },
+    },
+    optimizeDeps: {
+      include: [
+        '@supabase/ssr',
+        'cookie',
+        'quill',
+        'quill-delta',
+        'parchment',
+        'eventemitter3',
+        'lodash-es',
+      ],
+    },
+    ssr: {
+      noExternal: ['quill', 'quill-delta', 'parchment'],
+    },
+  },
+
+  css: ['~/assets/css/tailwind.css'],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
@@ -129,7 +151,13 @@ export default defineNuxtConfig({
     redirectOptions: {
       callback: '/callback',
       login: '/auth/login',
-      include: ['/mine', '/contacts', '/account(/*)?'],
+      include: [
+        '/mine',
+        '/contacts',
+        '/sources',
+        '/campaigns',
+        '/account(/*)?',
+      ],
       exclude: ['/auth(/*)?', '/credits-success'],
     },
   },

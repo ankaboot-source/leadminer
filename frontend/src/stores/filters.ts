@@ -19,6 +19,7 @@ type TogglesType = {
   replies: boolean;
   telephone: boolean;
   location: boolean;
+  hideUnsubscribed: boolean;
 };
 
 const VALID_STATUSES = ['VALID', 'UNKNOWN', null /*'UNVERIFIED'*/];
@@ -32,6 +33,7 @@ const recentToggle = ref(false);
 const phoneToggle = ref(false);
 const locationToggle = ref(false);
 const jobDetailsToggle = ref(false);
+const hideUnsubscribedToggle = ref(true);
 
 const isDefaultFilters = computed(
   () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
@@ -44,6 +46,7 @@ const areToggledFilters = computed(
     Number(repliesToggle.value) +
     Number(phoneToggle.value) +
     Number(locationToggle.value) +
+    Number(hideUnsubscribedToggle.value) +
     Number(jobDetailsToggle.value),
 );
 
@@ -129,6 +132,16 @@ function onNameToggle(toggle?: boolean) {
   }
 }
 
+function onHideUnsubscribedToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    hideUnsubscribedToggle.value = toggle;
+  }
+
+  filters.value.consent_status.value = hideUnsubscribedToggle.value
+    ? ['legitimate_interest', 'opt_in']
+    : [];
+}
+
 function watchStatusToggle() {
   return watch(
     () => filters.value.status.value,
@@ -173,6 +186,55 @@ function watchLocationToggle() {
       locationToggle.value = newLocationValue?.value === true;
     },
   );
+}
+
+function watchHideUnsubscribedToggle() {
+  return watch(
+    () => filters.value.consent_status.value,
+    (newConsentValue) => {
+      if (!newConsentValue || newConsentValue.length === 0) {
+        hideUnsubscribedToggle.value = false;
+        return;
+      }
+
+      const set = new Set(newConsentValue);
+      hideUnsubscribedToggle.value =
+        newConsentValue.length === 2 &&
+        set.has('legitimate_interest') &&
+        set.has('opt_in') &&
+        !set.has('opt_out');
+    },
+    { deep: true },
+  );
+}
+
+function syncTogglesWithFilters() {
+  validToggle.value = checkValidStatus(filters.value.status.value);
+  repliesToggle.value =
+    filters.value.replied_conversations.constraints.length === 1 &&
+    filters.value.replied_conversations.constraints[0].value === 1 &&
+    filters.value.replied_conversations.constraints[0].matchMode === 'gte';
+  recentToggle.value =
+    filters.value.recency.constraints.length === 1 &&
+    filters.value.recency.constraints[0].value?.toLocaleDateString() ===
+      new Date(
+        new Date().setFullYear(
+          new Date().getFullYear() - MAX_YEARS_AGO_TO_FILTER,
+        ),
+      ).toLocaleDateString();
+  nameToggle.value = Boolean(filters.value.name.value);
+  phoneToggle.value = Boolean(filters.value.telephone.value);
+  locationToggle.value = Boolean(
+    filters.value.location.constraints?.[1]?.value,
+  );
+
+  const consentValues = filters.value.consent_status.value ?? [];
+  const consentSet = new Set(consentValues);
+  hideUnsubscribedToggle.value =
+    consentValues.length === 2 &&
+    consentSet.has('legitimate_interest') &&
+    consentSet.has('opt_in') &&
+    !consentSet.has('opt_out');
 }
 
 function registerFiltersAndStartWatchers() {
@@ -232,6 +294,7 @@ function registerFiltersAndStartWatchers() {
   watchRepliesToggle();
   watchRecencyToggle();
   watchLocationToggle();
+  watchHideUnsubscribedToggle();
 }
 
 function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
@@ -243,6 +306,7 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
       replies: toggles,
       telephone: toggles,
       location: toggles,
+      hideUnsubscribed: toggles,
     };
   }
 
@@ -252,13 +316,14 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
   onRepliesToggle(toggles.replies);
   onPhoneToggle(toggles.telephone);
   onLocationToggle(toggles.location);
+  onHideUnsubscribedToggle(toggles.hideUnsubscribed);
 }
 
 function clearFilter() {
   searchContactModel.value = '';
   jobDetailsToggle.value = false;
-  toggleFilters(false);
   $reset();
+  toggleFilters(DEFAULT_TOGGLES);
 }
 
 function filterByMiningId(miningId: string) {
@@ -267,6 +332,7 @@ function filterByMiningId(miningId: string) {
 
 function $reset() {
   filters.value = structuredClone(DEFAULT_FILTERS);
+  syncTogglesWithFilters();
 }
 
 export const useFiltersStore = defineStore('filters', () => {
@@ -283,6 +349,7 @@ export const useFiltersStore = defineStore('filters', () => {
     phoneToggle,
     locationToggle,
     jobDetailsToggle,
+    hideUnsubscribedToggle,
 
     areToggledFilters,
     isDefaultFilters,
@@ -293,6 +360,7 @@ export const useFiltersStore = defineStore('filters', () => {
     onNameToggle,
     onPhoneToggle,
     onLocationToggle,
+    onHideUnsubscribedToggle,
 
     toggleFilters,
     clearFilter,
