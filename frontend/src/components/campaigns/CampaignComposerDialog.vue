@@ -365,6 +365,7 @@ const dialogHeader = computed(() =>
 
 const availableSenderEmails = ref<string[]>([]);
 const fallbackSenderEmail = ref('');
+const runtimeConfig = useRuntimeConfig();
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
 const DEFAULT_PROJECT_IMAGE_SRC =
@@ -397,6 +398,7 @@ const DEFAULT_BODY_TEXT = () => {
 };
 
 const DEFAULT_FOOTER_TEXT = () =>
+  String(runtimeConfig.public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
   t('default_footer_template', {
     ownerEmailToken: '{{ownerEmail}}',
     unsubscribeToken: '{{unsubscribeUrl}}',
