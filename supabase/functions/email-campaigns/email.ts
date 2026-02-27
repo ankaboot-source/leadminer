@@ -1,4 +1,8 @@
 import nodemailer from "nodemailer";
+import {
+  inlineDataImagesAsCid,
+  type InlineImageAttachment,
+} from "../_shared/inline-images.ts";
 
 const host = Deno.env.get("SMTP_HOST");
 const port = Deno.env.get("SMTP_PORT");
@@ -10,6 +14,7 @@ type SendEmailOptions = {
   from?: string;
   replyTo?: string;
   text?: string;
+  attachments?: InlineImageAttachment[];
   transport?: {
     host: string;
     port: number;
@@ -35,7 +40,9 @@ function getDefaultTransport() {
   };
 }
 
-export async function verifyTransport(transport?: SendEmailOptions["transport"]) {
+export async function verifyTransport(
+  transport?: SendEmailOptions["transport"],
+) {
   const transporter = nodemailer.createTransport(
     transport ?? getDefaultTransport(),
   );
@@ -51,14 +58,20 @@ export async function sendEmail(
   const transporter = nodemailer.createTransport(
     options.transport ?? getDefaultTransport(),
   );
+  const inlinePayload = inlineDataImagesAsCid(html);
+  const attachments = [
+    ...(options.attachments ?? []),
+    ...inlinePayload.attachments,
+  ];
 
   const info = await transporter.sendMail({
     from: options.from ?? defaultFrom,
     to,
     subject,
-    html,
+    html: inlinePayload.html,
     text: options.text,
     replyTo: options.replyTo,
+    attachments,
   });
 
   console.log("Email sent:", { to, messageId: info.messageId });
