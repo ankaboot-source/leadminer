@@ -26,7 +26,6 @@ BEGIN
 END;
 $$;
 
-
 SELECT cron.schedule(
   'passive-cron-job',
   '0 2 * * *', -- At 2:00 AM
