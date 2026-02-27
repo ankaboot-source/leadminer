@@ -6,10 +6,10 @@ import { resolvePublicBaseUrl } from "./url.ts";
 
 Deno.test("resolvePublicBaseUrl prefers explicit public URL", () => {
   const value = resolvePublicBaseUrl(
-    "https://db-qa.leadminer.io/",
+    "https://db-qa.domain.io/",
     "http://kong:8000",
   );
-  assertEquals(value, "https://db-qa.leadminer.io");
+  assertEquals(value, "https://db-qa.domain.io");
 });
 
 Deno.test("resolvePublicBaseUrl falls back to secondary URL", () => {
@@ -18,5 +18,5 @@ Deno.test("resolvePublicBaseUrl falls back to secondary URL", () => {
 });
 
 Deno.test("resolvePublicBaseUrl throws when both values are missing", () => {
-  assertThrows(() => resolvePublicBaseUrl(undefined, undefined));
+  assertThrows(() => resolvePublicBaseUrl());
 });
