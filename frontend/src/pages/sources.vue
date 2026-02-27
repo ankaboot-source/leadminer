@@ -92,6 +92,13 @@
                   <span>{{
                     source.passive_mining ? t('enabled') : t('disabled')
                   }}</span>
+                  <ToggleSwitch
+                    v-model="source.passive_mining"
+                    @update:model-value="
+                      (val: boolean) =>
+                        togglePassiveMining(source.email, source.type, val)
+                    "
+                  />
                 </div>
               </div>
 
@@ -290,6 +297,14 @@ async function confirmStopMining() {
   } finally {
     isStoppingMining.value = false;
   }
+}
+
+async function togglePassiveMining(
+  email: string,
+  type: string,
+  value: boolean,
+) {
+  await updatePassiveMining(email, type, value);
 }
 
 onMounted(async () => {

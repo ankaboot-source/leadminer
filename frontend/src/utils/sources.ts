@@ -31,6 +31,7 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   }
 
   const { data: miningSources, error } = await supabase
+    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('mining_sources')
     .select('*');
@@ -41,6 +42,7 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   }
 
   const { data: overviewData, error: overviewError } = await supabase
+    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('get_mining_source_overview', { user_id: user.value.sub });
 
@@ -71,4 +73,23 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   );
 
   return sourcesWithStats;
+}
+
+export async function updatePassiveMining(
+  email: string,
+  type: string,
+  value: boolean,
+): Promise<void> {
+  const { error } = await useSupabaseClient()
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
+    .from('mining_sources')
+    .update({ passive_mining: value })
+    .eq('email', email)
+    .eq('type', type);
+
+  if (error) {
+    console.error('Error updating passive mining status:', error.message);
+    throw error;
+  }
 }
