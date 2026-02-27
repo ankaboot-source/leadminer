@@ -14,6 +14,9 @@ export interface MiningSource {
   email: string;
   isValid?: boolean;
   passive_mining: boolean;
+  totalContacts?: number;
+  totalFromLastMining?: number;
+  lastMiningDate?: string;
 }
 
 export interface MiningProgress {

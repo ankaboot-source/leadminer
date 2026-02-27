@@ -18,22 +18,21 @@
         </div>
       </template>
       <template #list="slotProps">
-        <div class="grid gap-3">
+        <div class="grid gap-2">
           <div
             v-for="source in slotProps.items"
             :key="source.email"
             class="border border-surface-200 rounded-md p-4"
           >
             <div class="flex items-center justify-between gap-2">
-              <div>
+              <div class="flex items-center gap-2">
                 <div class="font-medium">{{ source.email }}</div>
-                <div class="text-sm text-surface-500 flex items-center gap-2">
-                  <i
-                    :class="getIcon(source.type)"
-                    class="text-secondary text-sm"
-                  ></i>
-                  <span>{{ source.type }}</span>
-                </div>
+                <Tag
+                  :value="
+                    source.isValid ? t('connected') : t('credential_expired')
+                  "
+                  :severity="source.isValid ? 'success' : 'warn'"
+                />
               </div>
               <div class="flex items-center gap-2">
                 <Button
@@ -42,7 +41,7 @@
                   outlined
                   severity="warning"
                   icon="pi pi-stop"
-                  :label="t('stop_extraction')"
+                  :label="t('stop_mining')"
                   :loading="isStoppingMining"
                   @click="confirmStopMining"
                 />
@@ -60,16 +59,14 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('email') }}</div>
-                <div class="font-medium truncate">{{ source.email }}</div>
-              </div>
-
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('type') }}</div>
                 <div class="flex items-center gap-2 font-medium">
-                  <i :class="getIcon(source.type)" class="text-secondary"></i>
+                  <i
+                    :class="getIcon(source.type)"
+                    class="text-secondary size-xs"
+                  ></i>
                   <span>{{ source.type }}</span>
                 </div>
               </div>
@@ -99,14 +96,24 @@
               </div>
 
               <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('credentials') }}</div>
-                <div class="flex items-center gap-2">
-                  <Tag
-                    :value="
-                      source.isValid ? t('valid') : t('expired_credentials')
-                    "
-                    :severity="source.isValid ? 'success' : 'warn'"
-                  />
+                <div class="text-surface-500">{{ t('total_contacts') }}</div>
+                <div class="font-medium">{{ source.totalContacts || 0 }}</div>
+              </div>
+
+              <div class="p-2 rounded bg-surface-50">
+                <div class="text-surface-500">{{ t('last_mining') }}</div>
+                <div class="font-medium">
+                  {{
+                    source.lastMiningDate
+                      ? formatDate(source.lastMiningDate)
+                      : '-'
+                  }}
+                </div>
+                <div
+                  v-if="source.totalFromLastMining"
+                  class="text-xs text-surface-500"
+                >
+                  {{ source.totalFromLastMining }} {{ t('contacts') }}
                 </div>
               </div>
             </div>
@@ -115,24 +122,42 @@
               v-if="isActiveMiningSource(source)"
               class="mt-4 p-3 rounded bg-surface-50 border border-primary/20"
             >
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
-                  <span class="relative flex h-3 w-3">
+                  <span class="relative flex h-2 w-2">
                     <span
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
                     ></span>
                     <span
-                      class="relative inline-flex h-3 w-3 rounded-full bg-primary"
+                      class="relative inline-flex h-2 w-2 rounded-full bg-primary"
                     ></span>
                   </span>
-                  <span class="font-medium text-primary">{{
+                  <span class="text-sm font-medium text-primary">{{
                     t('mining_in_progress')
                   }}</span>
                 </div>
-                <div class="text-sm text-surface-600">
-                  {{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }} |
-                  {{ t('emails_extracted') }}:
-                  {{ $leadminer.extractedEmails }}
+                <div class="flex items-center gap-2 text-sm text-surface-600">
+                  <span
+                    >{{ t('emails_scanned') }}:
+                    {{ $leadminer.scannedEmails }}</span
+                  >
+                  <span class="text-surface-400">|</span>
+                  <span
+                    >{{ t('emails_extracted') }}:
+                    {{ $leadminer.extractedEmails }}</span
+                  >
+                  <span class="text-surface-400">|</span>
+                  <span
+                    >{{ t('emails_cleaned') }}:
+                    {{ $leadminer.verifiedContacts }}</span
+                  >
+                  <Button
+                    size="small"
+                    severity="secondary"
+                    :label="t('view_mining')"
+                    class="ml-2"
+                    @click="navigateTo('/mine')"
+                  />
                 </div>
               </div>
             </div>
@@ -181,13 +206,6 @@ const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
 const isStoppingMining = ref(false);
 
-function isActiveMiningSource(source: MiningSource): boolean {
-  return (
-    Boolean($leadminer.activeMiningSource?.email === source.email &&
-    $leadminer.miningTask)
-  );
-}
-
 function getIcon(type: string) {
   switch (type) {
     case 'google':
@@ -197,6 +215,17 @@ function getIcon(type: string) {
     default:
       return 'pi pi-inbox';
   }
+}
+
+function isActiveMiningSource(source: MiningSource): boolean {
+  return Boolean(
+    $leadminer.activeMiningSource?.email === source.email &&
+      $leadminer.miningTask,
+  );
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString();
 }
 
 function openDeleteDialog(source: MiningSource) {
@@ -279,8 +308,8 @@ onMounted(async () => {
     "passive_mining": "Passive mining",
     "credentials": "Credentials",
     "status": "Status",
-    "valid": "Valid",
-    "expired_credentials": "Expired credentials",
+    "connected": "Connected",
+    "credential_expired": "Credential expired",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "delete_source": "Delete",
@@ -289,13 +318,18 @@ onMounted(async () => {
     "source_deleted": "Source deleted",
     "source_deleted_detail": "The mining source has been permanently deleted.",
     "delete_source_failed": "Unable to delete source",
-    "stop_extraction": "Stop extraction",
+    "stop_mining": "Stop mining",
+    "view_mining": "View mining",
     "mining_in_progress": "Mining in progress",
     "emails_scanned": "Scanned",
     "emails_extracted": "Extracted",
+    "emails_cleaned": "Cleaned",
     "mining_stopped": "Mining stopped",
     "mining_stopped_detail": "The mining process has been stopped.",
-    "stop_mining_failed": "Unable to stop mining"
+    "stop_mining_failed": "Unable to stop mining",
+    "total_contacts": "Total contacts",
+    "last_mining": "Last mining",
+    "contacts": "contacts"
   },
   "fr": {
     "sources": "Sources",
@@ -305,8 +339,8 @@ onMounted(async () => {
     "passive_mining": "Extraction passive",
     "credentials": "Identifiants",
     "status": "Statut",
-    "valid": "Valide",
-    "expired_credentials": "Identifiants expirés",
+    "connected": "Connecté",
+    "credential_expired": "Identifiant expiré",
     "enabled": "Activé",
     "disabled": "Désactivé",
     "delete_source": "Supprimer",
@@ -315,13 +349,18 @@ onMounted(async () => {
     "source_deleted": "Source supprimée",
     "source_deleted_detail": "La source de minage a été supprimée définitivement.",
     "delete_source_failed": "Impossible de supprimer la source",
-    "stop_extraction": "Arrêter l'extraction",
+    "stop_mining": "Arrêter le minage",
+    "view_mining": "Voir le minage",
     "mining_in_progress": "Extraction en cours",
     "emails_scanned": "Scannés",
     "emails_extracted": "Extracts",
+    "emails_cleaned": "Nettoyés",
     "mining_stopped": "Extraction stoppée",
     "mining_stopped_detail": "Le processus d'extraction a été stoppé.",
-    "stop_mining_failed": "Impossible de stopper l'extraction"
+    "stop_mining_failed": "Impossible de stopper le minage",
+    "total_contacts": "Total contacts",
+    "last_mining": "Dernier minage",
+    "contacts": "contacts"
   }
 }
 </i18n>
