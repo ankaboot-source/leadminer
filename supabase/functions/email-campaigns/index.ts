@@ -4,7 +4,6 @@ import corsHeaders from "../_shared/cors.ts";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
 import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
-import { AuthUser } from "https://esm.sh/@supabase/supabase-js@2.45.3/dist/module/index.d.ts";
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
@@ -113,7 +112,6 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   // Accept service role key directly (internal calls)
   if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
     await next();
-    return;
   }
 
   // Validate user JWT
@@ -284,18 +282,14 @@ async function triggerCampaignProcessorFromEdge() {
     console.log('Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
     return;
   }
-  try {
-    await fetch(`${SUPABASE_URL}/functions/v1/email-campaigns/campaigns/process`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "apikey": SUPABASE_SERVICE_ROLE_KEY
-      }
-    });
-  } catch (error) {
-    throw error
-  }
+  await fetch(`${SUPABASE_URL}/functions/v1/email-campaigns/campaigns/process`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "apikey": SUPABASE_SERVICE_ROLE_KEY
+    }
+  });
 }
 
 function defaultFooterTemplate(ownerEmail: string): string {
@@ -1126,7 +1120,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     }, 500);
   }
 
-  void triggerCampaignProcessorFromEdge().catch((error) => {
+  triggerCampaignProcessorFromEdge().catch((error) => {
     console.log("error triggered")
     console.log('error:', error)
     // Cron remains as fallback if immediate trigger fails.
