@@ -2,7 +2,7 @@ import PQueue from "p-queue";
 import { createSupabaseAdmin } from "../../_shared/supabase.ts";
 import weeklyMiningReportEmail from "../email-templates/weekly-report.ts";
 import { getMiningStats, getUserEmail, getUserLanguage } from "../utils/db.ts";
-import { sendEmail } from "../utils/email.ts";
+import { sendEmail } from "../../_shared/mailing/email.ts";
 
 interface ProcessingResult {
   userId: string;
@@ -65,7 +65,8 @@ async function aggregateMiningStats(miningIds: string[]): Promise<MiningTaskStat
  */
 async function getPassiveMiningIds(weekStart: Date, weekEnd: Date): Promise<PassiveMiningResult[]> {
   const { data, error } = await supabase
-    .rpc('private.get_passive_mining_ids', {
+    .schema('private')
+    .rpc('get_passive_mining_ids', {
       week_start: weekStart,
       week_end: weekEnd
     });
