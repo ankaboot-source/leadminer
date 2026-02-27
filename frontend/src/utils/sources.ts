@@ -1,21 +1,17 @@
 import type { MiningSource } from '~/types/mining';
-/**
- * Updates the validity of mining sources based on the provided active mining source.
- * @param miningSources - An array of mining sources.
- * @param activeMiningSource - The active mining source to be updated.
- * @param isValid - The validity status to set for the mining source.
- * @returns An updated array of mining sources with validity changes.
- */
+
+interface MiningSourceOverview {
+  source_email: string;
+  total_contacts: number;
+  last_mining_date: string;
+  total_from_last_mining: number;
+}
+
 export function updateMiningSourcesValidity(
   miningSources: MiningSource[],
   activeMiningSource: MiningSource,
   isValid: boolean,
 ) {
-  /**
-   * Updates the validity of mining sources based on the provided active mining source.
-   * @param {MiningSource} current - The current mining source being processed.
-   * @returns {MiningSource} The updated mining source.
-   */
   function updateValidity(current: MiningSource): MiningSource {
     if (current.email === activeMiningSource?.email) {
       current.isValid = isValid;
@@ -27,8 +23,14 @@ export function updateMiningSourcesValidity(
 }
 
 export async function getMiningSources(): Promise<MiningSource[]> {
-  const { data, error } = await useSupabaseClient()
-    // @ts-expect-error: Issue with nuxt/supabase
+  const supabase = useSupabaseClient();
+  const user = useSupabaseUser();
+
+  if (!user.value) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data: miningSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
     .select('*');
@@ -38,5 +40,35 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw error;
   }
 
-  return data;
+  const { data: overviewData, error: overviewError } = await supabase
+    .schema('private')
+    .rpc('get_mining_source_overview', { user_id: user.value.sub });
+
+  if (overviewError) {
+    console.error(
+      'Error fetching mining source overview:',
+      overviewError.message,
+    );
+  }
+
+  const overviewMap = new Map<string, MiningSourceOverview>();
+  if (overviewData) {
+    for (const row of overviewData as MiningSourceOverview[]) {
+      overviewMap.set(row.source_email, row);
+    }
+  }
+
+  const sourcesWithStats: MiningSource[] = (miningSources || []).map(
+    (source) => {
+      const overview = overviewMap.get(source.email);
+      return {
+        ...source,
+        totalContacts: overview?.total_contacts ?? 0,
+        totalFromLastMining: overview?.total_from_last_mining ?? 0,
+        lastMiningDate: overview?.last_mining_date ?? undefined,
+      };
+    },
+  );
+
+  return sourcesWithStats;
 }
