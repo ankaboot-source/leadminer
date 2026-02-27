@@ -3,14 +3,18 @@ import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
 import corsHeaders from "../_shared/cors.ts";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
 import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.ts";
+import { resolvePublicBaseUrl } from "../_shared/url.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const LEADMINER_PROJECT_URL = Deno.env.get("LEADMINER_PROJECT_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const LEADMINER_HASH_SECRET = Deno.env.get("LEADMINER_HASH_SECRET") as string;
+const CAMPAIGN_COMPLIANCE_FOOTER = (Deno.env.get("campaign_compliance_footer") || Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") || "").trim();
+const PUBLIC_CAMPAIGN_BASE_URL = resolvePublicBaseUrl(LEADMINER_PROJECT_URL || undefined, SUPABASE_URL || undefined);
 const SMTP_USER = (Deno.env.get("SMTP_USER") || "").trim().toLowerCase();
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
@@ -274,7 +278,7 @@ function toHtmlFromText(template: string): string {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  return `${SUPABASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
+  return `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
 }
 
 async function triggerCampaignProcessorFromEdge() {
@@ -293,6 +297,9 @@ async function triggerCampaignProcessorFromEdge() {
 }
 
 function defaultFooterTemplate(ownerEmail: string): string {
+  if (CAMPAIGN_COMPLIANCE_FOOTER) {
+    return CAMPAIGN_COMPLIANCE_FOOTER;
+  }
   return `${COMPLIANCE_SEPARATOR}\n\nYou received this email because ${ownerEmail} used leadminer.io to extract contacts from their mailbox. Try https://leadminer.io yourself.\n\n${UNSUBSCRIBE_TEXT_SUFFIX}: {{unsubscribeUrl}}`;
 }
 
@@ -742,13 +749,13 @@ async function injectTrackers(
       }
 
       const token = await recordClickLink(supabaseAdmin, campaignId, recipientId, originalUrl);
-      const trackedUrl = `${SUPABASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
       updatedHtml = updatedHtml.replace(`href="${originalUrl}"`, `href="${trackedUrl}"`);
     }
   }
 
   if (trackOpen) {
-    const pixelUrl = `${SUPABASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
     updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
