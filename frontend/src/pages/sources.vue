@@ -16,19 +16,17 @@
         </Column>
         <Column field="passive_mining" :header="t('passive_mining')">
           <template #body="slotProps">
-            <div v-if="slotProps.data.passive_mining">
-              <span class="relative flex h-3 w-3">
-                <span
-                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-                ></span>
-                <span
-                  class="relative inline-flex h-3 w-3 rounded-full bg-green-500"
-                ></span>
-              </span>
-            </div>
-            <div v-else>
-              <span class="inline-flex h-3 w-3 rounded-full bg-gray-500"></span>
-            </div>
+            <ToggleSwitch
+              v-model="slotProps.data.passive_mining"
+              @update:model-value="
+                (val: boolean) =>
+                  togglePassiveMining(
+                    slotProps.data.email,
+                    slotProps.data.type,
+                    val,
+                  )
+              "
+            />
           </template>
         </Column>
       </DataTable>
@@ -41,6 +39,14 @@ const $leadminer = useLeadminerStore();
 const { t } = useI18n({
   useScope: 'local',
 });
+
+async function togglePassiveMining(
+  email: string,
+  type: string,
+  value: boolean,
+) {
+  await updatePassiveMining(email, type, value);
+}
 
 function getIcon(type: string) {
   switch (type) {
