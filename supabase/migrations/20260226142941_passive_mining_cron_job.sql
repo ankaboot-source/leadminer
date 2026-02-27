@@ -28,6 +28,6 @@ $$;
 
 SELECT cron.schedule(
   'passive-cron-job',
-  '0 2 * * *', -- At 2:00 AM
+  '0 2 * * *', -- At 02:00 AM
   $$ SELECT invoke_edge_function('passive-mining'); $$
 );
