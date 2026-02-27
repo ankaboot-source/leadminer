@@ -134,10 +134,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
   async function fetchMiningSources() {
-    miningSources.value = (await getMiningSources()).map((source) => ({
-      isValid: true,
-      ...source
-    })) ?? [];
+    miningSources.value =
+      (await getMiningSources()).map((source) => ({
+        isValid: true,
+        ...source,
+      })) ?? [];
   }
 
   async function fetchInbox() {
