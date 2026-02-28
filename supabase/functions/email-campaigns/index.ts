@@ -6,8 +6,13 @@ import {
   createSupabaseAdmin,
   createSupabaseClient,
 } from "../_shared/supabase.ts";
+import { normalizeEmail } from "../_shared/email.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
+import {
+  getSenderCredentialIssue,
+  listUniqueSenderSources,
+} from "./sender-options.ts";
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
@@ -25,7 +30,7 @@ const CAMPAIGN_COMPLIANCE_FOOTER = (
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
-const SMTP_USER = (Deno.env.get("SMTP_USER") || "").trim().toLowerCase();
+const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
@@ -564,34 +569,58 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   const transportBySender: Record<string, Transport | null> = {
     [fallbackSenderEmail]: null,
   };
-  const sources = await getUserMiningSources(authorization);
-  const matchingSource = sources.find((source) => source.email === userEmail);
+  const sources = listUniqueSenderSources(
+    await getUserMiningSources(authorization),
+  );
 
-  if (!matchingSource) {
-    options.push({
-      email: userEmail,
-      available: false,
-      reason: "No matching mining source credentials",
-    });
-  } else {
+  for (const source of sources) {
+    const credentialIssue = getSenderCredentialIssue(source);
+    if (credentialIssue) {
+      options.push({
+        email: source.email,
+        available: false,
+        reason: credentialIssue,
+      });
+      continue;
+    }
+
     try {
       const transport = await buildUserTransport(
-        userEmail,
-        matchingSource.credentials,
+        source.email,
+        source.credentials,
       );
       await verifyTransport(transport);
-      options.push({ email: userEmail, available: true });
-      transportBySender[userEmail] = transport;
+      options.push({ email: source.email, available: true });
+      transportBySender[source.email] = transport;
     } catch (error) {
       options.push({
-        email: userEmail,
+        email: source.email,
         available: false,
         reason: extractErrorMessage(error),
       });
     }
   }
 
-  if (!options.some((option) => option.email === fallbackSenderEmail)) {
+  const normalizedUserEmail = normalizeEmail(userEmail);
+  if (
+    !options.some(
+      (option) => normalizeEmail(option.email) === normalizedUserEmail,
+    )
+  ) {
+    options.push({
+      email: userEmail,
+      available: false,
+      reason: "No matching mining source credentials",
+    });
+  }
+
+  const fallbackOption = options.find(
+    (option) => option.email === fallbackSenderEmail,
+  );
+  if (fallbackOption) {
+    fallbackOption.available = true;
+    delete fallbackOption.reason;
+  } else {
     options.push({ email: fallbackSenderEmail, available: true });
   }
 
@@ -603,8 +632,11 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
 }
 
 function ensureAllowedSender(senderEmail: string, options: SenderOption[]) {
+  const normalizedSenderEmail = normalizeEmail(senderEmail);
   return options.some(
-    (option) => option.email === senderEmail && option.available,
+    (option) =>
+      normalizeEmail(option.email) === normalizedSenderEmail &&
+      option.available,
   );
 }
 
