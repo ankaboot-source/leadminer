@@ -156,6 +156,7 @@
 </template>
 
 <script setup lang="ts">
+import { FetchError } from 'ofetch';
 import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
 import Papa from 'papaparse';
@@ -174,6 +175,39 @@ const { t: $t } = useI18n({
 });
 const $leadminerStore = useLeadminerStore();
 const $stepper = useMiningStepper();
+const $supabase = useSupabaseClient();
+const $consentSidebar = useMiningConsentSidebar();
+const $toast = useToast();
+
+async function handleAuthErrorAndRetry(
+  retryFn: () => Promise<void>,
+  sourceEmail: string,
+  sourceTypeVal: string,
+) {
+  try {
+    const { error: refreshError } = await $supabase.auth.refreshSession();
+    if (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+    }
+    await retryFn();
+  } catch (error) {
+    if (error instanceof FetchError && error.response?.status === 401) {
+      $consentSidebar.show(
+        sourceTypeVal as 'google' | 'microsoft' | 'imap',
+        sourceEmail,
+        '/mine',
+      );
+    } else {
+      console.error('Mining error:', error);
+      $toast.add({
+        severity: 'error',
+        summary: $t('common.start_mining'),
+        detail: t('mining_issue'),
+        life: 3000,
+      });
+    }
+  }
+}
 
 const dialog = ref();
 const visible = ref(false);
@@ -490,9 +524,18 @@ async function startMining() {
     contacts: parsedDataWithMappedHeaders,
   };
 
-  await $leadminerStore.startMining(SOURCE);
-  $stepper.next();
-  visible.value = false;
+  const activeSource = $leadminerStore.activeMiningSource;
+  if (!activeSource) return;
+
+  await handleAuthErrorAndRetry(
+    async () => {
+      await $leadminerStore.startMining(SOURCE);
+      $stepper.next();
+      visible.value = false;
+    },
+    activeSource.email,
+    activeSource.type,
+  );
 }
 </script>
 <i18n lang="json">

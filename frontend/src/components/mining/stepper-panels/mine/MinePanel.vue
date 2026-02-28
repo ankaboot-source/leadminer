@@ -132,6 +132,37 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
+const $supabase = useSupabaseClient();
+
+async function handleAuthErrorAndRetry(
+  retryFn: () => Promise<void>,
+  sourceEmail: string,
+  sourceTypeVal: string,
+) {
+  try {
+    const { error: refreshError } = await $supabase.auth.refreshSession();
+    if (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+    }
+    await retryFn();
+  } catch (error) {
+    if (error instanceof FetchError && error.response?.status === 401) {
+      $consentSidebar.show(
+        sourceTypeVal as 'google' | 'microsoft' | 'imap',
+        sourceEmail,
+        '/mine',
+      );
+    } else {
+      console.error('Mining error:', error);
+      $toast.add({
+        severity: 'error',
+        summary: $t('common.start_mining'),
+        detail: t('mining_issue'),
+        life: 3000,
+      });
+    }
+  }
+}
 
 function closeAutoExtractDialog() {
   autoExtractDialog.value = false;
@@ -318,38 +349,33 @@ async function startMiningBoxes() {
     return;
   }
   canceled.value = false;
-  try {
-    await $leadminerStore.startMining(sourceType.value);
-  } catch (error) {
-    if (
-      error instanceof FetchError &&
-      error.response?.status === 401 &&
-      $leadminerStore.activeMiningSource
-    ) {
-      $consentSidebar.show(
-        $leadminerStore.activeMiningSource.type,
-        $leadminerStore.activeMiningSource.email,
-        '/mine',
-      );
-    } else {
-      $toast.add({
-        severity: 'error',
-        summary: $t('common.start_mining'),
-        detail: t('mining_issue'),
-        life: 3000,
-      });
-    }
-  }
+  if (!$leadminerStore.activeMiningSource) return;
+  await handleAuthErrorAndRetry(
+    () => $leadminerStore.startMining(sourceType.value),
+    $leadminerStore.activeMiningSource.email,
+    $leadminerStore.activeMiningSource.type,
+  );
 }
 
 async function startMiningFile() {
-  await $leadminerStore.startMining(sourceType.value);
+  if (!$leadminerStore.activeMiningSource) return;
+  await handleAuthErrorAndRetry(
+    () => $leadminerStore.startMining(sourceType.value),
+    $leadminerStore.activeMiningSource.email,
+    $leadminerStore.activeMiningSource.type,
+  );
 }
 
 async function startMiningPst() {
-  await $leadminerStore.startMining(
-    sourceType.value,
-    $leadminerStore.pstFilePath,
+  if (!$leadminerStore.activeMiningSource) return;
+  await handleAuthErrorAndRetry(
+    () =>
+      $leadminerStore.startMining(
+        sourceType.value,
+        $leadminerStore.pstFilePath,
+      ),
+    $leadminerStore.activeMiningSource.email,
+    $leadminerStore.activeMiningSource.type,
   );
 }
 
