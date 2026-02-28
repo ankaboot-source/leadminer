@@ -13,7 +13,15 @@
       />
     </div>
 
+    <div
+      v-if="$campaignsStore.isLoading && !$campaignsStore.campaigns.length"
+      class="grid gap-3"
+    >
+      <CampaignsSkeleton />
+    </div>
+
     <DataView
+      v-else
       :value="$campaignsStore.campaigns"
       data-key="id"
       :paginator="true"
