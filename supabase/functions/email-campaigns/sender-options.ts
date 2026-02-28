@@ -58,6 +58,9 @@ export async function refreshOAuthToken(
     });
 
     if (!response.ok) {
+      const status = response.status;
+      const body = await response.text();
+      console.error(`OAuth token refresh failed: ${status} - ${body}`);
       return null;
     }
 
@@ -91,7 +94,11 @@ export function listUniqueSenderSources(
   const byEmail = new Map<string, MiningSourceCredential>();
   for (const source of sources) {
     const key = normalizeEmail(source.email);
-    if (!key || byEmail.has(key)) continue;
+    if (!key) {
+      console.warn("Skipping source with invalid email:", source.email);
+      continue;
+    }
+    if (byEmail.has(key)) continue;
     byEmail.set(key, source);
   }
   return [...byEmail.values()];
