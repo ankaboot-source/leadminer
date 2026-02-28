@@ -573,7 +573,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   };
   const supabaseAdmin = createSupabaseAdmin();
 
-  let sources = listUniqueSenderSources(
+  const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
   );
 
@@ -581,7 +581,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     const source = sources[i];
     const credentialIssue = getSenderCredentialIssue(source);
 
-    if (credentialIssue && credentialIssue.includes("expired")) {
+    if (credentialIssue?.includes("expired")) {
       try {
         const refreshed = await refreshOAuthToken(source);
         if (refreshed) {

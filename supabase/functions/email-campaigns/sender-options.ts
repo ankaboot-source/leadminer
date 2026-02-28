@@ -79,7 +79,7 @@ export async function refreshOAuthToken(
         ...source.credentials,
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || refreshToken,
-        expiresAt: expiresAt,
+        expiresAt,
       },
     };
   } catch (error) {
