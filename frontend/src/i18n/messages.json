@@ -136,7 +136,10 @@
       "toast_canceled_title": "Mining canceled",
       "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue.",
       "extract_signatures_option": "Extract contact details from signatures",
-      "extract_signatures_sub": "( this may take more time )"
+      "extract_signatures_sub": "( this may take more time )",
+      "contacts_got_rights_title": "Your contacts have rights",
+      "contacts_got_rights_detail": "You need consent or legitimate interest to contact them.",
+      "learn_more_about_rights": "Learn more about your contacts' rights"
     },
     "error": {
       "default": {
@@ -287,7 +290,10 @@
       "toast_canceled_title": "Extraction annulée",
       "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction.",
       "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
-      "extract_signatures_sub": "(l'extraction prendra plus de temps)"
+      "extract_signatures_sub": "(l'extraction prendra plus de temps)",
+      "contacts_got_rights_title": "Vos contacts ont des droits",
+      "contacts_got_rights_detail": "Vous avez besoin du consentement ou d'un intérêt légitime pour les contacter.",
+      "learn_more_about_rights": "En savoir plus sur les droits de vos contacts"
     },
     "error": {
       "default": {
