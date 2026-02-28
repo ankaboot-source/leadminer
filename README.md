@@ -18,10 +18,11 @@
 
 ## ✨ Features
 
-- ⛏️📧 Extract contacts from your emails
+- ⛏️📧 Extract contacts from your mailbox
 - 🧹💌 Clean your email list
-- 💎✒️ Enrich contacts details with signature extraction
-- 📤📇 Export your contacts to CSV, VCards or Google Contacts
+- 💎✒️ Enrich contacts with signature extraction
+- 📤📇 Export to CSV, VCards or Google Contacts
+- 📧🚀 Send email campaigns to your contacts using your own email with analytics
 
 ## 📑 Table of contents
 
@@ -146,10 +147,11 @@ External services for email verification and LLM-based signature extraction.
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 - **[OpenRouter](https://openrouter.ai/):** Used for LLM-powered email signature extraction.  
-  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
+   Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
 
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
-</details>
+
+  </details>
 
 <strong style="display: inline-block;" id="launch-app">
 7. Launch the app:
