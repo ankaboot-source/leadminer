@@ -191,6 +191,10 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function requireFallbackSenderEmail() {
   if (!SMTP_USER) {
     throw new Error("SMTP_USER is not configured");
@@ -895,7 +899,8 @@ async function injectTrackers(
   let updatedHtml = html;
 
   if (trackClick) {
-    const hrefRegex = /href\s*=\s*"([^"]+)"/g;
+    // Match both href="..." and href=3D"..." (quoted-printable encoded)
+    const hrefRegex = /href\s*=\s*(?:3D\s*)?["']([^"']+)["']/gi;
     const matches = [...updatedHtml.matchAll(hrefRegex)];
 
     for (const match of matches) {
@@ -911,8 +916,13 @@ async function injectTrackers(
         originalUrl,
       );
       const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+
+      // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
-        `href="${originalUrl}"`,
+        new RegExp(
+          `href\\s*=\\s*(?:3D\\s*)?["']${escapeRegExp(originalUrl)}["']`,
+          "gi",
+        ),
         `href="${trackedUrl}"`,
       );
     }
