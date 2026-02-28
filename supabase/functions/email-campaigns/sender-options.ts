@@ -44,6 +44,11 @@ export async function refreshOAuthToken(
     grant_type: "refresh_token",
   });
 
+  const expiresAtInput = Number(source.credentials.expiresAt);
+  if (!Number.isFinite(expiresAtInput) || expiresAtInput <= 0) {
+    console.warn("Missing or invalid expiresAt in source credentials");
+  }
+
   try {
     const response = await fetch(tokenUrl, {
       method: "POST",
@@ -73,7 +78,8 @@ export async function refreshOAuthToken(
         expiresAt: expiresAt,
       },
     };
-  } catch {
+  } catch (error) {
+    console.error("Failed to refresh OAuth token:", error);
     return null;
   }
 }
