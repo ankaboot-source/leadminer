@@ -243,10 +243,45 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <Checkbox v-model="form.trackClick" binary input-id="track-click" />
-            <label for="track-click">{{ t('track_click') }}</label>
+            <Checkbox
+              v-model="form.trackClick"
+              binary
+              input-id="track-click"
+              :disabled="form.plainTextOnly"
+            />
+            <label
+              for="track-click"
+              :class="{ 'opacity-50': form.plainTextOnly }"
+              >{{ t('track_click') }}</label
+            >
             <i
-              v-tooltip.top="t('track_click_help')"
+              v-tooltip.top="
+                form.plainTextOnly
+                  ? t('track_disabled_plain_text')
+                  : t('track_click_help')
+              "
+              class="pi pi-info-circle text-xs text-surface-500"
+            />
+          </div>
+
+          <div class="flex items-center gap-2 md:col-span-2">
+            <Checkbox
+              v-model="form.trackOpen"
+              binary
+              input-id="track-open"
+              :disabled="form.plainTextOnly"
+            />
+            <label
+              for="track-open"
+              :class="{ 'opacity-50': form.plainTextOnly }"
+              >{{ t('track_open') }}</label
+            >
+            <i
+              v-tooltip.top="
+                form.plainTextOnly
+                  ? t('track_disabled_plain_text')
+                  : t('track_open_help')
+              "
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </div>
@@ -1101,6 +1136,8 @@ watch(
   (isPlainTextOnly) => {
     if (isPlainTextOnly) {
       form.bodyTextTemplate = normalizeBodyText();
+      form.trackClick = false;
+      form.trackOpen = false;
     }
   },
 );
@@ -1177,6 +1214,7 @@ watch(
     "track_open_help": "Adds a tracking pixel to measure opens.",
     "track_click": "Track clicking",
     "track_click_help": "Converts links into tracked links for click analytics.",
+    "track_disabled_plain_text": "Disabled for plain text emails",
     "plain_text_only": "Send pure text (no HTML)",
     "plain_text_only_help": "Disables rich formatting and sends a plain text email.",
     "footer_template": "Compliance footer",
@@ -1269,6 +1307,7 @@ watch(
     "track_open_help": "Ajoute un pixel de suivi pour mesurer les ouvertures.",
     "track_click": "Suivre les clics",
     "track_click_help": "Transforme les liens pour mesurer les clics.",
+    "track_disabled_plain_text": "Désactivé pour les emails texte brut",
     "plain_text_only": "Envoyer en texte brut (sans HTML)",
     "plain_text_only_help": "Désactive la mise en forme riche et envoie un email texte uniquement.",
     "footer_template": "Pied de page conformité",

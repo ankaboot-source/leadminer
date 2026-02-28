@@ -29,7 +29,4 @@
   </div>
 </template>
 
-<script setup lang="ts">
-const $route = useRoute();
-const isPreview = Boolean($route.query.preview);
-</script>
+<script setup lang="ts"></script>
