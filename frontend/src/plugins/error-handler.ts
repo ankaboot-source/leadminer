@@ -29,8 +29,8 @@ const EXPECTED_FAULTY_STATUS_CODES = [402];
 function isExpectedFaultyCode(err: unknown) {
   return Boolean(
     isFetchError(err) &&
-      err.response &&
-      EXPECTED_FAULTY_STATUS_CODES.includes(err.response.status),
+    err.response &&
+    EXPECTED_FAULTY_STATUS_CODES.includes(err.response.status),
   );
 }
 
