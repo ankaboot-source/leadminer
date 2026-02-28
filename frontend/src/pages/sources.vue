@@ -58,8 +58,7 @@
           >
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <div class="font-medium">{{ source.type }}</div>
-                <div class="text-sm text-surface-500">{{ source.email }}</div>
+                <div class="font-medium">{{ source.email }}</div>
               </div>
 
               <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -68,8 +67,7 @@
                   <ToggleSwitch
                     v-model="source.passive_mining"
                     @update:model-value="
-                      (val: boolean) =>
-                        togglePassiveMining(source.email, source.type, val)
+                      (val: boolean) => togglePassiveMining(source, val)
                     "
                   />
                 </div>
@@ -86,11 +84,22 @@
                   @click="openDeleteDialog(source)"
                 />
 
+                <button
+                  v-if="!source.isValid"
+                  type="button"
+                  class="rounded-sm"
+                  @click="reconnectExpiredSource(source)"
+                >
+                  <Tag
+                    :value="t(getSourceStatusBadge(source).labelKey)"
+                    :severity="getSourceStatusBadge(source).severity"
+                    :icon="getSourceStatusBadge(source).icon"
+                  />
+                </button>
                 <Tag
-                  :value="
-                    source.isValid ? t('connected') : t('credential_expired')
-                  "
-                  :severity="source.isValid ? 'success' : 'warn'"
+                  v-else
+                  :value="t(getSourceStatusBadge(source).labelKey)"
+                  :severity="getSourceStatusBadge(source).severity"
                 />
               </div>
             </div>
@@ -207,12 +216,13 @@
 
 <script setup lang="ts">
 import type { MiningSource } from '~/types/mining';
+import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
   useScope: 'local',
 });
-const { $saasEdgeFunctions } = useNuxtApp();
+const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
 
 const deleteDialogVisible = ref(false);
@@ -283,12 +293,96 @@ async function confirmDelete() {
   }
 }
 
-async function togglePassiveMining(
-  email: string,
-  type: string,
-  value: boolean,
-) {
-  await updatePassiveMining(email, type, value);
+async function togglePassiveMining(source: MiningSource, value: boolean) {
+  try {
+    await updatePassiveMining(source.email, source.type, value);
+  } catch (error) {
+    source.passive_mining = !value;
+    $toast.add({
+      severity: 'error',
+      summary: t('passive_mining_update_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+    return;
+  }
+
+  if (!value) {
+    return;
+  }
+
+  if (
+    $leadminer.activeMiningTask &&
+    $leadminer.activeMiningSource?.email !== source.email
+  ) {
+    $toast.add({
+      severity: 'warn',
+      summary: t('mining_already_running'),
+      detail: t('mining_already_running_detail'),
+      life: 4500,
+    });
+    return;
+  }
+
+  try {
+    $leadminer.activeMiningSource = source;
+    await $leadminer.fetchInbox();
+    await $leadminer.startMining('email');
+    await $leadminer.getCurrentRunningMining();
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('mining_start_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  }
+}
+
+function getSourceStatusBadge(source: MiningSource) {
+  return resolveSourceStatusBadge({
+    isValid: source.isValid !== false,
+    isActiveMiningSource: isActiveMiningSource(source),
+    miningStatus: $leadminer.miningTask?.status,
+  });
+}
+
+async function reconnectExpiredSource(source: MiningSource) {
+  if (source.isValid || (source.type !== 'google' && source.type !== 'azure')) {
+    $toast.add({
+      severity: 'warn',
+      summary: t('reconnect_not_supported'),
+      detail: t('reconnect_not_supported_detail'),
+      life: 4500,
+    });
+    return;
+  }
+
+  try {
+    await useSupabaseClient().auth.refreshSession();
+    const { authorizationUri } = await $api<{ authorizationUri: string }>(
+      `/mine/sources/${source.type}`,
+      {
+        method: 'POST',
+        body: {
+          redirect: '/sources',
+        },
+      },
+    );
+
+    if (!authorizationUri) {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
+    await navigateTo(authorizationUri, { external: true });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('reconnect_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  }
 }
 
 onMounted(async () => {
@@ -327,13 +421,24 @@ onMounted(async () => {
     "stop_mining": "Stop mining",
     "view_mining": "View mining",
     "mining_in_progress": "Mining in progress",
+    "mining_status_running": "Mining in progress",
+    "mining_status_done": "Mining completed",
+    "mining_status_canceled": "Mining canceled",
+    "mining_start_failed": "Unable to start mining",
+    "mining_already_running": "Mining already running",
+    "mining_already_running_detail": "Another source is currently being mined.",
+    "passive_mining_update_failed": "Unable to update continuous mining",
+    "reconnect_failed": "Unable to reconnect source",
+    "reconnect_unavailable": "Reconnect URL is unavailable",
+    "reconnect_not_supported": "Reconnect not supported",
+    "reconnect_not_supported_detail": "This source requires manual credential update.",
     "emails_scanned": "Scanned",
     "emails_extracted": "Extracted",
     "emails_cleaned": "Cleaned",
     "mining_stopped": "Mining stopped",
     "mining_stopped_detail": "The mining process has been stopped.",
     "stop_mining_failed": "Unable to stop mining",
-    "total_contacts": "Total contacts",
+    "total_contacts": "Contacts (Total)",
     "last_mining": "Last mining",
     "contacts": "contacts"
   },
@@ -342,12 +447,12 @@ onMounted(async () => {
     "no_sources": "Aucune source",
     "email": "Email",
     "provider": "Fournisseur",
-    "last_extraction": "Derniere extraction",
+    "last_extraction": "Dernière extraction",
     "continuous_mining": "Extraction continue",
-    "remove": "Retirer",
-    "remove_source": "Retirer la source",
-    "remove_source_confirm": "Retirer definitivement cette source de minage ? Cette action est irreversible.",
-    "remove_source_failed": "Impossible de retirer la source",
+    "remove": "Supprimer",
+    "remove_source": "Supprimer la source",
+    "remove_source_confirm": "Supprimer définitivement cette source de minage ? Cette action est irréversible.",
+    "remove_source_failed": "Impossible de supprimer la source",
     "type": "Type",
     "passive_mining": "Extraction passive",
     "credentials": "Identifiants",
@@ -365,13 +470,24 @@ onMounted(async () => {
     "stop_mining": "Arrêter le minage",
     "view_mining": "Voir le minage",
     "mining_in_progress": "Extraction en cours",
+    "mining_status_running": "Extraction en cours",
+    "mining_status_done": "Extraction terminée",
+    "mining_status_canceled": "Extraction annulée",
+    "mining_start_failed": "Impossible de démarrer l'extraction",
+    "mining_already_running": "Extraction déjà en cours",
+    "mining_already_running_detail": "Une autre source est en cours d'extraction.",
+    "passive_mining_update_failed": "Impossible de mettre à jour l'extraction continue",
+    "reconnect_failed": "Impossible de reconnecter la source",
+    "reconnect_unavailable": "URL de reconnexion indisponible",
+    "reconnect_not_supported": "Reconnexion non prise en charge",
+    "reconnect_not_supported_detail": "Cette source nécessite une mise à jour manuelle des identifiants.",
     "emails_scanned": "Scannés",
     "emails_extracted": "Extracts",
     "emails_cleaned": "Nettoyés",
     "mining_stopped": "Extraction stoppée",
     "mining_stopped_detail": "Le processus d'extraction a été stoppé.",
     "stop_mining_failed": "Impossible de stopper le minage",
-    "total_contacts": "Total contacts",
+    "total_contacts": "Contacts (Total)",
     "last_mining": "Dernier minage",
     "contacts": "contacts"
   }
