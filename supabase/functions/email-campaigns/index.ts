@@ -1594,6 +1594,28 @@ app.post(
           continue;
         }
 
+        // Refresh OAuth token if expired before building transport
+        const sourceAsCredential: MiningSourceCredential = {
+          email: matchingSource.email,
+          type: matchingSource.type,
+          credentials: matchingSource.credentials as Record<string, unknown>,
+        };
+        const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
+        if (credentialIssue?.includes("expired")) {
+          const refreshed = await refreshOAuthToken(sourceAsCredential);
+          if (refreshed) {
+            await updateMiningSourceCredentials(
+              supabaseAdmin,
+              campaign.sender_email,
+              refreshed.credentials,
+            );
+            matchingSource.credentials = refreshed.credentials as Record<
+              string,
+              unknown
+            >;
+          }
+        }
+
         try {
           senderTransport = await buildUserTransport(
             campaign.sender_email,
@@ -1732,6 +1754,85 @@ app.post(
           processedRecipients += 1;
         } catch (error) {
           const message = extractErrorMessage(error);
+
+          // Check if it's an authentication error (535, 534, 401, etc.)
+          const isAuthError =
+            /535|534|401|authentication|credential|invalid credentials/i.test(
+              message,
+            );
+          const attemptCount = recipient.attempt_count || 0;
+          const canRetryAuth = isAuthError && attemptCount < 2;
+
+          if (canRetryAuth) {
+            try {
+              // Refresh OAuth token
+              const sourceForRetry: MiningSourceCredential = {
+                email: campaign.sender_email,
+                type: matchingSource?.type || "google",
+                credentials:
+                  (matchingSource?.credentials as Record<string, unknown>) ||
+                  {},
+              };
+              const refreshed = await refreshOAuthToken(sourceForRetry);
+              if (refreshed) {
+                await updateMiningSourceCredentials(
+                  supabaseAdmin,
+                  campaign.sender_email,
+                  refreshed.credentials,
+                );
+                // Rebuild transport with new credentials
+                senderTransport = await buildUserTransport(
+                  campaign.sender_email,
+                  refreshed.credentials,
+                );
+                matchingSource!.credentials = refreshed.credentials as Record<
+                  string,
+                  unknown
+                >;
+
+                // Retry sending the email
+                await sendEmail(
+                  recipient.contact_email,
+                  renderedSubject,
+                  campaign.plain_text_only ? "" : htmlWithTracking,
+                  {
+                    from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+                    replyTo: campaign.reply_to,
+                    text,
+                    transport: senderTransport,
+                  },
+                );
+
+                // If successful, mark as sent and continue to next recipient
+                await supabaseAdmin
+                  .schema("private")
+                  .from("email_campaign_recipients")
+                  .update({
+                    send_status: "sent",
+                    sent_at: new Date().toString(),
+                    attempt_count: attemptCount + 1,
+                    bounce_type: null,
+                    smtp_code: null,
+                    last_error: null,
+                  })
+                  .eq("id", recipient.id);
+
+                await updateContactDeliverability(
+                  supabaseAdmin,
+                  recipient.user_id,
+                  recipient.contact_email,
+                  "VALID",
+                );
+                processedRecipients += 1;
+                continue;
+              }
+            } catch (retryError) {
+              // Refresh failed, fall through to regular error handling
+              console.error("Failed to refresh token for retry:", retryError);
+            }
+          }
+
+          // Regular error handling for non-auth errors or failed retries
           const smtpCode = parseErrorCode(error);
           const bounceType = classifyBounceType(error);
 
