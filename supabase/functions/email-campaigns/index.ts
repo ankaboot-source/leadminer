@@ -355,7 +355,11 @@ function defaultFooterTemplate(ownerEmail: string): string {
   if (CAMPAIGN_COMPLIANCE_FOOTER) {
     return CAMPAIGN_COMPLIANCE_FOOTER;
   }
-  return `${COMPLIANCE_SEPARATOR}\n\nYou received this email because ${ownerEmail} used leadminer.io to extract contacts from their mailbox. Try https://leadminer.io yourself.\n\n${UNSUBSCRIBE_TEXT_SUFFIX}: {{unsubscribeUrl}}`;
+  return `${COMPLIANCE_SEPARATOR}
+
+You received this email because ${ownerEmail} used leadminer.io to extract contacts from their mailbox. Try https://leadminer.io yourself.
+
+<p><a href="{{unsubscribeUrl}}">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
 }
 
 function ensureUnsubscribeText(
@@ -850,13 +854,14 @@ function buildRenderedContent(
     payload.unsubscribeUrl,
   );
 
-  const html = payload.plainTextOnly ? "" : `${renderedBodyHtml}${footerHtml}`;
+  const html = payload.plainTextOnly ? "" : renderedBodyHtml;
   const text = `${renderedBodyText}\n\n${footerText}`.trim();
   const subject = renderTemplate(payload.subjectTemplate, contact, extra);
 
   return {
     subject,
-    html,
+    bodyHtml: html,
+    footerHtml,
     text,
   };
 }
@@ -1135,7 +1140,8 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     eligibleContacts[Math.floor(Math.random() * eligibleContacts.length)];
   const {
     subject: renderedSubject,
-    html,
+    bodyHtml,
+    footerHtml,
     text,
   } = buildRenderedContent(randomContact, {
     subjectTemplate: subject,
@@ -1154,17 +1160,13 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 
   try {
     const from = `"${escapeHtml(senderName)}" <${senderEmail}>`;
-    await sendEmail(
-      ownerEmail,
-      `[Preview] ${renderedSubject}`,
-      plainTextOnly ? "" : html,
-      {
-        from,
-        replyTo: ownerEmail,
-        text,
-        transport: transportBySender[senderEmail] ?? undefined,
-      },
-    );
+    const finalHtml = plainTextOnly ? "" : bodyHtml + footerHtml;
+    await sendEmail(ownerEmail, `[Preview] ${renderedSubject}`, finalHtml, {
+      from,
+      replyTo: ownerEmail,
+      text,
+      transport: transportBySender[senderEmail] ?? undefined,
+    });
     return c.json({
       msg: "Preview sent successfully",
       selectedContactEmail: randomContact.email,
@@ -1732,7 +1734,8 @@ app.post(
 
         const {
           subject: renderedSubject,
-          html,
+          bodyHtml,
+          footerHtml,
           text,
         } = buildRenderedContent(snapshot, {
           subjectTemplate: campaign.subject,
@@ -1755,22 +1758,21 @@ app.post(
                 campaign.id,
                 recipient.id,
                 recipient.open_token,
-                html,
+                bodyHtml,
                 campaign.track_click,
                 campaign.track_open,
               );
 
-          await sendEmail(
-            recipient.contact_email,
-            renderedSubject,
-            campaign.plain_text_only ? "" : htmlWithTracking,
-            {
-              from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
-              replyTo: campaign.reply_to,
-              text,
-              transport: senderTransport,
-            },
-          );
+          const finalHtml = campaign.plain_text_only
+            ? ""
+            : htmlWithTracking + footerHtml;
+
+          await sendEmail(recipient.contact_email, renderedSubject, finalHtml, {
+            from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+            replyTo: campaign.reply_to,
+            text,
+            transport: senderTransport,
+          });
 
           await supabaseAdmin
             .schema("private")
