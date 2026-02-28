@@ -66,12 +66,20 @@
           </label>
           <Select
             v-model="form.senderEmail"
-            :options="availableSenderEmails"
+            :options="senderOptions"
+            option-label="label"
+            option-value="email"
+            option-disabled="disabled"
             :loading="isLoadingSenderOptions"
             @update:model-value="markTouched('senderEmail')"
           />
           <small v-if="showFieldError('senderEmail')" class="text-red-500">
             {{ validationErrors.senderEmail }}
+          </small>
+          <small v-else-if="unavailableSenderCount" class="text-amber-600">
+            {{
+              t('some_senders_unavailable', { count: unavailableSenderCount })
+            }}
           </small>
         </div>
 
@@ -363,7 +371,15 @@ const dialogHeader = computed(() =>
   t('send_email_campaign_with_count', { count: selectedEmails.value.length }),
 );
 
-const availableSenderEmails = ref<string[]>([]);
+type SenderOptionItem = {
+  email: string;
+  available: boolean;
+  reason?: string;
+  label: string;
+  disabled: boolean;
+};
+
+const senderOptions = ref<SenderOptionItem[]>([]);
 const fallbackSenderEmail = ref('');
 const runtimeConfig = useRuntimeConfig();
 
@@ -447,6 +463,10 @@ type EdgeResponseError = {
     fallbackSenderEmail?: string;
   };
 };
+
+const unavailableSenderCount = computed(
+  () => senderOptions.value.filter((option) => option.disabled).length,
+);
 
 type FormField = 'senderName' | 'senderEmail' | 'replyTo' | 'subject' | 'body';
 
@@ -882,22 +902,57 @@ async function loadSenderOptions() {
 
     fallbackSenderEmail.value = data.fallbackSenderEmail || '';
     form.senderDailyLimit = Number(data.defaultDailyLimit || 1000);
-    availableSenderEmails.value = (data.options || [])
-      .filter((option: { available: boolean }) => option.available)
-      .map((option: { email: string }) => option.email);
+    senderOptions.value = (data.options || []).map(
+      (option: { email: string; available: boolean; reason?: string }) => {
+        const reason = String(option.reason || '').trim();
+        const unavailableLabel = reason
+          ? t('sender_unavailable_reason', {
+              email: option.email,
+              reason,
+            })
+          : t('sender_unavailable', {
+              email: option.email,
+            });
 
-    if (!availableSenderEmails.value.length) {
-      if (fallbackSenderEmail.value) {
-        availableSenderEmails.value = [fallbackSenderEmail.value];
-      }
+        return {
+          email: option.email,
+          available: option.available,
+          reason,
+          label: option.available ? option.email : unavailableLabel,
+          disabled: !option.available,
+        };
+      },
+    );
+
+    if (!senderOptions.value.length && fallbackSenderEmail.value) {
+      senderOptions.value = [
+        {
+          email: fallbackSenderEmail.value,
+          available: true,
+          label: fallbackSenderEmail.value,
+          disabled: false,
+        },
+      ];
     }
 
-    if (!availableSenderEmails.value.includes(form.senderEmail)) {
-      form.senderEmail = availableSenderEmails.value[0] || '';
+    const firstAvailable =
+      senderOptions.value.find((option) => !option.disabled)?.email || '';
+    const selected = senderOptions.value.find(
+      (option) => option.email === form.senderEmail,
+    );
+    if (!selected || selected.disabled) {
+      form.senderEmail = firstAvailable;
     }
   } catch (error: unknown) {
     if (fallbackSenderEmail.value) {
-      availableSenderEmails.value = [fallbackSenderEmail.value];
+      senderOptions.value = [
+        {
+          email: fallbackSenderEmail.value,
+          available: true,
+          label: fallbackSenderEmail.value,
+          disabled: false,
+        },
+      ];
       form.senderEmail = fallbackSenderEmail.value;
     }
     $toast.add({
@@ -1105,6 +1160,9 @@ watch(
     "sender_name_help": "The sender name displayed in your recipient inbox.",
     "sender_email": "Sender email",
     "sender_email_help": "The email address used to send this campaign.",
+    "sender_unavailable": "{email} (unavailable)",
+    "sender_unavailable_reason": "{email} (unavailable: {reason})",
+    "some_senders_unavailable": "{count} sender option(s) are currently unavailable.",
     "reply_to": "Reply-to",
     "reply_to_help": "Replies from recipients will be sent to this email address.",
     "subject": "Subject",
@@ -1195,6 +1253,9 @@ watch(
     "sender_name_help": "Nom affiché dans la boîte de réception de vos destinataires.",
     "sender_email": "Adresse d'expédition",
     "sender_email_help": "Adresse email utilisée pour envoyer cette campagne.",
+    "sender_unavailable": "{email} (indisponible)",
+    "sender_unavailable_reason": "{email} (indisponible : {reason})",
+    "some_senders_unavailable": "{count} option(s) d'expéditeur sont actuellement indisponibles.",
     "reply_to": "Répondre à",
     "reply_to_help": "Les réponses de vos destinataires seront envoyées à cette adresse.",
     "subject": "Sujet",
