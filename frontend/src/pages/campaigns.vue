@@ -208,10 +208,6 @@ const $campaignsStore = useCampaignsStore();
 const { t } = useI18n({ useScope: 'local' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
-const terminalToasts = useState<Record<string, boolean>>(
-  'campaign-terminal-toasts',
-  () => ({}),
-);
 type CampaignActionType = 'stop' | 'delete';
 const actionDialogVisible = ref(false);
 const actionDialogCampaign = ref<CampaignOverview | null>(null);
@@ -360,16 +356,10 @@ async function confirmActionDialog() {
 }
 
 function notifyTerminalCampaigns() {
-  $campaignsStore.campaigns.forEach((campaign) => {
-    if (campaign.status !== 'completed' && campaign.status !== 'failed') {
-      return;
-    }
+  const campaignsToNotify =
+    $campaignsStore.consumeTerminalCampaignNotifications();
 
-    const toastKey = `${campaign.id}:${campaign.status}`;
-    if (terminalToasts.value[toastKey]) return;
-
-    terminalToasts.value[toastKey] = true;
-
+  campaignsToNotify.forEach((campaign) => {
     if (campaign.status === 'failed') {
       $toast.add({
         group: 'has-links',
