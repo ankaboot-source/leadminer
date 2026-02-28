@@ -19,3 +19,4 @@ backend/config/production.yaml
 backend/config/default.yml
 supabase/config.toml
 frontend-v4/*
+.worktrees/
