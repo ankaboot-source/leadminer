@@ -26,12 +26,12 @@ export async function refreshOAuthToken(
 
   if (kind === "google") {
     tokenUrl = "https://oauth2.googleapis.com/token";
-    clientId = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID") || "";
-    clientSecret = Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET") || "";
+    clientId = Deno.env.get("GOOGLE_CLIENT_ID") || "";
+    clientSecret = Deno.env.get("GOOGLE_SECRET") || "";
   } else {
     tokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-    clientId = Deno.env.get("AZURE_OAUTH_CLIENT_ID") || "";
-    clientSecret = Deno.env.get("AZURE_OAUTH_CLIENT_SECRET") || "";
+    clientId = Deno.env.get("AZURE_CLIENT_ID") || "";
+    clientSecret = Deno.env.get("AZURE_SECRET") || "";
   }
 
   if (!clientId || !clientSecret) {
