@@ -1,4 +1,6 @@
 import type { CampaignOverview } from '@/types/campaign';
+import type { CampaignStatusesById } from '@/utils/campaignTerminalToasts';
+import { computeTerminalCampaignNotifications } from '@/utils/campaignTerminalToasts';
 
 export const useCampaignsStore = defineStore('campaigns-store', () => {
   const $supabase = useSupabaseClient();
@@ -6,6 +8,8 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
   const campaigns = ref<CampaignOverview[]>([]);
   const isLoading = ref(false);
   const errorMessage = ref<string | null>(null);
+  const terminalCampaignNotifications = ref<CampaignOverview[]>([]);
+  const statusesByCampaignId = ref<CampaignStatusesById>({});
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
   async function fetchCampaigns() {
@@ -23,7 +27,7 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
       throw error;
     }
 
-    campaigns.value = ((data ?? []) as Partial<CampaignOverview>[]).map(
+    const mappedCampaigns = ((data ?? []) as Partial<CampaignOverview>[]).map(
       (campaign) => ({
         ...campaign,
         attempted: Number(campaign.attempted || 0),
@@ -45,7 +49,24 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
           : [],
       }),
     ) as CampaignOverview[];
+
+    const notificationState = computeTerminalCampaignNotifications(
+      statusesByCampaignId.value,
+      mappedCampaigns,
+    );
+
+    campaigns.value = mappedCampaigns;
+    statusesByCampaignId.value = notificationState.statusesByCampaignId;
+    terminalCampaignNotifications.value.push(
+      ...notificationState.notifications,
+    );
     isLoading.value = false;
+  }
+
+  function consumeTerminalCampaignNotifications() {
+    const notifications = [...terminalCampaignNotifications.value];
+    terminalCampaignNotifications.value = [];
+    return notifications;
   }
 
   function startPolling() {
@@ -66,12 +87,15 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
     campaigns.value = [];
     isLoading.value = false;
     errorMessage.value = null;
+    terminalCampaignNotifications.value = [];
+    statusesByCampaignId.value = {};
   }
 
   return {
     campaigns,
     isLoading,
     errorMessage,
+    consumeTerminalCampaignNotifications,
     fetchCampaigns,
     startPolling,
     stopPolling,
