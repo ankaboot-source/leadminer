@@ -23,7 +23,6 @@ export default class RealtimeSSE extends SSE {
 
       if (res.writableEnded === false) {
         res.write('event: close\n');
-        res.write('data: Mining completed :)\n\n');
         res.flushHeaders();
         res.end();
       }

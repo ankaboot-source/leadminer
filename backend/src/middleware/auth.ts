@@ -1,9 +1,37 @@
 import { NextFunction, Request, Response } from 'express';
+import ENV from '../config';
 import AuthResolver from '../services/auth/AuthResolver';
+import supabase from '../utils/supabase';
 
 export default function initializeAuthMiddleware(authResolver: AuthResolver) {
   const verifyJWT = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+      // Check for service role authentication
+      if (
+        ENV.SUPABASE_SECRET_PROJECT_TOKEN &&
+        token === ENV.SUPABASE_SECRET_PROJECT_TOKEN
+      ) {
+        // Extract userId from route or query params
+        const userId = req.params.userId ?? req.query.userId;
+
+        if (userId) {
+          // Create a service user object with the extracted userId
+          const { user } = (await supabase.auth.admin.getUserById(userId)).data;
+
+          if (!user) {
+            return res.status(404).json({
+              message: 'User not found'
+            });
+          }
+
+          res.locals.user = user;
+          return next();
+        }
+      }
+
+      // Standard JWT validation
       const accessToken = authResolver.getAccessToken(req);
 
       if (!accessToken) {

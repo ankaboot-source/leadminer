@@ -7,7 +7,7 @@
     <span>
       {{ t('legal_information_3') }}
       <NuxtLink
-        class="text-indigo-500"
+        class="link"
         to="https://www.gnu.org/licenses/"
         target="_blank"
         rel="noopener noreferrer"
@@ -25,6 +25,7 @@ const { t } = useI18n({
 });
 
 const { authMode } = defineProps<{
+  // eslint-disable-next-line vue/require-default-prop
   authMode?: authModes;
 }>();
 </script>

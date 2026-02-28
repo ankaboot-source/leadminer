@@ -1,7 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
+import { TIMEOUT } from '../constants';
 
 export default class MailerCheckClient {
   private static readonly baseURL = 'https://app.mailercheck.com/api/';
@@ -17,7 +18,8 @@ export default class MailerCheckClient {
       baseURL: MailerCheckClient.baseURL,
       headers: {
         Authorization: `Bearer ${config.apiToken}`
-      }
+      },
+      timeout: TIMEOUT
     });
   }
 
@@ -30,7 +32,7 @@ export default class MailerCheckClient {
       );
       return data.status;
     } catch (error) {
-      logError(error, '[MailerCheck:verifyEmail]', this.logger);
+      logError(error, `[MailerCheck:verifyEmail:${email}]`, this.logger);
       throw error;
     }
   }

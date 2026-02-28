@@ -6,7 +6,7 @@ import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
 import ZerobounceEmailStatusVerifier from './zerobounce';
 import ZerobounceClient from './zerobounce/client';
-import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
+import { Distribution, TokenBucketRateLimiter } from '../rate-limiter';
 
 interface Config extends ReacherConfig, MailerCheckConfig, ZerobounceConfig {}
 
@@ -202,10 +202,13 @@ export default class EmailStatusVerifierFactory {
               : undefined
         }
       },
-      new TokenBucketRateLimiter(
-        config.REACHER_RATE_LIMITER_REQUESTS,
-        config.REACHER_RATE_LIMITER_INTERVAL
-      ),
+      new TokenBucketRateLimiter({
+        executeEvenly: false,
+        uniqueKey: 'email-verification-reacher',
+        distribution: Distribution.Redis,
+        requests: config.REACHER_RATE_LIMITER_REQUESTS,
+        intervalSeconds: config.REACHER_RATE_LIMITER_INTERVAL
+      }),
       logger
     );
 
@@ -221,10 +224,13 @@ export default class EmailStatusVerifierFactory {
   ) {
     const client = new MailerCheckClient(
       { apiToken: MAILERCHECK_API_KEY },
-      new TokenBucketRateLimiter(
-        60, // 60 requests
-        60 * 1000 // 1 minute
-      ),
+      new TokenBucketRateLimiter({
+        executeEvenly: true,
+        uniqueKey: 'email-verification-mailercheck',
+        distribution: Distribution.Redis,
+        requests: 60,
+        intervalSeconds: 60
+      }),
       logger
     );
 
@@ -240,14 +246,20 @@ export default class EmailStatusVerifierFactory {
   ) {
     const client = new ZerobounceClient(
       { apiToken: ZEROBOUNCE_API_KEY },
-      new TokenBucketRateLimiter(
-        ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
-        60 * 1000
-      ),
-      new TokenBucketRateLimiter(
-        ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,
-        60 * 1000
-      ),
+      new TokenBucketRateLimiter({
+        executeEvenly: false,
+        uniqueKey: 'email-verification-zerobounce-single',
+        distribution: Distribution.Redis,
+        requests: ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
+        intervalSeconds: 10
+      }),
+      new TokenBucketRateLimiter({
+        executeEvenly: false,
+        uniqueKey: 'email-verification-zerobounce-bulk',
+        distribution: Distribution.Redis,
+        requests: ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,
+        intervalSeconds: 60
+      }),
       logger
     );
 

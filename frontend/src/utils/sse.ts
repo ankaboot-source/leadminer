@@ -2,11 +2,12 @@ import {
   type EventSourceMessage,
   fetchEventSource,
 } from '@microsoft/fetch-event-source';
+import type { MiningType } from '~/types/mining';
 
 class SSE {
   private ctrl?: AbortController;
   private pendingCleanupTimeout: NodeJS.Timeout | null = null;
-  private cleanupDelay = 3 * 60 * 1000; // 3 minutes
+  private cleanupDelay = 10 * 60 * 1000; // 10 minutes
 
   private clearPendingCleanup() {
     if (this.pendingCleanupTimeout) {
@@ -23,9 +24,8 @@ class SSE {
   }
 
   initConnection(
-    miningType: 'file' | 'email',
+    miningType: MiningType,
     miningId: string,
-    token: string,
     {
       onFetchedUpdate,
       onExtractedUpdate,
@@ -36,6 +36,7 @@ class SSE {
       onCleaningDone,
       onVerifiedContacts,
       onCreatedContacts,
+      onMiningCompleted,
     }: {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
@@ -46,20 +47,42 @@ class SSE {
       onCleaningDone: (totalExtracted: number) => void;
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
+      onMiningCompleted: () => void;
     },
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
+
     return fetchEventSource(
-      `${
-        useRuntimeConfig().public.SERVER_ENDPOINT
-      }/api/imap/mine/${miningType}/${miningId}/progress/`,
+      `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
-        headers: {
-          'x-sb-jwt': token,
+        fetch: async (input, init) => {
+          const token = useSupabaseSession().value?.access_token;
+
+          if (!token) {
+            throw new Error('[SSE] No access token available.');
+          }
+
+          return fetch(input, {
+            ...init,
+            headers: {
+              ...(init?.headers || {}),
+              'x-sb-jwt': token,
+            },
+          });
         },
-        onopen: async () => {
-          console.log('[SSE] Connection established successfully.');
+        onopen: async (response) => {
+          if (response.status === 200) {
+            console.debug(
+              '[SSE] Connection established successfully',
+              response,
+            );
+            console.debug(
+              '[SSE] Clearing any pending cleanup operations',
+              response,
+            );
+            this.clearPendingCleanup();
+          }
         },
         onmessage: (msg: EventSourceMessage) => {
           this.clearPendingCleanup();
@@ -88,12 +111,14 @@ class SSE {
             onVerifiedContacts(parseInt(data));
           } else if (event === `createdContacts-${miningId}`) {
             onCreatedContacts(parseInt(data));
+          } else if (event === 'mining-completed') {
+            onMiningCompleted();
           }
         },
         onerror: (err: unknown) => {
           if (!this.pendingCleanupTimeout) {
             console.warn(
-              '[SSE] Connection lost, scheduling cleanup in 1 minute.',
+              '[SSE] Connection lost, scheduling cleanup in 10 minutes.',
             );
             this.pendingCleanupTimeout = setTimeout(() => {
               console.error('[SSE] Cleanup triggered after connection loss.');
@@ -102,7 +127,9 @@ class SSE {
             }, this.cleanupDelay);
           }
           console.warn(
-            `[SSE] Temporary error: ${(err as Error).message}. Connection will retry automatically.`,
+            `[SSE] Temporary error: ${
+              (err as Error).message
+            }. Connection will retry automatically.`,
           );
         },
         signal: this.ctrl.signal,

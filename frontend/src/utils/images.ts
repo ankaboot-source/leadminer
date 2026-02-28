@@ -10,6 +10,6 @@ export function getImageViaProxy(url: string) {
     const result = `${proxy}/${parsedUrl.host}${parsedUrl.pathname}${parsedUrl.search}`;
     return result;
   } catch {
-    return null;
+    return undefined;
   }
 }

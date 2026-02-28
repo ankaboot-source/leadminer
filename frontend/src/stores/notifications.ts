@@ -10,12 +10,17 @@ export interface Notification {
 export const useNotificationsStore = defineStore('notifications', () => {
   const notifications = ref<Notification[]>([]);
   const supabase = useSupabaseClient();
-  const user = useSupabaseUser();
+  const $user = useSupabaseUser();
 
   let subscription: ReturnType<typeof supabase.channel> | null = null;
 
+  function getCurrentUserId() {
+    return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+  }
+
   function subscribe(callback?: (notification: Notification) => void) {
-    if (!user.value?.id) return;
+    const userId = getCurrentUserId();
+    if (!userId) return;
 
     if (subscription) {
       supabase.removeChannel(subscription);
@@ -30,7 +35,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
           event: 'INSERT',
           schema: 'private',
           table: 'notifications',
-          filter: `user_id=eq.${user.value.id}`,
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           const newNotification = payload.new as Notification;

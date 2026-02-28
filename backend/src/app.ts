@@ -2,31 +2,34 @@ import * as Sentry from '@sentry/node';
 
 import express, { json, urlencoded } from 'express';
 
+import util from 'util';
 import { Logger } from 'winston';
-import AuthResolver from './services/auth/AuthResolver';
-import Billing from './utils/billing-plugin';
-import { Contacts } from './db/interfaces/Contacts';
 import ENV from './config';
+import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
-import TasksManager from './services/tasks-manager/TasksManager';
 import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
+import notFound from './middleware/notFound';
+import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
 import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
-import initializeSentry from './middleware/sentry';
 import initializeStreamRouter from './routes/stream.routes';
-import notFound from './middleware/notFound';
-import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
+import AuthResolver from './services/auth/AuthResolver';
+import TasksManager from './services/tasks-manager/TasksManager';
+import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
+import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
+import Billing from './utils/billing-plugin';
 
 export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
+  tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
@@ -61,18 +64,28 @@ export default function initializeApp(
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
   app.use(
     '/api/imap',
-    initializeStreamRouter(tasksManager, tasksManagerFile, authResolver)
+    initializeStreamRouter(
+      tasksManager,
+      tasksManagerFile,
+      tasksManagerPST,
+      authResolver
+    )
   );
   app.use(
     '/api/imap',
     initializeMiningRoutes(
       tasksManager,
       tasksManagerFile,
+      tasksManagerPST,
       miningSources,
-      authResolver
+      authResolver,
+      contacts
     )
   );
-  app.use('/api', initializeContactsRoutes(contacts, authResolver));
+  app.use(
+    '/api',
+    initializeContactsRoutes(contacts, authResolver, miningSources)
+  );
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 
   if (ENV.SENTRY_DSN_BACKEND) {
@@ -83,10 +96,15 @@ export default function initializeApp(
   app.use(errorLogger);
   app.use(errorHandler);
 
-  process.on('uncaughtException', (err) => {
-    logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, err.stack || err);
+  process.on('uncaughtException', (error) => {
+    logger.error(
+      '[UNCAUGHT EXCEPTION]:',
+      util.inspect(error, { depth: null, colors: true })
+    );
+    console.error(error);
+
     if (ENV.SENTRY_DSN_BACKEND) {
-      Sentry.captureException(err);
+      Sentry.captureException(error);
     }
   });
 

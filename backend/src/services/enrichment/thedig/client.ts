@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 
 import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
 
 interface Config {
   url: string;
@@ -24,8 +24,8 @@ export interface EnrichPersonRequest {
   identifier?: string[];
   nationality?: string[];
   description?: string[];
-  homeLocation?: string[];
-  workLocation?: string[];
+  homeLocation?: string;
+  workLocation?: string;
   alternateName?: string[];
   knowsLanguage?: string[];
 }
@@ -39,8 +39,8 @@ export interface EnrichPersonResponse {
   image?: string[];
   jobTitle?: string[];
   worksFor?: string[];
-  homeLocation?: string[];
-  workLocation?: string[];
+  homeLocation?: string;
+  workLocation?: string;
   sameAs?: string[];
   identifier?: string[];
   description?: string[];

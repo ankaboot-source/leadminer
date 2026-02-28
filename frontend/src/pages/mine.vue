@@ -1,9 +1,11 @@
 <template>
   <div class="flex flex-col grow">
-    <div class="flex flex-col grow border rounded-md px-2 pt-6">
+    <div
+      class="flex flex-col grow border border-surface-200 rounded-md px-2 pt-6"
+    >
       <MiningStepper />
     </div>
-    <MiningTable :show-table="showTable" />
+    <MiningTable :show-table="showTable" origin="mine" />
   </div>
 </template>
 
@@ -14,14 +16,20 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const $stepper = useMiningStepper();
 const $leadminer = useLeadminerStore();
+const $stepper = useMiningStepper();
 const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );
 
 try {
   await $leadminer.fetchMiningSources();
+  onMounted(async () => {
+    const step = await $leadminer.getCurrentRunningMining();
+    if (step !== undefined && step > 1) {
+      $stepper.go(step);
+    }
+  });
 } catch (error) {
   onMounted(() => {
     throw error instanceof FetchError && error.response?.status === 401

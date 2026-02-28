@@ -1,5 +1,3 @@
-import ImapConnectionProvider from './ImapConnectionProvider';
-
 export interface FlatTree {
   label: string;
   key: string;
@@ -28,8 +26,6 @@ export interface EmailMessage {
 export interface ImapEmailsFetcherOptions {
   email: string;
   userId: string;
-  batchSize: number;
   boxes: string[];
-  imapConnectionProvider: ImapConnectionProvider;
   fetchEmailBody: boolean;
 }

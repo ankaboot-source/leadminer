@@ -2,18 +2,24 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
 import ENV from '../config';
+import { Contacts } from '../db/interfaces/Contacts';
 import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { ImapEmailsFetcherOptions } from '../services/imap/types';
-import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
+import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
+import { Task } from '../services/tasks-manager/types';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
+import logger from '../utils/logger';
 import redis from '../utils/redis';
+import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
+import supabaseClient from '../utils/supabase';
+import { EmailVerificationData } from '../workers/email-verification/emailVerificationHandlers';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
@@ -52,19 +58,128 @@ async function exchangeForToken(
   };
 }
 
+function getSafeRedirectPath(path: unknown) {
+  if (
+    typeof path !== 'string' ||
+    !path.startsWith('/') ||
+    path.startsWith('//')
+  ) {
+    return '/';
+  }
+
+  return path;
+}
+
+function parseOAuthState(state: string | undefined) {
+  if (!state) {
+    throw new Error('Missing OAuth state.');
+  }
+
+  const decoded = Buffer.from(state, 'base64').toString('utf-8');
+  const parsed = JSON.parse(decoded) as {
+    userId?: string;
+    afterCallbackRedirect?: string;
+  };
+
+  if (!parsed.userId) {
+    throw new Error('Invalid OAuth state payload.');
+  }
+
+  return {
+    userId: parsed.userId,
+    afterCallbackRedirect: getSafeRedirectPath(parsed.afterCallbackRedirect)
+  };
+}
+
+async function publishPreviouslyUnverifiedEmailsToCleaning(
+  contacts: Contacts,
+  userId: string,
+  miningId: string,
+  emailStream: string
+) {
+  const redisClient = redis.getClient();
+  const queuedEmailsCache = new RedisQueuedEmailsCache(redisClient, miningId);
+  const producer = new RedisStreamProducer<EmailVerificationData>(
+    redisClient,
+    emailStream,
+    logger
+  );
+  logger.debug('Starting re-publication of unverified contacts', {
+    userId,
+    miningId,
+    emailStream
+  });
+  let emailsToVerify = 0;
+  try {
+    const unverifiedContacts = await contacts.getUnverifiedContacts(userId, []);
+
+    if (!unverifiedContacts || unverifiedContacts.length === 0) {
+      logger.debug('No unverified contacts found to re-publish', {
+        userId,
+        miningId
+      });
+      return emailsToVerify;
+    }
+
+    const toPublish = (
+      await queuedEmailsCache.addMany(
+        unverifiedContacts.map(({ email }) => email)
+      )
+    ).addedElements.map((e) => ({
+      email: e,
+      userId,
+      miningId
+    }));
+
+    emailsToVerify += toPublish.length;
+
+    logger.debug('Publishing unverified contacts to cleaning stream', {
+      userId,
+      miningId,
+      count: toPublish.length
+    });
+
+    await producer.produce(toPublish);
+
+    logger.debug('Successfully re-published contacts for cleaning', {
+      userId,
+      miningId,
+      count: toPublish.length
+    });
+
+    return emailsToVerify;
+  } catch (error) {
+    logger.error('Failed to re-publish unverified contacts', {
+      userId,
+      miningId,
+      error
+    });
+    throw error; // Re-throw to handle failure at the caller level
+  }
+}
+
 export default function initializeMiningController(
   tasksManager: TasksManager,
-  tasksManagerFile: TaskManagerFile,
-  miningSources: MiningSources
+  tasksManagerFile: TasksManagerFile,
+  tasksManagerPST: TasksManagerPST,
+  miningSources: MiningSources,
+  contactsDB: Contacts
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
+    async createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
+      const { redirect } = req.body;
+      const afterCallbackRedirect = getSafeRedirectPath(redirect);
+
+      const stateObj = JSON.stringify({
+        userId: user.id,
+        afterCallbackRedirect
+      });
 
       const authorizationUri = getAuthClient(provider).authorizeURL({
         ...getTokenConfig(provider),
-        state: user.id // This will allow us in the callback to associate the authorized account with the user
+        state: Buffer.from(stateObj).toString('base64')
       });
 
       return res.json({ authorizationUri });
@@ -73,12 +188,15 @@ export default function initializeMiningController(
     async createProviderMiningSourceCallback(req: Request, res: Response) {
       const { code, state } = req.query as { code: string; state: string };
       const provider = req.params.provider as OAuthMiningSourceProvider;
-
+      let redirect = '/';
       try {
+        const { userId, afterCallbackRedirect } = parseOAuthState(state);
+
+        redirect = afterCallbackRedirect;
         const exchangedTokens = await exchangeForToken(code, provider);
 
         await miningSources.upsert({
-          userId: state,
+          userId,
           email: exchangedTokens.email,
           credentials: {
             ...exchangedTokens,
@@ -86,15 +204,15 @@ export default function initializeMiningController(
           },
           type: provider
         });
-
-        res.redirect(
-          301,
-          `${ENV.FRONTEND_HOST}/mine?source=${exchangedTokens.email}`
-        );
+        redirect = afterCallbackRedirect.startsWith('/mine')
+          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
+          : afterCallbackRedirect;
+        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
       } catch (error) {
+        logger.error(error);
         res.redirect(
           301,
-          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`
+          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
         );
       }
     },
@@ -175,31 +293,10 @@ export default function initializeMiningController(
       }
     },
 
-    async getMiningSources(_req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.user as User;
-
-      try {
-        const sourcesData = await miningSources.getByUser(user.id);
-
-        const sources = sourcesData.map((s) => ({
-          email: s.email,
-          type: s.type
-        }));
-
-        return res.status(200).send({
-          message: 'Mining sources retrieved successfully',
-          sources
-        });
-      } catch (error) {
-        res.status(500);
-        return next(error);
-      }
-    },
-
     async startMining(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
-
       const {
+        extractSignatures,
         miningSource: { email },
         boxes: folders
       }: {
@@ -207,11 +304,15 @@ export default function initializeMiningController(
           email: string;
         };
         boxes: string[];
+        extractSignatures: boolean;
       } = req.body;
+
+      user.email = email; // used when user is not provided (edge function req)
 
       const errors = [
         validateType('email', email, 'string'),
-        validateType('boxes', folders, 'string[]')
+        validateType('boxes', folders, 'string[]'),
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -232,52 +333,34 @@ export default function initializeMiningController(
         );
 
       if (!miningSourceCredentials) {
-        return res.status(400).json({
+        return res.status(401).json({
           message: "This mining source isn't registered for this user"
         });
       }
 
-      const imapConnectionProvider =
-        'accessToken' in miningSourceCredentials
-          ? await new ImapConnectionProvider(
-              miningSourceCredentials.email
-            ).withOauth(miningSourceCredentials.accessToken)
-          : new ImapConnectionProvider(
-              miningSourceCredentials.email
-            ).withPassword(
-              miningSourceCredentials.host,
-              miningSourceCredentials.password,
-              miningSourceCredentials.tls,
-              miningSourceCredentials.port
-            );
-
-      let imapConnection = null;
-      let miningTask = null;
-
       try {
-        // Connect to validate connection before creating the pool.
-        imapConnection = await imapConnectionProvider.acquireConnection();
-        const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
-          imapConnectionProvider,
+        const miningTask = await tasksManager.createTask({
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
-          batchSize: ENV.FETCHING_BATCH_SIZE_TO_SEND,
-          fetchEmailBody: ENV.IMAP_FETCH_BODY
-        };
-        miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
-      } catch (err) {
-        if (imapConnection) {
-          await imapConnectionProvider.releaseConnection(imapConnection);
-        }
-        await imapConnectionProvider.cleanPool();
+          fetchEmailBody: extractSignatures
+        });
 
-        if (
-          err instanceof Error &&
-          err.message.toLowerCase().startsWith('invalid credentials')
-        ) {
-          return res.status(401).json({ message: err.message });
-        }
+        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
+
+        return res.status(201).send({ error: null, data: miningTask });
+      } catch (err) {
         if (
           err instanceof Error &&
           'textCode' in err &&
@@ -286,13 +369,31 @@ export default function initializeMiningController(
           return res.sendStatus(409);
         }
 
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 401')
+        ) {
+          res
+            .status(401)
+            .send('Failed to start fetching: Invalid credentials 401');
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 503')
+        ) {
+          res
+            .status(503)
+            .send(
+              'Failed to start fetching: Connection not available, please try again later 503'
+            );
+        }
+
         const newError = generateErrorObjectFromImapError(err);
 
         res.status(500);
         return next(new Error(newError.message));
       }
-
-      return res.status(201).send({ error: null, data: miningTask });
     },
 
     async startMiningFile(req: Request, res: Response, next: NextFunction) {
@@ -317,7 +418,35 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const fileMiningTask = await tasksManagerFile.createTask(user.id, 1);
+        const errors = [validateType('name', name, 'string')].filter(Boolean);
+
+        if (errors.length) {
+          return res
+            .status(400)
+            .json({ message: `Invalid input: ${errors.join(', ')}` });
+        }
+
+        const fileMiningTask = await tasksManagerFile.createTask(
+          user.id,
+          name,
+          1
+        );
+
+        const taskObject = tasksManagerFile.getTaskOrThrow(
+          fileMiningTask.miningId
+        );
+        const { userId, miningId } = taskObject;
+
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(
@@ -336,9 +465,80 @@ export default function initializeMiningController(
           })
         );
 
-        return res.status(201).send({ error: null, data: fileMiningTask });
+        return res.status(201).send({
+          error: null,
+          data: fileMiningTask
+        });
       } catch (err) {
-        res.status(500);
+        return next(err);
+      }
+    },
+
+    async startMiningPST(req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      const {
+        name,
+        extractSignatures
+      }: {
+        name: string;
+        extractSignatures: boolean;
+        // file
+      } = req.body;
+
+      const errors = [
+        validateType('name', name, 'string'),
+        validateType('extractSignatures', extractSignatures, 'boolean')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
+      }
+      try {
+        const miningTask = await tasksManagerPST.createTask(
+          user.id,
+          name,
+          extractSignatures
+        );
+
+        const taskObject = tasksManagerPST.getTaskOrThrow(miningTask.miningId);
+        const { userId, miningId } = taskObject;
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
+
+        return res.status(201).send({ error: null, data: miningTask });
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+        if (
+          err instanceof Error &&
+          'textCode' in err &&
+          err.textCode === 'CANNOT'
+        ) {
+          return res.sendStatus(409);
+        }
+
+        if (
+          err instanceof Error &&
+          err.message === 'Failed to parse PST file'
+        ) {
+          return res.status(422).json({ message: err.message });
+        }
+
         return next(err);
       }
     },
@@ -352,7 +552,14 @@ export default function initializeMiningController(
         return next(new Error('user does not exists.'));
       }
 
-      const manager = miningType === 'file' ? tasksManagerFile : tasksManager;
+      let manager;
+      if (miningType === 'file') {
+        manager = tasksManagerFile;
+      } else if (miningType === 'pst') {
+        manager = tasksManagerPST;
+      } else {
+        manager = tasksManager;
+      }
 
       const { id: taskId } = req.params;
       const {
@@ -390,15 +597,77 @@ export default function initializeMiningController(
       }
     },
 
-    getMiningTask(req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.User;
-
-      const { id: taskId, type: miningType } = req.params;
-
+    async getMiningTask(req: Request, res: Response, next: NextFunction) {
+      const { user } = res.locals;
       try {
-        const task = (
-          miningType === 'email' ? tasksManager : tasksManagerFile
-        ).getActiveTask(taskId);
+        const { data: userActiveTasks, error } = await supabaseClient
+          .schema('private')
+          .from('tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('started_at', { ascending: false })
+          .limit(4);
+
+        if (error || !userActiveTasks || userActiveTasks.length === 0) {
+          throw new Error('Unable to get active mining task');
+        }
+
+        const fetchTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'fetch'
+        );
+        const extractTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'extract'
+        );
+        const cleanTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === 'clean'
+        );
+
+        const miningId = extractTask?.details?.miningId;
+
+        if (!miningId) {
+          throw new Error('Mining id not found');
+        }
+
+        let task = null;
+
+        try {
+          task = tasksManager.getActiveTask(miningId);
+        } catch (err) {
+          logger.error(
+            `Task not found in tasksManager for miningId=${miningId}`
+          );
+        }
+
+        if (!task) {
+          try {
+            task = tasksManagerFile.getActiveTask(miningId);
+          } catch (err) {
+            logger.error(
+              `Task not found in tasksManagerFile for miningId=${miningId}`
+            );
+          }
+        }
+
+        if (!task) {
+          throw new Error(`No active task found for miningId=${miningId}`);
+        }
+
+        if (
+          task.miningSource.type === 'email' &&
+          (!fetchTask || !extractTask || !cleanTask)
+        ) {
+          throw new Error(`Email mining with id: ${miningId} not found`);
+        } else if (
+          task.miningSource.type === 'file' &&
+          (!extractTask || !cleanTask)
+        ) {
+          throw new Error(`File mining with id: ${miningId} not found`);
+        } else if (
+          task.miningSource.type === 'pst' &&
+          (!extractTask || !cleanTask)
+        ) {
+          throw new Error(`PST mining with id: ${miningId} not found`);
+        }
 
         if (user.id !== task.userId) {
           return res
@@ -406,9 +675,14 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        return res.status(200).send({ data: task });
+        return res.status(200).send({
+          task,
+          fetch: fetchTask,
+          extract: extractTask,
+          clean: cleanTask
+        });
       } catch (err) {
-        res.status(404);
+        res.status(204);
         return next(err);
       }
     }

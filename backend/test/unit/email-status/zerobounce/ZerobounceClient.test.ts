@@ -11,14 +11,26 @@ import {
 import MockAdapter from 'axios-mock-adapter';
 import ZerobounceClient from '../../../../src/services/email-status/zerobounce/client';
 import sandbox from './sandbox';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
 
-const ZEROBOUNCE_THROTTLE_REQUESTS = 1;
-const ZEROBOUNCE_THROTTLE_INTERVAL = 100;
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  ZEROBOUNCE_THROTTLE_REQUESTS,
-  ZEROBOUNCE_THROTTLE_INTERVAL
-);
+const ZEROBOUNCE_THROTTLE_REQUESTS = 5;
+const ZEROBOUNCE_THROTTLE_INTERVAL = 0.1;
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_zerobounce_test',
+  distribution: Distribution.Memory,
+  requests: ZEROBOUNCE_THROTTLE_REQUESTS,
+  intervalSeconds: ZEROBOUNCE_THROTTLE_INTERVAL
+});
+
+jest.mock('ioredis');
+
+jest.mock('../../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
 
 const LOGGER = {
   error: jest.fn(),
@@ -75,20 +87,17 @@ describe('ZerobounceClient', () => {
       axiosAdapter.onAny().reply(200, { valid: true });
 
       const startTime = Date.now();
-      const requests = [
-        await client.verifyEmail({
-          email_address: 'test@example.com',
-          ip_address: ''
-        }),
-        await client.verifyEmail({
-          email_address: 'test@example.com',
-          ip_address: ''
-        }),
-        await client.verifyEmail({
+
+      const requests = Array.from({
+        length: ZEROBOUNCE_THROTTLE_REQUESTS * 2
+      }).map(() =>
+        client.verifyEmail({
           email_address: 'test@example.com',
           ip_address: ''
         })
-      ];
+      );
+      await Promise.allSettled(requests);
+
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
@@ -130,20 +139,17 @@ describe('ZerobounceClient', () => {
       axiosAdapter.onAny().reply(200, { valid: true });
 
       const startTime = Date.now();
-      const requests = [
-        await client.verifyEmail({
-          email_address: 'test@example.com',
-          ip_address: ''
-        }),
-        await client.verifyEmail({
-          email_address: 'test@example.com',
-          ip_address: ''
-        }),
-        await client.verifyEmail({
+
+      const requests = Array.from({
+        length: ZEROBOUNCE_THROTTLE_REQUESTS * 2
+      }).map(() =>
+        client.verifyEmail({
           email_address: 'test@example.com',
           ip_address: ''
         })
-      ];
+      );
+      await Promise.allSettled(requests);
+
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(

@@ -109,7 +109,7 @@ describe('Enrichments Class', () => {
             'https://linkedin.com/in/johndoe',
             'https://github.com/johndoe'
           ],
-          location: ['San Francisco, CA', 'USA'],
+          location: 'San Francisco, CA, USA',
           alternateName: ['Johnny', 'J.D.']
         }
       ];
@@ -133,7 +133,7 @@ describe('Enrichments Class', () => {
             image: 'https://example.com/image.jpg',
             same_as:
               'https://linkedin.com/in/johndoe,https://github.com/johndoe',
-            location: 'San Francisco, CA,USA'
+            location: 'San Francisco, CA, USA'
           }
         ],
         p_update_empty_fields_only: true
@@ -217,11 +217,14 @@ describe('Enrichments Class', () => {
           name: 'hello'
         }
       ]);
-      expect(mockEngagements.register).toHaveBeenCalledWith(
-        userId,
-        ['test@example.com'],
-        'ENRICH'
-      );
+      expect(mockEngagements.register).toHaveBeenCalledWith([
+        {
+          email: 'test@example.com',
+          engagement_type: 'ENRICH',
+          service: 'test',
+          user_id: 'user-id'
+        }
+      ]);
       expect(task.details.total_enriched).toBe(1);
     });
   });

@@ -172,8 +172,14 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
-const $user = useSupabaseUser();
 const $profile = useSupabaseUserProfile();
+
+const {
+  data: { user },
+  error: userError,
+} = await useSupabaseClient().auth.getUser();
+
+if (!user || userError) throw new Error('Unable to fetch user data');
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
@@ -181,7 +187,7 @@ const showDeleteModal = ref(false);
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const isSocialLogin = ref($user.value?.app_metadata.provider === 'email');
+const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
   () =>
@@ -229,7 +235,7 @@ async function updateUserAccount(userAccount: UserAttributes) {
       severity: 'success',
       summary: t('password_updated'),
       detail: t('password_update_detail'),
-      life: 3000,
+      life: 5000,
     });
   }
 }
@@ -250,7 +256,7 @@ async function updateUserProfile(userProfile: Partial<Profile>) {
     severity: 'success',
     summary: t('profile_updated'),
     detail: t('profile_success'),
-    life: 3000,
+    life: 5000,
   });
 }
 

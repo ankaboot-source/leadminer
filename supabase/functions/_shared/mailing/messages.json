@@ -1,0 +1,16 @@
+{
+  "en": {
+    "footer": {
+      "line1": "You received this email as a notification about your recent activity on",
+      "brand": "leadminer",
+      "line2": "Extract, clean, and enrich your contacts — effortlessly."
+    }
+  },
+  "fr": {
+    "footer": {
+      "line1": "Vous recevez cet e-mail en tant que notification concernant votre récente activité sur",
+      "brand": "leadminer",
+      "line2": "Extrayez, nettoyez et enrichissez vos contacts — sans effort."
+    }
+  }
+}

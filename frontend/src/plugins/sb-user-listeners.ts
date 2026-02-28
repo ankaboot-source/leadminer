@@ -35,10 +35,15 @@ async function getCurrentUserProfile(client: SupabaseClient) {
 async function addMiningSourceFromProviderToken(
   provider: string,
   providerToken: string,
+  providerRefreshToken: string,
 ): Promise<void> {
   await useNuxtApp().$saasEdgeFunctions('add-mining-source', {
     method: 'POST',
-    body: { provider, provider_token: providerToken },
+    body: {
+      provider,
+      provider_token: providerToken,
+      provider_refresh_token: providerRefreshToken,
+    },
   });
 }
 
@@ -81,21 +86,35 @@ async function updateFirstTimeSignIn() {
  * Handles first-time sign-in logic.
  */
 async function handleFirstTimeSignIn() {
-  const $user = useSupabaseUser();
+  const {
+    data: { user },
+    error,
+  } = await useSupabaseClient().auth.getUser();
+
+  if (!user || error) throw new Error('Failed to fetch user data.');
+
   const $session = useSupabaseSession();
 
-  const provider = $user.value?.app_metadata.provider;
+  const provider = user.app_metadata?.provider;
   const providerToken = $session.value?.provider_token;
-  const firstTimeSignin = $user.value?.user_metadata.first_time_signin;
-  const emailTemplate = $user.value?.user_metadata.EmailTemplate;
+  const providerRefreshToken = $session.value?.provider_refresh_token;
+  const firstTimeSignin = user.user_metadata.first_time_signin;
+  const emailTemplate = user.user_metadata.EmailTemplate;
   const language = navigator.language.split('-')[0];
 
-  if (!firstTimeSignin && provider && providerToken) {
-    await addMiningSourceFromProviderToken(provider, providerToken);
+  if (!firstTimeSignin) {
     await updateFirstTimeSignIn();
   }
 
-  if (!emailTemplate || emailTemplate.language !== language) {
+  if (provider && providerToken && providerRefreshToken) {
+    await addMiningSourceFromProviderToken(
+      provider,
+      providerToken,
+      providerRefreshToken,
+    );
+  }
+
+  if (language && (!emailTemplate || emailTemplate.language !== language)) {
     await updateUserEmailTemplatesI18n(language);
   }
 }
@@ -137,7 +156,11 @@ export default defineNuxtPlugin({
 
         $currentProfile.value = await getCurrentUserProfile($supabaseClient);
         await handleFirstTimeSignIn();
-        channel = createUserProfileRealtimeChannel($user.value?.id as string);
+        const userId =
+          $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+        if (!userId) return;
+
+        channel = createUserProfileRealtimeChannel(userId);
         channel.subscribe();
       });
     }

@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:alpine
-    command: --port ${REDIS_PORT}
+    command: redis-server --maxmemory ${REDIS_MAXMEMORY} --maxmemory-policy ${REDIS_EVICTION_POLICY} --port ${REDIS_PORT}
     restart: always
 
   leadminer-api:
@@ -17,9 +17,22 @@ services:
     ports:
       - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
 
-  leadminer-worker:
-    image: leadminer-worker:git
-    container_name: leadminer_worker
+  leadminer-email-fetcher-service:
+    image: leadminer-email-fetcher-service:git
+    container_name: leadminer_email_fetcher_service
+    build:
+      context: micro-services/emails-fetcher
+      dockerfile: email-fetcher.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    ports:
+      - ${EMAIL_FETCHING_SERVICE_PORT}:${EMAIL_FETCHING_SERVICE_PORT}
+
+  leadminer-contact-extraction-worker:
+    image: leadminer-contact-extraction-worker:git
+    container_name: leadminer_contact_extraction
     build:
       context: backend
       dockerfile: worker.Dockerfile
@@ -28,9 +41,9 @@ services:
     depends_on:
       - redis
 
-  leadminer-email-worker:
-    image: leadminer-email-worker:git
-    container_name: leadminer_email_worker
+  leadminer-email-verification-worker:
+    image: leadminer-email-verification-worker:git
+    container_name: leadminer_email_verification_worker
     build:
       context: backend
       dockerfile: email-verification-worker.Dockerfile
@@ -69,6 +82,7 @@ services:
         CREDITS_PER_CONTACT: ${CREDITS_PER_CONTACT}
         SAAS_SUPABASE_PROJECT_URL: ${SAAS_SUPABASE_PROJECT_URL}
         SAAS_SUPABASE_ANON_KEY: ${SAAS_SUPABASE_ANON_KEY}
+        NOMINATIM_URL: ${NOMINATIM_URL}
     ports:
       - 8082:3000
     restart: always

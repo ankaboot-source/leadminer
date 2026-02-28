@@ -3,12 +3,12 @@ export interface PersonLD {
   image?: string;
   jobTitle?: string;
   worksFor?: string;
-  address?: string[];
+  address?: string;
   telephone?: string[];
   sameAs?: string[];
 }
 
 export interface ExtractSignature {
   isActive(): boolean;
-  extract(signature: string): Promise<PersonLD | null>;
+  extract(email: string, signature: string): Promise<PersonLD | null>;
 }

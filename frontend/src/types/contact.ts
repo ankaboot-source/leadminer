@@ -1,6 +1,7 @@
 export type Tag = 'professional' | 'newsletter' | 'personal' | 'group' | 'chat';
 
 export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
+export type ConsentStatus = 'legitimate_interest' | 'opt_out' | 'opt_in';
 
 export const EmailStatusScore: Record<EmailStatus, number> = {
   VALID: 0,
@@ -9,6 +10,14 @@ export const EmailStatusScore: Record<EmailStatus, number> = {
   INVALID: 3,
 };
 
+export interface NormalizedLocation {
+  osm_type?: string;
+  osm_id?: string;
+  lat?: string;
+  lon?: string;
+  display_name?: string;
+  address?: Record<string, unknown>;
+}
 export interface Contact {
   id: string;
   user_id: string;
@@ -18,7 +27,8 @@ export interface Contact {
   family_name: string | null;
   alternate_name: string[] | null;
   telephone: string[] | null;
-  location: string[] | null;
+  location: string | null;
+  location_normalized: NormalizedLocation | null;
   works_for: string | null;
   job_title: string | null;
   same_as: string[] | null;
@@ -29,13 +39,16 @@ export interface Contact {
   conversations?: number;
   replied_conversations?: number;
   status: EmailStatus | null;
+  consent_status?: ConsentStatus;
   occurrence?: number;
+  temperature: number | null;
   personid?: string;
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
   updated_at?: Date;
   created_at?: Date;
+  mining_id?: string;
 }
 
 export interface ContactEdit {

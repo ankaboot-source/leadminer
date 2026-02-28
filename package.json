@@ -4,11 +4,12 @@
   "description": "leadminer",
   "private": true,
   "scripts": {
-    "install-deps": "npm i && npm run install-deps:backend && npm run install-deps:frontend",
-    "install-deps:backend": "npm i --prefix ./backend",
+    "install-deps": "npm i && npm run install-deps:backend && npm run install-deps:frontend && npm run install-deps:micro-services-emails-fetcher",
     "install-deps:frontend": "npm i --prefix ./frontend",
+    "install-deps:backend": "npm i --prefix ./backend",
+    "install-deps:micro-services-emails-fetcher": "cd ./micro-services/emails-fetcher && bun install",
     "dev:all": "./run.sh",
-    "dev:generate-env": "bash ./generate_env.sh .env.master.dev",
+    "dev:generate-env": "bash ./generate_env.sh",
     "dev:supabase": "supabase start",
     "dev:supabase-functions": "supabase functions serve",
     "dev:frontend": "npm run dev --prefix ./frontend",
@@ -16,11 +17,21 @@
     "dev:backend-worker": "npm run dev:worker --prefix ./backend",
     "dev:backend-email-worker": "npm run dev:email-worker --prefix ./backend",
     "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
-    "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend"
+    "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend",
+    "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher",
+    "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher",
+    "prepare": "husky",
+    "precommit:check": "lint-staged"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.1",
     "supabase": "^2.19.7"
+  },
+  "lint-staged": {
+    "**/*.{js,cjs,mjs,ts,tsx,jsx,vue,json,yml,yaml,md,css,scss}": "prettier --write --ignore-unknown"
   }
 }

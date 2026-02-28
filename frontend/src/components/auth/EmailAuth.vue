@@ -42,9 +42,9 @@
         </template>
       </div>
       <div class="grid gap-1">
-        <label class="text-left" for="password">{{
-          $t('auth.password')
-        }}</label>
+        <label class="text-left" for="password">
+          {{ $t('auth.password') }}
+        </label>
         <Password
           v-model="password"
           :input-style="{ width: '100%' }"
@@ -163,7 +163,7 @@
               "
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
-              @keypress.enter="loginWithEmailAndPassword"
+              @keypress.enter="signInWithEmailAndPassword"
             />
             <template v-if="invalidEmail">
               <small id="password-help" class="text-red-400 text-left pl-4">
@@ -182,9 +182,9 @@
             </template>
           </div>
           <div class="grid gap-1">
-            <label class="text-left" for="password">{{
-              $t('auth.password')
-            }}</label>
+            <label class="text-left" for="password">
+              {{ $t('auth.password') }}
+            </label>
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
@@ -200,7 +200,7 @@
               "
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
-              @keypress.enter="loginWithEmailAndPassword"
+              @keypress.enter="signInWithEmailAndPassword"
             />
 
             <template v-if="invalidPassword">
@@ -216,7 +216,7 @@
             </template>
           </div>
         </div>
-        <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
+        <NuxtLink class="text-right link capitalize" to="/auth/forgot-password">
           {{ $t('auth.forgot_password') }}
         </NuxtLink>
       </div>
@@ -228,7 +228,7 @@
           :label="$t('auth.sign_in')"
           class="w-full"
           size="large"
-          @click="loginWithEmailAndPassword"
+          @click="signInWithEmailAndPassword"
         />
       </div>
     </template>
@@ -257,7 +257,7 @@ const { t: $t } = useI18n({
 });
 
 const { authMode = 'sign-in' } = defineProps<{
-  authMode: authModes;
+  authMode?: authModes;
 }>();
 
 const $toast = useToast();
@@ -309,14 +309,12 @@ function checkRequiredFields(): boolean {
   return !email.value || !password.value;
 }
 
-async function loginWithEmailAndPassword() {
+async function signInWithEmailAndPassword() {
   isLoading.value = true;
 
   setInvalidInputs(false);
 
-  if (checkRequiredFields()) {
-    return;
-  }
+  if (checkRequiredFields()) return;
 
   try {
     const { error } = await $supabase.auth.signInWithPassword({
@@ -326,7 +324,7 @@ async function loginWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    await navigateTo({ path: '/mine' });
+    await navigateTo({ path: '/' });
   } catch (error) {
     if (error instanceof Error) {
       setInvalidInputs(true);
@@ -347,12 +345,13 @@ function showToast(
   severity: ToastMessageOptions['severity'],
   summary: string,
   detail: string,
+  life = 3000,
 ) {
   $toast.add({
     severity,
     summary,
     detail,
-    life: 3000,
+    life,
   });
 }
 
@@ -361,6 +360,7 @@ function handleSuccess() {
     'success',
     $t('auth.sign_up_success'),
     $t('auth.confirmation_email', { email: email.value }),
+    5000,
   );
   $router.push({
     path: '/auth/success',

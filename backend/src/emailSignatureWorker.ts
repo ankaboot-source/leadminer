@@ -14,17 +14,16 @@ import EmailSignatureConsumer, {
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
-import { LLMModels, SignatureLLM } from './services/signature/llm';
+import { SignatureLLM } from './services/signature/llm';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
-import { TokenBucketRateLimiter } from './services/rate-limiter/RateLimiter';
+import { Distribution, TokenBucketRateLimiter } from './services/rate-limiter';
 import { SignatureRE } from './services/signature/regex';
+import { LLMModelsList } from './services/signature/llm/types';
 
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
 
 const emailSignatureCache = new RedisEmailSignatureCache(redisClient);
-
-const llmModel = LLMModels.cohere;
 
 const signatureEngines: EngineConfig[] = [
   {
@@ -36,19 +35,22 @@ const signatureEngines: EngineConfig[] = [
 if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   signatureEngines.push({
     engine: new SignatureLLM(
-      new TokenBucketRateLimiter(
-        llmModel.includes('free') ? 15 : 500,
-        60 * 1000
-      ),
+      new TokenBucketRateLimiter({
+        executeEvenly: false,
+        intervalSeconds: 60,
+        uniqueKey: 'email-signature-service',
+        distribution: Distribution.Memory,
+        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 1000
+      }),
       logger,
-      llmModel,
+      LLMModelsList,
       ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''
     ),
     useAsFallback: false
   });
 }
 
-const { processStreamData } = initializeEmailSignatureProcessor(
+const { processStreamData, handler } = initializeEmailSignatureProcessor(
   supabaseClient,
   new Signature(logger, signatureEngines),
   emailSignatureCache,
@@ -76,7 +78,8 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
   ENV.REDIS_EMAIL_SIGNATURE_CONSUMER_BATCH_SIZE,
   processStreamData,
   redisClient,
-  logger
+  logger,
+  handler
 );
 
 (async () => {

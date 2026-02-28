@@ -42,23 +42,71 @@
         {{ $t('auth.sign_up_success_message2') }}
       </p>
     </div>
+    <div>
+      <p>
+        {{ $t('auth.sign_up_still_not_receive') }}
+        <span
+          class="link cursor-pointer"
+          :class="{ 'text-gray-400 pointer-events-none': cooldown }"
+          @click="!cooldown && resendConfirmationEmail()"
+        >
+          {{ $t('auth.sign_up_resend_in', cooldown) }}
+        </span>
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+const $session = useSupabaseSession();
+const $supabaseClient = useSupabaseClient();
+const $toast = useToast();
 const $route = useRoute();
-const session = useSupabaseSession();
-const { email } = $route.query;
+const email = $route.query.email as string;
+
+const COOLDOWN_DEFAULT = 45;
+const cooldown = ref(COOLDOWN_DEFAULT);
+
+function startCooldown() {
+  cooldown.value = COOLDOWN_DEFAULT;
+  const timer = setInterval(() => {
+    cooldown.value--;
+    if (cooldown.value <= 0) clearInterval(timer);
+  }, 1000);
+}
+
+async function resendConfirmationEmail() {
+  const { error } = await $supabaseClient.auth.resend({
+    type: 'signup',
+    email,
+  });
+
+  if (error) {
+    throw Error(error.message);
+  }
+
+  $toast.add({
+    severity: 'success',
+    summary: $t('auth.confirmation_sent'),
+    detail: $t('auth.confirmation_email', { email }),
+    life: 5000,
+  });
+
+  startCooldown();
+}
 
 onBeforeMount(() => {
-  const unauthorized = window.history.state.back !== '/auth/signup' || !email;
+  const previousPath = window.history.state?.back;
+  const unauthorized = previousPath !== '/auth/signup' || !email;
   if (unauthorized) {
     const $router = useRouter();
     $router.replace('/auth');
   }
+
+  startCooldown();
 });
 
-watch(session, (activeSession) => {
+watch($session, (activeSession) => {
   if (activeSession) navigateTo('/');
 });
 </script>

@@ -1,8 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import { ImapFlow as Connection } from 'imapflow';
 import {
-  ImapMiningSourceCredentials,
   MiningSources,
   OAuthMiningSourceCredentials,
   OAuthMiningSourceProvider
@@ -23,23 +21,6 @@ type NewToken = {
   expires_at: number;
 };
 
-async function getImapConnectionProvider(
-  data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
-) {
-  if ('accessToken' in data) {
-    const connection = await new ImapConnectionProvider(data.email).withOauth(
-      data.accessToken
-    );
-    return connection;
-  }
-  return new ImapConnectionProvider(data.email).withPassword(
-    data.host,
-    data.password,
-    data.tls,
-    data.port
-  );
-}
-
 function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   const { provider, accessToken, refreshToken, expiresAt } = data;
   const client = provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
@@ -58,13 +39,13 @@ async function upsertMiningSource(
   userId: string,
   token: NewToken,
   provider: OAuthMiningSourceProvider,
-  data: OAuthMiningSourceCredentials
+  email: string
 ) {
   await miningSources.upsert({
     type: provider,
-    email: data.email,
+    email,
     credentials: {
-      email: data.email,
+      email,
       provider,
       accessToken: token.access_token,
       refreshToken: token.refresh_token,
@@ -76,9 +57,6 @@ async function upsertMiningSource(
 export default function initializeImapController(miningSources: MiningSources) {
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
-      let imapConnectionProvider: ImapConnectionProvider | null = null;
-      let imapConnection: Connection | null = null;
-
       const { email } = req.body;
 
       const errors = [validateType('email', email, 'string')].filter(Boolean);
@@ -88,6 +66,10 @@ export default function initializeImapController(miningSources: MiningSources) {
           .status(400)
           .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      let imapConnection: Awaited<
+        ReturnType<typeof ImapConnectionProvider.getSingleConnection>
+      > | null = null;
 
       try {
         const userId = (res.locals.user as User).id;
@@ -104,29 +86,45 @@ export default function initializeImapController(miningSources: MiningSources) {
         }
         if ('accessToken' in data) {
           const { token, refreshToken, provider } = getTokenAndProvider(data);
+
+          if (!refreshToken)
+            return res.status(401).send({
+              data: { message: 'No Refresh Token' }
+            });
+
           if (token.expired(1000)) {
-            if (!refreshToken)
-              return res.status(401).send({
-                data: { message: 'Token has expired' }
-              });
             const newToken = (await token.refresh()).token as NewToken;
 
             await upsertMiningSource(
               miningSources,
               userId,
-              newToken,
+              {
+                ...newToken,
+                refresh_token: newToken.refresh_token ?? refreshToken
+              },
               provider,
-              data
+              data.email
             );
 
             data.accessToken = newToken.access_token;
           }
         }
 
-        imapConnectionProvider = await getImapConnectionProvider(data);
-        imapConnection = await imapConnectionProvider.acquireConnection();
+        imapConnection = await ImapConnectionProvider.getSingleConnection(
+          email,
+          'accessToken' in data
+            ? {
+                oauthToken: data.accessToken
+              }
+            : {
+                host: data.host,
+                password: data.password,
+                tls: data.tls,
+                port: data.port
+              }
+        );
 
-        const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
+        const imapBoxesFetcher = new ImapBoxesFetcher(imapConnection, logger);
         const tree: any = await imapBoxesFetcher.getTree(data.email);
 
         logger.info('Mining IMAP tree succeeded.', {
@@ -139,6 +137,12 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (error: any) {
+        logger.error('Error during inbox fetch', {
+          message: error.message,
+          stack: error.stack,
+          code: error.code
+        });
+
         if ([502, 503].includes(error?.output?.payload?.statusCode)) {
           return res
             .status(error?.output?.payload?.statusCode)
@@ -152,9 +156,15 @@ export default function initializeImapController(miningSources: MiningSources) {
         return next(generatedError);
       } finally {
         if (imapConnection) {
-          await imapConnectionProvider?.releaseConnection(imapConnection);
+          try {
+            await imapConnection.logout();
+          } catch (logoutError) {
+            logger.warn(
+              'Unable to close IMAP connection cleanly.',
+              logoutError
+            );
+          }
         }
-        await imapConnectionProvider?.cleanPool();
       }
     }
   };

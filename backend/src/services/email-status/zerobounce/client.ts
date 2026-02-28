@@ -2,7 +2,8 @@ import { Logger } from 'winston';
 import axios, { AxiosInstance } from 'axios';
 import assert from 'node:assert';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
+import { ZEROBOUNCE_TIMEOUT } from '../constants';
 
 /**
  * Configuration options for ZerobounceClient.
@@ -107,7 +108,7 @@ export default class ZerobounceClient {
 
   static readonly BATCH_VALIDATION_PER_MINUTE = 5;
 
-  static readonly SINGLE_VALIDATION_PER_10_SECONDS = 50000;
+  static readonly SINGLE_VALIDATION_PER_10_SECONDS = 80000;
 
   private readonly api: AxiosInstance;
 
@@ -122,7 +123,8 @@ export default class ZerobounceClient {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: config.url ?? ZerobounceClient.baseURL
+      baseURL: config.url ?? ZerobounceClient.baseURL,
+      timeout: ZEROBOUNCE_TIMEOUT
     });
   }
 
@@ -148,7 +150,11 @@ export default class ZerobounceClient {
       );
       return response.data;
     } catch (error) {
-      logError(error, `[${this.constructor.name}:verifyEmail]`, this.logger);
+      logError(
+        error,
+        `[${this.constructor.name}:verifyEmail:${email}]`,
+        this.logger
+      );
       throw error;
     }
   }

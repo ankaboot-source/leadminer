@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import {
@@ -6,17 +7,16 @@ import {
   RedisCommand,
   StreamInfo,
   Task,
-  TaskFetch,
   TaskProgress,
   TaskProgressType
 } from './types';
 // eslint-disable-next-line max-classes-per-file
-import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
-
 import ENV from '../../config';
+import { mailMiningComplete, refineContacts } from '../../db/mail';
 import SupabaseTasks from '../../db/supabase/tasks';
+import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 import logger from '../../utils/logger';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
+import EmailFetcherClient from '../email-fetching';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
@@ -33,7 +33,6 @@ export default class TasksManager {
    * Creates a new MiningTaskManager instance.
    * @param redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
    * @param redisPublisher - The Redis publisher instance to use for publishing mining events.
-   * @param emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
    * @param idGenerator - A function that generates unique mining IDs
    */
@@ -41,7 +40,7 @@ export default class TasksManager {
     private readonly tasksResolver: SupabaseTasks,
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
-    private readonly emailFetcherFactory: EmailFetcherFactory,
+    private readonly emailFetcherAPI: EmailFetcherClient,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
     private readonly idGenerator: () => Promise<string>
   ) {
@@ -55,7 +54,51 @@ export default class TasksManager {
 
     // Set up the Redis subscriber to listen for updates
     this.redisSubscriber.on('message', async (_channel, data) => {
-      const { miningId, progressType, count } = JSON.parse(data);
+      let message: {
+        miningId?: string;
+        progressType?: TaskProgressType;
+        count?: number;
+        isCompleted?: boolean;
+        isCanceled?: boolean;
+      };
+
+      try {
+        message = JSON.parse(data);
+      } catch (error) {
+        logger.warn('Ignoring malformed Redis progress payload.', {
+          data,
+          error
+        });
+        return;
+      }
+
+      const { miningId, progressType, count, isCompleted, isCanceled } =
+        message;
+
+      if (!miningId || !progressType || typeof count !== 'number') {
+        logger.warn('Ignoring incomplete Redis progress payload.', { data });
+        return;
+      }
+
+      if (progressType === 'signatures' && isCompleted) {
+        const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+        if (!task) return;
+
+        const { signature } = task.process;
+
+        signature.status = TaskStatus.Done;
+      }
+
+      if (progressType === 'fetched' && (isCanceled || isCompleted)) {
+        const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+        if (!task) return;
+
+        const { fetch } = task.process;
+
+        fetch.status = isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
+      }
 
       if (count > 0) {
         this.updateProgress(miningId, progressType, count);
@@ -102,16 +145,14 @@ export default class TasksManager {
    * @throws {Error} If a task with the same mining ID already exists.
    * @throws {Error} If there is an error when creating the task.
    */
-  async createTask({
-    imapConnectionProvider,
-    email,
-    boxes,
-    batchSize,
-    fetchEmailBody,
-    userId
-  }: ImapEmailsFetcherOptions) {
+  async createTask(
+    { email, boxes, fetchEmailBody, userId }: ImapEmailsFetcherOptions,
+    passive_mining = false
+  ): Promise<RedactedTask> {
+    let miningTaskId: string | null = null;
     try {
       const { miningId, stream } = await this.generateTaskInformation();
+      miningTaskId = miningId;
       const {
         messagesStream,
         messagesConsumerGroup,
@@ -119,40 +160,47 @@ export default class TasksManager {
         emailsConsumerGroup
       } = stream;
 
-      const fetcher = this.emailFetcherFactory.create({
-        imapConnectionProvider,
-        boxes,
-        userId,
-        email,
-        miningId,
-        contactStream: messagesStream,
-        signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
-        batchSize,
-        fetchEmailBody
-      });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       const miningTask: MiningTask = {
         userId,
         miningId,
+        miningSource: { source: email, type: 'email' },
         progressHandlerSSE,
         process: {
+          signature: {
+            userId,
+            type: TaskType.Enrich,
+            category: TaskCategory.Enriching,
+            status: TaskStatus.Running,
+            details: {
+              miningId,
+              enabled: fetchEmailBody,
+              stream: {
+                signatureStream: 'email-signature'
+              },
+              progress: {
+                signatures: 0
+              },
+              passive_mining
+            }
+          },
           fetch: {
             userId,
             category: TaskCategory.Mining,
             type: TaskType.Fetch,
             status: TaskStatus.Running,
-            instance: fetcher,
             details: {
               miningId,
               stream: {
                 messagesStream
               },
               progress: {
-                totalMessages: await fetcher.getTotalMessages(),
-                folders: fetcher.folders,
+                totalMessages: 0,
+                folders: boxes,
                 fetched: 0
-              }
+              },
+              passive_mining
             }
           },
           extract: {
@@ -169,7 +217,8 @@ export default class TasksManager {
               },
               progress: {
                 extracted: 0
-              }
+              },
+              passive_mining
             }
           },
           clean: {
@@ -186,7 +235,8 @@ export default class TasksManager {
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
-              }
+              },
+              passive_mining
             }
           }
         },
@@ -195,35 +245,62 @@ export default class TasksManager {
           fetched: 0,
           extracted: 0,
           verifiedContacts: 0,
-          createdContacts: 0
+          createdContacts: 0,
+          signatures: 0
         },
         startedAt: performance.now()
       };
 
       const { progress, process } = miningTask;
-      const { fetch, extract, clean } = process;
-
-      progress.totalMessages = fetch.details.progress.totalMessages;
+      const { fetch, extract, clean, signature } = process;
 
       const taskFetch = await this.tasksResolver.create(fetch);
+      const taskSignature = await this.tasksResolver.create(signature);
       const taskExtract = await this.tasksResolver.create(extract);
       const taskClean = await this.tasksResolver.create(clean);
 
       miningTask.process.fetch.id = taskFetch.id;
+      miningTask.process.signature.id = taskSignature.id;
       miningTask.process.extract.id = taskExtract.id;
       miningTask.process.clean.id = taskClean.id;
+
       miningTask.process.fetch.startedAt = taskFetch.startedAt;
+      miningTask.process.signature.startedAt = taskSignature.startedAt;
       miningTask.process.extract.startedAt = taskExtract.startedAt;
       miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
-      fetch.instance.start();
 
       await Promise.all(
         [extract, clean].map((p) =>
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
+
+      try {
+        const {
+          data: { totalMessages }
+        } = await this.emailFetcherAPI.startFetch({
+          boxes,
+          userId,
+          email,
+          miningId,
+          contactStream: messagesStream,
+          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
+          extractSignatures: fetchEmailBody
+        });
+
+        progress.totalMessages = totalMessages;
+        process.fetch.details.progress.totalMessages = totalMessages;
+      } catch (error) {
+        logger.error(`Failed to start fetching task with id: ${miningId}`, {
+          error
+        });
+        if (error instanceof AxiosError) {
+          throw new Error(`Failed to start fetching: ${error.message}`);
+        }
+        throw new Error('Failed to start fetching');
+      }
 
       this.redisSubscriber.subscribe(miningId, (err) => {
         if (err) {
@@ -234,6 +311,9 @@ export default class TasksManager {
       return redactSensitiveData(miningTask);
     } catch (error) {
       logger.error('Error when creating task', error);
+      if (miningTaskId) {
+        await this.deleteTask(miningTaskId, null);
+      }
       throw error;
     }
   }
@@ -243,7 +323,7 @@ export default class TasksManager {
    * @param miningId - The mining ID of the task to retrieve.
    * @returns Returns the task, otherwise throws error.
    */
-  private getTaskOrThrow(miningId: string) {
+  getTaskOrThrow(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) {
       throw new Error(`Task with mining ID ${miningId} does not exist.`);
@@ -300,6 +380,8 @@ export default class TasksManager {
     }
     const task = this.getTaskOrThrow(miningId);
     const { progressHandlerSSE, startedAt, progress, process } = task;
+    const { fetch, extract, clean, signature } = process;
+
     try {
       const endEntireTask = !processIds || processIds.length === 0;
       const processesToStop = Object.values(process).filter((p) =>
@@ -308,12 +390,29 @@ export default class TasksManager {
           : !p.stoppedAt && p.id && processIds?.includes(p.id)
       );
 
-      if (endEntireTask) {
-        this.ACTIVE_MINING_TASKS.delete(miningId);
-        progressHandlerSSE.stop();
+      if (processesToStop.length) {
+        await this.stopTask(processesToStop, true);
       }
 
-      await this.stopTask(processesToStop, true);
+      const isCompleted = [fetch, extract, clean, signature].every(
+        (p) => p.stoppedAt != null
+      );
+
+      if (isCompleted) {
+        try {
+          await refineContacts(task.userId);
+          await mailMiningComplete(miningId);
+        } catch (err) {
+          logger.error(
+            'Failed to trigger email notification, refine contacts',
+            err
+          );
+        } finally {
+          this.ACTIVE_MINING_TASKS.delete(miningId);
+          progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
+          progressHandlerSSE.stop();
+        }
+      }
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
@@ -353,18 +452,26 @@ export default class TasksManager {
       // eslint-disable-next-line no-param-reassign
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
-      if (task.type === 'fetch') {
-        await (task as TaskFetch).instance.stop(
-          TaskStatus.Canceled === 'canceled'
+      try {
+        if (task.type === 'fetch') {
+          await this.emailFetcherAPI.stopFetch({
+            miningId: task.details.miningId,
+            canceled: task.status === 'canceled'
+          });
+        }
+
+        await this.pubsubSendMessage(
+          task.details.miningId,
+          'DELETE',
+          task.details.stream
+        );
+        await this.tasksResolver.update(task);
+      } catch (error) {
+        logger.error(
+          `Failed to stop current active task with id: ${task.details.miningId}`,
+          { error }
         );
       }
-
-      await this.pubsubSendMessage(
-        task.details.miningId,
-        'DELETE',
-        task.details.stream
-      );
-      await this.tasksResolver.update(task);
     });
 
     await Promise.all(stopPromises);
@@ -387,12 +494,13 @@ export default class TasksManager {
     if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
 
     const { progressHandlerSSE, process } = task;
-    const { fetch, extract, clean } = process;
+    const { fetch, extract, clean, signature } = process;
 
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...clean.details.progress
+      ...clean.details.progress,
+      ...signature.details.progress
     };
 
     const value = progress[`${progressType}`];
@@ -425,7 +533,8 @@ export default class TasksManager {
       fetched: 'fetch',
       extracted: 'extract',
       createdContacts: 'clean',
-      verifiedContacts: 'clean'
+      verifiedContacts: 'clean',
+      signatures: 'signature'
     };
 
     const taskProperty = progressMappings[progressType];
@@ -453,19 +562,37 @@ export default class TasksManager {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) return undefined;
 
-    const { fetch, extract, clean } = task.process;
+    const { fetch, extract, clean, signature } = task.process;
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...clean.details.progress
+      ...clean.details.progress,
+      ...signature.details.progress
     };
 
-    if (!fetch.stoppedAt && fetch.instance.isCompleted) {
-      logger.debug('Task progress update', {
-        ...progress
+    if (!fetch.stoppedAt && fetch.status === TaskStatus.Done) {
+      logger.debug('[Progress update]: stopping fetching task', {
+        status: fetch.status,
+        started_at: fetch.startedAt,
+        stopped_at: fetch.stoppedAt,
+        progress
       });
       await this.stopTask([fetch]);
       this.notifyChanges(task.miningId, 'fetched', 'fetching-finished');
+    }
+
+    if (
+      fetch.stoppedAt &&
+      !signature.stoppedAt &&
+      (signature.status === TaskStatus.Done || !signature.details.enabled)
+    ) {
+      logger.debug('[Progress update]: stopping signature task', {
+        status: signature.status,
+        started_at: signature.startedAt,
+        stopped_at: signature.stoppedAt,
+        progress
+      });
+      await this.stopTask([signature]);
     }
 
     if (
@@ -473,8 +600,11 @@ export default class TasksManager {
       fetch.stoppedAt &&
       progress.extracted >= progress.fetched
     ) {
-      logger.debug('Task progress update', {
-        ...progress
+      logger.debug('[Progress update]: stopping extracting task', {
+        status: extract.status,
+        started_at: extract.startedAt,
+        stopped_at: extract.stoppedAt,
+        progress
       });
       await this.stopTask([extract]);
       this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
@@ -485,8 +615,11 @@ export default class TasksManager {
       extract.stoppedAt &&
       progress.verifiedContacts >= progress.createdContacts
     ) {
-      logger.debug('Task progress update', {
-        ...progress
+      logger.debug('[Progress update]: stopping cleaning task', {
+        status: clean.status,
+        started_at: clean.startedAt,
+        stopped_at: clean.stoppedAt,
+        progress
       });
       await this.stopTask([clean]);
       this.notifyChanges(
@@ -499,13 +632,16 @@ export default class TasksManager {
     const status =
       fetch.stoppedAt !== undefined &&
       extract.stoppedAt !== undefined &&
-      clean.stoppedAt !== undefined;
+      clean.stoppedAt !== undefined &&
+      signature.stoppedAt !== undefined;
 
     if (status) {
       try {
         await this.deleteTask(miningId, null);
       } catch (error) {
-        logger.error(error);
+        logger.error(`Error deleting task: ${(error as Error).message}`, {
+          error
+        });
       }
     }
 

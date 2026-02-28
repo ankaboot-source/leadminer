@@ -14,6 +14,8 @@
       "cancel": "Cancel",
       "mine": "Mine",
       "contacts": "Contacts",
+      "sources": "Sources",
+      "campaigns": "Campaigns",
       "clean": "Clean",
       "enrich": "Enrich",
       "edit": "Edit",
@@ -26,7 +28,8 @@
       "the_plural": "the",
       "of": "of",
       "email_required": "Email is required",
-      "password_required": "Password is required"
+      "password_required": "Password is required",
+      "close": "Close"
     },
     "auth": {
       "sign_in": "Sign in",
@@ -52,14 +55,17 @@
       "sign_in_failed": "Sign in Failed",
       "invalid_login": "Invalid email or password",
       "weak_password": "Weak password, verify length or character criteria.",
-      "sign_up_success": "Sign up Successfully",
+      "sign_up_success": "Signed up Successfully",
       "confirmation_email": "We have sent a confirmation email to {email}",
+      "confirmation_sent": "Confirmation email sent",
       "sign_up_failed": "Sign up Failed",
       "account_already": "Already have an account?",
       "discover_gems": "Discover hidden gems in your social network",
       "sign_up_success_header": "Almost done",
       "sign_up_success_message1": "We sent an email to",
       "sign_up_success_message2": "It is a link that will sign you up. If you can't see this email, please check your spam folder.",
+      "sign_up_still_not_receive": "Still did not receive it?",
+      "sign_up_resend_in": "Resend | Resend in {n}s | Resend in {n}s",
       "social_account": "social account",
       "send_reset_instructions": "Send reset instructions",
       "reset_password_confirmed": "Reset Password Confirmed",
@@ -98,7 +104,7 @@
       "alternate_names_definition": "Other names this contact goes by",
       "alternate_emails_definition": "Other emails this contact uses",
       "telephone_definition": "Phone number this contact uses",
-      "address_definition": "The location of this contact",
+      "location_definition": "The location of this contact",
       "works_for_definition": "Organization this contact works for",
       "job_title_definition": "The job title of this contact",
       "updated_at_definition": "Last update date",
@@ -109,6 +115,11 @@
         "invalid": "INVALID",
         "unknown": "UNKNOWN",
         "unverified": "UNVERIFIED"
+      },
+      "consent": {
+        "legitimate_interest": "Legitimate interest",
+        "opt_out": "Opt-out",
+        "opt_in": "Opt-in"
       },
       "tag": {
         "professional": "Professional",
@@ -123,7 +134,20 @@
     },
     "mining": {
       "toast_canceled_title": "Mining canceled",
-      "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue."
+      "toast_canceled_by_connection_detail": "Your mining was interrupted due to an internet connection issue.",
+      "extract_signatures_option": "Extract contact details from signatures",
+      "extract_signatures_sub": "( this may take more time )"
+    },
+    "error": {
+      "default": {
+        "title": "Unexpected error",
+        "message": "An unexpected error occurred. Please try again."
+      }
+    },
+    "upload": {
+      "drag_and_drop": "Drag and drop files here.",
+      "select_file_label": "Upload your file",
+      "upload": "Upload"
     }
   },
   "fr": {
@@ -141,6 +165,8 @@
       "cancel": "Annuler",
       "mine": "Extraire",
       "contacts": "Contacts",
+      "campaigns": "Campagnes",
+      "sources": "Sources",
       "clean": "Nettoyer",
       "enrich": "Enrichir",
       "edit": "Modifier",
@@ -153,7 +179,8 @@
       "the_plural": "les",
       "of": "sur",
       "email_required": "Email est obligatoire",
-      "password_required": "Mot de passe est obligatoire"
+      "password_required": "Mot de passe est obligatoire",
+      "close": "Fermer"
     },
     "auth": {
       "sign_in": "Se connecter",
@@ -181,12 +208,15 @@
       "weak_password": "Mot de passe faible, vérifiez la longueur ou les critères de caractères.",
       "sign_up_success": "Inscription réussie",
       "confirmation_email": "Nous avons envoyé un e-mail de confirmation à {email}",
+      "confirmation_sent": "E-mail de confirmation envoyé",
       "sign_up_failed": "Échec de l'inscription",
       "account_already": "Vous avez déjà un compte ?",
       "discover_gems": "Découvrez des trésors cachés dans votre réseau social",
       "sign_up_success_header": "Presque terminé",
       "sign_up_success_message1": "Nous avons envoyé un e-mail à",
       "sign_up_success_message2": "Il contient un lien qui vous inscrira. Si vous ne voyez pas cet e-mail, veuillez vérifier votre dossier de spam.",
+      "sign_up_still_not_receive": "Vous ne l’avez toujours pas reçu ?",
+      "sign_up_resend_in": "Renvoyer | Renvoyer dans {n}s | Renvoyer dans {n}s",
       "social_account": "compte social",
       "send_reset_instructions": "Envoyer les instructions de réinitialisation",
       "reset_password_confirmed": "Réinitialisation du mot de passe confirmée",
@@ -225,7 +255,7 @@
       "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
       "alternate_emails_definition": "Autres adresses e-mail utilisées par ce contact",
       "telephone_definition": "Numéro de téléphone utilisées par ce contact",
-      "address_definition": "L'emplacement de ce contact",
+      "location_definition": "L'emplacement de ce contact",
       "works_for_definition": "Organisation pour laquelle ce contact travaille",
       "updated_at_definition": "Dernière date de modification",
       "created_at_definition": "La date de création de ce contact",
@@ -236,6 +266,11 @@
         "invalid": "INVALIDE",
         "unknown": "INCONNU",
         "unverified": "NON VÉRIFIÉ"
+      },
+      "consent": {
+        "legitimate_interest": "Intérêt légitime",
+        "opt_out": "Opposition (opt-out)",
+        "opt_in": "Consentement (opt-in)"
       },
       "tag": {
         "professional": "Professionnel",
@@ -250,7 +285,20 @@
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",
-      "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction."
+      "toast_canceled_by_connection_detail": "Connexion perdue. Extraction annulée. Veuillez vous reconnecter pour commencer une nouvelle extraction.",
+      "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
+      "extract_signatures_sub": "(l'extraction prendra plus de temps)"
+    },
+    "error": {
+      "default": {
+        "title": "Erreur inattendue",
+        "message": "Une erreur inattendue s'est produite. Veuillez réessayer."
+      }
+    },
+    "upload": {
+      "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
+      "select_file_label": "Téléchargez votre fichier",
+      "upload": "Téléversement"
     }
   }
 }

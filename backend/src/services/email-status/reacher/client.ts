@@ -1,7 +1,8 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
-import { IRateLimiter } from '../../rate-limiter/RateLimiter';
+import { IRateLimiter } from '../../rate-limiter';
+import { TIMEOUT } from '../constants';
 
 interface BulkSubmitResponse {
   job_id: string;
@@ -161,7 +162,8 @@ export default class ReacherClient {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: config.host
+      baseURL: config.host,
+      timeout: TIMEOUT
     });
 
     if (config.timeoutMs) {

@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import Aura from '@primevue/themes/aura';
+import Aura from '@primeuix/themes/aura';
 import pkg from './package.json';
 
 export default defineNuxtConfig({
@@ -8,6 +8,12 @@ export default defineNuxtConfig({
   imports: {
     autoImport: true,
     dirs: ['stores'],
+    imports: [
+      {
+        from: 'primevue/usetoast',
+        name: 'useToast',
+      },
+    ],
   },
 
   build: {
@@ -50,7 +56,10 @@ export default defineNuxtConfig({
       // Supabase saas
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
+      CAMPAIGN_COMPLIANCE_FOOTER: process.env.CAMPAIGN_COMPLIANCE_FOOTER,
       IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
+      // Nominatim
+      NOMINATIM_URL: process.env.NOMINATIM_URL,
     },
   },
 
@@ -72,15 +81,16 @@ export default defineNuxtConfig({
       theme: {
         preset: Aura,
         options: {
+          darkModeSelector: 'light',
           cssLayer: {
             name: 'primevue',
-            order: 'tailwind-base, primevue, tailwind-utilities',
+            order: 'theme, base, primevue',
           },
         },
       },
     },
     components: {
-      exclude: ['Editor', 'Chart'],
+      exclude: ['Chart'],
     },
   },
 
@@ -99,30 +109,41 @@ export default defineNuxtConfig({
 
   postcss: {
     plugins: {
-      tailwindcss: {},
-      autoprefixer: {
-        overrideBrowserslist: [
-          'last 4 Chrome versions',
-          'last 4 Firefox versions',
-          'last 4 Edge versions',
-          'last 4 Safari versions',
-          'last 4 Android versions',
-          'last 4 ChromeAndroid versions',
-          'last 4 FirefoxAndroid versions',
-          'last 4 iOS versions',
-        ],
-      },
+      '@tailwindcss/postcss': {},
+      autoprefixer: {},
     },
   },
 
-  css: ['primeicons/primeicons.css', '~/assets/css/tailwind.css'],
+  vite: {
+    resolve: {
+      alias: {
+        cookie: 'cookie-es',
+      },
+    },
+    optimizeDeps: {
+      include: [
+        '@supabase/ssr',
+        'cookie',
+        'quill',
+        'quill-delta',
+        'parchment',
+        'eventemitter3',
+        'lodash-es',
+      ],
+    },
+    ssr: {
+      noExternal: ['quill', 'quill-delta', 'parchment'],
+    },
+  },
+
+  css: ['~/assets/css/tailwind.css'],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
     key: process.env.SUPABASE_ANON_KEY,
     clientOptions: {
       auth: {
-        flowType: 'implicit',
+        flowType: 'pkce',
         detectSessionInUrl: true,
         persistSession: true,
         autoRefreshToken: true,
@@ -131,7 +152,13 @@ export default defineNuxtConfig({
     redirectOptions: {
       callback: '/callback',
       login: '/auth/login',
-      include: ['/mine', '/contacts', '/account(/*)?'],
+      include: [
+        '/mine',
+        '/contacts',
+        '/sources',
+        '/campaigns',
+        '/account(/*)?',
+      ],
       exclude: ['/auth(/*)?', '/credits-success'],
     },
   },

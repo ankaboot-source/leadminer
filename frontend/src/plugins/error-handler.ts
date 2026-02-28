@@ -6,11 +6,19 @@ interface ErrorStatusMessages {
   [key: number]: string;
 }
 
+export class HandledError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'handledError';
+  }
+}
+
 const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
   400: 'Oops! Something went wrong. Please double-check your input and try again.',
   401: "Sorry, you're not authorized. Please log in and try again.",
   403: 'Access denied. Please contact support if you need assistance.',
-  404: "what you're looking for couldn't be found.",
+  404: "What you're looking for couldn't be found.",
+  422: "We couldn't process this file, Please try another one.",
   500: 'Something went wrong on our end. Please try again later.',
   502: 'Our server is having issues. Please try again later.',
   503: 'Service is temporarily unavailable. Please check your connection or try again later.',
@@ -46,6 +54,9 @@ function networkErrorMessage(err: unknown) {
 
 function otherErrorMessages(err: unknown) {
   if (isFetchError(err) && err.response) {
+    if (err.response.status === 422) {
+      return ERROR_STATUS_MESSAGES[err.response.status];
+    }
     return (
       err.response._data.message ?? ERROR_STATUS_MESSAGES[err.response.status]
     );
@@ -57,7 +68,10 @@ export default defineNuxtPlugin((nuxtApp) => {
   const toastService = usePrimeVueToast();
 
   nuxtApp.vueApp.config.errorHandler = (error) => {
-    let message = ERROR_STATUS_MESSAGES[500];
+    if (error instanceof HandledError) {
+      console.warn('[HandledError]', error.message);
+      return;
+    }
 
     if (isExpectedFaultyCode(error)) return;
 
@@ -72,6 +86,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
+    let message = ERROR_STATUS_MESSAGES[500];
     message = networkErrorMessage(error) ?? otherErrorMessages(error);
 
     toastService.add({

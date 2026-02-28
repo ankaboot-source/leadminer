@@ -33,43 +33,78 @@
     <template #message="slotProps">
       <i class="pi pi-info-circle" />
       <div class="p-toast-message-text" data-pc-section="messagetext">
-        <span class="p-toast-summary" data-pc-section="summary">
+        <p class="p-toast-summary" data-pc-section="summary">
           {{ slotProps.message.summary }}
-        </span>
-        <div class="p-toast-detail" data-pc-section="detail">
-          <template
-            v-for="(detail, index) in (slotProps.message
-              .detail as ToastHasLinksGroupDetail[]) ?? []"
-            :key="index"
-          >
-            <a
-              v-if="detail.link"
-              :href="detail.link"
-              class="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {{ detail.text }}
-            </a>
-            <div v-else>
-              {{ detail.text }}
-            </div>
-          </template>
+        </p>
+
+        <div class="p-toast-detail">
+          {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
+          <Button
+            v-if="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                ?.action
+            "
+            class="mt-2"
+            size="small"
+            :label="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                ?.text
+            "
+            @click="
+              (
+                slotProps.message.detail as ToastHasLinksGroupDetail
+              ).button?.action?.()
+            "
+          ></Button>
+          <Button
+            v-else-if="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link
+            "
+            class="-ml-3"
+            size="small"
+            as="a"
+            variant="link"
+            :label="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.text
+            "
+            :href="
+              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
+            "
+            target="_blank"
+            rel="noopener"
+          />
         </div>
       </div>
     </template>
   </Toast>
+
+  <PassiveMiningDialog />
 </template>
 
 <script setup lang="ts">
-import { signOutManually } from './utils/auth';
-import { reloadNuxtApp } from 'nuxt/app';
+type ToastHasLinksGroupDetail = {
+  message: string;
+  link?: {
+    text: string;
+    url: string;
+  };
+  button?: {
+    text: string;
+    action?: () => void;
+  };
+};
+
+import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
 import { useIdle } from '@vueuse/core';
-const user = useSupabaseUser();
+import { reloadNuxtApp } from 'nuxt/app';
+import Normalizer from '~/utils/normalizer';
+import { signOutManually } from './utils/auth';
+
+const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
-const activeMiningTask = computed(() => $leadminerStore.activeMiningTask);
+const activeTask = computed(() => $leadminerStore.activeTask);
 const $supabaseClient = useSupabaseClient();
-const { idle, reset } = useIdle(30 * 60 * 1000); // 30 min timeout
+const { idle, reset } = useIdle(60 * 60 * 1000); // 1 hour timeout
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
@@ -81,18 +116,14 @@ $supabaseClient.auth.onAuthStateChange((event) => {
   }
 });
 watch(idle, (isIdle) => {
-  if (isIdle && !activeMiningTask.value && user.value) {
+  if (isIdle && !activeTask.value && $user.value) {
     signOut();
-    reloadNuxtApp({ persistState: false, force: true });
   }
 });
 
-watch(activeMiningTask, () => {
+Normalizer.setLang($leadminerStore.language || 'en');
+
+watch(activeTask, () => {
   reset();
 });
-
-type ToastHasLinksGroupDetail = {
-  text: string;
-  link?: string;
-};
 </script>

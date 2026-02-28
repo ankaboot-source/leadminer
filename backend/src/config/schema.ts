@@ -13,9 +13,8 @@ const schema = z.object({
   FRONTEND_HOST: z.string().url(),
 
   /* FETCHING */
-  FETCHING_BATCH_SIZE_TO_SEND: number(),
-  FETCHING_CHUNK_SIZE_PER_CONNECTION: number(),
-  FETCHING_MAX_CONNECTIONS_PER_FOLDER: number(),
+  EMAIL_FETCHING_SERVICE_URL: z.string().min(1),
+  EMAIL_FETCHING_SERVICE_API_TOKEN: z.string().min(8),
 
   /* IMAP */
   IMAP_AUTH_TIMEOUT: number(),
@@ -117,6 +116,31 @@ const schema = z.object({
   /* ENRICH-LAYER */
   ENRICH_LAYER_URL: z.string().min(1).optional(),
   ENRICH_LAYER_API_KEY: z.string().min(1).optional(),
+
+  /** GOOGLE CONTACTS SYNC */
+  GOOGLE_CONTACTS_CRITICAL_READ_REQUESTS: z.coerce
+    .number()
+    .positive()
+    .default(80),
+  GOOGLE_CONTACTS_CRITICAL_READ_INTERVAL: z.coerce
+    .number()
+    .positive()
+    .default(60),
+
+  GOOGLE_CONTACTS_CRITICAL_WRITE_REQUESTS: z.coerce
+    .number()
+    .positive()
+    .default(80),
+  GOOGLE_CONTACTS_CRITICAL_WRITE_INTERVAL: z.coerce
+    .number()
+    .positive()
+    .default(60),
+
+  GOOGLE_CONTACTS_READ_REQUESTS: z.coerce.number().positive().default(110),
+  GOOGLE_CONTACTS_READ_INTERVAL: z.coerce.number().positive().default(60),
+
+  GOOGLE_CONTACTS_WRITE_REQUESTS: z.coerce.number().positive().default(80),
+  GOOGLE_CONTACTS_WRITE_INTERVAL: z.coerce.number().positive().default(60),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });

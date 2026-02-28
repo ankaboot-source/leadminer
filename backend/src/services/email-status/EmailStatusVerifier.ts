@@ -1,5 +1,6 @@
 export type EmailVerifierType =
   | 'random'
+  | 'email-message-class'
   | 'mailercheck'
   | 'reacher'
   | 'zerobounce';

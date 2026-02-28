@@ -1,14 +1,14 @@
 import { Contact, TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
-import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
 export type RedisCommand = 'REGISTER' | 'DELETE';
 export type TaskProgressType =
   | 'fetched'
   | 'extracted'
   | 'createdContacts'
-  | 'verifiedContacts';
+  | 'verifiedContacts'
+  | 'signatures';
 
 export interface EmailStatusVerifier {
   running: boolean;
@@ -39,6 +39,7 @@ export interface TaskProgress {
   extracted: number;
   verifiedContacts: number;
   createdContacts: number;
+  signatures: number;
 }
 
 export interface Task {
@@ -57,7 +58,6 @@ export interface Task {
 export interface TaskFetch extends Task {
   category: TaskCategory.Mining;
   type: TaskType.Fetch;
-  instance: ImapEmailsFetcher;
   details: {
     miningId: string;
     stream: TaskFetchStreamInfo;
@@ -66,6 +66,7 @@ export interface TaskFetch extends Task {
       fetched: number;
       folders: string[];
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -78,6 +79,7 @@ export interface TaskExtract extends Task {
     progress: {
       extracted: number;
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -91,6 +93,7 @@ export interface TaskClean extends Task {
       verifiedContacts: number;
       createdContacts: number;
     };
+    passive_mining?: boolean;
   };
 }
 
@@ -108,20 +111,30 @@ export interface TaskEnrich extends Task {
       data: Array<Partial<Contact>>;
       raw_data: Array<unknown>;
     }[];
+    passive_mining?: boolean;
   };
+}
+
+export interface MiningSource {
+  source: string;
+  type: 'email' | 'file' | 'pst';
 }
 
 export interface MiningTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   process: {
     fetch: TaskFetch;
     extract: TaskExtract;
     clean: TaskClean;
+    // Temp solution to track signature extraction progress
+    signature: Task;
   };
   progress: TaskProgress;
   progressHandlerSSE: RealtimeSSE;
   startedAt: number;
+  passive_mining?: boolean;
 }
 
 /**
@@ -130,6 +143,7 @@ export interface MiningTask {
 export interface RedactedTask {
   userId: string;
   miningId: string;
+  miningSource: MiningSource;
   processes: {
     [K in TaskType]?: string;
   };

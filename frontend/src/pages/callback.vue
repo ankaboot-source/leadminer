@@ -32,11 +32,11 @@ const showOAuthErrorNotification = () => {
 
   const errorTitle = te(`${messageKey}.title`)
     ? t(`${messageKey}.title`)
-    : t('error.default.title');
+    : $t('error.default.title');
 
   const errorMessage = te(`${messageKey}.message`)
     ? t(`${messageKey}.message`)
-    : t('error.default.message');
+    : $t('error.default.message');
 
   $toast.add({
     severity: 'error',
@@ -54,7 +54,11 @@ onMounted(async () => {
     ['oauth-permissions', 'access_denied'].includes(error ?? '') &&
     provider
   ) {
-    useMiningConsentSidebar().show(provider as MiningSourceType);
+    useMiningConsentSidebar().show(
+      provider as MiningSourceType,
+      undefined,
+      navigateToPage ?? undefined,
+    );
   } else {
     showOAuthErrorNotification();
   }
@@ -70,10 +74,6 @@ onMounted(async () => {
       "access_denied": {
         "title": "OAuth sign-in",
         "message": "Access denied. You canceled the authentication process."
-      },
-      "default": {
-        "title": "Unexpected error",
-        "message": "An unexpected error occurred. Please try again."
       }
     }
   },
@@ -82,10 +82,6 @@ onMounted(async () => {
       "access_denied": {
         "title": "Connexion OAuth",
         "message": "Accès refusé. Vous avez annulé le processus d'authentification."
-      },
-      "default": {
-        "title": "Erreur inattendue",
-        "message": "Une erreur inattendue s'est produite. Veuillez réessayer."
       }
     }
   }

@@ -1,6 +1,6 @@
 <template>
   <div class="py-3.5 flex justify-between bg-white lg:bg-transparent">
-    <template v-if="$user">
+    <template v-if="showAuthenticatedNavigation">
       <AppLogo class="cursor-pointer" @click="navigateHome()" />
       <Button
         icon="pi pi-users"
@@ -11,6 +11,27 @@
           'border-primary': $router.currentRoute.value.path === contactsPath,
         }"
         @click="navigateTo(contactsPath)"
+      />
+      <Button
+        icon="pi pi-send"
+        :label="$t('common.campaigns')"
+        outlined
+        class="ml-2 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
+        :class="{
+          'border-primary': $router.currentRoute.value.path === campaignsPath,
+        }"
+        @click="navigateTo(campaignsPath)"
+      />
+      <Button
+        icon="pi pi-envelope"
+        outlined
+        class="ml-4 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
+        :class="{
+          'border-primary': $router.currentRoute.value.path === sourcesPath,
+        }"
+        type="button"
+        :label="$t('common.sources')"
+        @click="navigateTo(sourcesPath)"
       />
       <div class="grow" />
       <div id="desktop-navbar" class="hidden lg:flex lg:items-center lg:gap-1">
@@ -66,6 +87,21 @@
             />
 
             <Button
+              icon="pi pi-send"
+              :label="$t('common.campaigns')"
+              outlined
+              class="border-l-4 border-0 rounded-sm"
+              :class="{
+                'border-primary bg-primary-50':
+                  $router.currentRoute.value.path === campaignsPath,
+              }"
+              @click="
+                navigateTo(campaignsPath);
+                closeCallback();
+              "
+            />
+
+            <Button
               type="button"
               :label="$t('common.start_mining')"
               @click="
@@ -101,6 +137,7 @@
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
 const $user = useSupabaseUser();
+const $route = useRoute();
 const $router = useRouter();
 const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
@@ -108,12 +145,16 @@ const $sourcePanelStore = useStepperSourcePanel();
 const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
 const contactsPath = '/contacts';
+const campaignsPath = '/campaigns';
 const minePath = '/mine';
-const homePath = $user
-  ? '/'
-  : $contactsStore.contactCount
-    ? contactsPath
-    : minePath;
+const sourcesPath = '/sources';
+const isAuthRoute = computed(() => $route.path.startsWith('/auth'));
+const showAuthenticatedNavigation = computed(
+  () => Boolean($user.value) && !isAuthRoute.value,
+);
+const homePath = computed(() =>
+  $user.value ? '/' : $contactsStore.contactCount ? contactsPath : minePath,
+);
 
 function navigateToMine() {
   // If finished a mining or if already on the mining page, reset the stepper and mining store
@@ -129,10 +170,10 @@ function navigateToMine() {
   navigateTo(minePath);
 }
 function navigateHome() {
-  if ($router.currentRoute.value.path === homePath) {
+  if ($router.currentRoute.value.path === homePath.value) {
     $router.go(0); // reload the page
   } else {
-    $router.push(homePath);
+    $router.push(homePath.value);
   }
 }
 </script>

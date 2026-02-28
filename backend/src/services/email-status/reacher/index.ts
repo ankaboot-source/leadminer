@@ -44,10 +44,11 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     } catch (error) {
       const result: EmailStatusResult = {
         email,
-        status: Status.UNKNOWN
+        status: null as unknown as Status
       };
       if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        result.details = { hasTimedOut: true };
+        result.status = Status.UNKNOWN;
+        result.details = { hasTimedOut: true, source: 'reacher' };
       }
       return result;
     }

@@ -5,17 +5,19 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import SupabaseTasks from './db/supabase/tasks';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
+import EmailFetcherClient from './services/email-fetching';
+import PSTFetcherClient from './services/email-fetching/pst';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
+import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
+import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
-import SupabaseTasks from './db/supabase/tasks';
-import TasksManagerFile from './services/tasks-manager/TaskManagerFile';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -47,7 +49,11 @@ console.log(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
-    new EmailFetcherFactory(),
+    new EmailFetcherClient(
+      logger,
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
+      ENV.EMAIL_FETCHING_SERVICE_URL
+    ),
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
@@ -55,14 +61,28 @@ console.log(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
-    new EmailFetcherFactory(),
+    undefined,
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
+  const tasksManagerPST = new TasksManagerPST(
+    tasksResolver,
+    redis.getSubscriberClient(),
+    redis.getClient(),
+    new PSTFetcherClient(
+      logger,
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN, //! RDNDNT
+      ENV.EMAIL_FETCHING_SERVICE_URL
+    ),
+    new SSEBroadcasterFactory(),
+    flickrBase58IdGenerator()
+  );
+
   const app = initializeApp(
     authResolver,
     tasksManager,
     tasksManagerFile,
+    tasksManagerPST,
     miningSources,
     contactsResolver,
     userResolver,

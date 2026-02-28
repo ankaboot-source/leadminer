@@ -128,7 +128,7 @@ function stringToBase64URL(str: string) {
 
     while (queuedBits >= 6) {
       const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
+      if (TO_BASE64URL[pos]) base64.push(TO_BASE64URL[pos]);
       queuedBits -= 6;
     }
   };
@@ -141,7 +141,7 @@ function stringToBase64URL(str: string) {
 
     while (queuedBits >= 6) {
       const pos = (queue >> (queuedBits - 6)) & 63;
-      base64.push(TO_BASE64URL[pos]);
+      if (TO_BASE64URL[pos]) base64.push(TO_BASE64URL[pos]);
       queuedBits -= 6;
     }
   }
@@ -244,7 +244,7 @@ function deleteSupabaseCookies(keys: string[], excluded: string[] = []) {
   const cookies = document.cookie.split('; ');
   cookies.forEach((cookie) => {
     const cookieName = cookie.split('=')[0];
-    if (cookiesToDelete.includes(cookieName)) {
+    if (cookieName && cookiesToDelete.includes(cookieName)) {
       useCookie(cookieName).value = null;
     }
   });
@@ -256,67 +256,64 @@ export default defineNuxtPlugin(() => {
   const { url, cookieName, cookieOptions } = useRuntimeConfig().public.supabase;
 
   const overwriteSupabaseCookies = (session: Session) => {
-    const trimmedSession: Session = {
-      ...session,
-      user: {
-        ...session.user,
-        user_metadata: {
-          ...session.user.user_metadata,
-          EmailTemplate: {
-            language: session.user.user_metadata.EmailTemplate?.language,
+    try {
+      const trimmedSession: Session = {
+        ...session,
+        user: {
+          ...session.user,
+          user_metadata: {
+            ...session.user.user_metadata,
+            EmailTemplate: {
+              language: session.user.user_metadata.EmailTemplate?.language,
+            },
           },
         },
-      },
-    };
+      };
 
-    // Delete user identities
-    delete trimmedSession.user.identities;
+      // Delete user identities
+      delete trimmedSession.user.identities;
 
-    const targetDate = new Date('2025-11-22T09:40:00Z');
-    const maxAge = Math.max(
-      0,
-      Math.floor((targetDate.getTime() - Date.now()) / 1000),
-    );
-    const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
+      const maxAge = 60 * 60 * 24 * 30; // 30 days
 
-    const cookies = createSupabaseCookies(
-      storageName,
-      JSON.stringify(trimmedSession),
-      cookieOptions,
-    );
+      const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
 
-    if (cookies.length > 0) {
-      deleteSupabaseCookies(
-        [storageName],
-        cookies.map(({ name }) => name),
+      const cookies = createSupabaseCookies(
+        storageName,
+        JSON.stringify(trimmedSession),
+        cookieOptions,
       );
-      cookies.forEach(({ name, value: val }) => {
-        const cookie = useCookie(name, {
-          maxAge,
-          path: '/',
-          sameSite: cookieOptions.sameSite as
-            | 'lax'
-            | 'strict'
-            | 'none'
-            | undefined,
-          secure: cookieOptions.secure,
+
+      if (cookies.length > 0) {
+        deleteSupabaseCookies(
+          [storageName],
+          cookies.map(({ name }) => name),
+        );
+        cookies.forEach(({ name, value: val }) => {
+          const cookie = useCookie(name, {
+            maxAge,
+            path: '/',
+            sameSite: cookieOptions.sameSite as
+              | 'lax'
+              | 'strict'
+              | 'none'
+              | undefined,
+            secure: cookieOptions.secure,
+          });
+          cookie.value = val;
         });
-        cookie.value = val;
-      });
+      }
+    } catch (error) {
+      console.error('Error overwriting Supabase cookies:', error);
     }
   };
 
   if (import.meta.client) {
     watch(newSession, (session) => {
-      try {
-        if (session) overwriteSupabaseCookies(session);
-      } catch (error) {
-        console.error('Error overwriting Supabase cookies:', error);
-      }
+      if (session) overwriteSupabaseCookies(session);
     });
   }
 
-  supabase.auth.onAuthStateChange((_, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     if (session) {
       newSession.value = session;
     }

@@ -8,6 +8,7 @@ import {
   Contact,
   EmailExtractionResult,
   EmailStatus,
+  ExportService,
   ExtractionResult,
   FileExtractionResult,
   Tag
@@ -26,7 +27,7 @@ export default class PgContacts implements Contacts {
       JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
@@ -35,7 +36,7 @@ export default class PgContacts implements Contacts {
       LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     WHERE e.email IS NULL;
     `;
 
@@ -45,13 +46,16 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
     'SELECT * FROM private.get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
 
+  private static readonly SELECT_CONTACTS_UNVERIFIED =
+    'SELECT * FROM private.get_contacts_table($1) WHERE status IS NULL';
+
   private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
     FROM private.get_contacts_table_by_emails($1,$2) contacts
       JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS = `
@@ -60,7 +64,7 @@ export default class PgContacts implements Contacts {
       LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
-        AND e.engagement_type = 'CSV'
+        AND e.engagement_type = 'EXPORT'
     WHERE e.email IS NULL;
     `;
 
@@ -71,7 +75,7 @@ export default class PgContacts implements Contacts {
     WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO private.engagement (user_id, email, engagement_type) VALUES %L ON  CONFLICT (email, user_id, engagement_type) DO NOTHING;';
+    'INSERT INTO private.engagement (user_id, email, engagement_type, service) VALUES %L ON  CONFLICT (email, user_id, engagement_type, service) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -83,8 +87,8 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13)
+    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13, $14)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
     RETURNING persons.email;`;
 
@@ -209,16 +213,17 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create(result: ExtractionResult, userId: string) {
+  async create(result: ExtractionResult, userId: string, miningId: string) {
     const results = await (result.type === 'email'
-      ? this.createContactsFromEmail(result, userId)
-      : this.createContactsFromFile(result, userId));
+      ? this.createContactsFromEmail(result, userId, miningId)
+      : this.createContactsFromFile(result, userId, miningId));
     return results;
   }
 
   private async createContactsFromFile(
     result: FileExtractionResult,
-    userId: string
+    userId: string,
+    miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
     const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
@@ -253,7 +258,8 @@ export default class PgContacts implements Contacts {
         person.identifiers,
         userId,
         person.source,
-        organizationsDB.get(person.worksFor ?? '')
+        organizationsDB.get(person.worksFor ?? ''),
+        miningId
       ]);
 
       if (tags.length) {
@@ -290,7 +296,8 @@ export default class PgContacts implements Contacts {
 
   private async createContactsFromEmail(
     { message, persons }: EmailExtractionResult,
-    userId: string
+    userId: string,
+    miningId: string
   ) {
     try {
       const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
@@ -307,11 +314,12 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        const { rowCount: selectResults } = await this.pool.query(
-          'SELECT email FROM private.persons WHERE user_id = $1 AND email = $2;',
+        const { rowCount, rows } = await this.pool.query(
+          'SELECT email, status FROM private.persons WHERE user_id = $1 AND email = $2;',
           [userId, person.email]
         );
-        if (selectResults === 0) {
+
+        if (rowCount === 0 || rows[0]?.status === null) {
           insertedContacts.add({ email: person.email, tags });
         }
 
@@ -329,7 +337,8 @@ export default class PgContacts implements Contacts {
           person.identifiers,
           userId,
           person.source,
-          person.worksFor
+          person.worksFor,
+          miningId
         ]);
 
         const tagValues = tags.map((tag) => [
@@ -397,8 +406,10 @@ export default class PgContacts implements Contacts {
   ): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED,
-        [userId, emails]
+        emails.length
+          ? PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED
+          : PgContacts.SELECT_CONTACTS_UNVERIFIED,
+        emails.length ? [userId, emails] : [userId]
       );
       return rows;
     } catch (error) {
@@ -448,10 +459,11 @@ export default class PgContacts implements Contacts {
 
   async registerExportedContacts(
     contactIds: string[],
+    service: ExportService,
     userId: string
   ): Promise<void> {
     try {
-      const values = contactIds.map((id) => [userId, id, 'CSV']);
+      const values = contactIds.map((id) => [userId, id, 'EXPORT', service]);
       await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
     } catch (error) {
       this.logger.error(error);

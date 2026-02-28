@@ -3,13 +3,11 @@ import { findPhoneNumbersInText } from 'libphonenumber-js';
 import { ExtractSignature, PersonLD } from '../types';
 
 export const URL_X_REGEX =
-  /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(\w{1,15})\b/g;
+  /(?:https?:)?\/\/(?:[A-Za-z]+\.)?(twitter|x)\.com\/@?(?!home|share|privacy|tos)(?<handle>[A-Za-z0-9_]+)\/?/g;
 export const URL_LINKEDIN_REGEX =
-  /(?:https?:\/\/)?(?:[a-z]{2,3}\.)? {2}linkedin\.com\/in\/[a-zA-Z0-9\-_%]{3,100}(?:\/)?/;
+  /(?:https?:)?\/\/(?:[\w]+\.)?linkedin\.com\/in\/(?<handle>[\w\-_À-ÿ%]+)\/?/g;
 
 export class SignatureRE implements ExtractSignature {
-  LLM_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
-
   private readonly active = true;
 
   constructor(private readonly logger: Logger) {}
@@ -18,26 +16,30 @@ export class SignatureRE implements ExtractSignature {
     return this.active;
   }
 
-  private static getTelephone(signature: string): string[] {
+  static getTelephone(signature: string): string[] {
     const telephone = findPhoneNumbersInText(signature);
     return telephone.map((phone) => phone.number.number);
   }
 
-  private static getSameAs(signature: string): string[] {
+  static getSameAs(signature: string): string[] {
     const matches = new Set<string>();
-
     for (const match of signature.matchAll(URL_LINKEDIN_REGEX)) {
-      matches.add(`https://www.${match[1]}`);
+      const [linkedinUrl] = match;
+      if (linkedinUrl) matches.add(linkedinUrl.trim());
     }
 
     for (const match of signature.matchAll(URL_X_REGEX)) {
-      matches.add(`https://x.com/${match[1]}`);
+      const [xUrl] = match;
+      if (xUrl) matches.add(xUrl.trim());
     }
 
     return [...matches];
   }
 
-  public async extract(signature: string): Promise<PersonLD | null> {
+  public async extract(
+    _email: string,
+    signature: string
+  ): Promise<PersonLD | null> {
     try {
       return {
         name: '',

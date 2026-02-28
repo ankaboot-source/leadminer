@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
+import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 import logger from '../utils/logger';
-import TasksManagerFile from '../services/tasks-manager/TaskManagerFile';
 
 export default function initializeStreamController(
   tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile
+  tasksManagerFile: TasksManagerFile,
+  tasksManagerPST: TasksManagerPST
 ) {
   return {
     /**
@@ -13,7 +15,15 @@ export default function initializeStreamController(
      */
     streamProgress: (req: Request, res: Response) => {
       const { id: taskId, type: miningType } = req.params;
-      const manager = miningType === 'file' ? tasksManagerFile : tasksManager;
+
+      let manager;
+      if (miningType === 'file') {
+        manager = tasksManagerFile;
+      } else if (miningType === 'pst') {
+        manager = tasksManagerPST;
+      } else {
+        manager = tasksManager;
+      }
 
       try {
         const task = manager.getActiveTask(taskId);

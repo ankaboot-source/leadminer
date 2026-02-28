@@ -14,6 +14,7 @@ import {
   RedactedTask,
   Task,
   TaskClean,
+  TaskEnrich,
   TaskExtract,
   TaskFetch
 } from '../../src/services/tasks-manager/types';
@@ -24,21 +25,22 @@ import {
 } from '../../src/services/tasks-manager/utils';
 
 import ENV from '../../src/config';
-import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
-import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../src/db/supabase/tasks';
 import TasksManager from '../../src/services/tasks-manager/TasksManager';
 import redis from '../../src/utils/redis';
+import EmailFetcherClient from '../../src/services/email-fetching';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
   SUPABASE_SECRET_PROJECT_TOKEN: 'fake',
   REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: 'fake-group-extracting',
-  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning'
+  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning',
+  REDIS_SIGNATURE_STREAM_NAME: 'signature-test-stream',
+  IMAP_FETCH_BODY: true
 }));
 
 jest.mock('../../src/utils/redis', () => {
@@ -60,6 +62,20 @@ jest.mock('../../src/utils/redis', () => {
   };
 });
 
+jest.mock('../../src/utils/supabase', () => {
+  const clientMock = {
+    on: jest.fn(),
+    subscribe: jest.fn(),
+    publish: jest.fn(),
+    xgroup: jest.fn(),
+    del: jest.fn()
+  };
+  return {
+    getClient: jest.fn(() => clientMock),
+    getSubscriberClient: jest.fn(() => clientMock)
+  };
+});
+
 jest.mock('../../src/db/supabase/tasks', () =>
   jest.fn().mockImplementation(() => ({
     create: jest.fn((task: Task) => {
@@ -74,6 +90,12 @@ jest.mock('../../src/db/supabase/tasks', () =>
           };
         case 'clean':
           return { id: '3-task-clean', type: 'clean', started_at: Date.now() };
+        case 'enrich':
+          return {
+            id: '4-task-enrich',
+            type: 'enrich',
+            started_at: Date.now()
+          };
         default:
           return [];
       }
@@ -82,24 +104,26 @@ jest.mock('../../src/db/supabase/tasks', () =>
   }))
 );
 
+jest.mock('../../src/db/mail', () => ({
+  refineContacts: jest.fn(() => undefined),
+  mailMiningComplete: jest.fn(() => undefined)
+}));
+
 const fakeRedisClient = redis.getClient();
 const tasksResolver = new SupabaseTasks({} as SupabaseClient, {} as Logger);
 
-const mockEmailFetcher = {
-  getTotalMessages: jest.fn(() => 1000),
-  start: jest.fn(),
-  stop: jest.fn()
-};
 const mockedProgressHandler = {
-  send: jest.fn(),
+  sendSSE: jest.fn(),
   stop: jest.fn()
-};
-const emailFetcherFactory = {
-  create: jest.fn(() => mockEmailFetcher)
 };
 
 const sseBroadcasterFactory = {
   create: jest.fn(() => mockedProgressHandler)
+};
+
+const emailFetcherAPI = {
+  startFetch: jest.fn(() => Promise.resolve({ data: { totalMessages: 1 } })),
+  stopFetch: jest.fn(() => Promise.resolve({ data: { totalMessages: 1 } }))
 };
 
 const miningIdGenerator = jest.fn(() =>
@@ -119,7 +143,7 @@ METHODS:
   - #notifyChanges()
   - #updateProgress()
   - #hasCompleted()
-  - #pubsubSendMessage()
+  - #pubsubSendSSEMessage()
 
  */
 
@@ -130,17 +154,23 @@ describe('Test TaskManager helper functions', () => {
         userId: 'test-id-51fd-4e0f-b3bd-325664dd51e0',
         miningId:
           'test-id-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        miningSource: {
+          source: 'test@leadminer.io',
+          type: 'email'
+        },
         process: {
           fetch: { id: '325664dd51e0' } as TaskFetch,
           extract: { id: 'f6494f8d' } as TaskExtract,
-          clean: { id: 'a081e57d5f14' } as TaskClean
+          clean: { id: 'a081e57d5f14' } as TaskClean,
+          signature: { id: 'a081e57d5f15' } as TaskEnrich
         },
         progress: {
           totalMessages: 100,
           fetched: 50,
           extracted: 10,
           verifiedContacts: 5,
-          createdContacts: 10
+          createdContacts: 10,
+          signatures: 0
         },
         progressHandlerSSE: {} as RealtimeSSE,
         startedAt: performance.now()
@@ -149,17 +179,20 @@ describe('Test TaskManager helper functions', () => {
       const redactedTask: RedactedTask = {
         userId: mockedTask.userId,
         miningId: mockedTask.miningId,
+        miningSource: mockedTask.miningSource,
         processes: {
           fetch: '325664dd51e0',
           extract: 'f6494f8d',
-          clean: 'a081e57d5f14'
+          clean: 'a081e57d5f14',
+          signature: 'a081e57d5f15'
         },
         progress: {
           totalMessages: mockedTask.progress.totalMessages,
           fetched: mockedTask.progress.fetched,
           extracted: mockedTask.progress.extracted,
           verifiedContacts: mockedTask.progress.verifiedContacts,
-          createdContacts: mockedTask.progress.createdContacts
+          createdContacts: mockedTask.progress.createdContacts,
+          signatures: mockedTask.progress.signatures
         }
       };
 
@@ -205,10 +238,8 @@ describe('TasksManager', () => {
   const fetcherOptions: ImapEmailsFetcherOptions = {
     email: 'abc123@test.io',
     userId: 'abc123',
-    batchSize: 0,
     boxes: ['test'],
-    imapConnectionProvider: {} as ImapConnectionProvider,
-    fetchEmailBody: false
+    fetchEmailBody: ENV.IMAP_FETCH_BODY
   };
 
   beforeEach(() => {
@@ -217,7 +248,7 @@ describe('TasksManager', () => {
       tasksResolver,
       fakeRedisClient,
       fakeRedisClient,
-      emailFetcherFactory as unknown as EmailFetcherFactory,
+      emailFetcherAPI as unknown as EmailFetcherClient,
       sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
       miningIdGenerator
     );
@@ -228,14 +259,14 @@ describe('TasksManager', () => {
   });
 
   describe('TasksManager.constructor', () => {
-    it('sould throw an error if constructed more than once', () => {
+    it('should throw an error if constructed more than once', () => {
       try {
         /* eslint-disable-next-line no-new */
         new TasksManager(
           tasksResolver,
           fakeRedisClient,
           fakeRedisClient,
-          emailFetcherFactory as unknown as EmailFetcherFactory,
+          emailFetcherAPI as unknown as EmailFetcherClient,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
           miningIdGenerator
         );
@@ -245,7 +276,7 @@ describe('TasksManager', () => {
           tasksResolver,
           fakeRedisClient,
           fakeRedisClient,
-          emailFetcherFactory as unknown as EmailFetcherFactory,
+          emailFetcherAPI as unknown as EmailFetcherClient,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
           miningIdGenerator
         );
@@ -266,14 +297,18 @@ describe('TasksManager', () => {
 
         expect(miningIdGenerator).toHaveBeenCalledTimes(1);
         expect(sseBroadcasterFactory.create).toHaveBeenCalledTimes(1);
-        expect(emailFetcherFactory.create).toHaveBeenCalledTimes(1);
+        expect(emailFetcherAPI.startFetch).toHaveBeenCalledTimes(1);
 
         expect(miningIdGenerator).toHaveBeenCalledWith();
         expect(sseBroadcasterFactory.create).toHaveBeenCalledWith();
-        expect(emailFetcherFactory.create).toHaveBeenCalledWith({
+        expect(emailFetcherAPI.startFetch).toHaveBeenCalledWith({
           miningId: task.miningId,
           contactStream: `messages_stream-${task.miningId}`,
-          ...fetcherOptions
+          userId: fetcherOptions.userId,
+          email: fetcherOptions.email,
+          boxes: fetcherOptions.boxes,
+          extractSignatures: ENV.IMAP_FETCH_BODY,
+          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME
         });
 
         expect(tasksResolver.create).toHaveBeenCalledWith(
@@ -297,8 +332,15 @@ describe('TasksManager', () => {
             status: TaskStatus.Running
           })
         );
+        expect(tasksResolver.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'enrich',
+            category: TaskCategory.Enriching,
+            status: TaskStatus.Running
+          })
+        );
 
-        expect(tasksResolver.create).toHaveBeenCalledTimes(3);
+        expect(tasksResolver.create).toHaveBeenCalledTimes(4);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledTimes(1);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledWith(
           task.miningId,
@@ -351,6 +393,13 @@ describe('TasksManager', () => {
         );
         expect(tasksResolver.update).toHaveBeenCalledWith(
           expect.objectContaining({
+            type: 'enrich',
+            category: TaskCategory.Enriching,
+            status: TaskStatus.Canceled
+          })
+        );
+        expect(tasksResolver.update).toHaveBeenCalledWith(
+          expect.objectContaining({
             type: 'extract',
             category: TaskCategory.Mining,
             status: TaskStatus.Canceled
@@ -379,10 +428,10 @@ describe('TasksManager', () => {
 
       it('should stop process from list successfully', async () => {
         const processKeys = Object.keys(task.processes);
-        for (const processKey of processKeys) {
+        for (let index = 0; index < processKeys.length; index += 1) {
           (tasksResolver.update as jest.Mock).mockClear();
           (fakeRedisClient.xgroup as jest.Mock).mockClear();
-
+          const processKey = processKeys[index];
           const process =
             task.processes[processKey as keyof typeof task.processes];
 
@@ -394,18 +443,27 @@ describe('TasksManager', () => {
           expect(deletedTask).toBeDefined();
           expect(deletedTask).toEqual(task);
 
-          // eslint-disable-next-line @typescript-eslint/no-loop-func
-          expect(() =>
-            tasksManager.getActiveTask(deletedTask.miningId)
-          ).not.toThrow(Error);
+          const isLastProcess = index === processKeys.length - 1;
+          if (isLastProcess) {
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            expect(() => tasksManager.getActiveTask(task.miningId)).toThrow();
+          } else {
+            // eslint-disable-next-line @typescript-eslint/no-loop-func
+            expect(() =>
+              tasksManager.getActiveTask(task.miningId)
+            ).not.toThrow();
+          }
 
           expect(tasksResolver.update).toHaveBeenCalledWith(
             expect.objectContaining({
-              type: processKey,
+              type: processKey === 'signature' ? 'enrich' : processKey,
               category:
+                // eslint-disable-next-line no-nested-ternary
                 processKey === 'clean'
                   ? TaskCategory.Cleaning
-                  : TaskCategory.Mining,
+                  : processKey === 'signature'
+                    ? TaskCategory.Enriching
+                    : TaskCategory.Mining,
               status: TaskStatus.Canceled
             })
           );

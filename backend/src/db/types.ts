@@ -55,7 +55,7 @@ export interface Person {
   url?: string;
   name?: string;
   image?: string;
-  location?: string[];
+  location?: string;
   jobTitle?: string;
   sameAs?: string[];
   givenName?: string;
@@ -103,7 +103,34 @@ export interface Contact {
   given_name?: string;
   family_name?: string;
   alternate_name?: string[];
-  location?: string[];
+  location?: string;
+  works_for?: string;
+  job_title?: string;
+  same_as?: string[];
+  image?: string;
+  telephone?: string[];
+}
+
+export interface ContactFrontend {
+  id: string;
+  user_id: string;
+  email: string;
+  engagement?: number;
+  name?: string;
+  sender?: string;
+  recipient?: string;
+  conversations?: number;
+  replied_conversations?: number;
+  status?: Status;
+  occurrence?: number;
+  personid?: string;
+  recency?: Date;
+  seniority?: Date;
+  tags?: string[];
+  given_name?: string;
+  family_name?: string;
+  alternate_name?: string[];
+  location?: string;
   works_for?: string;
   job_title?: string;
   same_as?: string[];
@@ -121,7 +148,8 @@ export enum TaskType {
   Fetch = 'fetch',
   Extract = 'extract',
   Clean = 'clean',
-  Enrich = 'enrich'
+  Enrich = 'enrich',
+  Signature = 'signature'
 }
 
 export enum TaskCategory {
@@ -162,3 +190,9 @@ export type Organization = {
   founder?: string;
   _domain?: string;
 };
+
+export enum ExportService {
+  CSV = 'csv',
+  VCARD = 'vcard',
+  GOOGLE_CONTACTS = 'google_contacts'
+}

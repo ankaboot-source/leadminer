@@ -13,23 +13,36 @@ import ThedigApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from '../../../../src/services/enrichment/thedig/client';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
 
 // Mock dependencies
 jest.mock('axios');
+
+jest.mock('ioredis');
+
+jest.mock('../../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
+
 const mockAxiosInstance = {
   get: jest.fn(),
   post: jest.fn()
 } as unknown as jest.Mocked<typeof axios>;
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-const THEDIG_THROTTLE_REQUESTS = 1;
-const THEDIG_THROTTLE_INTERVAL = 100;
+const THEDIG_THROTTLE_REQUESTS = 5;
+const THEDIG_THROTTLE_INTERVAL = 0.1;
 
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  THEDIG_THROTTLE_REQUESTS,
-  THEDIG_THROTTLE_INTERVAL
-);
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_theDig_test',
+  distribution: Distribution.Memory,
+  requests: THEDIG_THROTTLE_REQUESTS,
+  intervalSeconds: THEDIG_THROTTLE_INTERVAL
+});
 
 describe('ThedigApi', () => {
   let mockLogger: jest.Mocked<Logger>;
@@ -93,11 +106,10 @@ describe('ThedigApi', () => {
       });
 
       const startTime = Date.now();
-      const requests = [
-        await theDigClient.enrich(personRequest),
-        await theDigClient.enrich(personRequest),
-        await theDigClient.enrich(personRequest)
-      ];
+      const requests = Array.from({ length: THEDIG_THROTTLE_REQUESTS * 2 }).map(
+        () => theDigClient.enrich(personRequest)
+      );
+      await Promise.all(requests);
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
@@ -164,11 +176,11 @@ describe('ThedigApi', () => {
       });
 
       const startTime = Date.now();
-      const requests = [
-        await theDigClient.enrichBulk(personRequest, 'webhook'),
-        await theDigClient.enrichBulk(personRequest, 'webhook'),
-        await theDigClient.enrichBulk(personRequest, 'webhook')
-      ];
+
+      const requests = Array.from({ length: THEDIG_THROTTLE_REQUESTS * 2 }).map(
+        () => theDigClient.enrichBulk(personRequest, 'webhook')
+      );
+      await Promise.all(requests);
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(

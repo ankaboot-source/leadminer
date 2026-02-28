@@ -1,4 +1,6 @@
 import { Logger } from 'winston';
+import PQueue from 'p-queue';
+import Redis from 'ioredis';
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import {
@@ -7,7 +9,6 @@ import {
   EmailVerifierType
 } from '../../services/email-status/EmailStatusVerifier';
 import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
-import logger from '../../utils/logger';
 
 export interface EmailVerificationData {
   userId: string;
@@ -15,58 +16,283 @@ export interface EmailVerificationData {
   miningId: string;
 }
 
-function logRejectedAndReturnResolved<T>(
-  results: PromiseSettledResult<T>[],
-  context: string
-): T[] {
-  results
-    .filter(
-      (result): result is PromiseRejectedResult => result.status === 'rejected'
-    )
-    .forEach((result) => {
-      logger.error(`${context}: Promise rejected`, {
-        error: result.reason.message,
-        timestamp: new Date().toISOString()
-      });
-    });
+function getFailurePhase(
+  cacheLookupTime: number,
+  engineVerifyTime: number
+): string {
+  if (!cacheLookupTime) {
+    return 'cache_lookup';
+  }
 
-  return results
-    .filter(
-      (result): result is PromiseFulfilledResult<T> =>
-        result.status === 'fulfilled'
-    )
-    .map((result) => result.value);
+  if (!engineVerifyTime) {
+    return 'engine_verify';
+  }
+
+  return 'persistence';
 }
 
-class EmailVerificationHandler {
-  private readonly WAITING_FOR_VERIFICATION: Map<string, string>;
+const MAX_QUEUE_SIZE = 20_000;
+const DRAIN_THRESHOLD = Math.floor(MAX_QUEUE_SIZE * 0.7);
+const VERIFIER_PRIORITY: Record<EmailVerifierType, number> = {
+  reacher: 1,
+  zerobounce: 2,
+  random: 0,
+  mailercheck: 0,
+  'email-message-class': 0
+};
+
+export class EmailVerificationHandler {
+  private readonly queue: PQueue;
+
+  private readonly streamActiveJobs = new Map<string, number>();
+
+  private readonly streamProgressDelta = new Map<string, number>();
+
+  private progressInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly contacts: Contacts,
     private readonly emailStatusCache: EmailStatusCache,
     private readonly emailStatusVerifier: EmailStatusVerifierFactory,
-
-    private readonly progressCallback: (verified: number) => Promise<void>,
-    private readonly classLogger: Logger,
-    private readonly verificationData: EmailVerificationData[]
+    private readonly redisClient: Redis,
+    private readonly logger: Logger
   ) {
-    this.WAITING_FOR_VERIFICATION = new Map<string, string>();
+    this.queue = new PQueue({ concurrency: 10, interval: 10, intervalCap: 1 });
   }
 
-  private static createEmailVerificationBatches(
-    emailAddresses: string[],
-    batchSize: number,
-    verifierName: string,
-    verifier: EmailStatusVerifier
-  ): [EmailStatusVerifier, string, string[]][] {
-    const verificationBatches: [EmailStatusVerifier, string, string[]][] = [];
+  static generateEmailId(email: string, userId: string) {
+    return `${email}:${userId}`;
+  }
 
-    for (let i = 0; i < emailAddresses.length; i += batchSize) {
-      const currentBatch = emailAddresses.slice(i, i + batchSize);
-      verificationBatches.push([verifier, verifierName, currentBatch]);
+  static decodeEmailId(emailId: string) {
+    const [email, userId] = emailId.split(':');
+    return { email, userId };
+  }
+
+  /**
+   * Processes jobs and manages queue priority
+   */
+  public async handle(streamId: string, jobs: EmailVerificationData[]) {
+    if (!this.streamActiveJobs.has(streamId)) {
+      this.logger.debug(
+        '[EmailVerificationHandler.handle]: Aborting ingestion: stream was unregistered',
+        { streamId }
+      );
+      return;
     }
 
-    return verificationBatches;
+    const emailToEmailIdsMap = new Map<string, string[]>();
+
+    for (const { email, userId } of jobs) {
+      const id = EmailVerificationHandler.generateEmailId(email, userId);
+      const ids = emailToEmailIdsMap.get(email) || [];
+      ids.push(id);
+      emailToEmailIdsMap.set(email, ids);
+    }
+
+    const verifierGroups = this.emailStatusVerifier.getEmailVerifiers(
+      Array.from(emailToEmailIdsMap.keys())
+    );
+
+    /* eslint-disable no-await-in-loop */
+    for (const [engineName, [engine, emails]] of verifierGroups) {
+      const priority = VERIFIER_PRIORITY[engineName as EmailVerifierType] ?? 0;
+
+      for (const email of emails) {
+        await this.applyBackpressure();
+
+        if (!this.streamActiveJobs.has(streamId)) {
+          this.logger.debug(
+            '[EmailVerificationHandler.handle]: Aborting ingestion: stream was unregistered',
+            { streamId }
+          );
+          break;
+        }
+
+        const emailIds = emailToEmailIdsMap.get(email);
+        if (!emailIds || emailIds.length === 0) continue;
+
+        if (emailIds.length > 1) {
+          this.logger.debug(
+            `[EmailVerificationHandler.handle]: Email ${email} has ${emailIds.length} duplicates will be pushed to queue`,
+            { streamId }
+          );
+        }
+
+        emailIds.forEach((emailId) => {
+          const { email: emailToVerify, userId } =
+            EmailVerificationHandler.decodeEmailId(emailId);
+
+          this.incrementActive(streamId);
+
+          this.queue
+            .add(
+              async () => {
+                await this.verifySingle(
+                  streamId,
+                  emailToVerify,
+                  userId,
+                  engine,
+                  engineName
+                );
+              },
+              { priority }
+            )
+            .catch((error) => {
+              this.logger.error('Queue error', { error: error.message, email });
+            })
+            .finally(() => {
+              this.decrementActive(streamId);
+            });
+        });
+      }
+    }
+    /* eslint-disable no-await-in-loop */
+  }
+
+  private async applyBackpressure() {
+    if (this.queue.size < MAX_QUEUE_SIZE) return;
+
+    this.logger.debug('Queue limit reached. Applying backpressure...', {
+      currentSize: this.queue.size,
+      limit: MAX_QUEUE_SIZE,
+      waitThreshold: DRAIN_THRESHOLD
+    });
+
+    const t0 = performance.now();
+
+    // p-queue utility to wait until size drops below threshold
+    await this.queue.onSizeLessThan(DRAIN_THRESHOLD);
+
+    const duration = (performance.now() - t0).toFixed(2);
+    this.logger.info('Backpressure released', {
+      durationMs: duration,
+      newSize: this.queue.size
+    });
+  }
+
+  private async verifySingle(
+    streamId: string,
+    email: string,
+    userId: string,
+    engine: EmailStatusVerifier,
+    engineName: string
+  ) {
+    const startTime = performance.now();
+    let cacheLookupTime = 0;
+    let engineVerifyTime = 0;
+    let persistenceTime = 0;
+    let cacheHit = false;
+
+    if (!this.streamActiveJobs.has(streamId)) {
+      this.logger.debug(
+        '[EmailVerificationHandler.verifySingle]: Aborting job: stream was unregistered',
+        { streamId }
+      );
+      return;
+    }
+
+    try {
+      const t0 = performance.now();
+      let result = await this.isExistingStatus(email);
+      cacheLookupTime = performance.now() - t0;
+
+      if (result?.status) {
+        cacheHit = true;
+      } else {
+        const t1 = performance.now();
+        result = await engine.verify(email);
+        engineVerifyTime = performance.now() - t1;
+      }
+
+      if (result?.status) {
+        const t2 = performance.now();
+        await this.updateStatus(userId, email, result);
+        persistenceTime = performance.now() - t2;
+      }
+
+      this.logger.info('Verification completed', {
+        streamId,
+        engineName,
+        cacheHit,
+        metrics: {
+          cacheLookupMs: cacheLookupTime.toFixed(2),
+          engineVerifyMs: engineVerifyTime.toFixed(2),
+          persistenceMs: persistenceTime.toFixed(2),
+          totalMs: (performance.now() - startTime).toFixed(2)
+        }
+      });
+    } catch (error) {
+      const totalTimeSoFar = performance.now() - startTime;
+      this.logger.error('Verification step failed', {
+        error,
+        streamId,
+        engineName,
+        context: {
+          cacheHit,
+          timeBeforeFailureMs: totalTimeSoFar.toFixed(2),
+          phase: getFailurePhase(cacheLookupTime, engineVerifyTime)
+        }
+      });
+    } finally {
+      // Update progress for ticker
+      const current = this.streamProgressDelta.get(streamId) ?? 0;
+      this.streamProgressDelta.set(streamId, current + 1);
+    }
+  }
+
+  private startProgressTicker() {
+    if (this.progressInterval) return;
+
+    this.progressInterval = setInterval(async () => {
+      if (this.streamProgressDelta.size === 0) {
+        this.stopProgressTicker();
+        return;
+      }
+
+      for (const [streamId, count] of this.streamProgressDelta.entries()) {
+        if (count === 0) continue;
+
+        const channelId = streamId.split('-')[1] || streamId;
+        const payload = JSON.stringify({
+          miningId: channelId,
+          progressType: 'verifiedContacts',
+          count
+        });
+
+        this.redisClient.publish(channelId, payload).catch((err) => {
+          this.logger.error('Redis Publish Failed', { streamId, err });
+        });
+
+        // Reset delta after publishing
+        this.streamProgressDelta.set(streamId, 0);
+      }
+    }, 5000);
+  }
+
+  private stopProgressTicker() {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+      this.logger.debug('Progress ticker stopped - no active streams');
+    }
+  }
+
+  public registerStream(streamId: string) {
+    if (!this.streamActiveJobs.has(streamId)) {
+      this.streamActiveJobs.set(streamId, 0);
+      this.streamProgressDelta.set(streamId, 0);
+      this.startProgressTicker();
+    }
+  }
+
+  public unregisterStream(streamId: string) {
+    this.streamProgressDelta.delete(streamId);
+    this.streamActiveJobs.delete(streamId);
+
+    if (this.streamProgressDelta.size === 0) {
+      this.stopProgressTicker();
+    }
   }
 
   private async isExistingStatus(email: string) {
@@ -81,7 +307,7 @@ class EmailVerificationHandler {
     email: string,
     status: EmailStatusResult
   ) {
-    this.emailStatusCache.set(email, status);
+    await this.emailStatusCache.set(email, status);
     return this.contacts.upsertEmailStatus({
       verifiedOn: new Date().toISOString(),
       ...status,
@@ -90,154 +316,33 @@ class EmailVerificationHandler {
     });
   }
 
-  private async getUpdateStatusCache() {
-    const cachePromises = this.verificationData.map(
-      async ({ userId, email }) => {
-        const existing = await this.isExistingStatus(email);
-        if (existing) {
-          await this.updateStatus(userId, email, existing);
-        } else {
-          this.WAITING_FOR_VERIFICATION.set(email, userId);
-        }
-      }
-    );
-
-    logRejectedAndReturnResolved(
-      await Promise.allSettled(cachePromises),
-      `[${this.constructor.name}.getUpdateStatusCache]:Updating email status from cache`
-    );
-
-    logRejectedAndReturnResolved(
-      await Promise.allSettled([
-        await this.progressCallback(
-          this.verificationData.map(({ email }) => email).length -
-            this.WAITING_FOR_VERIFICATION.size
-        )
-      ]),
-      `[${this.constructor.name}.getUpdateStatusCache]: Sending progress`
-    );
+  private incrementActive(streamId: string) {
+    const jobs = this.streamActiveJobs.get(streamId);
+    if (!jobs) return;
+    this.streamActiveJobs.set(streamId, jobs + 1);
   }
 
-  private logVerificationStarted(
-    emailsLength: number,
-    verifierName: string,
-    startTime: number
-  ) {
-    this.classLogger.info(
-      `Verification started with ${emailsLength} email(s)`,
-      {
-        engine: verifierName,
-        started_at: startTime
-      }
-    );
-  }
-
-  private logVerificationCompleted(
-    emailsLength: number,
-    verifierName: string,
-    startTime: number
-  ) {
-    this.classLogger.info(
-      `[Verification completed with ${emailsLength} results`,
-      {
-        started_at: startTime,
-        stopped_at: performance.now(),
-        duration: performance.now() - startTime,
-        engine: verifierName
-      }
-    );
-  }
-
-  private async verifyEmails(
-    emails: string[],
-    verifier: EmailStatusVerifier,
-    verifierName: string
-  ) {
-    const startTime = performance.now();
-
-    this.logVerificationStarted(emails.length, verifierName, startTime);
-
-    const results = logRejectedAndReturnResolved<EmailStatusResult>(
-      // eslint-disable-next-line no-await-in-loop
-      await Promise.allSettled(emails.map((email) => verifier.verify(email))),
-      `[${this.constructor.name}.verifyEmails]: Batch email status verification`
-    );
-
-    logRejectedAndReturnResolved(
-      await Promise.allSettled(
-        results.map(async (result) => {
-          const userId = this.WAITING_FOR_VERIFICATION.get(result.email);
-          if (!userId) throw new Error('Failed to updated: userId not found');
-          await this.updateStatus(userId, result.email, result);
-        })
-      ),
-      `[${this.constructor.name}.verifyEmails]: Updating email status post verification`
-    );
-
-    this.logVerificationCompleted(results.length, verifierName, startTime);
-
-    return results;
-  }
-
-  private async verificationPromises(
-    verifiers: [EmailVerifierType, [EmailStatusVerifier, string[]]][]
-  ) {
-    return verifiers.map(async ([verifierName, [verifier, emails]]) => {
-      const batches = EmailVerificationHandler.createEmailVerificationBatches(
-        emails,
-        verifier.emailsQuota / 10,
-        verifierName,
-        verifier
-      );
-
-      logRejectedAndReturnResolved(
-        await Promise.allSettled(
-          batches.map(async ([engine, engineName, emailBatch]) => {
-            const verified = await this.verifyEmails(
-              emailBatch,
-              engine,
-              engineName
-            );
-            await this.progressCallback(verified.length);
-          })
-        ),
-        'Email verification failed'
-      );
-    });
-  }
-
-  async verify() {
-    await this.getUpdateStatusCache();
-
-    const verifiers = Array.from(
-      this.emailStatusVerifier.getEmailVerifiers(
-        Array.from(this.WAITING_FOR_VERIFICATION.keys())
-      )
-    );
-    await Promise.allSettled([this.verificationPromises(verifiers)]);
+  private decrementActive(streamId: string) {
+    const jobs = this.streamActiveJobs.get(streamId);
+    if (!jobs) return;
+    this.streamActiveJobs.set(streamId, jobs - 1);
   }
 }
 
 export default function initializeEmailVerificationProcessor(
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
-  emailStatusVerifier: EmailStatusVerifierFactory
+  emailStatusVerifier: EmailStatusVerifierFactory,
+  redisClient: Redis,
+  logger: Logger
 ) {
-  return {
-    processStreamData: async (
-      message: EmailVerificationData[],
-      progressCallback: (verified: number) => Promise<void>
-    ) => {
-      const handler = new EmailVerificationHandler(
-        contacts,
-        emailStatusCache,
-        emailStatusVerifier,
-        progressCallback,
-        logger,
-        message
-      );
+  const handler = new EmailVerificationHandler(
+    contacts,
+    emailStatusCache,
+    emailStatusVerifier,
+    redisClient,
+    logger
+  );
 
-      await handler.verify();
-    }
-  };
+  return handler;
 }

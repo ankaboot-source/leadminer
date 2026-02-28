@@ -36,7 +36,7 @@
       />
       <p>
         {{ $t('common.back') }} {{ $t('common.to') }}
-        <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
+        <NuxtLink to="/auth/login" class="font-bold link capitalize">
           {{ $t('auth.sign_in') }}
         </NuxtLink>
       </p>

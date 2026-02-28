@@ -11,9 +11,18 @@ import axios from 'axios';
 import { Logger } from 'winston';
 import VoilanorbertApi from '../../../../src/services/enrichment/voilanorbert/client';
 import { logError } from '../../../../src/utils/axios';
-import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
+import {
+  Distribution,
+  TokenBucketRateLimiter
+} from '../../../../src/services/rate-limiter';
 
 jest.mock('axios');
+
+jest.mock('ioredis');
+
+jest.mock('../../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
 
 const mockAxiosInstance = {
   get: jest.fn(),
@@ -25,13 +34,16 @@ jest.mock('../../../../src/utils/axios', () => ({
   logError: jest.fn()
 }));
 
-const REACHER_THROTTLE_REQUESTS = 1;
-const REACHER_THROTTLE_INTERVAL = 100;
+const VOILANORBERT_THROTTLE_REQUESTS = 5;
+const VOILANORBERT_THROTTLE_INTERVAL = 0.1;
 
-const RATE_LIMITER = new TokenBucketRateLimiter(
-  REACHER_THROTTLE_REQUESTS,
-  REACHER_THROTTLE_INTERVAL
-);
+const RATE_LIMITER = new TokenBucketRateLimiter({
+  executeEvenly: true,
+  uniqueKey: 'email_verification_voilanorbert_test',
+  distribution: Distribution.Memory,
+  requests: VOILANORBERT_THROTTLE_REQUESTS,
+  intervalSeconds: VOILANORBERT_THROTTLE_INTERVAL
+});
 
 describe('VoilanorbertApi', () => {
   const mockLogger = {
@@ -89,15 +101,15 @@ describe('VoilanorbertApi', () => {
       ];
 
       const startTime = Date.now();
-      const requests = [
-        await voilanorbert.enrich(emails, 'webhook-url'),
-        await voilanorbert.enrich(emails, 'webhook-url'),
-        await voilanorbert.enrich(emails, 'webhook-url')
-      ];
+      const requests = Array.from({
+        length: VOILANORBERT_THROTTLE_REQUESTS * 2
+      }).map(() => voilanorbert.enrich(emails, 'webhook-url'));
+      await Promise.all(requests);
+
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
-        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
+        VOILANORBERT_THROTTLE_INTERVAL * (requests.length - 1)
       );
     });
 

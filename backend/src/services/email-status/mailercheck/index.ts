@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { AxiosError } from 'axios';
+import { /* axios, */ AxiosError } from 'axios';
 import {
   EmailStatusResult,
   EmailStatusVerifier,
@@ -37,12 +37,9 @@ export default class MailerCheckEmailStatusVerifier
         ...mailerCheckResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
-      if (error instanceof AxiosError && error.response?.status === 402) {
-        throw new Error('Insufficient Credits.');
-      }
       return {
         email,
-        status: Status.UNKNOWN,
+        status: null as unknown as Status,
         details: { hasTimedOut: true, source: 'mailercheck' }
       };
     }
@@ -71,6 +68,9 @@ export default class MailerCheckEmailStatusVerifier
     } catch (error) {
       if (error instanceof AxiosError && error.response?.status === 402) {
         throw new Error('Insufficient Credits.');
+      }
+      if (error instanceof AxiosError && error.response?.status === 429) {
+        throw new Error('API rate limit exceeded');
       }
       return this.defaultBulkResults(emails);
     }

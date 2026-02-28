@@ -1,7 +1,7 @@
 import { FilterMatchMode, FilterOperator } from '@primevue/core';
 
 // Filter configuration helpers
-function createConstraint(matchMode: string, value: unknown = null) {
+export function createConstraint(matchMode: string, value: unknown = null) {
   return {
     value,
     matchMode,
@@ -18,7 +18,9 @@ function createOperatorFilter(
 
 export const NOT_EMPTY = 'NOT_EMPTY';
 export const ANY_SELECTED = 'ANY_SELECTED';
+export const LOCATION_MATCH = 'LOCATION_MATCH';
 export const MAX_YEARS_AGO_TO_FILTER = 3;
+export const GLOBAL_SEARCH = 'GLOBAL_SEARCH'; // Contains for strings & location_normalized objects (location_normalized.display_name)
 
 export const DEFAULT_TOGGLES = {
   valid: true,
@@ -26,23 +28,30 @@ export const DEFAULT_TOGGLES = {
   name: false,
   replies: false,
   telephone: false,
+  location: false,
+  hideUnsubscribed: true,
 };
 
 export const DEFAULT_FILTERS = {
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  global: createConstraint(GLOBAL_SEARCH),
   name: { value: null, matchMode: NOT_EMPTY },
   telephone: { value: null, matchMode: NOT_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
+  consent_status: {
+    value: ['legitimate_interest', 'opt_in'],
+    matchMode: FilterMatchMode.IN,
+  },
+  location: createOperatorFilter(createConstraint(LOCATION_MATCH)),
   ...Object.fromEntries(
     [
       'source',
       'given_name',
       'family_name',
       'alternate_name',
-      'location',
       'works_for',
       'job_title',
+      'mining_id',
     ].map((key) => [
       key,
       createOperatorFilter(createConstraint(FilterMatchMode.CONTAINS)),
@@ -55,13 +64,17 @@ export const DEFAULT_FILTERS = {
     ]),
   ),
   ...Object.fromEntries(
-    ['occurrence', 'replied_conversations', 'recipient', 'sender'].map(
-      (key) => [
-        key,
-        createOperatorFilter(
-          createConstraint(FilterMatchMode.GREATER_THAN_OR_EQUAL_TO),
-        ),
-      ],
-    ),
+    [
+      'occurrence',
+      'replied_conversations',
+      'recipient',
+      'sender',
+      'temperature',
+    ].map((key) => [
+      key,
+      createOperatorFilter(
+        createConstraint(FilterMatchMode.GREATER_THAN_OR_EQUAL_TO),
+      ),
+    ]),
   ),
 };

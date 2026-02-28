@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import axios from 'axios';
 import { Request, Response, Router } from 'express';
-import logger from '../../../utils/logger';
 import { SERVER_PORT } from '../config';
 
 const router = Router();
@@ -66,7 +65,7 @@ router.post(
       });
       return res;
     } catch (err) {
-      logger.error(
+      console.error(
         'Error when enriching using voilanorbert',
         (err as Error).message
       );

@@ -2,7 +2,7 @@ import { Redis } from 'ioredis';
 import { Logger } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
-import { EmailData } from './handler';
+import { EmailData, EmailSignatureHandler } from './handler';
 import { Contact } from '../../db/types';
 
 export interface PubSubMessage {
@@ -22,9 +22,10 @@ export default class EmailSignatureConsumer {
     private readonly batchSize: number,
     private readonly emailProcessor: (
       data: EmailData
-    ) => Promise<Partial<Contact>[]>,
+    ) => Promise<{ finished: boolean; contacts: Partial<Contact>[] | null }>,
     private readonly redisClient: Redis,
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly handler?: EmailSignatureHandler
   ) {
     this.isInterrupted = true;
 
@@ -54,21 +55,32 @@ export default class EmailSignatureConsumer {
         this.batchSize
       );
 
-      for (const { streamName, data } of result) {
-        for (const emailData of data) {
+      for (const { data } of result) {
+        if (data.length === 0) continue;
+        if (this.handler) {
           /* eslint-disable-next-line no-await-in-loop */
-          await this.emailProcessor(emailData);
+          await this.handler.handle(this.emailSignatureStream, data);
         }
-
-        const miningId = streamName.split('-')[1];
-        const extractionProgress = {
-          miningId,
-          progressType: 'extractedSignature',
-          count: data.length
-        };
-
-        this.redisClient.publish(miningId, JSON.stringify(extractionProgress));
       }
+      // else {
+      //   // Fall back to individual message processing (backward compatibility)
+      //   for (const emailData of data) {
+      //     /* eslint-disable-next-line no-await-in-loop */
+      //     const { finished, contacts } = await this.emailProcessor(emailData);
+
+      //     if (finished) {
+      //       this.redisClient.publish(
+      //         miningId,
+      //         JSON.stringify({
+      //           miningId,
+      //           progressType: 'signatures',
+      //           isCompleted: finished,
+      //           count: contacts ? contacts.length : 0
+      //         })
+      //       );
+      //     }
+      //   }
+      // }
     } catch (err) {
       this.logger.error('Error while consuming messages from stream.', err);
       throw err;

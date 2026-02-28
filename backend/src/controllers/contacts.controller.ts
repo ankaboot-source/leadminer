@@ -1,16 +1,57 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { Contacts } from '../db/interfaces/Contacts';
-import { Contact } from '../db/types';
+import { Contact, ExportService } from '../db/types';
 import Billing from '../utils/billing-plugin';
+import { ExportOptions, ExportType } from '../services/export/types';
+import ExportFactory from '../services/export';
 import {
-  exportContactsToCSV,
-  getLocalizedCsvSeparator
-} from '../utils/helpers/csv';
+  MiningSources,
+  OAuthMiningSourceCredentials
+} from '../db/interfaces/MiningSources';
 
-function validateRequest(req: Request, res: Response) {
-  const userId = (res.locals.user as User).id;
+async function validateRequest(
+  req: Request,
+  res: Response,
+  miningSources: MiningSources
+) {
+  const user = res.locals.user as User;
   const partialExport = req.body.partialExport ?? false;
+  const updateEmptyFieldsOnly = req.body.updateEmptyFieldsOnly ?? false;
+  const exportType = (req.params.exportType ?? ExportType.CSV) as ExportType;
+
+  const localeFromHeader = req.headers['accept-language'];
+  const delimiterOption = req.query.delimiter?.toString();
+
+  const validExportType = Object.values(ExportType).includes(
+    exportType as ExportType
+  );
+
+  if (!validExportType) {
+    throw new Error(`Invalid export type: ${exportType}`);
+  }
+
+  let googleContactsOptions: ExportOptions['googleContactsOptions'] = {
+    userId: user.id,
+    accessToken: undefined,
+    refreshToken: undefined,
+    updateEmptyFieldsOnly
+  };
+
+  if (exportType === ExportType.GOOGLE_CONTACTS) {
+    const targetEmail = req.body.targetEmail || user.email;
+    const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
+      user.id,
+      targetEmail as string
+    )) as OAuthMiningSourceCredentials;
+
+    googleContactsOptions = {
+      ...googleContactsOptions,
+      accessToken: oauthCredentials?.accessToken,
+      refreshToken: oauthCredentials?.refreshToken
+    };
+  }
+
   const {
     emails,
     exportAllContacts
@@ -18,24 +59,30 @@ function validateRequest(req: Request, res: Response) {
 
   if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
     return {
-      userId,
+      userId: user.id,
+      exportType,
       contactsToExport: null,
       partialExport,
-      delimiter: undefined
+      exportOptions: {
+        locale: localeFromHeader,
+        delimiter: undefined,
+        googleContactsOptions
+      }
     };
   }
 
   const contactsToExport = exportAllContacts ? undefined : emails;
-  const localeFromHeader = req.headers['accept-language'];
-  const delimiterOption = req.query.delimiter?.toString();
-  const delimiter =
-    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader);
 
   return {
-    userId,
+    userId: user.id,
+    exportType,
     contactsToExport,
     partialExport,
-    delimiter
+    exportOptions: {
+      locale: localeFromHeader,
+      delimiter: delimiterOption,
+      googleContactsOptions
+    }
   };
 }
 
@@ -43,8 +90,9 @@ async function respondWithContacts(
   res: Response,
   userId: string,
   contacts: Contacts,
+  exportType: ExportType,
   contactsToExport?: string[],
-  delimiter?: string
+  exportOption?: ExportOptions
 ) {
   const selectedContacts = await contacts.getContacts(userId, contactsToExport);
 
@@ -52,8 +100,19 @@ async function respondWithContacts(
     return res.sendStatus(204); // 204 No Content
   }
 
-  const csvData = await exportContactsToCSV(selectedContacts, delimiter);
-  return res.header('Content-Type', 'text/csv').status(200).send(csvData);
+  try {
+    const { content, contentType } = await ExportFactory.get(exportType).export(
+      selectedContacts,
+      exportOption
+    );
+
+    return res.header('Content-Type', contentType).status(200).send(content);
+  } catch (err) {
+    if ((err as Error).message === 'Invalid credentials.') {
+      return res.sendStatus(401);
+    }
+    throw err;
+  }
 }
 
 async function verifyCredits(
@@ -88,6 +147,7 @@ async function verifyCredits(
 
 async function registerAndDeductCredits(
   userId: string,
+  exportType: ExportType,
   availableUnits: number,
   contacts: Contacts,
   availableContacts: Contact[]
@@ -95,6 +155,7 @@ async function registerAndDeductCredits(
   if (availableContacts.length) {
     await contacts.registerExportedContacts(
       availableContacts.map(({ email }) => email),
+      exportType as unknown as ExportService,
       userId
     );
     await Billing!.deductCustomerCredits(userId, availableUnits);
@@ -104,36 +165,56 @@ async function registerAndDeductCredits(
 async function respondWithConfirmedContacts(
   res: Response,
   userId: string,
+  exportType: ExportType,
   contacts: Contacts,
   newContacts: Contact[],
   previousExportedContacts: Contact[],
   availableUnits: number,
   statusCode: number,
-  delimiterOption?: string
+  exportOptions?: ExportOptions
 ) {
   const availableContacts = newContacts.slice(0, availableUnits);
   const selectedContacts = [...previousExportedContacts, ...availableContacts];
 
-  const csvData = await exportContactsToCSV(selectedContacts, delimiterOption);
+  try {
+    const { content, contentType } = await ExportFactory.get(exportType).export(
+      selectedContacts,
+      exportOptions
+    );
 
-  await registerAndDeductCredits(
-    userId,
-    availableUnits,
-    contacts,
-    availableContacts
-  );
+    await registerAndDeductCredits(
+      userId,
+      exportType,
+      availableUnits,
+      contacts,
+      selectedContacts
+    );
 
-  return res
-    .header('Content-Type', 'text/csv')
-    .status(statusCode)
-    .send(csvData);
+    return res
+      .header('Content-Type', contentType)
+      .status(statusCode)
+      .send(content);
+  } catch (err) {
+    if ((err as Error).message === 'Invalid credentials.') {
+      return res.sendStatus(401);
+    }
+    throw err;
+  }
 }
 
-export default function initializeContactsController(contacts: Contacts) {
+export default function initializeContactsController(
+  contacts: Contacts,
+  miningSources: MiningSources
+) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
-      const { userId, contactsToExport, partialExport, delimiter } =
-        validateRequest(req, res);
+      const {
+        userId,
+        contactsToExport,
+        partialExport,
+        exportType,
+        exportOptions
+      } = await validateRequest(req, res, miningSources);
       if (contactsToExport === null) {
         return res.status(400).json({
           message: 'Parameter "emails" must be a non-empty list of emails'
@@ -148,8 +229,9 @@ export default function initializeContactsController(contacts: Contacts) {
             res,
             userId,
             contacts,
+            exportType,
             contactsToExport,
-            delimiter
+            exportOptions
           );
         }
 
@@ -175,12 +257,13 @@ export default function initializeContactsController(contacts: Contacts) {
         return await respondWithConfirmedContacts(
           res,
           userId,
+          exportType,
           contacts,
           newContacts,
           previousExportedContacts,
           creditsInfo.availableUnits,
           statusCode,
-          delimiter
+          exportOptions
         );
       } catch (error) {
         return next(error);

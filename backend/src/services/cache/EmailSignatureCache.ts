@@ -7,8 +7,13 @@ export interface EmailSignatureWithMetadata {
   userId: string;
   signature: string;
   email: string;
+  messageId: string;
   firstSeenDate: string;
   lastSeenDate: string;
+}
+
+export interface SignatureProgress {
+  received: number;
 }
 
 export default interface EmailSignatureCache {
@@ -24,6 +29,7 @@ export default interface EmailSignatureCache {
     userId: string,
     email: string,
     signature: string,
+    messageId: string,
     messageDate: string,
     miningId: string
   ): Promise<void>;
@@ -45,4 +51,24 @@ export default interface EmailSignatureCache {
    * @param miningId - The ID of the mining operation to clear
    */
   clearCachedSignature(miningId: string): Promise<void>;
+
+  /**
+   * Increments the received message count for a mining operation
+   * @param miningId - The ID of the mining operation
+   * @returns The new received count
+   */
+  incrementReceived(miningId: string): Promise<number>;
+
+  /**
+   * Gets current progress state without modifying it
+   * @param miningId - The ID of the mining operation
+   * @returns Current progress state
+   */
+  getProgress(miningId: string): Promise<SignatureProgress>;
+
+  /**
+   * Clears all progress tracking keys for a mining operation
+   * @param miningId - The ID of the mining operation
+   */
+  clearProgress(miningId: string): Promise<void>;
 }

@@ -4,6 +4,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import { convertDates } from '~/utils/contacts';
+import Normalizer from '~/utils/normalizer';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
@@ -37,6 +38,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
+   * Clears the sync interval.
+   */
+  function clearSyncInterval() {
+    if (syncIntervalId) {
+      clearInterval(syncIntervalId);
+      syncIntervalId = null;
+    }
+  }
+
+  /**
    * Starts the sync interval to periodically apply cached contacts.
    */
   function startSyncInterval() {
@@ -46,21 +57,20 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }, 2000);
   }
 
-  /**
-   * Clears the sync interval.
-   */
-  function clearSyncInterval() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
+  function getCurrentUserId() {
+    return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
   }
 
   /**
    * Load contacts from database to store.
    */
-  async function loadContacts() {
+  async function loadContacts(userId = getCurrentUserId()) {
+    if (!userId) return [];
+
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_table', { user_id: $user.value?.id });
+      .rpc('get_contacts_table', { user_id: userId });
 
     if (error) throw error;
     return data as Contact[];
@@ -84,10 +94,13 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Refines contacts in database.
    */
   async function refineContacts() {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { userid: $user.value?.id });
+      .rpc('refine_persons', { userid: userId });
     if (error) throw error;
   }
 
@@ -102,9 +115,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
       : newContact;
 
     newContact.works_for = await getOrganizationName(updatedContact.works_for);
+    if (
+      updatedContact.location &&
+      updatedContact.location_normalized === null
+    ) {
+      Normalizer.add(updatedContact.location);
+    }
 
-    if (keepPosition)
+    if (keepPosition) {
       contactsCacheMap.set(updatedContact.email, updatedContact);
+    }
 
     // Remove and reinsert to change position in the Map
     contactsCacheMap.delete(email);
@@ -118,7 +138,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
     );
   }
 
-  function removeOldContacts(emails: string[]) {
+  function removeOldContacts(emails?: string[]) {
+    if (!emails) {
+      contactsCacheMap.clear();
+      contactsList.value = [];
+      return;
+    }
     emails.forEach((email) => {
       contactsCacheMap.delete(email);
     });
@@ -142,16 +167,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
           filter: `updated_at=gt.${new Date().toISOString()}`,
         },
         (payload: RealtimePostgresChangesPayload<Contact>) => {
-          if (payload.eventType === 'DELETE' && payload.old.email)
+          if (payload.eventType === 'DELETE' && payload.old.email) {
             removeOldContact(payload.old.email);
-          else if (payload.new as Contact)
+          } else if (payload.new as Contact) {
             setTimeout(async () => {
               await updateContactsCache(payload.new as Contact);
               updateContactList.value = true;
             }, 0);
+          }
         },
       );
-
     startSyncInterval();
     realtimeChannel.subscribe();
   }
@@ -170,6 +195,55 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
+   * Check if there is data in persons.
+   */
+  async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
+    if (!userId) return false;
+
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from('persons')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (error) throw error;
+
+    return (data?.length ?? 0) > 0;
+  }
+
+  /**
+   * Get unique, non-null locations that still need normalization
+   */
+  function getLocationsToNormalize(): string[] {
+    if (!contactsList.value) return [];
+
+    const locations = contactsList.value
+      .filter(
+        (contact) => contact.location && contact.location_normalized === null,
+      )
+      .map((contact) => contact.location as string);
+
+    // Remove duplicates
+    return [...new Set(locations)];
+  }
+
+  const visibleColumns = ref(['contacts']);
+
+  const combinedLocations = computed(() => {
+    return contactsList.value
+      ?.filter(
+        (contact) =>
+          contact.location && contact.location_normalized?.display_name,
+      )
+      ?.map((contact) => ({
+        location: contact.location,
+        display_name: contact.location_normalized?.display_name,
+      }));
+  });
+
+  /**
    * Resets the store.
    */
   function $reset() {
@@ -186,6 +260,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     selectedEmails,
     selectedContactsCount,
     contactCount,
+    visibleColumns,
+    combinedLocations,
     $reset,
     loadContacts,
     reloadContacts,
@@ -195,5 +271,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,
+    hasPersons,
+    getLocationsToNormalize,
   };
 });
