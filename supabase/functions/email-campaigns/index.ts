@@ -12,6 +12,8 @@ import { sendEmail, verifyTransport } from "./email.ts";
 import {
   getSenderCredentialIssue,
   listUniqueSenderSources,
+  refreshOAuthToken,
+  updateMiningSourceCredentials,
 } from "./sender-options.ts";
 
 const functionName = "email-campaigns";
@@ -569,9 +571,42 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   const transportBySender: Record<string, Transport | null> = {
     [fallbackSenderEmail]: null,
   };
+  const supabaseAdmin = createSupabaseAdmin();
+
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
   );
+
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    const credentialIssue = getSenderCredentialIssue(source);
+
+    if (credentialIssue?.includes("expired")) {
+      try {
+        const refreshed = await refreshOAuthToken(source);
+        if (refreshed) {
+          const updated = await updateMiningSourceCredentials(
+            supabaseAdmin,
+            source.email,
+            refreshed.credentials,
+          );
+          if (updated) {
+            sources[i] = refreshed;
+          }
+        } else {
+          console.warn(
+            `Could not refresh token for ${source.email}, source will remain unavailable`,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Failed to refresh token for source:",
+          source.email,
+          error,
+        );
+      }
+    }
+  }
 
   for (const source of sources) {
     const credentialIssue = getSenderCredentialIssue(source);
