@@ -1,4 +1,5 @@
 import { normalizeEmail } from "../_shared/email.ts";
+import { createSupabaseAdmin } from "../_shared/supabase.ts";
 
 export type MiningSourceCredential = {
   email: string;
@@ -111,4 +112,17 @@ export function getSenderCredentialIssue(
   }
 
   return null;
+}
+
+export async function updateMiningSourceCredentials(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  email: string,
+  credentials: Record<string, unknown>,
+): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from("mining_sources")
+    .update({ credentials })
+    .eq("email", email);
+
+  return !error;
 }
