@@ -274,8 +274,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       onMiningCompleted: () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
-        setTimeout(() => {
+        setTimeout(async () => {
           miningTask.value = undefined;
+          await fetchMiningSources();
         }, 100);
       },
     });
@@ -448,11 +449,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
+      await fetchMiningSources();
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
       cleaningFinished.value = true;
       isLoadingStopMining.value = false;
+      await fetchMiningSources();
       throw err;
     }
   }

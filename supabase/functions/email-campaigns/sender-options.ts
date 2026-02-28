@@ -113,7 +113,11 @@ export function listUniqueSenderSources(
   const byEmail = new Map<string, MiningSourceCredential>();
   for (const source of sources) {
     const key = normalizeEmail(source.email);
-    if (!key || byEmail.has(key)) continue;
+    if (!key) {
+      console.warn("Skipping source with invalid email:", source.email);
+      continue;
+    }
+    if (byEmail.has(key)) continue;
     byEmail.set(key, source);
   }
   return [...byEmail.values()];
@@ -134,4 +138,25 @@ export function getSenderCredentialIssue(
   }
 
   return null;
+}
+
+export async function updateMiningSourceCredentials(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  email: string,
+  credentials: Record<string, unknown>,
+): Promise<boolean> {
+  if (!email || typeof email !== "string") {
+    console.error("Invalid email provided to updateMiningSourceCredentials");
+    return false;
+  }
+
+  const { error } = await supabaseAdmin
+    .from("mining_sources")
+    .update({ credentials })
+    .eq("email", email);
+
+  if (error) {
+    console.error("Failed to update mining source credentials:", error);
+  }
+  return !error;
 }

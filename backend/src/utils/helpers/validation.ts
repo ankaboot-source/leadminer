@@ -1,6 +1,6 @@
 // skipcq: JS-0323
 function validateNumber(key: string, value: any) {
-  return Number.isNaN(value) || value <= 0
+  return typeof value !== 'number' || Number.isNaN(value) || value <= 0
     ? `${key} must be a valid positive number.`
     : null;
 }
@@ -17,6 +17,14 @@ function validateStringArray(key: string, value: any) {
     ? `${key} must be an array of non-empty strings.`
     : null;
 }
+
+// skipcq: JS-0296 JS-0323
+function validateString(key: string, value: unknown) {
+  return typeof value !== 'string' || value.trim() === ''
+    ? `${key} must be a non-empty string.`
+    : null;
+}
+
 // skipcq: JS-0323 - value can be of any type
 export default function validateType(key: string, value: any, type: string) {
   if (value === undefined || value === null) return `${key} is required.`;
@@ -28,6 +36,8 @@ export default function validateType(key: string, value: any, type: string) {
       return validateBoolean(key, value);
     case 'string[]':
       return validateStringArray(key, value);
+    case 'string':
+      return validateString(key, value);
     default:
       return null;
   }
