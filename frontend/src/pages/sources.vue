@@ -58,8 +58,7 @@
           >
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <div class="font-medium">{{ source.type }}</div>
-                <div class="text-sm text-surface-500">{{ source.email }}</div>
+                <div class="font-medium">{{ source.email }}</div>
               </div>
 
               <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -333,7 +332,7 @@ onMounted(async () => {
     "mining_stopped": "Mining stopped",
     "mining_stopped_detail": "The mining process has been stopped.",
     "stop_mining_failed": "Unable to stop mining",
-    "total_contacts": "Total contacts",
+    "total_contacts": "Contacts (Total)",
     "last_mining": "Last mining",
     "contacts": "contacts"
   },
@@ -342,12 +341,12 @@ onMounted(async () => {
     "no_sources": "Aucune source",
     "email": "Email",
     "provider": "Fournisseur",
-    "last_extraction": "Derniere extraction",
+    "last_extraction": "Dernière extraction",
     "continuous_mining": "Extraction continue",
-    "remove": "Retirer",
-    "remove_source": "Retirer la source",
-    "remove_source_confirm": "Retirer definitivement cette source de minage ? Cette action est irreversible.",
-    "remove_source_failed": "Impossible de retirer la source",
+    "remove": "Supprimer",
+    "remove_source": "Supprimer la source",
+    "remove_source_confirm": "Supprimer définitivement cette source de minage ? Cette action est irréversible.",
+    "remove_source_failed": "Impossible de supprimer la source",
     "type": "Type",
     "passive_mining": "Extraction passive",
     "credentials": "Identifiants",
@@ -371,7 +370,7 @@ onMounted(async () => {
     "mining_stopped": "Extraction stoppée",
     "mining_stopped_detail": "Le processus d'extraction a été stoppé.",
     "stop_mining_failed": "Impossible de stopper le minage",
-    "total_contacts": "Total contacts",
+    "total_contacts": "Contacts (Total)",
     "last_mining": "Dernier minage",
     "contacts": "contacts"
   }
