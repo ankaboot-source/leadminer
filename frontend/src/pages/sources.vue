@@ -6,7 +6,39 @@
       <h1 class="text-xl font-semibold">{{ t('sources') }}</h1>
     </div>
 
+    <div
+      v-if="
+        $leadminer.isLoadingMiningSources && !$leadminer.miningSources.length
+      "
+      class="grid gap-3"
+    >
+      <div
+        v-for="n in 3"
+        :key="`source-skeleton-${n}`"
+        class="border border-surface-200 rounded-md p-4"
+      >
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex flex-col gap-2">
+            <Skeleton width="8rem" height="1rem" />
+            <Skeleton width="14rem" height="0.85rem" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Skeleton width="5.5rem" height="2rem" />
+            <Skeleton width="2.8rem" height="1.6rem" />
+            <Skeleton width="5.2rem" height="1.75rem" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          <Skeleton height="4.5rem" />
+          <Skeleton height="4.5rem" />
+          <Skeleton height="4.5rem" />
+        </div>
+      </div>
+    </div>
+
     <DataView
+      v-else
       :value="$leadminer.miningSources"
       data-key="email"
       :paginator="true"
@@ -18,80 +50,21 @@
         </div>
       </template>
       <template #list="slotProps">
-        <div class="grid gap-2">
+        <div class="grid gap-3">
           <div
             v-for="source in slotProps.items"
             :key="source.email"
             class="border border-surface-200 rounded-md p-4"
           >
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <div class="font-medium">{{ source.email }}</div>
-                <Tag
-                  :value="
-                    source.isValid ? t('connected') : t('credential_expired')
-                  "
-                  :severity="source.isValid ? 'success' : 'warn'"
-                />
-              </div>
-              <div class="flex items-center gap-2">
-                <Button
-                  v-if="isActiveMiningSource(source)"
-                  size="small"
-                  outlined
-                  severity="warning"
-                  icon="pi pi-stop"
-                  :label="t('stop_mining')"
-                  :loading="isStoppingMining"
-                  @click="confirmStopMining"
-                />
-                <Button
-                  size="small"
-                  outlined
-                  severity="danger"
-                  icon="pi pi-trash"
-                  :label="t('delete_source')"
-                  :loading="
-                    isDeleting && deletingSource?.email === source.email
-                  "
-                  @click="openDeleteDialog(source)"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4 text-sm">
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('type') }}</div>
-                <div class="flex items-center gap-2 font-medium">
-                  <i
-                    :class="getIcon(source.type)"
-                    class="text-secondary size-xs"
-                  ></i>
-                  <span>{{ source.type }}</span>
-                </div>
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div class="font-medium">{{ source.type }}</div>
+                <div class="text-sm text-surface-500">{{ source.email }}</div>
               </div>
 
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('passive_mining') }}</div>
-                <div class="flex items-center gap-2">
-                  <span
-                    v-if="source.passive_mining"
-                    class="relative flex h-3 w-3"
-                  >
-                    <span
-                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-                    ></span>
-                    <span
-                      class="relative inline-flex h-3 w-3 rounded-full bg-green-500"
-                    ></span>
-                  </span>
-                  <span
-                    v-else
-                    class="inline-flex h-3 w-3 rounded-full bg-gray-500"
-                  ></span>
-                  <span>{{
-                    source.passive_mining ? t('enabled') : t('disabled')
-                  }}</span>
+              <div class="flex items-center justify-end gap-2 flex-wrap">
+                <div class="flex items-center gap-2 text-sm text-surface-600">
+                  <span>{{ t('continuous_mining') }}</span>
                   <ToggleSwitch
                     v-model="source.passive_mining"
                     @update:model-value="
@@ -100,16 +73,50 @@
                     "
                   />
                 </div>
+
+                <Button
+                  size="small"
+                  outlined
+                  severity="danger"
+                  icon="pi pi-trash"
+                  :label="t('remove')"
+                  :loading="
+                    isDeleting && deletingSource?.email === source.email
+                  "
+                  @click="openDeleteDialog(source)"
+                />
+
+                <Tag
+                  :value="
+                    source.isValid ? t('connected') : t('credential_expired')
+                  "
+                  :severity="source.isValid ? 'success' : 'warn'"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
+              <div class="p-2 rounded bg-surface-50">
+                <div class="text-surface-500">{{ t('provider') }}</div>
+                <div class="flex items-center gap-2 font-semibold mt-1">
+                  <i
+                    :class="getIcon(source.type)"
+                    class="text-secondary size-xs"
+                  ></i>
+                  <span class="capitalize">{{ source.type }}</span>
+                </div>
               </div>
 
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('total_contacts') }}</div>
-                <div class="font-medium">{{ source.totalContacts || 0 }}</div>
+                <div class="font-semibold mt-1">
+                  {{ source.totalContacts || 0 }}
+                </div>
               </div>
 
               <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('last_mining') }}</div>
-                <div class="font-medium">
+                <div class="text-surface-500">{{ t('last_extraction') }}</div>
+                <div class="font-semibold mt-1">
                   {{
                     source.lastMiningDate
                       ? formatDate(source.lastMiningDate)
@@ -176,11 +183,11 @@
     <Dialog
       v-model:visible="deleteDialogVisible"
       modal
-      :header="t('delete_source')"
+      :header="t('remove_source')"
       :style="{ width: '28rem', maxWidth: '95vw' }"
     >
       <div class="text-sm text-surface-700">
-        {{ t('delete_source_confirm') }}
+        {{ t('remove_source_confirm') }}
       </div>
 
       <template #footer>
@@ -188,7 +195,7 @@
           <Button outlined :label="t('cancel')" @click="closeDeleteDialog" />
           <Button
             severity="danger"
-            :label="t('delete_source')"
+            :label="t('remove')"
             :loading="isDeleting"
             @click="confirmDelete"
           />
@@ -211,7 +218,6 @@ const $toast = useToast();
 const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
-const isStoppingMining = ref(false);
 
 function getIcon(type: string) {
   switch (type) {
@@ -268,34 +274,12 @@ async function confirmDelete() {
   } catch (error) {
     $toast.add({
       severity: 'error',
-      summary: t('delete_source_failed'),
+      summary: t('remove_source_failed'),
       detail: (error as Error).message,
       life: 4500,
     });
   } finally {
     isDeleting.value = false;
-  }
-}
-
-async function confirmStopMining() {
-  isStoppingMining.value = true;
-  try {
-    await $leadminer.stopMining(true, null);
-    $toast.add({
-      severity: 'success',
-      summary: t('mining_stopped'),
-      detail: t('mining_stopped_detail'),
-      life: 3500,
-    });
-  } catch (error) {
-    $toast.add({
-      severity: 'error',
-      summary: t('stop_mining_failed'),
-      detail: (error as Error).message,
-      life: 4500,
-    });
-  } finally {
-    isStoppingMining.value = false;
   }
 }
 
@@ -319,6 +303,13 @@ onMounted(async () => {
     "sources": "Sources",
     "no_sources": "No sources yet",
     "email": "Email",
+    "provider": "Provider",
+    "last_extraction": "Last extraction",
+    "continuous_mining": "Continuous mining",
+    "remove": "Remove",
+    "remove_source": "Remove source",
+    "remove_source_confirm": "Remove this mining source permanently? This action cannot be undone.",
+    "remove_source_failed": "Unable to remove source",
     "type": "Type",
     "passive_mining": "Passive mining",
     "credentials": "Credentials",
@@ -350,6 +341,13 @@ onMounted(async () => {
     "sources": "Sources",
     "no_sources": "Aucune source",
     "email": "Email",
+    "provider": "Fournisseur",
+    "last_extraction": "Derniere extraction",
+    "continuous_mining": "Extraction continue",
+    "remove": "Retirer",
+    "remove_source": "Retirer la source",
+    "remove_source_confirm": "Retirer definitivement cette source de minage ? Cette action est irreversible.",
+    "remove_source_failed": "Impossible de retirer la source",
     "type": "Type",
     "passive_mining": "Extraction passive",
     "credentials": "Identifiants",

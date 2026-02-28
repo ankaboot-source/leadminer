@@ -29,6 +29,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
+  const isLoadingMiningSources = ref(false);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
@@ -134,11 +135,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
   async function fetchMiningSources() {
-    miningSources.value =
-      (await getMiningSources()).map((source) => ({
-        isValid: true,
-        ...source,
-      })) ?? [];
+    isLoadingMiningSources.value = true;
+
+    try {
+      miningSources.value =
+        (await getMiningSources()).map((source) => ({
+          isValid: true,
+          ...source,
+        })) ?? [];
+    } finally {
+      isLoadingMiningSources.value = false;
+    }
   }
 
   async function fetchInbox() {
@@ -535,6 +542,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningType,
     miningStartedAt,
     miningSources,
+    isLoadingMiningSources,
     activeMiningSource,
     boxes,
     selectedBoxes,

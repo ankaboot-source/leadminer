@@ -2,29 +2,51 @@ import { Context, Hono } from "hono";
 import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
 import corsHeaders from "../_shared/cors.ts";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
-import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.ts";
-import { resolvePublicBaseUrl } from "../_shared/url.ts";
+import {
+  createSupabaseAdmin,
+  createSupabaseClient,
+} from "../_shared/supabase.ts";
+import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const LEADMINER_PROJECT_URL = Deno.env.get("LEADMINER_PROJECT_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+  "SUPABASE_SERVICE_ROLE_KEY",
+) as string;
 const LEADMINER_HASH_SECRET = Deno.env.get("LEADMINER_HASH_SECRET") as string;
-const CAMPAIGN_COMPLIANCE_FOOTER = (Deno.env.get("campaign_compliance_footer") || Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") || "").trim();
-const PUBLIC_CAMPAIGN_BASE_URL = resolvePublicBaseUrl(LEADMINER_PROJECT_URL || undefined, SUPABASE_URL || undefined);
+const CAMPAIGN_COMPLIANCE_FOOTER = (
+  Deno.env.get("campaign_compliance_footer") ||
+  Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") ||
+  ""
+).trim();
+const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
+  Deno.env.get(key),
+);
 const SMTP_USER = (Deno.env.get("SMTP_USER") || "").trim().toLowerCase();
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
-const AZURE_DOMAINS = ["outlook", "hotmail", "live", "windowslive", "dbmail", "msn"];
+const AZURE_DOMAINS = [
+  "outlook",
+  "hotmail",
+  "live",
+  "windowslive",
+  "dbmail",
+  "msn",
+];
 const GOOGLE_DOMAINS = ["gmail", "googlemail", "google"];
 const UNSUBSCRIBE_TEXT_SUFFIX = "Click here to unsubscribe";
 const COMPLIANCE_SEPARATOR = "---";
 
-type CampaignStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
+type CampaignStatus =
+  | "queued"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "cancelled";
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 type ConsentStatus = "legitimate_interest" | "opt_out" | "opt_in";
 type BounceType = "hard" | "soft" | "technical";
@@ -104,7 +126,6 @@ type Transport = {
     accessToken?: string;
   };
 };
-
 
 async function authMiddleware(c: Context, next: () => Promise<void>) {
   const authHeader = c.req.header("authorization");
@@ -189,21 +210,24 @@ function getSmtpResponseCode(error: unknown): number | null {
 
 function getErrorText(error: unknown): string {
   const message = extractErrorMessage(error);
-  const response = typeof error === "object" && error && "response" in error
-    ? String(error.response || "")
-    : "";
-  const code = typeof error === "object" && error && "code" in error
-    ? String(error.code || "")
-    : "";
+  const response =
+    typeof error === "object" && error && "response" in error
+      ? String(error.response || "")
+      : "";
+  const code =
+    typeof error === "object" && error && "code" in error
+      ? String(error.code || "")
+      : "";
 
   return `${message} ${response} ${code}`.trim().toLowerCase();
 }
 
 function classifyBounceType(error: unknown): BounceType {
   const smtpCode = getSmtpResponseCode(error);
-  const technicalCode = typeof error === "object" && error && "code" in error
-    ? String(error.code || "").toUpperCase()
-    : "";
+  const technicalCode =
+    typeof error === "object" && error && "code" in error
+      ? String(error.code || "").toUpperCase()
+      : "";
   const text = getErrorText(error);
 
   const technicalCodes = new Set([
@@ -222,14 +246,18 @@ function classifyBounceType(error: unknown): BounceType {
 
   if (
     /5\.[0-9]\.[0-9]/.test(text) ||
-    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(text)
+    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(
+      text,
+    )
   ) {
     return "hard";
   }
 
   if (
     /4\.[0-9]\.[0-9]/.test(text) ||
-    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(text)
+    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(
+      text,
+    )
   ) {
     return "soft";
   }
@@ -248,10 +276,17 @@ function extractErrorMessage(error: unknown): string {
 }
 
 function toTextFromHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function normalizeBodyText(bodyText: string, bodyHtml: string, plainTextOnly: boolean): string {
+function normalizeBodyText(
+  bodyText: string,
+  bodyHtml: string,
+  plainTextOnly: boolean,
+): string {
   if (plainTextOnly) {
     return bodyText.trim().length ? bodyText : toTextFromHtml(bodyHtml);
   }
@@ -283,17 +318,20 @@ function buildUnsubscribeUrl(token: string): string {
 
 async function triggerCampaignProcessorFromEdge() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.log('Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
+    console.log("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
     return;
   }
-  await fetch(`${SUPABASE_URL}/functions/v1/email-campaigns/campaigns/process`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "apikey": SUPABASE_SERVICE_ROLE_KEY
-    }
-  });
+  await fetch(
+    `${SUPABASE_URL}/functions/v1/email-campaigns/campaigns/process`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+      },
+    },
+  );
 }
 
 function defaultFooterTemplate(ownerEmail: string): string {
@@ -303,7 +341,10 @@ function defaultFooterTemplate(ownerEmail: string): string {
   return `${COMPLIANCE_SEPARATOR}\n\nYou received this email because ${ownerEmail} used leadminer.io to extract contacts from their mailbox. Try https://leadminer.io yourself.\n\n${UNSUBSCRIBE_TEXT_SUFFIX}: {{unsubscribeUrl}}`;
 }
 
-function ensureUnsubscribeText(footerText: string, unsubscribeUrl: string): string {
+function ensureUnsubscribeText(
+  footerText: string,
+  unsubscribeUrl: string,
+): string {
   const normalized = footerText.trim();
   const line = `${UNSUBSCRIBE_TEXT_SUFFIX}: ${unsubscribeUrl}`;
 
@@ -318,7 +359,10 @@ function ensureUnsubscribeText(footerText: string, unsubscribeUrl: string): stri
   return `${normalized}\n\n${line}`;
 }
 
-function ensureUnsubscribeHtml(footerHtml: string, unsubscribeUrl: string): string {
+function ensureUnsubscribeHtml(
+  footerHtml: string,
+  unsubscribeUrl: string,
+): string {
   const normalized = footerHtml.trim();
   const link = `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
 
@@ -375,15 +419,20 @@ function renderTemplate(
     ...extraReplacements,
   };
 
-  return template.replace(/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g, (_, key: string) => {
-    const value = replacements[key] ?? "";
-    return options.escapeValues ? escapeHtml(value) : value;
-  });
+  return template.replace(
+    /{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g,
+    (_, key: string) => {
+      const value = replacements[key] ?? "";
+      return options.escapeValues ? escapeHtml(value) : value;
+    },
+  );
 }
 
 function getCurrentUtcDayStart(): string {
   const date = new Date();
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())).toISOString();
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  ).toISOString();
 }
 
 async function getAuthenticatedUser(c: Context) {
@@ -526,7 +575,10 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     });
   } else {
     try {
-      const transport = await buildUserTransport(userEmail, matchingSource.credentials);
+      const transport = await buildUserTransport(
+        userEmail,
+        matchingSource.credentials,
+      );
       await verifyTransport(transport);
       options.push({ email: userEmail, available: true });
       transportBySender[userEmail] = transport;
@@ -550,11 +602,10 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   };
 }
 
-function ensureAllowedSender(
-  senderEmail: string,
-  options: SenderOption[],
-) {
-  return options.some((option) => option.email === senderEmail && option.available);
+function ensureAllowedSender(senderEmail: string, options: SenderOption[]) {
+  return options.some(
+    (option) => option.email === senderEmail && option.available,
+  );
 }
 
 async function getSelectedContacts(
@@ -572,10 +623,15 @@ async function getSelectedContacts(
     throw new Error(`Unable to fetch contacts for campaign: ${error.message}`);
   }
 
-  const selectedSet = selectedEmails?.length ? new Set(selectedEmails.map((email) => email.toLowerCase())) : null;
+  const selectedSet = selectedEmails?.length
+    ? new Set(selectedEmails.map((email) => email.toLowerCase()))
+    : null;
 
   const contacts = (data ?? [])
-    .filter((row: ContactRow) => !selectedSet || selectedSet.has(row.email.toLowerCase()))
+    .filter(
+      (row: ContactRow) =>
+        !selectedSet || selectedSet.has(row.email.toLowerCase()),
+    )
     .map((row: ContactRow) => ({
       email: row.email,
       status: row.status,
@@ -640,7 +696,10 @@ async function getContactsByEmails(
   }));
 }
 
-function isContactEligible(contact: ContactSnapshot, onlyValidContacts: boolean) {
+function isContactEligible(
+  contact: ContactSnapshot,
+  onlyValidContacts: boolean,
+) {
   if (contact.consent_status === "opt_out") {
     return false;
   }
@@ -661,7 +720,9 @@ function filterEligibleContacts(
   contacts: ContactSnapshot[],
   onlyValidContacts: boolean,
 ) {
-  return contacts.filter((contact) => isContactEligible(contact, onlyValidContacts));
+  return contacts.filter((contact) =>
+    isContactEligible(contact, onlyValidContacts),
+  );
 }
 
 function buildRenderedContent(
@@ -683,14 +744,33 @@ function buildRenderedContent(
     senderName: payload.senderName,
   };
 
-  const renderedBodyHtml = renderTemplate(payload.bodyHtmlTemplate, contact, extra, {
-    escapeValues: true,
-  });
-  const renderedBodyText = renderTemplate(payload.bodyTextTemplate, contact, extra);
+  const renderedBodyHtml = renderTemplate(
+    payload.bodyHtmlTemplate,
+    contact,
+    extra,
+    {
+      escapeValues: true,
+    },
+  );
+  const renderedBodyText = renderTemplate(
+    payload.bodyTextTemplate,
+    contact,
+    extra,
+  );
 
-  const rawFooterText = renderTemplate(payload.footerTextTemplate, contact, extra);
-  const footerText = ensureUnsubscribeText(rawFooterText, payload.unsubscribeUrl);
-  const footerHtml = ensureUnsubscribeHtml(toHtmlFromText(rawFooterText), payload.unsubscribeUrl);
+  const rawFooterText = renderTemplate(
+    payload.footerTextTemplate,
+    contact,
+    extra,
+  );
+  const footerText = ensureUnsubscribeText(
+    rawFooterText,
+    payload.unsubscribeUrl,
+  );
+  const footerHtml = ensureUnsubscribeHtml(
+    toHtmlFromText(rawFooterText),
+    payload.unsubscribeUrl,
+  );
 
   const html = payload.plainTextOnly ? "" : `${renderedBodyHtml}${footerHtml}`;
   const text = `${renderedBodyText}\n\n${footerText}`.trim();
@@ -721,7 +801,9 @@ async function recordClickLink(
     .single();
 
   if (error || !data?.token) {
-    throw new Error(`Unable to save click tracker link: ${error?.message || "unknown"}`);
+    throw new Error(
+      `Unable to save click tracker link: ${error?.message || "unknown"}`,
+    );
   }
 
   return data.token as string;
@@ -748,9 +830,17 @@ async function injectTrackers(
         continue;
       }
 
-      const token = await recordClickLink(supabaseAdmin, campaignId, recipientId, originalUrl);
+      const token = await recordClickLink(
+        supabaseAdmin,
+        campaignId,
+        recipientId,
+        originalUrl,
+      );
       const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
-      updatedHtml = updatedHtml.replace(`href="${originalUrl}"`, `href="${trackedUrl}"`);
+      updatedHtml = updatedHtml.replace(
+        `href="${originalUrl}"`,
+        `href="${trackedUrl}"`,
+      );
     }
   }
 
@@ -813,9 +903,8 @@ async function finalizeCampaignStatusIfDone(
     return;
   }
 
-  const finalStatus: CampaignStatus = sentCount === 0 && failedCount > 0
-    ? "failed"
-    : "completed";
+  const finalStatus: CampaignStatus =
+    sentCount === 0 && failedCount > 0 ? "failed" : "completed";
 
   await setCampaignStatus(supabaseAdmin, campaignId, finalStatus);
 }
@@ -859,26 +948,40 @@ app.post("/campaigns/sender-options", authMiddleware, async (c: Context) => {
   }
 });
 
-app.post("/campaigns/preview",authMiddleware,  async (c: Context) => {
+app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
-  const payload = (await c.req.json().catch(() => ({}))) as CampaignCreatePayload;
+  const payload = (await c.req
+    .json()
+    .catch(() => ({}))) as CampaignCreatePayload;
   const senderName = String(payload.senderName || "").trim();
-  const senderEmail = String(payload.senderEmail || "").trim().toLowerCase();
+  const senderEmail = String(payload.senderEmail || "")
+    .trim()
+    .toLowerCase();
   const subject = String(payload.subject || "").trim();
   const selectedEmails = payload.selectedEmails;
   const plainTextOnly = Boolean(payload.plainTextOnly);
   const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
   const bodyTextTemplate = String(payload.bodyTextTemplate || "");
   const ownerEmail = auth.user.email as string;
-  const footerTextTemplate = String(payload.footerTextTemplate || defaultFooterTemplate(ownerEmail));
+  const footerTextTemplate = String(
+    payload.footerTextTemplate || defaultFooterTemplate(ownerEmail),
+  );
 
-  if (!senderName || !senderEmail || !subject || (!bodyHtmlTemplate && !bodyTextTemplate)) {
-    return c.json({
-      error: "Missing required campaign fields",
-      code: "MISSING_REQUIRED_FIELDS",
-    }, 400);
+  if (
+    !senderName ||
+    !senderEmail ||
+    !subject ||
+    (!bodyHtmlTemplate && !bodyTextTemplate)
+  ) {
+    return c.json(
+      {
+        error: "Missing required campaign fields",
+        code: "MISSING_REQUIRED_FIELDS",
+      },
+      400,
+    );
   }
 
   const authorization = c.req.header("authorization") as string;
@@ -915,7 +1018,11 @@ app.post("/campaigns/preview",authMiddleware,  async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
   let contacts: ContactSnapshot[] = [];
   try {
-    contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, selectedEmails);
+    contacts = await getSelectedContacts(
+      supabaseAdmin,
+      auth.user.id,
+      selectedEmails,
+    );
   } catch (error) {
     return c.json(
       {
@@ -925,20 +1032,35 @@ app.post("/campaigns/preview",authMiddleware,  async (c: Context) => {
       500,
     );
   }
-  const eligibleContacts = filterEligibleContacts(contacts, Boolean(payload.onlyValidContacts));
+  const eligibleContacts = filterEligibleContacts(
+    contacts,
+    Boolean(payload.onlyValidContacts),
+  );
 
   if (!eligibleContacts.length) {
-    return c.json({
-      error: "No eligible contacts available for preview",
-      code: "NO_ELIGIBLE_CONTACTS",
-    }, 400);
+    return c.json(
+      {
+        error: "No eligible contacts available for preview",
+        code: "NO_ELIGIBLE_CONTACTS",
+      },
+      400,
+    );
   }
 
-  const randomContact = eligibleContacts[Math.floor(Math.random() * eligibleContacts.length)];
-  const { subject: renderedSubject, html, text } = buildRenderedContent(randomContact, {
+  const randomContact =
+    eligibleContacts[Math.floor(Math.random() * eligibleContacts.length)];
+  const {
+    subject: renderedSubject,
+    html,
+    text,
+  } = buildRenderedContent(randomContact, {
     subjectTemplate: subject,
     bodyHtmlTemplate,
-    bodyTextTemplate: normalizeBodyText(bodyTextTemplate, bodyHtmlTemplate, plainTextOnly),
+    bodyTextTemplate: normalizeBodyText(
+      bodyTextTemplate,
+      bodyHtmlTemplate,
+      plainTextOnly,
+    ),
     footerTextTemplate,
     ownerEmail,
     unsubscribeUrl: buildUnsubscribeUrl(crypto.randomUUID()),
@@ -980,25 +1102,39 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
-  const payload = (await c.req.json().catch(() => ({}))) as CampaignCreatePayload;
+  const payload = (await c.req
+    .json()
+    .catch(() => ({}))) as CampaignCreatePayload;
   const senderName = String(payload.senderName || "").trim();
-  const senderEmail = String(payload.senderEmail || "").trim().toLowerCase();
+  const senderEmail = String(payload.senderEmail || "")
+    .trim()
+    .toLowerCase();
   const replyTo = String(payload.replyTo || auth.user.email || "").trim();
   const subject = String(payload.subject || "").trim();
   const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
   const bodyTextTemplate = String(payload.bodyTextTemplate || "");
   const ownerEmail = auth.user.email as string;
-  const footerTextTemplate = String(payload.footerTextTemplate || defaultFooterTemplate(ownerEmail));
+  const footerTextTemplate = String(
+    payload.footerTextTemplate || defaultFooterTemplate(ownerEmail),
+  );
   const plainTextOnly = Boolean(payload.plainTextOnly);
   const onlyValidContacts = Boolean(payload.onlyValidContacts);
   const trackOpen = payload.trackOpen !== false;
   const trackClick = payload.trackClick !== false;
 
-  if (!senderName || !senderEmail || !subject || (!bodyHtmlTemplate && !bodyTextTemplate)) {
-    return c.json({
-      error: "Missing required campaign fields",
-      code: "MISSING_REQUIRED_FIELDS",
-    }, 400);
+  if (
+    !senderName ||
+    !senderEmail ||
+    !subject ||
+    (!bodyHtmlTemplate && !bodyTextTemplate)
+  ) {
+    return c.json(
+      {
+        error: "Missing required campaign fields",
+        code: "MISSING_REQUIRED_FIELDS",
+      },
+      400,
+    );
   }
 
   const senderDailyLimit = Math.min(
@@ -1055,7 +1191,11 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
   let contacts: ContactSnapshot[] = [];
   try {
-    contacts = await getSelectedContacts(supabaseAdmin, auth.user.id, payload.selectedEmails);
+    contacts = await getSelectedContacts(
+      supabaseAdmin,
+      auth.user.id,
+      payload.selectedEmails,
+    );
   } catch (error) {
     return c.json(
       {
@@ -1068,10 +1208,13 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const eligibleContacts = filterEligibleContacts(contacts, onlyValidContacts);
 
   if (!eligibleContacts.length) {
-    return c.json({
-      error: "No eligible contacts to send",
-      code: "NO_ELIGIBLE_CONTACTS",
-    }, 400);
+    return c.json(
+      {
+        error: "No eligible contacts to send",
+        code: "NO_ELIGIBLE_CONTACTS",
+      },
+      400,
+    );
   }
 
   const { data: campaignData, error: campaignError } = await supabaseAdmin
@@ -1085,7 +1228,11 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       reply_to: replyTo,
       subject,
       body_html_template: bodyHtmlTemplate,
-      body_text_template: normalizeBodyText(bodyTextTemplate, bodyHtmlTemplate, plainTextOnly),
+      body_text_template: normalizeBodyText(
+        bodyTextTemplate,
+        bodyHtmlTemplate,
+        plainTextOnly,
+      ),
       footer_html_template: toHtmlFromText(footerTextTemplate),
       footer_text_template: footerTextTemplate,
       sender_daily_limit: senderDailyLimit,
@@ -1100,10 +1247,13 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     .single();
 
   if (campaignError || !campaignData?.id) {
-    return c.json({
-      error: campaignError?.message || "Unable to create campaign",
-      code: "CAMPAIGN_CREATE_FAILED",
-    }, 500);
+    return c.json(
+      {
+        error: campaignError?.message || "Unable to create campaign",
+        code: "CAMPAIGN_CREATE_FAILED",
+      },
+      500,
+    );
   }
 
   const campaignId = campaignData.id as string;
@@ -1121,15 +1271,18 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     .insert(recipientRows);
 
   if (recipientsError) {
-    return c.json({
-      error: recipientsError.message,
-      code: "CAMPAIGN_RECIPIENTS_CREATE_FAILED",
-    }, 500);
+    return c.json(
+      {
+        error: recipientsError.message,
+        code: "CAMPAIGN_RECIPIENTS_CREATE_FAILED",
+      },
+      500,
+    );
   }
 
   triggerCampaignProcessorFromEdge().catch((error) => {
-    console.log("error triggered")
-    console.log('error:', error)
+    console.log("error triggered");
+    console.log("error:", error);
     // Cron remains as fallback if immediate trigger fails.
   });
 
@@ -1177,14 +1330,20 @@ app.post("/campaigns/:id/stop", authMiddleware, async (c: Context) => {
     .single();
 
   if (campaignError || !campaign) {
-    return c.json({ error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" }, 404);
+    return c.json(
+      { error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" },
+      404,
+    );
   }
 
   if (["completed", "failed", "cancelled"].includes(String(campaign.status))) {
-    return c.json({
-      error: "Campaign is already in a terminal state",
-      code: "CAMPAIGN_ALREADY_TERMINAL",
-    }, 400);
+    return c.json(
+      {
+        error: "Campaign is already in a terminal state",
+        code: "CAMPAIGN_ALREADY_TERMINAL",
+      },
+      400,
+    );
   }
 
   await setCampaignStatus(supabaseAdmin, campaignId, "cancelled");
@@ -1218,14 +1377,20 @@ app.delete("/campaigns/:id", authMiddleware, async (c: Context) => {
     .single();
 
   if (campaignError || !campaign) {
-    return c.json({ error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" }, 404);
+    return c.json(
+      { error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" },
+      404,
+    );
   }
 
   if (campaign.status === "processing") {
-    return c.json({
-      error: "Campaign is currently processing. Stop it first.",
-      code: "CAMPAIGN_PROCESSING_DELETE_FORBIDDEN",
-    }, 409);
+    return c.json(
+      {
+        error: "Campaign is currently processing. Stop it first.",
+        code: "CAMPAIGN_PROCESSING_DELETE_FORBIDDEN",
+      },
+      409,
+    );
   }
 
   const { error: deleteError } = await supabaseAdmin
@@ -1236,253 +1401,301 @@ app.delete("/campaigns/:id", authMiddleware, async (c: Context) => {
     .eq("user_id", auth.user.id);
 
   if (deleteError) {
-    return c.json({ error: deleteError.message, code: "CAMPAIGN_DELETE_FAILED" }, 500);
+    return c.json(
+      { error: deleteError.message, code: "CAMPAIGN_DELETE_FAILED" },
+      500,
+    );
   }
 
   return c.json({ msg: "Campaign deleted", campaignId });
 });
 
-app.post("/campaigns/process", authMiddleware, verifyServiceRole, async (c: Context) => {
-  const supabaseAdmin = createSupabaseAdmin();
-  let fallbackSenderEmail = "";
-  try {
-    fallbackSenderEmail = requireFallbackSenderEmail();
-  } catch (error) {
-    return c.json({
-      error: extractErrorMessage(error),
-      code: "SMTP_SENDER_NOT_CONFIGURED",
-    }, 500);
-  }
-  const dayStart = getCurrentUtcDayStart();
-  const { data: campaigns, error: campaignsError } = await supabaseAdmin
-    .schema("private")
-    .from("email_campaigns")
-    .select("id, user_id, owner_email, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, footer_html_template, footer_text_template, sender_daily_limit, track_open, track_click, plain_text_only, only_valid_contacts")
-    .in("status", ["queued", "processing"])
-    .order("created_at", { ascending: true })
-    .limit(30);
-
-  if (campaignsError) {
-    return c.json({ error: campaignsError.message }, 500);
-  }
-
-  let processedRecipients = 0;
-
-  for (const campaign of campaigns ?? []) {
-    await setCampaignStatus(supabaseAdmin, campaign.id, "processing");
-
-    const enforcedLimit = Math.min(
-      Math.max(Number(campaign.sender_daily_limit || DEFAULT_SENDER_DAILY_LIMIT), 1),
-      MAX_SENDER_DAILY_LIMIT,
-    );
-
-    const { count: sentToday } = await supabaseAdmin
-      .schema("private")
-      .from("email_campaign_recipients")
-      .select("id", { count: "exact", head: true })
-      .eq("sender_email", campaign.sender_email)
-      .eq("send_status", "sent")
-      .gte("sent_at", dayStart);
-
-    const remainingForSender = Math.max(0, enforcedLimit - Number(sentToday || 0));
-    if (remainingForSender <= 0) {
-      continue;
+app.post(
+  "/campaigns/process",
+  authMiddleware,
+  verifyServiceRole,
+  async (c: Context) => {
+    const supabaseAdmin = createSupabaseAdmin();
+    let fallbackSenderEmail = "";
+    try {
+      fallbackSenderEmail = requireFallbackSenderEmail();
+    } catch (error) {
+      return c.json(
+        {
+          error: extractErrorMessage(error),
+          code: "SMTP_SENDER_NOT_CONFIGURED",
+        },
+        500,
+      );
     }
-
-    const { data: recipients, error: recipientsError } = await supabaseAdmin
+    const dayStart = getCurrentUtcDayStart();
+    const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
-      .from("email_campaign_recipients")
-      .select("id, user_id, contact_email, open_token, unsubscribe_token, attempt_count")
-      .eq("campaign_id", campaign.id)
-      .eq("send_status", "pending")
+      .from("email_campaigns")
+      .select(
+        "id, user_id, owner_email, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, footer_html_template, footer_text_template, sender_daily_limit, track_open, track_click, plain_text_only, only_valid_contacts",
+      )
+      .in("status", ["queued", "processing"])
       .order("created_at", { ascending: true })
-      .limit(Math.min(remainingForSender, PROCESSING_BATCH_SIZE));
+      .limit(30);
 
-    if (recipientsError) {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-      continue;
+    if (campaignsError) {
+      return c.json({ error: campaignsError.message }, 500);
     }
 
-    if (!recipients?.length) {
+    let processedRecipients = 0;
+
+    for (const campaign of campaigns ?? []) {
+      await setCampaignStatus(supabaseAdmin, campaign.id, "processing");
+
+      const enforcedLimit = Math.min(
+        Math.max(
+          Number(campaign.sender_daily_limit || DEFAULT_SENDER_DAILY_LIMIT),
+          1,
+        ),
+        MAX_SENDER_DAILY_LIMIT,
+      );
+
+      const { count: sentToday } = await supabaseAdmin
+        .schema("private")
+        .from("email_campaign_recipients")
+        .select("id", { count: "exact", head: true })
+        .eq("sender_email", campaign.sender_email)
+        .eq("send_status", "sent")
+        .gte("sent_at", dayStart);
+
+      const remainingForSender = Math.max(
+        0,
+        enforcedLimit - Number(sentToday || 0),
+      );
+      if (remainingForSender <= 0) {
+        continue;
+      }
+
+      const { data: recipients, error: recipientsError } = await supabaseAdmin
+        .schema("private")
+        .from("email_campaign_recipients")
+        .select(
+          "id, user_id, contact_email, open_token, unsubscribe_token, attempt_count",
+        )
+        .eq("campaign_id", campaign.id)
+        .eq("send_status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(Math.min(remainingForSender, PROCESSING_BATCH_SIZE));
+
+      if (recipientsError) {
+        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+        continue;
+      }
+
+      if (!recipients?.length) {
+        try {
+          await finalizeCampaignStatusIfDone(supabaseAdmin, campaign.id);
+        } catch {
+          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+        }
+        continue;
+      }
+
+      let senderTransport: Transport | undefined;
+      if (campaign.sender_email !== fallbackSenderEmail) {
+        const serviceClient = createSupabaseAdmin();
+        const { data: rows, error } = await serviceClient
+          .schema("private")
+          .rpc("get_mining_source_credentials_for_user", {
+            _user_id: campaign.user_id,
+            _encryption_key: LEADMINER_HASH_SECRET,
+          });
+
+        if (error) {
+          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+          continue;
+        }
+
+        const matchingSource = (rows ?? []).find(
+          (row: { email: string }) => row.email === campaign.sender_email,
+        );
+        if (!matchingSource) {
+          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+          continue;
+        }
+
+        try {
+          senderTransport = await buildUserTransport(
+            campaign.sender_email,
+            matchingSource.credentials as Record<string, unknown>,
+          );
+        } catch {
+          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+          continue;
+        }
+      }
+
+      const recipientEmails = recipients.map(
+        (recipient) => recipient.contact_email,
+      );
+      let liveContacts: ContactSnapshot[] = [];
+      try {
+        liveContacts = await getContactsByEmails(
+          supabaseAdmin,
+          campaign.user_id,
+          recipientEmails,
+        );
+      } catch {
+        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+        continue;
+      }
+
+      const liveContactByEmail = new Map<string, ContactSnapshot>();
+      liveContacts.forEach((contact) => {
+        liveContactByEmail.set(contact.email.toLowerCase(), contact);
+      });
+
+      for (const recipient of recipients) {
+        const { data: recipientState } = await supabaseAdmin
+          .schema("private")
+          .from("email_campaign_recipients")
+          .select("send_status")
+          .eq("id", recipient.id)
+          .single();
+
+        if (recipientState?.send_status !== "pending") {
+          continue;
+        }
+
+        const snapshot = liveContactByEmail.get(
+          recipient.contact_email.toLowerCase(),
+        );
+        if (!snapshot) {
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({
+              send_status: "skipped",
+              last_error: "Recipient not found in live contact table",
+            })
+            .eq("id", recipient.id);
+          continue;
+        }
+
+        if (
+          !isContactEligible(snapshot, Boolean(campaign.only_valid_contacts))
+        ) {
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({
+              send_status: "skipped",
+              last_error: "Recipient no longer eligible",
+            })
+            .eq("id", recipient.id);
+          continue;
+        }
+
+        const {
+          subject: renderedSubject,
+          html,
+          text,
+        } = buildRenderedContent(snapshot, {
+          subjectTemplate: campaign.subject,
+          bodyHtmlTemplate: campaign.body_html_template || "",
+          bodyTextTemplate: campaign.body_text_template || "",
+          footerTextTemplate:
+            campaign.footer_text_template ||
+            defaultFooterTemplate(campaign.owner_email),
+          ownerEmail: campaign.owner_email,
+          unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
+          senderName: campaign.sender_name,
+          plainTextOnly: campaign.plain_text_only,
+        });
+
+        try {
+          const htmlWithTracking = campaign.plain_text_only
+            ? ""
+            : await injectTrackers(
+                supabaseAdmin,
+                campaign.id,
+                recipient.id,
+                recipient.open_token,
+                html,
+                campaign.track_click,
+                campaign.track_open,
+              );
+
+          await sendEmail(
+            recipient.contact_email,
+            renderedSubject,
+            campaign.plain_text_only ? "" : htmlWithTracking,
+            {
+              from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+              replyTo: campaign.reply_to,
+              text,
+              transport: senderTransport,
+            },
+          );
+
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({
+              send_status: "sent",
+              sent_at: new Date().toISOString(),
+              attempt_count: recipient.attempt_count
+                ? recipient.attempt_count + 1
+                : 1,
+              bounce_type: null,
+              smtp_code: null,
+              last_error: null,
+            })
+            .eq("id", recipient.id);
+
+          await updateContactDeliverability(
+            supabaseAdmin,
+            recipient.user_id,
+            recipient.contact_email,
+            "VALID",
+          );
+          processedRecipients += 1;
+        } catch (error) {
+          const message = extractErrorMessage(error);
+          const smtpCode = parseErrorCode(error);
+          const bounceType = classifyBounceType(error);
+
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({
+              send_status: "failed",
+              attempt_count: recipient.attempt_count
+                ? recipient.attempt_count + 1
+                : 1,
+              bounce_type: bounceType,
+              smtp_code: smtpCode,
+              last_error: message,
+            })
+            .eq("id", recipient.id);
+
+          if (bounceType === "hard" || bounceType === "soft") {
+            await updateContactDeliverability(
+              supabaseAdmin,
+              recipient.user_id,
+              recipient.contact_email,
+              bounceType === "hard" ? "INVALID" : "RISKY",
+            );
+          }
+        }
+      }
+
       try {
         await finalizeCampaignStatusIfDone(supabaseAdmin, campaign.id);
       } catch {
         await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
       }
-      continue;
     }
 
-    let senderTransport: Transport | undefined;
-    if (campaign.sender_email !== fallbackSenderEmail) {
-      const serviceClient = createSupabaseAdmin();
-      const { data: rows, error } = await serviceClient
-        .schema("private")
-        .rpc("get_mining_source_credentials_for_user", {
-          _user_id: campaign.user_id,
-          _encryption_key: LEADMINER_HASH_SECRET,
-        });
-
-      if (error) {
-        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-        continue;
-      }
-
-      const matchingSource = (rows ?? []).find((row: { email: string }) => row.email === campaign.sender_email);
-      if (!matchingSource) {
-        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-        continue;
-      }
-
-      try {
-        senderTransport = await buildUserTransport(
-          campaign.sender_email,
-          matchingSource.credentials as Record<string, unknown>,
-        );
-      } catch {
-        await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-        continue;
-      }
-    }
-
-    const recipientEmails = recipients.map((recipient) => recipient.contact_email);
-    let liveContacts: ContactSnapshot[] = [];
-    try {
-      liveContacts = await getContactsByEmails(supabaseAdmin, campaign.user_id, recipientEmails);
-    } catch {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-      continue;
-    }
-
-    const liveContactByEmail = new Map<string, ContactSnapshot>();
-    liveContacts.forEach((contact) => {
-      liveContactByEmail.set(contact.email.toLowerCase(), contact);
-    });
-
-    for (const recipient of recipients) {
-      const { data: recipientState } = await supabaseAdmin
-        .schema("private")
-        .from("email_campaign_recipients")
-        .select("send_status")
-        .eq("id", recipient.id)
-        .single();
-
-      if (recipientState?.send_status !== "pending") {
-        continue;
-      }
-
-      const snapshot = liveContactByEmail.get(recipient.contact_email.toLowerCase());
-      if (!snapshot) {
-        await supabaseAdmin
-          .schema("private")
-          .from("email_campaign_recipients")
-          .update({
-            send_status: "skipped",
-            last_error: "Recipient not found in live contact table",
-          })
-          .eq("id", recipient.id);
-        continue;
-      }
-
-      if (!isContactEligible(snapshot, Boolean(campaign.only_valid_contacts))) {
-        await supabaseAdmin
-          .schema("private")
-          .from("email_campaign_recipients")
-          .update({
-            send_status: "skipped",
-            last_error: "Recipient no longer eligible",
-          })
-          .eq("id", recipient.id);
-        continue;
-      }
-
-      const { subject: renderedSubject, html, text } = buildRenderedContent(snapshot, {
-        subjectTemplate: campaign.subject,
-        bodyHtmlTemplate: campaign.body_html_template || "",
-        bodyTextTemplate: campaign.body_text_template || "",
-        footerTextTemplate: campaign.footer_text_template || defaultFooterTemplate(campaign.owner_email),
-        ownerEmail: campaign.owner_email,
-        unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
-        senderName: campaign.sender_name,
-        plainTextOnly: campaign.plain_text_only,
-      });
-
-      try {
-        const htmlWithTracking = campaign.plain_text_only
-          ? ""
-          : await injectTrackers(
-            supabaseAdmin,
-            campaign.id,
-            recipient.id,
-            recipient.open_token,
-            html,
-            campaign.track_click,
-            campaign.track_open,
-          );
-
-        await sendEmail(
-          recipient.contact_email,
-          renderedSubject,
-          campaign.plain_text_only ? "" : htmlWithTracking,
-          {
-            from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
-            replyTo: campaign.reply_to,
-            text,
-            transport: senderTransport,
-          },
-        );
-
-        await supabaseAdmin
-          .schema("private")
-          .from("email_campaign_recipients")
-          .update({
-            send_status: "sent",
-            sent_at: new Date().toISOString(),
-            attempt_count: recipient.attempt_count ? recipient.attempt_count + 1 : 1,
-            bounce_type: null,
-            smtp_code: null,
-            last_error: null,
-          })
-          .eq("id", recipient.id);
-
-        await updateContactDeliverability(supabaseAdmin, recipient.user_id, recipient.contact_email, "VALID");
-        processedRecipients += 1;
-      } catch (error) {
-        const message = extractErrorMessage(error);
-        const smtpCode = parseErrorCode(error);
-        const bounceType = classifyBounceType(error);
-
-        await supabaseAdmin
-          .schema("private")
-          .from("email_campaign_recipients")
-          .update({
-            send_status: "failed",
-            attempt_count: recipient.attempt_count ? recipient.attempt_count + 1 : 1,
-            bounce_type: bounceType,
-            smtp_code: smtpCode,
-            last_error: message,
-          })
-          .eq("id", recipient.id);
-
-        if (bounceType === "hard" || bounceType === "soft") {
-          await updateContactDeliverability(
-            supabaseAdmin,
-            recipient.user_id,
-            recipient.contact_email,
-            bounceType === "hard" ? "INVALID" : "RISKY",
-          );
-        }
-      }
-    }
-
-    try {
-      await finalizeCampaignStatusIfDone(supabaseAdmin, campaign.id);
-    } catch {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-    }
-  }
-
-  return c.json({ processedRecipients });
-});
+    return c.json({ processedRecipients });
+  },
+);
 
 app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
@@ -1526,16 +1739,14 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     .eq("contact_email", recipient.contact_email)
     .eq("send_status", "pending");
 
-  await supabaseAdmin
-    .schema("private")
-    .from("email_campaign_events")
-    .insert({
-      campaign_id: recipient.campaign_id,
-      recipient_id: recipient.id,
-      event_type: "unsubscribe",
-    });
+  await supabaseAdmin.schema("private").from("email_campaign_events").insert({
+    campaign_id: recipient.campaign_id,
+    recipient_id: recipient.id,
+    event_type: "unsubscribe",
+  });
 
-  const html = "<html><body><h1>You are unsubscribed</h1><p>You will no longer receive campaign emails from this sender.</p></body></html>";
+  const html =
+    "<html><body><h1>You are unsubscribed</h1><p>You will no longer receive campaign emails from this sender.</p></body></html>";
   return new Response(html, {
     headers: {
       ...corsHeaders,
@@ -1556,14 +1767,11 @@ app.get("/track/open/:token", async (c: Context) => {
     .single();
 
   if (recipient) {
-    await supabaseAdmin
-      .schema("private")
-      .from("email_campaign_events")
-      .insert({
-        campaign_id: recipient.campaign_id,
-        recipient_id: recipient.id,
-        event_type: "open",
-      });
+    await supabaseAdmin.schema("private").from("email_campaign_events").insert({
+      campaign_id: recipient.campaign_id,
+      recipient_id: recipient.id,
+      event_type: "open",
+    });
   }
 
   const pixel = Uint8Array.from(
@@ -1595,15 +1803,12 @@ app.get("/track/click/:token", async (c: Context) => {
     return c.json({ error: "Invalid tracking token" }, 404);
   }
 
-  await supabaseAdmin
-    .schema("private")
-    .from("email_campaign_events")
-    .insert({
-      campaign_id: link.campaign_id,
-      recipient_id: link.recipient_id,
-      event_type: "click",
-      url: link.url,
-    });
+  await supabaseAdmin.schema("private").from("email_campaign_events").insert({
+    campaign_id: link.campaign_id,
+    recipient_id: link.recipient_id,
+    event_type: "click",
+    url: link.url,
+  });
 
   return c.redirect(link.url, 302);
 });
@@ -1622,10 +1827,13 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
   try {
     fallbackSenderEmail = requireFallbackSenderEmail();
   } catch (error) {
-    return c.json({
-      error: extractErrorMessage(error),
-      code: "SMTP_SENDER_NOT_CONFIGURED",
-    }, 500);
+    return c.json(
+      {
+        error: extractErrorMessage(error),
+        code: "SMTP_SENDER_NOT_CONFIGURED",
+      },
+      500,
+    );
   }
   const safeUserEmail = escapeHtml(auth.user.email as string);
   const html = `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
