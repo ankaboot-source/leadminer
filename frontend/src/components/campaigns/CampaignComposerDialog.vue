@@ -318,6 +318,7 @@
 
 <script setup lang="ts">
 import type { Contact } from '@/types/contact';
+import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import Editor from 'primevue/editor';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
@@ -890,31 +891,21 @@ async function loadSenderOptions() {
     fallbackSenderEmail.value = data.fallbackSenderEmail || '';
     form.senderDailyLimit = Number(data.defaultDailyLimit || 1000);
     const allOptions = (data.options || []).map(
-      (option: { email: string; available: boolean; reason?: string }) => {
+      (option: { email: string; available: boolean }) => {
         return {
           email: option.email,
           available: option.available,
-          reason: String(option.reason || '').trim(),
         };
       },
     );
 
-    const unavailableReasons = [
-      ...new Set(
-        allOptions
-          .filter((option) => !option.available)
-          .map((option) => option.reason)
-          .filter((reason) => reason.length > 0),
-      ),
-    ];
-    if (allOptions.some((option) => !option.available)) {
+    const unavailableEmails = extractUnavailableSenderEmails(allOptions);
+    if (unavailableEmails.length) {
       $toast.add({
         severity: 'warn',
         summary: t('senders_unavailable_title'),
         detail: t('senders_unavailable_notification', {
-          reasons: unavailableReasons.length
-            ? unavailableReasons.join('; ')
-            : t('sender_unavailable_reason_unknown'),
+          emails: unavailableEmails.join(', '),
         }),
         life: 6500,
       });
@@ -1159,8 +1150,7 @@ watch(
     "sender_email": "Sender email",
     "sender_email_help": "The email address used to send this campaign.",
     "senders_unavailable_title": "Some sender addresses are unavailable",
-    "senders_unavailable_notification": "Unavailable senders were excluded: {reasons}",
-    "sender_unavailable_reason_unknown": "Sender credentials are unavailable",
+    "senders_unavailable_notification": "The following addresses are no longer available: {emails}. Please reconnect them in Sources.",
     "reply_to": "Reply-to",
     "reply_to_help": "Replies from recipients will be sent to this email address.",
     "subject": "Subject",
@@ -1252,8 +1242,7 @@ watch(
     "sender_email": "Adresse d'expédition",
     "sender_email_help": "Adresse email utilisée pour envoyer cette campagne.",
     "senders_unavailable_title": "Certaines adresses d'expédition sont indisponibles",
-    "senders_unavailable_notification": "Les expéditeurs indisponibles ont été exclus : {reasons}",
-    "sender_unavailable_reason_unknown": "Les identifiants de l'expéditeur sont indisponibles",
+    "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}. Veuillez les reconnecter dans les sources.",
     "reply_to": "Répondre à",
     "reply_to_help": "Les réponses de vos destinataires seront envoyées à cette adresse.",
     "subject": "Sujet",
