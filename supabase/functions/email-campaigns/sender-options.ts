@@ -139,24 +139,3 @@ export function getSenderCredentialIssue(
 
   return null;
 }
-
-export async function updateMiningSourceCredentials(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  email: string,
-  credentials: Record<string, unknown>,
-): Promise<boolean> {
-  if (!email || typeof email !== "string") {
-    console.error("Invalid email provided to updateMiningSourceCredentials");
-    return false;
-  }
-
-  const { error } = await supabaseAdmin
-    .from("mining_sources")
-    .update({ credentials })
-    .eq("email", email);
-
-  if (error) {
-    console.error("Failed to update mining source credentials:", error);
-  }
-  return !error;
-}
