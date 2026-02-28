@@ -26,15 +26,16 @@ export async function refreshOAuthToken(
 
   if (kind === "google") {
     tokenUrl = "https://oauth2.googleapis.com/token";
-    clientId = Deno.env.get("GOOGLE_OAUTH_CLIENT_ID") || "";
-    clientSecret = Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET") || "";
+    clientId = Deno.env.get("GOOGLE_CLIENT_ID") || "";
+    clientSecret = Deno.env.get("GOOGLE_SECRET") || "";
   } else {
     tokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-    clientId = Deno.env.get("AZURE_OAUTH_CLIENT_ID") || "";
-    clientSecret = Deno.env.get("AZURE_OAUTH_CLIENT_SECRET") || "";
+    clientId = Deno.env.get("AZURE_CLIENT_ID") || "";
+    clientSecret = Deno.env.get("AZURE_SECRET") || "";
   }
 
   if (!clientId || !clientSecret) {
+    console.warn("OAuth client ID or secret not configured");
     return null;
   }
 
@@ -44,11 +45,6 @@ export async function refreshOAuthToken(
     refresh_token: refreshToken,
     grant_type: "refresh_token",
   });
-
-  const expiresAtInput = Number(source.credentials.expiresAt);
-  if (!Number.isFinite(expiresAtInput) || expiresAtInput <= 0) {
-    console.warn("Missing or invalid expiresAt in source credentials");
-  }
 
   try {
     const response = await fetch(tokenUrl, {
@@ -86,6 +82,29 @@ export async function refreshOAuthToken(
     console.error("Failed to refresh OAuth token:", error);
     return null;
   }
+}
+
+export async function updateMiningSourceCredentials(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  email: string,
+  credentials: Record<string, unknown>,
+): Promise<boolean> {
+  if (!email || typeof email !== "string") {
+    console.error("Invalid email provided to updateMiningSourceCredentials");
+    return false;
+  }
+
+  const { error } = await supabaseAdmin
+    .from("mining_sources")
+    .update({ credentials })
+    .eq("email", email);
+
+  if (error) {
+    console.error("Failed to update mining source credentials:", error);
+    return false;
+  }
+
+  return true;
 }
 
 export function listUniqueSenderSources(

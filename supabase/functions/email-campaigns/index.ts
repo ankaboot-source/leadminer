@@ -33,6 +33,7 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
+const LEADMINER_FRONTEND_HOST = Deno.env.get("LEADMINER_FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
@@ -284,8 +285,13 @@ function extractErrorMessage(error: unknown): string {
 
 function toTextFromHtml(html: string): string {
   return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n\n")
+    .replace(/<\/li>/gi, "\n")
     .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+/g, " ")
     .trim();
 }
 
@@ -577,6 +583,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     await getUserMiningSources(authorization),
   );
 
+  // Refresh expired OAuth tokens
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
     const credentialIssue = getSenderCredentialIssue(source);
@@ -1130,7 +1137,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     ),
     footerTextTemplate,
     ownerEmail,
-    unsubscribeUrl: buildUnsubscribeUrl(crypto.randomUUID()),
+    unsubscribeUrl: buildUnsubscribeUrl("preview-unsubscribe"),
     senderName,
     plainTextOnly,
   });
@@ -1768,6 +1775,16 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
   const supabaseAdmin = createSupabaseAdmin();
 
+  if (token === "preview-unsubscribe") {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success?preview=true`,
+      },
+    });
+  }
+
   const { data: recipient, error } = await supabaseAdmin
     .schema("private")
     .from("email_campaign_recipients")
@@ -1776,16 +1793,13 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     .single();
 
   if (error || !recipient) {
-    return new Response(
-      "<html><body><h1>Invalid unsubscribe link</h1><p>This link is not valid anymore.</p></body></html>",
-      {
-        status: 404,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "text/html; charset=utf-8",
-        },
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/failure`,
       },
-    );
+    });
   }
 
   await supabaseAdmin
@@ -1812,12 +1826,11 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     event_type: "unsubscribe",
   });
 
-  const html =
-    "<html><body><h1>You are unsubscribed</h1><p>You will no longer receive campaign emails from this sender.</p></body></html>";
-  return new Response(html, {
+  return new Response(null, {
+    status: 302,
     headers: {
       ...corsHeaders,
-      "Content-Type": "text/html; charset=utf-8",
+      Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success`,
     },
   });
 });
