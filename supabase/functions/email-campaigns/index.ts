@@ -582,16 +582,24 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     const credentialIssue = getSenderCredentialIssue(source);
 
     if (credentialIssue && credentialIssue.includes("expired")) {
-      const refreshed = await refreshOAuthToken(source);
-      if (refreshed) {
-        const updated = await updateMiningSourceCredentials(
-          supabaseAdmin,
-          source.email,
-          refreshed.credentials,
-        );
-        if (updated) {
-          sources[i] = refreshed;
+      try {
+        const refreshed = await refreshOAuthToken(source);
+        if (refreshed) {
+          const updated = await updateMiningSourceCredentials(
+            supabaseAdmin,
+            source.email,
+            refreshed.credentials,
+          );
+          if (updated) {
+            sources[i] = refreshed;
+          }
         }
+      } catch (error) {
+        console.error(
+          "Failed to refresh token for source:",
+          source.email,
+          error,
+        );
       }
     }
   }
