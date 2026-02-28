@@ -20,6 +20,13 @@ export async function refreshOAuthToken(
     return null;
   }
 
+  console.log(
+    "[OAuth] Token refresh START for:",
+    source.email,
+    "provider:",
+    kind,
+  );
+
   let tokenUrl: string;
   let clientId: string;
   let clientSecret: string;
@@ -34,8 +41,19 @@ export async function refreshOAuthToken(
     clientSecret = Deno.env.get("AZURE_SECRET") || "";
   }
 
+  console.log(
+    "[OAuth] Client ID configured:",
+    !!clientId,
+    "Client Secret configured:",
+    !!clientSecret,
+  );
+
   if (!clientId || !clientSecret) {
-    console.warn("OAuth client ID or secret not configured");
+    console.warn(
+      "[OAuth] Client ID/Secret MISSING for:",
+      source.email,
+      "- cannot refresh token",
+    );
     return null;
   }
 
@@ -56,7 +74,14 @@ export async function refreshOAuthToken(
     if (!response.ok) {
       const status = response.status;
       const body = await response.text();
-      console.error(`OAuth token refresh failed: ${status} - ${body}`);
+      console.error(
+        "[OAuth] OAuth response NOT OK for:",
+        source.email,
+        "- status:",
+        status,
+        "body:",
+        body,
+      );
       return null;
     }
 
@@ -69,6 +94,13 @@ export async function refreshOAuthToken(
     const nowMs = Date.now();
     const expiresAt = nowMs + tokenData.expires_in * 1000;
 
+    console.log(
+      "[OAuth] Token refresh SUCCESS for:",
+      source.email,
+      "- new expiresAt:",
+      expiresAt,
+    );
+
     return {
       ...source,
       credentials: {
@@ -79,7 +111,12 @@ export async function refreshOAuthToken(
       },
     };
   } catch (error) {
-    console.error("Failed to refresh OAuth token:", error);
+    console.error(
+      "[OAuth] Token refresh EXCEPTION for:",
+      source.email,
+      "- error:",
+      error,
+    );
     return null;
   }
 }

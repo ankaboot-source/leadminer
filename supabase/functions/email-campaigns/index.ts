@@ -1600,6 +1600,10 @@ app.post(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
         if (!matchingSource) {
+          console.log(
+            "[OAuth] No matching source found for:",
+            campaign.sender_email,
+          );
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
           continue;
         }
@@ -1611,9 +1615,25 @@ app.post(
           credentials: matchingSource.credentials as Record<string, unknown>,
         };
         const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
+        console.log(
+          "[OAuth] Checking credentials for:",
+          campaign.sender_email,
+          "- issue:",
+          credentialIssue,
+        );
+
         if (credentialIssue?.includes("expired")) {
+          console.log(
+            "[OAuth] Token EXPIRED for:",
+            campaign.sender_email,
+            "- attempting refresh...",
+          );
           const refreshed = await refreshOAuthToken(sourceAsCredential);
           if (refreshed) {
+            console.log(
+              "[OAuth] Token refresh SUCCESS for:",
+              campaign.sender_email,
+            );
             await updateMiningSourceCredentials(
               supabaseAdmin,
               campaign.sender_email,
@@ -1623,7 +1643,19 @@ app.post(
               string,
               unknown
             >;
+          } else {
+            console.log(
+              "[OAuth] Token refresh FAILED for:",
+              campaign.sender_email,
+              "- source will remain unavailable",
+            );
           }
+        } else {
+          console.log(
+            "[OAuth] Token is valid for:",
+            campaign.sender_email,
+            "- no refresh needed",
+          );
         }
 
         try {
