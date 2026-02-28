@@ -593,6 +593,10 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
           if (updated) {
             sources[i] = refreshed;
           }
+        } else {
+          console.warn(
+            `Could not refresh token for ${source.email}, source will remain unavailable`,
+          );
         }
       } catch (error) {
         console.error(
