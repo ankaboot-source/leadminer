@@ -43,7 +43,10 @@
               <div>
                 <div class="font-medium">{{ campaign.subject }}</div>
                 <div class="text-sm text-surface-500">
-                  {{ campaign.sender_name }} - {{ campaign.sender_email }}
+                  {{ campaign.sender_name }} &lt;{{ campaign.sender_email }}&gt;
+                  · {{ campaign.total_batches }} lot(s) de
+                  {{ campaign.sender_daily_limit }}/jour ·
+                  {{ campaign.total_recipients }} destinataires
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -68,13 +71,13 @@
                   @click="openDeleteDialog(campaign)"
                 />
                 <Tag
-                  :value="statusLabel(campaign.status)"
+                  :value="statusLabel(campaign)"
                   :severity="statusSeverity(campaign.status)"
                 />
               </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4 text-sm">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500 flex items-center gap-1">
                   <span>{{ t('delivery') }}</span>
@@ -133,25 +136,6 @@
                 <div class="text-surface-500">{{ t('recipients') }}</div>
                 <div class="font-semibold">{{ campaign.total_recipients }}</div>
                 <div>{{ formatDate(campaign.created_at) }}</div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500 flex items-center gap-1">
-                  <span>{{ t('batches') }}</span>
-                  <i
-                    v-tooltip.top="batchesTooltip(campaign)"
-                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                    tabindex="0"
-                  />
-                </div>
-                <div class="font-semibold">{{ campaign.total_batches }}</div>
-                <div>
-                  {{
-                    t('batch_size_per_day', {
-                      limit: campaign.sender_daily_limit,
-                    })
-                  }}
-                </div>
               </div>
             </div>
 
@@ -312,14 +296,6 @@ function unsubscribeTooltip(campaign: CampaignOverview) {
   return t('unsubscribes_tooltip', {
     unsubscribed: campaign.unsubscribed,
     delivered: campaign.delivered,
-  });
-}
-
-function batchesTooltip(campaign: CampaignOverview) {
-  return t('batches_tooltip', {
-    total: campaign.total_batches,
-    limit: campaign.sender_daily_limit,
-    recipients: campaign.total_recipients,
   });
 }
 
@@ -511,10 +487,7 @@ onBeforeUnmount(() => {
     "status_processing_with_batches": "Processing ({current}/{total})",
     "status_completed": "Completed",
     "status_failed": "Failed",
-    "status_cancelled": "Cancelled",
-    "batches": "Batches",
-    "batch_size_per_day": "{limit} emails/day",
-    "batches_tooltip": "{total} batches of {limit} emails each ({recipients} total recipients)"
+    "status_cancelled": "Cancelled"
   },
   "fr": {
     "campaigns": "Campagnes",
