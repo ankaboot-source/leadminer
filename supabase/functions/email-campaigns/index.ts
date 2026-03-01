@@ -11,6 +11,7 @@ import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 import {
   getSenderCredentialIssue,
+  isTokenExpired,
   listUniqueSenderSources,
   refreshOAuthToken,
   updateMiningSourceCredentials,
@@ -662,19 +663,15 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   }
 
   for (const source of sources) {
-    const expiresAt = source.credentials.expiresAt;
     const nowMs = Date.now();
+    const expired = isTokenExpired(source.credentials, nowMs);
     console.log(
       "[OAuth] Checking source:",
       source.email,
       "- type:",
       source.type,
-      "- expiresAt:",
-      expiresAt,
-      "- now:",
-      nowMs,
       "- isExpired:",
-      expiresAt && expiresAt <= nowMs,
+      expired,
     );
 
     const credentialIssue = getSenderCredentialIssue(source);

@@ -132,6 +132,7 @@ export async function updateMiningSourceCredentials(
   }
 
   const { error } = await supabaseAdmin
+    .schema("private")
     .from("mining_sources")
     .update({ credentials })
     .eq("email", email);
@@ -169,24 +170,13 @@ export function getSenderCredentialIssue(
     return null;
   }
 
-  let expiresAt = source.credentials.expiresAt;
-
-  // Handle both numeric timestamp and ISO date string
-  if (typeof expiresAt === "string") {
-    expiresAt = new Date(expiresAt).getTime();
-  }
-
-  const numericExpiresAt = Number(expiresAt);
-  if (
-    Number.isFinite(numericExpiresAt) &&
-    numericExpiresAt > 0 &&
-    numericExpiresAt <= nowMs
-  ) {
+  const expired = isTokenExpired(source.credentials, nowMs);
+  if (expired) {
     console.log(
       "[OAuth] Token IS EXPIRED for:",
       source.email,
       "- expiresAt:",
-      numericExpiresAt,
+      source.credentials.expiresAt,
       "- now:",
       nowMs,
     );
@@ -194,4 +184,23 @@ export function getSenderCredentialIssue(
   }
 
   return null;
+}
+
+export function isTokenExpired(
+  credentials: Record<string, unknown>,
+  nowMs = Date.now(),
+): boolean {
+  let expiresAt = credentials.expiresAt;
+
+  // Handle both numeric timestamp and ISO date string
+  if (typeof expiresAt === "string") {
+    expiresAt = new Date(expiresAt).getTime();
+  }
+
+  const numericExpiresAt = Number(expiresAt);
+  return (
+    Number.isFinite(numericExpiresAt) &&
+    numericExpiresAt > 0 &&
+    numericExpiresAt <= nowMs
+  );
 }
