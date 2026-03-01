@@ -1061,8 +1061,14 @@ async function submit() {
     $toast.add({
       severity: 'success',
       summary: t('campaign_started'),
-      detail: t('campaign_started_detail'),
-      life: 4000,
+      detail: {
+        message: t('campaign_started_detail'),
+        button: {
+          text: t('see_campaigns'),
+          action: () => navigateTo('/campaigns'),
+        },
+      },
+      life: 6000,
     });
 
     if (data?.campaignId) {
@@ -1250,7 +1256,8 @@ watch(
     "campaign_sent_detail": "Your campaign has been fully sent.",
     "campaign_failed": "Campaign failed",
     "campaign_failed_detail": "The campaign could not deliver any email. Please review your sender configuration and try again.",
-    "see_results": "See results"
+    "see_results": "See results",
+    "see_campaigns": "See campaigns"
   },
   "fr": {
     "send_email_campaign": "Envoyer une campagne email",
@@ -1343,7 +1350,8 @@ watch(
     "campaign_sent_detail": "Votre campagne a été envoyée en totalité.",
     "campaign_failed": "Campagne échouée",
     "campaign_failed_detail": "La campagne n'a pu envoyer aucun email. Vérifiez la configuration d'expédition puis réessayez.",
-    "see_results": "Voir les résultats"
+    "see_results": "Voir les résultats",
+    "see_campaigns": "Voir les campagnes"
   }
 }
 </i18n>

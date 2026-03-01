@@ -134,6 +134,25 @@
                 <div class="font-semibold">{{ campaign.total_recipients }}</div>
                 <div>{{ formatDate(campaign.created_at) }}</div>
               </div>
+
+              <div class="p-2 rounded bg-surface-50">
+                <div class="text-surface-500 flex items-center gap-1">
+                  <span>{{ t('batches') }}</span>
+                  <i
+                    v-tooltip.top="batchesTooltip(campaign)"
+                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                    tabindex="0"
+                  />
+                </div>
+                <div class="font-semibold">{{ campaign.total_batches }}</div>
+                <div>
+                  {{
+                    t('batch_size_per_day', {
+                      limit: campaign.sender_daily_limit,
+                    })
+                  }}
+                </div>
+              </div>
             </div>
 
             <div v-if="campaign.link_clicks?.length" class="mt-4">
@@ -235,8 +254,24 @@ function statusSeverity(status: CampaignStatus) {
   return 'secondary';
 }
 
-function statusLabel(status: CampaignStatus) {
-  return t(`status_${status}`);
+function statusLabel(campaign: CampaignOverview) {
+  if (campaign.status === 'processing') {
+    const currentBatch = calculateCurrentBatch(campaign);
+    return t('status_processing_with_batches', {
+      current: currentBatch,
+      total: campaign.total_batches,
+    });
+  }
+  return t(`status_${campaign.status}`);
+}
+
+function calculateCurrentBatch(campaign: CampaignOverview): number {
+  if (!campaign.total_recipients || !campaign.total_batches) return 1;
+  const progress = campaign.attempted / campaign.total_recipients;
+  return Math.min(
+    Math.ceil(progress * campaign.total_batches),
+    campaign.total_batches,
+  );
 }
 
 function formatRate(value: number) {
@@ -277,6 +312,14 @@ function unsubscribeTooltip(campaign: CampaignOverview) {
   return t('unsubscribes_tooltip', {
     unsubscribed: campaign.unsubscribed,
     delivered: campaign.delivered,
+  });
+}
+
+function batchesTooltip(campaign: CampaignOverview) {
+  return t('batches_tooltip', {
+    total: campaign.total_batches,
+    limit: campaign.sender_daily_limit,
+    recipients: campaign.total_recipients,
   });
 }
 
@@ -465,9 +508,13 @@ onBeforeUnmount(() => {
     "action_failed": "Request failed",
     "status_queued": "Queued",
     "status_processing": "Processing",
+    "status_processing_with_batches": "Processing ({current}/{total})",
     "status_completed": "Completed",
     "status_failed": "Failed",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "batches": "Batches",
+    "batch_size_per_day": "{limit} emails/day",
+    "batches_tooltip": "{total} batches of {limit} emails each ({recipients} total recipients)"
   },
   "fr": {
     "campaigns": "Campagnes",
@@ -507,9 +554,13 @@ onBeforeUnmount(() => {
     "action_failed": "Échec de la requête",
     "status_queued": "En file d'attente",
     "status_processing": "En cours",
+    "status_processing_with_batches": "En cours ({current}/{total})",
     "status_completed": "Terminée",
     "status_failed": "Échouée",
-    "status_cancelled": "Stoppée"
+    "status_cancelled": "Stoppée",
+    "batches": "Lots",
+    "batch_size_per_day": "{limit} emails/jour",
+    "batches_tooltip": "{total} lots de {limit} emails chacun ({recipients} destinataires au total)"
   }
 }
 </i18n>
