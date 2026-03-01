@@ -151,6 +151,14 @@
       "drag_and_drop": "Drag and drop files here.",
       "select_file_label": "Upload your file",
       "upload": "Upload"
+    },
+    "unsubscribe": {
+      "success_header": "You have been unsubscribed",
+      "success_message": "You will no longer receive emails from us.",
+      "preview_notice": "This is a preview - the link is active in the actual email",
+      "failure_header": "Unsubscribe failed",
+      "failure_message": "We couldn't find your subscription. Please contact support.",
+      "go_home": "Go to home"
     }
   },
   "fr": {
@@ -218,7 +226,7 @@
       "sign_up_success_header": "Presque terminé",
       "sign_up_success_message1": "Nous avons envoyé un e-mail à",
       "sign_up_success_message2": "Il contient un lien qui vous inscrira. Si vous ne voyez pas cet e-mail, veuillez vérifier votre dossier de spam.",
-      "sign_up_still_not_receive": "Vous ne l’avez toujours pas reçu ?",
+      "sign_up_still_not_receive": "Vous ne l'avez toujours pas reçu ?",
       "sign_up_resend_in": "Renvoyer | Renvoyer dans {n}s | Renvoyer dans {n}s",
       "social_account": "compte social",
       "send_reset_instructions": "Envoyer les instructions de réinitialisation",
@@ -305,6 +313,14 @@
       "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
       "select_file_label": "Téléchargez votre fichier",
       "upload": "Téléversement"
+    },
+    "unsubscribe": {
+      "success_header": "Vous êtes désabonné",
+      "success_message": "Vous ne recevrez plus d'emails de notre part.",
+      "preview_notice": "Ceci est un aperçu - le lien est actif dans l'email réel",
+      "failure_header": "Désabonnement échoué",
+      "failure_message": "Nous n'avons pas trouvé votre abonnement. Veuillez contacter le support.",
+      "go_home": "Aller à l'accueil"
     }
   }
 }
