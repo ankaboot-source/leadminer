@@ -234,7 +234,12 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <Checkbox v-model="form.trackOpen" binary input-id="track-open" />
+            <Checkbox
+              v-model="form.trackOpen"
+              binary
+              input-id="track-open"
+              :disabled="form.plainTextOnly"
+            />
             <label for="track-open">{{ t('track_open') }}</label>
             <i
               v-tooltip.top="t('track_open_help')"
@@ -259,28 +264,6 @@
                 form.plainTextOnly
                   ? t('track_disabled_plain_text')
                   : t('track_click_help')
-              "
-              class="pi pi-info-circle text-xs text-surface-500"
-            />
-          </div>
-
-          <div class="flex items-center gap-2 md:col-span-2">
-            <Checkbox
-              v-model="form.trackOpen"
-              binary
-              input-id="track-open"
-              :disabled="form.plainTextOnly"
-            />
-            <label
-              for="track-open"
-              :class="{ 'opacity-50': form.plainTextOnly }"
-              >{{ t('track_open') }}</label
-            >
-            <i
-              v-tooltip.top="
-                form.plainTextOnly
-                  ? t('track_disabled_plain_text')
-                  : t('track_open_help')
               "
               class="pi pi-info-circle text-xs text-surface-500"
             />
