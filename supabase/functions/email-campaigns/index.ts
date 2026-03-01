@@ -36,7 +36,7 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
-const LEADMINER_FRONTEND_HOST = Deno.env.get("LEADMINER_FRONTEND_HOST") || "";
+const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
@@ -1989,7 +1989,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success?preview=true`,
+        Location: `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
       },
     });
   }
@@ -2006,7 +2006,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/failure`,
+        Location: `${FRONTEND_HOST}/unsubscribe/failure`,
       },
     });
   }
@@ -2039,7 +2039,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     status: 302,
     headers: {
       ...corsHeaders,
-      Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success`,
+      Location: `${FRONTEND_HOST}/unsubscribe/success`,
     },
   });
 });
