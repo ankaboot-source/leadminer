@@ -4,6 +4,19 @@
       "line1": "You received this email as a notification about your recent activity on",
       "brand": "leadminer",
       "line2": "Extract, clean, and enrich your contacts — effortlessly."
+    },
+    "oauth_failure": {
+      "subject": "Action required: Reconnect your sender account",
+      "title": "Email campaign issue",
+      "intro": "Your campaign \"{campaignSubject}\" could not be sent.",
+      "reason_label": "Reason:",
+      "steps_title": "To resolve this issue:",
+      "step1": "Go to your leadminer <strong>Sources</strong>",
+      "step2": "Find the address <strong>{senderEmail}</strong>",
+      "step3": "Click \"Reconnect\" to restore access",
+      "outro": "Once reconnected, you can restart your campaign from the campaigns page.",
+      "reason_expired": "The authentication token expired and could not be automatically renewed.",
+      "reason_invalid": "Unable to connect to the SMTP server. The credentials appear to be invalid."
     }
   },
   "fr": {
@@ -11,6 +24,19 @@
       "line1": "Vous recevez cet e-mail en tant que notification concernant votre récente activité sur",
       "brand": "leadminer",
       "line2": "Extrayez, nettoyez et enrichissez vos contacts — sans effort."
+    },
+    "oauth_failure": {
+      "subject": "Action requise : Reconnexion de votre compte expéditeur",
+      "title": "Problème d'envoi de campagne email",
+      "intro": "Votre campagne \"{campaignSubject}\" n'a pas pu être envoyée.",
+      "reason_label": "Raison :",
+      "steps_title": "Pour résoudre ce problème :",
+      "step1": "Rendez-vous dans les <strong>Sources</strong> de votre compte leadminer",
+      "step2": "Recherchez l'adresse <strong>{senderEmail}</strong>",
+      "step3": "Cliquez sur « Reconnecter » pour restaurer l'accès",
+      "outro": "Une fois reconnecté, vous pourrez relancer votre campagne depuis la page des campagnes.",
+      "reason_expired": "Le jeton d'authentification a expiré et n'a pas pu être renouvelé automatiquement.",
+      "reason_invalid": "Impossible de se connecter au serveur SMTP. Les identifiants semblent invalides."
     }
   }
 }

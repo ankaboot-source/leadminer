@@ -8,6 +8,7 @@ import {
 } from "../_shared/supabase.ts";
 import { normalizeEmail } from "../_shared/email.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
+import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 import {
   getSenderCredentialIssue,
@@ -97,6 +98,7 @@ type ContactSnapshot = {
   recipient: number | null;
   conversations: number | null;
   replied_conversations: number | null;
+  temperature: number | null;
 };
 
 type SenderOption = {
@@ -124,6 +126,7 @@ type ContactRow = {
   recipient: number | null;
   conversations: number | null;
   replied_conversations: number | null;
+  temperature: number | null;
 };
 
 type Transport = {
@@ -797,6 +800,7 @@ async function getSelectedContacts(
       recipient: row.recipient,
       conversations: row.conversations,
       replied_conversations: row.replied_conversations,
+      temperature: row.temperature,
     }));
 
   return contacts;
@@ -1413,6 +1417,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     sender_email: senderEmail,
     contact_email: contact.email,
     send_status: "pending" as RecipientStatus,
+    contact_temperature: contact.temperature ?? 0,
   }));
 
   const { error: recipientsError } = await supabaseAdmin
@@ -1630,7 +1635,7 @@ app.post(
         )
         .eq("campaign_id", campaign.id)
         .eq("send_status", "pending")
-        .order("created_at", { ascending: true })
+        .order("contact_temperature", { ascending: false })
         .limit(Math.min(remainingForSender, PROCESSING_BATCH_SIZE));
 
       if (recipientsError) {
@@ -1715,6 +1720,12 @@ app.post(
               campaign.sender_email,
               "- source will remain unavailable",
             );
+            await sendOAuthFailureNotification(
+              campaign.user_id,
+              campaign.sender_email,
+              campaign.subject,
+              "expired",
+            );
           }
         } else {
           console.log(
@@ -1731,6 +1742,12 @@ app.post(
           );
         } catch {
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+          await sendOAuthFailureNotification(
+            campaign.user_id,
+            campaign.sender_email,
+            campaign.subject,
+            "invalid",
+          );
           continue;
         }
       }
@@ -2139,5 +2156,76 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
     return c.json({ error: "Failed to send email" }, 500);
   }
 });
+
+async function sendOAuthFailureNotification(
+  userId: string,
+  senderEmail: string,
+  campaignSubject: string,
+  reasonKey: "expired" | "invalid",
+) {
+  const supabaseAdmin = createSupabaseAdmin();
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+  const userEmail = userData?.user?.email;
+  if (!userEmail) return;
+
+  const language = (userData?.user?.user_metadata?.EmailTemplate?.language ||
+    "en") as "en" | "fr";
+  const i18n = {
+    en: {
+      subject: "Action required: Reconnect your sender account",
+      title: "Email campaign issue",
+      intro: 'Your campaign "{campaignSubject}" could not be sent.',
+      reason_label: "Reason:",
+      steps_title: "To resolve this issue:",
+      step1: "Go to your leadminer <strong>Sources</strong>",
+      step2: "Find the address <strong>{senderEmail}</strong>",
+      step3: 'Click "Reconnect" to restore access',
+      outro:
+        "Once reconnected, you can restart your campaign from the campaigns page.",
+      reason_expired:
+        "The authentication token expired and could not be automatically renewed.",
+      reason_invalid:
+        "Unable to connect to the SMTP server. The credentials appear to be invalid.",
+    },
+    fr: {
+      subject: "Action requise : Reconnexion de votre compte expéditeur",
+      title: "Problème d'envoi de campagne email",
+      intro: 'Votre campagne "{campaignSubject}" n\'a pas pu être envoyée.',
+      reason_label: "Raison :",
+      steps_title: "Pour résoudre ce problème :",
+      step1:
+        "Rendez-vous dans les <strong>Sources</strong> de votre compte leadminer",
+      step2: "Recherchez l'adresse <strong>{senderEmail}</strong>",
+      step3: "Cliquez sur « Reconnecter » pour restaurer l'accès",
+      outro:
+        "Une fois reconnecté, vous pourrez relancer votre campagne depuis la page des campagnes.",
+      reason_expired:
+        "Le jeton d'authentification a expiré et n'a pas pu être renouvelé automatiquement.",
+      reason_invalid:
+        "Impossible de se connecter au serveur SMTP. Les identifiants semblent invalides.",
+    },
+  }[language];
+
+  const bodyContent = `
+    <p>${i18n.intro.replace("{campaignSubject}", escapeHtml(campaignSubject))}</p>
+    <p><strong>${i18n.reason_label}</strong> ${reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid}</p>
+    <p><strong>${i18n.steps_title}</strong></p>
+    <ol>
+      <li>${i18n.step1}</li>
+      <li>${i18n.step2.replace("{senderEmail}", escapeHtml(senderEmail))}</li>
+      <li>${i18n.step3}</li>
+    </ol>
+    <p>${i18n.outro}</p>
+  `;
+
+  const html = fillTemplate(i18n.title, bodyContent, "", language);
+
+  try {
+    await sendEmail(userEmail, i18n.subject, html);
+    console.log("[OAuth failure] Notification sent to:", userEmail);
+  } catch (error) {
+    console.error("[OAuth failure] Failed to send notification:", error);
+  }
+}
 
 Deno.serve((req) => app.fetch(req));
