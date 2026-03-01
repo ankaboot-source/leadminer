@@ -171,7 +171,7 @@ export function getSenderCredentialIssue(
 
   const expiresAt = Number(source.credentials.expiresAt);
   if (Number.isFinite(expiresAt) && expiresAt > 0 && expiresAt <= nowMs) {
-    return "OAuth token expired. Reconnect this source.";
+    return "Token OAuth expiré. Veuillez reconnecter ce compte dans les sources.";
   }
 
   return null;
