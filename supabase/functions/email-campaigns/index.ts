@@ -287,6 +287,44 @@ function extractErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
+function getUserFriendlyError(error: unknown): string {
+  const message = extractErrorMessage(error);
+
+  // Detect OAuth/credential errors (535, 534, BadCredentials, etc.)
+  if (
+    message.includes("535") ||
+    message.includes("534") ||
+    message.includes("BadCredentials") ||
+    message.includes("invalid credentials") ||
+    message.includes("authentication") ||
+    message.includes("Username and Password not accepted")
+  ) {
+    return "Identifiants OAuth invalides ou token expiré. Veuillez reconnecter ce compte.";
+  }
+
+  // Detect connection/timeout errors
+  if (
+    message.includes("ETIMEDOUT") ||
+    message.includes("timeout") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ENOTFOUND")
+  ) {
+    return "Impossible de se connecter au serveur SMTP. Veuillez réessayer plus tard.";
+  }
+
+  // Detect rate limiting
+  if (
+    message.includes("rate limit") ||
+    message.includes("throttl") ||
+    message.includes("429")
+  ) {
+    return "Trop de requêtes. Veuillez réessayer plus tard.";
+  }
+
+  // Default: return the original message but truncated
+  return message.length > 100 ? message.substring(0, 100) + "..." : message;
+}
+
 function toTextFromHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")
@@ -646,7 +684,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       options.push({
         email: source.email,
         available: false,
-        reason: extractErrorMessage(error),
+        reason: getUserFriendlyError(error),
       });
     }
   }
