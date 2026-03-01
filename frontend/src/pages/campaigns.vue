@@ -41,12 +41,16 @@
           >
             <div class="flex items-center justify-between gap-2">
               <div>
-                <div class="font-medium">{{ campaign.subject }}</div>
+                <div class="font-medium">
+                  {{ campaign.subject }} par {{ campaign.sender_name }} &lt;{{
+                    campaign.sender_email
+                  }}&gt;
+                </div>
                 <div class="text-sm text-surface-500">
-                  {{ campaign.sender_name }} &lt;{{ campaign.sender_email }}&gt;
-                  · {{ campaign.total_batches }} lot(s) de
+                  {{ campaign.total_batches }} lot(s) de
                   {{ campaign.sender_daily_limit }}/jour ·
-                  {{ campaign.total_recipients }} destinataires
+                  {{ campaign.total_recipients }} destinataires ·
+                  {{ formatDate(campaign.created_at) }}
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -130,12 +134,6 @@
                 </div>
                 <div class="font-semibold">{{ campaign.unsubscribed }}</div>
                 <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('recipients') }}</div>
-                <div class="font-semibold">{{ campaign.total_recipients }}</div>
-                <div>{{ formatDate(campaign.created_at) }}</div>
               </div>
             </div>
 
