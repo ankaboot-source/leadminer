@@ -136,7 +136,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['~/assets/css/tailwind.css'],
+  css: ['~/assets/css/tailwind.css', '@fontsource/material-symbols-outlined'],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
