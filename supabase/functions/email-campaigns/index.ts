@@ -24,7 +24,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
-const LEADMINER_HASH_SECRET = Deno.env.get("LEADMINER_HASH_SECRET") as string;
+const LEADMINER_API_HASH_SECRET = Deno.env.get(
+  "LEADMINER_API_HASH_SECRET",
+) as string;
 const CAMPAIGN_COMPLIANCE_FOOTER = (
   Deno.env.get("campaign_compliance_footer") ||
   Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") ||
@@ -519,7 +521,7 @@ async function getUserMiningSources(authorization: string) {
   const { data, error } = await supabase
     .schema("private")
     .rpc("get_user_mining_source_credentials", {
-      _encryption_key: LEADMINER_HASH_SECRET,
+      _encryption_key: LEADMINER_API_HASH_SECRET,
     });
 
   if (error) {
@@ -1652,7 +1654,7 @@ app.post(
           .schema("private")
           .rpc("get_mining_source_credentials_for_user", {
             _user_id: campaign.user_id,
-            _encryption_key: LEADMINER_HASH_SECRET,
+            _encryption_key: LEADMINER_API_HASH_SECRET,
           });
 
         if (error) {
