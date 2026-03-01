@@ -169,8 +169,27 @@ export function getSenderCredentialIssue(
     return null;
   }
 
-  const expiresAt = Number(source.credentials.expiresAt);
-  if (Number.isFinite(expiresAt) && expiresAt > 0 && expiresAt <= nowMs) {
+  let expiresAt = source.credentials.expiresAt;
+
+  // Handle both numeric timestamp and ISO date string
+  if (typeof expiresAt === "string") {
+    expiresAt = new Date(expiresAt).getTime();
+  }
+
+  const numericExpiresAt = Number(expiresAt);
+  if (
+    Number.isFinite(numericExpiresAt) &&
+    numericExpiresAt > 0 &&
+    numericExpiresAt <= nowMs
+  ) {
+    console.log(
+      "[OAuth] Token IS EXPIRED for:",
+      source.email,
+      "- expiresAt:",
+      numericExpiresAt,
+      "- now:",
+      nowMs,
+    );
     return "OAuth token expired. Please reconnect this account in sources.";
   }
 
