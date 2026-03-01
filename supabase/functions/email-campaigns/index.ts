@@ -299,7 +299,7 @@ function getUserFriendlyError(error: unknown): string {
     message.includes("authentication") ||
     message.includes("Username and Password not accepted")
   ) {
-    return "Identifiants OAuth invalides ou token expiré. Veuillez reconnecter ce compte.";
+    return "Invalid OAuth credentials or expired token. Please reconnect this account.";
   }
 
   // Detect connection/timeout errors
@@ -309,7 +309,7 @@ function getUserFriendlyError(error: unknown): string {
     message.includes("ECONNREFUSED") ||
     message.includes("ENOTFOUND")
   ) {
-    return "Impossible de se connecter au serveur SMTP. Veuillez réessayer plus tard.";
+    return "Cannot connect to SMTP server. Please try again later.";
   }
 
   // Detect rate limiting
@@ -318,7 +318,7 @@ function getUserFriendlyError(error: unknown): string {
     message.includes("throttl") ||
     message.includes("429")
   ) {
-    return "Trop de requêtes. Veuillez réessayer plus tard.";
+    return "Too many requests. Please try again later.";
   }
 
   // Default: return the original message but truncated
@@ -662,8 +662,35 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   }
 
   for (const source of sources) {
+    const expiresAt = source.credentials.expiresAt;
+    const nowMs = Date.now();
+    console.log(
+      "[OAuth] Checking source:",
+      source.email,
+      "- type:",
+      source.type,
+      "- expiresAt:",
+      expiresAt,
+      "- now:",
+      nowMs,
+      "- isExpired:",
+      expiresAt && expiresAt <= nowMs,
+    );
+
     const credentialIssue = getSenderCredentialIssue(source);
+    console.log(
+      "[OAuth] Credential issue for",
+      source.email,
+      ":",
+      credentialIssue,
+    );
+
     if (credentialIssue) {
+      console.log(
+        "[OAuth] Token EXPIRED for:",
+        source.email,
+        "- will attempt refresh",
+      );
       options.push({
         email: source.email,
         available: false,
