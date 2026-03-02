@@ -10,7 +10,7 @@
     </div>
     <div>
       <p>
-        {{ $t('unsubscribe.success_message') }}
+        {{ $t('unsubscribe.success_message', { sender: senderEmail }) }}
       </p>
     </div>
     <div v-if="isPreview" class="bg-blue-50 border border-blue-200 rounded p-4">
@@ -24,4 +24,5 @@
 <script setup lang="ts">
 const $route = useRoute();
 const isPreview = Boolean($route.query.preview);
+const senderEmail = $route.query.sender as string | undefined;
 </script>
