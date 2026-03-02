@@ -9,6 +9,7 @@ import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
+import { miningSourceService } from '../services/MiningSourceService';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import validateType from '../utils/helpers/validation';
@@ -93,20 +94,34 @@ export default function initializeImapController(miningSources: MiningSources) {
             });
 
           if (token.expired(1000)) {
-            const newToken = (await token.refresh()).token as NewToken;
-
-            await upsertMiningSource(
-              miningSources,
+            const { sources } = await miningSourceService.getSourcesForUser(
               userId,
-              {
-                ...newToken,
-                refresh_token: newToken.refresh_token ?? refreshToken
-              },
-              provider,
               data.email
             );
 
-            data.accessToken = newToken.access_token;
+            const refreshedSource = sources.find((s) => s.email === data.email);
+            if (
+              refreshedSource &&
+              'accessToken' in refreshedSource.credentials
+            ) {
+              data.accessToken = refreshedSource.credentials
+                .accessToken as string;
+            } else {
+              const newToken = (await token.refresh()).token as NewToken;
+
+              await upsertMiningSource(
+                miningSources,
+                userId,
+                {
+                  ...newToken,
+                  refresh_token: newToken.refresh_token ?? refreshToken
+                },
+                provider,
+                data.email
+              );
+
+              data.accessToken = newToken.access_token;
+            }
           }
         }
 
