@@ -659,16 +659,15 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
             sources[i] = refreshed;
           }
         } else {
-          console.warn(
-            `Could not refresh token for ${source.email}, source will remain unavailable`,
-          );
+          logger.warn("Could not refresh token, source will remain unavailable", {
+            email: source.email,
+          });
         }
       } catch (error) {
-        console.error(
-          "Failed to refresh token for source:",
-          source.email,
-          error,
-        );
+        logger.error("Failed to refresh token for source", {
+          email: source.email,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
   }
@@ -2056,7 +2055,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       .maybeSingle();
     senderEmail = profile?.email || "";
   } catch (e) {
-    console.error("Failed to fetch sender email:", e);
+    logger.error("Failed to fetch sender email", {
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 
   const successUrl = senderEmail
@@ -2163,7 +2164,9 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
 
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
-    console.error("Error in email-sending-request:", error);
+    logger.error("Error in email-sending-request", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Failed to send email" }, 500);
   }
 });
