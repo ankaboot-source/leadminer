@@ -2,9 +2,7 @@
   <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
     <div>
       <div class="inline-flex p-3">
-        <span class="material-symbols-outlined text-7xl text-orange-400"
-          >unsubscribe</span
-        >
+        <i class="pi pi-sign-out !text-7xl !text-orange-400"></i>
       </div>
       <div class="text-4xl font-bold font-serif">
         {{ $t('unsubscribe.success_header') }}
