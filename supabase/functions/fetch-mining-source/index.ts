@@ -17,6 +17,7 @@ import {
   isTokenExpired,
   refreshOAuthToken,
 } from "../email-campaigns/sender-options.ts";
+import * as crypto from "node:crypto";
 
 interface MiningSourceCredentials {
   accessToken?: string;
@@ -34,7 +35,7 @@ interface MiningSource {
   credentials: MiningSourceCredentials;
 }
 
-async function timingSafeCompare(a: string, b: string): Promise<boolean> {
+function timingSafeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
   const aBytes = encoder.encode(a);
   const bBytes = encoder.encode(b);
@@ -43,7 +44,7 @@ async function timingSafeCompare(a: string, b: string): Promise<boolean> {
     return false;
   }
 
-  return crypto.subtle.timingSafeEqual(aBytes, bBytes);
+  return crypto.timingSafeEqual(aBytes, bBytes);
 }
 
 function isValidEmail(email: string): boolean {
@@ -86,8 +87,7 @@ Deno.serve(async (req: Request) => {
   const authorization = req.headers.get("Authorization");
 
   if (
-    serviceKey &&
-    (await timingSafeCompare(serviceKey, supabaseServiceRoleKey))
+    serviceKey && timingSafeCompare(serviceKey, supabaseServiceRoleKey)
   ) {
     mode = "service";
   } else if (!authorization) {

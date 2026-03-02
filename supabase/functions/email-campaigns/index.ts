@@ -2044,9 +2044,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     status: 302,
     headers: {
       ...corsHeaders,
-      Location: success  });
-});Url,
+      Location: successUrl,
     },
+  });
 
 
 app.get("/track/open/:token", async (c: Context) => {
