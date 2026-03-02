@@ -94,7 +94,7 @@
                 <div class="font-semibold">
                   {{ campaign.delivered }}/{{ campaign.attempted }}
                 </div>
-                <div>{{ formatRate(campaign.delivery_rate) }}</div>
+                <div>{{ getBatchProgress(campaign) }}</div>
               </div>
 
               <div class="p-2 rounded bg-surface-50">
@@ -260,11 +260,56 @@ function formatRate(value: number) {
   return `${Number(value || 0).toFixed(2)}%`;
 }
 
+function getBatchProgress(campaign: CampaignOverview): string {
+  if (!campaign.total_batches || campaign.status === 'completed') {
+    return formatRate(campaign.delivery_rate);
+  }
+
+  const currentBatch = calculateCurrentBatch(campaign);
+  const nextBatchTime = new Date(Date.now() + 10 * 60 * 1000);
+  const timeStr = nextBatchTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return t('delivery_batch_progress', {
+    current: currentBatch,
+    total: campaign.total_batches,
+    time: timeStr,
+  });
+}
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
 function deliveryTooltip(campaign: CampaignOverview) {
+  if (
+    campaign.total_batches &&
+    campaign.status !== 'completed' &&
+    campaign.status !== 'failed'
+  ) {
+    const currentBatch = calculateCurrentBatch(campaign);
+    const nextBatchTime = new Date(Date.now() + 10 * 60 * 1000);
+    const timeStr = nextBatchTime.toLocaleString([], {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return t('delivery_tooltip_with_batch', {
+      delivered: campaign.delivered,
+      attempted: campaign.attempted,
+      hard: campaign.hard_bounced,
+      soft: campaign.soft_bounced,
+      other: campaign.failed_other,
+      current: currentBatch,
+      total: campaign.total_batches,
+      time: timeStr,
+    });
+  }
+
   return t('delivery_tooltip', {
     delivered: campaign.delivered,
     attempted: campaign.attempted,
@@ -454,6 +499,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Unsubscribes",
     "recipients": "Recipients",
     "delivery_tooltip": "Delivered: {delivered}/{attempted} | Hard bounces: {hard} | Soft bounces: {soft} | Other failures: {other}",
+    "delivery_batch_progress": "Batch {current}/{total} · ~{time}",
+    "delivery_tooltip_with_batch": "Batch {current} of {total}\nNext batch: {time}\nProcessed: {delivered}/{attempted} delivered\nHard bounces: {hard} | Soft bounces: {soft} | Other: {other}",
     "opens_tooltip_enabled": "Open tracking is enabled. Open rates are indicative only and can be inflated by Apple Mail Privacy Protection (especially on iOS) and email client prefetching.",
     "opens_tooltip_disabled": "Open tracking is disabled for this campaign, so opening metrics are not measured.",
     "clicks_tooltip_enabled": "Click tracking is enabled. Unique clicks are counted per recipient when they click tracked links.",
@@ -497,6 +544,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Désinscriptions",
     "recipients": "Destinataires",
     "delivery_tooltip": "Livrés : {delivered}/{attempted} | Hard bounces : {hard} | Soft bounces : {soft} | Autres échecs : {other}",
+    "delivery_batch_progress": "Lot {current}/{total} · ~{time}",
+    "delivery_tooltip_with_batch": "Lot {current} sur {total}\nProchain lot : {time}\nTraités : {delivered}/{attempted} livrés\nHard bounces : {hard} | Soft bounces : {soft} | Autres : {other}",
     "opens_tooltip_enabled": "Le tracking des ouvertures est activé. Le taux d'ouverture reste indicatif et peut être surestimé (Apple Mail Privacy Protection, notamment sur iOS, et préchargements des clients email).",
     "opens_tooltip_disabled": "Le tracking des ouvertures est désactivé pour cette campagne, les ouvertures ne sont donc pas mesurées.",
     "clicks_tooltip_enabled": "Le tracking des clics est activé. Les clics uniques sont comptés une seule fois par destinataire et par lien.",
