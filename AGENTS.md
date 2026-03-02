@@ -84,6 +84,34 @@ npm run build            # Compile TypeScript
 npm run dev:supabase-functions  # Serve functions locally
 ```
 
+#### Creating New Edge Functions
+
+**Always use the Supabase CLI to create new edge functions:**
+
+```bash
+# Create new edge function (auto-generates proper structure)
+npx supabase functions new <function-name>
+```
+
+**Why?** The CLI:
+
+- Creates proper directory structure
+- Sets up deno.json with correct permissions
+- Ensures function is registered with Supabase
+
+**Example workflow:**
+
+```bash
+# 1. Create the function scaffold
+npx supabase functions new my-new-function
+
+# 2. Implement your code in the generated index.ts
+# (copy your implementation into the created file)
+
+# 3. Test locally
+npm run dev:supabase-functions
+```
+
 ## Code Style Guidelines
 
 ### TypeScript Configuration
