@@ -185,6 +185,47 @@ try {
 - Include context (user ID, operation) in log messages
 - Use appropriate levels: `error`, `warn`, `info`, `debug`
 
+### Edge Function Logging (Deno)
+
+**Use the shared structured logger instead of raw console.log:**
+
+```typescript
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger("service-name");
+
+// Structured JSON logging with context
+logger.debug("Debug information", { userId: "123" });
+logger.info("Operation completed", { userId: "123", duration: 150 });
+logger.warn("Unexpected state", { details: context });
+logger.error("Operation failed", { error: error.message });
+```
+
+**Best Practices:**
+
+- Output structured JSON for log aggregators (CloudWatch, Datadog)
+- Control verbosity with `LOG_LEVEL` environment variable
+- Use English only for developer/operator logs (not user-facing)
+- Always include relevant context (user ID, operation, IDs)
+- Never log sensitive data (passwords, tokens, PII)
+- Use appropriate levels:
+  - `debug`: Development-only, detailed troubleshooting
+  - `info`: Operational events (token refresh, email sent)
+  - `warn`: Recoverable issues, unexpected states
+  - `error`: Failures requiring attention
+
+**Example Output:**
+
+```json
+{
+  "timestamp": "2026-03-02T14:30:00.000Z",
+  "service": "email-campaigns",
+  "level": "info",
+  "message": "OAuth token refreshed",
+  "email": "user@example.com"
+}
+```
+
 ### Testing
 
 - **Jest** for backend and emails-fetcher
@@ -223,3 +264,24 @@ try {
 - Node.js >= 20.0.0 required
 - Bun >= 1.1.0 required for emails-fetcher
 - Docker and Docker Compose required for local dev
+
+## Planning Documents
+
+### docs/plans Directory
+
+The `docs/plans/` directory contains local planning documents and implementation notes created during development. These files:
+
+- **Should NOT be pushed to the remote repository**
+- Are meant for local development reference only
+- Help track implementation details and decisions
+
+If you create plan documents in `docs/plans/`, they should remain local to your machine and not be shared with the team through git.
+
+### Creating Plan Documents
+
+When creating implementation plans:
+
+1. Save them to `docs/plans/YYYY-MM-DD-<feature-name>.md`
+2. Keep them local - do not commit to git
+3. Use them for local reference during development
+4. Delete them once the feature is complete if desired
