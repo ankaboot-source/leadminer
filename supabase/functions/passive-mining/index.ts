@@ -4,6 +4,10 @@ import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+  "SUPABASE_SERVICE_ROLE_KEY",
+) as string;
 
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
@@ -14,9 +18,7 @@ app.post("/", async (c: Context) => {
     console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
       try {
-        const miningTask = await startMiningEmail(
-          miningSource,
-        );
+        const miningTask = await startMiningEmail(miningSource);
         console.log(
           `Started mining task for source ${miningSource.email}:`,
           miningTask,
@@ -49,18 +51,42 @@ app.get("/", (c: Context) => {
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
-  const { data, error } = await supabase
-    .schema("private")
-    .from("mining_sources")
-    .select("email, user_id") // credentials and use it directly, instead of backend recalling db
-    .match({ passive_mining: true });
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-service-key": SUPABASE_SERVICE_ROLE_KEY,
+      },
+      body: JSON.stringify({ email: "all", mode: "service", user_id: "any" }),
+    },
+  );
 
-  if (error) {
-    console.error("Error fetching mining sources:", error.message);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(
+      "Error fetching mining sources from central function:",
+      response.status,
+      errorText,
+    );
+    throw new Error(
+      `Failed to fetch mining sources: ${response.status} ${errorText}`,
+    );
   }
 
-  return data;
+  const result = (await response.json()) as {
+    sources: { email: string; user_id: string; passive_mining: boolean }[];
+  };
+
+  const passiveSources = result.sources.filter(
+    (source) => source.passive_mining === true,
+  );
+
+  return passiveSources.map((source) => ({
+    email: source.email,
+    user_id: source.user_id,
+  }));
 }
 
 async function getBoxes(miningSource: any) {
@@ -70,7 +96,7 @@ async function getBoxes(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
         // originally its x-sb-jwt
       },
       body: JSON.stringify({ email: miningSource.email }),
