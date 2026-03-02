@@ -526,22 +526,30 @@ async function getAuthenticatedUser(c: Context) {
 }
 
 async function getUserMiningSources(authorization: string) {
-  const supabase = createSupabaseClient(authorization);
-  const { data, error } = await supabase
-    .schema("private")
-    .rpc("get_user_mining_source_credentials", {
-      _encryption_key: LEADMINER_API_HASH_SECRET,
-    });
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-mining-source`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": authorization,
+    },
+    body: JSON.stringify({ email: "all" }),
+  });
 
-  if (error) {
-    throw new Error(`Unable to fetch mining credentials: ${error.message}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch mining sources: ${response.status} ${errorText}`);
   }
 
-  return (data ?? []) as {
-    email: string;
-    type: string;
-    credentials: Record<string, unknown>;
-  }[];
+  const result = await response.json() as {
+    sources: { email: string; type: string; credentials: Record<string, unknown> }[];
+    refreshed: string[];
+  };
+
+  if (result.refreshed.length > 0) {
+    logger.info("Tokens refreshed via central function", { emails: result.refreshed });
+  }
+
+  return result.sources;
 }
 
 async function guessCustomSmtpHost(email: string) {
@@ -635,42 +643,10 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   const transportBySender: Record<string, Transport | null> = {
     [fallbackSenderEmail]: null,
   };
-  const supabaseAdmin = createSupabaseAdmin();
 
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
   );
-
-  // Refresh expired OAuth tokens
-  for (let i = 0; i < sources.length; i++) {
-    const source = sources[i];
-    const credentialIssue = getSenderCredentialIssue(source);
-
-    if (credentialIssue?.includes("expired")) {
-      try {
-        const refreshed = await refreshOAuthToken(source);
-        if (refreshed) {
-          const updated = await updateMiningSourceCredentials(
-            supabaseAdmin,
-            source.email,
-            refreshed.credentials,
-          );
-          if (updated) {
-            sources[i] = refreshed;
-          }
-        } else {
-          logger.warn("Could not refresh token, source will remain unavailable", {
-            email: source.email,
-          });
-        }
-      } catch (error) {
-        logger.error("Failed to refresh token for source", {
-          email: source.email,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-  }
 
   for (const source of sources) {
     const nowMs = Date.now();
