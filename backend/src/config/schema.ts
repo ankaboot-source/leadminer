@@ -45,6 +45,7 @@ const schema = z.object({
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
   SUPABASE_SECRET_PROJECT_TOKEN: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   PG_CONNECTION_STRING: z.string().url(),
 
   /* SENTRY */
