@@ -2052,14 +2052,31 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     event_type: "unsubscribe",
   });
 
+  let senderEmail = "";
+  try {
+    const { data: profile } = await supabaseAdmin
+      .schema("private")
+      .from("profiles")
+      .select("email")
+      .eq("user_id", recipient.user_id)
+      .maybeSingle();
+    senderEmail = profile?.email || "";
+  } catch (e) {
+    console.error("Failed to fetch sender email:", e);
+  }
+
+  const successUrl = senderEmail
+    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${encodeURIComponent(senderEmail)}`
+    : `${FRONTEND_HOST}/unsubscribe/success`;
+
   return new Response(null, {
     status: 302,
     headers: {
       ...corsHeaders,
-      Location: `${FRONTEND_HOST}/unsubscribe/success`,
+      Location: success  });
+});Url,
     },
-  });
-});
+
 
 app.get("/track/open/:token", async (c: Context) => {
   const token = c.req.param("token");
