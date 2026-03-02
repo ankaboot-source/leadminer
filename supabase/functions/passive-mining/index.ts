@@ -51,42 +51,18 @@ app.get("/", (c: Context) => {
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
-  const response = await fetch(
-    `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-service-key": SUPABASE_SERVICE_ROLE_KEY,
-      },
-      body: JSON.stringify({ email: "all", mode: "service", user_id: "any" }),
-    },
-  );
+  const { data, error } = await supabase
+    .schema("private")
+    .from("mining_sources")
+    .select("email, user_id")
+    .match({ passive_mining: true });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(
-      "Error fetching mining sources from central function:",
-      response.status,
-      errorText,
-    );
-    throw new Error(
-      `Failed to fetch mining sources: ${response.status} ${errorText}`,
-    );
+  if (error) {
+    console.error("Error fetching mining sources:", error.message);
+    throw error;
   }
 
-  const result = (await response.json()) as {
-    sources: { email: string; user_id: string; passive_mining: boolean }[];
-  };
-
-  const passiveSources = result.sources.filter(
-    (source) => source.passive_mining === true,
-  );
-
-  return passiveSources.map((source) => ({
-    email: source.email,
-    user_id: source.user_id,
-  }));
+  return data;
 }
 
 async function getBoxes(miningSource: any) {
