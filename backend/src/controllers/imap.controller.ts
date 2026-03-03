@@ -8,18 +8,11 @@ import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './imap.helpers';
-
-type NewToken = {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-};
 
 function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   const { provider, accessToken, refreshToken, expiresAt } = data;
@@ -34,7 +27,9 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   return { token, refreshToken, provider };
 }
 
-export default function initializeImapController(miningSources: MiningSources) {
+export default function initializeImapController(
+  miningSourceService: MiningSources
+) {
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
       const { email } = req.body;
@@ -53,7 +48,7 @@ export default function initializeImapController(miningSources: MiningSources) {
 
       try {
         const userId = (res.locals.user as User).id;
-        const { sources } = await miningSourceService.getSourcesForUser(
+        const sources = await miningSourceService.getSourcesForUser(
           userId,
           email
         );

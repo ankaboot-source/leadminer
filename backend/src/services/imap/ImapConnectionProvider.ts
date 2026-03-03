@@ -1,12 +1,9 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
-import { Token } from 'simple-oauth2';
 import util from 'util';
 import ENV from '../../config';
-import { refreshAccessToken } from '../../controllers/mining.helpers';
 import {
-  MiningSource,
   MiningSources,
   MiningSourceType,
   OAuthMiningSourceCredentials
@@ -30,6 +27,7 @@ class ImapConnectionProvider {
   };
 
   private poolIsInitialized;
+
   private connectionsPool: Pool<Connection> | undefined;
 
   /**
@@ -205,7 +203,7 @@ class ImapConnectionProvider {
             this.userId,
             this.currentOAuthSourceDetails.source.email
           )
-        )?.sources.pop()?.credentials as OAuthMiningSourceCredentials;
+        )?.pop()?.credentials as OAuthMiningSourceCredentials;
 
         if (!token) {
           throw new Error("mining source doesn't exist.");

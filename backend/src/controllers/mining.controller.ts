@@ -329,7 +329,7 @@ export default function initializeMiningController(
 
       const miningSourceCredentials = (
         await miningSourceService.getSourcesForUser(user.id, sanitizedEmail)
-      ).sources.pop()?.credentials;
+      ).pop()?.credentials;
 
       if (!miningSourceCredentials) {
         return res.status(401).json({

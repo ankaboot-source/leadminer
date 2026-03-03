@@ -24,6 +24,7 @@ import TasksManager from './services/tasks-manager/TasksManager';
 import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
 import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import Billing from './utils/billing-plugin';
+import { miningSourceService } from './db/supabase/MiningSourceService';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -61,7 +62,7 @@ export default function initializeApp(
   );
 
   app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
-  app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
+  app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
   app.use(
     '/api/imap',
     initializeStreamRouter(
@@ -84,7 +85,7 @@ export default function initializeApp(
   );
   app.use(
     '/api',
-    initializeContactsRoutes(contacts, authResolver, miningSources)
+    initializeContactsRoutes(contacts, authResolver, miningSourceService)
   );
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 

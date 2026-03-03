@@ -1,10 +1,10 @@
 import { Pool } from 'pg';
 import { Logger } from 'winston';
 import {
-  ImapMiningSourceCredentials,
   MiningSource,
   MiningSources,
   MiningSourceType,
+  ImapMiningSourceCredentials,
   OAuthMiningSourceCredentials
 } from '../interfaces/MiningSources';
 
@@ -19,18 +19,26 @@ export default class PgMiningSources implements MiningSources {
     SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials, passive_mining
     FROM private.mining_sources
     WHERE user_id = $2;`;
+  /**
+    * 
 
-  private static readonly GET_BY_EMAIL_AND_USERID_SQL = `
-    SELECT pgp_sym_decrypt(credentials, $1) as credentials
-    FROM private.mining_sources
-    WHERE email = $2 and user_id = $3
-    LIMIT 1;`;
+      private static readonly GET_BY_EMAIL_AND_USERID_SQL = `
+          SELECT pgp_sym_decrypt(credentials, $1) as credentials
+          FROM private.mining_sources
+          WHERE email = $2 and user_id = $3
+          LIMIT 1;`;
+    */
 
   constructor(
     private readonly client: Pool,
     private readonly logger: Logger,
     private readonly encryptionKey: string
   ) {}
+
+  getSourcesForUser(userId: string, email?: string): Promise<MiningSource[]> {
+    this.logger.warn('Method getSourcesForUser not implemented');
+    throw new Error(`Method not implemented, ${userId}, ${email}`);
+  }
 
   async upsert({
     userId,
@@ -80,29 +88,31 @@ export default class PgMiningSources implements MiningSources {
       return [];
     }
   }
+  /**
 
-  async getCredentialsBySourceEmail(
-    userId: string,
-    email: string
-  ): Promise<
-    (OAuthMiningSourceCredentials | ImapMiningSourceCredentials) | undefined
-  > {
-    try {
-      const { rows } = await this.client.query(
-        PgMiningSources.GET_BY_EMAIL_AND_USERID_SQL,
-        [this.encryptionKey, email, userId]
-      );
-      if (rows.length > 0) {
-        return JSON.parse(rows[0].credentials) as
-          | OAuthMiningSourceCredentials
-          | ImapMiningSourceCredentials;
+    async getCredentialsBySourceEmail(
+      userId: string,
+      email: string
+    ): Promise<
+      (OAuthMiningSourceCredentials | ImapMiningSourceCredentials) | undefined
+    > {
+      try {
+        const { rows } = await this.client.query(
+          PgMiningSources.GET_BY_EMAIL_AND_USERID_SQL,
+          [this.encryptionKey, email, userId]
+        );
+        if (rows.length > 0) {
+          return JSON.parse(rows[0].credentials) as
+            | OAuthMiningSourceCredentials
+            | ImapMiningSourceCredentials;
+        }
+        return undefined;
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error('Failed retrieving credentials', error);
+        }
+        return undefined;
       }
-      return undefined;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error('Failed retrieving credentials', error);
-      }
-      return undefined;
     }
-  }
+  */
 }
