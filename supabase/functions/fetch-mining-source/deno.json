@@ -1,3 +1,5 @@
 {
-  "imports": {}
+  "imports": {
+    "simple-oauth2": "npm:simple-oauth2@latest"
+  }
 }

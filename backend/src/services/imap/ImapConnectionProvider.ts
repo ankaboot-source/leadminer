@@ -13,6 +13,7 @@ import {
 } from '../../db/interfaces/MiningSources';
 import logger from '../../utils/logger';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
+import { miningSourceService } from '../../db/supabase/MiningSourceService';
 
 type CurrentOAuthSource = {
   email: string;
@@ -29,7 +30,6 @@ class ImapConnectionProvider {
   };
 
   private poolIsInitialized;
-
   private connectionsPool: Pool<Connection> | undefined;
 
   /**
@@ -37,7 +37,10 @@ class ImapConnectionProvider {
    * @constructor
    * @param email - User email address
    */
-  constructor(email: string) {
+  constructor(
+    email: string,
+    private readonly userId?: string
+  ) {
     this.imapConfig = {
       auth: {
         user: email,
@@ -150,38 +153,29 @@ class ImapConnectionProvider {
     }
   }
 
-  async updateOAuthToken(token: Token) {
+  async updateOAuthToken(token: OAuthMiningSourceCredentials) {
     if (!this.currentOAuthSourceDetails?.source.credentials)
       throw Error('currentOAuthSourceDetails.source.credentials is undefined');
 
     this.currentOAuthSourceDetails.source.credentials.accessToken = String(
-      token.access_token
+      token.accessToken
     );
 
-    if (token.refresh_token) {
+    if (token.refreshToken) {
       this.currentOAuthSourceDetails.source.credentials.refreshToken = String(
-        token.refresh_token
+        token.refreshToken
       );
     }
 
-    if (token.expires_at) {
+    if (token.expiresAt) {
       this.currentOAuthSourceDetails.source.credentials.expiresAt = Number(
-        token.expires_at
+        token.expiresAt
       );
     }
 
     if (this.imapConfig.auth) {
       this.imapConfig.auth.accessToken =
         this.currentOAuthSourceDetails.source.credentials.accessToken;
-    }
-
-    if (
-      this.currentOAuthSourceDetails.sources &&
-      this.currentOAuthSourceDetails.source.userId
-    ) {
-      await this.currentOAuthSourceDetails.sources.upsert(
-        this.currentOAuthSourceDetails.source as MiningSource
-      );
     }
   }
 
@@ -200,10 +194,23 @@ class ImapConnectionProvider {
     /* eslint-disable no-await-in-loop */
     for (let attempt = 1; attempt <= retries; attempt += 1) {
       try {
-        const newToken = await refreshAccessToken(
-          this.currentOAuthSourceDetails.source.credentials
-        );
-        await this.updateOAuthToken(newToken);
+        if (!this.userId) {
+          throw new Error(
+            'Attempting to refresh oauth without required parameter userId.'
+          );
+        }
+
+        const token = (
+          await miningSourceService.getSourcesForUser(
+            this.userId,
+            this.currentOAuthSourceDetails.source.email
+          )
+        )?.sources.pop()?.credentials as OAuthMiningSourceCredentials;
+
+        if (!token) {
+          throw new Error("mining source doesn't exist.");
+        }
+        await this.updateOAuthToken(token);
         logger.debug('OAuth token refreshed and updated successfully');
         return;
       } catch (error) {

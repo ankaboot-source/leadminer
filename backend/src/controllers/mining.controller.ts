@@ -31,6 +31,7 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
+import { miningSourceService } from '../db/supabase/MiningSourceService';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -326,11 +327,9 @@ export default function initializeMiningController(
         sanitizeImapInput(folder)
       );
 
-      const miningSourceCredentials =
-        await miningSources.getCredentialsBySourceEmail(
-          user.id,
-          sanitizedEmail
-        );
+      const miningSourceCredentials = (
+        await miningSourceService.getSourcesForUser(user.id, sanitizedEmail)
+      ).sources.pop()?.credentials;
 
       if (!miningSourceCredentials) {
         return res.status(401).json({

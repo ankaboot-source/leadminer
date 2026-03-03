@@ -9,6 +9,7 @@ import {
   MiningSources,
   OAuthMiningSourceCredentials
 } from '../db/interfaces/MiningSources';
+import { miningSourceService } from '../db/supabase/MiningSourceService';
 
 async function validateRequest(
   req: Request,
@@ -40,10 +41,13 @@ async function validateRequest(
 
   if (exportType === ExportType.GOOGLE_CONTACTS) {
     const targetEmail = req.body.targetEmail || user.email;
-    const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
-      user.id,
-      targetEmail as string
-    )) as OAuthMiningSourceCredentials;
+    const oauthCredentials = (
+      await miningSourceService.getSourcesForUser(
+        user.id,
+        targetEmail as string
+      )
+    )?.sources?.find((e) => e.email === targetEmail)
+      ?.credentials as OAuthMiningSourceCredentials;
 
     googleContactsOptions = {
       ...googleContactsOptions,

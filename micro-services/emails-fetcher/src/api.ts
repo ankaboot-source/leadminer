@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { AuthenticationFailure, ImapFlow as Connection } from 'imapflow';
 import ENV from './config';
-import pool from './db/pg';
-import PgMiningSources from './db/pg/PgMiningSources';
 import EmailsFetcher, { PSTEmailFetcher } from './emailJobs';
 import EmailFetcherFactory from './factory/EmailFetcherFactory';
 import PSTFetcherFactory from './factory/PSTFetcherFactory';
@@ -10,6 +8,7 @@ import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
 import logger from './utils/logger';
 import validateType from './utils/validation';
+import { miningSourceService } from './db/supabase';
 
 const apiRoutes = Router();
 
@@ -58,12 +57,6 @@ interface FetchStartPayload {
   contactStream: string;
   signatureStream: string;
 }
-
-const miningSources = new PgMiningSources(
-  pool,
-  logger,
-  ENV.LEADMINER_API_HASH_SECRET
-);
 
 type Credentials =
   | {
@@ -164,8 +157,9 @@ apiRoutes.post(
     const sanitizedFolders = folders.map((folder) => sanitizeImapInput(folder));
 
     try {
-      const miningSourceCredentials =
-        await miningSources.getCredentialsBySourceEmail(userId, sanitizedEmail);
+      const miningSourceCredentials = (
+        await miningSourceService.getSourcesForUser(userId, sanitizedEmail)
+      )?.sources.pop()?.credentials;
 
       if (!miningSourceCredentials) {
         return res.status(401).json({
@@ -204,7 +198,8 @@ apiRoutes.post(
 
       const provider = new ImapConnectionProvider(
         email,
-        totalApprovedImapConnections
+        totalApprovedImapConnections,
+        userId
       );
       const imapConnectionProvider =
         'accessToken' in miningSourceCredentials

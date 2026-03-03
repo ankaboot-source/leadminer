@@ -2,14 +2,13 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import {
   MiningSources,
-  OAuthMiningSourceCredentials,
-  OAuthMiningSourceProvider
+  OAuthMiningSourceCredentials
 } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { miningSourceService } from '../services/MiningSourceService';
+import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import validateType from '../utils/helpers/validation';
@@ -35,26 +34,6 @@ function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   return { token, refreshToken, provider };
 }
 
-async function upsertMiningSource(
-  miningSources: MiningSources,
-  userId: string,
-  token: NewToken,
-  provider: OAuthMiningSourceProvider,
-  email: string
-) {
-  await miningSources.upsert({
-    type: provider,
-    email,
-    credentials: {
-      email,
-      provider,
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
-      expiresAt: token.expires_at
-    },
-    userId
-  });
-}
 export default function initializeImapController(miningSources: MiningSources) {
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
@@ -74,10 +53,13 @@ export default function initializeImapController(miningSources: MiningSources) {
 
       try {
         const userId = (res.locals.user as User).id;
-        const data = await miningSources.getCredentialsBySourceEmail(
+        const { sources } = await miningSourceService.getSourcesForUser(
           userId,
           email
         );
+
+        const data =
+          sources?.find((e) => e.email === email)?.credentials ?? null;
 
         if (!data) {
           res.status(400);
@@ -86,7 +68,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           );
         }
         if ('accessToken' in data) {
-          const { token, refreshToken, provider } = getTokenAndProvider(data);
+          const { token, refreshToken } = getTokenAndProvider(data);
 
           if (!refreshToken)
             return res.status(401).send({
@@ -94,34 +76,9 @@ export default function initializeImapController(miningSources: MiningSources) {
             });
 
           if (token.expired(1000)) {
-            const { sources } = await miningSourceService.getSourcesForUser(
-              userId,
-              data.email
-            );
-
-            const refreshedSource = sources.find((s) => s.email === data.email);
-            if (
-              refreshedSource &&
-              'accessToken' in refreshedSource.credentials
-            ) {
-              data.accessToken = refreshedSource.credentials
-                .accessToken as string;
-            } else {
-              const newToken = (await token.refresh()).token as NewToken;
-
-              await upsertMiningSource(
-                miningSources,
-                userId,
-                {
-                  ...newToken,
-                  refresh_token: newToken.refresh_token ?? refreshToken
-                },
-                provider,
-                data.email
-              );
-
-              data.accessToken = newToken.access_token;
-            }
+            return res.status(401).send({
+              data: { message: 'Access token is expired' }
+            });
           }
         }
 
