@@ -1,4 +1,52 @@
 {
   "en": {},
-  "fr": {}
+  "fr": {
+    "time": {
+      "day": "{n} jour restant | {n} jours restants",
+      "month": "{n} mois restant | {n} mois restants"
+    },
+    "campaigns": {
+      "delivery_batch_progress": "Lot {current}/{total} - {time}",
+      "delivery_tooltip": "Deliverés: {delivered} / Tentés: {attempted} (Hard: {hard}, Soft: {soft}, Other: {other})",
+      "opens_tooltip_enabled": "Ouvertures suivies",
+      "opens_tooltip_disabled": "Ouvertures non suivies",
+      "clicks_tooltip_enabled": "Clics suivis",
+      "clicks_tooltip_disabled": "Clics non suivis",
+      "unsubscribes_tooltip": "Désinscriptions: {count}",
+      "status_completed": "Terminé",
+      "status_in_progress": "En cours",
+      "status_paused": "En pause",
+      "status_draft": "Brouillon",
+      "status_failed": "Échoué",
+      "recipients": "Destinataires",
+      "delivery": "Livraison",
+      "opens": "Ouvertures",
+      "clicks": "Clics",
+      "unsubscribes": "Désinscriptions",
+      "top_clicked_links": "Liens les plus cliqués",
+      "top_clicked_links_tooltip": "Top 5 des liens les plus cliqués",
+      "unique_clicks_count": "{count} clics uniques",
+      "refresh": "Actualiser",
+      "no_campaigns": "Aucune campagne",
+      "stop_campaign": "Arrêter",
+      "delete_campaign": "Supprimer",
+      "stop_campaign_confirm": "Êtes-vous sûr de vouloir arrêter cette campagne ?",
+      "delete_campaign_confirm": "Êtes-vous sûr de vouloir supprimer cette campagne ?",
+      "campaign_stopped": "Campagne arrêtée",
+      "campaign_stopped_detail": "La campagne a été arrêtée.",
+      "campaign_deleted": "Campagne supprimée",
+      "campaign_deleted_detail": "La campagne a été supprimée.",
+      "campaign_stop_failed": "Échec de l'arrêt de la campagne",
+      "campaign_delete_failed": "Échec de la suppression de la campagne",
+      "campaign_failed": "Campagne échouée",
+      "campaign_failed_detail": "La campagne n'a pas pu être envoyée.",
+      "see_results": "Voir les résultats",
+      "campaign_sent": "Campagne envoyée",
+      "campaign_sent_detail": "Votre campagne est en cours d'envoi.",
+      "campaigns": "Campagnes",
+      "load_failed": "Échec du chargement des campagnes",
+      "action_failed": "Échec de l'action",
+      "see_campaigns": "Voir les campagnes"
+    }
+  }
 }

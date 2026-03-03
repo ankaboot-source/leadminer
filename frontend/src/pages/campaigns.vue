@@ -243,6 +243,40 @@ function formatRate(value: number) {
   return `${Number(value || 0).toFixed(2)}%`;
 }
 
+function calculateRemainingTime(campaign: CampaignOverview): string {
+  const remaining = campaign.recipients_pending + campaign.recipients_failed;
+  const emailsPerDay = campaign.emails_per_day || 1;
+  const daysLeft = remaining / emailsPerDay;
+
+  if (daysLeft < 1) {
+    const hoursLeft = daysLeft * 24;
+    return `~${Math.ceil(hoursLeft)}h`;
+  }
+
+  if (daysLeft < 30) {
+    const days = Math.ceil(daysLeft);
+    return t('time.day', { n: days }, days);
+  }
+
+  const monthsLeft = Math.ceil(daysLeft / 30);
+  return t('time.month', { n: monthsLeft }, monthsLeft);
+}
+
+function getBatchProgress(campaign: CampaignOverview): string {
+  if (!campaign.total_batches || campaign.status === 'completed') {
+    return formatRate(campaign.delivery_rate);
+  }
+
+  const currentBatch = calculateCurrentBatch(campaign);
+  const timeStr = calculateRemainingTime(campaign);
+
+  return t('delivery_batch_progress', {
+    current: currentBatch,
+    total: campaign.total_batches,
+    time: timeStr,
+  });
+}
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
