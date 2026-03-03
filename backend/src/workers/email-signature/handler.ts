@@ -298,7 +298,10 @@ export class EmailSignatureHandler {
       const text = planer.extractFrom(body, 'text/plain');
       const originalMessage = CleanQuotedForwardedReplies(text);
       const parsed = new EmailReplyParser().read(originalMessage);
-      const sigFrag = parsed.fragments.filter((f) => f.isSignature()).pop();
+      const sigFrag = parsed
+        .getFragments()
+        .filter((f: { isSignature(): boolean }) => f.isSignature())
+        .pop();
 
       return (
         sigFrag?.getContent() ??
