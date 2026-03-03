@@ -92,7 +92,7 @@
                   />
                 </div>
                 <div class="font-semibold">
-                  {{ campaign.delivered }}/{{ campaign.attempted }}
+                  {{ campaign.attempted }}/{{ campaign.total_recipients }}
                 </div>
                 <div>{{ getBatchProgress(campaign) }}</div>
               </div>
