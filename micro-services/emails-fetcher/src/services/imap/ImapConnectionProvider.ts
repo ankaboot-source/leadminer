@@ -104,12 +104,13 @@ class ImapConnectionProvider {
           );
         }
 
-        const token = (
-          await miningSourceService.getSourcesForUser(
-            this.userId,
-            this.currentOAuthSourceDetails.source.email
-          )
-        )?.pop()?.credentials as OAuthMiningSourceCredentials;
+        const sources = await miningSourceService.getSourcesForUser(
+          this.userId,
+          this.currentOAuthSourceDetails.source.email
+        );
+
+        const token = sources?.pop()
+          ?.credentials as OAuthMiningSourceCredentials;
 
         if (!token) {
           throw new Error("mining source doesn't exist.");

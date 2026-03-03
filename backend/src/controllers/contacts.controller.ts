@@ -40,12 +40,11 @@ async function validateRequest(
 
   if (exportType === ExportType.GOOGLE_CONTACTS) {
     const targetEmail = req.body.targetEmail || user.email;
-    const oauthCredentials = (
-      await miningSourceService.getSourcesForUser(
-        user.id,
-        targetEmail as string
-      )
-    )?.find((e) => e.email === targetEmail)
+    const sources = await miningSourceService.getSourcesForUser(
+      user.id,
+      targetEmail as string
+    );
+    const oauthCredentials = sources?.find((e) => e.email === targetEmail)
       ?.credentials as OAuthMiningSourceCredentials;
 
     googleContactsOptions = {

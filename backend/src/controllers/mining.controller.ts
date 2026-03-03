@@ -327,9 +327,11 @@ export default function initializeMiningController(
         sanitizeImapInput(folder)
       );
 
-      const miningSourceCredentials = (
-        await miningSourceService.getSourcesForUser(user.id, sanitizedEmail)
-      ).pop()?.credentials;
+      const sources = await miningSourceService.getSourcesForUser(
+        user.id,
+        sanitizedEmail
+      );
+      const miningSourceCredentials = sources?.pop()?.credentials;
 
       if (!miningSourceCredentials) {
         return res.status(401).json({

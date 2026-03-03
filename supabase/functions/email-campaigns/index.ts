@@ -523,16 +523,23 @@ async function getAuthenticatedUser(c: Context) {
   return { supabase, user };
 }
 
-async function getUserMiningSources(authorization: string) {
+function withBearer(token: string): string {
+  if (!token) return token;
+  return token.toLowerCase().startsWith('bearer ')
+    ? token
+    : `Bearer ${token}`;
+}
+
+async function getUserMiningSources(authorization: string, userId?: string) {
   const response = await fetch(
     `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": authorization,
+        Authorization: withBearer(authorization),
       },
-      body: JSON.stringify({ email: "all" }),
+      body: JSON.stringify({ email: "all", user_id:userId }),
     },
   );
 
@@ -1642,7 +1649,7 @@ app.post(
 
       let senderTransport: Transport | undefined;
       if (campaign.sender_email !== fallbackSenderEmail) {
-        const sources = await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY);
+        const sources = await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY, campaign.user_id);
         const sourceAsCredential = sources.find(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
