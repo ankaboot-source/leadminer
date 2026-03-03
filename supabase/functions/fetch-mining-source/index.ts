@@ -22,10 +22,6 @@ import {
 } from "./oauth-handler/index.ts";
 import * as crypto from "node:crypto";
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
 function timingSafeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
   const aBytes = encoder.encode(a);
@@ -52,15 +48,7 @@ Deno.serve(async (req: Request) => {
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const leadminerHashSecret = Deno.env.get("LEADMINER_API_HASH_SECRET");
 
-<<<<<<< HEAD
   if (!supabaseUrl || !supabaseServiceRoleKey || !leadminerHashSecret) {
-=======
-  if (
-    !supabaseUrl ||
-    !supabaseServiceRoleKey ||
-    !leadminerHashSecret
-  ) {
->>>>>>> origin/main
     Logger.error("Missing environment variables");
 
     return new Response(
@@ -79,12 +67,8 @@ Deno.serve(async (req: Request) => {
   const authorization = req.headers.get("Authorization");
 
   if (
-<<<<<<< HEAD
     authorization &&
     timingSafeCompare(authorization.split(" ").pop()!, supabaseServiceRoleKey)
-=======
-    authorization && timingSafeCompare(authorization.split(' ').pop()!, supabaseServiceRoleKey)
->>>>>>> origin/main
   ) {
     mode = "service";
   } else if (!authorization) {
@@ -187,19 +171,11 @@ Deno.serve(async (req: Request) => {
     }
 
     for (const dbSource of sources) {
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
       if (dbSource.type === "imap") continue;
 
       const source = {
         ...dbSource,
-<<<<<<< HEAD
         credentials: dbSource.credentials as OAuthMiningSourceCredentials,
-=======
-        credentials: dbSource.credentials as OAuthMiningSourceCredentials
->>>>>>> origin/main
       };
 
       const needsRefresh = isTokenExpired(source.credentials, 1000);
