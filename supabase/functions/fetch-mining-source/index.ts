@@ -148,7 +148,8 @@ Deno.serve(async (req: Request) => {
         });
 
       if (error) {
-        throw new Error("Failed to fetch mining sources");
+        Logger.error("RPC error in service mode", { error: error.message });
+        throw new Error(`Failed to fetch mining sources: ${error.message}`);
       }
       sources = (data ?? []) as MiningSource[];
     } else {
@@ -159,7 +160,8 @@ Deno.serve(async (req: Request) => {
         });
 
       if (error) {
-        throw new Error("Failed to fetch mining sources");
+        Logger.error("RPC error in user mode", { error: error.message });
+        throw new Error(`Failed to fetch mining sources: ${error.message}`);
       }
       sources = (data ?? []) as MiningSource[];
     }
