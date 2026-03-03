@@ -70,7 +70,6 @@ export async function refreshAccessToken(
   OAuthCredentials: OAuthMiningSourceCredentials
 ): Promise<Token> {
   try {
-    console.log(OAuthCredentials)
     const authClient = getAuthClient(OAuthCredentials.provider);
 
     const token = {
