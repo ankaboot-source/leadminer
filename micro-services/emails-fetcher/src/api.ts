@@ -157,9 +157,11 @@ apiRoutes.post(
     const sanitizedFolders = folders.map((folder) => sanitizeImapInput(folder));
 
     try {
-      const miningSourceCredentials = (
-        await miningSourceService.getSourcesForUser(userId, sanitizedEmail)
-      )?.sources.pop()?.credentials;
+      const sources = await miningSourceService.getSourcesForUser(
+        userId,
+        sanitizedEmail
+      );
+      const miningSourceCredentials = sources?.pop()?.credentials;
 
       if (!miningSourceCredentials) {
         return res.status(401).json({
