@@ -47,6 +47,8 @@ COPY . .
 
 RUN npm install && npm run build
 
+USER node
+
 EXPOSE 3000
 
 CMD [ "node", ".output/server/index.mjs" ]
