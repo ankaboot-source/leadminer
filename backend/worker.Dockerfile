@@ -10,8 +10,10 @@ RUN npm run build
 # Run
 FROM node:lts-alpine
 WORKDIR /leadminer-worker
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 RUN npm install --omit-dev
 COPY --from=build-stage /leadminer-worker/dist .
+
+USER node
 
 CMD [ "node", "messageWorker.js" ]

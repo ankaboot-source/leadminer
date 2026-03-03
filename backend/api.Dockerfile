@@ -1,19 +1,27 @@
 # Build
 FROM node:lts-alpine as build-stage
+
 WORKDIR /leadminer-api
+
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY src ./src
+
 RUN npm install
 RUN npm run update-providers
 RUN npm run build
 
 # Run
 FROM node:lts-alpine as app-stage
+
 WORKDIR /leadminer-api
-COPY package*.json ./
+
+COPY --chown=node:node package*.json ./
 RUN npm install --omit=dev
+
 COPY --from=build-stage /leadminer-api/dist .
+
+USER node
 
 EXPOSE 8081
 EXPOSE 8021
