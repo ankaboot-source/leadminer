@@ -58,10 +58,10 @@ class ImapConnectionProvider {
   }
 
   isOAuth() {
-    return !!this.imapConfig.auth?.accessToken;
+    return Boolean(this.imapConfig.auth?.accessToken);
   }
 
-  async updateOAuthToken(token: OAuthMiningSourceCredentials) {
+  updateOAuthToken(token: OAuthMiningSourceCredentials) {
     if (!this.currentOAuthSourceDetails?.source.credentials)
       throw Error('currentOAuthSourceDetails.source.credentials is undefined');
 
@@ -109,7 +109,7 @@ class ImapConnectionProvider {
             this.userId,
             this.currentOAuthSourceDetails.source.email
           )
-        )?.sources.pop()?.credentials as OAuthMiningSourceCredentials;
+        )?.pop()?.credentials as OAuthMiningSourceCredentials;
 
         if (!token) {
           throw new Error("mining source doesn't exist.");

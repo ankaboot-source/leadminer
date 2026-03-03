@@ -54,7 +54,7 @@ export class MiningSourceService implements MiningSources {
     }));
   }
 
-  async upsert(source: MiningSource): Promise<void> {
+  upsert(source: MiningSource): Promise<void> {
     this.logger.warn('Method getSourcesForUser not implemented');
     throw new Error(`Method not implemented, ${source.email}:${source.type}`);
   }

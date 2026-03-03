@@ -151,7 +151,7 @@ class ImapConnectionProvider {
     }
   }
 
-  async updateOAuthToken(token: OAuthMiningSourceCredentials) {
+  updateOAuthToken(token: OAuthMiningSourceCredentials) {
     if (!this.currentOAuthSourceDetails?.source.credentials)
       throw Error('currentOAuthSourceDetails.source.credentials is undefined');
 
@@ -178,7 +178,7 @@ class ImapConnectionProvider {
   }
 
   isOAuth() {
-    return !!this.imapConfig.auth?.accessToken;
+    return Boolean(this.imapConfig.auth?.accessToken);
   }
 
   async refreshOAuthToken(retries = 3): Promise<void> {

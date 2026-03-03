@@ -167,7 +167,7 @@ export default function initializeMiningController(
   contactsDB: Contacts
 ) {
   return {
-    async createProviderMiningSource(req: Request, res: Response) {
+    createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
       const provider = req.params.provider as OAuthMiningSourceProvider;
       const { redirect } = req.body;
@@ -631,7 +631,7 @@ export default function initializeMiningController(
 
         try {
           task = tasksManager.getActiveTask(miningId);
-        } catch (err) {
+        } catch {
           logger.error(
             `Task not found in tasksManager for miningId=${miningId}`
           );
@@ -640,7 +640,7 @@ export default function initializeMiningController(
         if (!task) {
           try {
             task = tasksManagerFile.getActiveTask(miningId);
-          } catch (err) {
+          } catch {
             logger.error(
               `Task not found in tasksManagerFile for miningId=${miningId}`
             );
