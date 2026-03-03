@@ -59,9 +59,7 @@ export class MiningSourceService implements MiningSources {
     throw new Error(`Method not implemented, ${source.email}:${source.type}`);
   }
 
-  getByUser(
-    userId: string
-  ): Promise<
+  getByUser(userId: string): Promise<
     {
       email: string;
       type: MiningSourceType;
