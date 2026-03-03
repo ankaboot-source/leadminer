@@ -11,9 +11,11 @@ RUN bun run build
 # Runtime stage
 FROM oven/bun:alpine AS app-stage
 WORKDIR /leadminer-email-fetcher-service
-COPY package.json bun.lock ./
+COPY --chown=node:node package.json bun.lock ./
 RUN bun install --production
 COPY --from=build-stage /leadminer-email-fetcher-service/dist .
+
+USER node
 
 EXPOSE 8083
 EXPOSE 8023

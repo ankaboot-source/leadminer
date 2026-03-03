@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
           provider,
           expiresAt,
         }),
-        _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET"),
+        _encryption_key: Deno.env.get("LEADMINER_API_HASH_SECRET"),
       },
     );
 
@@ -104,6 +104,7 @@ Deno.serve(async (req: Request) => {
       status: 200,
     });
   } catch (error) {
+    console.log("error heeeeere")
     Logger.error((error as Error).message);
 
     return new Response(JSON.stringify(error), {

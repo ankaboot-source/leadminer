@@ -36,4 +36,6 @@ export interface CampaignOverview {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  sender_daily_limit: number;
+  total_batches: number;
 }

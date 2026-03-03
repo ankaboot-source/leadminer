@@ -159,7 +159,7 @@ export default defineNuxtConfig({
         '/campaigns',
         '/account(/*)?',
       ],
-      exclude: ['/auth(/*)?', '/credits-success'],
+      exclude: ['/auth(/*)?', '/credits-success', '/unsubscribe(/*)?'],
     },
   },
 

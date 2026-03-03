@@ -41,9 +41,16 @@
           >
             <div class="flex items-center justify-between gap-2">
               <div>
-                <div class="font-medium">{{ campaign.subject }}</div>
+                <div class="font-medium">
+                  {{ campaign.subject }} par {{ campaign.sender_name }} &lt;{{
+                    campaign.sender_email
+                  }}&gt;
+                </div>
                 <div class="text-sm text-surface-500">
-                  {{ campaign.sender_name }} - {{ campaign.sender_email }}
+                  {{ campaign.total_batches }} lot(s) de
+                  {{ campaign.sender_daily_limit }}/jour ·
+                  {{ campaign.total_recipients }} destinataires ·
+                  {{ formatDate(campaign.created_at) }}
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -68,13 +75,13 @@
                   @click="openDeleteDialog(campaign)"
                 />
                 <Tag
-                  :value="statusLabel(campaign.status)"
+                  :value="statusLabel(campaign)"
                   :severity="statusSeverity(campaign.status)"
                 />
               </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-4 text-sm">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500 flex items-center gap-1">
                   <span>{{ t('delivery') }}</span>
@@ -85,9 +92,9 @@
                   />
                 </div>
                 <div class="font-semibold">
-                  {{ campaign.delivered }}/{{ campaign.attempted }}
+                  {{ campaign.attempted }}/{{ campaign.total_recipients }}
                 </div>
-                <div>{{ formatRate(campaign.delivery_rate) }}</div>
+                <div>{{ getBatchProgress(campaign) }}</div>
               </div>
 
               <div class="p-2 rounded bg-surface-50">
@@ -127,12 +134,6 @@
                 </div>
                 <div class="font-semibold">{{ campaign.unsubscribed }}</div>
                 <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('recipients') }}</div>
-                <div class="font-semibold">{{ campaign.total_recipients }}</div>
-                <div>{{ formatDate(campaign.created_at) }}</div>
               </div>
             </div>
 
@@ -235,8 +236,24 @@ function statusSeverity(status: CampaignStatus) {
   return 'secondary';
 }
 
-function statusLabel(status: CampaignStatus) {
-  return t(`status_${status}`);
+function statusLabel(campaign: CampaignOverview) {
+  if (campaign.status === 'processing') {
+    const currentBatch = calculateCurrentBatch(campaign);
+    return t('status_processing_with_batches', {
+      current: currentBatch,
+      total: campaign.total_batches,
+    });
+  }
+  return t(`status_${campaign.status}`);
+}
+
+function calculateCurrentBatch(campaign: CampaignOverview): number {
+  if (!campaign.total_recipients || !campaign.total_batches) return 1;
+  const progress = campaign.attempted / campaign.total_recipients;
+  return Math.min(
+    Math.ceil(progress * campaign.total_batches),
+    campaign.total_batches,
+  );
 }
 
 function formatRate(value: number) {
@@ -244,8 +261,13 @@ function formatRate(value: number) {
 }
 
 function calculateRemainingTime(campaign: CampaignOverview): string {
-  const remaining = campaign.recipients_pending + campaign.recipients_failed;
-  const emailsPerDay = campaign.emails_per_day || 1;
+  const remaining = campaign.total_recipients - campaign.attempted;
+  const emailsPerDay = campaign.sender_daily_limit || 1000;
+
+  if (remaining <= 0) {
+    return '';
+  }
+
   const daysLeft = remaining / emailsPerDay;
 
   if (daysLeft < 1) {
@@ -282,6 +304,25 @@ function formatDate(value: string) {
 }
 
 function deliveryTooltip(campaign: CampaignOverview) {
+  if (
+    campaign.total_batches &&
+    campaign.status !== 'completed' &&
+    campaign.status !== 'failed'
+  ) {
+    const currentBatch = calculateCurrentBatch(campaign);
+    const timeStr = calculateRemainingTime(campaign);
+    return t('delivery_tooltip_with_batch', {
+      delivered: campaign.delivered,
+      attempted: campaign.attempted,
+      hard: campaign.hard_bounced,
+      soft: campaign.soft_bounced,
+      other: campaign.failed_other,
+      current: currentBatch,
+      total: campaign.total_batches,
+      time: timeStr,
+    });
+  }
+
   return t('delivery_tooltip', {
     delivered: campaign.delivered,
     attempted: campaign.attempted,
@@ -471,6 +512,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Unsubscribes",
     "recipients": "Recipients",
     "delivery_tooltip": "Delivered: {delivered}/{attempted} | Hard bounces: {hard} | Soft bounces: {soft} | Other failures: {other}",
+    "delivery_batch_progress": "Batch {current}/{total} · {time}",
+    "delivery_tooltip_with_batch": "Batch {current} of {total}\nRemaining: {time}\nProcessed: {delivered}/{attempted} delivered\nHard bounces: {hard} | Soft bounces: {soft} | Other: {other}",
     "opens_tooltip_enabled": "Open tracking is enabled. Open rates are indicative only and can be inflated by Apple Mail Privacy Protection (especially on iOS) and email client prefetching.",
     "opens_tooltip_disabled": "Open tracking is disabled for this campaign, so opening metrics are not measured.",
     "clicks_tooltip_enabled": "Click tracking is enabled. Unique clicks are counted per recipient when they click tracked links.",
@@ -499,6 +542,7 @@ onBeforeUnmount(() => {
     "action_failed": "Request failed",
     "status_queued": "Queued",
     "status_processing": "Processing",
+    "status_processing_with_batches": "Processing ({current}/{total})",
     "status_completed": "Completed",
     "status_failed": "Failed",
     "status_cancelled": "Cancelled"
@@ -513,6 +557,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Désinscriptions",
     "recipients": "Destinataires",
     "delivery_tooltip": "Livrés : {delivered}/{attempted} | Hard bounces : {hard} | Soft bounces : {soft} | Autres échecs : {other}",
+    "delivery_batch_progress": "Lot {current}/{total} · {time}",
+    "delivery_tooltip_with_batch": "Lot {current} sur {total}\nRestant : {time}\nTraités : {delivered}/{attempted} livrés\nHard bounces : {hard} | Soft bounces : {soft} | Autres : {other}",
     "opens_tooltip_enabled": "Le tracking des ouvertures est activé. Le taux d'ouverture reste indicatif et peut être surestimé (Apple Mail Privacy Protection, notamment sur iOS, et préchargements des clients email).",
     "opens_tooltip_disabled": "Le tracking des ouvertures est désactivé pour cette campagne, les ouvertures ne sont donc pas mesurées.",
     "clicks_tooltip_enabled": "Le tracking des clics est activé. Les clics uniques sont comptés une seule fois par destinataire et par lien.",
@@ -541,9 +587,13 @@ onBeforeUnmount(() => {
     "action_failed": "Échec de la requête",
     "status_queued": "En file d'attente",
     "status_processing": "En cours",
+    "status_processing_with_batches": "En cours ({current}/{total})",
     "status_completed": "Terminée",
     "status_failed": "Échouée",
-    "status_cancelled": "Stoppée"
+    "status_cancelled": "Stoppée",
+    "batches": "Lots",
+    "batch_size_per_day": "{limit} emails/jour",
+    "batches_tooltip": "{total} lots de {limit} emails chacun ({recipients} destinataires au total)"
   }
 }
 </i18n>

@@ -31,12 +31,17 @@ export interface MiningSources {
       email: string;
       type: MiningSourceType;
       credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
+      passive_mining: boolean;
     }[]
   >;
-  getCredentialsBySourceEmail(
-    userId: string,
-    email: string
-  ): Promise<
+  /**
+   * 
+    getCredentialsBySourceEmail(
+      userId: string,
+      email: string
+    ): Promise<
     (OAuthMiningSourceCredentials | ImapMiningSourceCredentials) | undefined
-  >;
+    >;
+  */
+  getSourcesForUser(userId: string, email?: string): Promise<MiningSource[]>;
 }

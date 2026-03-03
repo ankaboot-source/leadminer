@@ -13,7 +13,7 @@ import {
 async function validateRequest(
   req: Request,
   res: Response,
-  miningSources: MiningSources
+  miningSourceService: MiningSources
 ) {
   const user = res.locals.user as User;
   const partialExport = req.body.partialExport ?? false;
@@ -40,10 +40,12 @@ async function validateRequest(
 
   if (exportType === ExportType.GOOGLE_CONTACTS) {
     const targetEmail = req.body.targetEmail || user.email;
-    const oauthCredentials = (await miningSources.getCredentialsBySourceEmail(
+    const sources = await miningSourceService.getSourcesForUser(
       user.id,
       targetEmail as string
-    )) as OAuthMiningSourceCredentials;
+    );
+    const oauthCredentials = sources?.find((e) => e.email === targetEmail)
+      ?.credentials as OAuthMiningSourceCredentials;
 
     googleContactsOptions = {
       ...googleContactsOptions,

@@ -4,6 +4,10 @@ import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+  "SUPABASE_SERVICE_ROLE_KEY",
+) as string;
 
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
@@ -14,9 +18,7 @@ app.post("/", async (c: Context) => {
     console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
       try {
-        const miningTask = await startMiningEmail(
-          miningSource,
-        );
+        const miningTask = await startMiningEmail(miningSource);
         console.log(
           `Started mining task for source ${miningSource.email}:`,
           miningTask,
@@ -52,7 +54,7 @@ async function getMiningSources() {
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
-    .select("email, user_id") // credentials and use it directly, instead of backend recalling db
+    .select("email, user_id")
     .match({ passive_mining: true });
 
   if (error) {
@@ -70,7 +72,7 @@ async function getBoxes(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
         // originally its x-sb-jwt
       },
       body: JSON.stringify({ email: miningSource.email }),

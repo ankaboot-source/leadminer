@@ -1,5 +1,3 @@
-import { SupabaseAuthClient } from '@supabase/supabase-js/dist/module/lib/SupabaseAuthClient';
-
 /**
  * Represents the authenticated user.
  */
@@ -63,8 +61,6 @@ export interface ProviderConfig {
   imapConfig: IMAPConfig;
   domains: string[];
 }
-
-export type AuthenticationClient = SupabaseAuthClient;
 
 /**
  * Represents an authentication resolver that provides methods for authentication operations.

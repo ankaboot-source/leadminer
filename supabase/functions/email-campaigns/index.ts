@@ -8,13 +8,16 @@ import {
 } from "../_shared/supabase.ts";
 import { normalizeEmail } from "../_shared/email.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
+import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
 import {
   getSenderCredentialIssue,
+  isTokenExpired,
   listUniqueSenderSources,
-  refreshOAuthToken,
-  updateMiningSourceCredentials,
 } from "./sender-options.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger("email-campaigns");
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
@@ -23,17 +26,19 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
-const LEADMINER_HASH_SECRET = Deno.env.get("LEADMINER_HASH_SECRET") as string;
+const LEADMINER_API_HASH_SECRET = Deno.env.get(
+  "LEADMINER_API_HASH_SECRET",
+) as string;
 const CAMPAIGN_COMPLIANCE_FOOTER = (
   Deno.env.get("campaign_compliance_footer") ||
   Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") ||
   ""
 ).trim();
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
-  Deno.env.get(key),
+  Deno.env.get(key)
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
-const LEADMINER_FRONTEND_HOST = Deno.env.get("LEADMINER_FRONTEND_HOST") || "";
+const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 300;
@@ -94,6 +99,7 @@ type ContactSnapshot = {
   recipient: number | null;
   conversations: number | null;
   replied_conversations: number | null;
+  temperature: number | null;
 };
 
 type SenderOption = {
@@ -121,6 +127,7 @@ type ContactRow = {
   recipient: number | null;
   conversations: number | null;
   replied_conversations: number | null;
+  temperature: number | null;
 };
 
 type Transport = {
@@ -222,24 +229,21 @@ function getSmtpResponseCode(error: unknown): number | null {
 
 function getErrorText(error: unknown): string {
   const message = extractErrorMessage(error);
-  const response =
-    typeof error === "object" && error && "response" in error
-      ? String(error.response || "")
-      : "";
-  const code =
-    typeof error === "object" && error && "code" in error
-      ? String(error.code || "")
-      : "";
+  const response = typeof error === "object" && error && "response" in error
+    ? String(error.response || "")
+    : "";
+  const code = typeof error === "object" && error && "code" in error
+    ? String(error.code || "")
+    : "";
 
   return `${message} ${response} ${code}`.trim().toLowerCase();
 }
 
 function classifyBounceType(error: unknown): BounceType {
   const smtpCode = getSmtpResponseCode(error);
-  const technicalCode =
-    typeof error === "object" && error && "code" in error
-      ? String(error.code || "").toUpperCase()
-      : "";
+  const technicalCode = typeof error === "object" && error && "code" in error
+    ? String(error.code || "").toUpperCase()
+    : "";
   const text = getErrorText(error);
 
   const technicalCodes = new Set([
@@ -258,18 +262,20 @@ function classifyBounceType(error: unknown): BounceType {
 
   if (
     /5\.[0-9]\.[0-9]/.test(text) ||
-    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(
-      text,
-    )
+    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/
+      .test(
+        text,
+      )
   ) {
     return "hard";
   }
 
   if (
     /4\.[0-9]\.[0-9]/.test(text) ||
-    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(
-      text,
-    )
+    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/
+      .test(
+        text,
+      )
   ) {
     return "soft";
   }
@@ -373,7 +379,10 @@ function buildUnsubscribeUrl(token: string): string {
 
 async function triggerCampaignProcessorFromEdge() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.log("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
+    logger.error("Missing required environment variables", {
+      supabaseUrl: !!SUPABASE_URL,
+      serviceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+    });
     return;
   }
   await fetch(
@@ -423,7 +432,8 @@ function ensureUnsubscribeHtml(
   unsubscribeUrl: string,
 ): string {
   const normalized = footerHtml.trim();
-  const link = `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
+  const link =
+    `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
 
   if (!normalized) {
     return link;
@@ -489,9 +499,18 @@ function renderTemplate(
 
 function getCurrentUtcDayStart(): string {
   const date = new Date();
-  return new Date(
+  const utcDate = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  ).toISOString();
+  );
+  return utcDate.toISOString();
+}
+
+function getTodayUtcStartString(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T00:00:00.000Z`;
 }
 
 async function getAuthenticatedUser(c: Context) {
@@ -513,23 +532,49 @@ async function getAuthenticatedUser(c: Context) {
   return { supabase, user };
 }
 
-async function getUserMiningSources(authorization: string) {
-  const supabase = createSupabaseClient(authorization);
-  const { data, error } = await supabase
-    .schema("private")
-    .rpc("get_user_mining_source_credentials", {
-      _encryption_key: LEADMINER_HASH_SECRET,
-    });
+function withBearer(token: string): string {
+  if (!token) return token;
+  return token.toLowerCase().startsWith('bearer ')
+    ? token
+    : `Bearer ${token}`;
+}
 
-  if (error) {
-    throw new Error(`Unable to fetch mining credentials: ${error.message}`);
+async function getUserMiningSources(authorization: string, userId?: string) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: withBearer(authorization),
+      },
+      body: JSON.stringify({ email: "all", user_id:userId }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch mining sources: ${response.status} ${errorText}`,
+    );
   }
 
-  return (data ?? []) as {
-    email: string;
-    type: string;
-    credentials: Record<string, unknown>;
-  }[];
+  const result = await response.json() as {
+    sources: {
+      email: string;
+      type: string;
+      credentials: Record<string, unknown>;
+    }[];
+    refreshed: string[];
+  };
+
+  if (result.refreshed.length > 0) {
+    logger.info("Tokens refreshed via central function", {
+      emails: result.refreshed,
+    });
+  }
+
+  return result.sources;
 }
 
 async function guessCustomSmtpHost(email: string) {
@@ -623,74 +668,30 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   const transportBySender: Record<string, Transport | null> = {
     [fallbackSenderEmail]: null,
   };
-  const supabaseAdmin = createSupabaseAdmin();
 
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
   );
 
-  // Refresh expired OAuth tokens
-  for (let i = 0; i < sources.length; i++) {
-    const source = sources[i];
-    const credentialIssue = getSenderCredentialIssue(source);
-
-    if (credentialIssue?.includes("expired")) {
-      try {
-        const refreshed = await refreshOAuthToken(source);
-        if (refreshed) {
-          const updated = await updateMiningSourceCredentials(
-            supabaseAdmin,
-            source.email,
-            refreshed.credentials,
-          );
-          if (updated) {
-            sources[i] = refreshed;
-          }
-        } else {
-          console.warn(
-            `Could not refresh token for ${source.email}, source will remain unavailable`,
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Failed to refresh token for source:",
-          source.email,
-          error,
-        );
-      }
-    }
-  }
-
   for (const source of sources) {
-    const expiresAt = source.credentials.expiresAt;
     const nowMs = Date.now();
-    console.log(
-      "[OAuth] Checking source:",
-      source.email,
-      "- type:",
-      source.type,
-      "- expiresAt:",
-      expiresAt,
-      "- now:",
-      nowMs,
-      "- isExpired:",
-      expiresAt && expiresAt <= nowMs,
-    );
+    const expired = isTokenExpired(source.credentials, nowMs);
+    logger.debug("Checking sender source", {
+      email: source.email,
+      type: source.type,
+      isExpired: expired,
+    });
 
     const credentialIssue = getSenderCredentialIssue(source);
-    console.log(
-      "[OAuth] Credential issue for",
-      source.email,
-      ":",
+    logger.debug("Credential check result", {
+      email: source.email,
       credentialIssue,
-    );
+    });
 
     if (credentialIssue) {
-      console.log(
-        "[OAuth] Token EXPIRED for:",
-        source.email,
-        "- will attempt refresh",
-      );
+      logger.info("Token expired, will attempt refresh", {
+        email: source.email,
+      });
       options.push({
         email: source.email,
         available: false,
@@ -798,6 +799,7 @@ async function getSelectedContacts(
       recipient: row.recipient,
       conversations: row.conversations,
       replied_conversations: row.replied_conversations,
+      temperature: row.temperature,
     }));
 
   return contacts;
@@ -868,7 +870,7 @@ function filterEligibleContacts(
   onlyValidContacts: boolean,
 ) {
   return contacts.filter((contact) =>
-    isContactEligible(contact, onlyValidContacts),
+    isContactEligible(contact, onlyValidContacts)
   );
 }
 
@@ -985,7 +987,8 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl =
+        `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -999,8 +1002,10 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
-    updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
+    const pixelUrl =
+      `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    updatedHtml +=
+      `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
   return updatedHtml;
@@ -1057,8 +1062,9 @@ async function finalizeCampaignStatusIfDone(
     return;
   }
 
-  const finalStatus: CampaignStatus =
-    sentCount === 0 && failedCount > 0 ? "failed" : "completed";
+  const finalStatus: CampaignStatus = sentCount === 0 && failedCount > 0
+    ? "failed"
+    : "completed";
 
   await setCampaignStatus(supabaseAdmin, campaignId, finalStatus);
 }
@@ -1414,6 +1420,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     sender_email: senderEmail,
     contact_email: contact.email,
     send_status: "pending" as RecipientStatus,
+    contact_temperature: contact.temperature ?? 0,
   }));
 
   const { error: recipientsError } = await supabaseAdmin
@@ -1432,8 +1439,9 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   }
 
   triggerCampaignProcessorFromEdge().catch((error) => {
-    console.log("error triggered");
-    console.log("error:", error);
+    logger.error("Failed to trigger campaign processor", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Cron remains as fallback if immediate trigger fails.
   });
 
@@ -1579,7 +1587,9 @@ app.post(
         500,
       );
     }
-    const dayStart = getCurrentUtcDayStart();
+    const dayStart = getTodayUtcStartString();
+    logger.debug("Starting campaign processing", { dayStart });
+
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
       .from("email_campaigns")
@@ -1589,6 +1599,10 @@ app.post(
       .in("status", ["queued", "processing"])
       .order("created_at", { ascending: true })
       .limit(30);
+
+    logger.info("Campaign processing triggered", {
+      campaignsFound: campaigns?.length ?? 0,
+    });
 
     if (campaignsError) {
       return c.json({ error: campaignsError.message }, 500);
@@ -1619,9 +1633,23 @@ app.post(
         0,
         enforcedLimit - Number(sentToday || 0),
       );
+
       if (remainingForSender <= 0) {
+        logger.warn("Campaign skipped due to daily limit", {
+          campaignId: campaign.id,
+          senderEmail: campaign.sender_email,
+          sentToday: sentToday ?? 0,
+          enforcedLimit,
+        });
         continue;
       }
+
+      logger.debug("Campaign processing details", {
+        campaignId: campaign.id,
+        remainingForSender,
+        sentToday: sentToday ?? 0,
+        enforcedLimit,
+      });
 
       const { data: recipients, error: recipientsError } = await supabaseAdmin
         .schema("private")
@@ -1631,7 +1659,7 @@ app.post(
         )
         .eq("campaign_id", campaign.id)
         .eq("send_status", "pending")
-        .order("created_at", { ascending: true })
+        .order("contact_temperature", { ascending: false })
         .limit(Math.min(remainingForSender, PROCESSING_BATCH_SIZE));
 
       if (recipientsError) {
@@ -1650,88 +1678,56 @@ app.post(
 
       let senderTransport: Transport | undefined;
       if (campaign.sender_email !== fallbackSenderEmail) {
-        const serviceClient = createSupabaseAdmin();
-        const { data: rows, error } = await serviceClient
-          .schema("private")
-          .rpc("get_mining_source_credentials_for_user", {
-            _user_id: campaign.user_id,
-            _encryption_key: LEADMINER_HASH_SECRET,
-          });
-
-        if (error) {
-          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-          continue;
-        }
-
-        const matchingSource = (rows ?? []).find(
+        const sources = await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY, campaign.user_id);
+        const sourceAsCredential = sources.find(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
-        if (!matchingSource) {
-          console.log(
-            "[OAuth] No matching source found for:",
-            campaign.sender_email,
-          );
+
+        if (!sourceAsCredential) {
+          logger.warn("No matching mining source found for campaign sender", {
+            campaignId: campaign.id,
+            senderEmail: campaign.sender_email,
+          });
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
           continue;
         }
 
-        // Refresh OAuth token if expired before building transport
-        const sourceAsCredential: MiningSourceCredential = {
-          email: matchingSource.email,
-          type: matchingSource.type,
-          credentials: matchingSource.credentials as Record<string, unknown>,
-        };
         const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
-        console.log(
-          "[OAuth] Checking credentials for:",
-          campaign.sender_email,
-          "- issue:",
+        logger.debug("Checking sender credentials", {
+          senderEmail: campaign.sender_email,
           credentialIssue,
-        );
+        });
 
         if (credentialIssue?.includes("expired")) {
-          console.log(
-            "[OAuth] Token EXPIRED for:",
+          logger.info("OAuth token expired", {
+            senderEmail: campaign.sender_email,
+          });
+
+          await sendOAuthFailureNotification(
+            campaign.user_id,
             campaign.sender_email,
-            "- attempting refresh...",
+            campaign.subject,
+            "expired",
           );
-          const refreshed = await refreshOAuthToken(sourceAsCredential);
-          if (refreshed) {
-            console.log(
-              "[OAuth] Token refresh SUCCESS for:",
-              campaign.sender_email,
-            );
-            await updateMiningSourceCredentials(
-              supabaseAdmin,
-              campaign.sender_email,
-              refreshed.credentials,
-            );
-            matchingSource.credentials = refreshed.credentials as Record<
-              string,
-              unknown
-            >;
-          } else {
-            console.log(
-              "[OAuth] Token refresh FAILED for:",
-              campaign.sender_email,
-              "- source will remain unavailable",
-            );
-          }
         } else {
-          console.log(
-            "[OAuth] Token is valid for:",
-            campaign.sender_email,
-            "- no refresh needed",
-          );
+          logger.debug("OAuth token is valid, no refresh needed", {
+            senderEmail: campaign.sender_email,
+          });
         }
 
         try {
           senderTransport = await buildUserTransport(
             campaign.sender_email,
-            matchingSource.credentials as Record<string, unknown>,
+            sourceAsCredential.credentials as Record<string, unknown>,
           );
         } catch {
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
+          await sendOAuthFailureNotification(
+            campaign.user_id,
+            campaign.sender_email,
+            campaign.subject,
+            "invalid",
+          );
           continue;
         }
       }
@@ -1806,8 +1802,7 @@ app.post(
           subjectTemplate: campaign.subject,
           bodyHtmlTemplate: campaign.body_html_template || "",
           bodyTextTemplate: campaign.body_text_template || "",
-          footerTextTemplate:
-            campaign.footer_text_template ||
+          footerTextTemplate: campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
           unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
@@ -1815,25 +1810,28 @@ app.post(
           plainTextOnly: campaign.plain_text_only,
         });
 
+        let htmlWithTracking = "";
         try {
-          const htmlWithTracking = campaign.plain_text_only
-            ? ""
+          htmlWithTracking = campaign.plain_text_only
+            ? htmlWithTracking
             : await injectTrackers(
-                supabaseAdmin,
-                campaign.id,
-                recipient.id,
-                recipient.open_token,
-                bodyHtml,
-                campaign.track_click,
-                campaign.track_open,
-              );
+              supabaseAdmin,
+              campaign.id,
+              recipient.id,
+              recipient.open_token,
+              bodyHtml,
+              campaign.track_click,
+              campaign.track_open,
+            );
 
           const finalHtml = campaign.plain_text_only
             ? ""
             : htmlWithTracking + footerHtml;
 
           await sendEmail(recipient.contact_email, renderedSubject, finalHtml, {
-            from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+            from: `"${
+              escapeHtml(campaign.sender_name)
+            }" <${campaign.sender_email}>`,
             replyTo: campaign.reply_to,
             text,
             transport: senderTransport,
@@ -1874,30 +1872,23 @@ app.post(
 
           if (canRetryAuth) {
             try {
-              // Refresh OAuth token
-              const sourceForRetry: MiningSourceCredential = {
-                email: campaign.sender_email,
-                type: matchingSource?.type || "google",
-                credentials:
-                  (matchingSource?.credentials as Record<string, unknown>) ||
-                  {},
-              };
-              const refreshed = await refreshOAuthToken(sourceForRetry);
-              if (refreshed) {
-                await updateMiningSourceCredentials(
-                  supabaseAdmin,
-                  campaign.sender_email,
-                  refreshed.credentials,
+              // re-fetch oauth central edge-function will handle refresh
+              const sourceForRetry =
+                (await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY))?.find(
+                  (row: { email: string }) =>
+                    row.email === campaign.sender_email,
                 );
+
+              if (!sourceForRetry) {
+                throw new Error("");
+              }
+
+              if (!isTokenExpired(sourceForRetry.credentials, 1000)) {
                 // Rebuild transport with new credentials
                 senderTransport = await buildUserTransport(
                   campaign.sender_email,
-                  refreshed.credentials,
+                  sourceForRetry.credentials,
                 );
-                matchingSource!.credentials = refreshed.credentials as Record<
-                  string,
-                  unknown
-                >;
 
                 // Retry sending the email
                 await sendEmail(
@@ -1905,7 +1896,9 @@ app.post(
                   renderedSubject,
                   campaign.plain_text_only ? "" : htmlWithTracking,
                   {
-                    from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+                    from: `"${
+                      escapeHtml(campaign.sender_name)
+                    }" <${campaign.sender_email}>`,
                     replyTo: campaign.reply_to,
                     text,
                     transport: senderTransport,
@@ -1937,7 +1930,12 @@ app.post(
               }
             } catch (retryError) {
               // Refresh failed, fall through to regular error handling
-              console.error("Failed to refresh token for retry:", retryError);
+              logger.error("Token refresh failed during retry", {
+                senderEmail: campaign.sender_email,
+                error: retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError),
+              });
             }
           }
 
@@ -1990,7 +1988,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success?preview=true`,
+        Location: `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
       },
     });
   }
@@ -2007,7 +2005,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/failure`,
+        Location: `${FRONTEND_HOST}/unsubscribe/failure`,
       },
     });
   }
@@ -2036,11 +2034,32 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     event_type: "unsubscribe",
   });
 
+  let senderEmail = "";
+  try {
+    const { data: profile } = await supabaseAdmin
+      .schema("private")
+      .from("profiles")
+      .select("email")
+      .eq("user_id", recipient.user_id)
+      .maybeSingle();
+    senderEmail = profile?.email || "";
+  } catch (e) {
+    logger.error("Failed to fetch sender email", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  const successUrl = senderEmail
+    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${
+      encodeURIComponent(senderEmail)
+    }`
+    : `${FRONTEND_HOST}/unsubscribe/success`;
+
   return new Response(null, {
     status: 302,
     headers: {
       ...corsHeaders,
-      Location: `${LEADMINER_FRONTEND_HOST}/unsubscribe/success`,
+      Location: successUrl,
     },
   });
 });
@@ -2126,7 +2145,8 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
     );
   }
   const safeUserEmail = escapeHtml(auth.user.email as string);
-  const html = `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
+  const html =
+    `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
 
   try {
     await sendEmail(fallbackSenderEmail, subject, html, {
@@ -2136,9 +2156,89 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
 
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
-    console.error("Error in email-sending-request:", error);
+    logger.error("Error in email-sending-request", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Failed to send email" }, 500);
   }
 });
+
+async function sendOAuthFailureNotification(
+  userId: string,
+  senderEmail: string,
+  campaignSubject: string,
+  reasonKey: "expired" | "invalid",
+) {
+  const supabaseAdmin = createSupabaseAdmin();
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+  const userEmail = userData?.user?.email;
+  if (!userEmail) return;
+
+  const language = (userData?.user?.user_metadata?.EmailTemplate?.language ||
+    "en") as "en" | "fr";
+  const i18n = {
+    en: {
+      subject: "Action required: Reconnect your sender account",
+      title: "Email campaign issue",
+      intro: 'Your campaign "{campaignSubject}" could not be sent.',
+      reason_label: "Reason:",
+      steps_title: "To resolve this issue:",
+      step1: "Go to your leadminer <strong>Sources</strong>",
+      step2: "Find the address <strong>{senderEmail}</strong>",
+      step3: 'Click "Reconnect" to restore access',
+      outro:
+        "Once reconnected, you can restart your campaign from the campaigns page.",
+      reason_expired:
+        "The authentication token expired and could not be automatically renewed.",
+      reason_invalid:
+        "Unable to connect to the SMTP server. The credentials appear to be invalid.",
+    },
+    fr: {
+      subject: "Action requise : Reconnexion de votre compte expéditeur",
+      title: "Problème d'envoi de campagne email",
+      intro: 'Votre campagne "{campaignSubject}" n\'a pas pu être envoyée.',
+      reason_label: "Raison :",
+      steps_title: "Pour résoudre ce problème :",
+      step1:
+        "Rendez-vous dans les <strong>Sources</strong> de votre compte leadminer",
+      step2: "Recherchez l'adresse <strong>{senderEmail}</strong>",
+      step3: "Cliquez sur « Reconnecter » pour restaurer l'accès",
+      outro:
+        "Une fois reconnecté, vous pourrez relancer votre campagne depuis la page des campagnes.",
+      reason_expired:
+        "Le jeton d'authentification a expiré et n'a pas pu être renouvelé automatiquement.",
+      reason_invalid:
+        "Impossible de se connecter au serveur SMTP. Les identifiants semblent invalides.",
+    },
+  }[language];
+
+  const bodyContent = `
+    <p>${
+    i18n.intro.replace("{campaignSubject}", escapeHtml(campaignSubject))
+  }</p>
+    <p><strong>${i18n.reason_label}</strong> ${
+    reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid
+  }</p>
+    <p><strong>${i18n.steps_title}</strong></p>
+    <ol>
+      <li>${i18n.step1}</li>
+      <li>${i18n.step2.replace("{senderEmail}", escapeHtml(senderEmail))}</li>
+      <li>${i18n.step3}</li>
+    </ol>
+    <p>${i18n.outro}</p>
+  `;
+
+  const html = fillTemplate(i18n.title, bodyContent, "", language);
+
+  try {
+    await sendEmail(userEmail, i18n.subject, html);
+    logger.info("OAuth failure notification sent", { userEmail });
+  } catch (error) {
+    logger.error("Failed to send OAuth failure notification", {
+      userEmail,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 Deno.serve((req) => app.fetch(req));
