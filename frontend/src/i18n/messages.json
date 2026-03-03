@@ -83,7 +83,52 @@
     "time": {
       "hour": "{n} hour | {n} hours",
       "minute": "{n} minute | {n} minutes",
-      "second": "{n} second | {n} seconds"
+      "second": "{n} second | {n} seconds",
+      "day": "{n} day left | {n} days left",
+      "month": "{n} month left | {n} months left"
+    },
+    "campaigns": {
+      "delivery_batch_progress": "Batch {current}/{total} - {time}",
+      "delivery_tooltip": "Delivered: {delivered} / Attempted: {attempted} (Hard: {hard}, Soft: {soft}, Other: {other})",
+      "opens_tooltip_enabled": "Opens tracked",
+      "opens_tooltip_disabled": "Opens not tracked",
+      "clicks_tooltip_enabled": "Clicks tracked",
+      "clicks_tooltip_disabled": "Clicks not tracked",
+      "unsubscribes_tooltip": "Unsubscribes: {count}",
+      "status_completed": "Completed",
+      "status_in_progress": "In progress",
+      "status_paused": "Paused",
+      "status_draft": "Draft",
+      "status_failed": "Failed",
+      "recipients": "Recipients",
+      "delivery": "Delivery",
+      "opens": "Opens",
+      "clicks": "Clicks",
+      "unsubscribes": "Unsubscribes",
+      "top_clicked_links": "Top clicked links",
+      "top_clicked_links_tooltip": "Top 5 most clicked links",
+      "unique_clicks_count": "{count} unique clicks",
+      "refresh": "Refresh",
+      "no_campaigns": "No campaigns yet",
+      "stop_campaign": "Stop",
+      "delete_campaign": "Delete",
+      "stop_campaign_confirm": "Are you sure you want to stop this campaign?",
+      "delete_campaign_confirm": "Are you sure you want to delete this campaign?",
+      "campaign_stopped": "Campaign stopped",
+      "campaign_stopped_detail": "The campaign has been stopped.",
+      "campaign_deleted": "Campaign deleted",
+      "campaign_deleted_detail": "The campaign has been deleted.",
+      "campaign_stop_failed": "Failed to stop campaign",
+      "campaign_delete_failed": "Failed to delete campaign",
+      "campaign_failed": "Campaign failed",
+      "campaign_failed_detail": "The campaign could not be sent.",
+      "see_results": "See results",
+      "campaign_sent": "Campaign sent",
+      "campaign_sent_detail": "Your campaign is being sent.",
+      "campaigns": "Campaigns",
+      "load_failed": "Failed to load campaigns",
+      "action_failed": "Action failed",
+      "see_campaigns": "See campaigns"
     },
     "contact": {
       "name": "Full name",
@@ -245,7 +290,18 @@
     "time": {
       "hour": "{n} heure | {n} heures",
       "minute": "{n} minute | {n} minutes",
-      "second": "{n} seconde | {n} secondes"
+      "second": "{n} seconde | {n} secondes",
+      "day": "{n} jour restant | {n} jours restants",
+      "month": "{n} mois restant | {n} mois restants"
+    },
+    "campaigns": {
+      "delivery_batch_progress": "Lot {current}/{total} - {time}",
+      "delivery_tooltip": "Deliverés: {delivered} / Tentés: {attempted} (Hard: {hard}, Soft: {soft}, Other: {other})",
+      "opens_tooltip_enabled": "Ouvertures suivies",
+      "opens_tooltip_disabled": "Ouvertures non suivies",
+      "clicks_tooltip_enabled": "Clics suivis",
+      "clicks_tooltip_disabled": "Clics non suivis",
+      "unsubscribes_tooltip": "Désinscriptions: {count}"
     },
     "contact": {
       "name": "Nom complet",

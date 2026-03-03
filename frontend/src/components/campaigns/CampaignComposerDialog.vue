@@ -240,9 +240,23 @@
               input-id="track-open"
               :disabled="form.plainTextOnly"
             />
-            <label for="track-open">{{ t('track_open') }}</label>
+            <label
+              for="track-open"
+              :class="{ 'opacity-50': form.plainTextOnly }"
+              >{{ t('track_open') }}</label
+            >
             <i
-              v-tooltip.top="t('track_open_help')"
+              v-tooltip.top="
+                form.plainTextOnly
+                  ? t('track_disabled_plain_text')
+                  : t('track_open_help')
+              "
+              class="pi pi-info-circle text-xs text-surface-500"
+            />
+          </div>
+                  ? t('track_disabled_plain_text')
+                  : t('track_open_help')
+              "
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </div>

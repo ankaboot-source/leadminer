@@ -276,11 +276,12 @@ function calculateRemainingTime(campaign: CampaignOverview): string {
   }
 
   if (daysLeft < 30) {
-    return `~${Math.ceil(daysLeft)} days`;
+    const days = Math.ceil(daysLeft);
+    return t('time.day', { n: days }, days);
   }
 
-  const monthsLeft = daysLeft / 30;
-  return `~${Math.ceil(monthsLeft)} months`;
+  const monthsLeft = Math.ceil(daysLeft / 30);
+  return t('time.month', { n: monthsLeft }, monthsLeft);
 }
 
 function getBatchProgress(campaign: CampaignOverview): string {
