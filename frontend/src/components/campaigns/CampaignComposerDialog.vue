@@ -254,12 +254,6 @@
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </div>
-                  ? t('track_disabled_plain_text')
-                  : t('track_open_help')
-              "
-              class="pi pi-info-circle text-xs text-surface-500"
-            />
-          </div>
 
           <div class="flex items-center gap-2">
             <Checkbox
