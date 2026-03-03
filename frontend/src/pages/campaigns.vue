@@ -260,17 +260,36 @@ function formatRate(value: number) {
   return `${Number(value || 0).toFixed(2)}%`;
 }
 
+function calculateRemainingTime(campaign: CampaignOverview): string {
+  const remaining = campaign.total_recipients - campaign.attempted;
+  const emailsPerDay = campaign.sender_daily_limit || 1000;
+
+  if (remaining <= 0) {
+    return '';
+  }
+
+  const daysLeft = remaining / emailsPerDay;
+
+  if (daysLeft < 1) {
+    const hoursLeft = daysLeft * 24;
+    return `~${Math.ceil(hoursLeft)}h`;
+  }
+
+  if (daysLeft < 30) {
+    return `~${Math.ceil(daysLeft)} days`;
+  }
+
+  const monthsLeft = daysLeft / 30;
+  return `~${Math.ceil(monthsLeft)} months`;
+}
+
 function getBatchProgress(campaign: CampaignOverview): string {
   if (!campaign.total_batches || campaign.status === 'completed') {
     return formatRate(campaign.delivery_rate);
   }
 
   const currentBatch = calculateCurrentBatch(campaign);
-  const nextBatchTime = new Date(Date.now() + 10 * 60 * 1000);
-  const timeStr = nextBatchTime.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeStr = calculateRemainingTime(campaign);
 
   return t('delivery_batch_progress', {
     current: currentBatch,
@@ -290,14 +309,7 @@ function deliveryTooltip(campaign: CampaignOverview) {
     campaign.status !== 'failed'
   ) {
     const currentBatch = calculateCurrentBatch(campaign);
-    const nextBatchTime = new Date(Date.now() + 10 * 60 * 1000);
-    const timeStr = nextBatchTime.toLocaleString([], {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const timeStr = calculateRemainingTime(campaign);
     return t('delivery_tooltip_with_batch', {
       delivered: campaign.delivered,
       attempted: campaign.attempted,
@@ -499,8 +511,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Unsubscribes",
     "recipients": "Recipients",
     "delivery_tooltip": "Delivered: {delivered}/{attempted} | Hard bounces: {hard} | Soft bounces: {soft} | Other failures: {other}",
-    "delivery_batch_progress": "Batch {current}/{total} · ~{time}",
-    "delivery_tooltip_with_batch": "Batch {current} of {total}\nNext batch: {time}\nProcessed: {delivered}/{attempted} delivered\nHard bounces: {hard} | Soft bounces: {soft} | Other: {other}",
+    "delivery_batch_progress": "Batch {current}/{total} · {time}",
+    "delivery_tooltip_with_batch": "Batch {current} of {total}\nRemaining: {time}\nProcessed: {delivered}/{attempted} delivered\nHard bounces: {hard} | Soft bounces: {soft} | Other: {other}",
     "opens_tooltip_enabled": "Open tracking is enabled. Open rates are indicative only and can be inflated by Apple Mail Privacy Protection (especially on iOS) and email client prefetching.",
     "opens_tooltip_disabled": "Open tracking is disabled for this campaign, so opening metrics are not measured.",
     "clicks_tooltip_enabled": "Click tracking is enabled. Unique clicks are counted per recipient when they click tracked links.",
@@ -544,8 +556,8 @@ onBeforeUnmount(() => {
     "unsubscribes": "Désinscriptions",
     "recipients": "Destinataires",
     "delivery_tooltip": "Livrés : {delivered}/{attempted} | Hard bounces : {hard} | Soft bounces : {soft} | Autres échecs : {other}",
-    "delivery_batch_progress": "Lot {current}/{total} · ~{time}",
-    "delivery_tooltip_with_batch": "Lot {current} sur {total}\nProchain lot : {time}\nTraités : {delivered}/{attempted} livrés\nHard bounces : {hard} | Soft bounces : {soft} | Autres : {other}",
+    "delivery_batch_progress": "Lot {current}/{total} · {time}",
+    "delivery_tooltip_with_batch": "Lot {current} sur {total}\nRestant : {time}\nTraités : {delivered}/{attempted} livrés\nHard bounces : {hard} | Soft bounces : {soft} | Autres : {other}",
     "opens_tooltip_enabled": "Le tracking des ouvertures est activé. Le taux d'ouverture reste indicatif et peut être surestimé (Apple Mail Privacy Protection, notamment sur iOS, et préchargements des clients email).",
     "opens_tooltip_disabled": "Le tracking des ouvertures est désactivé pour cette campagne, les ouvertures ne sont donc pas mesurées.",
     "clicks_tooltip_enabled": "Le tracking des clics est activé. Les clics uniques sont comptés une seule fois par destinataire et par lien.",

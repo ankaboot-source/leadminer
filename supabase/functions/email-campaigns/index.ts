@@ -499,9 +499,18 @@ function renderTemplate(
 
 function getCurrentUtcDayStart(): string {
   const date = new Date();
-  return new Date(
+  const utcDate = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  ).toISOString();
+  );
+  return utcDate.toISOString();
+}
+
+function getTodayUtcStartString(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T00:00:00.000Z`;
 }
 
 async function getAuthenticatedUser(c: Context) {
@@ -1571,7 +1580,9 @@ app.post(
         500,
       );
     }
-    const dayStart = getCurrentUtcDayStart();
+    const dayStart = getTodayUtcStartString();
+    logger.debug("Starting campaign processing", { dayStart });
+
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
       .from("email_campaigns")
@@ -1581,6 +1592,10 @@ app.post(
       .in("status", ["queued", "processing"])
       .order("created_at", { ascending: true })
       .limit(30);
+
+    logger.info("Campaign processing triggered", {
+      campaignsFound: campaigns?.length ?? 0,
+    });
 
     if (campaignsError) {
       return c.json({ error: campaignsError.message }, 500);
@@ -1611,9 +1626,23 @@ app.post(
         0,
         enforcedLimit - Number(sentToday || 0),
       );
+
       if (remainingForSender <= 0) {
+        logger.warn("Campaign skipped due to daily limit", {
+          campaignId: campaign.id,
+          senderEmail: campaign.sender_email,
+          sentToday: sentToday ?? 0,
+          enforcedLimit,
+        });
         continue;
       }
+
+      logger.debug("Campaign processing details", {
+        campaignId: campaign.id,
+        remainingForSender,
+        sentToday: sentToday ?? 0,
+        enforcedLimit,
+      });
 
       const { data: recipients, error: recipientsError } = await supabaseAdmin
         .schema("private")
