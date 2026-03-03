@@ -49,8 +49,6 @@ Deno.serve(async (req: Request) => {
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const leadminerHashSecret = Deno.env.get("LEADMINER_API_HASH_SECRET");
 
-  console.log("variables:", supabaseUrl, supabaseServiceRoleKey, leadminerHashSecret)
-
   if (
     !supabaseUrl ||
     !supabaseServiceRoleKey ||
@@ -154,7 +152,6 @@ Deno.serve(async (req: Request) => {
         });
 
       if (error) {
-        console.log(error)
         throw new Error("Failed to fetch mining sources");
       }
       sources = (data ?? []) as MiningSource[];
@@ -208,8 +205,6 @@ Deno.serve(async (req: Request) => {
         expiresAt: expires_at
       }
       
-      console.log("refreshed: ", refreshed)
-
       await admin.schema("private").rpc("upsert_mining_source", {
         _user_id: actualUserId,
         _email: source.email,
