@@ -210,12 +210,8 @@ Deno.serve(async (req: Request) => {
 
       Logger.info(`Token expired for ${source.email}, attempting refresh`);
 
-<<<<<<< HEAD
       const { access_token, refresh_token, expires_at } =
         await refreshAccessToken(source.credentials);
-=======
-      const {access_token, refresh_token, expires_at} = await refreshAccessToken(source.credentials);
->>>>>>> origin/main
 
       if (!access_token || !expires_at) {
         Logger.warn(`Failed to refresh token for ${source.email}`);
