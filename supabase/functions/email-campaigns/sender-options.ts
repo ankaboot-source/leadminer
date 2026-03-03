@@ -1,5 +1,8 @@
 import { normalizeEmail } from "../_shared/email.ts";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger("sender-options");
 
 export type MiningSourceCredential = {
   email: string;
@@ -20,12 +23,10 @@ export async function refreshOAuthToken(
     return null;
   }
 
-  console.log(
-    "[OAuth] Token refresh START for:",
-    source.email,
-    "provider:",
-    kind,
-  );
+  logger.info("OAuth token refresh started", {
+    email: source.email,
+    provider: kind,
+  });
 
   let tokenUrl: string;
   let clientId: string;
@@ -41,19 +42,18 @@ export async function refreshOAuthToken(
     clientSecret = Deno.env.get("AZURE_SECRET") || "";
   }
 
-  console.log(
-    "[OAuth] Client ID configured:",
-    !!clientId,
-    "Client Secret configured:",
-    !!clientSecret,
-  );
+  logger.debug("OAuth client configuration", {
+    email: source.email,
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+  });
 
   if (!clientId || !clientSecret) {
-    console.warn(
-      "[OAuth] Client ID/Secret MISSING for:",
-      source.email,
-      "- cannot refresh token",
-    );
+    logger.warn("OAuth client credentials missing", {
+      email: source.email,
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+    });
     return null;
   }
 
@@ -74,14 +74,11 @@ export async function refreshOAuthToken(
     if (!response.ok) {
       const status = response.status;
       const body = await response.text();
-      console.error(
-        "[OAuth] OAuth response NOT OK for:",
-        source.email,
-        "- status:",
+      logger.error("OAuth token refresh failed", {
+        email: source.email,
         status,
-        "body:",
-        body,
-      );
+        responseBody: body,
+      });
       return null;
     }
 
@@ -94,12 +91,10 @@ export async function refreshOAuthToken(
     const nowMs = Date.now();
     const expiresAt = nowMs + tokenData.expires_in * 1000;
 
-    console.log(
-      "[OAuth] Token refresh SUCCESS for:",
-      source.email,
-      "- new expiresAt:",
+    logger.info("OAuth token refreshed successfully", {
+      email: source.email,
       expiresAt,
-    );
+    });
 
     return {
       ...source,
@@ -111,12 +106,10 @@ export async function refreshOAuthToken(
       },
     };
   } catch (error) {
-    console.error(
-      "[OAuth] Token refresh EXCEPTION for:",
-      source.email,
-      "- error:",
-      error,
-    );
+    logger.error("OAuth token refresh exception", {
+      email: source.email,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -127,7 +120,7 @@ export async function updateMiningSourceCredentials(
   credentials: Record<string, unknown>,
 ): Promise<boolean> {
   if (!email || typeof email !== "string") {
-    console.error("Invalid email provided to updateMiningSourceCredentials");
+    logger.error("Invalid email provided to update credentials", { email });
     return false;
   }
 
@@ -138,7 +131,10 @@ export async function updateMiningSourceCredentials(
     .eq("email", email);
 
   if (error) {
-    console.error("Failed to update mining source credentials:", error);
+    logger.error("Failed to update mining source credentials", {
+      email,
+      error: error.message,
+    });
     return false;
   }
 
@@ -152,7 +148,9 @@ export function listUniqueSenderSources(
   for (const source of sources) {
     const key = normalizeEmail(source.email);
     if (!key) {
-      console.warn("Skipping source with invalid email:", source.email);
+      logger.warn("Skipping source with invalid email", {
+        email: source.email,
+      });
       continue;
     }
     if (byEmail.has(key)) continue;
@@ -172,14 +170,11 @@ export function getSenderCredentialIssue(
 
   const expired = isTokenExpired(source.credentials, nowMs);
   if (expired) {
-    console.log(
-      "[OAuth] Token IS EXPIRED for:",
-      source.email,
-      "- expiresAt:",
-      source.credentials.expiresAt,
-      "- now:",
-      nowMs,
-    );
+    logger.debug("Token expired detected", {
+      email: source.email,
+      expiresAt: source.credentials.expiresAt,
+      now: nowMs,
+    });
     return "OAuth token expired. Please reconnect this account in sources.";
   }
 

@@ -17,6 +17,9 @@ import {
   refreshOAuthToken,
   updateMiningSourceCredentials,
 } from "./sender-options.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger("email-campaigns");
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
@@ -379,7 +382,10 @@ function buildUnsubscribeUrl(token: string): string {
 
 async function triggerCampaignProcessorFromEdge() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.log("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
+    logger.error("Missing required environment variables", {
+      supabaseUrl: !!SUPABASE_URL,
+      serviceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+    });
     return;
   }
   await fetch(
@@ -653,16 +659,15 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
             sources[i] = refreshed;
           }
         } else {
-          console.warn(
-            `Could not refresh token for ${source.email}, source will remain unavailable`,
-          );
+          logger.warn("Could not refresh token, source will remain unavailable", {
+            email: source.email,
+          });
         }
       } catch (error) {
-        console.error(
-          "Failed to refresh token for source:",
-          source.email,
-          error,
-        );
+        logger.error("Failed to refresh token for source", {
+          email: source.email,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
   }
@@ -670,29 +675,22 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
   for (const source of sources) {
     const nowMs = Date.now();
     const expired = isTokenExpired(source.credentials, nowMs);
-    console.log(
-      "[OAuth] Checking source:",
-      source.email,
-      "- type:",
-      source.type,
-      "- isExpired:",
-      expired,
-    );
+    logger.debug("Checking sender source", {
+      email: source.email,
+      type: source.type,
+      isExpired: expired,
+    });
 
     const credentialIssue = getSenderCredentialIssue(source);
-    console.log(
-      "[OAuth] Credential issue for",
-      source.email,
-      ":",
+    logger.debug("Credential check result", {
+      email: source.email,
       credentialIssue,
-    );
+    });
 
     if (credentialIssue) {
-      console.log(
-        "[OAuth] Token EXPIRED for:",
-        source.email,
-        "- will attempt refresh",
-      );
+      logger.info("Token expired, will attempt refresh", {
+        email: source.email,
+      });
       options.push({
         email: source.email,
         available: false,
@@ -1436,8 +1434,9 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   }
 
   triggerCampaignProcessorFromEdge().catch((error) => {
-    console.log("error triggered");
-    console.log("error:", error);
+    logger.error("Failed to trigger campaign processor", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Cron remains as fallback if immediate trigger fails.
   });
 
@@ -1671,10 +1670,10 @@ app.post(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
         if (!matchingSource) {
-          console.log(
-            "[OAuth] No matching source found for:",
-            campaign.sender_email,
-          );
+          logger.warn("No matching mining source found for campaign sender", {
+            campaignId: campaign.id,
+            senderEmail: campaign.sender_email,
+          });
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
           continue;
         }
@@ -1686,25 +1685,20 @@ app.post(
           credentials: matchingSource.credentials as Record<string, unknown>,
         };
         const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
-        console.log(
-          "[OAuth] Checking credentials for:",
-          campaign.sender_email,
-          "- issue:",
+        logger.debug("Checking sender credentials", {
+          senderEmail: campaign.sender_email,
           credentialIssue,
-        );
+        });
 
         if (credentialIssue?.includes("expired")) {
-          console.log(
-            "[OAuth] Token EXPIRED for:",
-            campaign.sender_email,
-            "- attempting refresh...",
-          );
+          logger.info("OAuth token expired, attempting refresh", {
+            senderEmail: campaign.sender_email,
+          });
           const refreshed = await refreshOAuthToken(sourceAsCredential);
           if (refreshed) {
-            console.log(
-              "[OAuth] Token refresh SUCCESS for:",
-              campaign.sender_email,
-            );
+            logger.info("OAuth token refreshed successfully", {
+              senderEmail: campaign.sender_email,
+            });
             await updateMiningSourceCredentials(
               supabaseAdmin,
               campaign.sender_email,
@@ -1715,11 +1709,9 @@ app.post(
               unknown
             >;
           } else {
-            console.log(
-              "[OAuth] Token refresh FAILED for:",
-              campaign.sender_email,
-              "- source will remain unavailable",
-            );
+            logger.warn("OAuth token refresh failed", {
+              senderEmail: campaign.sender_email,
+            });
             await sendOAuthFailureNotification(
               campaign.user_id,
               campaign.sender_email,
@@ -1728,11 +1720,9 @@ app.post(
             );
           }
         } else {
-          console.log(
-            "[OAuth] Token is valid for:",
-            campaign.sender_email,
-            "- no refresh needed",
-          );
+          logger.debug("OAuth token is valid, no refresh needed", {
+            senderEmail: campaign.sender_email,
+          });
         }
 
         try {
@@ -1953,7 +1943,10 @@ app.post(
               }
             } catch (retryError) {
               // Refresh failed, fall through to regular error handling
-              console.error("Failed to refresh token for retry:", retryError);
+              logger.error("Token refresh failed during retry", {
+                senderEmail: campaign.sender_email,
+                error: retryError instanceof Error ? retryError.message : String(retryError),
+              });
             }
           }
 
@@ -2062,7 +2055,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       .maybeSingle();
     senderEmail = profile?.email || "";
   } catch (e) {
-    console.error("Failed to fetch sender email:", e);
+    logger.error("Failed to fetch sender email", {
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 
   const successUrl = senderEmail
@@ -2169,7 +2164,9 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
 
     return c.json({ msg: "Email sent successfully" });
   } catch (error) {
-    console.error("Error in email-sending-request:", error);
+    logger.error("Error in email-sending-request", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Failed to send email" }, 500);
   }
 });
@@ -2239,9 +2236,12 @@ async function sendOAuthFailureNotification(
 
   try {
     await sendEmail(userEmail, i18n.subject, html);
-    console.log("[OAuth failure] Notification sent to:", userEmail);
+    logger.info("OAuth failure notification sent", { userEmail });
   } catch (error) {
-    console.error("[OAuth failure] Failed to send notification:", error);
+    logger.error("Failed to send OAuth failure notification", {
+      userEmail,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
