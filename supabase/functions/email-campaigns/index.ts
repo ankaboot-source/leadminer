@@ -14,8 +14,6 @@ import {
   getSenderCredentialIssue,
   isTokenExpired,
   listUniqueSenderSources,
-  refreshOAuthToken,
-  updateMiningSourceCredentials,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
 
@@ -37,7 +35,7 @@ const CAMPAIGN_COMPLIANCE_FOOTER = (
   ""
 ).trim();
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
-  Deno.env.get(key),
+  Deno.env.get(key)
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
@@ -231,24 +229,21 @@ function getSmtpResponseCode(error: unknown): number | null {
 
 function getErrorText(error: unknown): string {
   const message = extractErrorMessage(error);
-  const response =
-    typeof error === "object" && error && "response" in error
-      ? String(error.response || "")
-      : "";
-  const code =
-    typeof error === "object" && error && "code" in error
-      ? String(error.code || "")
-      : "";
+  const response = typeof error === "object" && error && "response" in error
+    ? String(error.response || "")
+    : "";
+  const code = typeof error === "object" && error && "code" in error
+    ? String(error.code || "")
+    : "";
 
   return `${message} ${response} ${code}`.trim().toLowerCase();
 }
 
 function classifyBounceType(error: unknown): BounceType {
   const smtpCode = getSmtpResponseCode(error);
-  const technicalCode =
-    typeof error === "object" && error && "code" in error
-      ? String(error.code || "").toUpperCase()
-      : "";
+  const technicalCode = typeof error === "object" && error && "code" in error
+    ? String(error.code || "").toUpperCase()
+    : "";
   const text = getErrorText(error);
 
   const technicalCodes = new Set([
@@ -267,18 +262,20 @@ function classifyBounceType(error: unknown): BounceType {
 
   if (
     /5\.[0-9]\.[0-9]/.test(text) ||
-    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(
-      text,
-    )
+    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/
+      .test(
+        text,
+      )
   ) {
     return "hard";
   }
 
   if (
     /4\.[0-9]\.[0-9]/.test(text) ||
-    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(
-      text,
-    )
+    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/
+      .test(
+        text,
+      )
   ) {
     return "soft";
   }
@@ -435,7 +432,8 @@ function ensureUnsubscribeHtml(
   unsubscribeUrl: string,
 ): string {
   const normalized = footerHtml.trim();
-  const link = `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
+  const link =
+    `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
 
   if (!normalized) {
     return link;
@@ -501,9 +499,18 @@ function renderTemplate(
 
 function getCurrentUtcDayStart(): string {
   const date = new Date();
-  return new Date(
+  const utcDate = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  ).toISOString();
+  );
+  return utcDate.toISOString();
+}
+
+function getTodayUtcStartString(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T00:00:00.000Z`;
 }
 
 async function getAuthenticatedUser(c: Context) {
@@ -526,27 +533,38 @@ async function getAuthenticatedUser(c: Context) {
 }
 
 async function getUserMiningSources(authorization: string) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-mining-source`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": authorization,
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+      body: JSON.stringify({ email: "all" }),
     },
-    body: JSON.stringify({ email: "all" }),
-  });
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to fetch mining sources: ${response.status} ${errorText}`);
+    throw new Error(
+      `Failed to fetch mining sources: ${response.status} ${errorText}`,
+    );
   }
 
   const result = await response.json() as {
-    sources: { email: string; type: string; credentials: Record<string, unknown> }[];
+    sources: {
+      email: string;
+      type: string;
+      credentials: Record<string, unknown>;
+    }[];
     refreshed: string[];
   };
 
   if (result.refreshed.length > 0) {
-    logger.info("Tokens refreshed via central function", { emails: result.refreshed });
+    logger.info("Tokens refreshed via central function", {
+      emails: result.refreshed,
+    });
   }
 
   return result.sources;
@@ -845,7 +863,7 @@ function filterEligibleContacts(
   onlyValidContacts: boolean,
 ) {
   return contacts.filter((contact) =>
-    isContactEligible(contact, onlyValidContacts),
+    isContactEligible(contact, onlyValidContacts)
   );
 }
 
@@ -962,7 +980,8 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl =
+        `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -976,8 +995,10 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
-    updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
+    const pixelUrl =
+      `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    updatedHtml +=
+      `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
   return updatedHtml;
@@ -1034,8 +1055,9 @@ async function finalizeCampaignStatusIfDone(
     return;
   }
 
-  const finalStatus: CampaignStatus =
-    sentCount === 0 && failedCount > 0 ? "failed" : "completed";
+  const finalStatus: CampaignStatus = sentCount === 0 && failedCount > 0
+    ? "failed"
+    : "completed";
 
   await setCampaignStatus(supabaseAdmin, campaignId, finalStatus);
 }
@@ -1558,7 +1580,9 @@ app.post(
         500,
       );
     }
-    const dayStart = getCurrentUtcDayStart();
+    const dayStart = getTodayUtcStartString();
+    logger.debug("Starting campaign processing", { dayStart });
+
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
       .from("email_campaigns")
@@ -1568,6 +1592,10 @@ app.post(
       .in("status", ["queued", "processing"])
       .order("created_at", { ascending: true })
       .limit(30);
+
+    logger.info("Campaign processing triggered", {
+      campaignsFound: campaigns?.length ?? 0,
+    });
 
     if (campaignsError) {
       return c.json({ error: campaignsError.message }, 500);
@@ -1598,9 +1626,23 @@ app.post(
         0,
         enforcedLimit - Number(sentToday || 0),
       );
+
       if (remainingForSender <= 0) {
+        logger.warn("Campaign skipped due to daily limit", {
+          campaignId: campaign.id,
+          senderEmail: campaign.sender_email,
+          sentToday: sentToday ?? 0,
+          enforcedLimit,
+        });
         continue;
       }
+
+      logger.debug("Campaign processing details", {
+        campaignId: campaign.id,
+        remainingForSender,
+        sentToday: sentToday ?? 0,
+        enforcedLimit,
+      });
 
       const { data: recipients, error: recipientsError } = await supabaseAdmin
         .schema("private")
@@ -1629,23 +1671,12 @@ app.post(
 
       let senderTransport: Transport | undefined;
       if (campaign.sender_email !== fallbackSenderEmail) {
-        const serviceClient = createSupabaseAdmin();
-        const { data: rows, error } = await serviceClient
-          .schema("private")
-          .rpc("get_mining_source_credentials_for_user", {
-            _user_id: campaign.user_id,
-            _encryption_key: LEADMINER_API_HASH_SECRET,
-          });
-
-        if (error) {
-          await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
-          continue;
-        }
-
-        const matchingSource = (rows ?? []).find(
+        const sources = await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY);
+        const sourceAsCredential = sources.find(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
-        if (!matchingSource) {
+
+        if (!sourceAsCredential) {
           logger.warn("No matching mining source found for campaign sender", {
             campaignId: campaign.id,
             senderEmail: campaign.sender_email,
@@ -1654,12 +1685,6 @@ app.post(
           continue;
         }
 
-        // Refresh OAuth token if expired before building transport
-        const sourceAsCredential: MiningSourceCredential = {
-          email: matchingSource.email,
-          type: matchingSource.type,
-          credentials: matchingSource.credentials as Record<string, unknown>,
-        };
         const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
         logger.debug("Checking sender credentials", {
           senderEmail: campaign.sender_email,
@@ -1667,34 +1692,16 @@ app.post(
         });
 
         if (credentialIssue?.includes("expired")) {
-          logger.info("OAuth token expired, attempting refresh", {
+          logger.info("OAuth token expired", {
             senderEmail: campaign.sender_email,
           });
-          const refreshed = await refreshOAuthToken(sourceAsCredential);
-          if (refreshed) {
-            logger.info("OAuth token refreshed successfully", {
-              senderEmail: campaign.sender_email,
-            });
-            await updateMiningSourceCredentials(
-              supabaseAdmin,
-              campaign.sender_email,
-              refreshed.credentials,
-            );
-            matchingSource.credentials = refreshed.credentials as Record<
-              string,
-              unknown
-            >;
-          } else {
-            logger.warn("OAuth token refresh failed", {
-              senderEmail: campaign.sender_email,
-            });
-            await sendOAuthFailureNotification(
-              campaign.user_id,
-              campaign.sender_email,
-              campaign.subject,
-              "expired",
-            );
-          }
+
+          await sendOAuthFailureNotification(
+            campaign.user_id,
+            campaign.sender_email,
+            campaign.subject,
+            "expired",
+          );
         } else {
           logger.debug("OAuth token is valid, no refresh needed", {
             senderEmail: campaign.sender_email,
@@ -1704,7 +1711,7 @@ app.post(
         try {
           senderTransport = await buildUserTransport(
             campaign.sender_email,
-            matchingSource.credentials as Record<string, unknown>,
+            sourceAsCredential.credentials as Record<string, unknown>,
           );
         } catch {
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
@@ -1788,8 +1795,7 @@ app.post(
           subjectTemplate: campaign.subject,
           bodyHtmlTemplate: campaign.body_html_template || "",
           bodyTextTemplate: campaign.body_text_template || "",
-          footerTextTemplate:
-            campaign.footer_text_template ||
+          footerTextTemplate: campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
           unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
@@ -1797,25 +1803,28 @@ app.post(
           plainTextOnly: campaign.plain_text_only,
         });
 
+        let htmlWithTracking = "";
         try {
-          const htmlWithTracking = campaign.plain_text_only
-            ? ""
+          htmlWithTracking = campaign.plain_text_only
+            ? htmlWithTracking
             : await injectTrackers(
-                supabaseAdmin,
-                campaign.id,
-                recipient.id,
-                recipient.open_token,
-                bodyHtml,
-                campaign.track_click,
-                campaign.track_open,
-              );
+              supabaseAdmin,
+              campaign.id,
+              recipient.id,
+              recipient.open_token,
+              bodyHtml,
+              campaign.track_click,
+              campaign.track_open,
+            );
 
           const finalHtml = campaign.plain_text_only
             ? ""
             : htmlWithTracking + footerHtml;
 
           await sendEmail(recipient.contact_email, renderedSubject, finalHtml, {
-            from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+            from: `"${
+              escapeHtml(campaign.sender_name)
+            }" <${campaign.sender_email}>`,
             replyTo: campaign.reply_to,
             text,
             transport: senderTransport,
@@ -1856,30 +1865,23 @@ app.post(
 
           if (canRetryAuth) {
             try {
-              // Refresh OAuth token
-              const sourceForRetry: MiningSourceCredential = {
-                email: campaign.sender_email,
-                type: matchingSource?.type || "google",
-                credentials:
-                  (matchingSource?.credentials as Record<string, unknown>) ||
-                  {},
-              };
-              const refreshed = await refreshOAuthToken(sourceForRetry);
-              if (refreshed) {
-                await updateMiningSourceCredentials(
-                  supabaseAdmin,
-                  campaign.sender_email,
-                  refreshed.credentials,
+              // re-fetch oauth central edge-function will handle refresh
+              const sourceForRetry =
+                (await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY))?.find(
+                  (row: { email: string }) =>
+                    row.email === campaign.sender_email,
                 );
+
+              if (!sourceForRetry) {
+                throw new Error("");
+              }
+
+              if (!isTokenExpired(sourceForRetry.credentials, 1000)) {
                 // Rebuild transport with new credentials
                 senderTransport = await buildUserTransport(
                   campaign.sender_email,
-                  refreshed.credentials,
+                  sourceForRetry.credentials,
                 );
-                matchingSource!.credentials = refreshed.credentials as Record<
-                  string,
-                  unknown
-                >;
 
                 // Retry sending the email
                 await sendEmail(
@@ -1887,7 +1889,9 @@ app.post(
                   renderedSubject,
                   campaign.plain_text_only ? "" : htmlWithTracking,
                   {
-                    from: `"${escapeHtml(campaign.sender_name)}" <${campaign.sender_email}>`,
+                    from: `"${
+                      escapeHtml(campaign.sender_name)
+                    }" <${campaign.sender_email}>`,
                     replyTo: campaign.reply_to,
                     text,
                     transport: senderTransport,
@@ -1921,7 +1925,9 @@ app.post(
               // Refresh failed, fall through to regular error handling
               logger.error("Token refresh failed during retry", {
                 senderEmail: campaign.sender_email,
-                error: retryError instanceof Error ? retryError.message : String(retryError),
+                error: retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError),
               });
             }
           }
@@ -2037,7 +2043,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   }
 
   const successUrl = senderEmail
-    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${encodeURIComponent(senderEmail)}`
+    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${
+      encodeURIComponent(senderEmail)
+    }`
     : `${FRONTEND_HOST}/unsubscribe/success`;
 
   return new Response(null, {
@@ -2047,7 +2055,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       Location: successUrl,
     },
   });
-
+});
 
 app.get("/track/open/:token", async (c: Context) => {
   const token = c.req.param("token");
@@ -2130,7 +2138,8 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
     );
   }
   const safeUserEmail = escapeHtml(auth.user.email as string);
-  const html = `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
+  const html =
+    `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
 
   try {
     await sendEmail(fallbackSenderEmail, subject, html, {
@@ -2197,8 +2206,12 @@ async function sendOAuthFailureNotification(
   }[language];
 
   const bodyContent = `
-    <p>${i18n.intro.replace("{campaignSubject}", escapeHtml(campaignSubject))}</p>
-    <p><strong>${i18n.reason_label}</strong> ${reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid}</p>
+    <p>${
+    i18n.intro.replace("{campaignSubject}", escapeHtml(campaignSubject))
+  }</p>
+    <p><strong>${i18n.reason_label}</strong> ${
+    reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid
+  }</p>
     <p><strong>${i18n.steps_title}</strong></p>
     <ol>
       <li>${i18n.step1}</li>

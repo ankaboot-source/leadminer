@@ -7,6 +7,7 @@
  *
  * DO NOT expose this function to end users or untrusted clients.
  */
+import { expiresAt } from "https://esm.sh/@supabase/auth-js@2.65.0/dist/module/lib/helpers.d.ts";
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import {
@@ -15,25 +16,12 @@ import {
 } from "../_shared/supabase.ts";
 import {
   isTokenExpired,
-  refreshOAuthToken,
-} from "../email-campaigns/sender-options.ts";
+  MiningSource,
+  OAuthMiningSourceCredentials,
+  refreshAccessToken,
+} from "./oauth-handler/index.ts";
 import * as crypto from "node:crypto";
 
-interface MiningSourceCredentials {
-  accessToken?: string;
-  refreshToken?: string;
-  expiresAt?: number;
-  password?: string;
-  imapHost?: string;
-  imapPort?: number;
-  [key: string]: unknown;
-}
-
-interface MiningSource {
-  email: string;
-  type: string;
-  credentials: MiningSourceCredentials;
-}
 
 function timingSafeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
@@ -58,13 +46,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const leadminerHashSecret = Deno.env.get("LEADMINER_HASH_SECRET");
+  const leadminerHashSecret = Deno.env.get("LEADMINER_API_HASH_SECRET");
 
   if (
     !supabaseUrl ||
-    !supabaseAnonKey ||
     !supabaseServiceRoleKey ||
     !leadminerHashSecret
   ) {
@@ -83,11 +69,10 @@ Deno.serve(async (req: Request) => {
   let userId: string | undefined;
   let targetEmail: string | undefined;
 
-  const serviceKey = req.headers.get("x-service-key");
   const authorization = req.headers.get("Authorization");
 
   if (
-    serviceKey && timingSafeCompare(serviceKey, supabaseServiceRoleKey)
+    authorization && timingSafeCompare(authorization.split(' ').pop()!, supabaseServiceRoleKey)
   ) {
     mode = "service";
   } else if (!authorization) {
@@ -118,7 +103,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const admin = createSupabaseAdmin();
+  const admin = createSupabaseAdmin(supabaseUrl, supabaseServiceRoleKey);
   let client: ReturnType<typeof createSupabaseClient>;
   let actualUserId: string;
 
@@ -133,7 +118,7 @@ Deno.serve(async (req: Request) => {
       );
     }
     actualUserId = userId;
-    client = createSupabaseClient(`Bearer ${serviceKey}`);
+    client = admin;
   } else {
     client = createSupabaseClient(authorization!);
     const {
@@ -189,38 +174,46 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    for (const source of sources) {
-      const needsRefresh = isTokenExpired(source.credentials);
+    for (const dbSource of sources) {
+
+      if (dbSource.type === "imap") continue;
+
+      const source = {
+        ...dbSource,
+        credentials: dbSource.credentials as OAuthMiningSourceCredentials
+      };
+
+      const needsRefresh = isTokenExpired(source.credentials, 1000);
+
       if (!needsRefresh) {
         continue;
       }
 
       Logger.info(`Token expired for ${source.email}, attempting refresh`);
 
-      const refreshed = await refreshOAuthToken(source);
-      if (!refreshed) {
+      const {access_token, refresh_token, expires_at} = await refreshAccessToken(source.credentials);
+
+      if (!access_token || !expires_at) {
         Logger.warn(`Failed to refresh token for ${source.email}`);
         continue;
       }
 
-      const newRefreshToken = refreshed.credentials.refreshToken;
-      const preservedRefreshToken =
-        newRefreshToken ?? source.credentials.refreshToken;
-
+      const refreshed = {
+        ...source.credentials,
+        accessToken: access_token,
+        refreshToken: refresh_token ?? source.credentials.refreshToken,
+        expiresAt: expires_at
+      }
+      
       await admin.schema("private").rpc("upsert_mining_source", {
         _user_id: actualUserId,
         _email: source.email,
         _type: source.type,
-        _credentials: JSON.stringify({
-          ...source.credentials,
-          accessToken: refreshed.credentials.accessToken,
-          refreshToken: preservedRefreshToken,
-          expiresAt: refreshed.credentials.expiresAt,
-        }),
+        _credentials: JSON.stringify(refreshed),
         _encryption_key: leadminerHashSecret,
       });
 
-      source.credentials = refreshed.credentials;
+      source.credentials = refreshed;
       refreshedEmails.push(source.email);
 
       Logger.info(`Successfully refreshed token for ${source.email}`);
