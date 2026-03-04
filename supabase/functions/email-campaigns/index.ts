@@ -78,6 +78,7 @@ type CampaignCreatePayload = {
   plainTextOnly?: boolean;
   onlyValidContacts?: boolean;
   footerTextTemplate?: string;
+  partialCampaign?: boolean;
 };
 
 type ContactSnapshot = {
@@ -397,6 +398,89 @@ async function triggerCampaignProcessorFromEdge() {
       },
     },
   );
+}
+
+// ============================================================================
+// Billing Integration
+// ============================================================================
+
+interface BillingResult {
+  allowed: boolean;
+  chargedUnits?: number;
+  response?: Response;
+}
+
+async function checkCampaignBilling(
+  authHeader: string,
+  userId: string,
+  contactsCount: number,
+  partialCampaign: boolean = false,
+): Promise<BillingResult> {
+  const billingEnabled = Deno.env.get("ENABLE_BILLING") === "true";
+
+  if (!billingEnabled) {
+    return { allowed: true, chargedUnits: contactsCount };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+  const billingUrl = `${supabaseUrl}/functions/v1/billing/campaign/charge`;
+
+  try {
+    const response = await fetch(billingUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+      body: JSON.stringify({
+        userId,
+        units: contactsCount,
+        partialCampaign,
+      }),
+    });
+
+    if (response.status === 404) {
+      logger.info("Billing function not available, allowing campaign");
+      return { allowed: true, chargedUnits: contactsCount };
+    }
+
+    if (response.status === 402 || response.status === 266) {
+      const payload = await response.json();
+      return {
+        allowed: false,
+        response: new Response(JSON.stringify(payload), {
+          status: response.status,
+          headers: { "Content-Type": "application/json" },
+        }),
+      };
+    }
+
+    if (!response.ok) {
+      logger.error(`Billing error: ${response.status}`);
+      return {
+        allowed: false,
+        response: new Response(
+          JSON.stringify({ error: "Billing verification failed" }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        ),
+      };
+    }
+
+    const result = await response.json();
+    return {
+      allowed: true,
+      chargedUnits: result.chargedUnits ?? contactsCount,
+    };
+  } catch (error) {
+    logger.error("Billing check failed", { error });
+    return {
+      allowed: false,
+      response: new Response(
+        JSON.stringify({ error: "Billing service unavailable" }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      ),
+    };
+  }
 }
 
 function defaultFooterTemplate(ownerEmail: string): string {
@@ -1368,6 +1452,21 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
+  const partialCampaign = payload.partialCampaign ?? false;
+
+  const billingResult = await checkCampaignBilling(
+    authorization,
+    auth.user.id,
+    eligibleContacts.length,
+    partialCampaign,
+  );
+
+  if (!billingResult.allowed && billingResult.response) {
+    return billingResult.response;
+  }
+
+  const chargedUnits = billingResult.chargedUnits ?? eligibleContacts.length;
+
   const { data: campaignData, error: campaignError } = await supabaseAdmin
     .schema("private")
     .from("email_campaigns")
@@ -1391,7 +1490,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       track_click: trackClick,
       plain_text_only: plainTextOnly,
       only_valid_contacts: onlyValidContacts,
-      total_recipients: eligibleContacts.length,
+      total_recipients: chargedUnits,
       status: "queued",
     })
     .select("id")
