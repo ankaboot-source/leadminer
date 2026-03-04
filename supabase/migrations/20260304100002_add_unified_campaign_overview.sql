@@ -20,44 +20,54 @@ SET search_path = ''
 AS $$
 BEGIN
   RETURN QUERY
-  -- Email campaigns
-  WITH email_stats AS (
-    SELECT
-      r.campaign_id,
-      COUNT(*) FILTER (WHERE r.send_status = 'sent')::INTEGER AS delivered,
-      COUNT(*) FILTER (WHERE r.send_status IN ('sent', 'failed'))::INTEGER AS attempted
-    FROM private.email_campaign_recipients r
-    WHERE r.user_id = auth.uid()
-    GROUP BY r.campaign_id
-  ),
-  email_opens AS (
-    SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS opened
-    FROM private.email_campaign_events e
-    JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
-    WHERE e.event_type = 'open' AND r.user_id = auth.uid()
-    GROUP BY e.campaign_id
-  ),
-  email_clicks AS (
-    SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS clicked
-    FROM private.email_campaign_events e
-    JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
-    WHERE e.event_type = 'click' AND r.user_id = auth.uid()
-    GROUP BY e.campaign_id
-  ),
-  email_unsubscribes AS (
-    SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS unsubscribed
-    FROM private.email_campaign_events e
-    JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
-    WHERE e.event_type = 'unsubscribe' AND r.user_id = auth.uid()
-    GROUP BY e.campaign_id
-  ),
-  email_link_clicks AS (
-    SELECT e.campaign_id, COUNT(*)::INTEGER AS click_count
-    FROM private.email_campaign_events e
-    JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
-    WHERE e.event_type = 'click' AND e.url IS NOT NULL AND r.user_id = auth.uid()
-    GROUP BY e.campaign_id
-  )
+  WITH 
+    email_stats AS (
+      SELECT
+        r.campaign_id,
+        COUNT(*) FILTER (WHERE r.send_status = 'sent')::INTEGER AS delivered,
+        COUNT(*) FILTER (WHERE r.send_status IN ('sent', 'failed'))::INTEGER AS attempted
+      FROM private.email_campaign_recipients r
+      WHERE r.user_id = auth.uid()
+      GROUP BY r.campaign_id
+    ),
+    email_opens AS (
+      SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS opened
+      FROM private.email_campaign_events e
+      JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
+      WHERE e.event_type = 'open' AND r.user_id = auth.uid()
+      GROUP BY e.campaign_id
+    ),
+    email_clicks AS (
+      SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS clicked
+      FROM private.email_campaign_events e
+      JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
+      WHERE e.event_type = 'click' AND r.user_id = auth.uid()
+      GROUP BY e.campaign_id
+    ),
+    email_unsubscribes AS (
+      SELECT e.campaign_id, COUNT(DISTINCT e.recipient_id)::INTEGER AS unsubscribed
+      FROM private.email_campaign_events e
+      JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
+      WHERE e.event_type = 'unsubscribe' AND r.user_id = auth.uid()
+      GROUP BY e.campaign_id
+    ),
+    email_link_clicks AS (
+      SELECT e.campaign_id, COUNT(*)::INTEGER AS click_count
+      FROM private.email_campaign_events e
+      JOIN private.email_campaign_recipients r ON r.id = e.recipient_id
+      WHERE e.event_type = 'click' AND e.url IS NOT NULL AND r.user_id = auth.uid()
+      GROUP BY e.campaign_id
+    ),
+    sms_clicks AS (
+      SELECT campaign_id, COUNT(*)::INTEGER AS click_count
+      FROM private.sms_campaign_link_clicks
+      GROUP BY campaign_id
+    ),
+    sms_unsubscribes AS (
+      SELECT campaign_id, COUNT(*)::INTEGER AS unsubscribe_count
+      FROM private.sms_campaign_unsubscribes
+      GROUP BY campaign_id
+    )
   SELECT 
     c.id,
     c.user_id,
@@ -82,17 +92,6 @@ BEGIN
   
   UNION ALL
   
-  -- SMS campaigns
-  WITH sms_clicks AS (
-    SELECT campaign_id, COUNT(*)::INTEGER AS click_count
-    FROM private.sms_campaign_link_clicks
-    GROUP BY campaign_id
-  ),
-  sms_unsubscribes AS (
-    SELECT campaign_id, COUNT(*)::INTEGER AS unsubscribe_count
-    FROM private.sms_campaign_unsubscribes
-    GROUP BY campaign_id
-  )
   SELECT 
     s.id,
     s.user_id,

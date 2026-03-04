@@ -32,6 +32,7 @@ export interface CampaignOverview {
   failed_other: number;
   failed_count?: number;
   opened: number;
+  open_count?: number;
   clicked: number;
   click_count?: number;
   unsubscribed: number;

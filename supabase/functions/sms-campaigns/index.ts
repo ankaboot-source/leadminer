@@ -31,12 +31,6 @@ type SmsCampaignCreatePayload = {
   timezone?: string;
 };
 
-type ContactSnapshot = {
-  telephone: string[] | null;
-  name: string | null;
-  email: string;
-};
-
 async function authMiddleware(c: Context, next: () => Promise<void>) {
   const authHeader = c.req.header("authorization");
 
@@ -93,25 +87,6 @@ function isValidPhoneNumber(phone: string | null): boolean {
   const normalized = normalizePhoneNumber(phone);
   if (!normalized) return false;
   return normalized.replace(/\D/g, "").length >= 10;
-}
-
-async function getSelectedContacts(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  userId: string,
-  selectedPhones: string[],
-): Promise<ContactSnapshot[]> {
-  const { data, error } = await supabaseAdmin
-    .schema("private")
-    .from("persons")
-    .select("email, telephone, name")
-    .eq("user_id", userId)
-    .in("telephone", selectedPhones.map((p) => `%${p}%`));
-
-  if (error) {
-    throw new Error(`Failed to fetch contacts: ${error.message}`);
-  }
-
-  return (data || []) as ContactSnapshot[];
 }
 
 async function checkSmsQuota(
@@ -231,12 +206,14 @@ async function injectTrackers(
 
 function generateUnsubscribeToken(userId: string, phone: string): string {
   const data = `${userId}:${phone}:${Date.now()}`;
-  return btoa(data).replace(/[/+=]/g, "").slice(0, 32);
+  return btoa(data);
 }
 
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  logger.info("Creating SMS campaign", { userId: user.id });
 
   const payload = (await c.req.json().catch(() => ({}))) as SmsCampaignCreatePayload;
   const { selectedPhones, senderName, senderPhone, provider, messageTemplate, useShortLinks, dailyLimit, timezone } = payload;
@@ -456,7 +433,7 @@ app.get("/track/click/:token", async (c: Context) => {
   const { data: click, error } = await supabaseAdmin
     .schema("private")
     .from("sms_campaign_link_clicks")
-    .select("*, campaign:sms_campaigns(user_id)")
+    .select("*, campaign:sms_campaigns(id, user_id, click_count)")
     .eq("token", token)
     .single();
 
@@ -464,13 +441,22 @@ app.get("/track/click/:token", async (c: Context) => {
     return c.redirect("/", 302);
   }
 
-  await supabaseAdmin
-    .schema("private")
-    .from("sms_campaigns")
-    .update({ click_count: click.campaign?.click_count ? click.campaign.click_count + 1 : 1 })
-    .eq("id", click.campaign_id);
+  const campaignId = click.campaign?.id;
+  const currentClickCount = click.campaign?.click_count || 0;
+  if (campaignId) {
+    await supabaseAdmin
+      .schema("private")
+      .from("sms_campaigns")
+      .update({ click_count: currentClickCount + 1 })
+      .eq("id", campaignId);
+  }
 
-  return c.redirect(click.url, 302);
+  const targetUrl = click.url;
+  if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+    return c.redirect("/", 302);
+  }
+
+  return c.redirect(targetUrl, 302);
 });
 
 app.get("/unsubscribe/:token", async (c: Context) => {
@@ -516,6 +502,8 @@ app.post("/process", authMiddleware, async (c: Context) => {
   if (!campaignId) {
     return c.json({ error: "Campaign ID required", code: "MISSING_CAMPAIGN_ID" }, 400);
   }
+
+  logger.info("Processing SMS campaign", { campaignId, userId: user.id });
 
   const supabaseAdmin = createSupabaseAdmin();
 
@@ -622,5 +610,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
   return c.json({ success: true, sentCount, failedCount });
 });
+
+Deno.serve((req) => app.fetch(req));
 
 export default app;

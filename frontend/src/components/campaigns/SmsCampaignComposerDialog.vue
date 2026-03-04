@@ -41,15 +41,15 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium flex items-center gap-1">
-          <span>{{ t('provider') }} *
-          <Select
-            v-model="form.provider"
-            :options="providerOptions"
-            option-label="label"
-            option-value="value"
-          />
+        <label class="text-sm font-medium">
+          {{ t('provider') }} *
         </label>
+        <Select
+          v-model="form.provider"
+          :options="providerOptions"
+          option-label="label"
+          option-value="value"
+        />
       </div>
 
       <div class="flex flex-col gap-1">
@@ -121,12 +121,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useDialog } from 'primevue/usedialog';
 import { useToast } from 'primevue/usetoast';
 import type { Contact } from '~/types/contact';
 
 const { t } = useI18n();
-const dialog = useDialog();
 const $toast = useToast();
 const $saasEdgeFunctions = useLeadminerSasSFunctions();
 const $screenStore = useScreenStore();
@@ -184,15 +182,18 @@ const charCount = ref(0);
 const encoding = ref('GSM-7');
 const smsParts = ref(1);
 
+const UNSUBSCRIBE_FOOTER_LENGTH = '\n\nUnsubscribe me: https://example.com'.length;
+
 const updateCharCount = () => {
   const text = form.messageTemplate || '';
-  charCount.value = text.length;
+  const totalWithFooter = text.length + UNSUBSCRIBE_FOOTER_LENGTH;
   
   const isUnicode = /[^\u0000-\u007F]/.test(text);
   encoding.value = isUnicode ? 'Unicode' : 'GSM-7';
   
   const maxPerSms = isUnicode ? 70 : 160;
-  smsParts.value = Math.ceil(text.length / maxPerSms) || 1;
+  smsParts.value = Math.ceil(totalWithFooter / maxPerSms) || 1;
+  charCount.value = totalWithFooter;
 };
 
 const validationErrors = computed<Record<FormField, string>>(() => {

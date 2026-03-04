@@ -437,10 +437,12 @@ async function confirmActionDialog() {
   isDialogSubmitting.value = true;
   actionLoading.value[campaign.id] = actionDialogType.value;
 
+  const channelPrefix = campaign.channel === 'sms' ? 'sms-campaigns' : 'email-campaigns';
+
   try {
     if (actionDialogType.value === 'stop') {
       await $saasEdgeFunctions(
-        `email-campaigns/campaigns/${campaign.id}/stop`,
+        `${channelPrefix}/campaigns/${campaign.id}/stop`,
         {
           method: 'POST',
         },
@@ -452,7 +454,7 @@ async function confirmActionDialog() {
         life: 3500,
       });
     } else {
-      await $saasEdgeFunctions(`email-campaigns/campaigns/${campaign.id}`, {
+      await $saasEdgeFunctions(`${channelPrefix}/campaigns/${campaign.id}`, {
         method: 'DELETE',
       });
       $toast.add({

@@ -1187,8 +1187,6 @@ function openSendSmsContactsDialog() {
 }
 
 function onSmsCampaignCreated(campaignId: string) {
-  console.log('SMS Campaign created:', campaignId);
-}
 
 const isFullscreen = ref(false);
 
