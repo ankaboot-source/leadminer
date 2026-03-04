@@ -7,9 +7,10 @@
  *
  * DO NOT expose this function to end users or untrusted clients.
  */
-import { expiresAt } from "https://esm.sh/@supabase/auth-js@2.65.0/dist/module/lib/helpers.d.ts";
+import { z } from "zod";
+import * as crypto from "node:crypto";
 import corsHeaders from "../_shared/cors.ts";
-import Logger from "../_shared/logger.ts";
+import { createLogger } from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -20,7 +21,31 @@ import {
   OAuthMiningSourceCredentials,
   refreshAccessToken,
 } from "./oauth-handler/index.ts";
-import * as crypto from "node:crypto";
+
+const logger = createLogger("fetch-mining-source");
+
+const REFRESH_BUFFER_MS = 1000;
+
+const RequestSchema = z.object({
+  email: z.string().email().optional(),
+  user_id: z.string().uuid().optional(),
+});
+
+type RequestBody = z.infer<typeof RequestSchema>;
+
+class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthError";
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
 
 function timingSafeCompare(a: string, b: string): boolean {
   const encoder = new TextEncoder();
@@ -34,188 +59,202 @@ function timingSafeCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(aBytes, bBytes);
 }
 
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+function isServiceKey(authHeader: string, serviceKey: string): boolean {
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : authHeader;
+  return timingSafeCompare(token, serviceKey);
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+class FetchMiningSourceHandler {
+  private admin: ReturnType<typeof createSupabaseAdmin>;
+  private encryptionKey: string;
+  private serviceRoleKey: string;
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const leadminerHashSecret = Deno.env.get("LEADMINER_API_HASH_SECRET");
+  constructor() {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const encryptionKey = Deno.env.get("LEADMINER_API_HASH_SECRET");
 
-  if (!supabaseUrl || !supabaseServiceRoleKey || !leadminerHashSecret) {
-    Logger.error("Missing environment variables");
-
-    return new Response(
-      JSON.stringify({ error: "Missing environment variables" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-
-  let mode: "user" | "service" = "user";
-  let userId: string | undefined;
-  let targetEmail: string | undefined;
-
-  const authorization = req.headers.get("Authorization");
-
-  if (
-    authorization &&
-    timingSafeCompare(authorization.split(" ").pop()!, supabaseServiceRoleKey)
-  ) {
-    mode = "service";
-  } else if (!authorization) {
-    return new Response(
-      JSON.stringify({ error: "Missing authorization header" }),
-      {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-
-  try {
-    const body = await req.json();
-    targetEmail = body.email;
-    userId = body.user_id;
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid request body" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  if (targetEmail && targetEmail !== "all" && !isValidEmail(targetEmail)) {
-    return new Response(JSON.stringify({ error: "Invalid email format" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const admin = createSupabaseAdmin(supabaseUrl, supabaseServiceRoleKey);
-  let client: ReturnType<typeof createSupabaseClient>;
-  let actualUserId: string;
-
-  if (mode === "service") {
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "user_id required in service mode" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+    if (!supabaseUrl || !supabaseServiceRoleKey || !encryptionKey) {
+      throw new Error("Missing required environment variables");
     }
-    actualUserId = userId;
-    client = admin;
-  } else {
-    client = createSupabaseClient(authorization!);
+
+    this.admin = createSupabaseAdmin(supabaseUrl, supabaseServiceRoleKey);
+    this.encryptionKey = encryptionKey;
+    this.serviceRoleKey = supabaseServiceRoleKey;
+  }
+
+  async handle(req: Request): Promise<Response> {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
+    try {
+      const body = await this.parseAndValidateBody(req);
+      const authHeader = req.headers.get("Authorization");
+      const userId = await this.resolveUserId(authHeader, body.user_id);
+
+      logger.info("Fetching mining sources", { userId });
+
+      let sources = await this.fetchSources(userId);
+      sources = this.filterByEmail(sources, body.email);
+
+      const refreshedEmails = await this.refreshTokensIfNeeded(sources, userId);
+
+      return this.buildSuccessResponse(sources, refreshedEmails);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  private async parseAndValidateBody(req: Request): Promise<RequestBody> {
+    let rawBody: unknown;
+
+    try {
+      rawBody = await req.json();
+    } catch {
+      throw new ValidationError("Invalid request body: must be valid JSON");
+    }
+
+    const result = RequestSchema.safeParse(rawBody);
+
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => i.message).join("; ");
+      throw new ValidationError(`Invalid request body: ${issues}`);
+    }
+
+    return result.data;
+  }
+
+  private async resolveUserId(
+    authHeader: string | null,
+    bodyUserId?: string,
+  ): Promise<string> {
+    if (!authHeader) {
+      throw new AuthError("Missing Authorization header");
+    }
+
+    if (isServiceKey(authHeader, this.serviceRoleKey)) {
+      if (!bodyUserId) {
+        throw new ValidationError(
+          "user_id is required when using service role key",
+        );
+      }
+      logger.debug("Using service role authentication", { userId: bodyUserId });
+      return bodyUserId;
+    }
+
+    const client = createSupabaseClient(authHeader);
     const {
       data: { user },
-      error: authError,
+      error,
     } = await client.auth.getUser();
 
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: authError?.message || "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+    if (error || !user) {
+      throw new AuthError(error?.message || "Invalid or expired token");
     }
-    actualUserId = user.id;
+
+    logger.debug("Using user JWT authentication", { userId: user.id });
+    return user.id;
   }
 
-  const refreshedEmails: string[] = [];
-
-  try {
-    let sources: MiningSource[];
-
-    if (mode === "service") {
-      const { data, error } = await admin
-        .schema("private")
-        .rpc("get_mining_source_credentials_for_user", {
-          _user_id: actualUserId,
-          _encryption_key: leadminerHashSecret,
-        });
-
-      if (error) {
-        Logger.error("RPC error in service mode", { error: error.message });
-        throw new Error(`Failed to fetch mining sources: ${error.message}`);
-      }
-      sources = (data ?? []) as MiningSource[];
-    } else {
-      const { data, error } = await client
-        .schema("private")
-        .rpc("get_user_mining_source_credentials", {
-          _encryption_key: leadminerHashSecret,
-        });
-
-      if (error) {
-        Logger.error("RPC error in user mode", { error: error.message });
-        throw new Error(`Failed to fetch mining sources: ${error.message}`);
-      }
-      sources = (data ?? []) as MiningSource[];
-    }
-
-    if (targetEmail && targetEmail !== "all") {
-      sources = sources.filter(
-        (s) => s.email.toLowerCase() === targetEmail!.toLowerCase(),
-      );
-    }
-
-    for (const dbSource of sources) {
-      if (dbSource.type === "imap") continue;
-
-      const source = {
-        ...dbSource,
-        credentials: dbSource.credentials as OAuthMiningSourceCredentials,
-      };
-
-      const needsRefresh = isTokenExpired(source.credentials, 1000);
-
-      if (!needsRefresh) {
-        continue;
-      }
-
-      Logger.info(`Token expired for ${source.email}, attempting refresh`);
-
-      const { access_token, refresh_token, expires_at } =
-        await refreshAccessToken(source.credentials);
-
-      if (!access_token || !expires_at) {
-        Logger.warn(`Failed to refresh token for ${source.email}`);
-        continue;
-      }
-
-      const refreshed = {
-        ...source.credentials,
-        accessToken: access_token,
-        refreshToken: refresh_token ?? source.credentials.refreshToken,
-        expiresAt: expires_at,
-      };
-      await admin.schema("private").rpc("upsert_mining_source", {
-        _user_id: actualUserId,
-        _email: source.email,
-        _type: source.type,
-        _credentials: JSON.stringify(refreshed),
-        _encryption_key: leadminerHashSecret,
+  private async fetchSources(userId: string): Promise<MiningSource[]> {
+    const { data, error } = await this.admin
+      .schema("private")
+      .rpc("get_mining_source_credentials_for_user", {
+        _user_id: userId,
+        _encryption_key: this.encryptionKey,
       });
 
-      source.credentials = refreshed;
-      refreshedEmails.push(source.email);
-
-      Logger.info(`Successfully refreshed token for ${source.email}`);
+    if (error) {
+      logger.error("Failed to fetch mining sources", {
+        userId,
+        error: error.message,
+      });
+      throw new Error(`Failed to fetch mining sources: ${error.message}`);
     }
 
+    return (data ?? []) as MiningSource[];
+  }
+
+  private filterByEmail(
+    sources: MiningSource[],
+    emailFilter?: string,
+  ): MiningSource[] {
+    if (!emailFilter) {
+      return sources;
+    }
+
+    const normalizedFilter = emailFilter.toLowerCase();
+    return sources.filter((s) => s.email.toLowerCase() === normalizedFilter);
+  }
+
+  private async refreshTokensIfNeeded(
+    sources: MiningSource[],
+    userId: string,
+  ): Promise<string[]> {
+    const refreshedEmails: string[] = [];
+    const nowMs = Date.now();
+
+    for (const source of sources) {
+      if (source.type === "imap") continue;
+
+      const credentials = source.credentials as OAuthMiningSourceCredentials;
+
+      if (!isTokenExpired(credentials, nowMs + REFRESH_BUFFER_MS)) {
+        continue;
+      }
+
+      logger.info("Token expired, attempting refresh", {
+        email: source.email,
+        userId,
+      });
+
+      try {
+        const refreshed = await refreshAccessToken(credentials);
+
+        if (!refreshed.access_token || !refreshed.expires_at) {
+          logger.warn("Token refresh returned incomplete data", {
+            email: source.email,
+          });
+          continue;
+        }
+
+        const updatedCredentials = {
+          ...credentials,
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token ?? credentials.refreshToken,
+          expiresAt: refreshed.expires_at,
+        };
+
+        await this.admin.schema("private").rpc("upsert_mining_source", {
+          _user_id: userId,
+          _email: source.email,
+          _type: source.type,
+          _credentials: JSON.stringify(updatedCredentials),
+          _encryption_key: this.encryptionKey,
+        });
+
+        source.credentials = updatedCredentials;
+        refreshedEmails.push(source.email);
+
+        logger.info("Token refreshed successfully", { email: source.email });
+      } catch (error) {
+        logger.error("Failed to refresh token", {
+          email: source.email,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return refreshedEmails;
+  }
+
+  private buildSuccessResponse(
+    sources: MiningSource[],
+    refreshedEmails: string[],
+  ): Response {
     const response = {
       sources: sources.map((s) => ({
         email: s.email,
@@ -229,13 +268,40 @@ Deno.serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    const err = error as Error;
-    Logger.error(err.message, { stack: err.stack });
+  }
 
-    return new Response(JSON.stringify({ error: err.message }), {
+  private handleError(error: unknown): Response {
+    if (error instanceof AuthError) {
+      logger.warn("Authentication failed", { error: error.message });
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (error instanceof ValidationError) {
+      logger.warn("Validation failed", { error: error.message });
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
+    logger.error("Request failed", {
+      error: message,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+}
+
+Deno.serve(async (req: Request) => {
+  const handler = new FetchMiningSourceHandler();
+  return handler.handle(req);
 });
