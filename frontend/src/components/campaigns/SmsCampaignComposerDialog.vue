@@ -150,11 +150,29 @@ const providerOptions = [
   { label: 'SMSGate', value: 'smsgate' },
 ];
 
-const DAILY_LIMIT = 200;
-const MONTHLY_LIMIT = 200;
+const quotaInfo = ref({
+  dailyLimit: 200,
+  monthlyLimit: 200,
+  remainingDaily: 200,
+  remainingMonthly: 200,
+});
 
-const dailyLimit = DAILY_LIMIT;
-const monthlyLimit = MONTHLY_LIMIT;
+const dailyLimit = computed(() => quotaInfo.value.dailyLimit);
+const monthlyLimit = computed(() => quotaInfo.value.monthlyLimit);
+
+async function fetchQuota() {
+  try {
+    const response = await $saasEdgeFunctions('sms-campaigns/quota', {
+      method: 'GET',
+    });
+    if (response.ok) {
+      const data = await response.json();
+      quotaInfo.value = data;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch quota:', error);
+  }
+}
 
 const form = reactive({
   senderPhone: '',
@@ -342,6 +360,7 @@ const resetForm = () => {
 
 const onDialogShow = () => {
   updateCharCount();
+  fetchQuota();
 };
 
 const onDialogHide = () => {

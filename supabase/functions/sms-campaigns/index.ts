@@ -65,6 +65,54 @@ app.options("*", () => new Response("ok", { headers: corsHeaders }));
 
 app.get("/health", (c) => c.json({ status: "ok", service: functionName }));
 
+app.get("/quota", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const quota = getSmsQuota();
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const now = new Date();
+  const userTimezone = "UTC";
+  const dayStart = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+  dayStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const { data: recentCampaigns } = await supabaseAdmin
+    .schema("private")
+    .from("sms_campaigns")
+    .select("id, created_at, recipient_count, sent_count")
+    .eq("user_id", user.id)
+    .gte("created_at", monthStart.toISOString());
+
+  const monthlyRecipientTotal = (recentCampaigns || []).reduce(
+    (sum, c) => sum + (c.recipient_count || 0),
+    0,
+  );
+
+  const dailyCampaigns = (recentCampaigns || []).filter(
+    (c) => new Date(c.created_at) >= dayStart,
+  );
+  const dailySmsTotal = dailyCampaigns.reduce(
+    (sum, c) => sum + (c.sent_count || 0),
+    0,
+  );
+
+  const effectiveDailyLimit = quota.dailyLimit === 0 ? Infinity : quota.dailyLimit;
+  const effectiveMonthlyLimit = quota.monthlyRecipientLimit === 0 ? Infinity : quota.monthlyRecipientLimit;
+
+  return c.json({
+    dailyLimit: effectiveDailyLimit,
+    monthlyLimit: effectiveMonthlyLimit,
+    usedDaily: dailySmsTotal,
+    usedMonthly: monthlyRecipientTotal,
+    remainingDaily: Math.max(0, effectiveDailyLimit - dailySmsTotal),
+    remainingMonthly: Math.max(0, effectiveMonthlyLimit - monthlyRecipientTotal),
+  });
+});
+
 function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
