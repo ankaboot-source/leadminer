@@ -537,7 +537,11 @@ function withBearer(token: string): string {
   return token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`;
 }
 
-async function getUserMiningSources(authorization: string, userId?: string) {
+async function getUserMiningSources(
+  authorization: string,
+  userId?: string,
+  refreshEmail?: string,
+) {
   const response = await fetch(
     `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
     {
@@ -546,7 +550,10 @@ async function getUserMiningSources(authorization: string, userId?: string) {
         "Content-Type": "application/json",
         Authorization: withBearer(authorization),
       },
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({
+        user_id: userId,
+        refresh_email: refreshEmail,
+      }),
     },
   );
 
@@ -707,10 +714,59 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       options.push({ email: source.email, available: true });
       transportBySender[source.email] = transport;
     } catch (error) {
+      const errorMessage = getUserFriendlyError(error);
+      const isOAuthError =
+        /oauth|authentication|invalid credentials|invalid credentials or expired token/i.test(
+          errorMessage,
+        );
+
+      if (
+        isOAuthError &&
+        (source.type === "google" || source.type === "azure")
+      ) {
+        logger.info("OAuth error, attempting forced token refresh", {
+          email: source.email,
+          type: source.type,
+        });
+
+        try {
+          const refreshedSources = await getUserMiningSources(
+            authorization,
+            undefined,
+            source.email,
+          );
+          const refreshedSource = refreshedSources.find(
+            (s) => s.email.toLowerCase() === source.email.toLowerCase(),
+          );
+
+          if (refreshedSource) {
+            const retryTransport = await buildUserTransport(
+              source.email,
+              refreshedSource.credentials,
+            );
+            await verifyTransport(retryTransport);
+            logger.info("Token refresh succeeded after OAuth failure", {
+              email: source.email,
+            });
+            options.push({ email: source.email, available: true });
+            transportBySender[source.email] = retryTransport;
+            continue;
+          }
+        } catch (refreshError) {
+          logger.warn("Token refresh failed after OAuth error", {
+            email: source.email,
+            error:
+              refreshError instanceof Error
+                ? refreshError.message
+                : String(refreshError),
+          });
+        }
+      }
+
       options.push({
         email: source.email,
         available: false,
-        reason: getUserFriendlyError(error),
+        reason: errorMessage,
       });
     }
   }

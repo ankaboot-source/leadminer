@@ -1074,6 +1074,7 @@ async function submit() {
     });
 
     $toast.add({
+      group: 'has-links',
       severity: 'success',
       summary: t('campaign_started'),
       detail: {

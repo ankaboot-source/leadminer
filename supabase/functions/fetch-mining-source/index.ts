@@ -29,6 +29,7 @@ const REFRESH_BUFFER_MS = 1000;
 const RequestSchema = z.object({
   email: z.string().email().optional(),
   user_id: z.string().uuid().optional(),
+  refresh_email: z.string().email().optional(),
 });
 
 type RequestBody = z.infer<typeof RequestSchema>;
@@ -100,7 +101,11 @@ class FetchMiningSourceHandler {
       let sources = await this.fetchSources(userId);
       sources = FetchMiningSourceHandler.filterByEmail(sources, body.email);
 
-      const refreshedEmails = await this.refreshTokensIfNeeded(sources, userId);
+      const refreshedEmails = await this.refreshTokensIfNeeded(
+        sources,
+        userId,
+        body.refresh_email,
+      );
 
       return FetchMiningSourceHandler.buildSuccessResponse(
         sources,
@@ -198,22 +203,31 @@ class FetchMiningSourceHandler {
   private async refreshTokensIfNeeded(
     sources: MiningSource[],
     userId: string,
+    forceRefreshEmail?: string,
   ): Promise<string[]> {
     const refreshedEmails: string[] = [];
     const nowMs = Date.now();
+
+    const forceRefreshSet = forceRefreshEmail
+      ? new Set(forceRefreshEmail.toLowerCase())
+      : null;
 
     for (const source of sources) {
       if (source.type === "imap") continue;
 
       const credentials = source.credentials as OAuthMiningSourceCredentials;
+      const shouldRefresh =
+        forceRefreshSet?.has(source.email.toLowerCase()) ||
+        isTokenExpired(credentials, nowMs + REFRESH_BUFFER_MS);
 
-      if (!isTokenExpired(credentials, nowMs + REFRESH_BUFFER_MS)) {
+      if (!shouldRefresh) {
         continue;
       }
 
-      logger.info("Token expired, attempting refresh", {
+      logger.info("Token expired or forced refresh, attempting refresh", {
         email: source.email,
         userId,
+        forced: !!forceRefreshSet?.has(source.email.toLowerCase()),
       });
 
       try {
