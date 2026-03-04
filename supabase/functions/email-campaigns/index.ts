@@ -35,7 +35,7 @@ const CAMPAIGN_COMPLIANCE_FOOTER = (
   ""
 ).trim();
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
-  Deno.env.get(key)
+  Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
@@ -229,21 +229,24 @@ function getSmtpResponseCode(error: unknown): number | null {
 
 function getErrorText(error: unknown): string {
   const message = extractErrorMessage(error);
-  const response = typeof error === "object" && error && "response" in error
-    ? String(error.response || "")
-    : "";
-  const code = typeof error === "object" && error && "code" in error
-    ? String(error.code || "")
-    : "";
+  const response =
+    typeof error === "object" && error && "response" in error
+      ? String(error.response || "")
+      : "";
+  const code =
+    typeof error === "object" && error && "code" in error
+      ? String(error.code || "")
+      : "";
 
   return `${message} ${response} ${code}`.trim().toLowerCase();
 }
 
 function classifyBounceType(error: unknown): BounceType {
   const smtpCode = getSmtpResponseCode(error);
-  const technicalCode = typeof error === "object" && error && "code" in error
-    ? String(error.code || "").toUpperCase()
-    : "";
+  const technicalCode =
+    typeof error === "object" && error && "code" in error
+      ? String(error.code || "").toUpperCase()
+      : "";
   const text = getErrorText(error);
 
   const technicalCodes = new Set([
@@ -262,20 +265,18 @@ function classifyBounceType(error: unknown): BounceType {
 
   if (
     /5\.[0-9]\.[0-9]/.test(text) ||
-    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/
-      .test(
-        text,
-      )
+    /user unknown|unknown user|no such user|mailbox unavailable|invalid recipient|recipient address rejected|account does not exist|doesn'?t exist/.test(
+      text,
+    )
   ) {
     return "hard";
   }
 
   if (
     /4\.[0-9]\.[0-9]/.test(text) ||
-    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/
-      .test(
-        text,
-      )
+    /mailbox full|quota|temporar|greylist|try again|throttl|rate limit|too many requests|resources temporarily unavailable/.test(
+      text,
+    )
   ) {
     return "soft";
   }
@@ -432,8 +433,7 @@ function ensureUnsubscribeHtml(
   unsubscribeUrl: string,
 ): string {
   const normalized = footerHtml.trim();
-  const link =
-    `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
+  const link = `<p><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">${UNSUBSCRIBE_TEXT_SUFFIX}</a></p>`;
 
   if (!normalized) {
     return link;
@@ -508,8 +508,8 @@ function getCurrentUtcDayStart(): string {
 function getTodayUtcStartString(): string {
   const now = new Date();
   const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(now.getUTCDate()).padStart(2, '0');
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}T00:00:00.000Z`;
 }
 
@@ -534,9 +534,7 @@ async function getAuthenticatedUser(c: Context) {
 
 function withBearer(token: string): string {
   if (!token) return token;
-  return token.toLowerCase().startsWith('bearer ')
-    ? token
-    : `Bearer ${token}`;
+  return token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`;
 }
 
 async function getUserMiningSources(authorization: string, userId?: string) {
@@ -548,7 +546,7 @@ async function getUserMiningSources(authorization: string, userId?: string) {
         "Content-Type": "application/json",
         Authorization: withBearer(authorization),
       },
-      body: JSON.stringify({ email: "all", user_id:userId }),
+      body: JSON.stringify({ user_id: userId }),
     },
   );
 
@@ -559,7 +557,7 @@ async function getUserMiningSources(authorization: string, userId?: string) {
     );
   }
 
-  const result = await response.json() as {
+  const result = (await response.json()) as {
     sources: {
       email: string;
       type: string;
@@ -870,7 +868,7 @@ function filterEligibleContacts(
   onlyValidContacts: boolean,
 ) {
   return contacts.filter((contact) =>
-    isContactEligible(contact, onlyValidContacts)
+    isContactEligible(contact, onlyValidContacts),
   );
 }
 
@@ -987,8 +985,7 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl =
-        `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -1002,10 +999,8 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl =
-      `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
-    updatedHtml +=
-      `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
+    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
   return updatedHtml;
@@ -1062,9 +1057,8 @@ async function finalizeCampaignStatusIfDone(
     return;
   }
 
-  const finalStatus: CampaignStatus = sentCount === 0 && failedCount > 0
-    ? "failed"
-    : "completed";
+  const finalStatus: CampaignStatus =
+    sentCount === 0 && failedCount > 0 ? "failed" : "completed";
 
   await setCampaignStatus(supabaseAdmin, campaignId, finalStatus);
 }
@@ -1678,7 +1672,10 @@ app.post(
 
       let senderTransport: Transport | undefined;
       if (campaign.sender_email !== fallbackSenderEmail) {
-        const sources = await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY, campaign.user_id);
+        const sources = await getUserMiningSources(
+          SUPABASE_SERVICE_ROLE_KEY,
+          campaign.user_id,
+        );
         const sourceAsCredential = sources.find(
           (row: { email: string }) => row.email === campaign.sender_email,
         );
@@ -1802,7 +1799,8 @@ app.post(
           subjectTemplate: campaign.subject,
           bodyHtmlTemplate: campaign.body_html_template || "",
           bodyTextTemplate: campaign.body_text_template || "",
-          footerTextTemplate: campaign.footer_text_template ||
+          footerTextTemplate:
+            campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
           unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
@@ -1815,23 +1813,23 @@ app.post(
           htmlWithTracking = campaign.plain_text_only
             ? htmlWithTracking
             : await injectTrackers(
-              supabaseAdmin,
-              campaign.id,
-              recipient.id,
-              recipient.open_token,
-              bodyHtml,
-              campaign.track_click,
-              campaign.track_open,
-            );
+                supabaseAdmin,
+                campaign.id,
+                recipient.id,
+                recipient.open_token,
+                bodyHtml,
+                campaign.track_click,
+                campaign.track_open,
+              );
 
           const finalHtml = campaign.plain_text_only
             ? ""
             : htmlWithTracking + footerHtml;
 
           await sendEmail(recipient.contact_email, renderedSubject, finalHtml, {
-            from: `"${
-              escapeHtml(campaign.sender_name)
-            }" <${campaign.sender_email}>`,
+            from: `"${escapeHtml(
+              campaign.sender_name,
+            )}" <${campaign.sender_email}>`,
             replyTo: campaign.reply_to,
             text,
             transport: senderTransport,
@@ -1873,11 +1871,11 @@ app.post(
           if (canRetryAuth) {
             try {
               // re-fetch oauth central edge-function will handle refresh
-              const sourceForRetry =
-                (await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY))?.find(
-                  (row: { email: string }) =>
-                    row.email === campaign.sender_email,
-                );
+              const sourceForRetry = (
+                await getUserMiningSources(SUPABASE_SERVICE_ROLE_KEY)
+              )?.find(
+                (row: { email: string }) => row.email === campaign.sender_email,
+              );
 
               if (!sourceForRetry) {
                 throw new Error("");
@@ -1896,9 +1894,9 @@ app.post(
                   renderedSubject,
                   campaign.plain_text_only ? "" : htmlWithTracking,
                   {
-                    from: `"${
-                      escapeHtml(campaign.sender_name)
-                    }" <${campaign.sender_email}>`,
+                    from: `"${escapeHtml(
+                      campaign.sender_name,
+                    )}" <${campaign.sender_email}>`,
                     replyTo: campaign.reply_to,
                     text,
                     transport: senderTransport,
@@ -1932,9 +1930,10 @@ app.post(
               // Refresh failed, fall through to regular error handling
               logger.error("Token refresh failed during retry", {
                 senderEmail: campaign.sender_email,
-                error: retryError instanceof Error
-                  ? retryError.message
-                  : String(retryError),
+                error:
+                  retryError instanceof Error
+                    ? retryError.message
+                    : String(retryError),
               });
             }
           }
@@ -2050,9 +2049,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   }
 
   const successUrl = senderEmail
-    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${
-      encodeURIComponent(senderEmail)
-    }`
+    ? `${FRONTEND_HOST}/unsubscribe/success?sender=${encodeURIComponent(
+        senderEmail,
+      )}`
     : `${FRONTEND_HOST}/unsubscribe/success`;
 
   return new Response(null, {
@@ -2145,8 +2144,7 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
     );
   }
   const safeUserEmail = escapeHtml(auth.user.email as string);
-  const html =
-    `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
+  const html = `<p>The user ${safeUserEmail} wants to send an email campaign to ${contactsCount} contacts</p>`;
 
   try {
     await sendEmail(fallbackSenderEmail, subject, html, {
@@ -2213,12 +2211,13 @@ async function sendOAuthFailureNotification(
   }[language];
 
   const bodyContent = `
-    <p>${
-    i18n.intro.replace("{campaignSubject}", escapeHtml(campaignSubject))
-  }</p>
+    <p>${i18n.intro.replace(
+      "{campaignSubject}",
+      escapeHtml(campaignSubject),
+    )}</p>
     <p><strong>${i18n.reason_label}</strong> ${
-    reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid
-  }</p>
+      reasonKey === "expired" ? i18n.reason_expired : i18n.reason_invalid
+    }</p>
     <p><strong>${i18n.steps_title}</strong></p>
     <ol>
       <li>${i18n.step1}</li>
