@@ -375,7 +375,18 @@ function toHtmlFromText(template: string): string {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  return `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/u/${token}`;
+}
+
+function buildOpenTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/o/${token}`;
+}
+
+function buildClickTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/c/${token}`;
 }
 
 async function triggerCampaignProcessorFromEdge() {
@@ -1041,7 +1052,7 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl = buildClickTrackingUrl(token);
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -1055,7 +1066,7 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    const pixelUrl = buildOpenTrackingUrl(openToken);
     updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
@@ -2174,7 +2185,13 @@ app.get("/track/click/:token", async (c: Context) => {
     url: link.url,
   });
 
-  return c.redirect(link.url, 302);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      ...corsHeaders,
+      Location: link.url,
+    },
+  });
 });
 
 app.post("/email-sending-request", authMiddleware, async (c: Context) => {
