@@ -1,0 +1,96 @@
+-- Standardize edge function invocation using vault.decrypted_secrets
+-- Fixes missing service_role_key in auth headers
+
+-- ============================================================================
+-- 1. Fix invoke_edge_function to retrieve from vault and include auth headers
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION invoke_edge_function(
+    edge_function_name TEXT,
+    body JSONB DEFAULT '{}'::jsonb
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    project_url TEXT;
+    service_role_key TEXT;
+    response JSONB;
+BEGIN
+    -- Get credentials from vault
+    SELECT decrypted_secret INTO project_url
+    FROM vault.decrypted_secrets
+    WHERE name = 'project_url';
+
+    SELECT decrypted_secret INTO service_role_key
+    FROM vault.decrypted_secrets
+    WHERE name = 'service_role_key';
+
+    IF project_url IS NULL OR service_role_key IS NULL THEN
+        RAISE EXCEPTION 'Missing vault secrets: project_url or service_role_key';
+    END IF;
+
+    response := net.http_post(
+        url := project_url || '/functions/v1/' || edge_function_name,
+        headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'Authorization', 'Bearer ' || service_role_key,
+            'apikey', service_role_key
+        ),
+        body := body
+    );
+
+    RETURN response;
+END;
+$$;
+
+-- ============================================================================
+-- 2. Refactor trigger_email_campaign_processor to use invoke_edge_function
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION private.trigger_email_campaign_processor()
+RETURNS VOID
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+    PERFORM invoke_edge_function('email-campaigns/campaigns/process');
+END;
+$$;
+
+-- ============================================================================
+-- 3. Refactor weekly passive report to use invoke_edge_function
+-- ============================================================================
+
+-- Unschedule the old cron job
+SELECT cron.unschedule('weekly-passive-mining-reports');
+
+-- Reschedule with new implementation using invoke_edge_function
+SELECT cron.schedule(
+    'weekly-passive-mining-reports',
+    '0 9 * * 1', -- Monday at 9:00 AM
+    $$
+    SELECT invoke_edge_function(
+        'mail/send-weekly-passive-mining-reports',
+        jsonb_build_object('weekStart', (CURRENT_DATE - INTERVAL '7 days')::TEXT)
+    );
+    $$
+);
+
+-- ============================================================================
+-- 4. Update passive mining cron job to use invoke_edge_function correctly
+-- ============================================================================
+
+-- Unschedule the old cron job
+SELECT cron.unschedule('passive-cron-job');
+
+-- Reschedule with correct invoke_edge_function usage
+SELECT cron.schedule(
+    'passive-cron-job',
+    '0 2 * * *', -- At 02:00 AM
+    $$
+    SELECT invoke_edge_function('passive-mining');
+    $$
+);
