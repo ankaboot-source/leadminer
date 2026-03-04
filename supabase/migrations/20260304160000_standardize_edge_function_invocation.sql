@@ -83,7 +83,7 @@ SELECT cron.schedule(
 -- 4. Update passive mining cron job to use invoke_edge_function correctly
 -- ============================================================================
 
-DO $$
+DO $do$
 BEGIN
     IF EXISTS (
         SELECT 1
@@ -108,9 +108,9 @@ BEGIN
     PERFORM cron.schedule(
         'passive-cron-job',
         '0 2 * * *', -- At 02:00 AM
-        $$
+        $cron$
         SELECT invoke_edge_function('passive-mining');
-        $$
+        $cron$
     );
 END
-$$;
+$do$;
