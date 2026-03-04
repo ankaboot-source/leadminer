@@ -1,5 +1,6 @@
 {
   "imports": {
-    "simple-oauth2": "npm:simple-oauth2@latest"
+    "simple-oauth2": "npm:simple-oauth2@latest",
+    "zod": "https://deno.land/x/zod@v3.23.8/mod.ts"
   }
 }
