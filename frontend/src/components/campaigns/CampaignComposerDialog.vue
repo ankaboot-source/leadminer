@@ -345,6 +345,7 @@
 <script setup lang="ts">
 import type { Contact } from '@/types/contact';
 import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
+import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
@@ -357,6 +358,7 @@ const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $screenStore = useScreenStore();
+const $leadminer = useLeadminerStore();
 const $toast = useToast();
 const $user = useSupabaseUser();
 
@@ -936,6 +938,11 @@ async function loadSenderOptions() {
         life: 6500,
       });
     }
+
+    $leadminer.miningSources = updateMiningSourcesValidityFromUnavailable(
+      $leadminer.miningSources,
+      unavailableEmails,
+    );
 
     senderOptions.value = allOptions
       .filter((option) => option.available)
