@@ -243,7 +243,7 @@ function getIcon(type: string) {
 function isActiveMiningSource(source: MiningSource): boolean {
   return Boolean(
     $leadminer.activeMiningSource?.email === source.email &&
-      $leadminer.miningTask,
+    $leadminer.miningTask,
   );
 }
 
