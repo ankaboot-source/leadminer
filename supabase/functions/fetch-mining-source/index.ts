@@ -8,7 +8,7 @@
  * DO NOT expose this function to end users or untrusted clients.
  */
 import { z } from "zod";
-import * as crypto from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import {
@@ -56,7 +56,7 @@ function timingSafeCompare(a: string, b: string): boolean {
     return false;
   }
 
-  return crypto.timingSafeEqual(aBytes, bBytes);
+  return timingSafeEqual(aBytes, bBytes);
 }
 
 function isServiceKey(authHeader: string, serviceKey: string): boolean {
@@ -91,24 +91,29 @@ class FetchMiningSourceHandler {
     }
 
     try {
-      const body = await this.parseAndValidateBody(req);
+      const body = await FetchMiningSourceHandler.parseAndValidateBody(req);
       const authHeader = req.headers.get("Authorization");
       const userId = await this.resolveUserId(authHeader, body.user_id);
 
       logger.info("Fetching mining sources", { userId });
 
       let sources = await this.fetchSources(userId);
-      sources = this.filterByEmail(sources, body.email);
+      sources = FetchMiningSourceHandler.filterByEmail(sources, body.email);
 
       const refreshedEmails = await this.refreshTokensIfNeeded(sources, userId);
 
-      return this.buildSuccessResponse(sources, refreshedEmails);
+      return FetchMiningSourceHandler.buildSuccessResponse(
+        sources,
+        refreshedEmails,
+      );
     } catch (error) {
-      return this.handleError(error);
+      return FetchMiningSourceHandler.handleError(error);
     }
   }
 
-  private async parseAndValidateBody(req: Request): Promise<RequestBody> {
+  private static async parseAndValidateBody(
+    req: Request,
+  ): Promise<RequestBody> {
     let rawBody: unknown;
 
     try {
@@ -178,7 +183,7 @@ class FetchMiningSourceHandler {
     return (data ?? []) as MiningSource[];
   }
 
-  private filterByEmail(
+  private static filterByEmail(
     sources: MiningSource[],
     emailFilter?: string,
   ): MiningSource[] {
@@ -251,7 +256,7 @@ class FetchMiningSourceHandler {
     return refreshedEmails;
   }
 
-  private buildSuccessResponse(
+  private static buildSuccessResponse(
     sources: MiningSource[],
     refreshedEmails: string[],
   ): Response {
@@ -270,7 +275,7 @@ class FetchMiningSourceHandler {
     });
   }
 
-  private handleError(error: unknown): Response {
+  private static handleError(error: unknown): Response {
     if (error instanceof AuthError) {
       logger.warn("Authentication failed", { error: error.message });
       return new Response(JSON.stringify({ error: error.message }), {
@@ -301,7 +306,7 @@ class FetchMiningSourceHandler {
   }
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve((req: Request) => {
   const handler = new FetchMiningSourceHandler();
   return handler.handle(req);
 });
