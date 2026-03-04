@@ -311,5 +311,51 @@ When creating implementation plans:
 
 1. Save them to `docs/plans/YYYY-MM-DD-<feature-name>.md`
 2. Keep them local - do not commit to git
-3. Use them for local reference during development
+3. Use them for local development reference during development
 4. Delete them once the feature is complete if desired
+
+## Quality Assurance
+
+**MANDATORY:** After committing and pushing changes to remote branch (or creating a PR), you MUST use the deepsource-check skill:
+
+```
+Use skill: deepsource-check
+```
+
+**Workflow:**
+
+1. Complete your work and commit changes
+2. Push to remote branch
+3. Run deepsource-check skill to scan for issues
+4. Fix any issues found
+5. Commit and push fixes
+6. Repeat until clean
+
+This skill will:
+
+- Verify DeepSource CLI is installed
+- Prompt user for authentication (first time only)
+- Scan issues in your changes (via branch or PR)
+- Guide you through fixing each issue
+- Verify fixes by re-running scans
+
+**Run deepsource-check AFTER committing and pushing, not before.** This ensures DeepSource has analyzed your code and you can fix issues before code review.
+
+### Quick Reference
+
+```bash
+# Complete your work, then:
+git add .
+git commit -m "feat: your feature"
+git push origin your-branch-name
+
+# Then run deepsource-check (or use PR number if created)
+deepsource issues --pr <NUMBER> --output json
+```
+
+deepsource issues --severity critical --output json
+deepsource issues --severity major --output json
+
+```
+
+```
