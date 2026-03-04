@@ -8,7 +8,6 @@
  * DO NOT expose this function to end users or untrusted clients.
  */
 import { z } from "zod";
-// skipcq: JS-C1003 - node:crypto requires wildcard import for full crypto API in Deno
 import * as crypto from "node:crypto";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
@@ -109,7 +108,6 @@ class FetchMiningSourceHandler {
     }
   }
 
-  // skipcq: JS-0105 - Helper method, doesn't need to access class instance
   private async parseAndValidateBody(req: Request): Promise<RequestBody> {
     let rawBody: unknown;
 
@@ -180,7 +178,6 @@ class FetchMiningSourceHandler {
     return (data ?? []) as MiningSource[];
   }
 
-  // skipcq: JS-0105 - Helper method, doesn't need to access class instance
   private filterByEmail(
     sources: MiningSource[],
     emailFilter?: string,
@@ -254,7 +251,6 @@ class FetchMiningSourceHandler {
     return refreshedEmails;
   }
 
-  // skipcq: JS-0105 - Helper method, doesn't need to access class instance
   private buildSuccessResponse(
     sources: MiningSource[],
     refreshedEmails: string[],
@@ -274,7 +270,6 @@ class FetchMiningSourceHandler {
     });
   }
 
-  // skipcq: JS-0105 - Error handler method
   private handleError(error: unknown): Response {
     if (error instanceof AuthError) {
       logger.warn("Authentication failed", { error: error.message });
@@ -306,7 +301,6 @@ class FetchMiningSourceHandler {
   }
 }
 
-// skipcq: JS-0116 - Deno.serve requires async handler, await not needed here
 Deno.serve(async (req: Request) => {
   const handler = new FetchMiningSourceHandler();
   return handler.handle(req);
