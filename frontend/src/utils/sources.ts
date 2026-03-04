@@ -22,6 +22,20 @@ export function updateMiningSourcesValidity(
   return miningSources.map(updateValidity);
 }
 
+export function updateMiningSourcesValidityFromUnavailable(
+  miningSources: MiningSource[],
+  unavailableEmails: string[],
+) {
+  const unavailableSet = new Set(
+    unavailableEmails.map((email) => email.toLowerCase()),
+  );
+
+  return miningSources.map((source) => ({
+    ...source,
+    isValid: !unavailableSet.has(source.email.toLowerCase()),
+  }));
+}
+
 export async function getMiningSources(): Promise<MiningSource[]> {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
