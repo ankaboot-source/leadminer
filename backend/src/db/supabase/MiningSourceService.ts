@@ -30,8 +30,7 @@ export class MiningSourceService implements MiningSources {
       {
         method: 'POST',
         body: {
-          email: email ?? 'all',
-          mode: 'service',
+          ...(email && { email }),
           user_id: userId
         }
       }
