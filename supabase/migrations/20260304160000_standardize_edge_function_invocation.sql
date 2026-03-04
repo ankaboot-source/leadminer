@@ -83,14 +83,34 @@ SELECT cron.schedule(
 -- 4. Update passive mining cron job to use invoke_edge_function correctly
 -- ============================================================================
 
--- Unschedule the old cron job
-SELECT cron.unschedule('passive-cron-job');
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM cron.job
+        WHERE jobname = 'passive-cron-job'
+          AND schedule = '0 2 * * *'
+          AND regexp_replace(command, '\s+', ' ', 'g')
+            LIKE '%SELECT invoke_edge_function(''passive-mining'');%'
+    ) THEN
+        RAISE NOTICE 'passive-cron-job already configured, skipping';
+        RETURN;
+    END IF;
 
--- Reschedule with correct invoke_edge_function usage
-SELECT cron.schedule(
-    'passive-cron-job',
-    '0 2 * * *', -- At 02:00 AM
-    $$
-    SELECT invoke_edge_function('passive-mining');
-    $$
-);
+    BEGIN
+        PERFORM cron.unschedule(jobid)
+        FROM cron.job
+        WHERE jobname = 'passive-cron-job';
+    EXCEPTION WHEN OTHERS THEN
+        DELETE FROM cron.job WHERE jobname = 'passive-cron-job';
+    END;
+
+    PERFORM cron.schedule(
+        'passive-cron-job',
+        '0 2 * * *', -- At 02:00 AM
+        $$
+        SELECT invoke_edge_function('passive-mining');
+        $$
+    );
+END
+$$;
