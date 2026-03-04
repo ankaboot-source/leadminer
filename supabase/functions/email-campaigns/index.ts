@@ -10,6 +10,7 @@ import { normalizeEmail } from "../_shared/email.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
+import { buildRedirectResponse } from "../_shared/http.ts";
 import {
   getSenderCredentialIssue,
   isTokenExpired,
@@ -2050,13 +2051,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   if (token === "preview-unsubscribe") {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
-      },
-    });
+    return buildRedirectResponse(
+      `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
+    );
   }
 
   const { data: recipient, error } = await supabaseAdmin
@@ -2067,13 +2064,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     .single();
 
   if (error || !recipient) {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/failure`,
-      },
-    });
+    return buildRedirectResponse(`${FRONTEND_HOST}/unsubscribe/failure`);
   }
 
   await supabaseAdmin
@@ -2121,13 +2112,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       )}`
     : `${FRONTEND_HOST}/unsubscribe/success`;
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...corsHeaders,
-      Location: successUrl,
-    },
-  });
+  return buildRedirectResponse(successUrl);
 });
 
 app.get("/track/open/:token", async (c: Context) => {
@@ -2185,13 +2170,7 @@ app.get("/track/click/:token", async (c: Context) => {
     url: link.url,
   });
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...corsHeaders,
-      Location: link.url,
-    },
-  });
+  return buildRedirectResponse(link.url);
 });
 
 app.post("/email-sending-request", authMiddleware, async (c: Context) => {
