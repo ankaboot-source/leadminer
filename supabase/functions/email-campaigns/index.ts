@@ -10,6 +10,7 @@ import { normalizeEmail } from "../_shared/email.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
+import { buildRedirectResponse } from "../_shared/http.ts";
 import {
   getSenderCredentialIssue,
   isTokenExpired,
@@ -375,7 +376,18 @@ function toHtmlFromText(template: string): string {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  return `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/u/${token}`;
+}
+
+function buildOpenTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/o/${token}`;
+}
+
+function buildClickTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/c/${token}`;
 }
 
 async function triggerCampaignProcessorFromEdge() {
@@ -1041,7 +1053,7 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl = buildClickTrackingUrl(token);
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -1055,7 +1067,7 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    const pixelUrl = buildOpenTrackingUrl(openToken);
     updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
@@ -2039,13 +2051,9 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   if (token === "preview-unsubscribe") {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
-      },
-    });
+    return buildRedirectResponse(
+      `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
+    );
   }
 
   const { data: recipient, error } = await supabaseAdmin
@@ -2056,13 +2064,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     .single();
 
   if (error || !recipient) {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/failure`,
-      },
-    });
+    return buildRedirectResponse(`${FRONTEND_HOST}/unsubscribe/failure`);
   }
 
   await supabaseAdmin
@@ -2110,13 +2112,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       )}`
     : `${FRONTEND_HOST}/unsubscribe/success`;
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...corsHeaders,
-      Location: successUrl,
-    },
-  });
+  return buildRedirectResponse(successUrl);
 });
 
 app.get("/track/open/:token", async (c: Context) => {
@@ -2174,7 +2170,7 @@ app.get("/track/click/:token", async (c: Context) => {
     url: link.url,
   });
 
-  return c.redirect(link.url, 302);
+  return buildRedirectResponse(link.url);
 });
 
 app.post("/email-sending-request", authMiddleware, async (c: Context) => {
