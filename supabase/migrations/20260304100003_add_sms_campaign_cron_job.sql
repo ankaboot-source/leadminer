@@ -9,32 +9,22 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  campaign_record RECORD;
   supabase_url TEXT := current_setting('app.settings.supabase_url', true);
   service_role_key TEXT := current_setting('app.settings.service_role_key', true);
-  response TEXT;
 BEGIN
-  FOR campaign_record IN
-    SELECT id
-    FROM private.sms_campaigns
-    WHERE status = 'queued'
-    ORDER BY created_at ASC
-    LIMIT 10
-  LOOP
-    BEGIN
-      response := supabase_http.request(
-        supabase_url || '/functions/v1/sms-campaigns/process',
-        'POST',
-        ARRAY[
-          ('Content-Type', 'application/json'),
-          ('Authorization', 'Bearer ' || service_role_key)
-        ],
-        ('{"campaignId": "' || campaign_record.id::TEXT || '"}')::jsonb
-      );
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Failed to process SMS campaign %: %', campaign_record.id, SQLERRM;
-    END;
-  END LOOP;
+  IF supabase_url IS NULL OR service_role_key IS NULL THEN
+    RETURN;
+  END IF;
+
+  PERFORM net.http_post(
+    url := supabase_url || '/functions/v1/sms-campaigns/process',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || service_role_key,
+      'apikey', service_role_key
+    ),
+    body := '{}'::jsonb
+  );
 END;
 $$;
 

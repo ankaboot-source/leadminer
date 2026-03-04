@@ -7,17 +7,17 @@ import { createSmsProvider } from "./providers/mod.ts";
 import type { SendSmsResult } from "./providers/types.ts";
 import { getSmsQuota, getLocalTimeBounds } from "./utils/quota.ts";
 import { shortenUrl } from "./utils/short-link.ts";
+import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
+import { estimateSmsSegments } from "./utils/sms-segments.ts";
 
 const logger = createLogger("sms-campaigns");
 
 const functionName = "sms-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) => Deno.env.get(key));
 
-type SmsCampaignStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
 type SmsCampaignCreatePayload = {
@@ -27,7 +27,6 @@ type SmsCampaignCreatePayload = {
   provider: "twilio" | "smsgate";
   messageTemplate: string;
   useShortLinks?: boolean;
-  dailyLimit?: number;
   timezone?: string;
 };
 
@@ -69,16 +68,10 @@ app.get("/quota", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
+  const timezone = c.req.query("timezone") || "UTC";
   const quota = getSmsQuota();
   const supabaseAdmin = createSupabaseAdmin();
-
-  const now = new Date();
-  const userTimezone = "UTC";
-  const dayStart = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
-  dayStart.setHours(0, 0, 0, 0);
-  const monthStart = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
+  const { dayStart, monthStart } = getLocalTimeBounds(timezone);
 
   const { data: recentCampaigns } = await supabaseAdmin
     .schema("private")
@@ -100,16 +93,20 @@ app.get("/quota", authMiddleware, async (c: Context) => {
     0,
   );
 
-  const effectiveDailyLimit = quota.dailyLimit === 0 ? Infinity : quota.dailyLimit;
-  const effectiveMonthlyLimit = quota.monthlyRecipientLimit === 0 ? Infinity : quota.monthlyRecipientLimit;
+  const dailyLimit = quota.dailyLimit;
+  const monthlyLimit = quota.monthlyRecipientLimit;
+  const remainingDaily =
+    dailyLimit === 0 ? null : Math.max(0, dailyLimit - dailySmsTotal);
+  const remainingMonthly =
+    monthlyLimit === 0 ? null : Math.max(0, monthlyLimit - monthlyRecipientTotal);
 
   return c.json({
-    dailyLimit: effectiveDailyLimit,
-    monthlyLimit: effectiveMonthlyLimit,
+    dailyLimit,
+    monthlyLimit,
     usedDaily: dailySmsTotal,
     usedMonthly: monthlyRecipientTotal,
-    remainingDaily: Math.max(0, effectiveDailyLimit - dailySmsTotal),
-    remainingMonthly: Math.max(0, effectiveMonthlyLimit - monthlyRecipientTotal),
+    remainingDaily,
+    remainingMonthly,
   });
 });
 
@@ -117,24 +114,6 @@ function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return "Unknown error";
-}
-
-function normalizePhoneNumber(phone: string): string | null {
-  const cleaned = phone.replace(/[\s\-\(\)\.\+]/g, "");
-  const e164Match = cleaned.match(/^\+?(\d{10,15})$/);
-  if (!e164Match) return null;
-  const digits = e164Match[1];
-  if (digits.length >= 10) {
-    return `+${digits}`;
-  }
-  return null;
-}
-
-function isValidPhoneNumber(phone: string | null): boolean {
-  if (!phone) return false;
-  const normalized = normalizePhoneNumber(phone);
-  if (!normalized) return false;
-  return normalized.replace(/\D/g, "").length >= 10;
 }
 
 async function checkSmsQuota(
@@ -264,7 +243,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   logger.info("Creating SMS campaign", { userId: user.id });
 
   const payload = (await c.req.json().catch(() => ({}))) as SmsCampaignCreatePayload;
-  const { selectedPhones, senderName, senderPhone, provider, messageTemplate, useShortLinks, dailyLimit, timezone } = payload;
+  const { selectedPhones, senderName, senderPhone, provider, messageTemplate, useShortLinks, timezone } = payload;
 
   if (!senderName || !senderPhone || !provider || !messageTemplate) {
     return c.json({ error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" }, 400);
@@ -274,7 +253,9 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     return c.json({ error: "No recipients selected", code: "NO_RECIPIENTS" }, 400);
   }
 
-  const validPhones = selectedPhones.filter(isValidPhoneNumber).map(normalizePhoneNumber!);
+  const validPhones = selectedPhones
+    .filter(isValidPhoneNumber)
+    .map((phone) => normalizePhoneNumber(phone) as string);
   const uniquePhones = [...new Set(validPhones)];
 
   if (uniquePhones.length === 0) {
@@ -365,16 +346,13 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     }
   }
 
-  const charCount = previewMessage.length;
-  const isUnicode = /[^\u0000-\u007F]/.test(previewMessage);
-  const maxPerSms = isUnicode ? 70 : 160;
-  const parts = Math.ceil(previewMessage.length / maxPerSms);
+  const segmentEstimate = estimateSmsSegments(previewMessage, false);
 
   return c.json({
     preview: previewMessage,
-    charCount,
-    encoding: isUnicode ? "Unicode" : "GSM-7",
-    parts,
+    charCount: segmentEstimate.charCount,
+    encoding: segmentEstimate.encoding,
+    parts: segmentEstimate.parts,
   });
 });
 
@@ -383,14 +361,13 @@ app.get("/campaigns", authMiddleware, async (c: Context) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const supabaseAdmin = createSupabaseAdmin();
-  const { data, error } = await supabaseAdmin.rpc("get_unified_campaigns_overview");
+  const { data, error } = await supabaseAdmin.rpc("get_sms_campaigns_overview");
 
   if (error) {
     return c.json({ error: extractErrorMessage(error), code: "FETCH_FAILED" }, 500);
   }
 
-  const smsCampaigns = (data || []).filter((row: Record<string, unknown>) => row.channel === "sms");
-  return c.json({ campaigns: smsCampaigns });
+  return c.json({ campaigns: data || [] });
 });
 
 app.get("/campaigns/:id", authMiddleware, async (c: Context) => {
@@ -542,28 +519,48 @@ app.get("/unsubscribe/:token", async (c: Context) => {
 });
 
 app.post("/process", authMiddleware, async (c: Context) => {
-  const user = c.get("user");
-  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const user = c.get("user") as { id: string } | undefined;
+  const authHeader = c.req.header("authorization") || "";
+  const isServiceRole = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  if (!user && !isServiceRole) return c.json({ error: "Unauthorized" }, 401);
 
-  const { campaignId } = (await c.req.json().catch(() => ({}))) as { campaignId?: string };
+  const { campaignId } = (await c.req.json().catch(() => ({}))) as {
+    campaignId?: string;
+  };
 
-  if (!campaignId) {
-    return c.json({ error: "Campaign ID required", code: "MISSING_CAMPAIGN_ID" }, 400);
-  }
-
-  logger.info("Processing SMS campaign", { campaignId, userId: user.id });
+  logger.info("Processing SMS campaign", {
+    campaignId,
+    userId: user?.id,
+    viaServiceRole: isServiceRole,
+  });
 
   const supabaseAdmin = createSupabaseAdmin();
 
-  const { data: campaign, error: fetchError } = await supabaseAdmin
+  let campaignQuery = supabaseAdmin
     .schema("private")
     .from("sms_campaigns")
-    .select("*")
-    .eq("id", campaignId)
-    .eq("user_id", user.id)
-    .single();
+    .select("*");
+
+  if (campaignId) {
+    campaignQuery = campaignQuery.eq("id", campaignId);
+  } else {
+    campaignQuery = campaignQuery.eq("status", "queued").order("created_at", {
+      ascending: true,
+    }).limit(1);
+  }
+
+  const { data: campaignData, error: fetchError } = await campaignQuery;
+  const campaign = Array.isArray(campaignData) ? campaignData[0] : campaignData;
+
+  if (!campaignId && !campaign && !fetchError) {
+    return c.json({ success: true, processed: 0 });
+  }
 
   if (fetchError || !campaign) {
+    return c.json({ error: "Campaign not found", code: "NOT_FOUND" }, 404);
+  }
+
+  if (!isServiceRole && user && campaign.user_id !== user.id) {
     return c.json({ error: "Campaign not found", code: "NOT_FOUND" }, 404);
   }
 
@@ -571,17 +568,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
     return c.json({ error: "Campaign already processed", code: "INVALID_STATUS" }, 400);
   }
 
+  const resolvedCampaignId = campaign.id as string;
+
   await supabaseAdmin
     .schema("private")
     .from("sms_campaigns")
     .update({ status: "processing", started_at: new Date().toISOString() })
-    .eq("id", campaignId);
+    .eq("id", resolvedCampaignId);
 
   const { data: recipients } = await supabaseAdmin
     .schema("private")
     .from("sms_campaign_recipients")
     .select("*")
-    .eq("campaign_id", campaignId)
+    .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
   const smsProvider = createSmsProvider(campaign.provider as "twilio" | "smsgate");
@@ -592,13 +591,13 @@ app.post("/process", authMiddleware, async (c: Context) => {
     try {
       let messageWithTrackers = await injectTrackers(
         supabaseAdmin,
-        campaignId,
+        resolvedCampaignId,
         recipient.id,
         campaign.message_template,
         campaign.use_short_links,
       );
 
-      const unsubscribeToken = generateUnsubscribeToken(user.id, recipient.phone);
+      const unsubscribeToken = generateUnsubscribeToken(campaign.user_id, recipient.phone);
       const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
       messageWithTrackers += `\n\nUnsubscribe me: ${unsubscribeUrl}`;
 
@@ -654,7 +653,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
       failed_count: failedCount,
       completed_at: new Date().toISOString(),
     })
-    .eq("id", campaignId);
+    .eq("id", resolvedCampaignId);
 
   return c.json({ success: true, sentCount, failedCount });
 });

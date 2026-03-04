@@ -16,18 +16,32 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
     isLoading.value = true;
     errorMessage.value = null;
 
-    const { data, error } = await $supabase
+    const { data: emailData, error: emailError } = await $supabase
       .schema('private')
       // @ts-expect-error rpc typing from private schema function
-      .rpc('get_unified_campaigns_overview');
+      .rpc('get_campaigns_overview');
 
-    if (error) {
-      errorMessage.value = error.message;
+    const { data: smsData, error: smsError } = await $supabase
+      .schema('private')
+      // @ts-expect-error rpc typing from private schema function
+      .rpc('get_sms_campaigns_overview');
+
+    if (emailError || smsError) {
+      errorMessage.value = emailError?.message || smsError?.message || null;
       isLoading.value = false;
-      throw error;
+      throw emailError || smsError;
     }
 
-    const mappedCampaigns = ((data ?? []) as Partial<CampaignOverview>[]).map(
+    const emailCampaigns = (emailData ?? []).map((campaign) => ({
+      ...(campaign as Partial<CampaignOverview>),
+      channel: 'email' as const,
+    })) as Partial<CampaignOverview>[];
+    const smsCampaigns = (smsData ?? []).map((campaign) => ({
+      ...(campaign as Partial<CampaignOverview>),
+      channel: 'sms' as const,
+    })) as Partial<CampaignOverview>[];
+
+    const mappedCampaigns = [...emailCampaigns, ...smsCampaigns].map(
       (campaign) => {
         const channel = (campaign.channel as 'email' | 'sms') || 'email';
         
@@ -44,6 +58,14 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
             hard_bounced: 0,
             soft_bounced: 0,
             failed_other: 0,
+            total_recipients: Number(campaign.recipient_count || 0),
+            delivery_rate: 0,
+            opening_rate: 0,
+            clicking_rate: 0,
+            unsubscribe_rate: 0,
+            track_open: false,
+            track_click: true,
+            link_clicks: [],
           };
         }
         
@@ -69,7 +91,12 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
             : [],
         };
       },
-    ) as CampaignOverview[];
+    )
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime(),
+      ) as CampaignOverview[];
 
     const notificationState = computeTerminalCampaignNotifications(
       statusesByCampaignId.value,

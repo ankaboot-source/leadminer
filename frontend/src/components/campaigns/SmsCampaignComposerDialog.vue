@@ -23,7 +23,12 @@
       </Message>
 
       <div class="text-sm text-surface-600">
-        {{ t('sms_limit_note', { dailyLimit: dailyLimit, monthlyLimit: monthlyLimit }) }}
+        {{
+          t('sms_limit_note', {
+            dailyLimit: dailyLimitLabel,
+            monthlyLimit: monthlyLimitLabel,
+          })
+        }}
       </div>
 
       <div class="flex flex-col gap-1">
@@ -159,12 +164,22 @@ const quotaInfo = ref({
 
 const dailyLimit = computed(() => quotaInfo.value.dailyLimit);
 const monthlyLimit = computed(() => quotaInfo.value.monthlyLimit);
+const dailyLimitLabel = computed(() =>
+  dailyLimit.value === 0 ? t('unlimited') : String(dailyLimit.value),
+);
+const monthlyLimitLabel = computed(() =>
+  monthlyLimit.value === 0 ? t('unlimited') : String(monthlyLimit.value),
+);
 
 async function fetchQuota() {
   try {
-    const response = await $saasEdgeFunctions('sms-campaigns/quota', {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const response = await $saasEdgeFunctions(
+      `sms-campaigns/quota?timezone=${encodeURIComponent(timezone)}`,
+      {
       method: 'GET',
-    });
+      },
+    );
     if (response.ok) {
       const data = await response.json();
       quotaInfo.value = data;
@@ -376,6 +391,7 @@ watch(() => form.messageTemplate, updateCharCount);
     "send_sms_campaign": "Send SMS Campaign",
     "sms_gdpr_notice": "SMS campaigns are subject to GDPR and telecommunications regulations. Ensure you have consent.",
     "sms_limit_note": "Daily limit: {dailyLimit} SMS | Monthly recipient limit: {monthlyLimit}",
+    "unlimited": "unlimited",
     "sender_phone": "Sender Phone",
     "sender_phone_placeholder": "+1234567890",
     "sender_phone_required": "Sender phone is required",
@@ -399,6 +415,7 @@ watch(() => form.messageTemplate, updateCharCount);
     "send_sms_campaign": "Envoyer une campagne SMS",
     "sms_gdpr_notice": "Les campagnes SMS sont soumises au RGPD et aux réglementations sur les télécommunications. Assurez-vous d'avoir le consentement.",
     "sms_limit_note": "Limite quotidienne : {dailyLimit} SMS | Limite mensuelle de destinataires : {monthlyLimit}",
+    "unlimited": "illimitée",
     "sender_phone": "Téléphone de l'expéditeur",
     "sender_phone_placeholder": "+33123456789",
     "sender_phone_required": "Le téléphone de l'expéditeur est requis",

@@ -1,81 +1,54 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertExists,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  getLocalTimeBounds,
+  getSmsQuotaFromEnv,
+  parseQuotaValue,
+} from "./quota.ts";
 
-function getEnvQuota(key: string, defaultValue: number): number {
-  const value = Deno.env.get(key);
-  if (!value || value === "") {
-    return defaultValue;
-  }
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed)) {
-    console.warn(`Invalid ${key}, using default: ${defaultValue}`);
-    return defaultValue;
-  }
-  return parsed;
-}
-
-function getSmsQuota(): { dailyLimit: number; monthlyRecipientLimit: number } {
-  return {
-    dailyLimit: getEnvQuota("SMS_CAMPAIGN_DAILY_LIMIT", 200),
-    monthlyRecipientLimit: getEnvQuota("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT", 200),
-  };
-}
-
-function getLocalTimeBounds(timezone: string): { dayStart: Date; monthStart: Date } {
-  const now = new Date();
-  
-  const dayStart = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
-  dayStart.setHours(0, 0, 0, 0);
-  
-  const monthStart = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
-  
-  return { dayStart, monthStart };
-}
-
-Deno.test("getSmsQuota returns defaults when env vars not set", () => {
-  Deno.env.delete("SMS_CAMPAIGN_DAILY_LIMIT");
-  Deno.env.delete("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT");
-  
-  const quota = getSmsQuota();
+Deno.test("getSmsQuotaFromEnv returns defaults when env vars not set", () => {
+  const quota = getSmsQuotaFromEnv(() => undefined);
   assertEquals(quota.dailyLimit, 200);
   assertEquals(quota.monthlyRecipientLimit, 200);
 });
 
-Deno.test("getSmsQuota parses valid env values", () => {
-  Deno.env.set("SMS_CAMPAIGN_DAILY_LIMIT", "500");
-  Deno.env.set("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT", "1000");
-  
-  const quota = getSmsQuota();
+Deno.test("getSmsQuotaFromEnv parses valid env values", () => {
+  const values = {
+    SMS_CAMPAIGN_DAILY_LIMIT: "500",
+    SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT: "1000",
+  } as Record<string, string>;
+  const quota = getSmsQuotaFromEnv((key) => values[key]);
   assertEquals(quota.dailyLimit, 500);
   assertEquals(quota.monthlyRecipientLimit, 1000);
-  
-  Deno.env.delete("SMS_CAMPAIGN_DAILY_LIMIT");
-  Deno.env.delete("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT");
 });
 
-Deno.test("getSmsQuota treats 0 as unlimited", () => {
-  Deno.env.set("SMS_CAMPAIGN_DAILY_LIMIT", "0");
-  Deno.env.set("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT", "0");
-  
-  const quota = getSmsQuota();
+Deno.test("getSmsQuotaFromEnv treats 0 as unlimited", () => {
+  const values = {
+    SMS_CAMPAIGN_DAILY_LIMIT: "0",
+    SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT: "0",
+  } as Record<string, string>;
+  const quota = getSmsQuotaFromEnv((key) => values[key]);
   assertEquals(quota.dailyLimit, 0);
   assertEquals(quota.monthlyRecipientLimit, 0);
-  
-  Deno.env.delete("SMS_CAMPAIGN_DAILY_LIMIT");
-  Deno.env.delete("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT");
 });
 
-Deno.test("getSmsQuota falls back on invalid values", () => {
-  Deno.env.set("SMS_CAMPAIGN_DAILY_LIMIT", "invalid");
-  Deno.env.set("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT", "");
-  
-  const quota = getSmsQuota();
+Deno.test("getSmsQuotaFromEnv falls back on invalid values", () => {
+  const values = {
+    SMS_CAMPAIGN_DAILY_LIMIT: "invalid",
+    SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT: "",
+  } as Record<string, string>;
+  const quota = getSmsQuotaFromEnv((key) => values[key]);
   assertEquals(quota.dailyLimit, 200);
   assertEquals(quota.monthlyRecipientLimit, 200);
-  
-  Deno.env.delete("SMS_CAMPAIGN_DAILY_LIMIT");
-  Deno.env.delete("SMS_CAMPAIGN_MONTHLY_RECIPIENT_LIMIT");
+});
+
+Deno.test("parseQuotaValue returns default for invalid values", () => {
+  assertEquals(parseQuotaValue(undefined, 200), 200);
+  assertEquals(parseQuotaValue("", 200), 200);
+  assertEquals(parseQuotaValue("abc", 200), 200);
+  assertEquals(parseQuotaValue("150", 200), 150);
 });
 
 Deno.test("getLocalTimeBounds returns valid dates", () => {

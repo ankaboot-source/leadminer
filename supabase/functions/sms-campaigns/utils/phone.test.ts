@@ -1,22 +1,5 @@
-import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
-
-function normalizePhoneNumber(phone: string): string | null {
-  const cleaned = phone.replace(/[\s\-\(\)\.\+]/g, "");
-  const e164Match = cleaned.match(/^\+?(\d{10,15})$/);
-  if (!e164Match) return null;
-  const digits = e164Match[1];
-  if (digits.length >= 10) {
-    return `+${digits}`;
-  }
-  return null;
-}
-
-function isValidPhoneNumber(phone: string | null): boolean {
-  if (!phone) return false;
-  const normalized = normalizePhoneNumber(phone);
-  if (!normalized) return false;
-  return normalized.replace(/\D/g, "").length >= 10;
-}
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { isValidPhoneNumber, normalizePhoneNumber } from "./phone.ts";
 
 Deno.test("normalizePhoneNumber formats valid numbers to E.164", () => {
   assertEquals(normalizePhoneNumber("+1234567890"), "+1234567890");
