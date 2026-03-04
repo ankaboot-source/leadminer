@@ -2,7 +2,12 @@ import { defineStore } from 'pinia';
 import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
-import { getMiningSources, updateMiningSourcesValidity } from '@/utils/sources';
+import {
+  getMiningSources,
+  updateMiningSourcesValidity,
+  updateMiningSourcesValidityFromUnavailable,
+} from '@/utils/sources';
+import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -14,7 +19,7 @@ import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
-  const { $api } = useNuxtApp();
+  const { $api, $saasEdgeFunctions } = useNuxtApp();
   const { t, getBrowserLocale } = useI18n();
   const language = getBrowserLocale() || 'en';
   const $toast = useToast();
@@ -138,11 +143,32 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     isLoadingMiningSources.value = true;
 
     try {
-      miningSources.value =
-        (await getMiningSources()).map((source) => ({
-          isValid: true,
-          ...source,
-        })) ?? [];
+      const sources = await getMiningSources();
+
+      let unavailableEmails: string[] = [];
+      try {
+        const senderOptionsData = await $saasEdgeFunctions(
+          'email-campaigns/campaigns/sender-options',
+          { method: 'POST' },
+        );
+        const allOptions = (senderOptionsData.options || []).map(
+          (option: { email: string; available: boolean }) => ({
+            email: option.email,
+            available: option.available,
+          }),
+        );
+        unavailableEmails = extractUnavailableSenderEmails(allOptions);
+      } catch (error) {
+        console.warn(
+          'Failed to fetch sender-options, assuming all sources valid:',
+          error,
+        );
+      }
+
+      miningSources.value = updateMiningSourcesValidityFromUnavailable(
+        sources,
+        unavailableEmails,
+      );
     } finally {
       isLoadingMiningSources.value = false;
     }
