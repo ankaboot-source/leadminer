@@ -11,6 +11,11 @@ RUN bun run build
 # Runtime stage
 FROM oven/bun:alpine AS app-stage
 WORKDIR /leadminer-email-fetcher-service
+
+# ✅ Create node user
+RUN addgroup node \
+ && adduser -D -G node -s /bin/sh node
+
 COPY --chown=node:node package.json bun.lock ./
 RUN bun install --production
 COPY --from=build-stage /leadminer-email-fetcher-service/dist .
