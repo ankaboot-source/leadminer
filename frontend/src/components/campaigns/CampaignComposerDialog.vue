@@ -440,6 +440,8 @@ const DEFAULT_FOOTER_TEXT = () =>
     unsubscribeToken: '{{unsubscribeUrl}}',
   });
 
+const DEFAULT_SENDER_DAILY_LIMIT_UI = 500;
+
 const form = reactive({
   senderName: '',
   senderEmail: '',
@@ -447,7 +449,7 @@ const form = reactive({
   bodyHtmlTemplate: DEFAULT_BODY_HTML(),
   bodyTextTemplate: DEFAULT_BODY_TEXT(),
   footerTextTemplate: DEFAULT_FOOTER_TEXT(),
-  senderDailyLimit: 1000,
+  senderDailyLimit: DEFAULT_SENDER_DAILY_LIMIT_UI,
   trackOpen: true,
   trackClick: true,
   plainTextOnly: false,
@@ -917,7 +919,7 @@ async function loadSenderOptions() {
     );
 
     fallbackSenderEmail.value = data.fallbackSenderEmail || '';
-    form.senderDailyLimit = Number(data.defaultDailyLimit || 1000);
+    form.senderDailyLimit = DEFAULT_SENDER_DAILY_LIMIT_UI;
     const allOptions = (data.options || []).map(
       (option: { email: string; available: boolean }) => {
         return {
