@@ -233,7 +233,13 @@ async function injectTrackers(
 
 function generateUnsubscribeToken(userId: string, phone: string): string {
   const data = `${userId}:${phone}:${Date.now()}`;
-  return btoa(data);
+  return btoa(data).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeUnsubscribeToken(token: string): string {
+  const normalized = token.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+  return atob(`${normalized}${padding}`);
 }
 
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
@@ -488,7 +494,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
   
   try {
-    const decoded = atob(token);
+    const decoded = decodeUnsubscribeToken(token);
     const [userId, phone] = decoded.split(":");
     
     if (!userId || !phone) {
