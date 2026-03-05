@@ -1,0 +1,3 @@
+-- Upgrade supabase_vault extension to recommended version
+-- Commented out for local development as 0.2.8 -> 0.3.1 upgrade path doesn't exist
+-- ALTER EXTENSION supabase_vault UPDATE TO '0.3.1';
