@@ -248,7 +248,7 @@ async function fetchQuota() {
       quotaInfo.value = data;
     }
   } catch (error) {
-    console.warn('Failed to fetch quota:', error);
+    void error;
   }
 }
 
@@ -309,11 +309,14 @@ const smsParts = ref(1);
 
 const UNSUBSCRIBE_FOOTER_LENGTH = '\n\nUnsubscribe me: https://example.com'.length;
 
+const hasUnicodeChars = (text: string) =>
+  Array.from(text).some((char) => char.codePointAt(0)! > 127);
+
 const updateCharCount = () => {
   const text = form.messageTemplate || '';
   const totalWithFooter = text.length + UNSUBSCRIBE_FOOTER_LENGTH;
   
-  const isUnicode = /[^\u0000-\u007F]/.test(text);
+  const isUnicode = hasUnicodeChars(text);
   encoding.value = isUnicode ? 'Unicode' : 'GSM-7';
   
   const maxPerSms = isUnicode ? 70 : 160;
