@@ -12,9 +12,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   const updateContactList = ref<boolean>(false);
   const contactsCacheMap = new Map<string, Contact>();
-  const contactsList = ref<Contact[] | undefined>(undefined);
+  const contactsList = ref<Contact[] | undefined>();
 
-  const selectedEmails = ref<string[] | undefined>(undefined);
+  const selectedEmails = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
 
   const contactCount = computed(() => contactsList.value?.length);
@@ -161,7 +161,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!userId) return;
 
     if (realtimeChannel && realtimeChannelUserId !== userId) {
-      void $supabase.removeChannel(realtimeChannel);
+      $supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
       realtimeChannelUserId = null;
     }
