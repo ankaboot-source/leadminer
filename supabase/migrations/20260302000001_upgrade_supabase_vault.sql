@@ -1,3 +1,5 @@
 -- Upgrade supabase_vault extension to recommended version
--- Commented out for local development as 0.2.8 -> 0.3.1 upgrade path doesn't exist
--- ALTER EXTENSION supabase_vault UPDATE TO '0.3.1';
+-- Fixes Supabase database linter warning: extension_versions_outdated
+-- https://supabase.com/docs/guides/database/database-linter?lint=0022_extension_versions_outdated
+
+ALTER EXTENSION supabase_vault UPDATE TO '0.3.1';
