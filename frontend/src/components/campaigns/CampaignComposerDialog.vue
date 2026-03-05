@@ -622,6 +622,10 @@ const editorModules = computed(() => ({
     : {}),
 }));
 
+type AttributeTarget = 'subject' | 'body';
+
+const activeAttributeTarget = ref<AttributeTarget>('body');
+
 const attributeMenuItems = computed(() =>
   attributeOptions.map((key) => ({
     label: `{{${key}}}`,
@@ -629,9 +633,6 @@ const attributeMenuItems = computed(() =>
   })),
 );
 
-type AttributeTarget = 'subject' | 'body';
-
-const activeAttributeTarget = ref<AttributeTarget>('body');
 const subjectSelectionStart = ref(0);
 const subjectSelectionEnd = ref(0);
 
