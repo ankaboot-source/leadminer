@@ -19,6 +19,10 @@ export class TwilioProvider implements SmsProvider {
     this.fromNumber = TWILIO_FROM_NUMBER;
   }
 
+  static isConfigured(): boolean {
+    return Boolean(TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER);
+  }
+
   async send(params: SendSmsParams): Promise<SendSmsResult> {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Messages.json`;
     const auth = btoa(`${this.accountSid}:${this.authToken}`);

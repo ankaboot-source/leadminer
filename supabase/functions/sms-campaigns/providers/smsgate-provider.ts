@@ -1,8 +1,10 @@
 import type { SmsProvider, SendSmsParams, SendSmsResult } from "./types.ts";
 
-const SMSGATE_BASE_URL = Deno.env.get("SMSGATE_BASE_URL") || "https://api.sms-gate.app";
-const SMSGATE_USERNAME = Deno.env.get("SMSGATE_USERNAME") || "";
-const SMSGATE_PASSWORD = Deno.env.get("SMSGATE_PASSWORD") || "";
+export interface SmsGateCredentials {
+  baseUrl: string;
+  username: string;
+  password: string;
+}
 
 export class SmsGateProvider implements SmsProvider {
   name = "smsgate";
@@ -10,13 +12,13 @@ export class SmsGateProvider implements SmsProvider {
   private username: string;
   private password: string;
 
-  constructor() {
-    if (!SMSGATE_USERNAME || !SMSGATE_PASSWORD) {
+  constructor(credentials: SmsGateCredentials) {
+    if (!credentials.username || !credentials.password) {
       throw new Error("SMSGate credentials not configured");
     }
-    this.baseUrl = SMSGATE_BASE_URL;
-    this.username = SMSGATE_USERNAME;
-    this.password = SMSGATE_PASSWORD;
+    this.baseUrl = credentials.baseUrl || "https://api.sms-gate.app";
+    this.username = credentials.username;
+    this.password = credentials.password;
   }
 
   async send(params: SendSmsParams): Promise<SendSmsResult> {

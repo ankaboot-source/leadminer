@@ -4,7 +4,11 @@ import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.t
 import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { generateShortToken } from "../_shared/short-token.ts";
-import { createSmsProvider } from "./providers/mod.ts";
+import {
+  createSmsProvider,
+  isTwilioFallbackAvailable,
+  type SmsGateCredentials,
+} from "./providers/mod.ts";
 import type { SendSmsResult } from "./providers/types.ts";
 import { getSmsQuota, getLocalTimeBounds } from "./utils/quota.ts";
 import { shortenUrl } from "./utils/short-link.ts";
@@ -25,10 +29,21 @@ type SmsCampaignCreatePayload = {
   selectedPhones?: string[];
   senderName: string;
   senderPhone: string;
-  provider: "twilio" | "smsgate";
   messageTemplate: string;
   useShortLinks?: boolean;
+  allowTwilioFallback?: boolean;
+  smsgateConfig?: {
+    baseUrl?: string;
+    username?: string;
+    password?: string;
+  };
   timezone?: string;
+};
+
+type SmsGateProfileConfig = {
+  smsgate_base_url: string | null;
+  smsgate_username: string | null;
+  smsgate_password: string | null;
 };
 
 async function authMiddleware(c: Context, next: () => Promise<void>) {
@@ -64,6 +79,99 @@ app.use("*", async (c, next) => {
 app.options("*", () => new Response("ok", { headers: corsHeaders }));
 
 app.get("/health", (c) => c.json({ status: "ok", service: functionName }));
+
+async function getUserSmsGateConfig(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  userId: string,
+): Promise<SmsGateProfileConfig> {
+  const { data, error } = await supabaseAdmin
+    .schema("private")
+    .from("profiles")
+    .select("smsgate_base_url,smsgate_username,smsgate_password")
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !data) {
+    return {
+      smsgate_base_url: null,
+      smsgate_username: null,
+      smsgate_password: null,
+    };
+  }
+
+  return data as SmsGateProfileConfig;
+}
+
+function toSmsGateCredentials(
+  config: SmsGateProfileConfig,
+): SmsGateCredentials | null {
+  if (!config.smsgate_username || !config.smsgate_password) {
+    return null;
+  }
+
+  return {
+    baseUrl: config.smsgate_base_url || "https://api.sms-gate.app",
+    username: config.smsgate_username,
+    password: config.smsgate_password,
+  };
+}
+
+app.get("/providers/status", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const supabaseAdmin = createSupabaseAdmin();
+  const config = await getUserSmsGateConfig(supabaseAdmin, user.id);
+
+  return c.json({
+    smsgateConfigured: Boolean(config.smsgate_username && config.smsgate_password),
+    smsgateBaseUrl: config.smsgate_base_url || "https://api.sms-gate.app",
+    smsgateUsername: config.smsgate_username || "",
+    twilioFallbackAvailable: isTwilioFallbackAvailable(),
+  });
+});
+
+app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const payload = (await c.req.json().catch(() => ({}))) as {
+    baseUrl?: string;
+    username?: string;
+    password?: string;
+  };
+
+  const supabaseAdmin = createSupabaseAdmin();
+  const existingConfig = await getUserSmsGateConfig(supabaseAdmin, user.id);
+
+  const username = payload.username?.trim() || existingConfig.smsgate_username || "";
+  const password = payload.password?.trim() || existingConfig.smsgate_password || "";
+  const baseUrl =
+    payload.baseUrl?.trim() || existingConfig.smsgate_base_url || "https://api.sms-gate.app";
+
+  if (!username || !password) {
+    return c.json(
+      { error: "Missing SMSGate credentials", code: "MISSING_SMSGATE_CREDENTIALS" },
+      400,
+    );
+  }
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("profiles")
+    .update({
+      smsgate_base_url: baseUrl,
+      smsgate_username: username,
+      smsgate_password: password,
+    })
+    .eq("user_id", user.id);
+
+  if (error) {
+    return c.json({ error: extractErrorMessage(error), code: "SAVE_CREDENTIALS_FAILED" }, 500);
+  }
+
+  return c.json({ success: true });
+});
 
 app.get("/quota", authMiddleware, async (c: Context) => {
   const user = c.get("user");
@@ -249,9 +357,18 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   logger.info("Creating SMS campaign", { userId: user.id });
 
   const payload = (await c.req.json().catch(() => ({}))) as SmsCampaignCreatePayload;
-  const { selectedPhones, senderName, senderPhone, provider, messageTemplate, useShortLinks, timezone } = payload;
+  const {
+    selectedPhones,
+    senderName,
+    senderPhone,
+    messageTemplate,
+    useShortLinks,
+    allowTwilioFallback,
+    smsgateConfig,
+    timezone,
+  } = payload;
 
-  if (!senderName || !senderPhone || !provider || !messageTemplate) {
+  if (!senderName || !senderPhone || !messageTemplate) {
     return c.json({ error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" }, 400);
   }
 
@@ -271,6 +388,33 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const userTimezone = timezone || "UTC";
   const supabaseAdmin = createSupabaseAdmin();
 
+  if (smsgateConfig?.username && smsgateConfig?.password) {
+    await supabaseAdmin
+      .schema("private")
+      .from("profiles")
+      .update({
+        smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
+        smsgate_username: smsgateConfig.username,
+        smsgate_password: smsgateConfig.password,
+      })
+      .eq("user_id", user.id);
+  }
+
+  const profileConfig = await getUserSmsGateConfig(supabaseAdmin, user.id);
+  const smsgateCredentials = toSmsGateCredentials(profileConfig);
+
+  if (!smsgateCredentials) {
+    return c.json(
+      {
+        error: "SMSGate is not configured. Please add your SMSGate credentials.",
+        code: "SMSGATE_NOT_CONFIGURED",
+      },
+      400,
+    );
+  }
+
+  const twilioFallbackEnabled = Boolean(allowTwilioFallback && isTwilioFallbackAvailable());
+
   const quotaCheck = await checkSmsQuota(supabaseAdmin, user.id, uniquePhones.length, userTimezone);
   if (!quotaCheck.allowed) {
     return c.json({ error: quotaCheck.error, code: "QUOTA_EXCEEDED", remainingDaily: quotaCheck.remainingDaily, remainingMonthly: quotaCheck.remainingMonthly }, 403);
@@ -283,9 +427,10 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       user_id: user.id,
       sender_name: senderName,
       sender_phone: senderPhone,
-      provider,
+      provider: "smsgate",
       message_template: messageTemplate,
       use_short_links: useShortLinks || false,
+      twilio_fallback_enabled: twilioFallbackEnabled,
       recipient_count: uniquePhones.length,
       status: "queued",
     })
@@ -332,10 +477,41 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const payload = (await c.req.json().catch(() => ({}))) as SmsCampaignCreatePayload;
-  const { senderName, senderPhone, provider, messageTemplate, useShortLinks, selectedPhones } = payload;
+  const {
+    senderName,
+    senderPhone,
+    messageTemplate,
+    useShortLinks,
+    selectedPhones,
+    smsgateConfig,
+  } = payload;
 
-  if (!senderName || !senderPhone || !provider || !messageTemplate) {
+  if (!senderName || !senderPhone || !messageTemplate) {
     return c.json({ error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" }, 400);
+  }
+
+  const supabaseAdmin = createSupabaseAdmin();
+  if (smsgateConfig?.username && smsgateConfig?.password) {
+    await supabaseAdmin
+      .schema("private")
+      .from("profiles")
+      .update({
+        smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
+        smsgate_username: smsgateConfig.username,
+        smsgate_password: smsgateConfig.password,
+      })
+      .eq("user_id", user.id);
+  }
+
+  const profileConfig = await getUserSmsGateConfig(supabaseAdmin, user.id);
+  if (!toSmsGateCredentials(profileConfig)) {
+    return c.json(
+      {
+        error: "SMSGate is not configured. Please add your SMSGate credentials.",
+        code: "SMSGATE_NOT_CONFIGURED",
+      },
+      400,
+    );
   }
 
   const unsubscribeToken = getUniqueShortToken(10);
@@ -343,8 +519,6 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   const footerText = `\n\nUnsubscribe me: ${unsubscribeUrl}`;
   
   let previewMessage = messageTemplate + footerText;
-
-  const supabaseAdmin = createSupabaseAdmin();
   if (useShortLinks) {
     const hrefRegex = /(https?:\/\/[^\s]+)/gi;
     const matches = [...previewMessage.matchAll(hrefRegex)];
@@ -606,7 +780,18 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
-  const smsProvider = createSmsProvider(campaign.provider as "twilio" | "smsgate");
+  const profileConfig = await getUserSmsGateConfig(supabaseAdmin, campaign.user_id);
+  const smsgateCredentials = toSmsGateCredentials(profileConfig);
+  if (!smsgateCredentials) {
+    return c.json(
+      { error: "SMSGate credentials missing for campaign owner", code: "SMSGATE_NOT_CONFIGURED" },
+      400,
+    );
+  }
+
+  const smsProvider = createSmsProvider("smsgate", { smsgate: smsgateCredentials });
+  const twilioFallbackEnabled =
+    Boolean(campaign.twilio_fallback_enabled) && isTwilioFallbackAvailable();
   let sentCount = 0;
   let failedCount = 0;
 
@@ -632,11 +817,27 @@ app.post("/process", authMiddleware, async (c: Context) => {
       const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
       messageWithTrackers += `\n\nUnsubscribe me: ${unsubscribeUrl}`;
 
-      const result: SendSmsResult = await smsProvider.send({
+      let result: SendSmsResult = await smsProvider.send({
         to: recipient.phone,
         from: campaign.sender_phone,
         body: messageWithTrackers,
       });
+
+      let providerUsed = "smsgate";
+
+      if (!result.success && twilioFallbackEnabled) {
+        const twilioProvider = createSmsProvider("twilio");
+        const fallbackResult = await twilioProvider.send({
+          to: recipient.phone,
+          from: campaign.sender_phone,
+          body: messageWithTrackers,
+        });
+
+        if (fallbackResult.success) {
+          result = fallbackResult;
+          providerUsed = "twilio";
+        }
+      }
 
       if (result.success) {
         await supabaseAdmin
@@ -645,6 +846,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .update({
             send_status: "sent",
             provider_message_id: result.messageId,
+            provider_used: providerUsed,
             sent_at: new Date().toISOString(),
           })
           .eq("id", recipient.id);
@@ -656,6 +858,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .update({
             send_status: "failed",
             provider_error: result.error,
+            provider_used: twilioFallbackEnabled ? "smsgate/twilio_failed" : "smsgate",
             attempt_count: recipient.attempt_count + 1,
           })
           .eq("id", recipient.id);

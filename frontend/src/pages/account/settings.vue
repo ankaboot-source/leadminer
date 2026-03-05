@@ -116,6 +116,53 @@
       <component :is="AcceptNewsLetter" type="checkbox" />
     </Panel>
 
+    <Panel :header="t('sms_gateway_settings')">
+      <div class="grid gap-3">
+        <p class="text-sm m-0 text-surface-600">
+          {{ t('sms_gateway_description') }}
+        </p>
+        <div class="grid gap-2">
+          <label class="block">{{ t('smsgate_base_url') }}</label>
+          <InputText v-model="smsgateBaseUrlInput" class="w-full md:w-30rem" />
+        </div>
+        <div class="grid gap-2">
+          <label class="block">{{ t('smsgate_username') }}</label>
+          <InputText v-model="smsgateUsernameInput" class="w-full md:w-30rem" />
+        </div>
+        <div class="grid gap-2">
+          <label class="block">{{ t('smsgate_password') }}</label>
+          <Password
+            v-model="smsgatePasswordInput"
+            :feedback="false"
+            toggle-mask
+            class="w-full md:w-30rem"
+            :input-style="{ width: '100%' }"
+          />
+        </div>
+        <div class="flex items-center gap-2 text-sm">
+          <i
+            class="pi"
+            :class="twilioFallbackAvailable ? 'pi-check-circle text-green-500' : 'pi-times-circle text-surface-500'"
+          />
+          <span>{{ t('twilio_fallback_status', { status: twilioFallbackAvailable ? t('available') : t('not_available') }) }}</span>
+        </div>
+        <a
+          href="https://docs.sms-gate.app/installation/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline text-sm"
+        >
+          {{ t('open_smsgate_docs') }}
+        </a>
+        <Button
+          class="w-full md:w-60 gap-4"
+          :label="t('save_sms_gateway')"
+          :loading="isSavingSmsGateway"
+          @click="saveSmsGatewaySettings"
+        />
+      </div>
+    </Panel>
+
     <!-- Warning modal Section -->
     <Dialog
       v-model:visible="showDeleteModal"
@@ -171,7 +218,7 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-const { $api } = useNuxtApp();
+const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $profile = useSupabaseUserProfile();
 
 const {
@@ -183,10 +230,15 @@ if (!user || userError) throw new Error('Unable to fetch user data');
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
+const isSavingSmsGateway = ref(false);
+const twilioFallbackAvailable = ref(false);
 
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
+const smsgateBaseUrlInput = ref($profile.value?.smsgate_base_url || 'https://api.sms-gate.app');
+const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
+const smsgatePasswordInput = ref('');
 const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
@@ -332,6 +384,81 @@ async function deleteAccount() {
     throw err;
   }
 }
+
+async function fetchSmsProviderStatus() {
+  try {
+    const response = await $saasEdgeFunctions('sms-campaigns/providers/status', {
+      method: 'GET',
+    });
+    if (!response.ok) return;
+
+    const data = await response.json();
+    twilioFallbackAvailable.value = Boolean(data.twilioFallbackAvailable);
+
+    if (data.smsgateBaseUrl) {
+      smsgateBaseUrlInput.value = data.smsgateBaseUrl;
+    }
+    if (data.smsgateUsername) {
+      smsgateUsernameInput.value = data.smsgateUsername;
+    }
+  } catch {
+    twilioFallbackAvailable.value = false;
+  }
+}
+
+async function saveSmsGatewaySettings() {
+  try {
+    isSavingSmsGateway.value = true;
+
+    const response = await $saasEdgeFunctions('sms-campaigns/providers/smsgate', {
+      method: 'POST',
+      body: JSON.stringify({
+        baseUrl: smsgateBaseUrlInput.value,
+        username: smsgateUsernameInput.value,
+        password: smsgatePasswordInput.value,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || t('sms_gateway_save_failed'));
+    }
+
+    smsgatePasswordInput.value = '';
+
+    const { error: profileUpdateError } = await useSupabaseClient<Profile>()
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from('profiles')
+      .update({
+        smsgate_base_url: smsgateBaseUrlInput.value,
+        smsgate_username: smsgateUsernameInput.value,
+      })
+      .eq('user_id', $profile.value?.user_id);
+
+    if (profileUpdateError) {
+      throw profileUpdateError;
+    }
+
+    $toast.add({
+      severity: 'success',
+      summary: t('sms_gateway_saved'),
+      detail: t('sms_gateway_saved_detail'),
+      life: 5000,
+    });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('error'),
+      detail: (error as Error).message,
+      life: 4000,
+    });
+  } finally {
+    isSavingSmsGateway.value = false;
+  }
+}
+
+await fetchSmsProviderStatus();
 </script>
 
 <i18n lang="json">
@@ -365,7 +492,20 @@ async function deleteAccount() {
         "p4": "If you didn't request this change, you can safely disregard this email. Your current email address will remain unchanged."
       },
       "button": "Confirm Email Address"
-    }
+    },
+    "sms_gateway_settings": "SMS Gateway Settings",
+    "sms_gateway_description": "SMSGate is your default SMS provider. Configure per-user credentials here. Twilio is optional fallback only if enabled by server environment.",
+    "smsgate_base_url": "SMSGate API URL",
+    "smsgate_username": "SMSGate Username",
+    "smsgate_password": "SMSGate Password",
+    "save_sms_gateway": "Save SMS Gateway",
+    "sms_gateway_saved": "SMS gateway saved",
+    "sms_gateway_saved_detail": "Your SMSGate credentials were saved successfully.",
+    "sms_gateway_save_failed": "Unable to save SMS gateway settings",
+    "twilio_fallback_status": "Twilio fallback: {status}",
+    "available": "available",
+    "not_available": "not available",
+    "open_smsgate_docs": "Open official SMSGate installation guide"
   },
   "fr": {
     "profile_information": "Informations du profil",
@@ -396,7 +536,20 @@ async function deleteAccount() {
         "p4": "Si vous n'avez pas demandé ce changement, vous pouvez ignorer cet e-mail. Votre adresse e-mail actuelle restera inchangée."
       },
       "button": "Confirmez votre adresse e-mail"
-    }
+    },
+    "sms_gateway_settings": "Paramètres de passerelle SMS",
+    "sms_gateway_description": "SMSGate est votre fournisseur SMS par défaut. Configurez ici les identifiants par utilisateur. Twilio est un secours optionnel uniquement si l'environnement serveur l'active.",
+    "smsgate_base_url": "URL API SMSGate",
+    "smsgate_username": "Nom d'utilisateur SMSGate",
+    "smsgate_password": "Mot de passe SMSGate",
+    "save_sms_gateway": "Enregistrer la passerelle SMS",
+    "sms_gateway_saved": "Passerelle SMS enregistrée",
+    "sms_gateway_saved_detail": "Vos identifiants SMSGate ont été enregistrés avec succès.",
+    "sms_gateway_save_failed": "Impossible d'enregistrer les paramètres de passerelle SMS",
+    "twilio_fallback_status": "Secours Twilio : {status}",
+    "available": "disponible",
+    "not_available": "non disponible",
+    "open_smsgate_docs": "Ouvrir le guide officiel d'installation SMSGate"
   }
 }
 </i18n>

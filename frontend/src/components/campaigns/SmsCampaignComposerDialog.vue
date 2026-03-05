@@ -47,15 +47,51 @@
 
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium">
-          {{ t('provider') }} *
+          {{ t('provider') }}
         </label>
-        <Select
-          v-model="form.provider"
-          :options="providerOptions"
-          option-label="label"
-          option-value="value"
-        />
+        <div class="flex items-center gap-2">
+          <Tag value="SMSGate" severity="info" />
+          <small class="text-surface-600">{{ t('provider_default_note') }}</small>
+          <Button
+            text
+            size="small"
+            icon="pi pi-question-circle"
+            :label="t('setup_help')"
+            @click="showSetupDialog = true"
+          />
+        </div>
       </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div class="flex flex-col gap-1 md:col-span-2">
+          <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
+          <InputText v-model="form.smsgateBaseUrl" placeholder="https://api.sms-gate.app" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium">{{ t('smsgate_username') }} *</label>
+          <InputText v-model="form.smsgateUsername" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium">{{ t('smsgate_password') }} *</label>
+          <Password v-model="form.smsgatePassword" :feedback="false" toggle-mask input-class="w-full" />
+        </div>
+      </div>
+
+      <div v-if="providerStatus.twilioFallbackAvailable" class="flex items-center gap-2">
+        <Checkbox v-model="form.allowTwilioFallback" :binary="true" input-id="allowTwilioFallback" />
+        <label for="allowTwilioFallback" class="text-sm cursor-pointer">
+          {{ t('allow_twilio_fallback') }}
+        </label>
+      </div>
+
+      <Message
+        v-if="!hasUsableSmsGateConfig"
+        severity="warn"
+        :closable="false"
+        size="small"
+      >
+        {{ t('smsgate_not_configured') }}
+      </Message>
 
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium flex items-center gap-1">
@@ -121,6 +157,32 @@
       </div>
     </div>
   </Dialog>
+
+  <Dialog
+    v-model:visible="showSetupDialog"
+    modal
+    :header="t('sms_provider_setup')"
+    :style="{ width: '38rem', maxWidth: '95vw' }"
+  >
+    <div class="flex flex-col gap-3 text-sm">
+      <p class="m-0">{{ t('smsgate_setup_intro') }}</p>
+      <ol class="pl-4 m-0 flex flex-col gap-2">
+        <li>{{ t('smsgate_setup_step_1') }}</li>
+        <li>{{ t('smsgate_setup_step_2') }}</li>
+        <li>{{ t('smsgate_setup_step_3') }}</li>
+      </ol>
+      <a
+        href="https://docs.sms-gate.app/installation/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="underline"
+      >
+        {{ t('open_smsgate_docs') }}
+      </a>
+      <Divider />
+      <p class="m-0 text-surface-600">{{ t('twilio_fallback_note') }}</p>
+    </div>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -150,10 +212,11 @@ const isVisible = computed({
   set: (value) => emit('update:visible', value),
 });
 
-const providerOptions = [
-  { label: 'Twilio', value: 'twilio' },
-  { label: 'SMSGate', value: 'smsgate' },
-];
+const showSetupDialog = ref(false);
+const providerStatus = ref({
+  smsgateConfigured: false,
+  twilioFallbackAvailable: false,
+});
 
 const quotaInfo = ref({
   dailyLimit: 200,
@@ -189,9 +252,38 @@ async function fetchQuota() {
   }
 }
 
+async function fetchProviderStatus() {
+  try {
+    const response = await $saasEdgeFunctions('sms-campaigns/providers/status', {
+      method: 'GET',
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    providerStatus.value = {
+      smsgateConfigured: Boolean(data.smsgateConfigured),
+      twilioFallbackAvailable: Boolean(data.twilioFallbackAvailable),
+    };
+
+    if (data.smsgateBaseUrl && !form.smsgateBaseUrl) {
+      form.smsgateBaseUrl = data.smsgateBaseUrl;
+    }
+    if (data.smsgateUsername && !form.smsgateUsername) {
+      form.smsgateUsername = data.smsgateUsername;
+    }
+  } catch {
+    providerStatus.value = {
+      smsgateConfigured: false,
+      twilioFallbackAvailable: false,
+    };
+  }
+}
+
 const form = reactive({
   senderPhone: '',
-  provider: 'twilio' as 'twilio' | 'smsgate',
+  smsgateBaseUrl: 'https://api.sms-gate.app',
+  smsgateUsername: '',
+  smsgatePassword: '',
+  allowTwilioFallback: false,
   messageTemplate: '',
   useShortLinks: false,
 });
@@ -240,6 +332,16 @@ const isFormValid = computed(() =>
   Object.values(validationErrors.value).every((value) => !value),
 );
 
+const hasProvidedSmsGateCredentials = computed(
+  () =>
+    form.smsgateUsername.trim().length > 0 &&
+    form.smsgatePassword.trim().length > 0,
+);
+
+const hasUsableSmsGateConfig = computed(
+  () => providerStatus.value.smsgateConfigured || hasProvidedSmsGateCredentials.value,
+);
+
 const selectedContactsLength = computed(() => {
   return props.selectedContacts.filter(c => c.telephone && c.telephone.length > 0).length;
 });
@@ -250,6 +352,7 @@ const isSubmitting = ref(false);
 const isPreviewDisabled = computed(() =>
   !form.senderPhone ||
   !form.messageTemplate ||
+  !hasUsableSmsGateConfig.value ||
   isSendingPreview.value ||
   !isFormValid.value
 );
@@ -257,6 +360,7 @@ const isPreviewDisabled = computed(() =>
 const isActionDisabled = computed(
   () =>
     selectedContactsLength.value === 0 ||
+    !hasUsableSmsGateConfig.value ||
     isSendingPreview.value ||
     isSubmitting.value ||
     !isFormValid.value
@@ -281,9 +385,14 @@ const sendPreview = async () => {
       body: JSON.stringify({
         senderName: 'Preview',
         senderPhone: form.senderPhone,
-        provider: form.provider,
         messageTemplate: form.messageTemplate,
         useShortLinks: form.useShortLinks,
+        allowTwilioFallback: form.allowTwilioFallback,
+        smsgateConfig: {
+          baseUrl: form.smsgateBaseUrl,
+          username: form.smsgateUsername,
+          password: form.smsgatePassword,
+        },
         selectedPhones: getSelectedPhones().slice(0, 1),
       }),
     });
@@ -324,9 +433,14 @@ const submitCampaign = async () => {
       body: JSON.stringify({
         senderName: 'Campaign',
         senderPhone: form.senderPhone,
-        provider: form.provider,
         messageTemplate: form.messageTemplate,
         useShortLinks: form.useShortLinks,
+        allowTwilioFallback: form.allowTwilioFallback,
+        smsgateConfig: {
+          baseUrl: form.smsgateBaseUrl,
+          username: form.smsgateUsername,
+          password: form.smsgatePassword,
+        },
         selectedPhones: phones,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }),
@@ -334,6 +448,9 @@ const submitCampaign = async () => {
 
     if (!response.ok) {
       const error = await response.json();
+      if (error.code === 'SMSGATE_NOT_CONFIGURED') {
+        showSetupDialog.value = true;
+      }
       throw new Error(error.error || 'Campaign creation failed');
     }
 
@@ -363,7 +480,10 @@ const submitCampaign = async () => {
 
 const resetForm = () => {
   form.senderPhone = '';
-  form.provider = 'twilio';
+  form.smsgateBaseUrl = 'https://api.sms-gate.app';
+  form.smsgateUsername = '';
+  form.smsgatePassword = '';
+  form.allowTwilioFallback = false;
   form.messageTemplate = '';
   form.useShortLinks = false;
   charCount.value = 0;
@@ -376,6 +496,7 @@ const resetForm = () => {
 const onDialogShow = () => {
   updateCharCount();
   fetchQuota();
+  fetchProviderStatus();
 };
 
 const onDialogHide = () => {
@@ -396,6 +517,20 @@ watch(() => form.messageTemplate, updateCharCount);
     "sender_phone_placeholder": "+1234567890",
     "sender_phone_required": "Sender phone is required",
     "provider": "Provider",
+    "provider_default_note": "SMSGate is the default provider for your account.",
+    "setup_help": "Setup help",
+    "sms_provider_setup": "SMS Provider Setup",
+    "smsgate_setup_intro": "Configure SMSGate credentials first. Twilio is optional fallback only when enabled by your admin environment.",
+    "smsgate_setup_step_1": "Install and configure SMS Gate on your Android device.",
+    "smsgate_setup_step_2": "Copy your API URL, username and password.",
+    "smsgate_setup_step_3": "Paste credentials here or in Account Settings.",
+    "open_smsgate_docs": "Open official SMSGate installation guide",
+    "twilio_fallback_note": "Twilio fallback is available only if server environment variables are configured.",
+    "smsgate_base_url": "SMSGate API URL",
+    "smsgate_username": "SMSGate Username",
+    "smsgate_password": "SMSGate Password",
+    "allow_twilio_fallback": "Allow Twilio fallback when SMSGate fails",
+    "smsgate_not_configured": "SMSGate credentials are not configured yet.",
     "message": "Message",
     "message_placeholder": "Enter your SMS message here...",
     "message_required": "Message is required",
@@ -420,6 +555,20 @@ watch(() => form.messageTemplate, updateCharCount);
     "sender_phone_placeholder": "+33123456789",
     "sender_phone_required": "Le téléphone de l'expéditeur est requis",
     "provider": "Fournisseur",
+    "provider_default_note": "SMSGate est le fournisseur par défaut de votre compte.",
+    "setup_help": "Aide à la configuration",
+    "sms_provider_setup": "Configuration du fournisseur SMS",
+    "smsgate_setup_intro": "Configurez d'abord les identifiants SMSGate. Twilio est un secours optionnel seulement si activé par l'environnement administrateur.",
+    "smsgate_setup_step_1": "Installez et configurez SMS Gate sur votre appareil Android.",
+    "smsgate_setup_step_2": "Copiez l'URL API, le nom d'utilisateur et le mot de passe.",
+    "smsgate_setup_step_3": "Collez les identifiants ici ou dans les paramètres du compte.",
+    "open_smsgate_docs": "Ouvrir le guide officiel d'installation SMSGate",
+    "twilio_fallback_note": "Le secours Twilio est disponible uniquement si les variables d'environnement serveur sont configurées.",
+    "smsgate_base_url": "URL API SMSGate",
+    "smsgate_username": "Nom d'utilisateur SMSGate",
+    "smsgate_password": "Mot de passe SMSGate",
+    "allow_twilio_fallback": "Autoriser le secours Twilio en cas d'échec SMSGate",
+    "smsgate_not_configured": "Les identifiants SMSGate ne sont pas encore configurés.",
     "message": "Message",
     "message_placeholder": "Entrez votre message SMS ici...",
     "message_required": "Le message est requis",
