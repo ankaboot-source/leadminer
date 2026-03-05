@@ -2,10 +2,9 @@
 -- Fixes missing service_role_key in auth headers
 
 -- ============================================================================
--- 1. Fix invoke_edge_function to retrieve from vault and include auth headers
+-- 1. Fix private.invoke_edge_function to retrieve from vault and include auth headers
 -- ============================================================================
-
-CREATE OR REPLACE FUNCTION invoke_edge_function(
+CREATE OR REPLACE FUNCTION private.invoke_edge_function(
     edge_function_name TEXT,
     body JSONB DEFAULT '{}'::jsonb
 )
@@ -47,7 +46,7 @@ END;
 $$;
 
 -- ============================================================================
--- 2. Refactor trigger_email_campaign_processor to use invoke_edge_function
+-- 2. Refactor trigger_email_campaign_processor to use private.invoke_edge_function
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION private.trigger_email_campaign_processor()
@@ -56,23 +55,33 @@ LANGUAGE plpgsql
 SET search_path = ''
 AS $$
 BEGIN
-    PERFORM invoke_edge_function('email-campaigns/campaigns/process');
+    PERFORM private.invoke_edge_function('email-campaigns/campaigns/process');
 END;
 $$;
 
 -- ============================================================================
--- 3. Refactor weekly passive report to use invoke_edge_function
+-- 3. Refactor weekly passive report to use private.invoke_edge_function
 -- ============================================================================
 
 -- Unschedule the old cron job
-SELECT cron.unschedule('weekly-passive-mining-reports');
+DO $do$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM cron.job
+        WHERE jobname = 'weekly-passive-mining-reports'
+    ) THEN
+        PERFORM cron.unschedule('weekly-passive-mining-reports');
+    END IF;
+END
+$do$;
 
--- Reschedule with new implementation using invoke_edge_function
+-- Reschedule with new implementation using private.invoke_edge_function
 SELECT cron.schedule(
     'weekly-passive-mining-reports',
     '0 9 * * 1', -- Monday at 9:00 AM
     $$
-    SELECT invoke_edge_function(
+    SELECT private.invoke_edge_function(
         'mail/send-weekly-passive-mining-reports',
         jsonb_build_object('weekStart', (CURRENT_DATE - INTERVAL '7 days')::TEXT)
     );
@@ -80,7 +89,7 @@ SELECT cron.schedule(
 );
 
 -- ============================================================================
--- 4. Update passive mining cron job to use invoke_edge_function correctly
+-- 4. Update passive mining cron job to use private.invoke_edge_function correctly
 -- ============================================================================
 
 DO $do$
@@ -91,7 +100,7 @@ BEGIN
         WHERE jobname = 'passive-cron-job'
           AND schedule = '0 2 * * *'
           AND regexp_replace(command, '\s+', ' ', 'g')
-            LIKE '%SELECT invoke_edge_function(''passive-mining'');%'
+            LIKE '%SELECT private.invoke_edge_function(''passive-mining'');%'
     ) THEN
         RAISE NOTICE 'passive-cron-job already configured, skipping';
         RETURN;
@@ -109,7 +118,7 @@ BEGIN
         'passive-cron-job',
         '0 2 * * *', -- At 02:00 AM
         $cron$
-        SELECT invoke_edge_function('passive-mining');
+        SELECT private.invoke_edge_function('passive-mining');
         $cron$
     );
 END
