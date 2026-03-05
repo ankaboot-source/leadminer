@@ -4,6 +4,9 @@ CREATE INDEX IF NOT EXISTS persons_user_id_email_idx
 CREATE INDEX IF NOT EXISTS persons_user_id_updated_at_idx
   ON private.persons (user_id, updated_at DESC);
 
+CREATE INDEX IF NOT EXISTS refinedpersons_user_id_email_idx
+  ON private.refinedpersons (user_id, email);
+
 CREATE OR REPLACE FUNCTION private.get_contacts_table(user_id uuid)
 RETURNS TABLE(
   source text,
