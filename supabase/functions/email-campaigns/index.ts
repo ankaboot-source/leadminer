@@ -16,7 +16,7 @@ import {
   listUniqueSenderSources,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { checkComplianceMiddleware } from "./compliance-middleware.ts";
+import { complianceMiddleware } from "./compliance-middleware.ts";
 
 const logger = createLogger("email-campaigns");
 
@@ -1251,7 +1251,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 });
 
-app.post("/campaigns/create", authMiddleware, checkComplianceMiddleware, async (c: Context) => {
+app.post("/campaigns/create", authMiddleware, complianceMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
@@ -1374,50 +1374,8 @@ app.post("/campaigns/create", authMiddleware, checkComplianceMiddleware, async (
     );
   }
 
-  const partialCampaign = payload.partialCampaign ?? false;
-
-  const billingEnabled = Deno.env.get("ENABLE_BILLING") === "true";
-  let chargedUnits = eligibleContacts.length;
-
-  if (billingEnabled) {
-    try {
-      const { data, error } = await supabaseAdmin.functions.invoke(
-        "billing/campaign/charge",
-        {
-          body: {
-            userId: auth.user.id,
-            units: eligibleContacts.length,
-            partialCampaign,
-          },
-        },
-      );
-
-      if (error) {
-        logger.error("Billing invocation error:", error);
-        return c.json(
-          { error: "Billing service unavailable" },
-          503,
-        );
-      }
-
-      if (data && (data.status === 402 || data.status === 266)) {
-        return c.json(
-          { ...(data.payload as Record<string, unknown>), reason: "credits" },
-          data.status,
-        );
-      }
-
-      if (data && data.status === 200) {
-        chargedUnits = (data.payload as { chargedUnits?: number })?.chargedUnits ?? eligibleContacts.length;
-      }
-    } catch (error) {
-      logger.error("Billing check failed:", error);
-      return c.json(
-        { error: "Billing verification failed" },
-        500,
-      );
-    }
-  }
+  // Use selectedEmails.length (already filtered by middleware)
+  const totalRecipients = payload.selectedEmails?.length ?? eligibleContacts.length;
 
   const { data: campaignData, error: campaignError } = await supabaseAdmin
     .schema("private")
@@ -1442,7 +1400,7 @@ app.post("/campaigns/create", authMiddleware, checkComplianceMiddleware, async (
       track_click: trackClick,
       plain_text_only: plainTextOnly,
       only_valid_contacts: onlyValidContacts,
-      total_recipients: chargedUnits,
+      total_recipients: totalRecipients,
       status: "queued",
     })
     .select("id")

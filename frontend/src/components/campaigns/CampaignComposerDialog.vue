@@ -339,7 +339,12 @@
         </div>
       </div>
     </template>
-  </Dialog>
+    </Dialog>
+
+  <ComplianceDialog
+    ref="complianceDialogRef"
+    @confirm-partial="submit(true)"
+  />
 </template>
 
 <script setup lang="ts">
@@ -347,6 +352,10 @@ import type { Contact } from '@/types/contact';
 import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
+import ComplianceDialog from './ComplianceDialog.vue';
+import { openCreditsDialog } from '@/utils/credits';
+
+type SenderOptionItem = {
 
 const isVisible = defineModel<boolean>('visible', { required: true });
 
@@ -402,6 +411,7 @@ type SenderOptionItem = {
 const senderOptions = ref<SenderOptionItem[]>([]);
 const fallbackSenderEmail = ref('');
 const runtimeConfig = useRuntimeConfig();
+const complianceDialogRef = ref<InstanceType<typeof ComplianceDialog> | null>(null);
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
 const DEFAULT_PROJECT_IMAGE_SRC =
@@ -1043,7 +1053,7 @@ async function sendPreview() {
   }
 }
 
-async function submit() {
+async function submit(partialCampaign = false) {
   if (!ensureValidForm()) {
     return;
   }
@@ -1070,6 +1080,33 @@ async function submit() {
         trackClick: form.trackClick,
         plainTextOnly: form.plainTextOnly,
         onlyValidContacts: form.onlyValidContacts,
+        partialCampaign,
+      },
+      onResponse: ({ response }) => {
+        if (response.status === 402 || (response.status === 266 && response._data?.reason === 'credits')) {
+          openCreditsDialog(
+            null,
+            response.status === 402,
+            response._data.total,
+            response._data.available,
+            response._data.availableAlready,
+          );
+          return;
+        }
+
+        if (response.status === 266 && response._data?.reason === 'consent') {
+          complianceDialogRef.value?.openModal(
+            response._data.total,
+            response._data.available,
+          );
+          return;
+        }
+
+        if (response.status === 200) {
+          return;
+        }
+
+        throw new Error(response._data?.error || 'Campaign creation failed');
       },
     });
 
