@@ -80,7 +80,7 @@
                 (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
               "
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
             />
           </div>
         </div>
