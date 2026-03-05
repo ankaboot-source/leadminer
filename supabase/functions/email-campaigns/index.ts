@@ -1544,7 +1544,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   return c.json({
     msg: "Campaign queued",
     campaignId,
-    queuedCount: recipientRows.length,
+    queuedCount: eligibleContacts.length,
   });
 });
 
