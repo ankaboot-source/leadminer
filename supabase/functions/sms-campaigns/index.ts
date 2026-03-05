@@ -3,6 +3,7 @@ import corsHeaders from "../_shared/cors.ts";
 import { createSupabaseAdmin, createSupabaseClient } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
+import { generateShortToken } from "../_shared/short-token.ts";
 import { createSmsProvider } from "./providers/mod.ts";
 import type { SendSmsResult } from "./providers/types.ts";
 import { getSmsQuota, getLocalTimeBounds } from "./utils/quota.ts";
@@ -182,22 +183,28 @@ async function recordClickLink(
   recipientId: string,
   url: string,
 ): Promise<string> {
-  const token = crypto.randomUUID();
-  const { error } = await supabaseAdmin
-    .schema("private")
-    .from("sms_campaign_link_clicks")
-    .insert({
-      campaign_id: campaignId,
-      recipient_id: recipientId,
-      token,
-      url,
-    });
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const token = getUniqueShortToken(8);
+    const { error } = await supabaseAdmin
+      .schema("private")
+      .from("sms_campaign_link_clicks")
+      .insert({
+        campaign_id: campaignId,
+        recipient_id: recipientId,
+        token,
+        url,
+      });
 
-  if (error) {
-    throw new Error(`Failed to record click link: ${error.message}`);
+    if (!error) {
+      return token;
+    }
+
+    if (!error.message.includes("duplicate") && !error.message.includes("unique")) {
+      throw new Error(`Failed to record click link: ${error.message}`);
+    }
   }
 
-  return token;
+  throw new Error("Unable to generate unique short token for SMS click tracker");
 }
 
 async function injectTrackers(
@@ -231,15 +238,8 @@ async function injectTrackers(
   return updatedMessage;
 }
 
-function generateUnsubscribeToken(userId: string, phone: string): string {
-  const data = `${userId}:${phone}:${Date.now()}`;
-  return btoa(data).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function decodeUnsubscribeToken(token: string): string {
-  const normalized = token.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-  return atob(`${normalized}${padding}`);
+function getUniqueShortToken(length = 8): string {
+  return generateShortToken(length);
 }
 
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
@@ -296,10 +296,21 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     return c.json({ error: extractErrorMessage(campaignError), code: "CREATE_FAILED" }, 500);
   }
 
+  const usedUnsubscribeTokens = new Set<string>();
+  const getNextUnsubscribeToken = () => {
+    let token = getUniqueShortToken(10);
+    while (usedUnsubscribeTokens.has(token)) {
+      token = getUniqueShortToken(10);
+    }
+    usedUnsubscribeTokens.add(token);
+    return token;
+  };
+
   const recipientRecords = uniquePhones.map((phone) => ({
     campaign_id: campaign.id,
     phone,
     message: messageTemplate,
+    unsubscribe_short_token: getNextUnsubscribeToken(),
     send_status: "pending" as RecipientStatus,
   }));
 
@@ -327,7 +338,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     return c.json({ error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" }, 400);
   }
 
-  const unsubscribeToken = generateUnsubscribeToken(user.id, selectedPhones?.[0] || "+0000000000");
+  const unsubscribeToken = getUniqueShortToken(10);
   const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
   const footerText = `\n\nUnsubscribe me: ${unsubscribeUrl}`;
   
@@ -492,36 +503,42 @@ app.get("/track/click/:token", async (c: Context) => {
 
 app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
-  
-  try {
-    const decoded = decodeUnsubscribeToken(token);
-    const [userId, phone] = decoded.split(":");
-    
-    if (!userId || !phone) {
-      return c.html("<html><body><h1>Invalid unsubscribe link</h1></body></html>");
-    }
+  const supabaseAdmin = createSupabaseAdmin();
 
-    const supabaseAdmin = createSupabaseAdmin();
-    
-    const { data: existing } = await supabaseAdmin
-      .schema("private")
-      .from("sms_campaign_unsubscribes")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("phone", phone)
-      .single();
+  const { data: recipient, error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_campaign_recipients")
+    .select("id, campaign_id, phone, campaign:sms_campaigns(user_id)")
+    .eq("unsubscribe_short_token", token)
+    .single();
 
-    if (!existing) {
-      await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_unsubscribes")
-        .insert({ user_id: userId, phone });
-    }
-
-    return c.html("<html><body><h1>You have been unsubscribed from SMS campaigns.</h1></body></html>");
-  } catch {
+  if (error || !recipient || !recipient.campaign?.user_id || !recipient.phone) {
     return c.html("<html><body><h1>Invalid unsubscribe link</h1></body></html>");
   }
+
+  const userId = recipient.campaign.user_id as string;
+  const phone = recipient.phone as string;
+
+  const { data: existing } = await supabaseAdmin
+    .schema("private")
+    .from("sms_campaign_unsubscribes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("phone", phone)
+    .single();
+
+  if (!existing) {
+    await supabaseAdmin
+      .schema("private")
+      .from("sms_campaign_unsubscribes")
+      .insert({
+        user_id: userId,
+        phone,
+        campaign_id: recipient.campaign_id,
+      });
+  }
+
+  return c.html("<html><body><h1>You have been unsubscribed from SMS campaigns.</h1></body></html>");
 });
 
 app.post("/process", authMiddleware, async (c: Context) => {
@@ -603,7 +620,15 @@ app.post("/process", authMiddleware, async (c: Context) => {
         campaign.use_short_links,
       );
 
-      const unsubscribeToken = generateUnsubscribeToken(campaign.user_id, recipient.phone);
+      const unsubscribeToken =
+        recipient.unsubscribe_short_token || getUniqueShortToken(10);
+      if (!recipient.unsubscribe_short_token) {
+        await supabaseAdmin
+          .schema("private")
+          .from("sms_campaign_recipients")
+          .update({ unsubscribe_short_token: unsubscribeToken })
+          .eq("id", recipient.id);
+      }
       const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
       messageWithTrackers += `\n\nUnsubscribe me: ${unsubscribeUrl}`;
 
