@@ -469,9 +469,12 @@ export default class PgContacts implements Contacts {
       }
 
       if (pocInsertResult.status === 'rejected') {
-        this.logger.error('[PgContacts.createContactsFromEmail:pointsOfContact]', {
-          error: pocInsertResult.reason
-        });
+        this.logger.error(
+          '[PgContacts.createContactsFromEmail:pointsOfContact]',
+          {
+            error: pocInsertResult.reason
+          }
+        );
       }
 
       return Array.from(insertedContacts);

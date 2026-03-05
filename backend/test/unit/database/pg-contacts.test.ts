@@ -87,7 +87,11 @@ describe('PgContacts create from email', () => {
       ]
     };
 
-    const result = await contacts.create(extractionResult, 'user-1', 'mining-1');
+    const result = await contacts.create(
+      extractionResult,
+      'user-1',
+      'mining-1'
+    );
 
     expect(result).toEqual([
       {
