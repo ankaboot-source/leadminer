@@ -224,6 +224,7 @@ const { t } = useI18n({
 });
 const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
+const $imapDialogStore = useImapDialog();
 
 const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
@@ -348,17 +349,21 @@ function getSourceStatusBadge(source: MiningSource) {
 }
 
 async function reconnectExpiredSource(source: MiningSource) {
-  if (source.isValid || (source.type !== 'google' && source.type !== 'azure')) {
-    $toast.add({
-      severity: 'warn',
-      summary: t('reconnect_not_supported'),
-      detail: t('reconnect_not_supported_detail'),
-      life: 4500,
-    });
+  if (source.isValid) {
     return;
   }
 
   try {
+    if (source.type === 'imap') {
+      $imapDialogStore.imapEmail = source.email;
+      $imapDialogStore.showImapDialog = true;
+      return;
+    }
+
+    if (source.type !== 'google' && source.type !== 'azure') {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
     await useSupabaseClient().auth.refreshSession();
     const { authorizationUri } = await $api<{ authorizationUri: string }>(
       `/imap/mine/sources/${source.type}`,

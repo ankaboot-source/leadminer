@@ -1,5 +1,6 @@
 <template>
   <Button
+    v-if="!props.dialogOnly"
     outlined
     :label="t('other_email_provider')"
     icon="pi pi-inbox"
@@ -95,6 +96,15 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const props = withDefaults(
+  defineProps<{
+    dialogOnly?: boolean;
+  }>(),
+  {
+    dialogOnly: false,
+  },
+);
+
 interface ImapConfigs {
   host: string;
   port: number;
@@ -106,6 +116,7 @@ const show = defineModel<boolean>('show');
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
+const $imapDialogStore = useImapDialog();
 
 const imapSource = defineModel<MiningSource>('source');
 
@@ -144,6 +155,10 @@ function resetFormErrors() {
 }
 
 watch(show, (value) => {
+  if (value && $imapDialogStore.imapEmail) {
+    imapEmail.value = $imapDialogStore.imapEmail;
+  }
+
   if (!value) {
     resetFormErrors();
     imapAdvancedSettings.value = false;

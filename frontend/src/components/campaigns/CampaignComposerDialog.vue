@@ -344,7 +344,10 @@
 
 <script setup lang="ts">
 import type { Contact } from '@/types/contact';
-import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
+import {
+  extractUnavailableSenderEmails,
+  getUnavailableSenderReconnectContext,
+} from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
 
@@ -356,9 +359,10 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
-const { $saasEdgeFunctions } = useNuxtApp();
+const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $screenStore = useScreenStore();
 const $leadminer = useLeadminerStore();
+const $imapDialogStore = useImapDialog();
 const $toast = useToast();
 const $user = useSupabaseUser();
 
@@ -851,6 +855,54 @@ function resolveErrorMessage(error: unknown, fallbackKey: string) {
   return t(fallbackKey);
 }
 
+async function reconnectSenderSource(email: string) {
+  const source = $leadminer.miningSources.find(
+    (item) => item.email.toLowerCase() === email.toLowerCase(),
+  );
+
+  if (!source) {
+    await navigateTo('/sources');
+    return;
+  }
+
+  if (source.type === 'imap') {
+    $imapDialogStore.imapEmail = source.email;
+    $imapDialogStore.showImapDialog = true;
+    return;
+  }
+
+  if (source.type !== 'google' && source.type !== 'azure') {
+    await navigateTo('/sources');
+    return;
+  }
+
+  try {
+    await useSupabaseClient().auth.refreshSession();
+    const { authorizationUri } = await $api<{ authorizationUri: string }>(
+      `/imap/mine/sources/${source.type}`,
+      {
+        method: 'POST',
+        body: {
+          redirect: '/sources',
+        },
+      },
+    );
+
+    if (!authorizationUri) {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
+    await navigateTo(authorizationUri, { external: true });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('reconnect_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  }
+}
+
 function startCampaignCompletionWatcher(campaignId: string) {
   const timer = setInterval(async () => {
     try {
@@ -931,14 +983,41 @@ async function loadSenderOptions() {
     );
 
     const unavailableEmails = extractUnavailableSenderEmails(allOptions);
-    if (unavailableEmails.length) {
+    const reconnectContext =
+      getUnavailableSenderReconnectContext(unavailableEmails);
+    if (reconnectContext.mode === 'single') {
       $toast.add({
+        group: 'has-links',
         severity: 'warn',
         summary: t('senders_unavailable_title'),
-        detail: t('senders_unavailable_notification', {
-          emails: unavailableEmails.join(', '),
-        }),
-        life: 6500,
+        detail: {
+          message: t('senders_unavailable_notification', {
+            emails: unavailableEmails.join(', '),
+          }),
+          button: {
+            text: t('reconnect_single_sender', {
+              email: reconnectContext.email,
+            }),
+            action: () => reconnectSenderSource(reconnectContext.email),
+          },
+        },
+        life: 12000,
+      });
+    } else if (reconnectContext.mode === 'multiple') {
+      $toast.add({
+        group: 'has-links',
+        severity: 'warn',
+        summary: t('senders_unavailable_title'),
+        detail: {
+          message: t('senders_unavailable_notification', {
+            emails: unavailableEmails.join(', '),
+          }),
+          button: {
+            text: t('reconnect_senders'),
+            action: () => navigateTo('/sources'),
+          },
+        },
+        life: 12000,
       });
     }
 
@@ -1195,7 +1274,11 @@ watch(
     "sender_email": "Sender email",
     "sender_email_help": "The email address used to send this campaign.",
     "senders_unavailable_title": "Some sender addresses are unavailable",
-    "senders_unavailable_notification": "The following addresses are no longer available: {emails}. Please reconnect them in Sources.",
+    "senders_unavailable_notification": "The following addresses are no longer available: {emails}.",
+    "reconnect_single_sender": "Reconnect {email}",
+    "reconnect_senders": "Reconnect",
+    "reconnect_failed": "Unable to reconnect source",
+    "reconnect_unavailable": "Reconnect URL is unavailable",
     "reply_to": "Reply-to",
     "reply_to_help": "Replies from recipients will be sent to this email address.",
     "subject": "Subject",
@@ -1289,7 +1372,11 @@ watch(
     "sender_email": "Adresse d'expédition",
     "sender_email_help": "Adresse email utilisée pour envoyer cette campagne.",
     "senders_unavailable_title": "Certaines adresses d'expédition sont indisponibles",
-    "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}. Veuillez les reconnecter dans les sources.",
+    "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}.",
+    "reconnect_single_sender": "Reconnecter {email}",
+    "reconnect_senders": "Reconnecter",
+    "reconnect_failed": "Impossible de reconnecter la source",
+    "reconnect_unavailable": "URL de reconnexion indisponible",
     "reply_to": "Répondre à",
     "reply_to_help": "Les réponses de vos destinataires seront envoyées à cette adresse.",
     "subject": "Sujet",
