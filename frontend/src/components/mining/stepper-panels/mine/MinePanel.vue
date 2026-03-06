@@ -109,6 +109,7 @@ import { FetchError } from 'ofetch';
 import type { TreeSelectionKeys } from 'primevue/tree';
 
 import ProgressCard from '@/components/mining/ProgressCard.vue';
+import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource } from '~/types/mining';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
@@ -136,8 +137,8 @@ const $supabase = useSupabaseClient();
 
 async function handleAuthErrorAndRetry(
   retryFn: () => Promise<void>,
-  sourceEmail: string,
-  sourceTypeVal: string,
+  sourceEmail?: string,
+  sourceTypeVal?: string,
 ) {
   try {
     const { error: refreshError } = await $supabase.auth.refreshSession();
@@ -146,7 +147,12 @@ async function handleAuthErrorAndRetry(
     }
     await retryFn();
   } catch (error) {
-    if (error instanceof FetchError && error.response?.status === 401) {
+    if (
+      error instanceof FetchError &&
+      error.response?.status === 401 &&
+      sourceEmail &&
+      sourceTypeVal
+    ) {
       $consentSidebar.show(
         sourceTypeVal as 'google' | 'microsoft' | 'imap',
         sourceEmail,
@@ -349,33 +355,33 @@ async function startMiningBoxes() {
     return;
   }
   canceled.value = false;
-  if (!$leadminerStore.activeMiningSource) return;
+
+  if (
+    requiresActiveMiningSource(sourceType.value) &&
+    !$leadminerStore.activeMiningSource
+  ) {
+    return;
+  }
+
+  const activeSource = $leadminerStore.activeMiningSource;
+  if (!activeSource) return;
+
   await handleAuthErrorAndRetry(
     () => $leadminerStore.startMining(sourceType.value),
-    $leadminerStore.activeMiningSource.email,
-    $leadminerStore.activeMiningSource.type,
+    activeSource.email,
+    activeSource.type,
   );
 }
 
 async function startMiningFile() {
-  if (!$leadminerStore.activeMiningSource) return;
-  await handleAuthErrorAndRetry(
-    () => $leadminerStore.startMining(sourceType.value),
-    $leadminerStore.activeMiningSource.email,
-    $leadminerStore.activeMiningSource.type,
+  await handleAuthErrorAndRetry(() =>
+    $leadminerStore.startMining(sourceType.value),
   );
 }
 
 async function startMiningPst() {
-  if (!$leadminerStore.activeMiningSource) return;
-  await handleAuthErrorAndRetry(
-    () =>
-      $leadminerStore.startMining(
-        sourceType.value,
-        $leadminerStore.pstFilePath,
-      ),
-    $leadminerStore.activeMiningSource.email,
-    $leadminerStore.activeMiningSource.type,
+  await handleAuthErrorAndRetry(() =>
+    $leadminerStore.startMining(sourceType.value, $leadminerStore.pstFilePath),
   );
 }
 
