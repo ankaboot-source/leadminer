@@ -44,7 +44,7 @@ Deno.test({
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
-      if (key === "ENABLE_BILLING") return "false";
+      if (key === "ENABLE_CREDIT") return "false";
       return originalEnv(key);
     };
 
@@ -96,7 +96,7 @@ Deno.test({
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
-      if (key === "ENABLE_BILLING") return "false";
+      if (key === "ENABLE_CREDIT") return "false";
       return originalEnv(key);
     };
 
@@ -158,7 +158,7 @@ Deno.test({
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
-      if (key === "ENABLE_BILLING") return "true";
+      if (key === "ENABLE_CREDIT") return "true";
       return originalEnv(key);
     };
 

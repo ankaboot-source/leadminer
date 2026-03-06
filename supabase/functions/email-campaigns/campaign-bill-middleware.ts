@@ -9,7 +9,7 @@ export async function campaignBillMiddleware(c: Context, next: Next) {
     return next();
   }
 
-  const billingEnabled = Deno.env.get("ENABLE_BILLING") === "true";
+  const billingEnabled = Deno.env.get("ENABLE_CREDIT") === "true";
 
   const campaignData = c.get("campaignCreate");
   if (!campaignData) {

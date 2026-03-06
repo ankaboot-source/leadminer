@@ -78,7 +78,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
       );
     }
 
-    const billingEnabled = Deno.env.get("ENABLE_BILLING") === "true";
+    const billingEnabled = Deno.env.get("ENABLE_CREDIT") === "true";
     let eligibleCount = consentedContacts.length;
 
     if (billingEnabled) {
