@@ -204,7 +204,6 @@ class FetchMiningSourceHandler {
     forceRefreshEmail?: string,
   ): Promise<string[]> {
     const refreshedEmails: string[] = [];
-    const nowMs = Date.now();
 
     const forceRefreshSet = forceRefreshEmail
       ? new Set(forceRefreshEmail.toLowerCase())
