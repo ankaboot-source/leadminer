@@ -49,7 +49,6 @@ export function getAuthClient(provider: OAuthMiningSourceProvider) {
 
 export function isTokenExpired(
   credentials: OAuthMiningSourceCredentials,
-  nowMs = 1000,
 ): boolean {
   const client = getAuthClient(credentials.provider);
 
@@ -58,7 +57,7 @@ export function isTokenExpired(
     refresh_token: credentials.refreshToken,
     expires_at: credentials.expiresAt,
   });
-  return token.expired(nowMs);
+  return token.expired(1000);
 }
 
 export async function refreshAccessToken(
