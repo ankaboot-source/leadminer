@@ -1,22 +1,16 @@
 <template>
   <Dialog v-model:visible="showModal" modal :header="t('consent_required')">
     <p class="m-0">
-      {{ t('consent_message', { available, total }) }}
+      {{ t('consent_message', { available, total: t('contact', total) }) }}
     </p>
     <template #footer>
       <div class="flex justify-end gap-2">
+        <Button :label="t('privacy_policy')" link @click="openPrivacyPolicy" />
+        <Button :label="t('cancel')" severity="secondary" @click="closeModal" />
         <Button
-          :label="t('privacy_policy')"
-          link
-          @click="openPrivacyPolicy"
-        />
-        <Button
-          :label="t('cancel')"
-          severity="secondary"
-          @click="closeModal"
-        />
-        <Button
-          :label="t('continue_with_available', { count: available })"
+          :label="
+            t('continue_with_available', { count: t('contact', available) })
+          "
           severity="contrast"
           @click="confirmPartial"
         />
@@ -27,11 +21,11 @@
 
 <script setup lang="ts">
 const { t } = useI18n({
-  useScope: "local",
+  useScope: 'local',
 });
 
 const emit = defineEmits<{
-  "confirm-partial": [];
+  'confirm-partial': [];
 }>();
 
 const showModal = ref(false);
@@ -49,11 +43,11 @@ const closeModal = () => {
 };
 
 const openPrivacyPolicy = () => {
-  window.open("/privacy-policy", "_blank");
+  window.open('/privacy-policy', '_blank');
 };
 
 const confirmPartial = () => {
-  emit("confirm-partial");
+  emit('confirm-partial');
   closeModal();
 };
 
@@ -67,17 +61,19 @@ defineExpose({
 {
   "en": {
     "consent_required": "Consent Required",
-    "consent_message": "Only {available} of {total} contacts have given consent to be contacted.",
+    "consent_message": "Only {available} of {total} have given consent to be contacted.",
+    "contact": "contact | contacts",
     "privacy_policy": "Privacy Policy",
     "cancel": "Cancel",
-    "continue_with_available": "Continue with {count} contacts"
+    "continue_with_available": "Continue with {count}"
   },
   "fr": {
     "consent_required": "Consentement Requis",
-    "consent_message": "Seulement {available} sur {total} contacts ont donné leur consentement.",
+    "consent_message": "Seulement {available} sur {total} ont donné leur consentement.",
+    "contact": "contact | contacts",
     "privacy_policy": "Politique de Confidentialité",
     "cancel": "Annuler",
-    "continue_with_available": "Continuer avec {count} contacts"
+    "continue_with_available": "Continuer avec {count}"
   }
 }
 </i18n>

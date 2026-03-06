@@ -16,7 +16,8 @@ import {
   listUniqueSenderSources,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { complianceMiddleware } from "./compliance-middleware.ts";
+import { campaignCheckMiddleware } from "./campaign-check-middleware.ts";
+import { campaignBillMiddleware } from "./campaign-bill-middleware.ts";
 
 const logger = createLogger("email-campaigns");
 
@@ -1251,209 +1252,239 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 });
 
-app.post("/campaigns/create", authMiddleware, complianceMiddleware, async (c: Context) => {
-  const auth = await getAuthenticatedUser(c);
-  if ("error" in auth) return auth.error;
+app.post(
+  "/campaigns/create",
+  authMiddleware,
+  campaignCheckMiddleware,
+  async (c: Context) => {
+    const user = c.get("user");
+    if (!user?.email) {
+      return c.json({ error: "User not found", code: "UNAUTHORIZED" }, 401);
+    }
 
-  const payload = (await c.req
-    .json()
-    .catch(() => ({}))) as CampaignCreatePayload;
-  const senderName = String(payload.senderName || "").trim();
-  const senderEmail = String(payload.senderEmail || "")
-    .trim()
-    .toLowerCase();
-  const replyTo = String(payload.replyTo || auth.user.email || "").trim();
-  const subject = String(payload.subject || "").trim();
-  const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
-  const bodyTextTemplate = String(payload.bodyTextTemplate || "");
-  const ownerEmail = auth.user.email as string;
-  const footerTextTemplate = String(
-    payload.footerTextTemplate || defaultFooterTemplate(ownerEmail),
-  );
-  const plainTextOnly = Boolean(payload.plainTextOnly);
-  const onlyValidContacts = Boolean(payload.onlyValidContacts);
-  const trackOpen = payload.trackOpen !== false;
-  const trackClick = payload.trackClick !== false;
+    const checkData = c.get("campaignCheck") as
+      | {
+          filteredEmails: string[];
+          eligibleCount: number;
+          userId: string;
+          payload: Record<string, unknown>;
+        }
+      | undefined;
 
-  if (
-    !senderName ||
-    !senderEmail ||
-    !subject ||
-    (!bodyHtmlTemplate && !bodyTextTemplate)
-  ) {
-    return c.json(
-      {
-        error: "Missing required campaign fields",
-        code: "MISSING_REQUIRED_FIELDS",
-      },
-      400,
+    if (!checkData) {
+      return c.json(
+        { error: "Campaign check data missing", code: "INTERNAL_ERROR" },
+        500,
+      );
+    }
+
+    const { payload, userId, filteredEmails } = checkData;
+    const ownerEmail = user.email;
+
+    const senderName = String(payload.senderName || "").trim();
+    const senderEmail = String(payload.senderEmail || "")
+      .trim()
+      .toLowerCase();
+    const replyTo = String(payload.replyTo || ownerEmail || "").trim();
+    const subject = String(payload.subject || "").trim();
+    const bodyHtmlTemplate = String(payload.bodyHtmlTemplate || "");
+    const bodyTextTemplate = String(payload.bodyTextTemplate || "");
+    const footerTextTemplate = String(
+      payload.footerTextTemplate || defaultFooterTemplate(ownerEmail),
     );
-  }
+    const plainTextOnly = Boolean(payload.plainTextOnly);
+    const onlyValidContacts = Boolean(payload.onlyValidContacts);
+    const trackOpen = payload.trackOpen !== false;
+    const trackClick = payload.trackClick !== false;
 
-  const senderDailyLimit = Math.min(
-    Math.max(Number(payload.senderDailyLimit || DEFAULT_SENDER_DAILY_LIMIT), 1),
-    MAX_SENDER_DAILY_LIMIT,
-  );
+    if (
+      !senderName ||
+      !senderEmail ||
+      !subject ||
+      (!bodyHtmlTemplate && !bodyTextTemplate)
+    ) {
+      return c.json(
+        {
+          error: "Missing required campaign fields",
+          code: "MISSING_REQUIRED_FIELDS",
+        },
+        400,
+      );
+    }
 
-  const authorization = c.req.header("authorization") as string;
-  let options: SenderOption[] = [];
-  let fallbackSenderEmail = "";
-  let transportBySender: Record<string, Transport | null> = {};
-
-  try {
-    const senderOptions = await resolveSenderOptions(authorization, ownerEmail);
-    options = senderOptions.options;
-    fallbackSenderEmail = senderOptions.fallbackSenderEmail;
-    transportBySender = senderOptions.transportBySender;
-  } catch (error) {
-    return c.json(
-      {
-        error: extractErrorMessage(error),
-        code: "SMTP_SENDER_NOT_CONFIGURED",
-      },
-      500,
+    const senderDailyLimit = Math.min(
+      Math.max(
+        Number(payload.senderDailyLimit || DEFAULT_SENDER_DAILY_LIMIT),
+        1,
+      ),
+      MAX_SENDER_DAILY_LIMIT,
     );
-  }
 
-  if (!ensureAllowedSender(senderEmail, options)) {
-    return c.json(
-      {
-        error: "Selected sender is not available",
-        code: "SENDER_NOT_ALLOWED",
-        fallbackSenderEmail,
-      },
-      400,
-    );
-  }
+    const authorization = c.req.header("authorization") as string;
+    let options: SenderOption[] = [];
+    let fallbackSenderEmail = "";
+    let transportBySender: Record<string, Transport | null> = {};
 
-  if (senderEmail !== fallbackSenderEmail) {
     try {
-      await verifyTransport(transportBySender[senderEmail] ?? undefined);
+      const senderOptions = await resolveSenderOptions(
+        authorization,
+        ownerEmail,
+      );
+      options = senderOptions.options;
+      fallbackSenderEmail = senderOptions.fallbackSenderEmail;
+      transportBySender = senderOptions.transportBySender;
     } catch (error) {
       return c.json(
         {
           error: extractErrorMessage(error),
-          code: "SENDER_SMTP_FAILED",
-          fallbackSenderEmail,
+          code: "SMTP_SENDER_NOT_CONFIGURED",
         },
-        422,
+        500,
       );
     }
-  }
 
-  const supabaseAdmin = createSupabaseAdmin();
-  
-  // Use filtered emails from compliance middleware (or original if not filtered)
-  const selectedEmails = c.get("filteredEmails") as string[] | undefined || payload.selectedEmails || [];
-  
-  let contacts: ContactSnapshot[] = [];
-  try {
-    contacts = await getSelectedContacts(
-      supabaseAdmin,
-      auth.user.id,
-      selectedEmails,
+    if (!ensureAllowedSender(senderEmail, options)) {
+      return c.json(
+        {
+          error: "Selected sender is not available",
+          code: "SENDER_NOT_ALLOWED",
+          fallbackSenderEmail,
+        },
+        400,
+      );
+    }
+
+    if (senderEmail !== fallbackSenderEmail) {
+      try {
+        await verifyTransport(transportBySender[senderEmail] ?? undefined);
+      } catch (error) {
+        return c.json(
+          {
+            error: extractErrorMessage(error),
+            code: "SENDER_SMTP_FAILED",
+            fallbackSenderEmail,
+          },
+          422,
+        );
+      }
+    }
+
+    const supabaseAdmin = createSupabaseAdmin();
+
+    let contacts: ContactSnapshot[] = [];
+    try {
+      contacts = await getContactsByEmails(
+        supabaseAdmin,
+        userId,
+        filteredEmails,
+      );
+    } catch (error) {
+      return c.json(
+        {
+          error: extractErrorMessage(error),
+          code: "CONTACTS_FETCH_FAILED",
+        },
+        500,
+      );
+    }
+    const eligibleContacts = filterEligibleContacts(
+      contacts,
+      onlyValidContacts,
     );
-  } catch (error) {
-    return c.json(
-      {
-        error: extractErrorMessage(error),
-        code: "CONTACTS_FETCH_FAILED",
-      },
-      500,
-    );
-  }
-  const eligibleContacts = filterEligibleContacts(contacts, onlyValidContacts);
 
-  if (!eligibleContacts.length) {
-    return c.json(
-      {
-        error: "No eligible contacts to send",
-        code: "NO_ELIGIBLE_CONTACTS",
-      },
-      400,
-    );
-  }
+    if (!eligibleContacts.length) {
+      return c.json(
+        {
+          error: "No eligible contacts to send",
+          code: "NO_ELIGIBLE_CONTACTS",
+        },
+        400,
+      );
+    }
 
-  // Use selectedEmails.length (already filtered by middleware)
-  const totalRecipients = payload.selectedEmails?.length ?? eligibleContacts.length;
+    // Use eligibleContacts.length (already filtered by middleware and consent)
+    const totalRecipients = eligibleContacts.length;
 
-  const { data: campaignData, error: campaignError } = await supabaseAdmin
-    .schema("private")
-    .from("email_campaigns")
-    .insert({
-      user_id: auth.user.id,
-      owner_email: ownerEmail,
-      sender_name: senderName,
+    const { data: campaignData, error: campaignError } = await supabaseAdmin
+      .schema("private")
+      .from("email_campaigns")
+      .insert({
+        user_id: userId,
+        owner_email: ownerEmail,
+        sender_name: senderName,
+        sender_email: senderEmail,
+        reply_to: replyTo,
+        subject,
+        body_html_template: bodyHtmlTemplate,
+        body_text_template: normalizeBodyText(
+          bodyTextTemplate,
+          bodyHtmlTemplate,
+          plainTextOnly,
+        ),
+        footer_html_template: toHtmlFromText(footerTextTemplate),
+        footer_text_template: footerTextTemplate,
+        sender_daily_limit: senderDailyLimit,
+        track_open: trackOpen,
+        track_click: trackClick,
+        plain_text_only: plainTextOnly,
+        only_valid_contacts: onlyValidContacts,
+        total_recipients: totalRecipients,
+        status: "queued",
+      })
+      .select("id")
+      .single();
+
+    if (campaignError || !campaignData?.id) {
+      return c.json(
+        {
+          error: campaignError?.message || "Unable to create campaign",
+          code: "CAMPAIGN_CREATE_FAILED",
+        },
+        500,
+      );
+    }
+
+    const campaignId = campaignData.id as string;
+    const recipientRows = eligibleContacts.map((contact) => ({
+      campaign_id: campaignId,
+      user_id: userId,
       sender_email: senderEmail,
-      reply_to: replyTo,
-      subject,
-      body_html_template: bodyHtmlTemplate,
-      body_text_template: normalizeBodyText(
-        bodyTextTemplate,
-        bodyHtmlTemplate,
-        plainTextOnly,
-      ),
-      footer_html_template: toHtmlFromText(footerTextTemplate),
-      footer_text_template: footerTextTemplate,
-      sender_daily_limit: senderDailyLimit,
-      track_open: trackOpen,
-      track_click: trackClick,
-      plain_text_only: plainTextOnly,
-      only_valid_contacts: onlyValidContacts,
-      total_recipients: totalRecipients,
-      status: "queued",
-    })
-    .select("id")
-    .single();
+      contact_email: contact.email,
+      send_status: "pending" as RecipientStatus,
+      contact_temperature: contact.temperature ?? 0,
+    }));
 
-  if (campaignError || !campaignData?.id) {
-    return c.json(
-      {
-        error: campaignError?.message || "Unable to create campaign",
-        code: "CAMPAIGN_CREATE_FAILED",
-      },
-      500,
-    );
-  }
+    const { error: recipientsError } = await supabaseAdmin
+      .schema("private")
+      .from("email_campaign_recipients")
+      .insert(recipientRows);
 
-  const campaignId = campaignData.id as string;
-  const recipientRows = eligibleContacts.map((contact) => ({
-    campaign_id: campaignId,
-    user_id: auth.user.id,
-    sender_email: senderEmail,
-    contact_email: contact.email,
-    send_status: "pending" as RecipientStatus,
-    contact_temperature: contact.temperature ?? 0,
-  }));
+    if (recipientsError) {
+      return c.json(
+        {
+          error: recipientsError.message,
+          code: "CAMPAIGN_RECIPIENTS_CREATE_FAILED",
+        },
+        500,
+      );
+    }
 
-  const { error: recipientsError } = await supabaseAdmin
-    .schema("private")
-    .from("email_campaign_recipients")
-    .insert(recipientRows);
-
-  if (recipientsError) {
-    return c.json(
-      {
-        error: recipientsError.message,
-        code: "CAMPAIGN_RECIPIENTS_CREATE_FAILED",
-      },
-      500,
-    );
-  }
-
-  triggerCampaignProcessorFromEdge().catch((error) => {
-    logger.error("Failed to trigger campaign processor", {
-      error: error instanceof Error ? error.message : String(error),
+    triggerCampaignProcessorFromEdge().catch((error) => {
+      logger.error("Failed to trigger campaign processor", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     });
-    // Cron remains as fallback if immediate trigger fails.
-  });
 
-  return c.json({
-    msg: "Campaign queued",
-    campaignId,
-    queuedCount: recipientRows.length,
-  });
-});
+    c.set("campaignCreate", {
+      campaignId,
+      createdCount: recipientRows.length,
+      userId,
+    });
+
+    await next();
+  },
+  campaignBillMiddleware,
+);
 
 app.get("/campaigns/:id/status", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
