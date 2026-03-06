@@ -1143,6 +1143,7 @@ async function submit(partialCampaign = false) {
 
     if (shouldCloseDialog) {
       $toast.add({
+        group: 'has-links',
         severity: 'success',
         summary: t('campaign_started'),
         detail: {
