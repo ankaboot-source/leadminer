@@ -20,3 +20,4 @@ backend/config/default.yml
 supabase/config.toml
 frontend-v4/*
 .worktrees/
+.opencode/plans/
