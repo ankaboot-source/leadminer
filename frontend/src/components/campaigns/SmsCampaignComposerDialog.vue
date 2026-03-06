@@ -58,7 +58,10 @@
             :allow-empty="false"
           />
           <Button
-            v-if="form.provider === 'smsgate'"
+            v-if="
+              form.provider === 'smsgate' ||
+              form.provider === 'simple-sms-gateway'
+            "
             text
             size="small"
             icon="pi pi-question-circle"
@@ -97,6 +100,38 @@
           >
           <Password
             v-model="form.smsgatePassword"
+            :feedback="false"
+            toggle-mask
+            input-class="w-full"
+          />
+        </div>
+      </div>
+
+      <div
+        v-if="form.provider === 'simple-sms-gateway'"
+        class="grid grid-cols-1 md:grid-cols-2 gap-2"
+      >
+        <div class="flex flex-col gap-1 md:col-span-2">
+          <label class="text-sm font-medium">{{
+            t('simple_sms_gateway_base_url')
+          }}</label>
+          <InputText
+            v-model="form.simpleSmsGatewayBaseUrl"
+            placeholder="https://api.simple-sms-gateway.com"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium"
+            >{{ t('simple_sms_gateway_username') }} *</label
+          >
+          <InputText v-model="form.simpleSmsGatewayUsername" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium"
+            >{{ t('simple_sms_gateway_password') }} *</label
+          >
+          <Password
+            v-model="form.simpleSmsGatewayPassword"
             :feedback="false"
             toggle-mask
             input-class="w-full"
@@ -235,6 +270,7 @@ const isVisible = computed({
 const showSetupDialog = ref(false);
 const providerStatus = ref({
   smsgateConfigured: false,
+  simpleSmsGatewayConfigured: false,
   twilioAvailable: false,
 });
 
@@ -284,6 +320,7 @@ async function fetchProviderStatus() {
     const data = await response.json();
     providerStatus.value = {
       smsgateConfigured: Boolean(data.smsgateConfigured),
+      simpleSmsGatewayConfigured: Boolean(data.simpleSmsGatewayConfigured),
       twilioAvailable: Boolean(data.twilioAvailable),
     };
 
@@ -293,9 +330,16 @@ async function fetchProviderStatus() {
     if (data.smsgateUsername && !form.smsgateUsername) {
       form.smsgateUsername = data.smsgateUsername;
     }
+    if (data.simpleSmsGatewayBaseUrl && !form.simpleSmsGatewayBaseUrl) {
+      form.simpleSmsGatewayBaseUrl = data.simpleSmsGatewayBaseUrl;
+    }
+    if (data.simpleSmsGatewayUsername && !form.simpleSmsGatewayUsername) {
+      form.simpleSmsGatewayUsername = data.simpleSmsGatewayUsername;
+    }
   } catch {
     providerStatus.value = {
       smsgateConfigured: false,
+      simpleSmsGatewayConfigured: false,
       twilioAvailable: false,
     };
   }
@@ -306,7 +350,10 @@ const form = reactive({
   smsgateBaseUrl: 'https://api.sms-gate.app',
   smsgateUsername: '',
   smsgatePassword: '',
-  provider: 'smsgate' as 'smsgate' | 'twilio',
+  simpleSmsGatewayBaseUrl: 'https://api.simple-sms-gateway.com',
+  simpleSmsGatewayUsername: '',
+  simpleSmsGatewayPassword: '',
+  provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
   messageTemplate: '',
   useShortLinks: false,
 });
@@ -375,9 +422,24 @@ const hasUsableSmsGateConfig = computed(
     hasProvidedSmsGateCredentials.value,
 );
 
+const hasProvidedSimpleSmsGatewayCredentials = computed(
+  () =>
+    form.simpleSmsGatewayUsername.trim().length > 0 &&
+    form.simpleSmsGatewayPassword.trim().length > 0,
+);
+
+const hasUsableSimpleSmsGatewayConfig = computed(
+  () =>
+    providerStatus.value.simpleSmsGatewayConfigured ||
+    hasProvidedSimpleSmsGatewayCredentials.value,
+);
+
 const hasUsableProviderConfig = computed(() => {
   if (form.provider === 'twilio') {
     return providerStatus.value.twilioAvailable;
+  }
+  if (form.provider === 'simple-sms-gateway') {
+    return hasUsableSimpleSmsGatewayConfig.value;
   }
   return hasUsableSmsGateConfig.value;
 });
@@ -386,11 +448,23 @@ const providerConfigError = computed(() => {
   if (form.provider === 'twilio' && !providerStatus.value.twilioAvailable) {
     return t('twilio_not_configured');
   }
+  if (
+    form.provider === 'simple-sms-gateway' &&
+    !hasUsableSimpleSmsGatewayConfig.value
+  ) {
+    return t('simple_sms_gateway_not_configured');
+  }
   return t('smsgate_not_configured');
 });
 
 const providerOptions = computed(() => {
-  const options = [{ label: 'SMSGate', value: 'smsgate' as const }];
+  const options = [
+    { label: 'SMSGate', value: 'smsgate' as const },
+    {
+      label: 'simple-sms-gateway',
+      value: 'simple-sms-gateway' as const,
+    },
+  ];
   if (providerStatus.value.twilioAvailable) {
     options.push({ label: 'Twilio', value: 'twilio' as const });
   }
@@ -453,6 +527,11 @@ const sendPreview = async () => {
             username: form.smsgateUsername,
             password: form.smsgatePassword,
           },
+          simpleSmsGatewayConfig: {
+            baseUrl: form.simpleSmsGatewayBaseUrl,
+            username: form.simpleSmsGatewayUsername,
+            password: form.simpleSmsGatewayPassword,
+          },
           selectedPhones: getSelectedPhones().slice(0, 1),
         }),
       },
@@ -504,6 +583,11 @@ const submitCampaign = async () => {
             username: form.smsgateUsername,
             password: form.smsgatePassword,
           },
+          simpleSmsGatewayConfig: {
+            baseUrl: form.simpleSmsGatewayBaseUrl,
+            username: form.simpleSmsGatewayUsername,
+            password: form.simpleSmsGatewayPassword,
+          },
           selectedPhones: phones,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
@@ -513,6 +597,9 @@ const submitCampaign = async () => {
     if (!response.ok) {
       const error = await response.json();
       if (error.code === 'SMSGATE_NOT_CONFIGURED') {
+        showSetupDialog.value = true;
+      }
+      if (error.code === 'SIMPLE_SMS_GATEWAY_NOT_CONFIGURED') {
         showSetupDialog.value = true;
       }
       throw new Error(error.error || 'Campaign creation failed');
@@ -547,6 +634,9 @@ const resetForm = () => {
   form.smsgateBaseUrl = 'https://api.sms-gate.app';
   form.smsgateUsername = '';
   form.smsgatePassword = '';
+  form.simpleSmsGatewayBaseUrl = 'https://api.simple-sms-gateway.com';
+  form.simpleSmsGatewayUsername = '';
+  form.simpleSmsGatewayPassword = '';
   form.provider = 'smsgate';
   form.messageTemplate = '';
   form.useShortLinks = false;
@@ -594,6 +684,10 @@ watch(() => form.messageTemplate, updateCharCount);
     "smsgate_username": "SMSGate Username",
     "smsgate_password": "SMSGate Password",
     "smsgate_not_configured": "SMSGate credentials are not configured yet.",
+    "simple_sms_gateway_base_url": "simple-sms-gateway API URL",
+    "simple_sms_gateway_username": "simple-sms-gateway Username",
+    "simple_sms_gateway_password": "simple-sms-gateway Password",
+    "simple_sms_gateway_not_configured": "simple-sms-gateway credentials are not configured yet.",
     "message": "Message",
     "message_placeholder": "Enter your SMS message here...",
     "message_required": "Message is required",
@@ -631,6 +725,10 @@ watch(() => form.messageTemplate, updateCharCount);
     "smsgate_username": "Nom d'utilisateur SMSGate",
     "smsgate_password": "Mot de passe SMSGate",
     "smsgate_not_configured": "Les identifiants SMSGate ne sont pas encore configurés.",
+    "simple_sms_gateway_base_url": "URL API simple-sms-gateway",
+    "simple_sms_gateway_username": "Nom d'utilisateur simple-sms-gateway",
+    "simple_sms_gateway_password": "Mot de passe simple-sms-gateway",
+    "simple_sms_gateway_not_configured": "Les identifiants simple-sms-gateway ne sont pas encore configurés.",
     "message": "Message",
     "message_placeholder": "Entrez votre message SMS ici...",
     "message_required": "Le message est requis",

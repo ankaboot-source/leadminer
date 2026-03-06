@@ -168,6 +168,40 @@
           :loading="isSavingSmsGateway"
           @click="saveSmsGatewaySettings"
         />
+
+        <Divider />
+
+        <h3 class="m-0">{{ t('simple_sms_gateway_settings') }}</h3>
+        <div class="grid gap-2">
+          <label class="block">{{ t('simple_sms_gateway_base_url') }}</label>
+          <InputText
+            v-model="simpleSmsGatewayBaseUrlInput"
+            class="w-full md:w-30rem"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="block">{{ t('simple_sms_gateway_username') }}</label>
+          <InputText
+            v-model="simpleSmsGatewayUsernameInput"
+            class="w-full md:w-30rem"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="block">{{ t('simple_sms_gateway_password') }}</label>
+          <Password
+            v-model="simpleSmsGatewayPasswordInput"
+            :feedback="false"
+            toggle-mask
+            class="w-full md:w-30rem"
+            :input-style="{ width: '100%' }"
+          />
+        </div>
+        <Button
+          class="w-full md:w-80 gap-4"
+          :label="t('save_simple_sms_gateway')"
+          :loading="isSavingSimpleSmsGateway"
+          @click="saveSimpleSmsGatewaySettings"
+        />
       </div>
     </Panel>
 
@@ -239,6 +273,7 @@ if (!user || userError) throw new Error('Unable to fetch user data');
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
 const isSavingSmsGateway = ref(false);
+const isSavingSimpleSmsGateway = ref(false);
 const twilioAvailable = ref(false);
 
 const emailInput = ref($profile.value?.email);
@@ -249,6 +284,14 @@ const smsgateBaseUrlInput = ref(
 );
 const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
 const smsgatePasswordInput = ref('');
+const simpleSmsGatewayBaseUrlInput = ref(
+  $profile.value?.simple_sms_gateway_base_url ||
+    'https://api.simple-sms-gateway.com',
+);
+const simpleSmsGatewayUsernameInput = ref(
+  $profile.value?.simple_sms_gateway_username || '',
+);
+const simpleSmsGatewayPasswordInput = ref('');
 const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
@@ -414,6 +457,12 @@ async function fetchSmsProviderStatus() {
     if (data.smsgateUsername) {
       smsgateUsernameInput.value = data.smsgateUsername;
     }
+    if (data.simpleSmsGatewayBaseUrl) {
+      simpleSmsGatewayBaseUrlInput.value = data.simpleSmsGatewayBaseUrl;
+    }
+    if (data.simpleSmsGatewayUsername) {
+      simpleSmsGatewayUsernameInput.value = data.simpleSmsGatewayUsername;
+    }
   } catch {
     twilioAvailable.value = false;
   }
@@ -474,6 +523,61 @@ async function saveSmsGatewaySettings() {
   }
 }
 
+async function saveSimpleSmsGatewaySettings() {
+  try {
+    isSavingSimpleSmsGateway.value = true;
+
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/providers/simple-sms-gateway',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          baseUrl: simpleSmsGatewayBaseUrlInput.value,
+          username: simpleSmsGatewayUsernameInput.value,
+          password: simpleSmsGatewayPasswordInput.value,
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || t('simple_sms_gateway_save_failed'));
+    }
+
+    simpleSmsGatewayPasswordInput.value = '';
+
+    const { error: profileUpdateError } = await useSupabaseClient<Profile>()
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from('profiles')
+      .update({
+        simple_sms_gateway_base_url: simpleSmsGatewayBaseUrlInput.value,
+        simple_sms_gateway_username: simpleSmsGatewayUsernameInput.value,
+      })
+      .eq('user_id', $profile.value?.user_id);
+
+    if (profileUpdateError) {
+      throw profileUpdateError;
+    }
+
+    $toast.add({
+      severity: 'success',
+      summary: t('simple_sms_gateway_saved'),
+      detail: t('simple_sms_gateway_saved_detail'),
+      life: 5000,
+    });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('error'),
+      detail: (error as Error).message,
+      life: 4000,
+    });
+  } finally {
+    isSavingSimpleSmsGateway.value = false;
+  }
+}
+
 await fetchSmsProviderStatus();
 </script>
 
@@ -518,6 +622,14 @@ await fetchSmsProviderStatus();
     "sms_gateway_saved": "SMS gateway saved",
     "sms_gateway_saved_detail": "Your SMSGate credentials were saved successfully.",
     "sms_gateway_save_failed": "Unable to save SMS gateway settings",
+    "simple_sms_gateway_settings": "simple-sms-gateway Settings",
+    "simple_sms_gateway_base_url": "simple-sms-gateway API URL",
+    "simple_sms_gateway_username": "simple-sms-gateway Username",
+    "simple_sms_gateway_password": "simple-sms-gateway Password",
+    "save_simple_sms_gateway": "Save simple-sms-gateway",
+    "simple_sms_gateway_saved": "simple-sms-gateway saved",
+    "simple_sms_gateway_saved_detail": "Your simple-sms-gateway credentials were saved successfully.",
+    "simple_sms_gateway_save_failed": "Unable to save simple-sms-gateway settings",
     "twilio_status": "Twilio: {status}",
     "available": "available",
     "not_available": "not available",
@@ -562,6 +674,14 @@ await fetchSmsProviderStatus();
     "sms_gateway_saved": "Passerelle SMS enregistrée",
     "sms_gateway_saved_detail": "Vos identifiants SMSGate ont été enregistrés avec succès.",
     "sms_gateway_save_failed": "Impossible d'enregistrer les paramètres de passerelle SMS",
+    "simple_sms_gateway_settings": "Paramètres simple-sms-gateway",
+    "simple_sms_gateway_base_url": "URL API simple-sms-gateway",
+    "simple_sms_gateway_username": "Nom d'utilisateur simple-sms-gateway",
+    "simple_sms_gateway_password": "Mot de passe simple-sms-gateway",
+    "save_simple_sms_gateway": "Enregistrer simple-sms-gateway",
+    "simple_sms_gateway_saved": "simple-sms-gateway enregistré",
+    "simple_sms_gateway_saved_detail": "Vos identifiants simple-sms-gateway ont été enregistrés avec succès.",
+    "simple_sms_gateway_save_failed": "Impossible d'enregistrer les paramètres simple-sms-gateway",
     "twilio_status": "Twilio : {status}",
     "available": "disponible",
     "not_available": "non disponible",

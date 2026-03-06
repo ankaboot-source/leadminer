@@ -19,7 +19,7 @@ export interface CampaignOverview {
   sender_name: string;
   sender_email?: string;
   sender_phone?: string;
-  provider?: 'twilio' | 'smsgate';
+  provider?: 'twilio' | 'smsgate' | 'simple-sms-gateway';
   subject?: string;
   status: CampaignStatus;
   total_recipients?: number;

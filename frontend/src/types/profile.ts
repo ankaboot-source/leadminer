@@ -7,4 +7,7 @@ export interface Profile {
   smsgate_base_url?: string | null;
   smsgate_username?: string | null;
   smsgate_password?: string | null;
+  simple_sms_gateway_base_url?: string | null;
+  simple_sms_gateway_username?: string | null;
+  simple_sms_gateway_password?: string | null;
 }
