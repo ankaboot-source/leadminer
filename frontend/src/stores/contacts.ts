@@ -12,14 +12,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   const updateContactList = ref<boolean>(false);
   const contactsCacheMap = new Map<string, Contact>();
-  const contactsList = ref<Contact[] | undefined>(undefined);
+  const contactsList = ref<Contact[] | undefined>();
 
-  const selectedEmails = ref<string[] | undefined>(undefined);
+  const selectedEmails = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
 
   const contactCount = computed(() => contactsList.value?.length);
 
   let realtimeChannel: RealtimeChannel | null = null;
+  let realtimeChannelUserId: string | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
@@ -156,15 +157,26 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Subscribes to real-time updates for contacts.
    */
   function subscribeToRealtimeUpdates() {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
+    if (realtimeChannel && realtimeChannelUserId !== userId) {
+      $supabase.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+      realtimeChannelUserId = null;
+    }
+
+    if (realtimeChannel) return;
+
     realtimeChannel = useSupabaseClient()
-      .channel('contacts-table')
+      .channel(`contacts-table-${userId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'private',
           table: 'persons',
-          filter: `updated_at=gt.${new Date().toISOString()}`,
+          filter: `user_id=eq.${userId}`,
         },
         (payload: RealtimePostgresChangesPayload<Contact>) => {
           if (payload.eventType === 'DELETE' && payload.old.email) {
@@ -177,6 +189,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
           }
         },
       );
+    realtimeChannelUserId = userId;
     startSyncInterval();
     realtimeChannel.subscribe();
   }
@@ -190,6 +203,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (realtimeChannel) {
       await realtimeChannel.unsubscribe();
       await $supabase.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+      realtimeChannelUserId = null;
     }
     if (syncIntervalId) clearSyncInterval();
   }
@@ -200,17 +215,17 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
     if (!userId) return false;
 
-    const { data, error } = await $supabase
+    const { count, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('persons')
-      .select('*', { count: 'exact' })
+      .select('email', { count: 'exact', head: true })
       .eq('user_id', userId)
       .limit(1);
 
     if (error) throw error;
 
-    return (data?.length ?? 0) > 0;
+    return (count ?? 0) > 0;
   }
 
   /**

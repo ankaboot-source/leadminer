@@ -38,41 +38,51 @@
         </p>
 
         <div class="p-toast-detail">
-          {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
-          <Button
+          <div>
+            {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
+          </div>
+          <div
             v-if="
               (slotProps.message.detail as ToastHasLinksGroupDetail).button
                 ?.action
             "
             class="mt-2"
-            size="small"
-            :label="
-              (slotProps.message.detail as ToastHasLinksGroupDetail).button
-                ?.text
-            "
-            @click="
-              (
-                slotProps.message.detail as ToastHasLinksGroupDetail
-              ).button?.action?.()
-            "
-          ></Button>
-          <Button
+          >
+            <Button
+              size="small"
+              :label="
+                (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                  ?.text
+              "
+              @click="
+                (
+                  slotProps.message.detail as ToastHasLinksGroupDetail
+                ).button?.action?.()
+              "
+            ></Button>
+          </div>
+          <div
             v-else-if="
               (slotProps.message.detail as ToastHasLinksGroupDetail).link
             "
-            class="-ml-3"
-            size="small"
-            as="a"
-            variant="link"
-            :label="
-              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.text
-            "
-            :href="
-              (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
-            "
-            target="_blank"
-            rel="noopener"
-          />
+            class="mt-2"
+          >
+            <Button
+              class="-ml-3"
+              size="small"
+              as="a"
+              variant="link"
+              :label="
+                (slotProps.message.detail as ToastHasLinksGroupDetail).link
+                  ?.text
+              "
+              :href="
+                (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
+              "
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          </div>
         </div>
       </div>
     </template>

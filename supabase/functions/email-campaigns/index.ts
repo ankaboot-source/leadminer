@@ -7,9 +7,11 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { normalizeEmail } from "../_shared/email.ts";
+import { generateShortToken } from "../_shared/short-token.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
+import { buildRedirectResponse } from "../_shared/http.ts";
 import {
   getSenderCredentialIssue,
   isTokenExpired,
@@ -379,7 +381,18 @@ function toHtmlFromText(template: string): string {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  return `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/unsubscribe/${token}`;
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/u/${token}`;
+}
+
+function buildOpenTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/o/${token}`;
+}
+
+function buildClickTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/c/${token}`;
 }
 
 async function triggerCampaignProcessorFromEdge() {
@@ -542,7 +555,11 @@ function withBearer(token: string): string {
   return token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`;
 }
 
-async function getUserMiningSources(authorization: string, userId?: string) {
+async function getUserMiningSources(
+  authorization: string,
+  userId?: string,
+  refreshEmail?: string,
+) {
   const response = await fetch(
     `${SUPABASE_URL}/functions/v1/fetch-mining-source`,
     {
@@ -551,7 +568,10 @@ async function getUserMiningSources(authorization: string, userId?: string) {
         "Content-Type": "application/json",
         Authorization: withBearer(authorization),
       },
-      body: JSON.stringify({ user_id: userId }),
+      body: JSON.stringify({
+        user_id: userId,
+        refresh_email: refreshEmail,
+      }),
     },
   );
 
@@ -712,10 +732,59 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       options.push({ email: source.email, available: true });
       transportBySender[source.email] = transport;
     } catch (error) {
+      const errorMessage = getUserFriendlyError(error);
+      const isOAuthError =
+        /oauth|authentication|invalid credentials|invalid credentials or expired token/i.test(
+          errorMessage,
+        );
+
+      if (
+        isOAuthError &&
+        (source.type === "google" || source.type === "azure")
+      ) {
+        logger.info("OAuth error, attempting forced token refresh", {
+          email: source.email,
+          type: source.type,
+        });
+
+        try {
+          const refreshedSources = await getUserMiningSources(
+            authorization,
+            undefined,
+            source.email,
+          );
+          const refreshedSource = refreshedSources.find(
+            (s) => s.email.toLowerCase() === source.email.toLowerCase(),
+          );
+
+          if (refreshedSource) {
+            const retryTransport = await buildUserTransport(
+              source.email,
+              refreshedSource.credentials,
+            );
+            await verifyTransport(retryTransport);
+            logger.info("Token refresh succeeded after OAuth failure", {
+              email: source.email,
+            });
+            options.push({ email: source.email, available: true });
+            transportBySender[source.email] = retryTransport;
+            continue;
+          }
+        } catch (refreshError) {
+          logger.warn("Token refresh failed after OAuth error", {
+            email: source.email,
+            error:
+              refreshError instanceof Error
+                ? refreshError.message
+                : String(refreshError),
+          });
+        }
+      }
+
       options.push({
         email: source.email,
         available: false,
-        reason: getUserFriendlyError(error),
+        reason: errorMessage,
       });
     }
   }
@@ -942,24 +1011,32 @@ async function recordClickLink(
   recipientId: string,
   url: string,
 ) {
-  const { data, error } = await supabaseAdmin
-    .schema("private")
-    .from("email_campaign_links")
-    .insert({
-      campaign_id: campaignId,
-      recipient_id: recipientId,
-      url,
-    })
-    .select("token")
-    .single();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const shortToken = generateShortToken(8);
+    const { data, error } = await supabaseAdmin
+      .schema("private")
+      .from("email_campaign_links")
+      .insert({
+        campaign_id: campaignId,
+        recipient_id: recipientId,
+        url,
+        short_token: shortToken,
+      })
+      .select("short_token")
+      .single();
 
-  if (error || !data?.token) {
-    throw new Error(
-      `Unable to save click tracker link: ${error?.message || "unknown"}`,
-    );
+    if (!error && data?.short_token) {
+      return data.short_token as string;
+    }
+
+    if (error?.code !== "23505") {
+      throw new Error(
+        `Unable to save click tracker link: ${error?.message || "unknown"}`,
+      );
+    }
   }
 
-  return data.token as string;
+  throw new Error("Unable to generate unique short token for click tracker");
 }
 
 async function injectTrackers(
@@ -990,7 +1067,7 @@ async function injectTrackers(
         recipientId,
         originalUrl,
       );
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/click/${token}`;
+      const trackedUrl = buildClickTrackingUrl(token);
 
       // Replace both quoted-printable encoded (href=3D"...") and regular (href="...")
       updatedHtml = updatedHtml.replace(
@@ -1004,7 +1081,7 @@ async function injectTrackers(
   }
 
   if (trackOpen) {
-    const pixelUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/email-campaigns/track/open/${openToken}`;
+    const pixelUrl = buildOpenTrackingUrl(openToken);
     updatedHtml += `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none" />`;
   }
 
@@ -1691,7 +1768,7 @@ app.post(
         .schema("private")
         .from("email_campaign_recipients")
         .select(
-          "id, user_id, contact_email, open_token, unsubscribe_token, attempt_count",
+          "id, user_id, contact_email, open_short_token, unsubscribe_short_token, attempt_count",
         )
         .eq("campaign_id", campaign.id)
         .eq("send_status", "pending")
@@ -1845,7 +1922,9 @@ app.post(
             campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
-          unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribe_token),
+          unsubscribeUrl: buildUnsubscribeUrl(
+            recipient.unsubscribe_short_token,
+          ),
           senderName: campaign.sender_name,
           plainTextOnly: campaign.plain_text_only,
         });
@@ -1858,7 +1937,7 @@ app.post(
                 supabaseAdmin,
                 campaign.id,
                 recipient.id,
-                recipient.open_token,
+                recipient.open_short_token,
                 bodyHtml,
                 campaign.track_click,
                 campaign.track_open,
@@ -2025,30 +2104,20 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   if (token === "preview-unsubscribe") {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
-      },
-    });
+    return buildRedirectResponse(
+      `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
+    );
   }
 
   const { data: recipient, error } = await supabaseAdmin
     .schema("private")
     .from("email_campaign_recipients")
     .select("id, campaign_id, user_id, contact_email")
-    .eq("unsubscribe_token", token)
+    .eq("unsubscribe_short_token", token)
     .single();
 
   if (error || !recipient) {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${FRONTEND_HOST}/unsubscribe/failure`,
-      },
-    });
+    return buildRedirectResponse(`${FRONTEND_HOST}/unsubscribe/failure`);
   }
 
   await supabaseAdmin
@@ -2096,13 +2165,7 @@ app.get("/unsubscribe/:token", async (c: Context) => {
       )}`
     : `${FRONTEND_HOST}/unsubscribe/success`;
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...corsHeaders,
-      Location: successUrl,
-    },
-  });
+  return buildRedirectResponse(successUrl);
 });
 
 app.get("/track/open/:token", async (c: Context) => {
@@ -2113,7 +2176,7 @@ app.get("/track/open/:token", async (c: Context) => {
     .schema("private")
     .from("email_campaign_recipients")
     .select("id, campaign_id")
-    .eq("open_token", token)
+    .eq("open_short_token", token)
     .single();
 
   if (recipient) {
@@ -2146,7 +2209,7 @@ app.get("/track/click/:token", async (c: Context) => {
     .schema("private")
     .from("email_campaign_links")
     .select("url, campaign_id, recipient_id")
-    .eq("token", token)
+    .eq("short_token", token)
     .single();
 
   if (!link?.url) {
@@ -2160,7 +2223,7 @@ app.get("/track/click/:token", async (c: Context) => {
     url: link.url,
   });
 
-  return c.redirect(link.url, 302);
+  return buildRedirectResponse(link.url);
 });
 
 app.post("/email-sending-request", authMiddleware, async (c: Context) => {
