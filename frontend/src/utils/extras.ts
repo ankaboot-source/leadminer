@@ -11,15 +11,8 @@ export function startMiningNotification() {
   $toast.add({
     severity: 'info',
     summary: t('mining.contacts_got_rights_title'),
-    detail: {
-      message: t('mining.contacts_got_rights_detail'),
-      link: {
-        text: t('mining.learn_more_about_rights'),
-        url: 'https://leadminer.io/donnees-personnelles',
-      },
-    },
+    detail: t('mining.contacts_got_rights_detail'),
     life: 8000,
-    group: 'has-links',
   });
 }
 
