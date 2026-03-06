@@ -334,12 +334,22 @@
             :label="t('send_campaign')"
             :loading="isSubmitting"
             :disabled="isActionDisabled"
-            @click="submit"
+            @click="submit(false)"
           />
         </div>
       </div>
     </template>
   </Dialog>
+
+  <ComplianceDialog ref="complianceDialogRef" @confirm-partial="submit(true)" />
+
+  <component
+    :is="CreditsDialog"
+    ref="CreditsDialogCampaignRef"
+    engagement-type="contact"
+    action-type="campaign"
+    @secondary-action="submit(true)"
+  />
 </template>
 
 <script setup lang="ts">
@@ -350,6 +360,12 @@ import {
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
+import ComplianceDialog from './ComplianceDialog.vue';
+import {
+  CreditsDialog,
+  CreditsDialogCampaignRef,
+  openCreditsDialog,
+} from '@/utils/credits';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
 
@@ -406,6 +422,9 @@ type SenderOptionItem = {
 const senderOptions = ref<SenderOptionItem[]>([]);
 const fallbackSenderEmail = ref('');
 const runtimeConfig = useRuntimeConfig();
+const complianceDialogRef = ref<InstanceType<typeof ComplianceDialog> | null>(
+  null,
+);
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
 const DEFAULT_PROJECT_IMAGE_SRC =
@@ -627,7 +646,6 @@ const editorModules = computed(() => ({
 }));
 
 type AttributeTarget = 'subject' | 'body';
-
 const activeAttributeTarget = ref<AttributeTarget>('body');
 
 const attributeMenuItems = computed(() =>
@@ -1125,7 +1143,7 @@ async function sendPreview() {
   }
 }
 
-async function submit() {
+async function submit(partialCampaign = false) {
   if (!ensureValidForm()) {
     return;
   }
@@ -1135,6 +1153,9 @@ async function submit() {
   }
 
   isSubmitting.value = true;
+  let shouldCloseDialog = true;
+  let showErrorToast = true;
+
   try {
     const data = await $saasEdgeFunctions('email-campaigns/campaigns/create', {
       method: 'POST',
@@ -1152,42 +1173,90 @@ async function submit() {
         trackClick: form.trackClick,
         plainTextOnly: form.plainTextOnly,
         onlyValidContacts: form.onlyValidContacts,
+        partialCampaign,
+      },
+      onResponse: ({ response }) => {
+        if (response.status === 402) {
+          openCreditsDialog(
+            CreditsDialogCampaignRef,
+            true,
+            response._data.total,
+            response._data.available,
+            response._data.availableAlready,
+          );
+          shouldCloseDialog = false;
+          showErrorToast = false;
+          return;
+        }
+
+        if (response.status === 266 && response._data?.reason === 'credits') {
+          openCreditsDialog(
+            CreditsDialogCampaignRef,
+            false,
+            response._data.total,
+            response._data.available,
+            response._data.availableAlready,
+          );
+          shouldCloseDialog = false;
+          showErrorToast = false;
+          return;
+        }
+
+        if (response.status === 266 && response._data?.reason === 'consent') {
+          complianceDialogRef.value?.openModal(
+            response._data.total,
+            response._data.available,
+          );
+          shouldCloseDialog = false;
+          showErrorToast = false;
+          return;
+        }
+
+        if (response.status === 200) {
+          return;
+        }
+
+        throw new Error(response._data?.error || 'Campaign creation failed');
       },
     });
 
-    $toast.add({
-      group: 'has-links',
-      severity: 'success',
-      summary: t('campaign_started'),
-      detail: {
-        message: t('campaign_started_detail'),
-        button: {
-          text: t('see_campaigns'),
-          action: () => navigateTo('/campaigns'),
+    if (shouldCloseDialog) {
+      $toast.add({
+        group: 'has-links',
+        severity: 'success',
+        summary: t('campaign_started'),
+        detail: {
+          message: t('campaign_started_detail'),
+          button: {
+            text: t('see_campaigns'),
+            action: () => navigateTo('/campaigns'),
+          },
         },
-      },
-      life: 6000,
-    });
+        life: 6000,
+      });
 
-    if (data?.campaignId) {
-      startCampaignCompletionWatcher(data.campaignId);
+      if (data?.campaignId) {
+        startCampaignCompletionWatcher(data.campaignId);
+      }
+
+      isVisible.value = false;
     }
-
-    isVisible.value = false;
   } catch (error: unknown) {
-    const parsedError = error as EdgeResponseError;
-    const code = parsedError?.data?.code;
-    if (code === 'SENDER_SMTP_FAILED' && fallbackSenderEmail.value) {
-      form.senderEmail =
-        parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
-    }
+    if (showErrorToast) {
+      const parsedError = error as EdgeResponseError;
+      const code = parsedError?.data?.code;
+      if (code === 'SENDER_SMTP_FAILED' && fallbackSenderEmail.value) {
+        form.senderEmail =
+          parsedError?.data?.fallbackSenderEmail || fallbackSenderEmail.value;
+      }
 
-    $toast.add({
-      severity: 'error',
-      summary: t('campaign_start_failed'),
-      detail: resolveErrorMessage(error, 'error_campaign_start_failed'),
-      life: 5000,
-    });
+      $toast.add({
+        severity: 'error',
+        summary: t('campaign_start_failed'),
+        detail: resolveErrorMessage(error, 'error_campaign_start_failed'),
+        life: 5000,
+      });
+    }
   } finally {
     isSubmitting.value = false;
   }
