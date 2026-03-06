@@ -639,6 +639,9 @@ const editorModules = computed(() => ({
     : {}),
 }));
 
+type AttributeTarget = 'subject' | 'body';
+const activeAttributeTarget = ref<AttributeTarget>('body');
+
 const attributeMenuItems = computed(() =>
   attributeOptions.map((key) => ({
     label: `{{${key}}}`,
@@ -646,9 +649,6 @@ const attributeMenuItems = computed(() =>
   })),
 );
 
-type AttributeTarget = 'subject' | 'body';
-
-const activeAttributeTarget = ref<AttributeTarget>('body');
 const subjectSelectionStart = ref(0);
 const subjectSelectionEnd = ref(0);
 
@@ -1076,7 +1076,7 @@ async function submit(partialCampaign = false) {
   let showErrorToast = true;
 
   try {
-    await $saasEdgeFunctions('email-campaigns/campaigns/create', {
+    const data = await $saasEdgeFunctions('email-campaigns/campaigns/create', {
       method: 'POST',
       body: {
         selectedEmails: selectedEmails.value,
@@ -1152,6 +1152,10 @@ async function submit(partialCampaign = false) {
         },
         life: 6000,
       });
+
+      if (data?.campaignId) {
+        startCampaignCompletionWatcher(data.campaignId);
+      }
 
       isVisible.value = false;
     }

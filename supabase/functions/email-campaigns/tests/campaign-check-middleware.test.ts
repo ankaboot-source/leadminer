@@ -1,3 +1,17 @@
+interface MockContext {
+  req: {
+    path: string;
+    json?: () => Promise<Record<string, unknown>>;
+  };
+  get: (key: string) => unknown;
+  set: (key: string, value: unknown) => void;
+  json: (data: unknown, status?: number) => void;
+}
+
+interface MockNext {
+  (): Promise<void>;
+}
+
 Deno.test({
   name: "campaign-check-middleware: should skip non-create paths",
   async fn() {
@@ -5,14 +19,14 @@ Deno.test({
       await import("../campaign-check-middleware.ts");
 
     let nextCalled = false;
-    const context: any = {
+    const context: MockContext = {
       req: { path: "/campaigns/list" },
       get: () => undefined,
       set: () => {},
       json: () => {},
     };
 
-    await campaignCheckMiddleware(context, () => {
+    await campaignCheckMiddleware(context as any, () => {
       nextCalled = true;
     });
 
@@ -28,8 +42,8 @@ Deno.test({
     const { campaignCheckMiddleware } =
       await import("../campaign-check-middleware.ts");
 
-    let jsonResult: any;
-    const context: any = {
+    let jsonResult: Record<string, unknown> | undefined;
+    const context: MockContext = {
       req: {
         path: "/campaigns/create",
         json: async () => ({ selectedEmails: [] }),
@@ -39,131 +53,20 @@ Deno.test({
         return undefined;
       },
       set: () => {},
-      json: (data: any) => {
-        jsonResult = { data, status: 400 };
+      json: (data: unknown) => {
+        jsonResult = { data: data as Record<string, unknown>, status: 400 };
       },
     };
 
-    await campaignCheckMiddleware(context, () => Promise.resolve());
+    await campaignCheckMiddleware(context as any, () => Promise.resolve());
 
-    if (!jsonResult || jsonResult.data.error !== "No contacts selected") {
+    if (
+      !jsonResult ||
+      (jsonResult.data as Record<string, unknown>)?.error !==
+        "No contacts selected"
+    ) {
       throw new Error(
         `Expected 400 with 'No contacts selected', got: ${JSON.stringify(jsonResult)}`,
-      );
-    }
-  },
-});
-
-Deno.test({
-  name: "campaign-bill-middleware: should skip non-create paths",
-  async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
-
-    let nextCalled = false;
-    const context: any = {
-      req: { path: "/campaigns/list" },
-      get: () => undefined,
-      json: () => {},
-    };
-
-    await campaignBillMiddleware(context, () => {
-      nextCalled = true;
-    });
-
-    if (!nextCalled) {
-      throw new Error("Expected next() to be called");
-    }
-  },
-});
-
-Deno.test({
-  name: "campaign-bill-middleware: should return 500 when campaign data missing",
-  async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
-
-    let jsonResult: any;
-    const context: any = {
-      req: { path: "/campaigns/create" },
-      get: () => undefined,
-      json: (data: any, status?: number) => {
-        jsonResult = { data, status };
-      },
-    };
-
-    const originalEnv = Deno.env.get;
-    Deno.env.get = (key: string) => {
-      if (key === "ENABLE_BILLING") return "false";
-      return originalEnv(key);
-    };
-
-    try {
-      await campaignBillMiddleware(context, () => Promise.resolve());
-    } finally {
-      Deno.env.get = originalEnv;
-    }
-
-    if (!jsonResult || jsonResult.status !== 500) {
-      throw new Error(`Expected 500, got: ${JSON.stringify(jsonResult)}`);
-    }
-    if (jsonResult.data.error !== "Campaign creation data missing") {
-      throw new Error(
-        `Expected 'Campaign creation data missing', got: ${jsonResult.data.error}`,
-      );
-    }
-  },
-});
-
-Deno.test({
-  name: "campaign-bill-middleware: should return success when billing disabled",
-  async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
-
-    let jsonResult: any;
-    const context: any = {
-      req: { path: "/campaigns/create" },
-      get: (key: string) => {
-        if (key === "campaignCreate") {
-          return {
-            campaignId: "campaign-123",
-            createdCount: 10,
-            userId: "user-123",
-          };
-        }
-        return undefined;
-      },
-      json: (data: any, status?: number) => {
-        jsonResult = { data, status };
-      },
-    };
-
-    const originalEnv = Deno.env.get;
-    Deno.env.get = (key: string) => {
-      if (key === "ENABLE_BILLING") return "false";
-      return originalEnv(key);
-    };
-
-    try {
-      await campaignBillMiddleware(context, () => Promise.resolve());
-    } finally {
-      Deno.env.get = originalEnv;
-    }
-
-    if (!jsonResult || jsonResult.data.msg !== "Campaign queued") {
-      throw new Error(
-        `Expected success response, got: ${JSON.stringify(jsonResult)}`,
-      );
-    }
-    if (jsonResult.data.campaignId !== "campaign-123") {
-      throw new Error(
-        `Expected campaignId 'campaign-123', got: ${jsonResult.data.campaignId}`,
-      );
-    }
-    if (jsonResult.data.queuedCount !== 10) {
-      throw new Error(
-        `Expected queuedCount 10, got: ${jsonResult.data.queuedCount}`,
       );
     }
   },

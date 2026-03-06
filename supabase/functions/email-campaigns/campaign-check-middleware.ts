@@ -157,7 +157,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
       payload,
     });
 
-    await next();
+    return await next();
   } catch (error) {
     logger.error("Campaign check failed", { error, userId: user.id });
     return c.json(

@@ -154,7 +154,7 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
 
   // Accept service role key directly (internal calls)
   if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
-    await next();
+    return await next();
   }
 
   // Validate user JWT
@@ -166,7 +166,7 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   }
 
   c.set("user", data.user);
-  await next();
+  return await next();
 }
 
 app.use("*", async (c, next) => {
@@ -1481,7 +1481,7 @@ app.post(
       userId,
     });
 
-    await next();
+    return await next();
   },
   campaignBillMiddleware,
 );
