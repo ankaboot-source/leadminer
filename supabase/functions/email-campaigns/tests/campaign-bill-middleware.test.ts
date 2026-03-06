@@ -1,12 +1,4 @@
-interface MockContext {
-  req: {
-    path: string;
-    json?: () => Promise<Record<string, unknown>>;
-  };
-  get: (key: string) => unknown;
-  set: (key: string, value: unknown) => void;
-  json: (data: unknown, status?: number) => void;
-}
+import { Context } from "hono";
 
 Deno.test({
   name: "campaign-bill-middleware: should skip non-create paths",
@@ -15,13 +7,15 @@ Deno.test({
       await import("../campaign-bill-middleware.ts");
 
     let nextCalled = false;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: { path: "/campaigns/list" },
       get: () => undefined,
+      set: () => {},
       json: () => {},
-    };
+    } as unknown as Context;
 
-    await campaignBillMiddleware(context as any, () => {
+    await campaignBillMiddleware(context, async () => {
       nextCalled = true;
     });
 
@@ -38,13 +32,15 @@ Deno.test({
       await import("../campaign-bill-middleware.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: { path: "/campaigns/create" },
       get: () => undefined,
+      set: () => {},
       json: (data: unknown, status?: number) => {
         jsonResult = { data: data as Record<string, unknown>, status };
       },
-    };
+    } as unknown as Context;
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
@@ -53,7 +49,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context as any, () => Promise.resolve());
+      await campaignBillMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -79,7 +75,8 @@ Deno.test({
       await import("../campaign-bill-middleware.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: { path: "/campaigns/create" },
       get: (key: string) => {
         if (key === "campaignCreate") {
@@ -91,10 +88,11 @@ Deno.test({
         }
         return undefined;
       },
+      set: () => {},
       json: (data: unknown, status?: number) => {
         jsonResult = { data: data as Record<string, unknown>, status };
       },
-    };
+    } as unknown as Context;
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
@@ -103,7 +101,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context as any, () => Promise.resolve());
+      await campaignBillMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -139,7 +137,8 @@ Deno.test({
       await import("../campaign-bill-middleware.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: { path: "/campaigns/create" },
       get: (key: string) => {
         if (key === "campaignCreate") {
@@ -151,10 +150,11 @@ Deno.test({
         }
         return undefined;
       },
+      set: () => {},
       json: (data: unknown, status?: number) => {
         jsonResult = { data: data as Record<string, unknown>, status };
       },
-    };
+    } as unknown as Context;
 
     const originalEnv = Deno.env.get;
     Deno.env.get = (key: string) => {
@@ -163,7 +163,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context as any, () => Promise.resolve());
+      await campaignBillMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }

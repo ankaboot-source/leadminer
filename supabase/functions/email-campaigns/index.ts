@@ -28,6 +28,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
+// skipcq: JS-0356 - Reserved for future API hash verification
 const LEADMINER_API_HASH_SECRET = Deno.env.get(
   "LEADMINER_API_HASH_SECRET",
 ) as string;
@@ -1256,7 +1257,7 @@ app.post(
   "/campaigns/create",
   authMiddleware,
   campaignCheckMiddleware,
-  async (c: Context) => {
+  async (c: Context, next: () => Promise<void>) => {
     const user = c.get("user");
     if (!user?.email) {
       return c.json({ error: "User not found", code: "UNAUTHORIZED" }, 401);

@@ -1,16 +1,4 @@
-interface MockContext {
-  req: {
-    path: string;
-    json?: () => Promise<Record<string, unknown>>;
-  };
-  get: (key: string) => unknown;
-  set: (key: string, value: unknown) => void;
-  json: (data: unknown, status?: number) => void;
-}
-
-interface MockNext {
-  (): Promise<void>;
-}
+import { Context } from "hono";
 
 Deno.test({
   name: "campaign-check-middleware: should skip non-create paths",
@@ -19,14 +7,15 @@ Deno.test({
       await import("../campaign-check-middleware.ts");
 
     let nextCalled = false;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: { path: "/campaigns/list" },
       get: () => undefined,
       set: () => {},
       json: () => {},
-    };
+    } as unknown as Context;
 
-    await campaignCheckMiddleware(context as any, () => {
+    await campaignCheckMiddleware(context, async () => {
       nextCalled = true;
     });
 
@@ -43,7 +32,8 @@ Deno.test({
       await import("../campaign-check-middleware.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
-    const context: MockContext = {
+    // skipcq: JS-0323 - Test mock requires minimal Context interface
+    const context = {
       req: {
         path: "/campaigns/create",
         json: async () => ({ selectedEmails: [] }),
@@ -56,9 +46,9 @@ Deno.test({
       json: (data: unknown) => {
         jsonResult = { data: data as Record<string, unknown>, status: 400 };
       },
-    };
+    } as unknown as Context;
 
-    await campaignCheckMiddleware(context as any, () => Promise.resolve());
+    await campaignCheckMiddleware(context, async () => {});
 
     if (
       !jsonResult ||
