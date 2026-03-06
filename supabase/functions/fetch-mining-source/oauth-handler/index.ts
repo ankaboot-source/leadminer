@@ -1,4 +1,4 @@
-import { Token } from 'simple-oauth2';
+import { Token } from "simple-oauth2";
 import googleOAuth2Client from "./google.ts";
 import azureOAuth2Client from "./azure.ts";
 import { createLogger } from "../../_shared/logger.ts";
@@ -18,8 +18,8 @@ export interface ImapMiningSourceCredentials {
   tls: boolean;
 }
 
-export type OAuthMiningSourceProvider = 'azure' | 'google';
-export type MiningSourceType = OAuthMiningSourceProvider | 'imap';
+export type OAuthMiningSourceProvider = "azure" | "google";
+export type MiningSourceType = OAuthMiningSourceProvider | "imap";
 
 export interface OAuthMiningSourceCredentials {
   email: string;
@@ -38,36 +38,30 @@ export interface MiningSource {
 
 export function getAuthClient(provider: OAuthMiningSourceProvider) {
   switch (provider) {
-    case 'google':
+    case "google":
       return googleOAuth2Client;
-    case 'azure':
+    case "azure":
       return azureOAuth2Client;
     default:
-      throw new Error('Not a valid OAuth provider');
+      throw new Error("Not a valid OAuth provider");
   }
 }
 
 export function isTokenExpired(
   credentials: OAuthMiningSourceCredentials,
-  nowMs = Date.now(),
 ): boolean {
-  let expiresAt = credentials.expiresAt;
+  const client = getAuthClient(credentials.provider);
 
-  // Handle both numeric timestamp and ISO date string
-  if (typeof expiresAt === "string") {
-    expiresAt = new Date(expiresAt).getTime();
-  }
-
-  const numericExpiresAt = Number(expiresAt);
-  return (
-    Number.isFinite(numericExpiresAt) &&
-    numericExpiresAt > 0 &&
-    numericExpiresAt <= nowMs
-  );
+  const token = client.createToken({
+    access_token: credentials.accessToken,
+    refresh_token: credentials.refreshToken,
+    expires_at: credentials.expiresAt,
+  });
+  return token.expired(1000);
 }
 
 export async function refreshAccessToken(
-  OAuthCredentials: OAuthMiningSourceCredentials
+  OAuthCredentials: OAuthMiningSourceCredentials,
 ): Promise<Token> {
   try {
     const authClient = getAuthClient(OAuthCredentials.provider);
@@ -75,7 +69,7 @@ export async function refreshAccessToken(
     const token = {
       access_token: OAuthCredentials.accessToken,
       refresh_token: OAuthCredentials.refreshToken,
-      expires_at: OAuthCredentials.expiresAt
+      expires_at: OAuthCredentials.expiresAt,
     };
 
     const tokenInstance = authClient.createToken(token);
@@ -85,7 +79,7 @@ export async function refreshAccessToken(
 
     return refreshedToken;
   } catch (error) {
-    createLogger("refreshAccessToken").error('Failed to refresh access token');
+    createLogger("refreshAccessToken").error("Failed to refresh access token");
     throw error;
   }
 }
