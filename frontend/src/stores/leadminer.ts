@@ -145,6 +145,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     try {
       const sources = await getMiningSources();
 
+      const previousValidityMap = new Map(
+        miningSources.value.map((s) => [s.email.toLowerCase(), s.isValid]),
+      );
+
       let unavailableEmails: string[] = [];
       try {
         const senderOptionsData = await $saasEdgeFunctions(
@@ -160,9 +164,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         unavailableEmails = extractUnavailableSenderEmails(allOptions);
       } catch (error) {
         console.warn(
-          'Failed to fetch sender-options, assuming all sources valid:',
+          'Failed to fetch sender-options, preserving previous validity:',
           error,
         );
+        miningSources.value = sources.map((source) => ({
+          ...source,
+          isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
+        }));
+        return;
       }
 
       miningSources.value = updateMiningSourcesValidityFromUnavailable(

@@ -81,16 +81,96 @@ export default class PgContacts implements Contacts {
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
 
-  private static readonly INSERT_POC_SQL = `
-    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","plus_address", "user_id")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-    RETURNING id;`;
-
   private static readonly UPSERT_PERSON_SQL = `
+    WITH upserted AS (
+      INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      ON CONFLICT (email, user_id, source) DO UPDATE
+      SET
+        name = EXCLUDED.name,
+        url = EXCLUDED.url,
+        image = EXCLUDED.image,
+        location = EXCLUDED.location,
+        same_as = EXCLUDED.same_as,
+        given_name = EXCLUDED.given_name,
+        family_name = EXCLUDED.family_name,
+        job_title = EXCLUDED.job_title,
+        identifiers = EXCLUDED.identifiers,
+        works_for = EXCLUDED.works_for,
+        mining_id = EXCLUDED.mining_id
+      WHERE
+        private.persons.name IS DISTINCT FROM EXCLUDED.name
+        OR private.persons.url IS DISTINCT FROM EXCLUDED.url
+        OR private.persons.image IS DISTINCT FROM EXCLUDED.image
+        OR private.persons.location IS DISTINCT FROM EXCLUDED.location
+        OR private.persons.same_as IS DISTINCT FROM EXCLUDED.same_as
+        OR private.persons.given_name IS DISTINCT FROM EXCLUDED.given_name
+        OR private.persons.family_name IS DISTINCT FROM EXCLUDED.family_name
+        OR private.persons.job_title IS DISTINCT FROM EXCLUDED.job_title
+        OR private.persons.identifiers IS DISTINCT FROM EXCLUDED.identifiers
+        OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
+        OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id
+      RETURNING persons.email
+    )
+    SELECT email FROM upserted
+    UNION ALL
+    SELECT $2
+    WHERE NOT EXISTS (SELECT 1 FROM upserted);`;
+
+  private static readonly UPSERT_PERSONS_BULK_SQL = `
     INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13, $14)
-    ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
-    RETURNING persons.email;`;
+    SELECT *
+    FROM UNNEST(
+      $1::text[],
+      $2::text[],
+      $3::text[],
+      $4::text[],
+      $5::text[],
+      $6::text[][],
+      $7::text[],
+      $8::text[],
+      $9::text[],
+      $10::text[][],
+      $11::uuid[],
+      $12::text[],
+      $13::uuid[],
+      $14::text[]
+    )
+    ON CONFLICT (email, user_id, source) DO UPDATE
+    SET
+      name = EXCLUDED.name,
+      url = EXCLUDED.url,
+      image = EXCLUDED.image,
+      location = EXCLUDED.location,
+      same_as = EXCLUDED.same_as,
+      given_name = EXCLUDED.given_name,
+      family_name = EXCLUDED.family_name,
+      job_title = EXCLUDED.job_title,
+      identifiers = EXCLUDED.identifiers,
+      works_for = EXCLUDED.works_for,
+      mining_id = EXCLUDED.mining_id
+    WHERE
+      private.persons.name IS DISTINCT FROM EXCLUDED.name
+      OR private.persons.url IS DISTINCT FROM EXCLUDED.url
+      OR private.persons.image IS DISTINCT FROM EXCLUDED.image
+      OR private.persons.location IS DISTINCT FROM EXCLUDED.location
+      OR private.persons.same_as IS DISTINCT FROM EXCLUDED.same_as
+      OR private.persons.given_name IS DISTINCT FROM EXCLUDED.given_name
+      OR private.persons.family_name IS DISTINCT FROM EXCLUDED.family_name
+      OR private.persons.job_title IS DISTINCT FROM EXCLUDED.job_title
+      OR private.persons.identifiers IS DISTINCT FROM EXCLUDED.identifiers
+      OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
+      OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id;`;
+
+  private static readonly SELECT_PERSONS_STATUS_BY_EMAILS = `
+    SELECT email, status
+    FROM private.persons
+    WHERE user_id = $1 AND email = ANY($2);
+  `;
+
+  private static readonly INSERT_POC_BULK_SQL = `
+    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","plus_address", "user_id")
+    VALUES %L;`;
 
   private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
     SELECT *
@@ -242,10 +322,8 @@ export default class PgContacts implements Contacts {
     }
 
     for (const { person, tags } of persons) {
-      const {
-        rows: [{ email }]
-        // eslint-disable-next-line no-await-in-loop
-      } = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+      // eslint-disable-next-line no-await-in-loop
+      await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
         person.name,
         person.email,
         person.url,
@@ -278,7 +356,7 @@ export default class PgContacts implements Contacts {
         );
       }
 
-      insertedContacts.add({ email, tags });
+      insertedContacts.add({ email: person.email, tags });
       // eslint-disable-next-line no-await-in-loop
       await this.pool.query(
         `
@@ -287,7 +365,7 @@ export default class PgContacts implements Contacts {
         ON CONFLICT (user_id, email) 
         DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
         `,
-        [userId, email, tags.map((tag) => tag.name)]
+        [userId, person.email, tags.map((tag) => tag.name)]
       );
     }
 
@@ -312,60 +390,91 @@ export default class PgContacts implements Contacts {
         userId
       ]);
 
-      for (const { pointOfContact, person, tags } of persons) {
-        // eslint-disable-next-line no-await-in-loop
-        const { rowCount, rows } = await this.pool.query(
-          'SELECT email, status FROM private.persons WHERE user_id = $1 AND email = $2;',
-          [userId, person.email]
-        );
+      if (!persons.length) {
+        return [];
+      }
 
-        if (rowCount === 0 || rows[0]?.status === null) {
+      const emails = persons.map(({ person }) => person.email);
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_PERSONS_STATUS_BY_EMAILS,
+        [userId, emails]
+      );
+
+      const statusByEmail = new Map<string, string | null>();
+      rows.forEach((row) => statusByEmail.set(row.email, row.status));
+
+      await this.pool.query(PgContacts.UPSERT_PERSONS_BULK_SQL, [
+        persons.map(({ person }) => person.name ?? null),
+        persons.map(({ person }) => person.email),
+        persons.map(({ person }) => person.url ?? null),
+        persons.map(({ person }) => person.image ?? null),
+        persons.map(({ person }) => person.location ?? null),
+        persons.map(({ person }) => person.sameAs ?? null),
+        persons.map(({ person }) => person.givenName ?? null),
+        persons.map(({ person }) => person.familyName ?? null),
+        persons.map(({ person }) => person.jobTitle ?? null),
+        persons.map(({ person }) => person.identifiers ?? null),
+        persons.map(() => userId),
+        persons.map(({ person }) => person.source),
+        persons.map(({ person }) => person.worksFor ?? null),
+        persons.map(() => miningId)
+      ]);
+
+      const tagValues = persons.flatMap(({ person, tags }) => {
+        if (statusByEmail.get(person.email) !== undefined) {
+          const status = statusByEmail.get(person.email);
+          if (status === null) {
+            insertedContacts.add({ email: person.email, tags });
+          }
+        } else {
           insertedContacts.add({ email: person.email, tags });
         }
 
-        // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
-          person.name,
-          person.email,
-          person.url,
-          person.image,
-          person.location,
-          person.sameAs,
-          person.givenName,
-          person.familyName,
-          person.jobTitle,
-          person.identifiers,
-          userId,
-          person.source,
-          person.worksFor,
-          miningId
-        ]);
-
-        const tagValues = tags.map((tag) => [
+        return tags.map((tag) => [
           tag.name,
           tag.reachable,
           tag.source,
           userId,
           person.email
         ]);
+      });
 
-        // eslint-disable-next-line no-await-in-loop
-        await Promise.allSettled([
-          this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues)),
-          this.pool.query(PgContacts.INSERT_POC_SQL, [
-            message.messageId,
-            pointOfContact.name,
-            pointOfContact.from,
-            pointOfContact.replyTo,
-            pointOfContact.to,
-            pointOfContact.cc,
-            pointOfContact.bcc,
-            pointOfContact.body,
-            person.email,
-            pointOfContact.plusAddress,
-            userId
-          ])
-        ]);
+      const pocValues = persons.map(({ pointOfContact, person }) => [
+        message.messageId,
+        pointOfContact.name,
+        pointOfContact.from,
+        pointOfContact.replyTo,
+        pointOfContact.to,
+        pointOfContact.cc,
+        pointOfContact.bcc,
+        pointOfContact.body,
+        person.email,
+        pointOfContact.plusAddress,
+        userId
+      ]);
+
+      const [tagsInsertResult, pocInsertResult] = await Promise.allSettled([
+        tagValues.length
+          ? this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues))
+          : Promise.resolve(),
+        pocValues.length
+          ? this.pool.query(format(PgContacts.INSERT_POC_BULK_SQL, pocValues))
+          : Promise.resolve()
+      ]);
+
+      if (tagsInsertResult.status === 'rejected') {
+        this.logger.error('[PgContacts.createContactsFromEmail:tags]', {
+          error: tagsInsertResult.reason
+        });
+      }
+
+      if (pocInsertResult.status === 'rejected') {
+        this.logger.error(
+          '[PgContacts.createContactsFromEmail:pointsOfContact]',
+          {
+            error: pocInsertResult.reason
+          }
+        );
       }
 
       return Array.from(insertedContacts);

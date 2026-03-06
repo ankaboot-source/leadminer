@@ -361,7 +361,7 @@ async function reconnectExpiredSource(source: MiningSource) {
   try {
     await useSupabaseClient().auth.refreshSession();
     const { authorizationUri } = await $api<{ authorizationUri: string }>(
-      `/mine/sources/${source.type}`,
+      `/imap/mine/sources/${source.type}`,
       {
         method: 'POST',
         body: {
