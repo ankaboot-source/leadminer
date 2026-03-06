@@ -9,7 +9,7 @@ const config = useRuntimeConfig();
 
 const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/email-campaigns`;
 
-await navigateTo(`${edgeFunctionUrl}/track/open/${token}`, {
+await navigateTo(`${edgeFunctionUrl}/track/open/${encodeURIComponent(token)}`, {
   external: true,
   redirectCode: 302,
 });
