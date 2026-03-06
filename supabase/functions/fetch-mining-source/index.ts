@@ -24,8 +24,6 @@ import {
 
 const logger = createLogger("fetch-mining-source");
 
-const REFRESH_BUFFER_MS = 1000;
-
 const RequestSchema = z.object({
   email: z.string().email().optional(),
   user_id: z.string().uuid().optional(),
@@ -206,7 +204,6 @@ class FetchMiningSourceHandler {
     forceRefreshEmail?: string,
   ): Promise<string[]> {
     const refreshedEmails: string[] = [];
-    const nowMs = Date.now();
 
     const forceRefreshSet = forceRefreshEmail
       ? new Set(forceRefreshEmail.toLowerCase())
@@ -218,7 +215,7 @@ class FetchMiningSourceHandler {
       const credentials = source.credentials as OAuthMiningSourceCredentials;
       const shouldRefresh =
         forceRefreshSet?.has(source.email.toLowerCase()) ||
-        isTokenExpired(credentials, nowMs + REFRESH_BUFFER_MS);
+        isTokenExpired(credentials);
 
       if (!shouldRefresh) {
         continue;

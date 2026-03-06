@@ -2,6 +2,7 @@ export const CreditsCounter = null;
 export const CreditsDialog = null;
 export const CreditsDialogEnrichRef = ref();
 export const CreditsDialogExportRef = ref();
+export const CreditsDialogCampaignRef = ref();
 // skipcq: JS-0356
 export const openCreditsDialog = (
   _ref: Ref<unknown>,
