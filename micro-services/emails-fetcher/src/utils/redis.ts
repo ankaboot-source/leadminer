@@ -44,6 +44,10 @@ class RedisManager {
     }
 
     this.normalClient = new Redis(redisOpts);
+
+    this.normalClient.on('error', (error) => {
+      logger.error('Redis client error:', error);
+    });
   }
 
   /**
@@ -82,7 +86,13 @@ class RedisManager {
    * @return Redis client instance
    */
   getSubscriberClient() {
-    return this.normalClient.duplicate();
+    const subscriber = this.normalClient.duplicate();
+    
+    subscriber.on('error', (error) => {
+      logger.error('Redis subscriber client error:', error);
+    });
+
+    return subscriber;
   }
 }
 
