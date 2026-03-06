@@ -51,7 +51,9 @@
         </label>
         <div class="flex items-center gap-2">
           <Tag value="SMSGate" severity="info" />
-          <small class="text-surface-600">{{ t('provider_default_note') }}</small>
+          <small class="text-surface-600">{{
+            t('provider_default_note')
+          }}</small>
           <Button
             text
             size="small"
@@ -65,20 +67,39 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div class="flex flex-col gap-1 md:col-span-2">
           <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
-          <InputText v-model="form.smsgateBaseUrl" placeholder="https://api.sms-gate.app" />
+          <InputText
+            v-model="form.smsgateBaseUrl"
+            placeholder="https://api.sms-gate.app"
+          />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">{{ t('smsgate_username') }} *</label>
+          <label class="text-sm font-medium"
+            >{{ t('smsgate_username') }} *</label
+          >
           <InputText v-model="form.smsgateUsername" />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">{{ t('smsgate_password') }} *</label>
-          <Password v-model="form.smsgatePassword" :feedback="false" toggle-mask input-class="w-full" />
+          <label class="text-sm font-medium"
+            >{{ t('smsgate_password') }} *</label
+          >
+          <Password
+            v-model="form.smsgatePassword"
+            :feedback="false"
+            toggle-mask
+            input-class="w-full"
+          />
         </div>
       </div>
 
-      <div v-if="providerStatus.twilioFallbackAvailable" class="flex items-center gap-2">
-        <Checkbox v-model="form.allowTwilioFallback" :binary="true" input-id="allowTwilioFallback" />
+      <div
+        v-if="providerStatus.twilioFallbackAvailable"
+        class="flex items-center gap-2"
+      >
+        <Checkbox
+          v-model="form.allowTwilioFallback"
+          :binary="true"
+          input-id="allowTwilioFallback"
+        />
         <label for="allowTwilioFallback" class="text-sm cursor-pointer">
           {{ t('allow_twilio_fallback') }}
         </label>
@@ -96,7 +117,9 @@
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium flex items-center gap-1">
           <span>{{ t('message') }} *</span>
-          <span class="text-xs text-surface-500">({{ charCount }} {{ t('characters') }})</span>
+          <span class="text-xs text-surface-500"
+            >({{ charCount }} {{ t('characters') }})</span
+          >
         </label>
         <Textarea
           v-model="form.messageTemplate"
@@ -193,7 +216,7 @@ import type { Contact } from '~/types/contact';
 
 const { t } = useI18n();
 const $toast = useToast();
-const $saasEdgeFunctions = useLeadminerSasSFunctions();
+const { $saasEdgeFunctions } = useNuxtApp();
 const $screenStore = useScreenStore();
 
 interface Props {
@@ -240,7 +263,7 @@ async function fetchQuota() {
     const response = await $saasEdgeFunctions(
       `sms-campaigns/quota?timezone=${encodeURIComponent(timezone)}`,
       {
-      method: 'GET',
+        method: 'GET',
       },
     );
     if (response.ok) {
@@ -254,9 +277,12 @@ async function fetchQuota() {
 
 async function fetchProviderStatus() {
   try {
-    const response = await $saasEdgeFunctions('sms-campaigns/providers/status', {
-      method: 'GET',
-    });
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/providers/status',
+      {
+        method: 'GET',
+      },
+    );
     if (!response.ok) return;
     const data = await response.json();
     providerStatus.value = {
@@ -307,7 +333,8 @@ const charCount = ref(0);
 const encoding = ref('GSM-7');
 const smsParts = ref(1);
 
-const UNSUBSCRIBE_FOOTER_LENGTH = '\n\nUnsubscribe me: https://example.com'.length;
+const UNSUBSCRIBE_FOOTER_LENGTH = '\n\nUnsubscribe me: https://example.com'
+  .length;
 
 const hasUnicodeChars = (text: string) =>
   Array.from(text).some((char) => char.codePointAt(0)! > 127);
@@ -315,10 +342,10 @@ const hasUnicodeChars = (text: string) =>
 const updateCharCount = () => {
   const text = form.messageTemplate || '';
   const totalWithFooter = text.length + UNSUBSCRIBE_FOOTER_LENGTH;
-  
+
   const isUnicode = hasUnicodeChars(text);
   encoding.value = isUnicode ? 'Unicode' : 'GSM-7';
-  
+
   const maxPerSms = isUnicode ? 70 : 160;
   smsParts.value = Math.ceil(totalWithFooter / maxPerSms) || 1;
   charCount.value = totalWithFooter;
@@ -326,8 +353,12 @@ const updateCharCount = () => {
 
 const validationErrors = computed<Record<FormField, string>>(() => {
   return {
-    senderPhone: form.senderPhone.trim().length ? '' : t('sender_phone_required'),
-    messageTemplate: form.messageTemplate.trim().length ? '' : t('message_required'),
+    senderPhone: form.senderPhone.trim().length
+      ? ''
+      : t('sender_phone_required'),
+    messageTemplate: form.messageTemplate.trim().length
+      ? ''
+      : t('message_required'),
   };
 });
 
@@ -342,22 +373,27 @@ const hasProvidedSmsGateCredentials = computed(
 );
 
 const hasUsableSmsGateConfig = computed(
-  () => providerStatus.value.smsgateConfigured || hasProvidedSmsGateCredentials.value,
+  () =>
+    providerStatus.value.smsgateConfigured ||
+    hasProvidedSmsGateCredentials.value,
 );
 
 const selectedContactsLength = computed(() => {
-  return props.selectedContacts.filter(c => c.telephone && c.telephone.length > 0).length;
+  return props.selectedContacts.filter(
+    (c) => c.telephone && c.telephone.length > 0,
+  ).length;
 });
 
 const isSendingPreview = ref(false);
 const isSubmitting = ref(false);
 
-const isPreviewDisabled = computed(() =>
-  !form.senderPhone ||
-  !form.messageTemplate ||
-  !hasUsableSmsGateConfig.value ||
-  isSendingPreview.value ||
-  !isFormValid.value
+const isPreviewDisabled = computed(
+  () =>
+    !form.senderPhone ||
+    !form.messageTemplate ||
+    !hasUsableSmsGateConfig.value ||
+    isSendingPreview.value ||
+    !isFormValid.value,
 );
 
 const isActionDisabled = computed(
@@ -366,7 +402,7 @@ const isActionDisabled = computed(
     !hasUsableSmsGateConfig.value ||
     isSendingPreview.value ||
     isSubmitting.value ||
-    !isFormValid.value
+    !isFormValid.value,
 );
 
 const getSelectedPhones = (): string[] => {
@@ -381,24 +417,27 @@ const getSelectedPhones = (): string[] => {
 
 const sendPreview = async () => {
   isSendingPreview.value = true;
-  
+
   try {
-    const response = await $saasEdgeFunctions('sms-campaigns/campaigns/preview', {
-      method: 'POST',
-      body: JSON.stringify({
-        senderName: 'Preview',
-        senderPhone: form.senderPhone,
-        messageTemplate: form.messageTemplate,
-        useShortLinks: form.useShortLinks,
-        allowTwilioFallback: form.allowTwilioFallback,
-        smsgateConfig: {
-          baseUrl: form.smsgateBaseUrl,
-          username: form.smsgateUsername,
-          password: form.smsgatePassword,
-        },
-        selectedPhones: getSelectedPhones().slice(0, 1),
-      }),
-    });
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/campaigns/preview',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          senderName: 'Preview',
+          senderPhone: form.senderPhone,
+          messageTemplate: form.messageTemplate,
+          useShortLinks: form.useShortLinks,
+          allowTwilioFallback: form.allowTwilioFallback,
+          smsgateConfig: {
+            baseUrl: form.smsgateBaseUrl,
+            username: form.smsgateUsername,
+            password: form.smsgatePassword,
+          },
+          selectedPhones: getSelectedPhones().slice(0, 1),
+        }),
+      },
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -406,7 +445,7 @@ const sendPreview = async () => {
     }
 
     const data = await response.json();
-    
+
     $toast.add({
       severity: 'info',
       summary: t('preview'),
@@ -430,24 +469,27 @@ const submitCampaign = async () => {
 
   try {
     const phones = getSelectedPhones();
-    
-    const response = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
-      method: 'POST',
-      body: JSON.stringify({
-        senderName: 'Campaign',
-        senderPhone: form.senderPhone,
-        messageTemplate: form.messageTemplate,
-        useShortLinks: form.useShortLinks,
-        allowTwilioFallback: form.allowTwilioFallback,
-        smsgateConfig: {
-          baseUrl: form.smsgateBaseUrl,
-          username: form.smsgateUsername,
-          password: form.smsgatePassword,
-        },
-        selectedPhones: phones,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      }),
-    });
+
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/campaigns/create',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          senderName: 'Campaign',
+          senderPhone: form.senderPhone,
+          messageTemplate: form.messageTemplate,
+          useShortLinks: form.useShortLinks,
+          allowTwilioFallback: form.allowTwilioFallback,
+          smsgateConfig: {
+            baseUrl: form.smsgateBaseUrl,
+            username: form.smsgateUsername,
+            password: form.smsgatePassword,
+          },
+          selectedPhones: phones,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      },
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -458,7 +500,7 @@ const submitCampaign = async () => {
     }
 
     const data = await response.json();
-    
+
     $toast.add({
       severity: 'success',
       summary: t('campaign_created'),
@@ -491,7 +533,7 @@ const resetForm = () => {
   form.useShortLinks = false;
   charCount.value = 0;
   smsParts.value = 1;
-  Object.keys(touched).forEach(key => {
+  Object.keys(touched).forEach((key) => {
     touched[key as FormField] = false;
   });
 };

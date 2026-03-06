@@ -99,44 +99,20 @@
           />
         </div>
         <div class="flex gap-2">
-          <Button
-            v-tooltip.top="
-              isSendByEmailDisabled &&
-              t('select_at_least_one_contact', {
-                action: t('send_email_campaign').toLowerCase(),
-              })
-            "
+          <SplitButton
             severity="contrast"
-            :label="t('send_email_campaign')"
+            :label="t('send_campaign')"
+            :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
             pt:label:class="hidden md:block"
-            :disabled="isSendByEmailDisabled"
             @click="openSendContactsDialog"
           >
+            <Menu ref="sendCampaignMenu" :model="sendCampaignMenuItems" popup />
             <template #icon>
               <span class="p-button-icon p-button-icon-left">
-                <i class="pi pi-envelope" />
+                <i class="pi pi-send" />
               </span>
             </template>
-          </Button>
-          <Button
-            v-tooltip.top="
-              isSendBySmsDisabled &&
-              t('select_at_least_one_contact', {
-                action: t('send_sms_campaign').toLowerCase(),
-              })
-            "
-            severity="info"
-            :label="t('send_sms_campaign')"
-            pt:label:class="hidden md:block"
-            :disabled="isSendBySmsDisabled"
-            @click="openSendSmsContactsDialog"
-          >
-            <template #icon>
-              <span class="p-button-icon p-button-icon-left">
-                <i class="pi pi-comments" />
-              </span>
-            </template>
-          </Button>
+          </SplitButton>
         </div>
 
         <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
@@ -1168,12 +1144,28 @@ const isExportDisabled = computed(
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
+const sendCampaignMenu = ref();
+
+const sendCampaignMenuItems = computed(() => [
+  {
+    label: t('send_email_campaign'),
+    icon: 'pi pi-envelope',
+    command: () => openSendContactsDialog(),
+    disabled: isSendByEmailDisabled.value,
+  },
+  {
+    label: t('send_sms_campaign'),
+    icon: 'pi pi-comments',
+    command: () => openSendSmsContactsDialog(),
+    disabled: isSendBySmsDisabled.value,
+  },
+]);
 
 const isSendByEmailDisabled = computed(() => isExportDisabled.value);
 
 const isSendBySmsDisabled = computed(() => {
   const hasPhones = implicitlySelectedContacts.value.some(
-    (c) => c.telephone && c.telephone.length > 0
+    (c) => c.telephone && c.telephone.length > 0,
   );
   return !hasPhones || isExportDisabled.value;
 });
