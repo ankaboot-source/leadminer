@@ -142,9 +142,17 @@
         <div class="flex items-center gap-2 text-sm">
           <i
             class="pi"
-            :class="twilioFallbackAvailable ? 'pi-check-circle text-green-500' : 'pi-times-circle text-surface-500'"
+            :class="
+              twilioAvailable
+                ? 'pi-check-circle text-green-500'
+                : 'pi-times-circle text-surface-500'
+            "
           />
-          <span>{{ t('twilio_fallback_status', { status: twilioFallbackAvailable ? t('available') : t('not_available') }) }}</span>
+          <span>{{
+            t('twilio_status', {
+              status: twilioAvailable ? t('available') : t('not_available'),
+            })
+          }}</span>
         </div>
         <a
           href="https://docs.sms-gate.app/installation/"
@@ -231,12 +239,14 @@ if (!user || userError) throw new Error('Unable to fetch user data');
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
 const isSavingSmsGateway = ref(false);
-const twilioFallbackAvailable = ref(false);
+const twilioAvailable = ref(false);
 
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const smsgateBaseUrlInput = ref($profile.value?.smsgate_base_url || 'https://api.sms-gate.app');
+const smsgateBaseUrlInput = ref(
+  $profile.value?.smsgate_base_url || 'https://api.sms-gate.app',
+);
 const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
 const smsgatePasswordInput = ref('');
 const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
@@ -387,13 +397,16 @@ async function deleteAccount() {
 
 async function fetchSmsProviderStatus() {
   try {
-    const response = await $saasEdgeFunctions('sms-campaigns/providers/status', {
-      method: 'GET',
-    });
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/providers/status',
+      {
+        method: 'GET',
+      },
+    );
     if (!response.ok) return;
 
     const data = await response.json();
-    twilioFallbackAvailable.value = Boolean(data.twilioFallbackAvailable);
+    twilioAvailable.value = Boolean(data.twilioAvailable);
 
     if (data.smsgateBaseUrl) {
       smsgateBaseUrlInput.value = data.smsgateBaseUrl;
@@ -402,7 +415,7 @@ async function fetchSmsProviderStatus() {
       smsgateUsernameInput.value = data.smsgateUsername;
     }
   } catch {
-    twilioFallbackAvailable.value = false;
+    twilioAvailable.value = false;
   }
 }
 
@@ -410,14 +423,17 @@ async function saveSmsGatewaySettings() {
   try {
     isSavingSmsGateway.value = true;
 
-    const response = await $saasEdgeFunctions('sms-campaigns/providers/smsgate', {
-      method: 'POST',
-      body: JSON.stringify({
-        baseUrl: smsgateBaseUrlInput.value,
-        username: smsgateUsernameInput.value,
-        password: smsgatePasswordInput.value,
-      }),
-    });
+    const response = await $saasEdgeFunctions(
+      'sms-campaigns/providers/smsgate',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          baseUrl: smsgateBaseUrlInput.value,
+          username: smsgateUsernameInput.value,
+          password: smsgatePasswordInput.value,
+        }),
+      },
+    );
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -494,7 +510,7 @@ await fetchSmsProviderStatus();
       "button": "Confirm Email Address"
     },
     "sms_gateway_settings": "SMS Gateway Settings",
-    "sms_gateway_description": "SMSGate is your default SMS provider. Configure per-user credentials here. Twilio is optional fallback only if enabled by server environment.",
+    "sms_gateway_description": "SMSGate is your default SMS provider. Configure per-user credentials here. Twilio is also available if server environment variables are configured.",
     "smsgate_base_url": "SMSGate API URL",
     "smsgate_username": "SMSGate Username",
     "smsgate_password": "SMSGate Password",
@@ -502,7 +518,7 @@ await fetchSmsProviderStatus();
     "sms_gateway_saved": "SMS gateway saved",
     "sms_gateway_saved_detail": "Your SMSGate credentials were saved successfully.",
     "sms_gateway_save_failed": "Unable to save SMS gateway settings",
-    "twilio_fallback_status": "Twilio fallback: {status}",
+    "twilio_status": "Twilio: {status}",
     "available": "available",
     "not_available": "not available",
     "open_smsgate_docs": "Open official SMSGate installation guide"
@@ -546,7 +562,7 @@ await fetchSmsProviderStatus();
     "sms_gateway_saved": "Passerelle SMS enregistrée",
     "sms_gateway_saved_detail": "Vos identifiants SMSGate ont été enregistrés avec succès.",
     "sms_gateway_save_failed": "Impossible d'enregistrer les paramètres de passerelle SMS",
-    "twilio_fallback_status": "Secours Twilio : {status}",
+    "twilio_status": "Twilio : {status}",
     "available": "disponible",
     "not_available": "non disponible",
     "open_smsgate_docs": "Ouvrir le guide officiel d'installation SMSGate"

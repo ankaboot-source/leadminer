@@ -137,7 +137,7 @@ app.get("/providers/status", authMiddleware, async (c: Context) => {
     ),
     smsgateBaseUrl: config.smsgate_base_url || "https://api.sms-gate.app",
     smsgateUsername: config.smsgate_username || "",
-    twilioFallbackAvailable: isTwilioFallbackAvailable(),
+    twilioAvailable: isTwilioFallbackAvailable(),
   });
 });
 
@@ -583,6 +583,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     messageTemplate,
     useShortLinks,
     selectedPhones,
+    provider,
     smsgateConfig,
   } = payload;
 
@@ -593,26 +594,41 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     );
   }
 
+  const selectedProvider = provider || "smsgate";
   const supabaseAdmin = createSupabaseAdmin();
-  if (smsgateConfig?.username && smsgateConfig?.password) {
-    await supabaseAdmin
-      .schema("private")
-      .from("profiles")
-      .update({
-        smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
-        smsgate_username: smsgateConfig.username,
-        smsgate_password: smsgateConfig.password,
-      })
-      .eq("user_id", user.id);
+
+  if (selectedProvider === "smsgate") {
+    if (smsgateConfig?.username && smsgateConfig?.password) {
+      await supabaseAdmin
+        .schema("private")
+        .from("profiles")
+        .update({
+          smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
+          smsgate_username: smsgateConfig.username,
+          smsgate_password: smsgateConfig.password,
+        })
+        .eq("user_id", user.id);
+    }
+
+    const profileConfig = await getUserSmsGateConfig(supabaseAdmin, user.id);
+    if (!toSmsGateCredentials(profileConfig)) {
+      return c.json(
+        {
+          error:
+            "SMSGate is not configured. Please add your SMSGate credentials.",
+          code: "SMSGATE_NOT_CONFIGURED",
+        },
+        400,
+      );
+    }
   }
 
-  const profileConfig = await getUserSmsGateConfig(supabaseAdmin, user.id);
-  if (!toSmsGateCredentials(profileConfig)) {
+  if (selectedProvider === "twilio" && !TwilioProvider.isConfigured()) {
     return c.json(
       {
         error:
-          "SMSGate is not configured. Please add your SMSGate credentials.",
-        code: "SMSGATE_NOT_CONFIGURED",
+          "Twilio is not configured. Please configure Twilio environment variables.",
+        code: "TWILIO_NOT_CONFIGURED",
       },
       400,
     );
@@ -906,26 +922,31 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
-  const profileConfig = await getUserSmsGateConfig(
-    supabaseAdmin,
-    campaign.user_id,
-  );
-  const smsgateCredentials = toSmsGateCredentials(profileConfig);
-  if (!smsgateCredentials) {
-    return c.json(
-      {
-        error: "SMSGate credentials missing for campaign owner",
-        code: "SMSGATE_NOT_CONFIGURED",
-      },
-      400,
+  const selectedProvider = campaign.provider as "smsgate" | "twilio";
+  let smsProvider;
+
+  if (selectedProvider === "twilio") {
+    smsProvider = createSmsProvider("twilio");
+  } else {
+    const profileConfig = await getUserSmsGateConfig(
+      supabaseAdmin,
+      campaign.user_id,
     );
+    const smsgateCredentials = toSmsGateCredentials(profileConfig);
+    if (!smsgateCredentials) {
+      return c.json(
+        {
+          error: "SMSGate credentials missing for campaign owner",
+          code: "SMSGATE_NOT_CONFIGURED",
+        },
+        400,
+      );
+    }
+    smsProvider = createSmsProvider("smsgate", {
+      smsgate: smsgateCredentials,
+    });
   }
 
-  const smsProvider = createSmsProvider("smsgate", {
-    smsgate: smsgateCredentials,
-  });
-  const twilioFallbackEnabled =
-    Boolean(campaign.twilio_fallback_enabled) && isTwilioFallbackAvailable();
   let sentCount = 0;
   let failedCount = 0;
 
@@ -957,21 +978,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
         body: messageWithTrackers,
       });
 
-      let providerUsed = "smsgate";
-
-      if (!result.success && twilioFallbackEnabled) {
-        const twilioProvider = createSmsProvider("twilio");
-        const fallbackResult = await twilioProvider.send({
-          to: recipient.phone,
-          from: campaign.sender_phone,
-          body: messageWithTrackers,
-        });
-
-        if (fallbackResult.success) {
-          result = fallbackResult;
-          providerUsed = "twilio";
-        }
-      }
+      const providerUsed = selectedProvider;
 
       if (result.success) {
         await supabaseAdmin
@@ -992,9 +999,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .update({
             send_status: "failed",
             provider_error: result.error,
-            provider_used: twilioFallbackEnabled
-              ? "smsgate/twilio_failed"
-              : "smsgate",
+            provider_used: providerUsed,
             attempt_count: recipient.attempt_count + 1,
           })
           .eq("id", recipient.id);

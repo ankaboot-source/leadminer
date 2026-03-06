@@ -1,9 +1,13 @@
 import type { SmsProvider } from "./types.ts";
 import { TwilioProvider } from "./twilio-provider.ts";
-import { SmsGateProvider, type SmsGateCredentials } from "./smsgate-provider.ts";
+import {
+  SmsGateProvider,
+  type SmsGateCredentials,
+} from "./smsgate-provider.ts";
 
 export type { SmsProvider, SendSmsParams, SendSmsResult } from "./types.ts";
 export type { SmsGateCredentials } from "./smsgate-provider.ts";
+export { TwilioProvider };
 
 export function isTwilioFallbackAvailable(): boolean {
   return TwilioProvider.isConfigured();
