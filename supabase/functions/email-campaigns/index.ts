@@ -501,6 +501,7 @@ function renderTemplate(
   );
 }
 
+// skipcq: JS-0356 - Reserved for future daily limit tracking
 function getCurrentUtcDayStart(): string {
   const date = new Date();
   const utcDate = new Date(
