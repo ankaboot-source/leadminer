@@ -14,7 +14,8 @@ interface ModalButton {
   title: string;
   link?: string;
   action?: string;
-  variant?: "primary" | "secondary" | "ghost";
+  severity?: "primary" | "secondary" | "contrast";
+  variant?: "outlined" | "text" | "link";
 }
 
 interface ModalResponse {
@@ -73,7 +74,7 @@ function buildModalResponse(
       buttons.push({
         title: t(locale, "modal.insufficient_credits.buttons.upgrade"),
         link: billingUrl,
-        variant: "primary",
+        severity: "contrast",
       });
     }
     if (available > 0) {
@@ -84,13 +85,14 @@ function buildModalResponse(
           values,
         ),
         action: "continue_partial",
-        variant: "secondary",
+        variant: "outlined",
       });
     }
     buttons.push({
       title: t(locale, "modal.insufficient_credits.buttons.cancel"),
       action: "cancel",
-      variant: "ghost",
+      severity: "secondary",
+      variant: "text",
     });
 
     return {
@@ -107,7 +109,7 @@ function buildModalResponse(
       buttons.push({
         title: t(locale, "modal.partial_credits.buttons.upgrade"),
         link: billingUrl,
-        variant: "primary",
+        severity: "contrast",
       });
     }
     buttons.push({
@@ -117,12 +119,13 @@ function buildModalResponse(
         values,
       ),
       action: "continue_partial",
-      variant: "secondary",
+      variant: "outlined",
     });
     buttons.push({
       title: t(locale, "modal.partial_credits.buttons.cancel"),
       action: "cancel",
-      variant: "ghost",
+      severity: "secondary",
+      variant: "text",
     });
 
     return {
@@ -138,12 +141,13 @@ function buildModalResponse(
     buttons.push({
       title: t(locale, "modal.no_consented_contacts.buttons.cancel"),
       action: "cancel",
-      variant: "ghost",
+      severity: "secondary",
+      variant: "text",
     });
     buttons.push({
       title: t(locale, "modal.no_consented_contacts.buttons.privacy_policy"),
       link: "/privacy-policy",
-      variant: "ghost",
+      variant: "link",
     });
 
     return {
@@ -161,7 +165,7 @@ function buildModalResponse(
   buttons.push({
     title: t(locale, "modal.consent_required.buttons.privacy_policy"),
     link: "/privacy-policy",
-    variant: "ghost",
+    variant: "link",
   });
   if (available > 0) {
     buttons.push({
@@ -171,13 +175,14 @@ function buildModalResponse(
         values,
       ),
       action: "continue_partial",
-      variant: "secondary",
+      variant: "outlined",
     });
   }
   buttons.push({
     title: t(locale, "modal.consent_required.buttons.cancel"),
     action: "cancel",
-    variant: "ghost",
+    severity: "secondary",
+    variant: "text",
   });
 
   return {

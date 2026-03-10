@@ -3,18 +3,19 @@
     v-model:visible="isVisible"
     modal
     :header="modalData?.title"
-    :style="{ width: '28rem', maxWidth: '90vw' }"
+    :style="{ width: '30rem', maxWidth: '90vw' }"
   >
     <p class="m-0 text-surface-600">
       {{ modalData?.description }}
     </p>
     <template #footer>
-      <div class="flex justify-between gap-2">
+      <div class="flex justify-between gap-4">
         <!-- Left side: Cancel button only -->
         <Button
           v-if="cancelButton"
           :label="cancelButton.title"
-          link
+          :severity="cancelButton.severity"
+          :variant="cancelButton.variant"
           @click="handleButtonClick(cancelButton)"
         />
 
@@ -24,8 +25,8 @@
             v-for="(button, index) in actionButtons"
             :key="index"
             :label="button.title"
-            :outlined="button.variant === 'secondary'"
-            :severity="button.variant === 'primary' ? 'contrast' : 'secondary'"
+            :severity="button.severity"
+            :variant="button.variant"
             @click="handleButtonClick(button)"
           />
         </div>
@@ -39,7 +40,8 @@ export interface ModalButton {
   title: string;
   link?: string;
   action?: string;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  severity?: 'primary' | 'secondary' | 'contrast';
+  variant?: 'outlined' | 'text' | 'link';
 }
 
 export interface ModalData {
