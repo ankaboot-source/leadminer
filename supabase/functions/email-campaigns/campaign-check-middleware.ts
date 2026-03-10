@@ -1,12 +1,33 @@
 import { Context, Next } from "hono";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { t, getUserLocale } from "./i18n.ts";
 
 const logger = createLogger("email-campaigns:check");
 
 interface ContactSnapshot {
   email: string;
   consent_status: "legitimate_interest" | "opt_out" | "opt_in";
+}
+
+interface ModalButton {
+  title: string;
+  link?: string;
+  action?: string;
+  variant?: "primary" | "secondary" | "ghost";
+}
+
+interface ModalResponse {
+  type: "modal";
+  title: string;
+  description: string;
+  data: {
+    total: number;
+    available: number;
+    availableAlready: number;
+    reason?: string;
+  };
+  buttons: ModalButton[];
 }
 
 async function getSelectedContacts(
@@ -29,6 +50,116 @@ async function getSelectedContacts(
     email: row.email,
     consent_status: row.consent_status || "legitimate_interest",
   }));
+}
+
+function buildModalResponse(
+  locale: "en" | "fr",
+  scenario: "insufficient_credits" | "consent_required" | "partial_credits",
+  total: number,
+  available: number,
+  availableAlready: number,
+  billingUrl?: string,
+): ModalResponse {
+  const values = { total, available, availableAlready };
+
+  const buttons: ModalButton[] = [];
+
+  if (scenario === "insufficient_credits") {
+    if (billingUrl) {
+      buttons.push({
+        title: t(locale, "modal.insufficient_credits.buttons.upgrade"),
+        link: billingUrl,
+        variant: "primary",
+      });
+    }
+    if (available > 0) {
+      buttons.push({
+        title: t(
+          locale,
+          "modal.insufficient_credits.buttons.continue_partial",
+          values,
+        ),
+        action: "continue_partial",
+        variant: "secondary",
+      });
+    }
+    buttons.push({
+      title: t(locale, "modal.insufficient_credits.buttons.cancel"),
+      action: "cancel",
+      variant: "ghost",
+    });
+
+    return {
+      type: "modal",
+      title: t(locale, "modal.insufficient_credits.title"),
+      description: t(locale, "modal.insufficient_credits.description", values),
+      data: { total, available, availableAlready, reason: "credits" },
+      buttons,
+    };
+  }
+
+  if (scenario === "partial_credits") {
+    if (billingUrl) {
+      buttons.push({
+        title: t(locale, "modal.partial_credits.buttons.upgrade"),
+        link: billingUrl,
+        variant: "primary",
+      });
+    }
+    buttons.push({
+      title: t(
+        locale,
+        "modal.partial_credits.buttons.continue_partial",
+        values,
+      ),
+      action: "continue_partial",
+      variant: "secondary",
+    });
+    buttons.push({
+      title: t(locale, "modal.partial_credits.buttons.cancel"),
+      action: "cancel",
+      variant: "ghost",
+    });
+
+    return {
+      type: "modal",
+      title: t(locale, "modal.partial_credits.title"),
+      description: t(locale, "modal.partial_credits.description", values),
+      data: { total, available, availableAlready, reason: "credits" },
+      buttons,
+    };
+  }
+
+  // consent_required
+  buttons.push({
+    title: t(locale, "modal.consent_required.buttons.privacy_policy"),
+    link: "/privacy-policy",
+    variant: "ghost",
+  });
+  if (available > 0) {
+    buttons.push({
+      title: t(
+        locale,
+        "modal.consent_required.buttons.continue_partial",
+        values,
+      ),
+      action: "continue_partial",
+      variant: "secondary",
+    });
+  }
+  buttons.push({
+    title: t(locale, "modal.consent_required.buttons.cancel"),
+    action: "cancel",
+    variant: "ghost",
+  });
+
+  return {
+    type: "modal",
+    title: t(locale, "modal.consent_required.title"),
+    description: t(locale, "modal.consent_required.description", values),
+    data: { total, available, availableAlready, reason: "consent" },
+    buttons,
+  };
 }
 
 export async function campaignCheckMiddleware(c: Context, next: Next) {
@@ -59,6 +190,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
     return c.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, 401);
   }
 
+  const locale = getUserLocale(user.user_metadata || {});
   const supabaseAdmin = createSupabaseAdmin();
 
   try {
@@ -108,18 +240,41 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
         }
 
         if (!data?.hasCredits && !data?.available) {
+          // No credits at all
+          const billingUrl = Deno.env.get("BILLING_URL") || "/billing";
           return c.json(
-            {
-              total: consentedContacts.length,
-              available: data?.available ?? 0,
-              availableAlready: 0,
-              reason: "credits",
-            },
+            buildModalResponse(
+              locale,
+              "insufficient_credits",
+              consentedContacts.length,
+              data?.available ?? 0,
+              0,
+              billingUrl,
+            ),
             402,
           );
         }
 
         eligibleCount = Math.min(consentedContacts.length, data.available);
+
+        // If partial credits (can't send to all)
+        if (eligibleCount < consentedContacts.length) {
+          const billingUrl = Deno.env.get("BILLING_URL") || "/billing";
+
+          if (!payload.partialCampaign) {
+            return c.json(
+              buildModalResponse(
+                locale,
+                "partial_credits",
+                consentedContacts.length,
+                eligibleCount,
+                0,
+                billingUrl,
+              ),
+              266 as unknown as Parameters<typeof c.json>[1],
+            );
+          }
+        }
       } catch (error) {
         logger.error("Billing quota check exception", {
           error,
@@ -135,14 +290,16 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
     if (eligibleCount < selectedEmails.length && !payload.partialCampaign) {
       const reason =
         eligibleCount === consentedContacts.length ? "consent" : "credits";
+
       return c.json(
-        {
-          total: selectedEmails.length,
-          available: eligibleCount,
-          availableAlready: 0,
-          reason,
-        },
-        266,
+        buildModalResponse(
+          locale,
+          reason === "consent" ? "consent_required" : "partial_credits",
+          selectedEmails.length,
+          eligibleCount,
+          0,
+        ),
+        266 as unknown as Parameters<typeof c.json>[1],
       );
     }
 
