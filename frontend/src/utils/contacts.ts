@@ -15,6 +15,9 @@ export function convertDates(data: Contact[]) {
     if (d.created_at) {
       d.created_at = new Date(d.created_at);
     }
+    if (d.consent_changed_at) {
+      d.consent_changed_at = new Date(d.consent_changed_at);
+    }
     return d;
   });
 }
