@@ -19,15 +19,14 @@ function parsePlural(text: string, count: number): string {
   return count === 1 ? singularForm : pluralForm;
 }
 
-function interpolate(
-  text: string,
-  values: Record<string, number | string>,
+/**
+ * Simple template interpolator: replaces {var} with provided values
+ */
+export function interpolate(
+  template: string,
+  vars: Record<string, string | number> = {},
 ): string {
-  return text.replace(/\{(\w+)\}/g, (match, key) => {
-    const value = values[key];
-    if (value === undefined) return match;
-    return String(value);
-  });
+  return template.replace(/{(\w+)}/g, (_, key) => String(vars[key] ?? ""));
 }
 
 function getNestedValue(obj: unknown, keys: string[]): unknown {
