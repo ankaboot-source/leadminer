@@ -30,6 +30,18 @@ function interpolate(
   });
 }
 
+function getNestedValue(obj: unknown, keys: string[]): unknown {
+  let current = obj;
+  for (const k of keys) {
+    if (current && typeof current === "object" && k in current) {
+      current = (current as Record<string, unknown>)[k];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}
+
 export function t(
   locale: Locale,
   key: string,
@@ -38,29 +50,21 @@ export function t(
   const localeMessages = messages[locale] || messages.en;
   const keys = key.split(".");
 
-  let current: unknown = localeMessages;
-  for (const k of keys) {
-    if (current && typeof current === "object" && k in current) {
-      current = (current as Record<string, unknown>)[k];
-    } else {
-      // Fallback to English
-      current = messages.en;
-      for (const fallbackKey of keys) {
-        if (current && typeof current === "object" && fallbackKey in current) {
-          current = (current as Record<string, unknown>)[fallbackKey];
-        } else {
-          return key; // Return key if translation not found
-        }
-      }
-    }
+  // Try locale messages first
+  let current = getNestedValue(localeMessages, keys);
+
+  // Fallback to English if not found
+  if (current === undefined) {
+    current = getNestedValue(messages.en, keys);
   }
 
   if (typeof current !== "string") return key;
 
-  // Handle plural forms if values contain count-related keys
+  // Handle plural forms using the first number value
   let result = current;
-  if ("available" in values) {
-    result = parsePlural(result, Number(values.available));
+  const countValue = Object.values(values).find((v) => typeof v === "number");
+  if (countValue !== undefined) {
+    result = parsePlural(result, countValue);
   }
 
   return interpolate(result, values);
