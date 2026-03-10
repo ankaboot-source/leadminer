@@ -54,7 +54,11 @@ async function getSelectedContacts(
 
 function buildModalResponse(
   locale: "en" | "fr",
-  scenario: "insufficient_credits" | "consent_required" | "partial_credits",
+  scenario:
+    | "insufficient_credits"
+    | "consent_required"
+    | "partial_credits"
+    | "no_consented_contacts",
   total: number,
   available: number,
   availableAlready: number,
@@ -126,6 +130,29 @@ function buildModalResponse(
       title: t(locale, "modal.partial_credits.title"),
       description: t(locale, "modal.partial_credits.description", values),
       data: { total, available, availableAlready, reason: "credits" },
+      buttons,
+    };
+  }
+
+  if (scenario === "no_consented_contacts") {
+    buttons.push({
+      title: t(locale, "modal.no_consented_contacts.buttons.cancel"),
+      action: "cancel",
+      variant: "ghost",
+    });
+    buttons.push({
+      title: t(locale, "modal.no_consented_contacts.buttons.privacy_policy"),
+      link: "/privacy-policy",
+      variant: "ghost",
+    });
+
+    return {
+      type: "modal",
+      title: t(locale, "modal.no_consented_contacts.title"),
+      description: t(locale, "modal.no_consented_contacts.description", {
+        total,
+      }),
+      data: { total, available: 0, availableAlready: 0, reason: "consent" },
       buttons,
     };
   }
@@ -205,7 +232,13 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
 
     if (consentedContacts.length === 0) {
       return c.json(
-        { error: "No contacts with consent", code: "NO_CONSENTED_CONTACTS" },
+        buildModalResponse(
+          locale,
+          "no_consented_contacts",
+          selectedEmails.length,
+          0,
+          0,
+        ),
         400,
       );
     }

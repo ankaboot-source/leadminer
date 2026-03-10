@@ -9,16 +9,26 @@
       {{ modalData?.description }}
     </p>
     <template #footer>
-      <div class="flex justify-end gap-2 flex-wrap">
+      <div class="flex justify-between gap-2">
+        <!-- Left side: Cancel button only -->
         <Button
-          v-for="(button, index) in modalData?.buttons"
-          :key="index"
-          :label="button.title"
-          :link="button.variant === 'ghost'"
-          :outlined="button.variant === 'secondary'"
-          :severity="button.variant === 'primary' ? 'contrast' : 'secondary'"
-          @click="handleButtonClick(button)"
+          v-if="cancelButton"
+          :label="cancelButton.title"
+          link
+          @click="handleButtonClick(cancelButton)"
         />
+
+        <!-- Right side: All other buttons -->
+        <div class="flex gap-2">
+          <Button
+            v-for="(button, index) in actionButtons"
+            :key="index"
+            :label="button.title"
+            :outlined="button.variant === 'secondary'"
+            :severity="button.variant === 'primary' ? 'contrast' : 'secondary'"
+            @click="handleButtonClick(button)"
+          />
+        </div>
       </div>
     </template>
   </Dialog>
@@ -52,6 +62,14 @@ const emit = defineEmits<{
 
 const isVisible = ref(false);
 const modalData = ref<ModalData | null>(null);
+
+const cancelButton = computed(() => {
+  return modalData.value?.buttons.find((b) => b.action === 'cancel');
+});
+
+const actionButtons = computed(() => {
+  return modalData.value?.buttons.filter((b) => b.action !== 'cancel') ?? [];
+});
 
 function openModal(data: ModalData) {
   modalData.value = data;

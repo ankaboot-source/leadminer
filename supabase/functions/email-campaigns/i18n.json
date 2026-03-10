@@ -12,7 +12,7 @@
       },
       "consent_required": {
         "title": "Consent Required",
-        "description": "Only {available} of {total} contact | contacts have given consent to receive email campaigns. You can only send to contacts who have opted in or have a legitimate interest basis.",
+        "description": "{available} of {total} contact | contacts can receive email campaigns. You can only send to contacts who have opted in or have a legitimate interest basis.",
         "buttons": {
           "privacy_policy": "Privacy Policy",
           "continue_partial": "Continue with {available} contact | Continue with {available} contacts",
@@ -25,6 +25,14 @@
         "buttons": {
           "upgrade": "Upgrade to Send All",
           "continue_partial": "Send to {available} contact | Send to {available} contacts",
+          "cancel": "Cancel"
+        }
+      },
+      "no_consented_contacts": {
+        "title": "No Contacts Available",
+        "description": "None of your selected contacts have given consent to receive email campaigns. All {total} contact | contacts have opted out.",
+        "buttons": {
+          "privacy_policy": "Privacy Policy",
           "cancel": "Cancel"
         }
       }
@@ -43,7 +51,7 @@
       },
       "consent_required": {
         "title": "Consentement Requis",
-        "description": "Seulement {available} sur {total} contact | contacts ont donné leur consentement pour recevoir des campagnes email. Vous ne pouvez envoyer qu'aux contacts ayant opté ou ayant un intérêt légitime.",
+        "description": "{available} sur {total} contact | contacts peuvent recevoir des campagnes email. Vous ne pouvez envoyer qu'aux contacts ayant opté ou ayant un intérêt légitime.",
         "buttons": {
           "privacy_policy": "Politique de Confidentialité",
           "continue_partial": "Continuer avec {available} contact | Continuer avec {available} contacts",
@@ -56,6 +64,14 @@
         "buttons": {
           "upgrade": "Mettre à niveau pour tout envoyer",
           "continue_partial": "Envoyer à {available} contact | Envoyer à {available} contacts",
+          "cancel": "Annuler"
+        }
+      },
+      "no_consented_contacts": {
+        "title": "Aucun Contact Disponible",
+        "description": "Aucun de vos contacts sélectionnés n'a donné son consentement pour recevoir des campagnes email. Tous les {total} contact | contacts se sont désinscrits.",
+        "buttons": {
+          "privacy_policy": "Politique de Confidentialité",
           "cancel": "Annuler"
         }
       }
