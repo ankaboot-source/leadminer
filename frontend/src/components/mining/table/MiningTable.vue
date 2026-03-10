@@ -628,11 +628,13 @@
         </div>
       </template>
       <template #body="{ data }">
-        <Tag
-          class="font-normal"
-          :value="getConsentLabel(data.consent_status)"
-          :severity="getConsentColor(data.consent_status)"
-        />
+        <div v-tooltip.bottom="data.consent_changed_at?.toLocaleString()">
+          <Tag
+            class="font-normal"
+            :value="getConsentLabel(data.consent_status)"
+            :severity="getConsentColor(data.consent_status)"
+          />
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
