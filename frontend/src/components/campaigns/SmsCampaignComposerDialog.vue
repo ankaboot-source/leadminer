@@ -17,8 +17,12 @@
         class="border border-blue-200 border-t border-t-blue-200 bg-blue-50"
       >
         <div class="flex items-center gap-3">
-          <i class="pi pi-comments text-xl" />
-          <span>{{ t('sms_gdpr_notice') }}</span>
+          <img
+            src="/icons/gdpr.png"
+            alt="GDPR"
+            class="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
+          />
+          <span>{{ t('gdpr_notice') }}</span>
         </div>
       </Message>
 
@@ -229,12 +233,12 @@
         <li>{{ t('smsgate_setup_step_3') }}</li>
       </ol>
       <a
-        href="https://docs.sms-gate.app/installation/"
+        href="https://sms-gate.app/"
         target="_blank"
         rel="noopener noreferrer"
         class="underline"
       >
-        {{ t('open_smsgate_docs') }}
+        {{ t('download_smsgate_apk') }}
       </a>
     </div>
   </Dialog>
@@ -678,7 +682,7 @@ watch(() => form.messageTemplate, updateCharCount);
     "smsgate_setup_step_1": "Install and configure SMS Gate on your Android device.",
     "smsgate_setup_step_2": "Copy your API URL, username and password.",
     "smsgate_setup_step_3": "Paste credentials here or in Account Settings.",
-    "open_smsgate_docs": "Open official SMSGate installation guide",
+    "download_smsgate_apk": "Download and install the APK",
     "twilio_not_configured": "Twilio is not configured. Please configure Twilio environment variables.",
     "smsgate_base_url": "SMSGate API URL",
     "smsgate_username": "SMSGate Username",
@@ -719,7 +723,7 @@ watch(() => form.messageTemplate, updateCharCount);
     "smsgate_setup_step_1": "Installez et configurez SMS Gate sur votre appareil Android.",
     "smsgate_setup_step_2": "Copiez l'URL API, le nom d'utilisateur et le mot de passe.",
     "smsgate_setup_step_3": "Collez les identifiants ici ou dans les paramètres du compte.",
-    "open_smsgate_docs": "Ouvrir le guide officiel d'installation SMSGate",
+    "download_smsgate_apk": "Télécharger et installer l'APK",
     "twilio_not_configured": "Twilio n'est pas configuré. Veuillez configurer les variables d'environnement Twilio.",
     "smsgate_base_url": "URL API SMSGate",
     "smsgate_username": "Nom d'utilisateur SMSGate",

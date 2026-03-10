@@ -155,12 +155,12 @@
           }}</span>
         </div>
         <a
-          href="https://docs.sms-gate.app/installation/"
+          href="https://sms-gate.app/"
           target="_blank"
           rel="noopener noreferrer"
           class="underline text-sm"
         >
-          {{ t('open_smsgate_docs') }}
+          {{ t('download_smsgate_apk') }}
         </a>
         <Button
           class="w-full md:w-60 gap-4"
@@ -633,7 +633,7 @@ await fetchSmsProviderStatus();
     "twilio_status": "Twilio: {status}",
     "available": "available",
     "not_available": "not available",
-    "open_smsgate_docs": "Open official SMSGate installation guide"
+    "download_smsgate_apk": "Download and install the APK"
   },
   "fr": {
     "profile_information": "Informations du profil",
@@ -685,7 +685,7 @@ await fetchSmsProviderStatus();
     "twilio_status": "Twilio : {status}",
     "available": "disponible",
     "not_available": "non disponible",
-    "open_smsgate_docs": "Ouvrir le guide officiel d'installation SMSGate"
+    "download_smsgate_apk": "Télécharger et installer l'APK"
   }
 }
 </i18n>
