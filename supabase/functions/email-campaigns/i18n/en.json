@@ -22,7 +22,7 @@
     },
     "consent_required": {
       "title": "Consent or Legitimate Interest",
-      "description": "Only {{available}} of {{total}} {{engagement_type}} have given consent to be contacted.",
+      "description": "Only {{available}} of {{total}} {{engagementType}} have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
         "continue_partial": "Continue with {{count}} {{engagementType}}",
@@ -35,7 +35,7 @@
       }
     },
     "no_consented_contacts": {
-      "title": "No Contacts Available",
+      "title": "Consent or Legitimate Interest",
       "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} has opted out.",
       "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
       "buttons": {

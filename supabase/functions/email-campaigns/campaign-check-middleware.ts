@@ -79,7 +79,7 @@ function checkCompliance(
       description: t("modal.no_consented_contacts.description", {
         count: total,
         total,
-        engagement_type: t(
+        engagementType: t(
           "modal.no_consented_contacts.engagement_types.contact_plural",
         ),
       }),
@@ -102,7 +102,7 @@ function checkCompliance(
       description: t("modal.consent_required.description", {
         available: consentedContacts.length,
         total,
-        engagement_type: t(
+        engagementType: t(
           "modal.consent_required.engagement_types.contact_plural",
         ),
       }),
