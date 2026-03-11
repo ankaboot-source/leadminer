@@ -8,7 +8,6 @@
         v-if="$leadminer.miningSources.length > 0"
         icon="pi pi-plus"
         outlined
-        severity="secondary"
         :label="t('add_source')"
         @click="showAddSourceDialog = true"
       />
