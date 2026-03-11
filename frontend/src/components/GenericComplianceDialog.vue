@@ -1,11 +1,6 @@
 <template>
-  <Dialog
-    v-model:visible="isVisible"
-    modal
-    :header="modalData?.title"
-    :style="{ width: '30rem', maxWidth: '90vw' }"
-  >
-    <p class="m-0 text-surface-600">
+  <Dialog v-model:visible="isVisible" modal :header="modalData?.title">
+    <p class="m-0">
       {{ modalData?.description }}
     </p>
     <template #footer>
@@ -27,8 +22,19 @@
             :label="button.title"
             :severity="button.severity"
             :variant="button.variant"
+            :class="
+              button.icon
+                ? 'flex space-x-1 items-center justify-center lg:rounded-l-none'
+                : ''
+            "
             @click="handleButtonClick(button)"
-          />
+          >
+            <template v-if="button.icon" #icon>
+              <span class="p-button-icon p-button-icon-right">
+                <MdiIcon :icon="button.icon" size="1.3rem" />
+              </span>
+            </template>
+          </Button>
         </div>
       </div>
     </template>
@@ -42,6 +48,7 @@ export interface ModalButton {
   action?: string;
   severity?: 'primary' | 'secondary' | 'contrast';
   variant?: 'outlined' | 'text' | 'link';
+  icon?: string;
 }
 
 export interface ModalData {

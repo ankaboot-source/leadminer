@@ -16,6 +16,7 @@ interface ModalButton {
   action?: string;
   severity?: "primary" | "secondary" | "contrast";
   variant?: "outlined" | "text" | "link";
+  icon?: string;
 }
 
 interface ModalResponse {
@@ -66,13 +67,15 @@ function buildModalResponse(
   const buttons: ModalButton[] = [];
 
   if (scenario === "insufficient_credits") {
-    if (billingUrl) {
-      buttons.push({
-        title: t("modal.insufficient_credits.buttons.upgrade"),
-        link: billingUrl,
-        severity: "contrast",
-      });
-    }
+    // Cancel button FIRST (left side)
+    buttons.push({
+      title: t("modal.insufficient_credits.buttons.cancel"),
+      action: "cancel",
+      severity: "secondary",
+      variant: "text",
+    });
+
+    // Continue partial button SECOND (middle)
     if (available > 0) {
       buttons.push({
         title: t("modal.insufficient_credits.buttons.continue_partial", {
@@ -84,12 +87,16 @@ function buildModalResponse(
         variant: "outlined",
       });
     }
-    buttons.push({
-      title: t("modal.insufficient_credits.buttons.cancel"),
-      action: "cancel",
-      severity: "secondary",
-      variant: "text",
-    });
+
+    // Upgrade/Refill button LAST (right side - PRIMARY with icon)
+    if (billingUrl) {
+      buttons.push({
+        title: t("modal.insufficient_credits.buttons.upgrade"),
+        link: billingUrl,
+        severity: "contrast",
+        icon: "mdiRocketLaunch",
+      });
+    }
 
     return {
       type: "modal",

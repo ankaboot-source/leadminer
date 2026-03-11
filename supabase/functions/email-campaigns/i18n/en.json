@@ -10,9 +10,9 @@
         "cancel": "Cancel"
       },
       "action_types": {
-        "export": "export",
-        "enrich": "enrich",
-        "campaign": "send"
+        "export": "Export",
+        "enrich": "Enrich",
+        "campaign": "Send"
       },
       "engagement_types": {
         "contact": "contact",
