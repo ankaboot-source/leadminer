@@ -1,25 +1,5 @@
 {
   "modal": {
-    "insufficient_credits": {
-      "title": "Oups ! Crédits trop bas 😅",
-      "description": "Vous n'avez pas assez de crédits pour {{actionType}} votre {{engagementType}}.",
-      "description_plural": "Vous n'avez pas assez de crédits pour {{actionType}} vos {{formattedTotal}} {{engagementType}}.",
-      "buttons": {
-        "upgrade": "Recharger vos crédits",
-        "continue_partial": "Envoyer à {{available}} {{engagementType}}",
-        "continue_partial_one": "Envoyer à {{available}} {{engagementType}}",
-        "cancel": "Annuler"
-      },
-      "action_types": {
-        "export": "exporter",
-        "enrich": "enrichir",
-        "campaign": "envoyer une campagne à vos"
-      },
-      "engagement_types": {
-        "contact": "contact",
-        "contact_plural": "contacts"
-      }
-    },
     "consent_required": {
       "title": "Consentement ou Intérêt Légitime",
       "description": "Seulement {{available}} sur {{total}} {{engagementType}} ont donné leur consentement.",

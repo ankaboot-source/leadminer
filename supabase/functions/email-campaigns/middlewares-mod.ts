@@ -5,22 +5,14 @@ import { initI18n, t, getUserLocale } from "./i18n.ts";
 
 // Constants
 const PRIVACY_POLICY_URL = "/privacy-policy";
-const DEFAULT_BILLING_URL = "/billing";
 
 const logger = createLogger("email-campaigns:bill");
-
-interface BillingResult {
-  success: boolean;
-  chargedUnits?: number;
-  error?: string;
-}
 
 interface SuccessResponse {
   msg: string;
   campaignId: string;
   queuedCount: number;
   chargedUnits?: number;
-  billingError?: string;
 }
 
 interface ContactSnapshot {
@@ -54,7 +46,7 @@ interface ModalResponse {
 interface CheckResult {
   response: ModalResponse | null;
   partialField?: "partial_one" | "partial_two";
-  eligibleCount?: number; // Credit-based limit (defaults to all contacts if billing disabled)
+  eligibleCount?: number;
 }
 
 async function getSelectedContacts(
@@ -77,182 +69,6 @@ async function getSelectedContacts(
     email: row.email,
     consent_status: row.consent_status || "legitimate_interest",
   }));
-}
-
-/**
- * Check billing - verifies credits/quota availability
- * Returns CheckResult with response and partial field if applicable
- */
-async function checkBilling(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  consentedContacts: ContactSnapshot[],
-  userId: string,
-  billingUrl: string,
-  _partialOne: boolean, // Ignored - for consistency
-  partialTwo: boolean,
-): Promise<CheckResult> {
-  const { data, error } = await supabaseAdmin.functions.invoke(
-    "billing/campaign/quota",
-    {
-      body: {
-        userId,
-        units: consentedContacts.length,
-      },
-    },
-  );
-
-  if (error) {
-    logger.error("Billing quota check failed", {
-      error: error.message,
-      userId,
-    });
-    throw new Error("Billing service unavailable");
-  }
-
-  const total = consentedContacts.length;
-
-  // Calculate eligible count based on credits
-  const eligibleCount = Math.min(consentedContacts.length, data.available || 0);
-
-  // No credits at all
-  if (eligibleCount === 0) {
-    return {
-      response: {
-        type: "modal",
-        title: t("modal.insufficient_credits.title"),
-        description: t("modal.insufficient_credits.description", {
-          count: total,
-          actionType: t("modal.insufficient_credits.action_types.campaign"),
-          engagementType: t(
-            "modal.insufficient_credits.engagement_types.contact",
-            { count: total },
-          ),
-          formattedTotal: total,
-        }),
-        data: { total, available: 0, availableAlready: 0, reason: "credits" },
-        buttons: [
-          {
-            title: t("modal.insufficient_credits.buttons.upgrade"),
-            link: billingUrl,
-            severity: "contrast",
-            icon: "mdiRocketLaunch",
-          },
-        ],
-      },
-      partialField: undefined, // Can't proceed
-      eligibleCount: 0,
-    };
-  }
-
-  // Partial credits - check if user approved partial_two
-  if (eligibleCount < consentedContacts.length) {
-    if (!partialTwo) {
-      // User hasn't approved yet - show modal
-      return {
-        response: {
-          type: "modal",
-          title: t("modal.insufficient_credits.title"),
-          description: t("modal.insufficient_credits.description", {
-            count: total,
-            actionType: t("modal.insufficient_credits.action_types.campaign"),
-            engagementType: t(
-              "modal.insufficient_credits.engagement_types.contact",
-              { count: total },
-            ),
-            formattedTotal: total,
-          }),
-          data: {
-            total: consentedContacts.length,
-            available: eligibleCount,
-            availableAlready: 0,
-            reason: "credits",
-          },
-          buttons: [
-            {
-              title: t("modal.insufficient_credits.buttons.continue_partial", {
-                count: eligibleCount,
-                available: eligibleCount,
-                engagementType: t(
-                  "modal.insufficient_credits.engagement_types.contact",
-                  { count: eligibleCount },
-                ),
-              }),
-              action: "continue_partial",
-              variant: "outlined",
-            },
-            {
-              title: t("modal.insufficient_credits.buttons.upgrade"),
-              link: billingUrl,
-              severity: "contrast",
-              icon: "mdiRocketLaunch",
-            },
-          ],
-        },
-        partialField: "partial_two",
-        eligibleCount: eligibleCount,
-      };
-    } else {
-      // User approved partial_two - proceed but return eligibleCount for slicing
-      return {
-        response: null,
-        eligibleCount: eligibleCount,
-      };
-    }
-  }
-
-  // Enough credits - proceed with all contacts
-  return {
-    response: null,
-    eligibleCount: consentedContacts.length,
-  };
-}
-
-/**
- * Charge campaign credits from user's account
- * Returns success status and details of the charge operation
- */
-async function chargeCampaignCredits(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  userId: string,
-  createdCount: number,
-  campaignId: string,
-): Promise<BillingResult> {
-  try {
-    const { data, error } = await supabaseAdmin.functions.invoke(
-      "billing/campaign/charge",
-      {
-        body: {
-          userId,
-          units: createdCount,
-        },
-      },
-    );
-
-    if (error) {
-      logger.error("Billing charge failed", {
-        error: error.message,
-        userId,
-        campaignId,
-        createdCount,
-      });
-      return { success: false, error: error.message };
-    }
-
-    logger.info("Billing charge successful", {
-      userId,
-      campaignId,
-      createdCount,
-      chargedUnits: data?.payload?.chargedUnits,
-    });
-
-    return {
-      success: true,
-      chargedUnits: data?.payload?.chargedUnits,
-    };
-  } catch (error) {
-    logger.error("Billing charge exception", { error, userId, campaignId });
-    return { success: false, error: String(error) };
-  }
 }
 
 /**
@@ -348,7 +164,6 @@ function checkCompliance(
 function createSuccessResponse(
   campaignId: string,
   queuedCount: number,
-  billingResult?: BillingResult,
 ): SuccessResponse {
   const response: SuccessResponse = {
     msg: "Campaign queued",
@@ -356,18 +171,10 @@ function createSuccessResponse(
     queuedCount,
   };
 
-  if (billingResult) {
-    if (billingResult.success) {
-      response.chargedUnits = billingResult.chargedUnits;
-    } else {
-      response.billingError = billingResult.error;
-    }
-  }
-
   return response;
 }
 
-export async function createFinalResponseMiddleware(c: Context, next: Next) {
+export function createFinalResponseMiddleware(c: Context, next: Next) {
   if (!c.req.path.endsWith("/campaigns/create")) {
     return next();
   }
@@ -382,31 +189,7 @@ export async function createFinalResponseMiddleware(c: Context, next: Next) {
   }
 
   const { campaignId, createdCount, userId } = campaignData;
-  const billingEnabled = Deno.env.get("ENABLE_CREDIT") === "true";
-
-  // If billing not enabled, just return success
-  if (!billingEnabled) {
-    return c.json(createSuccessResponse(campaignId, createdCount));
-  }
-
-  // Billing enabled - charge credits (limits already enforced by complianceMiddleware)
-  const supabaseAdmin = createSupabaseAdmin();
-
-  const billingResult = await chargeCampaignCredits(
-    supabaseAdmin,
-    userId,
-    createdCount,
-    campaignId,
-  );
-
-  // Determine status code: 200 for success, 402 for failed charge
-  const statusCode = billingResult.success ? 200 : 402;
-
-  // Return response (campaign queued regardless of charge result)
-  return c.json(
-    createSuccessResponse(campaignId, createdCount, billingResult),
-    statusCode as unknown as Parameters<typeof c.json>[1],
-  );
+  return c.json(createSuccessResponse(campaignId, createdCount));
 }
 
 export async function complianceMiddleware(c: Context, next: Next) {
@@ -475,46 +258,10 @@ export async function complianceMiddleware(c: Context, next: Next) {
       );
     }
 
-    // All contacts have consent
     const consentedContacts = contacts.filter(
       (c) => c.consent_status !== "opt_out",
     );
-
-    // Check 2: Billing (credits) - only if enabled
-    let eligibleCount = consentedContacts.length; // Default to all contacts
-
-    if (Deno.env.get("ENABLE_CREDIT") === "true") {
-      const billingCheck = await checkBilling(
-        supabaseAdmin,
-        consentedContacts,
-        user.id,
-        DEFAULT_BILLING_URL,
-        payload.partial_one || false,
-        payload.partial_two || false,
-      );
-
-      if (billingCheck.response) {
-        const statusCode =
-          billingCheck.response.data?.available === 0 ? 402 : 266;
-
-        // Add partial_continue field if applicable
-        if (billingCheck.partialField) {
-          billingCheck.response.data.partial_continue =
-            billingCheck.partialField;
-        }
-
-        return c.json(
-          billingCheck.response,
-          statusCode as unknown as Parameters<typeof c.json>[1],
-        );
-      }
-
-      // Billing check passed - get eligible count from credits
-      eligibleCount = billingCheck.eligibleCount ?? consentedContacts.length;
-    }
-
-    // All checks passed - proceed with campaign
-    // Slice contacts to eligible count (based on credits if billing enabled)
+    const eligibleCount = consentedContacts.length;
     const finalContacts = consentedContacts.slice(0, eligibleCount);
     const finalEmails = finalContacts.map((c) => c.email);
 
