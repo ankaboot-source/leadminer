@@ -29,12 +29,11 @@ export class SmsGateProvider implements SmsProvider {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Basic ${btoa(`${this.username}:${this.password}`)}`,
+          Authorization: `Basic ${btoa(`${this.username}:${this.password}`)}`,
         },
         body: JSON.stringify({
-          phoneNumber: params.to,
-          sender: params.from,
-          message: params.body,
+          textMessage: { text: params.body },
+          phoneNumbers: [params.to],
         }),
       });
 
