@@ -6,7 +6,8 @@
       "description_plural": "You don't have enough credits to {{actionType}} your {{formattedTotal}} {{engagementType}}.",
       "buttons": {
         "upgrade": "Refill credits",
-        "continue_partial": "{{actionType}} only {{available}}",
+        "continue_partial": "Send to {{available}} {{engagementType}}",
+        "continue_partial_one": "Send to {{available}} {{engagementType}}",
         "cancel": "Cancel"
       },
       "action_types": {
@@ -20,11 +21,12 @@
       }
     },
     "consent_required": {
-      "title": "Consent Required",
+      "title": "Consent or Legitimate Interest",
       "description": "Only {{available}} of {{total}} {{engagement_type}} have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
-        "continue_partial": "Continue with {{count}}",
+        "continue_partial": "Continue with {{count}} {{engagementType}}",
+        "continue_partial_one": "Continue with {{count}} {{engagementType}}",
         "cancel": "Cancel"
       },
       "engagement_types": {
@@ -33,9 +35,9 @@
       }
     },
     "no_consented_contacts": {
-      "title": "Consent Required",
-      "description": "None of your selected contacts have given consent to be contacted.",
-      "description_plural": "None of your selected contacts have given consent to be contacted.",
+      "title": "No Contacts Available",
+      "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} has opted out.",
+      "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
         "cancel": "Cancel"
