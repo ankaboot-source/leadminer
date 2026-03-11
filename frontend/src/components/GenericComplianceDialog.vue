@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:visible="isVisible" modal :header="modalData?.title">
+  <Dialog v-model:visible="isVisible" modal :header="modalData?.title" :style="{ width: '30rem' }">
     <p class="m-0">
       {{ modalData?.description }}
     </p>

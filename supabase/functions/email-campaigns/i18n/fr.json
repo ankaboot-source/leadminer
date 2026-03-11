@@ -6,13 +6,14 @@
       "description_plural": "Vous n'avez pas assez de crédits pour {{actionType}} vos {{formattedTotal}} {{engagementType}}.",
       "buttons": {
         "upgrade": "Recharger vos crédits",
-        "continue_partial": "{{actionType}} seulement {{available}}",
+        "continue_partial": "Envoyer à {{available}} {{engagementType}}",
+        "continue_partial_one": "Envoyer à {{available}} {{engagementType}}",
         "cancel": "Annuler"
       },
       "action_types": {
         "export": "exporter",
         "enrich": "enrichir",
-        "campaign": "envoyer"
+        "campaign": "envoyer une campagne à vos"
       },
       "engagement_types": {
         "contact": "contact",
@@ -20,11 +21,12 @@
       }
     },
     "consent_required": {
-      "title": "Consentement Requis",
+      "title": "Consentement ou Intérêt Légitime",
       "description": "Seulement {{available}} sur {{total}} {{engagement_type}} ont donné leur consentement.",
       "buttons": {
         "privacy_policy": "Politique de Confidentialité",
-        "continue_partial": "Continuer avec {{count}}",
+        "continue_partial": "Continuer avec {{count}} {{engagementType}}",
+        "continue_partial_one": "Continuer avec {{count}} {{engagementType}}",
         "cancel": "Annuler"
       },
       "engagement_types": {

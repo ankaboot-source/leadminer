@@ -121,9 +121,13 @@ function checkCompliance(
         {
           title: t("modal.consent_required.buttons.continue_partial", {
             count: consentedContacts.length,
+            engagementType: t(
+              "modal.consent_required.engagement_types.contact",
+              { count: consentedContacts.length },
+            ),
           }),
           action: "continue_partial",
-          variant: "outlined",
+          severity: "primary",
         },
       ],
     };
@@ -214,8 +218,11 @@ async function checkBilling(
         {
           title: t("modal.insufficient_credits.buttons.continue_partial", {
             count: eligibleCount,
-            actionType: t("modal.insufficient_credits.action_types.campaign"),
             available: eligibleCount,
+            engagementType: t(
+              "modal.insufficient_credits.engagement_types.contact",
+              { count: eligibleCount },
+            ),
           }),
           action: "continue_partial",
           variant: "outlined",
@@ -262,7 +269,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
     return c.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, 401);
   }
 
-  const locale = getUserLocale(user.user_metadata || {});
+  const locale = "fr"; //getUserLocale(user.user_metadata || {});
   await initI18n(locale);
 
   const supabaseAdmin = createSupabaseAdmin();
