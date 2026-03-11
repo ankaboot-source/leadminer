@@ -222,9 +222,9 @@
     <div class="flex flex-col gap-3 text-sm">
       <template v-if="setupProvider === 'smsgate'">
         <p class="m-0">{{ t('smsgate_setup_intro') }}</p>
-        <ol class="pl-4 m-0 flex flex-col gap-2">
-          <li>{{ t('smsgate_setup_step_1') }}</li>
-          <li>{{ t('smsgate_setup_step_2') }}</li>
+        <ol class="pl-4 m-0 list-decimal">
+          <li class="mb-2">{{ t('smsgate_setup_step_1') }}</li>
+          <li class="mb-2">{{ t('smsgate_setup_step_2') }}</li>
           <li>{{ t('smsgate_setup_step_3') }}</li>
         </ol>
         <a
@@ -238,8 +238,8 @@
       </template>
       <template v-else-if="setupProvider === 'simple-sms-gateway'">
         <p class="m-0">{{ t('simple_sms_gateway_setup_intro') }}</p>
-        <ol class="pl-4 m-0 flex flex-col gap-2">
-          <li>{{ t('simple_sms_gateway_setup_step_1') }}</li>
+        <ol class="pl-4 m-0 list-decimal">
+          <li class="mb-2">{{ t('simple_sms_gateway_setup_step_1') }}</li>
           <li>{{ t('simple_sms_gateway_setup_step_2') }}</li>
         </ol>
         <a
