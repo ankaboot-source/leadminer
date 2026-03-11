@@ -1,0 +1,39 @@
+{
+  "modal": {
+    "insufficient_credits": {
+      "title": "Insufficient Credits",
+      "description": "You have {{available}} credit{{available, plural, one{} other{s}}} available, but you selected {{total}} contact{{total, plural, one{} other{s}}}. Upgrade your plan to send to all selected contacts.",
+      "buttons": {
+        "upgrade": "Upgrade Plan",
+        "continue_partial": "Send to {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Cancel"
+      }
+    },
+    "consent_required": {
+      "title": "Consent Required",
+      "description": "{{available}} of {{total}} contact{{total, plural, one{} other{s}}} can receive email campaigns. You can only send to contacts who have opted in or have a legitimate interest basis.",
+      "buttons": {
+        "privacy_policy": "Privacy Policy",
+        "continue_partial": "Continue with {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Cancel"
+      }
+    },
+    "partial_credits": {
+      "title": "Partial Credits Available",
+      "description": "You can only send to {{available}} of {{total}} contact{{total, plural, one{} other{s}}} with your current credits. The remaining contacts will not receive this campaign.",
+      "buttons": {
+        "upgrade": "Upgrade to Send All",
+        "continue_partial": "Send to {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Cancel"
+      }
+    },
+    "no_consented_contacts": {
+      "title": "No Contacts Available",
+      "description": "None of your selected contacts have given consent to receive email campaigns. All {{total}} contact{{total, plural, one{} other{s}}} have opted out.",
+      "buttons": {
+        "privacy_policy": "Privacy Policy",
+        "cancel": "Cancel"
+      }
+    }
+  }
+}

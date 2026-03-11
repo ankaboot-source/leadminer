@@ -1,7 +1,7 @@
 import { Context, Next } from "hono";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { t, getUserLocale } from "./i18n.ts";
+import { initI18n, t, getUserLocale } from "./i18n.ts";
 
 const logger = createLogger("email-campaigns:check");
 
@@ -54,7 +54,6 @@ async function getSelectedContacts(
 }
 
 function buildModalResponse(
-  locale: "en" | "fr",
   scenario:
     | "insufficient_credits"
     | "consent_required"
@@ -72,24 +71,20 @@ function buildModalResponse(
   if (scenario === "insufficient_credits") {
     if (billingUrl) {
       buttons.push({
-        title: t(locale, "modal.insufficient_credits.buttons.upgrade"),
+        title: t("modal.insufficient_credits.buttons.upgrade"),
         link: billingUrl,
         severity: "contrast",
       });
     }
     if (available > 0) {
       buttons.push({
-        title: t(
-          locale,
-          "modal.insufficient_credits.buttons.continue_partial",
-          values,
-        ),
+        title: t("modal.insufficient_credits.buttons.continue_partial", values),
         action: "continue_partial",
         variant: "outlined",
       });
     }
     buttons.push({
-      title: t(locale, "modal.insufficient_credits.buttons.cancel"),
+      title: t("modal.insufficient_credits.buttons.cancel"),
       action: "cancel",
       severity: "secondary",
       variant: "text",
@@ -97,8 +92,8 @@ function buildModalResponse(
 
     return {
       type: "modal",
-      title: t(locale, "modal.insufficient_credits.title"),
-      description: t(locale, "modal.insufficient_credits.description", values),
+      title: t("modal.insufficient_credits.title"),
+      description: t("modal.insufficient_credits.description", values),
       data: { total, available, availableAlready, reason: "credits" },
       buttons,
     };
@@ -107,22 +102,18 @@ function buildModalResponse(
   if (scenario === "partial_credits") {
     if (billingUrl) {
       buttons.push({
-        title: t(locale, "modal.partial_credits.buttons.upgrade"),
+        title: t("modal.partial_credits.buttons.upgrade"),
         link: billingUrl,
         severity: "contrast",
       });
     }
     buttons.push({
-      title: t(
-        locale,
-        "modal.partial_credits.buttons.continue_partial",
-        values,
-      ),
+      title: t("modal.partial_credits.buttons.continue_partial", values),
       action: "continue_partial",
       variant: "outlined",
     });
     buttons.push({
-      title: t(locale, "modal.partial_credits.buttons.cancel"),
+      title: t("modal.partial_credits.buttons.cancel"),
       action: "cancel",
       severity: "secondary",
       variant: "text",
@@ -130,8 +121,8 @@ function buildModalResponse(
 
     return {
       type: "modal",
-      title: t(locale, "modal.partial_credits.title"),
-      description: t(locale, "modal.partial_credits.description", values),
+      title: t("modal.partial_credits.title"),
+      description: t("modal.partial_credits.description", values),
       data: { total, available, availableAlready, reason: "credits" },
       buttons,
     };
@@ -139,23 +130,21 @@ function buildModalResponse(
 
   if (scenario === "no_consented_contacts") {
     buttons.push({
-      title: t(locale, "modal.no_consented_contacts.buttons.cancel"),
+      title: t("modal.no_consented_contacts.buttons.cancel"),
       action: "cancel",
       severity: "secondary",
       variant: "text",
     });
     buttons.push({
-      title: t(locale, "modal.no_consented_contacts.buttons.privacy_policy"),
+      title: t("modal.no_consented_contacts.buttons.privacy_policy"),
       link: "/privacy-policy",
       variant: "link",
     });
 
     return {
       type: "modal",
-      title: t(locale, "modal.no_consented_contacts.title"),
-      description: t(locale, "modal.no_consented_contacts.description", {
-        total,
-      }),
+      title: t("modal.no_consented_contacts.title"),
+      description: t("modal.no_consented_contacts.description", { total }),
       data: { total, available: 0, availableAlready: 0, reason: "consent" },
       buttons,
     };
@@ -163,23 +152,19 @@ function buildModalResponse(
 
   // consent_required
   buttons.push({
-    title: t(locale, "modal.consent_required.buttons.privacy_policy"),
+    title: t("modal.consent_required.buttons.privacy_policy"),
     link: "/privacy-policy",
     variant: "link",
   });
   if (available > 0) {
     buttons.push({
-      title: t(
-        locale,
-        "modal.consent_required.buttons.continue_partial",
-        values,
-      ),
+      title: t("modal.consent_required.buttons.continue_partial", values),
       action: "continue_partial",
       variant: "outlined",
     });
   }
   buttons.push({
-    title: t(locale, "modal.consent_required.buttons.cancel"),
+    title: t("modal.consent_required.buttons.cancel"),
     action: "cancel",
     severity: "secondary",
     variant: "text",
@@ -187,8 +172,8 @@ function buildModalResponse(
 
   return {
     type: "modal",
-    title: t(locale, "modal.consent_required.title"),
-    description: t(locale, "modal.consent_required.description", values),
+    title: t("modal.consent_required.title"),
+    description: t("modal.consent_required.description", values),
     data: { total, available, availableAlready, reason: "consent" },
     buttons,
   };
@@ -223,6 +208,8 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
   }
 
   const locale = getUserLocale(user.user_metadata || {});
+  await initI18n(locale);
+
   const supabaseAdmin = createSupabaseAdmin();
 
   try {
@@ -238,7 +225,6 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
     if (consentedContacts.length === 0) {
       return c.json(
         buildModalResponse(
-          locale,
           "no_consented_contacts",
           selectedEmails.length,
           0,
@@ -282,7 +268,6 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
           const billingUrl = Deno.env.get("BILLING_URL") || "/billing";
           return c.json(
             buildModalResponse(
-              locale,
               "insufficient_credits",
               consentedContacts.length,
               data?.available ?? 0,
@@ -302,7 +287,6 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
           if (!payload.partialCampaign) {
             return c.json(
               buildModalResponse(
-                locale,
                 "partial_credits",
                 consentedContacts.length,
                 eligibleCount,
@@ -331,7 +315,6 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
 
       return c.json(
         buildModalResponse(
-          locale,
           reason === "consent" ? "consent_required" : "partial_credits",
           selectedEmails.length,
           eligibleCount,

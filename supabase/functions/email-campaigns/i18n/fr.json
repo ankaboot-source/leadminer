@@ -1,0 +1,39 @@
+{
+  "modal": {
+    "insufficient_credits": {
+      "title": "Crédits Insuffisants",
+      "description": "Vous disposez de {{available}} crédit{{available, plural, one{} other{s}}}, mais vous avez sélectionné {{total}} contact{{total, plural, one{} other{s}}}. Mettez à niveau votre plan pour envoyer à tous les contacts sélectionnés.",
+      "buttons": {
+        "upgrade": "Mettre à niveau le plan",
+        "continue_partial": "Envoyer à {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Annuler"
+      }
+    },
+    "consent_required": {
+      "title": "Consentement Requis",
+      "description": "{{available}} sur {{total}} contact{{total, plural, one{} other{s}}} peuvent recevoir des campagnes email. Vous ne pouvez envoyer qu'aux contacts ayant opté ou ayant un intérêt légitime.",
+      "buttons": {
+        "privacy_policy": "Politique de Confidentialité",
+        "continue_partial": "Continuer avec {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Annuler"
+      }
+    },
+    "partial_credits": {
+      "title": "Crédits Partiels Disponibles",
+      "description": "Vous pouvez seulement envoyer à {{available}} sur {{total}} contact{{total, plural, one{} other{s}}} avec vos crédits actuels. Les contacts restants ne recevront pas cette campagne.",
+      "buttons": {
+        "upgrade": "Mettre à niveau pour tout envoyer",
+        "continue_partial": "Envoyer à {{available}} contact{{available, plural, one{} other{s}}}",
+        "cancel": "Annuler"
+      }
+    },
+    "no_consented_contacts": {
+      "title": "Aucun Contact Disponible",
+      "description": "Aucun de vos contacts sélectionnés n'a donné son consentement pour recevoir des campagnes email. Tous les {{total}} contact{{total, plural, one{} other{s}}} se sont désinscrits.",
+      "buttons": {
+        "privacy_policy": "Politique de Confidentialité",
+        "cancel": "Annuler"
+      }
+    }
+  }
+}
