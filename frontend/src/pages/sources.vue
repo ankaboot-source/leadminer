@@ -84,18 +84,19 @@
                   @click="openDeleteDialog(source)"
                 />
 
-                <button
-                  v-if="!source.isValid"
-                  type="button"
-                  class="rounded-sm"
-                  @click="reconnectExpiredSource(source)"
-                >
+                <div v-if="!source.isValid" class="flex gap-2 items-center">
                   <Tag
                     :value="t(getSourceStatusBadge(source).labelKey)"
                     :severity="getSourceStatusBadge(source).severity"
                     :icon="getSourceStatusBadge(source).icon"
                   />
-                </button>
+                  <Button
+                    :label="t('reconnect')"
+                    size="small"
+                    severity="warn"
+                    @click="reconnectExpiredSource(source)"
+                  />
+                </div>
                 <Tag
                   v-else
                   :value="t(getSourceStatusBadge(source).labelKey)"
@@ -224,10 +225,36 @@ const { t } = useI18n({
 });
 const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
+const $route = useRoute();
+const $router = useRouter();
+const $imapDialogStore = useImapDialog();
 
 const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
+
+onMounted(async () => {
+  const reconnectEmail = $route.query.reconnect as string;
+
+  if (reconnectEmail) {
+    const source = $leadminer.miningSources.find(
+      (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),
+    );
+
+    if (source && !source.isValid) {
+      $router.replace({ query: {} });
+
+      if (source.type === 'imap') {
+        $imapDialogStore.imapEmail = source.email;
+        $imapDialogStore.showImapDialog = true;
+      } else {
+        await reconnectExpiredSource(source);
+      }
+    } else {
+      $router.replace({ query: {} });
+    }
+  }
+});
 
 function getIcon(type: string) {
   switch (type) {
@@ -432,6 +459,7 @@ onMounted(async () => {
     "reconnect_unavailable": "Reconnect URL is unavailable",
     "reconnect_not_supported": "Reconnect not supported",
     "reconnect_not_supported_detail": "This source requires manual credential update.",
+    "reconnect": "Reconnect",
     "emails_scanned": "Scanned",
     "emails_extracted": "Extracted",
     "emails_cleaned": "Cleaned",
@@ -481,6 +509,7 @@ onMounted(async () => {
     "reconnect_unavailable": "URL de reconnexion indisponible",
     "reconnect_not_supported": "Reconnexion non prise en charge",
     "reconnect_not_supported_detail": "Cette source nécessite une mise à jour manuelle des identifiants.",
+    "reconnect": "Reconnecter",
     "emails_scanned": "Scannés",
     "emails_extracted": "Extracts",
     "emails_cleaned": "Nettoyés",
