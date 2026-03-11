@@ -70,7 +70,7 @@
           <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
           <InputText
             v-model="form.smsgateBaseUrl"
-            placeholder="https://api.sms-gate.app"
+            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
           />
         </div>
         <div class="flex flex-col gap-1">
@@ -102,7 +102,7 @@
           }}</label>
           <InputText
             v-model="form.simpleSmsGatewayBaseUrl"
-            placeholder="https://api.simple-sms-gateway.com"
+            placeholder="http://192.168.1.100:8080/send-sms"
           />
         </div>
       </div>
@@ -340,10 +340,10 @@ async function fetchProviderStatus() {
 }
 
 const form = reactive({
-  smsgateBaseUrl: 'https://api.sms-gate.app',
+  smsgateBaseUrl: 'https://api.sms-gate.app/3rdparty/v1/messages',
   smsgateUsername: '',
   smsgatePassword: '',
-  simpleSmsGatewayBaseUrl: 'https://api.simple-sms-gateway.com',
+  simpleSmsGatewayBaseUrl: 'http://192.168.1.100:8080/send-sms',
   provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
   messageTemplate: '',
   useShortLinks: true,
@@ -590,10 +590,10 @@ const submitCampaign = async () => {
 };
 
 const resetForm = () => {
-  form.smsgateBaseUrl = 'https://api.sms-gate.app';
+  form.smsgateBaseUrl = 'https://api.sms-gate.app/3rdparty/v1/messages';
   form.smsgateUsername = '';
   form.smsgatePassword = '';
-  form.simpleSmsGatewayBaseUrl = 'https://api.simple-sms-gateway.com';
+  form.simpleSmsGatewayBaseUrl = 'http://192.168.1.100:8080/send-sms';
   form.provider = 'smsgate';
   form.messageTemplate = '';
   form.useShortLinks = true;

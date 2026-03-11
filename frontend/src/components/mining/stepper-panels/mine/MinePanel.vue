@@ -367,15 +367,23 @@ async function startMiningFile() {
 }
 
 async function startMiningPst() {
-  if (!$leadminerStore.activeMiningSource) return;
+  if (!$leadminerStore.pstFilePath) {
+    $toast.add({
+      severity: 'error',
+      summary: t('error'),
+      detail: t('pst_file_required'),
+      life: 3000,
+    });
+    return;
+  }
   await handleAuthErrorAndRetry(
     () =>
       $leadminerStore.startMining(
         sourceType.value,
         $leadminerStore.pstFilePath,
       ),
-    $leadminerStore.activeMiningSource.email,
-    $leadminerStore.activeMiningSource.type,
+    '',
+    'pst',
   );
 }
 
@@ -439,6 +447,7 @@ async function haltMining() {
     "contacts_extracted": "{extractedEmails} email messages extracted from your mailbox",
     "select_folders": "Select folders",
     "select_at_least_one_folder": "Please select at least one folder to start mining.",
+    "pst_file_required": "Please upload a PST file first.",
     "mining_started": "Mining Started",
     "mining_success": "Your mining is successfully started.",
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
@@ -464,6 +473,7 @@ async function haltMining() {
     "contacts_extracted": "{extractedEmails} messages e-mail extraits de votre boîte aux lettres",
     "select_folders": "Sélectionnez des dossiers",
     "select_at_least_one_folder": "Veuillez sélectionner au moins un dossier pour commencer l'extraction.",
+    "pst_file_required": "Veuillez d'abord télécharger un fichier PST.",
     "mining_started": "Extraction commencée",
     "mining_success": "Votre extraction a été lancée avec succès.",
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",

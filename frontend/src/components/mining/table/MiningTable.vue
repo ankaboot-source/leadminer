@@ -98,15 +98,27 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <div class="flex gap-2">
+        <div
+          v-tooltip.top="
+            isSendByEmailDisabled &&
+            isSendBySmsDisabled &&
+            t('select_at_least_one_contact', {
+              action: t('send_campaign').toLowerCase(),
+            })
+          "
+          class="flex gap-2"
+        >
           <SplitButton
             severity="contrast"
             :label="t('send_campaign')"
+            :model="sendCampaignMenuItems"
             :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
+            :button-props="{
+              disabled: isSendByEmailDisabled,
+              onClick: () => openSendContactsDialog(),
+            }"
             pt:label:class="hidden md:block"
-            @click="openSendContactsDialog"
           >
-            <Menu ref="sendCampaignMenu" :model="sendCampaignMenuItems" popup />
             <template #icon>
               <span class="p-button-icon p-button-icon-left">
                 <i class="pi pi-send" />
@@ -1144,7 +1156,6 @@ const isExportDisabled = computed(
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
-const sendCampaignMenu = ref();
 
 const sendCampaignMenuItems = computed(() => [
   {

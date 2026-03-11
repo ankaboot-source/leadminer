@@ -1,8 +1,15 @@
+<template>
+  <div />
+</template>
+
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
 
 const { t, te } = useI18n({
   useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
 });
 const $toast = useToast();
 const $user = useSupabaseUser();

@@ -171,7 +171,7 @@ const { t } = useI18n({
 });
 
 const { t: $t } = useI18n({
-  useScope: 'local',
+  useScope: 'global',
 });
 const $leadminerStore = useLeadminerStore();
 const $stepper = useMiningStepper();

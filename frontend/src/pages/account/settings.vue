@@ -123,7 +123,11 @@
         </p>
         <div class="grid gap-2">
           <label class="block">{{ t('smsgate_base_url') }}</label>
-          <InputText v-model="smsgateBaseUrlInput" class="w-full md:w-30rem" />
+          <InputText
+            v-model="smsgateBaseUrlInput"
+            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
+            class="w-full md:w-30rem"
+          />
         </div>
         <div class="grid gap-2">
           <label class="block">{{ t('smsgate_username') }}</label>
@@ -179,23 +183,14 @@
             class="w-full md:w-30rem"
           />
         </div>
-        <div class="grid gap-2">
-          <label class="block">{{ t('simple_sms_gateway_username') }}</label>
-          <InputText
-            v-model="simpleSmsGatewayUsernameInput"
-            class="w-full md:w-30rem"
-          />
-        </div>
-        <div class="grid gap-2">
-          <label class="block">{{ t('simple_sms_gateway_password') }}</label>
-          <Password
-            v-model="simpleSmsGatewayPasswordInput"
-            :feedback="false"
-            toggle-mask
-            class="w-full md:w-30rem"
-            :input-style="{ width: '100%' }"
-          />
-        </div>
+        <a
+          :href="simpleSmsGatewayDownloadUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline text-sm"
+        >
+          {{ t('download_simple_sms_gateway_apk') }}
+        </a>
         <Button
           class="w-full md:w-80 gap-4"
           :label="t('save_simple_sms_gateway')"
@@ -280,7 +275,8 @@ const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
 const smsgateBaseUrlInput = ref(
-  $profile.value?.smsgate_base_url || 'https://api.sms-gate.app',
+  $profile.value?.smsgate_base_url ||
+    'https://api.sms-gate.app/3rdparty/v1/messages',
 );
 const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
 const smsgatePasswordInput = ref('');
@@ -288,10 +284,8 @@ const simpleSmsGatewayBaseUrlInput = ref(
   $profile.value?.simple_sms_gateway_base_url ||
     'https://api.simple-sms-gateway.com',
 );
-const simpleSmsGatewayUsernameInput = ref(
-  $profile.value?.simple_sms_gateway_username || '',
-);
-const simpleSmsGatewayPasswordInput = ref('');
+const simpleSmsGatewayDownloadUrl =
+  'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
 const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
@@ -460,9 +454,6 @@ async function fetchSmsProviderStatus() {
     if (data.simpleSmsGatewayBaseUrl) {
       simpleSmsGatewayBaseUrlInput.value = data.simpleSmsGatewayBaseUrl;
     }
-    if (data.simpleSmsGatewayUsername) {
-      simpleSmsGatewayUsernameInput.value = data.simpleSmsGatewayUsername;
-    }
   } catch {
     twilioAvailable.value = false;
   }
@@ -527,32 +518,12 @@ async function saveSimpleSmsGatewaySettings() {
   try {
     isSavingSimpleSmsGateway.value = true;
 
-    const response = await $saasEdgeFunctions(
-      'sms-campaigns/providers/simple-sms-gateway',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          baseUrl: simpleSmsGatewayBaseUrlInput.value,
-          username: simpleSmsGatewayUsernameInput.value,
-          password: simpleSmsGatewayPasswordInput.value,
-        }),
-      },
-    );
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.error || t('simple_sms_gateway_save_failed'));
-    }
-
-    simpleSmsGatewayPasswordInput.value = '';
-
     const { error: profileUpdateError } = await useSupabaseClient<Profile>()
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('profiles')
       .update({
         simple_sms_gateway_base_url: simpleSmsGatewayBaseUrlInput.value,
-        simple_sms_gateway_username: simpleSmsGatewayUsernameInput.value,
       })
       .eq('user_id', $profile.value?.user_id);
 
@@ -624,16 +595,14 @@ await fetchSmsProviderStatus();
     "sms_gateway_save_failed": "Unable to save SMS gateway settings",
     "simple_sms_gateway_settings": "simple-sms-gateway Settings",
     "simple_sms_gateway_base_url": "simple-sms-gateway API URL",
-    "simple_sms_gateway_username": "simple-sms-gateway Username",
-    "simple_sms_gateway_password": "simple-sms-gateway Password",
     "save_simple_sms_gateway": "Save simple-sms-gateway",
     "simple_sms_gateway_saved": "simple-sms-gateway saved",
-    "simple_sms_gateway_saved_detail": "Your simple-sms-gateway credentials were saved successfully.",
-    "simple_sms_gateway_save_failed": "Unable to save simple-sms-gateway settings",
+    "simple_sms_gateway_saved_detail": "Your simple-sms-gateway API URL was saved successfully.",
     "twilio_status": "Twilio: {status}",
     "available": "available",
     "not_available": "not available",
-    "download_smsgate_apk": "Download and install the APK"
+    "download_smsgate_apk": "Download and install the APK",
+    "download_simple_sms_gateway_apk": "Download simple-sms-gateway from Play Store"
   },
   "fr": {
     "profile_information": "Informations du profil",
@@ -676,16 +645,14 @@ await fetchSmsProviderStatus();
     "sms_gateway_save_failed": "Impossible d'enregistrer les paramètres de passerelle SMS",
     "simple_sms_gateway_settings": "Paramètres simple-sms-gateway",
     "simple_sms_gateway_base_url": "URL API simple-sms-gateway",
-    "simple_sms_gateway_username": "Nom d'utilisateur simple-sms-gateway",
-    "simple_sms_gateway_password": "Mot de passe simple-sms-gateway",
     "save_simple_sms_gateway": "Enregistrer simple-sms-gateway",
     "simple_sms_gateway_saved": "simple-sms-gateway enregistré",
-    "simple_sms_gateway_saved_detail": "Vos identifiants simple-sms-gateway ont été enregistrés avec succès.",
-    "simple_sms_gateway_save_failed": "Impossible d'enregistrer les paramètres simple-sms-gateway",
+    "simple_sms_gateway_saved_detail": "Votre URL API simple-sms-gateway a été enregistrée avec succès.",
     "twilio_status": "Twilio : {status}",
     "available": "disponible",
     "not_available": "non disponible",
-    "download_smsgate_apk": "Télécharger et installer l'APK"
+    "download_smsgate_apk": "Télécharger et installer l'APK",
+    "download_simple_sms_gateway_apk": "Télécharger simple-sms-gateway depuis le Play Store"
   }
 }
 </i18n>
