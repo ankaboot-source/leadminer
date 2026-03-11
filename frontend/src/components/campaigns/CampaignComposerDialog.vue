@@ -334,7 +334,7 @@
             :label="t('send_campaign')"
             :loading="isSubmitting"
             :disabled="isActionDisabled"
-            @click="submit(false)"
+            @click="submit()"
           />
         </div>
       </div>
@@ -409,7 +409,11 @@ type SenderOptionItem = {
 
 const senderOptions = ref<SenderOptionItem[]>([]);
 const fallbackSenderEmail = ref('');
-const runtimeConfig = useRuntimeConfig();
+
+// Track partial campaign flags for two-phase compliance/billing
+const partialOne = ref(false);
+const partialTwo = ref(false);
+
 const genericComplianceDialogRef = ref<InstanceType<
   typeof GenericComplianceDialog
 > | null>(null);
@@ -685,6 +689,9 @@ async function onDialogShow() {
   editorReady.value = false;
   imageResizeAvailable.value = await ensureQuillImageResizeModule();
   editorReady.value = true;
+  // Reset partial flags for new campaign
+  partialOne.value = false;
+  partialTwo.value = false;
 }
 
 function onDialogHide() {
@@ -912,8 +919,14 @@ function startCampaignCompletionWatcher(campaignId: string) {
 
 function handleComplianceAction(action: string, data?: ModalData['data']) {
   if (action === 'continue_partial' && data) {
+    // Check which partial flag to set based on backend response
+    if (data.partial_continue === 'partial_one') {
+      partialOne.value = true;
+    } else if (data.partial_continue === 'partial_two') {
+      partialTwo.value = true;
+    }
     // User wants to proceed with partial campaign
-    submit(true);
+    submit();
   }
   // Other actions (cancel, upgrade) are handled by the dialog automatically
 }
@@ -1064,7 +1077,7 @@ async function sendPreview() {
   }
 }
 
-async function submit(partialCampaign = false) {
+async function submit() {
   if (!ensureValidForm()) {
     return;
   }
@@ -1094,7 +1107,8 @@ async function submit(partialCampaign = false) {
         trackClick: form.trackClick,
         plainTextOnly: form.plainTextOnly,
         onlyValidContacts: form.onlyValidContacts,
-        partialCampaign,
+        partial_one: partialOne.value,
+        partial_two: partialTwo.value,
       },
       onResponse: ({ response }) => {
         // Handle modal responses (402 and 266)
