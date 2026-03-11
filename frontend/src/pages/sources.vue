@@ -93,7 +93,7 @@
                   <Button
                     :label="t('reconnect')"
                     size="small"
-                    severity="warn"
+                    severity="primary"
                     @click="reconnectExpiredSource(source)"
                   />
                 </div>
