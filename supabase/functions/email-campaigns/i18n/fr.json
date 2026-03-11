@@ -21,11 +21,15 @@
     },
     "consent_required": {
       "title": "Consentement Requis",
-      "description": "Seulement {{available}} sur {{total}} ont donné leur consentement.",
+      "description": "Seulement {{available}} sur {{total}} {{engagement_type}} ont donné leur consentement.",
       "buttons": {
         "privacy_policy": "Politique de Confidentialité",
         "continue_partial": "Continuer avec {{count}}",
         "cancel": "Annuler"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
       }
     },
     "no_consented_contacts": {

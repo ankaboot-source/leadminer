@@ -167,6 +167,9 @@ function buildModalResponse(
     description: t("modal.consent_required.description", {
       available,
       total,
+      engagement_type: t(
+        "modal.consent_required.engagement_types.contact_plural",
+      ),
     }),
     data: { total, available, availableAlready, reason: "consent" },
     buttons,

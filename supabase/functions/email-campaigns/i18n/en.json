@@ -21,17 +21,21 @@
     },
     "consent_required": {
       "title": "Consent Required",
-      "description": "Only {{available}} of {{total}} have given consent to be contacted.",
+      "description": "Only {{available}} of {{total}} {{engagement_type}} have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
         "continue_partial": "Continue with {{count}}",
         "cancel": "Cancel"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
       }
     },
     "no_consented_contacts": {
-      "title": "No Contacts Available",
-      "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} have opted out.",
-      "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
+      "title": "Consent Required",
+      "description": "None of your selected contacts have given consent to be contacted.",
+      "description_plural": "None of your selected contacts have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
         "cancel": "Cancel"
