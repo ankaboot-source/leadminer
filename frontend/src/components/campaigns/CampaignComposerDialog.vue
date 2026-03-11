@@ -975,6 +975,7 @@ async function loadSenderOptions() {
             },
           },
         },
+        group: 'has-links',
         life: 6500,
       });
     }
