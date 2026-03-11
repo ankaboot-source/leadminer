@@ -64,8 +64,6 @@ function buildModalResponse(
   availableAlready: number,
   billingUrl?: string,
 ): ModalResponse {
-  const values = { total, available, availableAlready };
-
   const buttons: ModalButton[] = [];
 
   if (scenario === "insufficient_credits") {
@@ -78,7 +76,10 @@ function buildModalResponse(
     }
     if (available > 0) {
       buttons.push({
-        title: t("modal.insufficient_credits.buttons.continue_partial", values),
+        title: t("modal.insufficient_credits.buttons.continue_partial", {
+          count: available,
+          available,
+        }),
         action: "continue_partial",
         variant: "outlined",
       });
@@ -93,7 +94,11 @@ function buildModalResponse(
     return {
       type: "modal",
       title: t("modal.insufficient_credits.title"),
-      description: t("modal.insufficient_credits.description", values),
+      description: t("modal.insufficient_credits.description", {
+        count: total,
+        available,
+        total,
+      }),
       data: { total, available, availableAlready, reason: "credits" },
       buttons,
     };
@@ -108,7 +113,10 @@ function buildModalResponse(
       });
     }
     buttons.push({
-      title: t("modal.partial_credits.buttons.continue_partial", values),
+      title: t("modal.partial_credits.buttons.continue_partial", {
+        count: available,
+        available,
+      }),
       action: "continue_partial",
       variant: "outlined",
     });
@@ -122,7 +130,11 @@ function buildModalResponse(
     return {
       type: "modal",
       title: t("modal.partial_credits.title"),
-      description: t("modal.partial_credits.description", values),
+      description: t("modal.partial_credits.description", {
+        count: total,
+        available,
+        total,
+      }),
       data: { total, available, availableAlready, reason: "credits" },
       buttons,
     };
@@ -144,7 +156,10 @@ function buildModalResponse(
     return {
       type: "modal",
       title: t("modal.no_consented_contacts.title"),
-      description: t("modal.no_consented_contacts.description", { total }),
+      description: t("modal.no_consented_contacts.description", {
+        count: total,
+        total,
+      }),
       data: { total, available: 0, availableAlready: 0, reason: "consent" },
       buttons,
     };
@@ -158,7 +173,10 @@ function buildModalResponse(
   });
   if (available > 0) {
     buttons.push({
-      title: t("modal.consent_required.buttons.continue_partial", values),
+      title: t("modal.consent_required.buttons.continue_partial", {
+        count: available,
+        available,
+      }),
       action: "continue_partial",
       variant: "outlined",
     });
@@ -173,7 +191,11 @@ function buildModalResponse(
   return {
     type: "modal",
     title: t("modal.consent_required.title"),
-    description: t("modal.consent_required.description", values),
+    description: t("modal.consent_required.description", {
+      count: total,
+      available,
+      total,
+    }),
     data: { total, available, availableAlready, reason: "consent" },
     buttons,
   };

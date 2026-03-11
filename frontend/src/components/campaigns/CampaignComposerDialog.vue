@@ -1098,7 +1098,7 @@ async function submit(partialCampaign = false) {
       },
       onResponse: ({ response }) => {
         // Handle modal responses (402 and 266)
-        if (response.status === 402 || response.status === 266) {
+        if ([402, 266, 400].includes(response.status)) {
           const modalData = response._data as ModalData;
 
           if (modalData?.type === 'modal') {

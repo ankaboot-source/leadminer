@@ -1,0 +1,8 @@
+{
+  "version": "4",
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.45.3": "120c64e8b607f0c23cfaa2b418b51c4d235edb1e6f40087a080b67a83c6f64b8",
+    "https://esm.sh/hono@4.7.4": "174d520e05dd0a3a1405b1435ee8a8cfe08b16ea80a8363879a88b8a6ff14f69",
+    "https://esm.sh/hono@4.7.4/cors": "7fae6007a9ce0f5e471d3e7a9244648df6060438c74d8da418bf0cea735e17c4"
+  }
+}
