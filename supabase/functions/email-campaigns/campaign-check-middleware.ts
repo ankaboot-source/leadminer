@@ -57,7 +57,6 @@ function buildModalResponse(
   scenario:
     | "insufficient_credits"
     | "consent_required"
-    | "partial_credits"
     | "no_consented_contacts",
   total: number,
   available: number,
@@ -78,6 +77,7 @@ function buildModalResponse(
       buttons.push({
         title: t("modal.insufficient_credits.buttons.continue_partial", {
           count: available,
+          actionType: t("modal.insufficient_credits.action_types.campaign"),
           available,
         }),
         action: "continue_partial",
@@ -96,44 +96,12 @@ function buildModalResponse(
       title: t("modal.insufficient_credits.title"),
       description: t("modal.insufficient_credits.description", {
         count: total,
-        available,
-        total,
-      }),
-      data: { total, available, availableAlready, reason: "credits" },
-      buttons,
-    };
-  }
-
-  if (scenario === "partial_credits") {
-    if (billingUrl) {
-      buttons.push({
-        title: t("modal.partial_credits.buttons.upgrade"),
-        link: billingUrl,
-        severity: "contrast",
-      });
-    }
-    buttons.push({
-      title: t("modal.partial_credits.buttons.continue_partial", {
-        count: available,
-        available,
-      }),
-      action: "continue_partial",
-      variant: "outlined",
-    });
-    buttons.push({
-      title: t("modal.partial_credits.buttons.cancel"),
-      action: "cancel",
-      severity: "secondary",
-      variant: "text",
-    });
-
-    return {
-      type: "modal",
-      title: t("modal.partial_credits.title"),
-      description: t("modal.partial_credits.description", {
-        count: total,
-        available,
-        total,
+        actionType: t("modal.insufficient_credits.action_types.campaign"),
+        engagementType: t(
+          "modal.insufficient_credits.engagement_types.contact",
+          { count: total },
+        ),
+        formattedTotal: total,
       }),
       data: { total, available, availableAlready, reason: "credits" },
       buttons,
@@ -159,6 +127,12 @@ function buildModalResponse(
       description: t("modal.no_consented_contacts.description", {
         count: total,
         total,
+        engagementType: t(
+          "modal.no_consented_contacts.engagement_types.contact",
+        ),
+        engagementType_plural: t(
+          "modal.no_consented_contacts.engagement_types.contact_plural",
+        ),
       }),
       data: { total, available: 0, availableAlready: 0, reason: "consent" },
       buttons,
@@ -175,7 +149,6 @@ function buildModalResponse(
     buttons.push({
       title: t("modal.consent_required.buttons.continue_partial", {
         count: available,
-        available,
       }),
       action: "continue_partial",
       variant: "outlined",
@@ -192,7 +165,6 @@ function buildModalResponse(
     type: "modal",
     title: t("modal.consent_required.title"),
     description: t("modal.consent_required.description", {
-      count: total,
       available,
       total,
     }),
@@ -309,7 +281,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
           if (!payload.partialCampaign) {
             return c.json(
               buildModalResponse(
-                "partial_credits",
+                "insufficient_credits",
                 consentedContacts.length,
                 eligibleCount,
                 0,
@@ -337,7 +309,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
 
       return c.json(
         buildModalResponse(
-          reason === "consent" ? "consent_required" : "partial_credits",
+          reason === "consent" ? "consent_required" : "insufficient_credits",
           selectedEmails.length,
           eligibleCount,
           0,

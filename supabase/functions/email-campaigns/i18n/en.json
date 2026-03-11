@@ -1,45 +1,44 @@
 {
   "modal": {
     "insufficient_credits": {
-      "title": "Insufficient Credits",
-      "description": "You have {{available}} credit available, but you selected {{total}} contact. Upgrade your plan to send to all selected contacts.",
-      "description_plural": "You have {{available}} credits available, but you selected {{total}} contacts. Upgrade your plan to send to all selected contacts.",
+      "title": "Oops! Running low on credits 😅",
+      "description": "You don't have enough credits to {{actionType}} your {{engagementType}}.",
+      "description_plural": "You don't have enough credits to {{actionType}} your {{formattedTotal}} {{engagementType}}.",
       "buttons": {
-        "upgrade": "Upgrade Plan",
-        "continue_partial": "Send to {{available}} contact",
-        "continue_partial_plural": "Send to {{available}} contacts",
+        "upgrade": "Refill credits",
+        "continue_partial": "{{actionType}} only {{available}}",
         "cancel": "Cancel"
+      },
+      "action_types": {
+        "export": "export",
+        "enrich": "enrich",
+        "campaign": "send"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
       }
     },
     "consent_required": {
       "title": "Consent Required",
-      "description_one": "{{available}} of {{total}} contact can receive email campaigns. You can only send to contacts who have opted in or have a legitimate interest basis.",
-      "description": "{{available}} of {{total}} contacts can receive email campaigns. You can only send to contacts who have opted in or have a legitimate interest basis.",
+      "description": "Only {{available}} of {{total}} have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
-        "continue_partial_one": "Continue with {{available}} contact",
-        "continue_partial": "Continue with {{available}} contacts",
-        "cancel": "Cancel"
-      }
-    },
-    "partial_credits": {
-      "title": "Partial Credits Available",
-      "description_one": "You can only send to {{available}} of {{total}} contact with your current credits. The remaining contacts will not receive this campaign.",
-      "description": "You can only send to {{available}} of {{total}} contacts with your current credits. The remaining contacts will not receive this campaign.",
-      "buttons": {
-        "upgrade": "Upgrade to Send All",
-        "continue_partial_one": "Send to {{available}} contact",
-        "continue_partial": "Send to {{available}} contacts",
+        "continue_partial": "Continue with {{count}}",
         "cancel": "Cancel"
       }
     },
     "no_consented_contacts": {
       "title": "No Contacts Available",
-      "description": "None of your selected contacts have given consent to receive email campaigns. All {{total}} contact has opted out.",
-      "description_plural": "None of your selected contacts have given consent to receive email campaigns. All {{total}} contacts have opted out.",
+      "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} have opted out.",
+      "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
       "buttons": {
         "privacy_policy": "Privacy Policy",
         "cancel": "Cancel"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
       }
     }
   }
