@@ -6,7 +6,7 @@ import { initI18n, t, getUserLocale } from "./i18n.ts";
 // Constants
 const PRIVACY_POLICY_URL = "/privacy-policy";
 
-const logger = createLogger("email-campaigns:bill");
+const logger = createLogger("email-campaigns:middleware");
 
 interface SuccessResponse {
   msg: string;
@@ -188,7 +188,7 @@ export function createFinalResponseMiddleware(c: Context, next: Next) {
     );
   }
 
-  const { campaignId, createdCount, userId } = campaignData;
+  const { campaignId, createdCount } = campaignData;
   return c.json(createSuccessResponse(campaignId, createdCount));
 }
 
