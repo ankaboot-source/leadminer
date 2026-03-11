@@ -1531,6 +1531,8 @@ app.post(
       contact_email: contact.email,
       send_status: "pending" as RecipientStatus,
       contact_temperature: contact.temperature ?? 0,
+      open_short_token: generateShortToken(8),
+      unsubscribe_short_token: generateShortToken(8),
     }));
 
     const { error: recipientsError } = await supabaseAdmin
@@ -1909,6 +1911,32 @@ app.post(
           continue;
         }
 
+        let unsubscribeToken = recipient.unsubscribe_short_token;
+        if (!unsubscribeToken) {
+          unsubscribeToken = generateShortToken(8);
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({ unsubscribe_short_token: unsubscribeToken })
+            .eq("id", recipient.id);
+          logger.debug("Generated missing unsubscribe token", {
+            recipientId: recipient.id,
+          });
+        }
+
+        let openToken = recipient.open_short_token;
+        if (!openToken) {
+          openToken = generateShortToken(8);
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({ open_short_token: openToken })
+            .eq("id", recipient.id);
+          logger.debug("Generated missing open token", {
+            recipientId: recipient.id,
+          });
+        }
+
         const {
           subject: renderedSubject,
           bodyHtml,
@@ -1922,9 +1950,7 @@ app.post(
             campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
-          unsubscribeUrl: buildUnsubscribeUrl(
-            recipient.unsubscribe_short_token,
-          ),
+          unsubscribeUrl: buildUnsubscribeUrl(unsubscribeToken),
           senderName: campaign.sender_name,
           plainTextOnly: campaign.plain_text_only,
         });
@@ -1937,7 +1963,7 @@ app.post(
                 supabaseAdmin,
                 campaign.id,
                 recipient.id,
-                recipient.open_short_token,
+                openToken,
                 bodyHtml,
                 campaign.track_click,
                 campaign.track_open,
