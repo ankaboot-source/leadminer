@@ -2,7 +2,7 @@
   <Dialog
     v-model:visible="isVisible"
     modal
-    :header="t('send_sms_campaign')"
+    :header="dialogHeader"
     :maximizable="$screenStore?.size?.md"
     :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
     :style="{ width: '42rem', maxWidth: '95vw' }"
@@ -193,16 +193,7 @@
     </div>
 
     <template #footer>
-      <div
-        class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full"
-      >
-        <div class="text-sm text-surface-600 self-center">
-          {{
-            t('recipient_count_with_phone', {
-              count: selectedContactsLength,
-            })
-          }}
-        </div>
+      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end w-full">
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             outlined
@@ -498,6 +489,10 @@ const selectedContactsLength = computed(() => {
   ).length;
 });
 
+const dialogHeader = computed(() =>
+  t('send_sms_campaign_with_count', { count: selectedContactsLength.value }),
+);
+
 const isSubmitting = ref(false);
 
 const isActionDisabled = computed(
@@ -615,6 +610,7 @@ watch(() => form.messageTemplate, updateCharCount);
 {
   "en": {
     "send_sms_campaign": "Send SMS Campaign",
+    "send_sms_campaign_with_count": "Send SMS campaign ({count} contacts)",
     "gdpr_notice": "You may send campaigns only when you have a valid legal basis (legitimate interest or consent). For legitimate interest, target contacts with prior exchanges for a similar purpose, provide clear information, and always include an unsubscribe link.",
     "sms_limit_note": "To help protect your campaign deliverability, {dailyLimit} SMS are sent per day by default. To learn more about this limit, contact your SMS provider.",
     "unlimited": "unlimited",
@@ -650,7 +646,6 @@ watch(() => form.messageTemplate, updateCharCount);
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
     "send_campaign": "Send SMS",
-    "recipient_count_with_phone": "{count} recipients with phone number",
     "preview_failed": "Preview failed",
     "campaign_created": "Campaign Created",
     "campaign_created_detail": "{count} SMS will be sent",
@@ -658,6 +653,7 @@ watch(() => form.messageTemplate, updateCharCount);
   },
   "fr": {
     "send_sms_campaign": "Envoyer une campagne SMS",
+    "send_sms_campaign_with_count": "Envoyer une campagne SMS ({count} destinataires)",
     "gdpr_notice": "Vous pouvez envoyer une campagne si vous disposez d'une base légale valide (intérêt légitime ou consentement). En intérêt légitime, ciblez des contacts avec lesquels vous avez déjà échangé pour une finalité comparable, informez-les clairement et incluez toujours un lien de désinscription.",
     "sms_limit_note": "Afin de garantir la déliverabilité de votre campagne SMS, par défaut 200 SMS sont envoyés par jour. Pour en savoir plus sur cette limite, contacter votre opérateur téléphonique.",
     "unlimited": "illimitée",
@@ -693,7 +689,6 @@ watch(() => form.messageTemplate, updateCharCount);
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",
     "send_campaign": "Envoyer SMS",
-    "recipient_count_with_phone": "{count} destinataire avec numéro de téléphone",
     "preview_failed": "Échec de l'aperçu",
     "campaign_created": "Campagne créée",
     "campaign_created_detail": "{count} SMS seront envoyés",
