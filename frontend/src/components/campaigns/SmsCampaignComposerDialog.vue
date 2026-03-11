@@ -28,9 +28,6 @@
 
       <div class="text-sm text-surface-600">
         {{ t('sms_limit_note') }}
-        <a class="underline" href="#" target="_blank" rel="noopener noreferrer">
-          {{ t('more_info') }}
-        </a>
       </div>
 
       <div class="flex flex-col gap-1">
@@ -199,6 +196,13 @@
       <div
         class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full"
       >
+        <div class="text-sm text-surface-600 self-center">
+          {{
+            t('recipient_count_with_phone', {
+              count: selectedContactsLength,
+            })
+          }}
+        </div>
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             outlined
@@ -208,7 +212,7 @@
           />
           <Button
             class="w-full sm:w-auto"
-            :label="t('send_sms')"
+            :label="t('send_campaign')"
             :disabled="isActionDisabled"
             :loading="isSubmitting"
             @click="submitCampaign"
@@ -612,8 +616,7 @@ watch(() => form.messageTemplate, updateCharCount);
   "en": {
     "send_sms_campaign": "Send SMS Campaign",
     "gdpr_notice": "You may send campaigns only when you have a valid legal basis (legitimate interest or consent). For legitimate interest, target contacts with prior exchanges for a similar purpose, provide clear information, and always include an unsubscribe link.",
-    "sms_limit_note": "To help protect your campaign deliverability, {dailyLimit} SMS are sent per day by default. To learn more about this limit,",
-    "more_info": "click here.",
+    "sms_limit_note": "To help protect your campaign deliverability, {dailyLimit} SMS are sent per day by default. To learn more about this limit, contact your SMS provider.",
     "unlimited": "unlimited",
     "provider": "Provider",
     "provider_default_note": "SMSGate is the default provider for your account.",
@@ -639,14 +642,15 @@ watch(() => form.messageTemplate, updateCharCount);
     "message_placeholder": "Enter your SMS message here...",
     "message_required": "Message is required",
     "characters_left": "{count} characters left",
-    "insert_person_attribute_body": "Insert person attribute",
+    "insert_person_attribute_body": "Insert contact attribute in SMS",
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
     "monthly_recipient_limit_help": "Maximum number of recipients per month (max 250)",
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
-    "send_sms": "Send SMS",
+    "send_campaign": "Send SMS",
+    "recipient_count_with_phone": "{count} recipients with phone number",
     "preview_failed": "Preview failed",
     "campaign_created": "Campaign Created",
     "campaign_created_detail": "{count} SMS will be sent",
@@ -655,8 +659,7 @@ watch(() => form.messageTemplate, updateCharCount);
   "fr": {
     "send_sms_campaign": "Envoyer une campagne SMS",
     "gdpr_notice": "Vous pouvez envoyer une campagne si vous disposez d'une base légale valide (intérêt légitime ou consentement). En intérêt légitime, ciblez des contacts avec lesquels vous avez déjà échangé pour une finalité comparable, informez-les clairement et incluez toujours un lien de désinscription.",
-    "sms_limit_note": "Afin de garantir la déliverabilité de votre campagne SMS, par défaut {dailyLimit} SMS sont envoyés par jour. Pour en savoir plus sur cette limite,",
-    "more_info": "cliquez ici.",
+    "sms_limit_note": "Afin de garantir la déliverabilité de votre campagne SMS, par défaut 200 SMS sont envoyés par jour. Pour en savoir plus sur cette limite, contacter votre opérateur téléphonique.",
     "unlimited": "illimitée",
     "provider": "Fournisseur",
     "provider_default_note": "SMSGate est le fournisseur par défaut de votre compte.",
@@ -682,14 +685,15 @@ watch(() => form.messageTemplate, updateCharCount);
     "message_placeholder": "Entrez votre message SMS ici...",
     "message_required": "Le message est requis",
     "characters_left": "{count} caractères restants",
-    "insert_person_attribute_body": "Insérer un attribut personne",
+    "insert_person_attribute_body": "Insérer un attribut contact dans le SMS",
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
     "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 250)",
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",
-    "send_sms": "Envoyer SMS",
+    "send_campaign": "Envoyer SMS",
+    "recipient_count_with_phone": "{count} destinataire avec numéro de téléphone",
     "preview_failed": "Échec de l'aperçu",
     "campaign_created": "Campagne créée",
     "campaign_created_detail": "{count} SMS seront envoyés",
