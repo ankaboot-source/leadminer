@@ -43,6 +43,7 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
+const FALLBACK_SENDER_ENABLED = Boolean(Deno.env.get("FALLBACK_SENDER_ENABLED") !== "false");
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
@@ -212,7 +213,14 @@ function requireFallbackSenderEmail() {
   if (!SMTP_USER) {
     throw new Error("SMTP_USER is not configured");
   }
+  if (!FALLBACK_SENDER_ENABLED) {
+    throw new Error("Fallback sender is disabled via FALLBACK_SENDER_ENABLED env var");
+  }
   return SMTP_USER;
+}
+
+function isFallbackSenderEnabled(): boolean {
+  return Boolean(SMTP_USER && FALLBACK_SENDER_ENABLED);
 }
 
 function parseErrorCode(error: unknown): string {
@@ -686,11 +694,11 @@ async function buildUserTransport(
 }
 
 async function resolveSenderOptions(authorization: string, userEmail: string) {
-  const fallbackSenderEmail = requireFallbackSenderEmail();
+  const fallbackSenderEmail = isFallbackSenderEnabled() ? requireFallbackSenderEmail() : "";
   const options: SenderOption[] = [];
-  const transportBySender: Record<string, Transport | null> = {
-    [fallbackSenderEmail]: null,
-  };
+  const transportBySender: Record<string, Transport | null> = fallbackSenderEmail
+    ? { [fallbackSenderEmail]: null }
+    : {};
 
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
@@ -802,14 +810,16 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     });
   }
 
-  const fallbackOption = options.find(
-    (option) => option.email === fallbackSenderEmail,
-  );
-  if (fallbackOption) {
-    fallbackOption.available = true;
-    delete fallbackOption.reason;
-  } else {
-    options.push({ email: fallbackSenderEmail, available: true });
+  if (fallbackSenderEmail) {
+    const fallbackOption = options.find(
+      (option) => option.email === fallbackSenderEmail,
+    );
+    if (fallbackOption) {
+      fallbackOption.available = true;
+      delete fallbackOption.reason;
+    } else {
+      options.push({ email: fallbackSenderEmail, available: true });
+    }
   }
 
   return {
@@ -1691,6 +1701,15 @@ app.post(
   async (c: Context) => {
     const supabaseAdmin = createSupabaseAdmin();
     let fallbackSenderEmail = "";
+    if (!isFallbackSenderEnabled()) {
+      return c.json(
+        {
+          error: "Fallback sender is disabled",
+          code: "FALLBACK_SENDER_DISABLED",
+        },
+        500,
+      );
+    }
     try {
       fallbackSenderEmail = requireFallbackSenderEmail();
     } catch (error) {
@@ -2263,6 +2282,15 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
 
   const subject = "Email sending request";
   let fallbackSenderEmail = "";
+  if (!isFallbackSenderEnabled()) {
+    return c.json(
+      {
+        error: "Fallback sender is disabled",
+        code: "FALLBACK_SENDER_DISABLED",
+      },
+      500,
+    );
+  }
   try {
     fallbackSenderEmail = requireFallbackSenderEmail();
   } catch (error) {

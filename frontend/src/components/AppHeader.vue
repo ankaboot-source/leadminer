@@ -25,7 +25,7 @@
       <Button
         icon="pi pi-envelope"
         outlined
-        class="ml-4 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
+        class="ml-2 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
         :class="{
           'border-primary': $router.currentRoute.value.path === sourcesPath,
         }"
