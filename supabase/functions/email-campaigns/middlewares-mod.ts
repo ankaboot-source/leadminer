@@ -54,6 +54,7 @@ interface ModalResponse {
 interface CheckResult {
   response: ModalResponse | null;
   partialField?: "partial_one" | "partial_two";
+  eligibleCount?: number; // Credit-based limit (defaults to all contacts if billing disabled)
 }
 
 async function getSelectedContacts(
@@ -110,8 +111,11 @@ async function checkBilling(
 
   const total = consentedContacts.length;
 
+  // Calculate eligible count based on credits
+  const eligibleCount = Math.min(consentedContacts.length, data.available || 0);
+
   // No credits at all
-  if (!data?.hasCredits && !data?.available) {
+  if (eligibleCount === 0) {
     return {
       response: {
         type: "modal",
@@ -135,59 +139,72 @@ async function checkBilling(
           },
         ],
       },
-      partialField: undefined,
+      partialField: undefined, // Can't proceed
+      eligibleCount: 0,
     };
   }
 
-  // Partial credits
-  const eligibleCount = Math.min(consentedContacts.length, data.available);
-  if (eligibleCount < consentedContacts.length && !partialTwo) {
-    return {
-      response: {
-        type: "modal",
-        title: t("modal.insufficient_credits.title"),
-        description: t("modal.insufficient_credits.description", {
-          count: total,
-          actionType: t("modal.insufficient_credits.action_types.campaign"),
-          engagementType: t(
-            "modal.insufficient_credits.engagement_types.contact",
-            { count: total },
-          ),
-          formattedTotal: total,
-        }),
-        data: {
-          total: consentedContacts.length,
-          available: eligibleCount,
-          availableAlready: 0,
-          reason: "credits",
+  // Partial credits - check if user approved partial_two
+  if (eligibleCount < consentedContacts.length) {
+    if (!partialTwo) {
+      // User hasn't approved yet - show modal
+      return {
+        response: {
+          type: "modal",
+          title: t("modal.insufficient_credits.title"),
+          description: t("modal.insufficient_credits.description", {
+            count: total,
+            actionType: t("modal.insufficient_credits.action_types.campaign"),
+            engagementType: t(
+              "modal.insufficient_credits.engagement_types.contact",
+              { count: total },
+            ),
+            formattedTotal: total,
+          }),
+          data: {
+            total: consentedContacts.length,
+            available: eligibleCount,
+            availableAlready: 0,
+            reason: "credits",
+          },
+          buttons: [
+            {
+              title: t("modal.insufficient_credits.buttons.continue_partial", {
+                count: eligibleCount,
+                available: eligibleCount,
+                engagementType: t(
+                  "modal.insufficient_credits.engagement_types.contact",
+                  { count: eligibleCount },
+                ),
+              }),
+              action: "continue_partial",
+              variant: "outlined",
+            },
+            {
+              title: t("modal.insufficient_credits.buttons.upgrade"),
+              link: billingUrl,
+              severity: "contrast",
+              icon: "mdiRocketLaunch",
+            },
+          ],
         },
-        buttons: [
-          {
-            title: t("modal.insufficient_credits.buttons.continue_partial", {
-              count: eligibleCount,
-              available: eligibleCount,
-              engagementType: t(
-                "modal.insufficient_credits.engagement_types.contact",
-                { count: eligibleCount },
-              ),
-            }),
-            action: "continue_partial",
-            variant: "outlined",
-          },
-          {
-            title: t("modal.insufficient_credits.buttons.upgrade"),
-            link: billingUrl,
-            severity: "contrast",
-            icon: "mdiRocketLaunch",
-          },
-        ],
-      },
-      partialField: "partial_two",
-    };
+        partialField: "partial_two",
+        eligibleCount: eligibleCount,
+      };
+    } else {
+      // User approved partial_two - proceed but return eligibleCount for slicing
+      return {
+        response: null,
+        eligibleCount: eligibleCount,
+      };
+    }
   }
 
-  // Enough credits (or partial already acknowledged)
-  return { response: null, partialField: undefined };
+  // Enough credits - proceed with all contacts
+  return {
+    response: null,
+    eligibleCount: consentedContacts.length,
+  };
 }
 
 /**
@@ -464,6 +481,8 @@ export async function complianceMiddleware(c: Context, next: Next) {
     );
 
     // Check 2: Billing (credits) - only if enabled
+    let eligibleCount = consentedContacts.length; // Default to all contacts
+
     if (Deno.env.get("ENABLE_CREDIT") === "true") {
       const billingCheck = await checkBilling(
         supabaseAdmin,
@@ -489,10 +508,15 @@ export async function complianceMiddleware(c: Context, next: Next) {
           statusCode as unknown as Parameters<typeof c.json>[1],
         );
       }
+
+      // Billing check passed - get eligible count from credits
+      eligibleCount = billingCheck.eligibleCount ?? consentedContacts.length;
     }
 
     // All checks passed - proceed with campaign
-    const finalEmails = consentedContacts.map((c) => c.email);
+    // Slice contacts to eligible count (based on credits if billing enabled)
+    const finalContacts = consentedContacts.slice(0, eligibleCount);
+    const finalEmails = finalContacts.map((c) => c.email);
 
     c.set("campaignCheck", {
       filteredEmails: finalEmails,

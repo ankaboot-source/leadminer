@@ -449,7 +449,7 @@ const DEFAULT_BODY_TEXT = () => {
 };
 
 const DEFAULT_FOOTER_TEXT = () =>
-  String(runtimeConfig.public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
+  String(useRuntimeConfig().public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
   t('default_footer_template', {
     ownerEmailToken: '{{ownerEmail}}',
     unsubscribeToken: '{{unsubscribeUrl}}',
