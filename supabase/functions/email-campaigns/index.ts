@@ -18,8 +18,7 @@ import {
   listUniqueSenderSources,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { campaignCheckMiddleware } from "./campaign-check-middleware.ts";
-import { campaignBillMiddleware } from "./campaign-bill-middleware.ts";
+import { complianceMiddleware, createFinalResponseMiddleware } from "./middlewares-mod.ts";
 
 const logger = createLogger("email-campaigns");
 
@@ -31,9 +30,6 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
 // skipcq: JS-0356 - Reserved for future API hash verification
-const LEADMINER_API_HASH_SECRET = Deno.env.get(
-  "LEADMINER_API_HASH_SECRET",
-) as string;
 const CAMPAIGN_COMPLIANCE_FOOTER = (
   Deno.env.get("campaign_compliance_footer") ||
   Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") ||
@@ -1334,7 +1330,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 app.post(
   "/campaigns/create",
   authMiddleware,
-  campaignCheckMiddleware,
+  complianceMiddleware,
   async (c: Context, next: () => Promise<void>) => {
     const user = c.get("user");
     if (!user?.email) {
@@ -1562,7 +1558,7 @@ app.post(
 
     return await next();
   },
-  campaignBillMiddleware,
+  createFinalResponseMiddleware,
 );
 
 app.get("/campaigns/:id/status", authMiddleware, async (c: Context) => {
