@@ -1,0 +1,31 @@
+{
+  "modal": {
+    "consent_required": {
+      "title": "Consent or Legitimate Interest",
+      "description": "Only {{available}} of {{total}} {{engagementType}} have given consent to be contacted.",
+      "buttons": {
+        "privacy_policy": "Privacy Policy",
+        "continue_partial": "Continue with {{count}} {{engagementType}}",
+        "continue_partial_one": "Continue with {{count}} {{engagementType}}",
+        "cancel": "Cancel"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
+      }
+    },
+    "no_consented_contacts": {
+      "title": "Consent or Legitimate Interest",
+      "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} has opted out.",
+      "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
+      "buttons": {
+        "privacy_policy": "Privacy Policy",
+        "cancel": "Cancel"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
+      }
+    }
+  }
+}

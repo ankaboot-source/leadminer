@@ -345,21 +345,16 @@
             :label="t('send_campaign')"
             :loading="isSubmitting"
             :disabled="isActionDisabled"
-            @click="submit(false)"
+            @click="submit()"
           />
         </div>
       </div>
     </template>
   </Dialog>
 
-  <ComplianceDialog ref="complianceDialogRef" @confirm-partial="submit(true)" />
-
-  <component
-    :is="CreditsDialog"
-    ref="CreditsDialogCampaignRef"
-    engagement-type="contact"
-    action-type="campaign"
-    @secondary-action="submit(true)"
+  <GenericComplianceDialog
+    ref="genericComplianceDialogRef"
+    @action="handleComplianceAction"
   />
 </template>
 
@@ -368,12 +363,9 @@ import type { Contact } from '@/types/contact';
 import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
-import ComplianceDialog from './ComplianceDialog.vue';
-import {
-  CreditsDialog,
-  CreditsDialogCampaignRef,
-  openCreditsDialog,
-} from '@/utils/credits';
+import GenericComplianceDialog, {
+  type ModalData,
+} from '@/components/GenericComplianceDialog.vue';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
 
@@ -429,10 +421,13 @@ type SenderOptionItem = {
 const senderOptions = ref<SenderOptionItem[]>([]);
 const hasNoSenderOptions = computed(() => senderOptions.value.length === 0 && !isLoadingSenderOptions.value);
 const fallbackSenderEmail = ref('');
-const runtimeConfig = useRuntimeConfig();
-const complianceDialogRef = ref<InstanceType<typeof ComplianceDialog> | null>(
-  null,
-);
+
+const partialOne = ref(false);
+const partialTwo = ref(false);
+
+const genericComplianceDialogRef = ref<InstanceType<
+  typeof GenericComplianceDialog
+> | null>(null);
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
 const DEFAULT_PROJECT_IMAGE_SRC =
@@ -465,7 +460,7 @@ const DEFAULT_BODY_TEXT = () => {
 };
 
 const DEFAULT_FOOTER_TEXT = () =>
-  String(runtimeConfig.public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
+  String(useRuntimeConfig().public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
   t('default_footer_template', {
     ownerEmailToken: '{{ownerEmail}}',
     unsubscribeToken: '{{unsubscribeUrl}}',
@@ -705,6 +700,9 @@ async function onDialogShow() {
   editorReady.value = false;
   imageResizeAvailable.value = await ensureQuillImageResizeModule();
   editorReady.value = true;
+  // Reset partial flags for new campaign
+  partialOne.value = false;
+  partialTwo.value = false;
 }
 
 function onDialogHide() {
@@ -930,6 +928,20 @@ function startCampaignCompletionWatcher(campaignId: string) {
   }, 60000);
 }
 
+function handleComplianceAction(action: string, data?: ModalData['data']) {
+  if (action === 'continue_partial' && data) {
+    // Check which partial flag to set based on backend response
+    if (data.partial_continue === 'partial_one') {
+      partialOne.value = true;
+    } else if (data.partial_continue === 'partial_two') {
+      partialTwo.value = true;
+    }
+    // User wants to proceed with partial campaign
+    submit();
+  }
+  // Other actions (cancel, upgrade) are handled by the dialog automatically
+}
+
 function normalizeBodyText() {
   if (form.plainTextOnly) {
     return form.bodyTextTemplate;
@@ -1096,7 +1108,7 @@ async function sendPreview() {
   }
 }
 
-async function submit(partialCampaign = false) {
+async function submit() {
   if (!ensureValidForm()) {
     return;
   }
@@ -1126,43 +1138,20 @@ async function submit(partialCampaign = false) {
         trackClick: form.trackClick,
         plainTextOnly: form.plainTextOnly,
         onlyValidContacts: form.onlyValidContacts,
-        partialCampaign,
+        partial_one: partialOne.value,
+        partial_two: partialTwo.value,
       },
       onResponse: ({ response }) => {
-        if (response.status === 402) {
-          openCreditsDialog(
-            CreditsDialogCampaignRef,
-            true,
-            response._data.total,
-            response._data.available,
-            response._data.availableAlready,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
-        }
+        // Handle modal responses (402 and 266)
+        if ([402, 266, 400].includes(response.status)) {
+          const modalData = response._data as ModalData;
 
-        if (response.status === 266 && response._data?.reason === 'credits') {
-          openCreditsDialog(
-            CreditsDialogCampaignRef,
-            false,
-            response._data.total,
-            response._data.available,
-            response._data.availableAlready,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
-        }
-
-        if (response.status === 266 && response._data?.reason === 'consent') {
-          complianceDialogRef.value?.openModal(
-            response._data.total,
-            response._data.available,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
+          if (modalData?.type === 'modal') {
+            genericComplianceDialogRef.value?.openModal(modalData);
+            shouldCloseDialog = false;
+            showErrorToast = false;
+            return;
+          }
         }
 
         if (response.status === 200) {
