@@ -410,7 +410,6 @@ type SenderOptionItem = {
 const senderOptions = ref<SenderOptionItem[]>([]);
 const fallbackSenderEmail = ref('');
 
-// Track partial campaign flags for two-phase compliance/billing
 const partialOne = ref(false);
 const partialTwo = ref(false);
 
