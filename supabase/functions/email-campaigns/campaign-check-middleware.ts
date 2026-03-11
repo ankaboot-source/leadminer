@@ -5,6 +5,10 @@ import { initI18n, t, getUserLocale } from "./i18n.ts";
 
 const logger = createLogger("email-campaigns:check");
 
+// Constants
+const PRIVACY_POLICY_URL = "/privacy-policy";
+const DEFAULT_BILLING_URL = "/billing";
+
 interface ContactSnapshot {
   email: string;
   consent_status: "legitimate_interest" | "opt_out" | "opt_in";
@@ -54,50 +58,113 @@ async function getSelectedContacts(
   }));
 }
 
-function buildModalResponse(
-  scenario:
-    | "insufficient_credits"
-    | "consent_required"
-    | "no_consented_contacts",
-  total: number,
-  available: number,
-  availableAlready: number,
-  billingUrl?: string,
-): ModalResponse {
-  const buttons: ModalButton[] = [];
+/**
+ * Check compliance - verifies consent status of contacts
+ * Returns ModalResponse if there are consent issues, null if all contacts have consent
+ */
+function checkCompliance(
+  contacts: ContactSnapshot[],
+  selectedEmails: string[],
+): ModalResponse | null {
+  const consentedContacts = contacts.filter(
+    (c) => c.consent_status !== "opt_out",
+  );
+  const total = selectedEmails.length;
 
-  if (scenario === "insufficient_credits") {
-    // Cancel button FIRST (left side)
-    buttons.push({
-      title: t("modal.insufficient_credits.buttons.cancel"),
-      action: "cancel",
-      severity: "secondary",
-      variant: "text",
+  // Scenario: No contacts have consent
+  if (consentedContacts.length === 0) {
+    return {
+      type: "modal",
+      title: t("modal.no_consented_contacts.title"),
+      description: t("modal.no_consented_contacts.description", {
+        count: total,
+        total,
+        engagement_type: t(
+          "modal.no_consented_contacts.engagement_types.contact_plural",
+        ),
+      }),
+      data: { total, available: 0, availableAlready: 0, reason: "consent" },
+      buttons: [
+        {
+          title: t("modal.no_consented_contacts.buttons.privacy_policy"),
+          link: PRIVACY_POLICY_URL,
+          variant: "link",
+        },
+      ],
+    };
+  }
+
+  // Scenario: Partial consent (some contacts opted out)
+  if (consentedContacts.length < selectedEmails.length) {
+    return {
+      type: "modal",
+      title: t("modal.consent_required.title"),
+      description: t("modal.consent_required.description", {
+        available: consentedContacts.length,
+        total,
+        engagement_type: t(
+          "modal.consent_required.engagement_types.contact_plural",
+        ),
+      }),
+      data: {
+        total: selectedEmails.length,
+        available: consentedContacts.length,
+        availableAlready: 0,
+        reason: "consent",
+      },
+      buttons: [
+        {
+          title: t("modal.consent_required.buttons.privacy_policy"),
+          link: PRIVACY_POLICY_URL,
+          variant: "link",
+        },
+        {
+          title: t("modal.consent_required.buttons.continue_partial", {
+            count: consentedContacts.length,
+          }),
+          action: "continue_partial",
+          variant: "outlined",
+        },
+      ],
+    };
+  }
+
+  // All contacts have consent
+  return null;
+}
+
+/**
+ * Check billing - verifies credits/quota availability
+ * Returns ModalResponse if there are credit issues, null if enough credits
+ */
+async function checkBilling(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  consentedContacts: ContactSnapshot[],
+  userId: string,
+  billingUrl: string,
+): Promise<ModalResponse | null> {
+  const { data, error } = await supabaseAdmin.functions.invoke(
+    "billing/campaign/quota",
+    {
+      body: {
+        userId,
+        units: consentedContacts.length,
+      },
+    },
+  );
+
+  if (error) {
+    logger.error("Billing quota check failed", {
+      error: error.message,
+      userId,
     });
+    throw new Error("Billing service unavailable");
+  }
 
-    // Continue partial button SECOND (middle)
-    if (available > 0) {
-      buttons.push({
-        title: t("modal.insufficient_credits.buttons.continue_partial", {
-          count: available,
-          actionType: t("modal.insufficient_credits.action_types.campaign"),
-          available,
-        }),
-        action: "continue_partial",
-        variant: "outlined",
-      });
-    }
+  const total = consentedContacts.length;
 
-    // Upgrade/Refill button LAST (right side - PRIMARY with icon)
-    if (billingUrl) {
-      buttons.push({
-        title: t("modal.insufficient_credits.buttons.upgrade"),
-        link: billingUrl,
-        severity: "contrast",
-        icon: "mdiRocketLaunch",
-      });
-    }
-
+  // No credits at all
+  if (!data?.hasCredits && !data?.available) {
     return {
       type: "modal",
       title: t("modal.insufficient_credits.title"),
@@ -110,77 +177,61 @@ function buildModalResponse(
         ),
         formattedTotal: total,
       }),
-      data: { total, available, availableAlready, reason: "credits" },
-      buttons,
+      data: { total, available: 0, availableAlready: 0, reason: "credits" },
+      buttons: [
+        {
+          title: t("modal.insufficient_credits.buttons.upgrade"),
+          link: billingUrl,
+          severity: "contrast",
+          icon: "mdiRocketLaunch",
+        },
+      ],
     };
   }
 
-  if (scenario === "no_consented_contacts") {
-    buttons.push({
-      title: t("modal.no_consented_contacts.buttons.cancel"),
-      action: "cancel",
-      severity: "secondary",
-      variant: "text",
-    });
-    buttons.push({
-      title: t("modal.no_consented_contacts.buttons.privacy_policy"),
-      link: "/privacy-policy",
-      variant: "link",
-    });
-
+  // Partial credits
+  const eligibleCount = Math.min(consentedContacts.length, data.available);
+  if (eligibleCount < consentedContacts.length) {
     return {
       type: "modal",
-      title: t("modal.no_consented_contacts.title"),
-      description: t("modal.no_consented_contacts.description", {
+      title: t("modal.insufficient_credits.title"),
+      description: t("modal.insufficient_credits.description", {
         count: total,
-        total,
+        actionType: t("modal.insufficient_credits.action_types.campaign"),
         engagementType: t(
-          "modal.no_consented_contacts.engagement_types.contact",
+          "modal.insufficient_credits.engagement_types.contact",
+          { count: total },
         ),
-        engagementType_plural: t(
-          "modal.no_consented_contacts.engagement_types.contact_plural",
-        ),
+        formattedTotal: total,
       }),
-      data: { total, available: 0, availableAlready: 0, reason: "consent" },
-      buttons,
+      data: {
+        total: consentedContacts.length,
+        available: eligibleCount,
+        availableAlready: 0,
+        reason: "credits",
+      },
+      buttons: [
+        {
+          title: t("modal.insufficient_credits.buttons.continue_partial", {
+            count: eligibleCount,
+            actionType: t("modal.insufficient_credits.action_types.campaign"),
+            available: eligibleCount,
+          }),
+          action: "continue_partial",
+          variant: "outlined",
+        },
+        {
+          title: t("modal.insufficient_credits.buttons.upgrade"),
+          link: billingUrl,
+          severity: "contrast",
+          icon: "mdiRocketLaunch",
+        },
+      ],
     };
   }
 
-  // consent_required
-  buttons.push({
-    title: t("modal.consent_required.buttons.privacy_policy"),
-    link: "/privacy-policy",
-    variant: "link",
-  });
-  if (available > 0) {
-    buttons.push({
-      title: t("modal.consent_required.buttons.continue_partial", {
-        count: available,
-      }),
-      action: "continue_partial",
-      variant: "outlined",
-    });
-  }
-  buttons.push({
-    title: t("modal.consent_required.buttons.cancel"),
-    action: "cancel",
-    severity: "secondary",
-    variant: "text",
-  });
-
-  return {
-    type: "modal",
-    title: t("modal.consent_required.title"),
-    description: t("modal.consent_required.description", {
-      available,
-      total,
-      engagement_type: t(
-        "modal.consent_required.engagement_types.contact_plural",
-      ),
-    }),
-    data: { total, available, availableAlready, reason: "consent" },
-    buttons,
-  };
+  // Enough credits
+  return null;
 }
 
 export async function campaignCheckMiddleware(c: Context, next: Next) {
@@ -217,120 +268,49 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
   const supabaseAdmin = createSupabaseAdmin();
 
   try {
+    // Fetch all contacts first
     const contacts = await getSelectedContacts(
       supabaseAdmin,
       user.id,
       selectedEmails,
     );
+
+    // Check 1: Compliance (consent) - ALWAYS FIRST
+    const complianceResult = checkCompliance(contacts, selectedEmails);
+    if (complianceResult) {
+      const statusCode = complianceResult.data?.available === 0 ? 400 : 266;
+      return c.json(
+        complianceResult,
+        statusCode as unknown as Parameters<typeof c.json>[1],
+      );
+    }
+
+    // All contacts have consent
     const consentedContacts = contacts.filter(
       (c) => c.consent_status !== "opt_out",
     );
 
-    if (consentedContacts.length === 0) {
-      return c.json(
-        buildModalResponse(
-          "no_consented_contacts",
-          selectedEmails.length,
-          0,
-          0,
-        ),
-        400,
-      );
-    }
-
+    // Check 2: Billing (credits) - only if enabled
     const billingEnabled = Deno.env.get("ENABLE_CREDIT") === "true";
-    let eligibleCount = consentedContacts.length;
-
     if (billingEnabled) {
-      try {
-        const { data, error } = await supabaseAdmin.functions.invoke(
-          "billing/campaign/quota",
-          {
-            body: {
-              userId: user.id,
-              units: consentedContacts.length,
-            },
-          },
-        );
-
-        if (error) {
-          logger.error("Billing quota check failed", {
-            error: error.message,
-            userId: user.id,
-          });
-          return c.json(
-            {
-              error: "Billing service unavailable",
-              code: "BILLING_UNAVAILABLE",
-            },
-            503,
-          );
-        }
-
-        if (!data?.hasCredits && !data?.available) {
-          // No credits at all
-          const billingUrl = Deno.env.get("BILLING_URL") || "/billing";
-          return c.json(
-            buildModalResponse(
-              "insufficient_credits",
-              consentedContacts.length,
-              data?.available ?? 0,
-              0,
-              billingUrl,
-            ),
-            402,
-          );
-        }
-
-        eligibleCount = Math.min(consentedContacts.length, data.available);
-
-        // If partial credits (can't send to all)
-        if (eligibleCount < consentedContacts.length) {
-          const billingUrl = Deno.env.get("BILLING_URL") || "/billing";
-
-          if (!payload.partialCampaign) {
-            return c.json(
-              buildModalResponse(
-                "insufficient_credits",
-                consentedContacts.length,
-                eligibleCount,
-                0,
-                billingUrl,
-              ),
-              266 as unknown as Parameters<typeof c.json>[1],
-            );
-          }
-        }
-      } catch (error) {
-        logger.error("Billing quota check exception", {
-          error,
-          userId: user.id,
-        });
+      const billingUrl = Deno.env.get("BILLING_URL") || DEFAULT_BILLING_URL;
+      const billingResult = await checkBilling(
+        supabaseAdmin,
+        consentedContacts,
+        user.id,
+        billingUrl,
+      );
+      if (billingResult) {
+        const statusCode = billingResult.data?.available === 0 ? 402 : 266;
         return c.json(
-          { error: "Billing verification failed", code: "BILLING_ERROR" },
-          500,
+          billingResult,
+          statusCode as unknown as Parameters<typeof c.json>[1],
         );
       }
     }
 
-    if (eligibleCount < selectedEmails.length && !payload.partialCampaign) {
-      const reason =
-        eligibleCount === consentedContacts.length ? "consent" : "credits";
-
-      return c.json(
-        buildModalResponse(
-          reason === "consent" ? "consent_required" : "insufficient_credits",
-          selectedEmails.length,
-          eligibleCount,
-          0,
-        ),
-        266 as unknown as Parameters<typeof c.json>[1],
-      );
-    }
-
-    const finalEmails = consentedContacts
-      .slice(0, eligibleCount)
-      .map((c) => c.email);
+    // All checks passed - proceed with campaign
+    const finalEmails = consentedContacts.map((c) => c.email);
 
     c.set("campaignCheck", {
       filteredEmails: finalEmails,

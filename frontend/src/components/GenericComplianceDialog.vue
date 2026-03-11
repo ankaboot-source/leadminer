@@ -4,38 +4,27 @@
       {{ modalData?.description }}
     </p>
     <template #footer>
-      <div class="flex justify-between gap-4">
-        <!-- Left side: Cancel button only -->
+      <div class="flex justify-end gap-2">
+        <!-- All buttons in order (secondary first, primary last) -->
         <Button
-          v-if="cancelButton"
-          :label="cancelButton.title"
-          :severity="cancelButton.severity"
-          :variant="cancelButton.variant"
-          @click="handleButtonClick(cancelButton)"
-        />
-
-        <!-- Right side: All other buttons -->
-        <div class="flex gap-2">
-          <Button
-            v-for="(button, index) in actionButtons"
-            :key="index"
-            :label="button.title"
-            :severity="button.severity"
-            :variant="button.variant"
-            :class="
-              button.icon
-                ? 'flex space-x-1 items-center justify-center lg:rounded-l-none'
-                : ''
-            "
-            @click="handleButtonClick(button)"
-          >
-            <template v-if="button.icon" #icon>
-              <span class="p-button-icon p-button-icon-right">
-                <MdiIcon :icon="button.icon" size="1.3rem" />
-              </span>
-            </template>
-          </Button>
-        </div>
+          v-for="(button, index) in modalData?.buttons"
+          :key="index"
+          :label="button.title"
+          :severity="button.severity"
+          :variant="button.variant"
+          :class="
+            button.icon
+              ? 'flex space-x-1 items-center justify-center lg:rounded-l-none'
+              : ''
+          "
+          @click="handleButtonClick(button)"
+        >
+          <template v-if="button.icon" #icon>
+            <span class="p-button-icon p-button-icon-right">
+              <MdiIcon :icon="button.icon as any" size="1.3rem" />
+            </span>
+          </template>
+        </Button>
       </div>
     </template>
   </Dialog>
@@ -72,14 +61,6 @@ const emit = defineEmits<{
 const isVisible = ref(false);
 const modalData = ref<ModalData | null>(null);
 
-const cancelButton = computed(() => {
-  return modalData.value?.buttons.find((b) => b.action === 'cancel');
-});
-
-const actionButtons = computed(() => {
-  return modalData.value?.buttons.filter((b) => b.action !== 'cancel') ?? [];
-});
-
 function openModal(data: ModalData) {
   modalData.value = data;
   isVisible.value = true;
@@ -104,11 +85,6 @@ function handleButtonClick(button: ModalButton) {
   }
 
   if (button.action) {
-    if (button.action === 'cancel') {
-      closeModal();
-      return;
-    }
-
     emit('action', button.action, modalData.value?.data);
     closeModal();
   }
