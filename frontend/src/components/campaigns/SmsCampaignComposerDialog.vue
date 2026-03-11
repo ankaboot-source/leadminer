@@ -393,10 +393,20 @@ const attributeOptions = [
   'fullName',
   'givenName',
   'familyName',
-  'telephone',
+  'email',
+  'emailDomain',
   'location',
   'worksFor',
   'jobTitle',
+  'alternateName',
+  'telephone',
+  'seniority',
+  'recency',
+  'occurrence',
+  'conversations',
+  'repliedConversations',
+  'sender',
+  'recipient',
 ];
 
 const attributeMenuItems = computed(() =>
