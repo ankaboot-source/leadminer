@@ -4,7 +4,49 @@
   >
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">{{ t('sources') }}</h1>
+      <Button
+        icon="pi pi-plus"
+        :label="t('add_source')"
+        @click="showAddSourceDialog = true"
+      />
     </div>
+
+    <Dialog
+      v-model:visible="showAddSourceDialog"
+      modal
+      :header="t('add_source')"
+      :style="{ width: '30rem' }"
+    >
+      <div class="flex flex-col gap-3">
+        <Button
+          class="w-full justify-start"
+          severity="secondary"
+          outlined
+          @click="addGoogleSource"
+        >
+          <i class="pi pi-google mr-2" />
+          Google
+        </Button>
+        <Button
+          class="w-full justify-start"
+          severity="secondary"
+          outlined
+          @click="addAzureSource"
+        >
+          <i class="pi pi-microsoft mr-2" />
+          Outlook / Office 365
+        </Button>
+        <Button
+          class="w-full justify-start"
+          severity="secondary"
+          outlined
+          @click="addImapSource"
+        >
+          <i class="pi pi-inbox mr-2" />
+          IMAP
+        </Button>
+      </div>
+    </Dialog>
 
     <div
       v-if="
@@ -232,6 +274,59 @@ const $imapDialogStore = useImapDialog();
 const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
+const showAddSourceDialog = ref(false);
+
+async function addGoogleSource() {
+  showAddSourceDialog.value = false;
+  try {
+    const { authorizationUri } = await $api<{ authorizationUri: string }>(
+      '/imap/mine/sources/google',
+      {
+        method: 'POST',
+        body: { redirect: '/sources' },
+      },
+    );
+    if (authorizationUri) {
+      window.location.href = authorizationUri;
+    }
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('add_source_failed'),
+      detail: t('add_source_failed_detail'),
+      life: 4500,
+    });
+  }
+}
+
+async function addAzureSource() {
+  showAddSourceDialog.value = false;
+  try {
+    const { authorizationUri } = await $api<{ authorizationUri: string }>(
+      '/imap/mine/sources/azure',
+      {
+        method: 'POST',
+        body: { redirect: '/sources' },
+      },
+    );
+    if (authorizationUri) {
+      window.location.href = authorizationUri;
+    }
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('add_source_failed'),
+      detail: t('add_source_failed_detail'),
+      life: 4500,
+    });
+  }
+}
+
+function addImapSource() {
+  showAddSourceDialog.value = false;
+  $imapDialogStore.imapEmail = '';
+  $imapDialogStore.showImapDialog = true;
+}
 
 onMounted(async () => {
   const reconnectEmail = $route.query.reconnect as string;
@@ -422,6 +517,9 @@ onMounted(async () => {
 {
   "en": {
     "sources": "Sources",
+    "add_source": "Add source",
+    "add_source_failed": "Unable to add source",
+    "add_source_failed_detail": "An error occurred while adding the source.",
     "no_sources": "No sources yet",
     "email": "Email",
     "provider": "Provider",
@@ -472,6 +570,9 @@ onMounted(async () => {
   },
   "fr": {
     "sources": "Sources",
+    "add_source": "Ajouter une source",
+    "add_source_failed": "Impossible d'ajouter la source",
+    "add_source_failed_detail": "Une erreur s'est produite lors de l'ajout de la source.",
     "no_sources": "Aucune source",
     "email": "Email",
     "provider": "Fournisseur",

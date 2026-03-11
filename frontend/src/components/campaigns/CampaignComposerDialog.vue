@@ -64,7 +64,18 @@
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </label>
+          <template v-if="hasNoSenderOptions">
+            <Message severity="warn" :closable="false" class="text-sm">
+              {{ t('no_sender_options') }}
+            </Message>
+            <Button
+              outlined
+              :label="t('go_to_sources')"
+              @click="navigateTo('/sources')"
+            />
+          </template>
           <Select
+            v-else
             v-model="form.senderEmail"
             :options="senderOptions"
             option-label="label"
@@ -416,6 +427,7 @@ type SenderOptionItem = {
 };
 
 const senderOptions = ref<SenderOptionItem[]>([]);
+const hasNoSenderOptions = computed(() => senderOptions.value.length === 0 && !isLoadingSenderOptions.value);
 const fallbackSenderEmail = ref('');
 const runtimeConfig = useRuntimeConfig();
 const complianceDialogRef = ref<InstanceType<typeof ComplianceDialog> | null>(
@@ -1287,6 +1299,7 @@ watch(
     "senders_unavailable_notification": "The following addresses are no longer available: {emails}. Please reconnect them in Sources.",
     "reconnect_source": "Reconnect",
     "go_to_sources": "Go to Sources",
+    "no_sender_options": "No email source available. Add or reconnect a source to send campaigns.",
     "reply_to": "Reply-to",
     "reply_to_help": "Replies from recipients will be sent to this email address.",
     "subject": "Subject",
@@ -1383,6 +1396,7 @@ watch(
     "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}. Veuillez les reconnecter dans les sources.",
     "reconnect_source": "Reconnecter",
     "go_to_sources": "Aller aux sources",
+    "no_sender_options": "Aucune source d'email disponible. Ajoutez ou reconnectez une source pour envoyer des campagnes.",
     "reply_to": "Répondre à",
     "reply_to_help": "Les réponses de vos destinataires seront envoyées à cette adresse.",
     "subject": "Sujet",
