@@ -5,7 +5,9 @@
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">{{ t('sources') }}</h1>
       <Button
+        v-if="$leadminer.miningSources.length > 0"
         icon="pi pi-plus"
+        severity="secondary"
         :label="t('add_source')"
         @click="showAddSourceDialog = true"
       />
@@ -18,33 +20,15 @@
       :style="{ width: '30rem' }"
     >
       <div class="flex flex-col gap-3">
-        <Button
-          class="w-full justify-start"
-          severity="secondary"
-          outlined
-          @click="addGoogleSource"
-        >
+        <Button class="w-full justify-start" severity="secondary" outlined @click="addGoogleSource">
           <i class="pi pi-google mr-2" />
           Google
         </Button>
-        <Button
-          class="w-full justify-start"
-          severity="secondary"
-          outlined
-          @click="addAzureSource"
-        >
+        <Button class="w-full justify-start" severity="secondary" outlined @click="addAzureSource">
           <i class="pi pi-microsoft mr-2" />
-          Outlook / Office 365
+          {{ t('microsoft_or_outlook') }}
         </Button>
-        <Button
-          class="w-full justify-start"
-          severity="secondary"
-          outlined
-          @click="addImapSource"
-        >
-          <i class="pi pi-inbox mr-2" />
-          IMAP
-        </Button>
+        <AddSourceImap v-model:source="imapSourceModel" v-model:show="$imapDialogStore.showImapDialog" />
       </div>
     </Dialog>
 
@@ -87,8 +71,9 @@
       :rows="10"
     >
       <template #empty>
-        <div class="text-center py-8 text-surface-500">
-          {{ t('no_sources') }}
+        <div class="text-center py-8 text-surface-500 flex flex-col items-center gap-4">
+          <span>{{ t('no_sources') }}</span>
+          <Button icon="pi pi-plus" :label="t('add_source')" @click="showAddSourceDialog = true" />
         </div>
       </template>
       <template #list="slotProps">
@@ -135,7 +120,7 @@
                   <Button
                     :label="t('reconnect')"
                     size="small"
-                    severity="primary"
+                    severity="secondary"
                     @click="reconnectExpiredSource(source)"
                   />
                 </div>
@@ -258,6 +243,8 @@
 </template>
 
 <script setup lang="ts">
+import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
+import { addOAuthAccount } from '@/utils/oauth';
 import type { MiningSource } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
@@ -275,20 +262,12 @@ const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
 const showAddSourceDialog = ref(false);
+const imapSourceModel = ref<MiningSource>();
 
 async function addGoogleSource() {
   showAddSourceDialog.value = false;
   try {
-    const { authorizationUri } = await $api<{ authorizationUri: string }>(
-      '/imap/mine/sources/google',
-      {
-        method: 'POST',
-        body: { redirect: '/sources' },
-      },
-    );
-    if (authorizationUri) {
-      window.location.href = authorizationUri;
-    }
+    await addOAuthAccount('google', '/sources');
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -302,16 +281,7 @@ async function addGoogleSource() {
 async function addAzureSource() {
   showAddSourceDialog.value = false;
   try {
-    const { authorizationUri } = await $api<{ authorizationUri: string }>(
-      '/imap/mine/sources/azure',
-      {
-        method: 'POST',
-        body: { redirect: '/sources' },
-      },
-    );
-    if (authorizationUri) {
-      window.location.href = authorizationUri;
-    }
+    await addOAuthAccount('azure', '/sources');
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -322,11 +292,14 @@ async function addAzureSource() {
   }
 }
 
-function addImapSource() {
-  showAddSourceDialog.value = false;
-  $imapDialogStore.imapEmail = '';
-  $imapDialogStore.showImapDialog = true;
-}
+watch(
+  () => $imapDialogStore.showImapDialog,
+  (show) => {
+    if (show) {
+      showAddSourceDialog.value = false;
+    }
+  },
+);
 
 onMounted(async () => {
   const reconnectEmail = $route.query.reconnect as string;
@@ -518,6 +491,8 @@ onMounted(async () => {
   "en": {
     "sources": "Sources",
     "add_source": "Add source",
+    "microsoft_or_outlook": "Microsoft or Outlook",
+    "other_email_provider": "Other email provider (IMAP)",
     "add_source_failed": "Unable to add source",
     "add_source_failed_detail": "An error occurred while adding the source.",
     "no_sources": "No sources yet",
@@ -571,6 +546,8 @@ onMounted(async () => {
   "fr": {
     "sources": "Sources",
     "add_source": "Ajouter une source",
+    "microsoft_or_outlook": "Microsoft ou Outlook",
+    "other_email_provider": "Autre compte e-mail (IMAP)",
     "add_source_failed": "Impossible d'ajouter la source",
     "add_source_failed_detail": "Une erreur s'est produite lors de l'ajout de la source.",
     "no_sources": "Aucune source",

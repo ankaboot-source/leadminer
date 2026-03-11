@@ -38,7 +38,7 @@ describe('getTokenConfig', () => {
         'openid',
         'profile'
       ],
-      prompt: 'consent select_account'
+      prompt: 'select_account'
     });
   });
 });
