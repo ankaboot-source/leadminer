@@ -7,6 +7,7 @@
       <Button
         v-if="$leadminer.miningSources.length > 0"
         icon="pi pi-plus"
+        outlined
         severity="secondary"
         :label="t('add_source')"
         @click="showAddSourceDialog = true"
@@ -20,17 +21,27 @@
       :style="{ width: '30rem' }"
     >
       <div class="flex flex-col gap-3">
-        <Button class="w-full justify-start" severity="secondary" outlined @click="addGoogleSource">
+        <Button class="w-full justify-start" outlined @click="addGoogleSource">
           <i class="pi pi-google mr-2" />
           Google
         </Button>
-        <Button class="w-full justify-start" severity="secondary" outlined @click="addAzureSource">
+        <Button class="w-full justify-start" outlined @click="addAzureSource">
           <i class="pi pi-microsoft mr-2" />
           {{ t('microsoft_or_outlook') }}
         </Button>
-        <AddSourceImap v-model:source="imapSourceModel" v-model:show="$imapDialogStore.showImapDialog" />
+        <Button class="w-full justify-start" outlined @click="openImapFromAddSource">
+          <i class="pi pi-inbox mr-2" />
+          {{ t('other_email_provider') }}
+        </Button>
       </div>
     </Dialog>
+
+    <div class="hidden">
+      <AddSourceImap
+        v-model:source="imapSourceModel"
+        v-model:show="showAddSourceImapDialog"
+      />
+    </div>
 
     <div
       v-if="
@@ -120,7 +131,7 @@
                   <Button
                     :label="t('reconnect')"
                     size="small"
-                    severity="secondary"
+                    severity="primary"
                     @click="reconnectExpiredSource(source)"
                   />
                 </div>
@@ -263,6 +274,7 @@ const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
 const showAddSourceDialog = ref(false);
 const imapSourceModel = ref<MiningSource>();
+const showAddSourceImapDialog = ref(false);
 
 async function addGoogleSource() {
   showAddSourceDialog.value = false;
@@ -292,14 +304,12 @@ async function addAzureSource() {
   }
 }
 
-watch(
-  () => $imapDialogStore.showImapDialog,
-  (show) => {
-    if (show) {
-      showAddSourceDialog.value = false;
-    }
-  },
-);
+function openImapFromAddSource() {
+  showAddSourceDialog.value = false;
+  nextTick(() => {
+    showAddSourceImapDialog.value = true;
+  });
+}
 
 onMounted(async () => {
   const reconnectEmail = $route.query.reconnect as string;
