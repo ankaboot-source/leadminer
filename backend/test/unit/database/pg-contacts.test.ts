@@ -106,7 +106,7 @@ describe('PgContacts create from email', () => {
       }
     ]);
 
-    expect(query).toHaveBeenCalledTimes(5);
+    expect(query).toHaveBeenCalledTimes(6);
 
     const upsertSql = String(query.mock.calls[2][0]);
     expect(upsertSql).toContain('INSERT INTO private.persons');
