@@ -57,7 +57,7 @@ export function isTokenExpired(
     refresh_token: credentials.refreshToken,
     expires_at: credentials.expiresAt,
   });
-  return token.expired(1000);
+  return token.expired(300);
 }
 
 export async function refreshAccessToken(
