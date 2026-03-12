@@ -320,29 +320,6 @@ function openImapFromAddSource() {
   });
 }
 
-onMounted(async () => {
-  const reconnectEmail = $route.query.reconnect as string;
-
-  if (reconnectEmail) {
-    const source = $leadminer.miningSources.find(
-      (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),
-    );
-
-    if (source && !source.isValid) {
-      $router.replace({ query: {} });
-
-      if (source.type === 'imap') {
-        $imapDialogStore.imapEmail = source.email;
-        $imapDialogStore.showImapDialog = true;
-      } else {
-        await reconnectExpiredSource(source);
-      }
-    } else {
-      $router.replace({ query: {} });
-    }
-  }
-});
-
 function getIcon(type: string) {
   switch (type) {
     case 'google':
@@ -504,8 +481,29 @@ async function reconnectExpiredSource(source: MiningSource) {
 }
 
 onMounted(async () => {
+  const reconnectEmail = $route.query.reconnect as string;
+
   await $leadminer.fetchMiningSources();
   await $leadminer.getCurrentRunningMining();
+
+  if (reconnectEmail) {
+    const source = $leadminer.miningSources.find(
+      (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),
+    );
+
+    if (source && !source.isValid) {
+      $router.replace({ query: {} });
+
+      if (source.type === 'imap') {
+        $imapDialogStore.imapEmail = source.email;
+        $imapDialogStore.showImapDialog = true;
+      } else {
+        await reconnectExpiredSource(source);
+      }
+    } else {
+      $router.replace({ query: {} });
+    }
+  }
 });
 </script>
 
