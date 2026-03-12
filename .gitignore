@@ -21,3 +21,4 @@ supabase/config.toml
 frontend-v4/*
 .worktrees/
 .opencode/plans/
+docs/plans/
