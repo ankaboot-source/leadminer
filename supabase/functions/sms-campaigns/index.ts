@@ -25,20 +25,44 @@ const logger = createLogger("sms-campaigns");
 const functionName = "sms-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
+app.onError((err, c) => {
+  logger.error("Unhandled sms-campaigns error", {
+    path: c.req.path,
+    method: c.req.method,
+    error: err.message,
+    stack: err.stack,
+  });
+
+  return c.json(
+    {
+      error: "Unexpected server error",
+      code: "INTERNAL_ERROR",
+      detail: err.message,
+    },
+    500,
+  );
+});
+
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
+const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
 type SmsCampaignCreatePayload = {
   selectedPhones?: string[];
+  selectedRecipients?: Array<{
+    phone: string;
+    personalization?: Record<string, unknown>;
+  }>;
   senderName: string;
-  senderPhone: string;
   messageTemplate: string;
+  footerTextTemplate?: string;
   useShortLinks?: boolean;
   provider?: "smsgate" | "simple-sms-gateway" | "twilio";
   smsgateConfig?: {
@@ -48,19 +72,27 @@ type SmsCampaignCreatePayload = {
   };
   simpleSmsGatewayConfig?: {
     baseUrl?: string;
-    username?: string;
-    password?: string;
   };
   timezone?: string;
 };
+
+type SmsTemplateContext = Record<string, unknown>;
+
+function buildSmsUnsubscribeUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/u/${token}`;
+}
+
+function buildSmsClickTrackingUrl(token: string): string {
+  const base = (FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "");
+  return `${base}/c/${token}`;
+}
 
 type SmsProviderProfileConfig = {
   smsgate_base_url: string | null;
   smsgate_username: string | null;
   smsgate_password: string | null;
   simple_sms_gateway_base_url: string | null;
-  simple_sms_gateway_username: string | null;
-  simple_sms_gateway_password: string | null;
 };
 
 async function authMiddleware(c: Context, next: () => Promise<void>) {
@@ -105,7 +137,7 @@ async function getUserSmsProviderConfig(
     .schema("private")
     .from("profiles")
     .select(
-      "smsgate_base_url,smsgate_username,smsgate_password,simple_sms_gateway_base_url,simple_sms_gateway_username,simple_sms_gateway_password",
+      "smsgate_base_url,smsgate_username,smsgate_password,simple_sms_gateway_base_url",
     )
     .eq("user_id", userId)
     .single();
@@ -116,12 +148,43 @@ async function getUserSmsProviderConfig(
       smsgate_username: null,
       smsgate_password: null,
       simple_sms_gateway_base_url: null,
-      simple_sms_gateway_username: null,
-      simple_sms_gateway_password: null,
     };
   }
 
   return data as SmsProviderProfileConfig;
+}
+
+async function saveProfileFields(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  userId: string,
+  fields: Partial<SmsProviderProfileConfig>,
+): Promise<unknown> {
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("profiles")
+    .upsert({ user_id: userId, ...fields }, { onConflict: "user_id" });
+
+  return error;
+}
+
+async function triggerSmsCampaignProcessorFromEdge() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    logger.error("Missing required environment variables", {
+      supabaseUrl: !!SUPABASE_URL,
+      serviceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+    });
+    return;
+  }
+
+  await fetch(`${SUPABASE_URL}/functions/v1/sms-campaigns/process`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+    },
+    body: JSON.stringify({}),
+  });
 }
 
 function toSmsGateCredentials(
@@ -132,7 +195,9 @@ function toSmsGateCredentials(
   }
 
   return {
-    baseUrl: config.smsgate_base_url || "https://api.sms-gate.app",
+    baseUrl:
+      config.smsgate_base_url ||
+      "https://api.sms-gate.app/3rdparty/v1/messages",
     username: config.smsgate_username,
     password: config.smsgate_password,
   };
@@ -141,19 +206,12 @@ function toSmsGateCredentials(
 function toSimpleSmsGatewayCredentials(
   config: SmsProviderProfileConfig,
 ): SimpleSmsGatewayCredentials | null {
-  if (
-    !config.simple_sms_gateway_username ||
-    !config.simple_sms_gateway_password
-  ) {
+  if (!config.simple_sms_gateway_base_url) {
     return null;
   }
 
   return {
-    baseUrl:
-      config.simple_sms_gateway_base_url ||
-      "https://api.simple-sms-gateway.com",
-    username: config.simple_sms_gateway_username,
-    password: config.simple_sms_gateway_password,
+    baseUrl: config.simple_sms_gateway_base_url,
   };
 }
 
@@ -168,15 +226,14 @@ app.get("/providers/status", authMiddleware, async (c: Context) => {
     smsgateConfigured: Boolean(
       config.smsgate_username && config.smsgate_password,
     ),
-    smsgateBaseUrl: config.smsgate_base_url || "https://api.sms-gate.app",
+    smsgateBaseUrl:
+      config.smsgate_base_url ||
+      "https://api.sms-gate.app/3rdparty/v1/messages",
     smsgateUsername: config.smsgate_username || "",
-    simpleSmsGatewayConfigured: Boolean(
-      config.simple_sms_gateway_username && config.simple_sms_gateway_password,
-    ),
+    simpleSmsGatewayConfigured: Boolean(config.simple_sms_gateway_base_url),
     simpleSmsGatewayBaseUrl:
       config.simple_sms_gateway_base_url ||
-      "https://api.simple-sms-gateway.com",
-    simpleSmsGatewayUsername: config.simple_sms_gateway_username || "",
+      "http://192.168.1.100:8080/send-sms",
     twilioAvailable: isTwilioFallbackAvailable(),
   });
 });
@@ -201,7 +258,7 @@ app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
   const baseUrl =
     payload.baseUrl?.trim() ||
     existingConfig.smsgate_base_url ||
-    "https://api.sms-gate.app";
+    "https://api.sms-gate.app/3rdparty/v1/messages";
 
   if (!username || !password) {
     return c.json(
@@ -213,15 +270,11 @@ app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
     );
   }
 
-  const { error } = await supabaseAdmin
-    .schema("private")
-    .from("profiles")
-    .update({
-      smsgate_base_url: baseUrl,
-      smsgate_username: username,
-      smsgate_password: password,
-    })
-    .eq("user_id", user.id);
+  const error = await saveProfileFields(supabaseAdmin, user.id, {
+    smsgate_base_url: baseUrl,
+    smsgate_username: username,
+    smsgate_password: password,
+  });
 
   if (error) {
     return c.json(
@@ -242,8 +295,6 @@ app.post(
 
     const payload = (await c.req.json().catch(() => ({}))) as {
       baseUrl?: string;
-      username?: string;
-      password?: string;
     };
 
     const supabaseAdmin = createSupabaseAdmin();
@@ -252,38 +303,24 @@ app.post(
       user.id,
     );
 
-    const username =
-      payload.username?.trim() ||
-      existingConfig.simple_sms_gateway_username ||
-      "";
-    const password =
-      payload.password?.trim() ||
-      existingConfig.simple_sms_gateway_password ||
-      "";
     const baseUrl =
       payload.baseUrl?.trim() ||
       existingConfig.simple_sms_gateway_base_url ||
-      "https://api.simple-sms-gateway.com";
+      "http://192.168.1.100:8080/send-sms";
 
-    if (!username || !password) {
+    if (!baseUrl) {
       return c.json(
         {
-          error: "Missing simple-sms-gateway credentials",
-          code: "MISSING_SIMPLE_SMS_GATEWAY_CREDENTIALS",
+          error: "Missing simple-sms-gateway endpoint",
+          code: "MISSING_SIMPLE_SMS_GATEWAY_ENDPOINT",
         },
         400,
       );
     }
 
-    const { error } = await supabaseAdmin
-      .schema("private")
-      .from("profiles")
-      .update({
-        simple_sms_gateway_base_url: baseUrl,
-        simple_sms_gateway_username: username,
-        simple_sms_gateway_password: password,
-      })
-      .eq("user_id", user.id);
+    const error = await saveProfileFields(supabaseAdmin, user.id, {
+      simple_sms_gateway_base_url: baseUrl,
+    });
 
     if (error) {
       return c.json(
@@ -350,6 +387,68 @@ function extractErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
+function toTemplateValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => toTemplateValue(item))
+      .filter((item) => item.length > 0)
+      .join(", ");
+  }
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+function renderSmsTemplate(
+  template: string,
+  context: SmsTemplateContext,
+): string {
+  return template.replace(
+    /{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g,
+    (_match, key: string) => {
+      return toTemplateValue(context[key]);
+    },
+  );
+}
+
+function buildSmsTemplateContext(
+  personalization: Record<string, unknown> | null,
+): SmsTemplateContext {
+  const source = personalization || {};
+  const email = toTemplateValue(source.email);
+
+  const givenName = toTemplateValue(source.givenName ?? source.given_name);
+  const familyName = toTemplateValue(source.familyName ?? source.family_name);
+  const fullName = toTemplateValue(source.fullName ?? source.name);
+
+  const context: SmsTemplateContext = {
+    name: toTemplateValue(source.name),
+    fullName,
+    givenName,
+    familyName,
+    email,
+    emailDomain: email.includes("@") ? email.split("@")[1] : "",
+    location: toTemplateValue(source.location),
+    worksFor: toTemplateValue(source.worksFor ?? source.works_for),
+    jobTitle: toTemplateValue(source.jobTitle ?? source.job_title),
+    alternateName: toTemplateValue(
+      source.alternateName ?? source.alternate_name,
+    ),
+    telephone: toTemplateValue(source.telephone),
+    seniority: toTemplateValue(source.seniority),
+    recency: toTemplateValue(source.recency),
+    occurrence: toTemplateValue(source.occurrence),
+    conversations: toTemplateValue(source.conversations),
+    repliedConversations: toTemplateValue(
+      source.repliedConversations ?? source.replied_conversations,
+    ),
+    sender: toTemplateValue(source.sender),
+    recipient: toTemplateValue(source.recipient),
+  };
+
+  return context;
+}
+
 async function checkSmsQuota(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   userId: string,
@@ -360,6 +459,7 @@ async function checkSmsQuota(
   remainingDaily: number;
   remainingMonthly: number;
   error?: string;
+  checkFailed?: boolean;
 }> {
   const quota = getSmsQuota();
   const { dayStart, monthStart } = getLocalTimeBounds(timezone);
@@ -377,6 +477,7 @@ async function checkSmsQuota(
       remainingDaily: 0,
       remainingMonthly: 0,
       error: error.message,
+      checkFailed: true,
     };
   }
 
@@ -432,7 +533,7 @@ async function recordClickLink(
   url: string,
 ): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const token = getUniqueShortToken(8);
+    const token = `s_${getUniqueShortToken(8)}`;
     const { error } = await supabaseAdmin
       .schema("private")
       .from("sms_campaign_link_clicks")
@@ -481,7 +582,7 @@ async function injectTrackers(
       recipientId,
       originalUrl,
     );
-    let trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/track/click/${token}`;
+    let trackedUrl = buildSmsClickTrackingUrl(token);
 
     if (useShortLinks) {
       const shortUrl = await shortenUrl(trackedUrl);
@@ -511,9 +612,10 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     .catch(() => ({}))) as SmsCampaignCreatePayload;
   const {
     selectedPhones,
+    selectedRecipients,
     senderName,
-    senderPhone,
     messageTemplate,
+    footerTextTemplate,
     useShortLinks,
     provider,
     smsgateConfig,
@@ -521,21 +623,27 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     timezone,
   } = payload;
 
-  if (!senderName || !senderPhone || !messageTemplate) {
+  if (!senderName || !messageTemplate) {
     return c.json(
       { error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" },
       400,
     );
   }
 
-  if (!selectedPhones || selectedPhones.length === 0) {
+  const phonesFromRecipients = (selectedRecipients || []).map((r) => r.phone);
+  const requestedPhones =
+    phonesFromRecipients.length > 0
+      ? phonesFromRecipients
+      : selectedPhones || [];
+
+  if (!requestedPhones || requestedPhones.length === 0) {
     return c.json(
       { error: "No recipients selected", code: "NO_RECIPIENTS" },
       400,
     );
   }
 
-  const validPhones = selectedPhones
+  const validPhones = requestedPhones
     .filter(isValidPhoneNumber)
     .map((phone) => normalizePhoneNumber(phone) as string);
   const uniquePhones = [...new Set(validPhones)];
@@ -551,37 +659,45 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   if (smsgateConfig?.username && smsgateConfig?.password) {
-    await supabaseAdmin
-      .schema("private")
-      .from("profiles")
-      .update({
-        smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
-        smsgate_username: smsgateConfig.username,
-        smsgate_password: smsgateConfig.password,
-      })
-      .eq("user_id", user.id);
+    await saveProfileFields(supabaseAdmin, user.id, {
+      smsgate_base_url:
+        smsgateConfig.baseUrl ||
+        "https://api.sms-gate.app/3rdparty/v1/messages",
+      smsgate_username: smsgateConfig.username,
+      smsgate_password: smsgateConfig.password,
+    });
   }
 
-  if (simpleSmsGatewayConfig?.username && simpleSmsGatewayConfig?.password) {
-    await supabaseAdmin
-      .schema("private")
-      .from("profiles")
-      .update({
-        simple_sms_gateway_base_url:
-          simpleSmsGatewayConfig.baseUrl ||
-          "https://api.simple-sms-gateway.com",
-        simple_sms_gateway_username: simpleSmsGatewayConfig.username,
-        simple_sms_gateway_password: simpleSmsGatewayConfig.password,
-      })
-      .eq("user_id", user.id);
+  if (simpleSmsGatewayConfig?.baseUrl) {
+    await saveProfileFields(supabaseAdmin, user.id, {
+      simple_sms_gateway_base_url:
+        simpleSmsGatewayConfig.baseUrl || "http://192.168.1.100:8080/send-sms",
+    });
   }
 
   const selectedProvider = provider || "smsgate";
 
   const profileConfig = await getUserSmsProviderConfig(supabaseAdmin, user.id);
-  const smsgateCredentials = toSmsGateCredentials(profileConfig);
+  const smsgateCredentials =
+    toSmsGateCredentials(profileConfig) ||
+    (smsgateConfig?.username && smsgateConfig?.password
+      ? {
+          baseUrl:
+            smsgateConfig.baseUrl ||
+            "https://api.sms-gate.app/3rdparty/v1/messages",
+          username: smsgateConfig.username,
+          password: smsgateConfig.password,
+        }
+      : null);
   const simpleSmsGatewayCredentials =
-    toSimpleSmsGatewayCredentials(profileConfig);
+    toSimpleSmsGatewayCredentials(profileConfig) ||
+    (simpleSmsGatewayConfig?.baseUrl
+      ? {
+          baseUrl:
+            simpleSmsGatewayConfig.baseUrl ||
+            "http://192.168.1.100:8080/send-sms",
+        }
+      : null);
 
   if (selectedProvider === "smsgate" && !smsgateCredentials) {
     return c.json(
@@ -626,6 +742,16 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     userTimezone,
   );
   if (!quotaCheck.allowed) {
+    if (quotaCheck.checkFailed) {
+      return c.json(
+        {
+          error: `Unable to verify SMS quota right now: ${quotaCheck.error}`,
+          code: "QUOTA_CHECK_FAILED",
+        },
+        500,
+      );
+    }
+
     return c.json(
       {
         error: quotaCheck.error,
@@ -643,9 +769,9 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     .insert({
       user_id: user.id,
       sender_name: senderName,
-      sender_phone: senderPhone,
       provider: selectedProvider,
       message_template: messageTemplate,
+      footer_text_template: footerTextTemplate || null,
       use_short_links: useShortLinks || false,
       recipient_count: uniquePhones.length,
       status: "queued",
@@ -662,18 +788,31 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
 
   const usedUnsubscribeTokens = new Set<string>();
   const getNextUnsubscribeToken = () => {
-    let token = getUniqueShortToken(10);
+    let token = `s_${getUniqueShortToken(10)}`;
     while (usedUnsubscribeTokens.has(token)) {
-      token = getUniqueShortToken(10);
+      token = `s_${getUniqueShortToken(10)}`;
     }
     usedUnsubscribeTokens.add(token);
     return token;
   };
 
+  const personalizationByPhone = new Map<string, Record<string, unknown>>();
+  for (const recipient of selectedRecipients || []) {
+    const normalizedPhone = normalizePhoneNumber(recipient.phone || "");
+    if (!normalizedPhone) continue;
+    if (
+      !personalizationByPhone.has(normalizedPhone) &&
+      recipient.personalization
+    ) {
+      personalizationByPhone.set(normalizedPhone, recipient.personalization);
+    }
+  }
+
   const recipientRecords = uniquePhones.map((phone) => ({
     campaign_id: campaign.id,
     phone,
     message: messageTemplate,
+    personalization_data: personalizationByPhone.get(phone) || null,
     unsubscribe_short_token: getNextUnsubscribeToken(),
     send_status: "pending" as RecipientStatus,
   }));
@@ -698,6 +837,14 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
+  triggerSmsCampaignProcessorFromEdge().catch((error) => {
+    logger.error("Failed to trigger SMS campaign processor", {
+      error: error instanceof Error ? error.message : String(error),
+      campaignId: campaign.id,
+    });
+    // Cron remains as fallback if immediate trigger fails.
+  });
+
   return c.json({
     campaignId: campaign.id,
     recipientCount: uniquePhones.length,
@@ -713,8 +860,8 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     .catch(() => ({}))) as SmsCampaignCreatePayload;
   const {
     senderName,
-    senderPhone,
     messageTemplate,
+    footerTextTemplate,
     useShortLinks,
     selectedPhones,
     provider,
@@ -722,7 +869,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     simpleSmsGatewayConfig,
   } = payload;
 
-  if (!senderName || !senderPhone || !messageTemplate) {
+  if (!senderName || !messageTemplate) {
     return c.json(
       { error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" },
       400,
@@ -734,15 +881,13 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 
   if (selectedProvider === "smsgate") {
     if (smsgateConfig?.username && smsgateConfig?.password) {
-      await supabaseAdmin
-        .schema("private")
-        .from("profiles")
-        .update({
-          smsgate_base_url: smsgateConfig.baseUrl || "https://api.sms-gate.app",
-          smsgate_username: smsgateConfig.username,
-          smsgate_password: smsgateConfig.password,
-        })
-        .eq("user_id", user.id);
+      await saveProfileFields(supabaseAdmin, user.id, {
+        smsgate_base_url:
+          smsgateConfig.baseUrl ||
+          "https://api.sms-gate.app/3rdparty/v1/messages",
+        smsgate_username: smsgateConfig.username,
+        smsgate_password: smsgateConfig.password,
+      });
     }
 
     const profileConfig = await getUserSmsProviderConfig(
@@ -762,18 +907,12 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 
   if (selectedProvider === "simple-sms-gateway") {
-    if (simpleSmsGatewayConfig?.username && simpleSmsGatewayConfig?.password) {
-      await supabaseAdmin
-        .schema("private")
-        .from("profiles")
-        .update({
-          simple_sms_gateway_base_url:
-            simpleSmsGatewayConfig.baseUrl ||
-            "https://api.simple-sms-gateway.com",
-          simple_sms_gateway_username: simpleSmsGatewayConfig.username,
-          simple_sms_gateway_password: simpleSmsGatewayConfig.password,
-        })
-        .eq("user_id", user.id);
+    if (simpleSmsGatewayConfig?.baseUrl) {
+      await saveProfileFields(supabaseAdmin, user.id, {
+        simple_sms_gateway_base_url:
+          simpleSmsGatewayConfig.baseUrl ||
+          "http://192.168.1.100:8080/send-sms",
+      });
     }
 
     const profileConfig = await getUserSmsProviderConfig(
@@ -803,11 +942,17 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     );
   }
 
-  const unsubscribeToken = getUniqueShortToken(10);
-  const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
-  const footerText = `\n\nUnsubscribe me: ${unsubscribeUrl}`;
+  const unsubscribeToken = `s_${getUniqueShortToken(10)}`;
+  const unsubscribeUrl = buildSmsUnsubscribeUrl(unsubscribeToken);
+  const renderedFooter = renderSmsTemplate(
+    footerTextTemplate || "Unsubscribe me: {{unsubscribeUrl}}",
+    { unsubscribeUrl },
+  );
 
-  let previewMessage = messageTemplate + footerText;
+  let previewMessage = messageTemplate;
+  if (renderedFooter.trim().length > 0) {
+    previewMessage += `\n\n${renderedFooter}`;
+  }
   if (useShortLinks) {
     const hrefRegex = /(https?:\/\/[^\s]+)/gi;
     const matches = [...previewMessage.matchAll(hrefRegex)];
@@ -816,8 +961,8 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
       const originalUrl = match[1];
       if (!originalUrl) continue;
 
-      const tempToken = crypto.randomUUID();
-      const trackedUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/track/click/${tempToken}`;
+      const tempToken = `s_${getUniqueShortToken(10)}`;
+      const trackedUrl = buildSmsClickTrackingUrl(tempToken);
       const shortUrl = await shortenUrl(trackedUrl);
 
       if (shortUrl) {
@@ -1147,16 +1292,24 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
   for (const recipient of recipients || []) {
     try {
+      const templateContext = buildSmsTemplateContext(
+        recipient.personalization_data as Record<string, unknown> | null,
+      );
+      const renderedBody = renderSmsTemplate(
+        campaign.message_template,
+        templateContext,
+      );
+
       let messageWithTrackers = await injectTrackers(
         supabaseAdmin,
         resolvedCampaignId,
         recipient.id,
-        campaign.message_template,
+        renderedBody,
         campaign.use_short_links,
       );
 
       const unsubscribeToken =
-        recipient.unsubscribe_short_token || getUniqueShortToken(10);
+        recipient.unsubscribe_short_token || `s_${getUniqueShortToken(10)}`;
       if (!recipient.unsubscribe_short_token) {
         await supabaseAdmin
           .schema("private")
@@ -1164,12 +1317,20 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .update({ unsubscribe_short_token: unsubscribeToken })
           .eq("id", recipient.id);
       }
-      const unsubscribeUrl = `${PUBLIC_CAMPAIGN_BASE_URL}/functions/v1/sms-campaigns/unsubscribe/${unsubscribeToken}`;
-      messageWithTrackers += `\n\nUnsubscribe me: ${unsubscribeUrl}`;
+      const unsubscribeUrl = buildSmsUnsubscribeUrl(unsubscribeToken);
+      const footerTemplate =
+        campaign.footer_text_template || "Unsubscribe me: {{unsubscribeUrl}}";
+      const renderedFooter = renderSmsTemplate(footerTemplate, {
+        ...templateContext,
+        unsubscribeUrl,
+      });
+      if (renderedFooter.trim().length > 0) {
+        messageWithTrackers += `\n\n${renderedFooter}`;
+      }
 
       let result: SendSmsResult = await smsProvider.send({
         to: recipient.phone,
-        from: campaign.sender_phone,
+        from: "",
         body: messageWithTrackers,
       });
 

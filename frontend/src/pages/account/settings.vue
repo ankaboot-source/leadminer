@@ -180,6 +180,7 @@
           <label class="block">{{ t('simple_sms_gateway_base_url') }}</label>
           <InputText
             v-model="simpleSmsGatewayBaseUrlInput"
+            placeholder="http://192.168.1.100:8080/send-sms"
             class="w-full md:w-30rem"
           />
         </div>
@@ -282,7 +283,7 @@ const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
 const smsgatePasswordInput = ref('');
 const simpleSmsGatewayBaseUrlInput = ref(
   $profile.value?.simple_sms_gateway_base_url ||
-    'https://api.simple-sms-gateway.com',
+    'http://192.168.1.100:8080/send-sms',
 );
 const simpleSmsGatewayDownloadUrl =
   'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
@@ -434,15 +435,9 @@ async function deleteAccount() {
 
 async function fetchSmsProviderStatus() {
   try {
-    const response = await $saasEdgeFunctions(
-      'sms-campaigns/providers/status',
-      {
-        method: 'GET',
-      },
-    );
-    if (!response.ok) return;
-
-    const data = await response.json();
+    const data = await $saasEdgeFunctions('sms-campaigns/providers/status', {
+      method: 'GET',
+    });
     twilioAvailable.value = Boolean(data.twilioAvailable);
 
     if (data.smsgateBaseUrl) {
@@ -463,22 +458,14 @@ async function saveSmsGatewaySettings() {
   try {
     isSavingSmsGateway.value = true;
 
-    const response = await $saasEdgeFunctions(
-      'sms-campaigns/providers/smsgate',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          baseUrl: smsgateBaseUrlInput.value,
-          username: smsgateUsernameInput.value,
-          password: smsgatePasswordInput.value,
-        }),
-      },
-    );
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.error || t('sms_gateway_save_failed'));
-    }
+    await $saasEdgeFunctions('sms-campaigns/providers/smsgate', {
+      method: 'POST',
+      body: JSON.stringify({
+        baseUrl: smsgateBaseUrlInput.value,
+        username: smsgateUsernameInput.value,
+        password: smsgatePasswordInput.value,
+      }),
+    });
 
     smsgatePasswordInput.value = '';
 

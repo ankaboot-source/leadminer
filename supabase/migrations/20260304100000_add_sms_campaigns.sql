@@ -39,7 +39,6 @@ CREATE TABLE private.sms_campaigns (
 CREATE TABLE private.sms_campaign_recipients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id UUID NOT NULL REFERENCES private.sms_campaigns(id) ON DELETE CASCADE,
-  contact_id UUID REFERENCES private.persons(id) ON DELETE SET NULL,
   phone TEXT NOT NULL,
   message TEXT NOT NULL,
   send_status private.sms_campaign_recipient_status DEFAULT 'pending',

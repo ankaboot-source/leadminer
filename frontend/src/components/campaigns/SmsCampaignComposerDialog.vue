@@ -188,6 +188,20 @@
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </div>
+
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm font-medium flex items-center gap-1">
+              <span>{{ t('footer_template') }}</span>
+              <i
+                v-tooltip.top="t('footer_template_help')"
+                class="pi pi-info-circle text-xs text-surface-500"
+              />
+            </label>
+            <Textarea v-model="form.footerTextTemplate" rows="2" auto-resize />
+            <small class="text-surface-500">{{
+              t('footer_template_hint')
+            }}</small>
+          </div>
         </div>
       </div>
     </div>
@@ -307,14 +321,9 @@ const providerStatus = ref({
 
 async function fetchProviderStatus() {
   try {
-    const response = await $saasEdgeFunctions(
-      'sms-campaigns/providers/status',
-      {
-        method: 'GET',
-      },
-    );
-    if (!response.ok) return;
-    const data = await response.json();
+    const data = await $saasEdgeFunctions('sms-campaigns/providers/status', {
+      method: 'GET',
+    });
     providerStatus.value = {
       smsgateConfigured: Boolean(data.smsgateConfigured),
       simpleSmsGatewayConfigured: Boolean(data.simpleSmsGatewayConfigured),
@@ -346,6 +355,7 @@ const form = reactive({
   simpleSmsGatewayBaseUrl: 'http://192.168.1.100:8080/send-sms',
   provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
   messageTemplate: '',
+  footerTextTemplate: t('default_footer_template'),
   useShortLinks: true,
   monthlyRecipientLimit: 200,
 });
@@ -513,59 +523,78 @@ const isActionDisabled = computed(
     !isFormValid.value,
 );
 
-const getSelectedPhones = (): string[] => {
-  const phones: string[] = [];
+const getSelectedRecipients = (): Array<{
+  phone: string;
+  personalization: Record<string, unknown>;
+}> => {
+  const recipients: Array<{
+    phone: string;
+    personalization: Record<string, unknown>;
+  }> = [];
+  const seen = new Set<string>();
+
   for (const contact of props.selectedContacts) {
     if (contact.telephone && contact.telephone.length > 0) {
-      phones.push(...contact.telephone);
+      for (const phone of contact.telephone) {
+        const normalized = phone.trim();
+        if (!normalized || seen.has(normalized)) continue;
+        seen.add(normalized);
+        recipients.push({
+          phone: normalized,
+          personalization: {
+            name: contact.name,
+            fullName: contact.name,
+            givenName: contact.given_name,
+            familyName: contact.family_name,
+            email: contact.email,
+            location: contact.location,
+            worksFor: contact.works_for,
+            jobTitle: contact.job_title,
+            alternateName: contact.alternate_name,
+            telephone: contact.telephone,
+            seniority: contact.seniority,
+            recency: contact.recency,
+            occurrence: contact.occurrence,
+            conversations: contact.conversations,
+            repliedConversations: contact.replied_conversations,
+            sender: contact.sender,
+            recipient: contact.recipient,
+          },
+        });
+      }
     }
   }
-  return [...new Set(phones)];
+  return recipients;
 };
 
 const submitCampaign = async () => {
   isSubmitting.value = true;
 
   try {
-    const phones = getSelectedPhones();
+    const recipients = getSelectedRecipients();
+    const phones = recipients.map((recipient) => recipient.phone);
 
-    const response = await $saasEdgeFunctions(
-      'sms-campaigns/campaigns/create',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          senderName: 'Campaign',
-          messageTemplate: form.messageTemplate,
-          useShortLinks: form.useShortLinks,
-          provider: form.provider,
-          smsgateConfig: {
-            baseUrl: form.smsgateBaseUrl,
-            username: form.smsgateUsername,
-            password: form.smsgatePassword,
-          },
-          simpleSmsGatewayConfig: {
-            baseUrl: form.simpleSmsGatewayBaseUrl,
-          },
-          selectedPhones: phones,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      if (error.code === 'SMSGATE_NOT_CONFIGURED') {
-        setupProvider.value = 'smsgate';
-        showSetupDialog.value = true;
-      }
-      if (error.code === 'SIMPLE_SMS_GATEWAY_NOT_CONFIGURED') {
-        setupProvider.value = 'simple-sms-gateway';
-        showSetupDialog.value = true;
-      }
-      throw new Error(error.error || 'Campaign creation failed');
-    }
-
-    const data = await response.json();
+    const data = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        senderName: 'Campaign',
+        messageTemplate: form.messageTemplate,
+        useShortLinks: form.useShortLinks,
+        provider: form.provider,
+        footerTextTemplate: form.footerTextTemplate,
+        smsgateConfig: {
+          baseUrl: form.smsgateBaseUrl,
+          username: form.smsgateUsername,
+          password: form.smsgatePassword,
+        },
+        simpleSmsGatewayConfig: {
+          baseUrl: form.simpleSmsGatewayBaseUrl,
+        },
+        selectedRecipients: recipients,
+        selectedPhones: phones,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
 
     $toast.add({
       severity: 'success',
@@ -578,10 +607,34 @@ const submitCampaign = async () => {
     isVisible.value = false;
     resetForm();
   } catch (error) {
+    const backendError = (error as { data?: Record<string, unknown> })?.data;
+    const backendCode =
+      typeof backendError?.code === 'string' ? backendError.code : '';
+
+    if (backendCode === 'SMSGATE_NOT_CONFIGURED') {
+      setupProvider.value = 'smsgate';
+      showSetupDialog.value = true;
+    }
+    if (backendCode === 'SIMPLE_SMS_GATEWAY_NOT_CONFIGURED') {
+      setupProvider.value = 'simple-sms-gateway';
+      showSetupDialog.value = true;
+    }
+
+    const detailParts = [
+      (typeof backendError?.error === 'string' && backendError.error) ||
+        (error instanceof Error ? error.message : String(error)),
+    ];
+    if (typeof backendError?.detail === 'string') {
+      detailParts.push(`- ${backendError.detail}`);
+    }
+    if (backendCode) {
+      detailParts.push(`(code: ${backendCode})`);
+    }
+
     $toast.add({
       severity: 'error',
       summary: t('campaign_creation_failed'),
-      detail: error instanceof Error ? error.message : String(error),
+      detail: detailParts.join(' '),
       life: 5000,
     });
   } finally {
@@ -596,6 +649,7 @@ const resetForm = () => {
   form.simpleSmsGatewayBaseUrl = 'http://192.168.1.100:8080/send-sms';
   form.provider = 'smsgate';
   form.messageTemplate = '';
+  form.footerTextTemplate = t('default_footer_template');
   form.useShortLinks = true;
   charCount.value = 0;
   smsParts.value = 1;
@@ -653,6 +707,10 @@ watch(() => form.messageTemplate, updateCharCount);
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
     "monthly_recipient_limit_help": "Maximum number of recipients per month (max 250)",
+    "footer_template": "Footer template",
+    "footer_template_help": "Editable footer appended to each SMS.",
+    "footer_template_hint": "Use {{unsubscribeUrl}} to insert the unsubscribe link.",
+    "default_footer_template": "Unsubscribe me: {{unsubscribeUrl}}",
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
     "send_campaign": "Send campaign",
@@ -696,6 +754,10 @@ watch(() => form.messageTemplate, updateCharCount);
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
     "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 250)",
+    "footer_template": "Modèle de pied de message",
+    "footer_template_help": "Pied de message modifiable ajouté à chaque SMS.",
+    "footer_template_hint": "Utilisez {{unsubscribeUrl}} pour insérer le lien de désinscription.",
+    "default_footer_template": "Se désinscrire : {{unsubscribeUrl}}",
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",
     "send_campaign": "Envoyer la campagne",

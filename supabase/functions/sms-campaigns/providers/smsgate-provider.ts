@@ -16,13 +16,17 @@ export class SmsGateProvider implements SmsProvider {
     if (!credentials.username || !credentials.password) {
       throw new Error("SMSGate credentials not configured");
     }
-    this.baseUrl = credentials.baseUrl || "https://api.sms-gate.app";
+    this.baseUrl =
+      credentials.baseUrl || "https://api.sms-gate.app/3rdparty/v1/messages";
     this.username = credentials.username;
     this.password = credentials.password;
   }
 
   async send(params: SendSmsParams): Promise<SendSmsResult> {
-    const url = `${this.baseUrl}/3rdparty/v1/messages`;
+    const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, "");
+    const url = normalizedBaseUrl.endsWith("/3rdparty/v1/messages")
+      ? normalizedBaseUrl
+      : `${normalizedBaseUrl}/3rdparty/v1/messages`;
 
     try {
       const response = await fetch(url, {
