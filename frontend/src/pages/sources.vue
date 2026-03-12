@@ -28,7 +28,11 @@
           <i class="pi pi-microsoft mr-2" />
           {{ t('microsoft_or_outlook') }}
         </Button>
-        <Button class="w-full justify-start" outlined @click="openImapFromAddSource">
+        <Button
+          class="w-full justify-start"
+          outlined
+          @click="openImapFromAddSource"
+        >
           <i class="pi pi-inbox mr-2" />
           {{ t('other_email_provider') }}
         </Button>
@@ -81,9 +85,15 @@
       :rows="10"
     >
       <template #empty>
-        <div class="text-center py-8 text-surface-500 flex flex-col items-center gap-4">
+        <div
+          class="text-center py-8 text-surface-500 flex flex-col items-center gap-4"
+        >
           <span>{{ t('no_sources') }}</span>
-          <Button icon="pi pi-plus" :label="t('add_source')" @click="showAddSourceDialog = true" />
+          <Button
+            icon="pi pi-plus"
+            :label="t('add_source')"
+            @click="showAddSourceDialog = true"
+          />
         </div>
       </template>
       <template #list="slotProps">
@@ -279,7 +289,7 @@ async function addGoogleSource() {
   showAddSourceDialog.value = false;
   try {
     await addOAuthAccount('google', '/sources');
-  } catch (error) {
+  } catch {
     $toast.add({
       severity: 'error',
       summary: t('add_source_failed'),
@@ -293,7 +303,7 @@ async function addAzureSource() {
   showAddSourceDialog.value = false;
   try {
     await addOAuthAccount('azure', '/sources');
-  } catch (error) {
+  } catch {
     $toast.add({
       severity: 'error',
       summary: t('add_source_failed'),
@@ -452,17 +462,21 @@ function getSourceStatusBadge(source: MiningSource) {
 }
 
 async function reconnectExpiredSource(source: MiningSource) {
-  if (source.isValid || (source.type !== 'google' && source.type !== 'azure')) {
-    $toast.add({
-      severity: 'warn',
-      summary: t('reconnect_not_supported'),
-      detail: t('reconnect_not_supported_detail'),
-      life: 4500,
-    });
+  if (source.isValid) {
     return;
   }
 
   try {
+    if (source.type === 'imap') {
+      $imapDialogStore.imapEmail = source.email;
+      $imapDialogStore.showImapDialog = true;
+      return;
+    }
+
+    if (source.type !== 'google' && source.type !== 'azure') {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
     await useSupabaseClient().auth.refreshSession();
     const { authorizationUri } = await $api<{ authorizationUri: string }>(
       `/imap/mine/sources/${source.type}`,

@@ -88,6 +88,12 @@
     </template>
   </Toast>
 
+  <AddSourceImap
+    v-model:show="$imapDialogStore.showImapDialog"
+    v-model:source="imapReconnectSource"
+    dialog-only
+  />
+
   <PassiveMiningDialog />
 </template>
 
@@ -104,7 +110,9 @@ type ToastHasLinksGroupDetail = {
   };
 };
 
+import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
+import type { MiningSource } from '@/types/mining';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import Normalizer from '~/utils/normalizer';
@@ -112,7 +120,9 @@ import { signOutManually } from './utils/auth';
 
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
+const $imapDialogStore = useImapDialog();
 const activeTask = computed(() => $leadminerStore.activeTask);
+const imapReconnectSource = ref<MiningSource>();
 const $supabaseClient = useSupabaseClient();
 const { idle, reset } = useIdle(60 * 60 * 1000); // 1 hour timeout
 $supabaseClient.auth.onAuthStateChange((event) => {

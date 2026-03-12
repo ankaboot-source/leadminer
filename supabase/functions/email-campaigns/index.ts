@@ -18,7 +18,10 @@ import {
   listUniqueSenderSources,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { complianceMiddleware, createFinalResponseMiddleware } from "./middlewares-mod.ts";
+import {
+  complianceMiddleware,
+  createFinalResponseMiddleware,
+} from "./middlewares-mod.ts";
 
 const logger = createLogger("email-campaigns");
 
@@ -39,7 +42,9 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
-const FALLBACK_SENDER_ENABLED = Boolean(Deno.env.get("FALLBACK_SENDER_ENABLED") !== "false");
+const FALLBACK_SENDER_ENABLED = Boolean(
+  Deno.env.get("FALLBACK_SENDER_ENABLED") !== "false",
+);
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
@@ -210,7 +215,9 @@ function requireFallbackSenderEmail() {
     throw new Error("SMTP_USER is not configured");
   }
   if (!FALLBACK_SENDER_ENABLED) {
-    throw new Error("Fallback sender is disabled via FALLBACK_SENDER_ENABLED env var");
+    throw new Error(
+      "Fallback sender is disabled via FALLBACK_SENDER_ENABLED env var",
+    );
   }
   return SMTP_USER;
 }
@@ -690,11 +697,12 @@ async function buildUserTransport(
 }
 
 async function resolveSenderOptions(authorization: string, userEmail: string) {
-  const fallbackSenderEmail = isFallbackSenderEnabled() ? requireFallbackSenderEmail() : "";
+  const fallbackSenderEmail = isFallbackSenderEnabled()
+    ? requireFallbackSenderEmail()
+    : "";
   const options: SenderOption[] = [];
-  const transportBySender: Record<string, Transport | null> = fallbackSenderEmail
-    ? { [fallbackSenderEmail]: null }
-    : {};
+  const transportBySender: Record<string, Transport | null> =
+    fallbackSenderEmail ? { [fallbackSenderEmail]: null } : {};
 
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
