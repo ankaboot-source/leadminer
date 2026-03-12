@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   extractUnavailableSenderEmails,
+  getSenderDisplayLabel,
   getUnavailableSenderReconnectContext,
 } from '@/utils/senderOptions';
 
@@ -53,5 +54,28 @@ describe('getUnavailableSenderReconnectContext', () => {
     ).toEqual({
       mode: 'multiple',
     });
+  });
+});
+
+describe('getSenderDisplayLabel', () => {
+  it('prefers full name when available', () => {
+    const result = getSenderDisplayLabel(
+      'bader.lejmi@gmail.com',
+      'Bader Lejmi',
+    );
+
+    expect(result).toBe('Bader Lejmi');
+  });
+
+  it('falls back to email prefix when full name is missing', () => {
+    const result = getSenderDisplayLabel('bader.lejmi@gmail.com');
+
+    expect(result).toBe('bader.lejmi');
+  });
+
+  it('returns empty string when neither full name nor email exists', () => {
+    const result = getSenderDisplayLabel(undefined, '');
+
+    expect(result).toBe('');
   });
 });

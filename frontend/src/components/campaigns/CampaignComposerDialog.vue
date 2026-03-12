@@ -362,6 +362,7 @@
 import type { Contact } from '@/types/contact';
 import {
   extractUnavailableSenderEmails,
+  getSenderDisplayLabel,
   getUnavailableSenderReconnectContext,
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
@@ -384,6 +385,7 @@ const $leadminer = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $toast = useToast();
 const $user = useSupabaseUser();
+const $profile = useSupabaseUserProfile();
 
 const editorRef = ref<{
   quill?: {
@@ -425,6 +427,9 @@ type SenderOptionItem = {
 const senderOptions = ref<SenderOptionItem[]>([]);
 const hasNoSenderOptions = computed(
   () => senderOptions.value.length === 0 && !isLoadingSenderOptions.value,
+);
+const senderEmailPrefix = computed(() =>
+  getSenderDisplayLabel($user.value?.email, undefined),
 );
 const fallbackSenderEmail = ref('');
 
@@ -1266,14 +1271,32 @@ async function submit() {
 }
 
 watch(
+  () => $profile.value?.full_name,
+  (fullName) => {
+    if (!isVisible.value || !fullName?.trim()) {
+      return;
+    }
+
+    if (
+      !form.senderName ||
+      form.senderName.trim() === senderEmailPrefix.value
+    ) {
+      form.senderName = getSenderDisplayLabel($user.value?.email, fullName);
+    }
+  },
+);
+
+watch(
   isVisible,
   async (visible) => {
     if (!visible) return;
     resetTouched();
 
     if (!form.senderName) {
-      form.senderName =
-        ($user.value?.email || '').split('@')[0] || 'Leadminer user';
+      form.senderName = getSenderDisplayLabel(
+        $user.value?.email,
+        $profile.value?.full_name,
+      );
     }
     if (!form.bodyHtmlTemplate) {
       form.bodyHtmlTemplate = DEFAULT_BODY_HTML();
