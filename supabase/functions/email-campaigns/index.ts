@@ -2153,9 +2153,14 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   if (token === "preview-unsubscribe") {
-    return buildRedirectResponse(
-      `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
-    );
+    const sender = c.req.query("sender")?.trim();
+    const previewUrl = sender
+      ? `${FRONTEND_HOST}/unsubscribe/success?preview=true&sender=${encodeURIComponent(
+          sender,
+        )}`
+      : `${FRONTEND_HOST}/unsubscribe/success?preview=true`;
+
+    return buildRedirectResponse(previewUrl);
   }
 
   const { data: recipient, error } = await supabaseAdmin

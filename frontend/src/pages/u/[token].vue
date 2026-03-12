@@ -1,9 +1,8 @@
 <template>
   <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
     <div>
-      <div class="inline-flex items-center gap-3 p-3 text-orange-400">
-        <i class="pi pi-user !text-6xl"></i>
-        <i class="pi pi-shield !text-5xl"></i>
+      <div class="inline-flex items-center p-3 text-orange-400">
+        <i class="pi pi-user-minus !text-7xl"></i>
       </div>
       <div class="text-4xl font-bold font-serif">
         {{ t('unsubscribe_manage_preferences') }}
