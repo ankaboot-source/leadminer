@@ -362,6 +362,7 @@
 import type { Contact } from '@/types/contact';
 import {
   extractUnavailableSenderEmails,
+  getSenderDisplayLabel,
   getUnavailableSenderReconnectContext,
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
@@ -384,6 +385,7 @@ const $leadminer = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $toast = useToast();
 const $user = useSupabaseUser();
+const $profile = useSupabaseUserProfile();
 
 const editorRef = ref<{
   quill?: {
@@ -1272,8 +1274,10 @@ watch(
     resetTouched();
 
     if (!form.senderName) {
-      form.senderName =
-        ($user.value?.email || '').split('@')[0] || 'Leadminer user';
+      form.senderName = getSenderDisplayLabel(
+        $user.value?.email,
+        $profile.value?.full_name,
+      );
     }
     if (!form.bodyHtmlTemplate) {
       form.bodyHtmlTemplate = DEFAULT_BODY_HTML();
