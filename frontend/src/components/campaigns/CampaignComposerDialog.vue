@@ -428,6 +428,9 @@ const senderOptions = ref<SenderOptionItem[]>([]);
 const hasNoSenderOptions = computed(
   () => senderOptions.value.length === 0 && !isLoadingSenderOptions.value,
 );
+const senderEmailPrefix = computed(() =>
+  getSenderDisplayLabel($user.value?.email, undefined),
+);
 const fallbackSenderEmail = ref('');
 
 const partialOne = ref(false);
@@ -1266,6 +1269,22 @@ async function submit() {
     isSubmitting.value = false;
   }
 }
+
+watch(
+  () => $profile.value?.full_name,
+  (fullName) => {
+    if (!isVisible.value || !fullName?.trim()) {
+      return;
+    }
+
+    if (
+      !form.senderName ||
+      form.senderName.trim() === senderEmailPrefix.value
+    ) {
+      form.senderName = getSenderDisplayLabel($user.value?.email, fullName);
+    }
+  },
+);
 
 watch(
   isVisible,
