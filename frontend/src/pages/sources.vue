@@ -265,6 +265,7 @@
 <script setup lang="ts">
 import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import { addOAuthAccount } from '@/utils/oauth';
+import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
@@ -491,8 +492,10 @@ onMounted(async () => {
       (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),
     );
 
+    const clearReconnectQuery = () => $router.replace({ query: {} });
+
     if (source && !source.isValid) {
-      $router.replace({ query: {} });
+      clearReconnectQuery();
 
       if (source.type === 'imap') {
         $imapDialogStore.imapEmail = source.email;
@@ -500,8 +503,29 @@ onMounted(async () => {
       } else {
         await reconnectExpiredSource(source);
       }
+    } else if (!source) {
+      clearReconnectQuery();
+
+      const action = resolveReconnectFallbackAction(reconnectEmail);
+
+      try {
+        if (action === 'google' || action === 'azure') {
+          await addOAuthAccount(action, '/sources');
+          return;
+        }
+      } catch {
+        $toast.add({
+          severity: 'error',
+          summary: t('add_source_failed'),
+          detail: t('add_source_failed_detail'),
+          life: 4500,
+        });
+      }
+
+      $imapDialogStore.imapEmail = reconnectEmail;
+      $imapDialogStore.showImapDialog = true;
     } else {
-      $router.replace({ query: {} });
+      clearReconnectQuery();
     }
   }
 });
