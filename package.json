@@ -21,7 +21,8 @@
     "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher",
     "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher",
     "prepare": "husky",
-    "precommit:check": "lint-staged"
+    "precommit:check": "lint-staged",
+    "prepush:check": "bash ./scripts/prepush-ci-check.sh"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
