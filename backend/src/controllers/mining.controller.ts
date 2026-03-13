@@ -300,8 +300,7 @@ export default function initializeMiningController(
         extractSignatures,
         miningSource: { email },
         boxes: folders,
-        since,
-        passive_mining: isPassiveMining
+        since
       }: {
         miningSource: {
           email: string;
@@ -309,7 +308,6 @@ export default function initializeMiningController(
         boxes: string[];
         extractSignatures: boolean;
         since?: string;
-        passive_mining?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -344,16 +342,13 @@ export default function initializeMiningController(
       }
 
       try {
-        const miningTask = await tasksManager.createTask(
-          {
-            boxes: sanitizedFolders,
-            userId: user.id,
-            email: miningSourceCredentials.email,
-            fetchEmailBody: extractSignatures,
-            since
-          },
-          isPassiveMining === true
-        );
+        const miningTask = await tasksManager.createTask({
+          boxes: sanitizedFolders,
+          userId: user.id,
+          email: miningSourceCredentials.email,
+          fetchEmailBody: extractSignatures,
+          since
+        });
 
         const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
         const { userId, miningId } = taskObject;

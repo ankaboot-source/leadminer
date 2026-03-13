@@ -22,12 +22,3 @@ frontend-v4/*
 .worktrees/
 .opencode/plans/
 docs/plans/
-frontend/src/presets
-frontend/src/assets
-frontend/src/components/credits
-backend/src/utils/billing-plugin
-PrivacyPolicyButton.vue
-frontend/tailwind.config.ts
-supabase/functions/campaign
-CampaignButton.vue
-frontend/src/components/icons/*

@@ -99,7 +99,7 @@ async function getBoxes(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
         // originally its x-sb-jwt
       },
       body: JSON.stringify({ email: miningSource.email }),
@@ -127,14 +127,13 @@ async function startMiningEmail(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        Authorization: `Bearer ${Deno.env.get("LEADMINER_SECRET_TOKEN")}`,
       },
       body: JSON.stringify({
         miningSource: { email: miningSource.email },
         boxes: folders,
         extractSignatures: false,
         since,
-        passive_mining: true,
       }),
     },
   );
