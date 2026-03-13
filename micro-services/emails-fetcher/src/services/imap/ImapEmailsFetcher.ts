@@ -172,7 +172,7 @@ export default class ImapEmailsFetcher {
    * @param batchSize - A Number To send notification every x emails processed
    */
   constructor(
-    private readonly imapConnectionProvider: ImapConnectionProvider,
+    public readonly imapConnectionProvider: ImapConnectionProvider,
     public readonly folders: string[],
     private readonly userId: string,
     private readonly userEmail: string,
@@ -182,6 +182,7 @@ export default class ImapEmailsFetcher {
     private readonly fetchEmailBody: boolean,
     private readonly batchSize: number,
     private readonly maxBodyTextSize: number | undefined,
+    private readonly since: string | undefined,
     private readonly maxConcurrentConnections = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
   ) {
     // Generate a unique identifier for the user.

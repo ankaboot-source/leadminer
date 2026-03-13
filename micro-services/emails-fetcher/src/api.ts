@@ -47,6 +47,7 @@ interface FetchPostBody {
   filterBodySize: number | undefined;
   contactStream: string;
   signatureStream: string;
+  since: string | undefined;
 }
 
 interface FetchStartPayload {
@@ -144,7 +145,10 @@ apiRoutes.post(
       validateType('signatureStream', signatureStream, 'string'),
       validateType('email', email, 'string'),
       validateType('boxes', folders, 'string[]'),
-      validateType('extractSignatures', extractSignatures, 'boolean')
+      validateType('extractSignatures', extractSignatures, 'boolean'),
+      ...(req.body.since
+        ? [validateType('since', req.body.since, 'string')]
+        : [])
     ].filter(Boolean);
 
     if (errors.length) {
@@ -224,7 +228,8 @@ apiRoutes.post(
         fetchEmailBody: extractSignatures && ENV.IMAP_FETCH_BODY,
         maxConcurrentConnections: totalApprovedImapConnections,
         filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
-        imapConnectionProvider
+        imapConnectionProvider,
+        since: req.body.since
       });
 
       const totalMessages = await emailFetcher.getTotalMessages();
