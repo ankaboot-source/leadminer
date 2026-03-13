@@ -200,7 +200,6 @@
     "unsubscribe": {
       "success_header": "You have been unsubscribed",
       "success_message": "You will no longer receive emails from {sender}.",
-      "preview_notice": "This is a preview - the link is active in the actual email",
       "failure_header": "Unsubscribe failed",
       "failure_message": "We couldn't find your subscription. Please contact support.",
       "go_home": "Go to home"
@@ -373,7 +372,6 @@
     "unsubscribe": {
       "success_header": "Vous êtes désabonné",
       "success_message": "Vous ne recevrez plus d'emails de {sender}.",
-      "preview_notice": "Ceci est un aperçu - le lien est actif dans l'email réel",
       "failure_header": "Désabonnement échoué",
       "failure_message": "Nous n'avons pas trouvé votre abonnement. Veuillez contacter le support.",
       "go_home": "Aller à l'accueil"

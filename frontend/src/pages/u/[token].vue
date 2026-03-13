@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { resolveDataPrivacyUrl } from '@/utils/privacy-link';
-
 const { t } = useI18n({
   useScope: 'local',
 });

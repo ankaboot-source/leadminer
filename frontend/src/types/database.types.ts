@@ -350,6 +350,8 @@ export type Database = {
           alternate_email: string[] | null;
           alternate_name: string[] | null;
           created_at: string;
+          consent_changed_at: string | null;
+          consent_status: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
           email: string;
           family_name: string | null;
           given_name: string | null;
@@ -373,6 +375,8 @@ export type Database = {
           alternate_email?: string[] | null;
           alternate_name?: string[] | null;
           created_at?: string;
+          consent_changed_at?: string | null;
+          consent_status?: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
           email: string;
           family_name?: string | null;
           given_name?: string | null;
@@ -396,6 +400,8 @@ export type Database = {
           alternate_email?: string[] | null;
           alternate_name?: string[] | null;
           created_at?: string;
+          consent_changed_at?: string | null;
+          consent_status?: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
           email?: string;
           family_name?: string | null;
           given_name?: string | null;
@@ -905,6 +911,8 @@ export type Database = {
           email: string;
           name: string;
           status: string;
+          consent_status: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
+          consent_changed_at: string | null;
           image: string;
           location: string;
           location_normalized: Json;
@@ -940,6 +948,8 @@ export type Database = {
           email: string;
           name: string;
           status: string;
+          consent_status: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
+          consent_changed_at: string | null;
           image: string;
           location: string;
           location_normalized: Json;

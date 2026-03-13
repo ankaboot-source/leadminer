@@ -61,6 +61,7 @@ export default defineNuxtConfig({
         process.env.NUXT_PUBLIC_DATA_PRIVACY_URL ||
         process.env.DATA_PRIVACY_URL,
       IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
+      DATA_PRIVACY_URL: process.env.DATA_PRIVACY_URL,
       // Nominatim
       NOMINATIM_URL: process.env.NOMINATIM_URL,
     },
