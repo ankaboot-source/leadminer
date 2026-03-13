@@ -57,6 +57,9 @@ export default defineNuxtConfig({
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
       CAMPAIGN_COMPLIANCE_FOOTER: process.env.CAMPAIGN_COMPLIANCE_FOOTER,
+      DATA_PRIVACY_URL:
+        process.env.NUXT_PUBLIC_DATA_PRIVACY_URL ||
+        process.env.DATA_PRIVACY_URL,
       IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
       DATA_PRIVACY_URL: process.env.DATA_PRIVACY_URL,
       // Nominatim

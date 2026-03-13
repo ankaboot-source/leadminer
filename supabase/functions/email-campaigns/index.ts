@@ -18,8 +18,10 @@ import {
   listUniqueSenderSources,
 } from "./sender-options.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { campaignCheckMiddleware } from "./campaign-check-middleware.ts";
-import { campaignBillMiddleware } from "./campaign-bill-middleware.ts";
+import {
+  complianceMiddleware,
+  createFinalResponseMiddleware,
+} from "./middlewares-mod.ts";
 
 const logger = createLogger("email-campaigns");
 
@@ -31,9 +33,6 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
   "SUPABASE_SERVICE_ROLE_KEY",
 ) as string;
 // skipcq: JS-0356 - Reserved for future API hash verification
-const LEADMINER_API_HASH_SECRET = Deno.env.get(
-  "LEADMINER_API_HASH_SECRET",
-) as string;
 const CAMPAIGN_COMPLIANCE_FOOTER = (
   Deno.env.get("campaign_compliance_footer") ||
   Deno.env.get("CAMPAIGN_COMPLIANCE_FOOTER") ||
@@ -43,6 +42,9 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );
 const SMTP_USER = normalizeEmail(Deno.env.get("SMTP_USER") || "");
+const FALLBACK_SENDER_ENABLED = Boolean(
+  Deno.env.get("FALLBACK_SENDER_ENABLED") !== "false",
+);
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
@@ -212,7 +214,16 @@ function requireFallbackSenderEmail() {
   if (!SMTP_USER) {
     throw new Error("SMTP_USER is not configured");
   }
+  if (!FALLBACK_SENDER_ENABLED) {
+    throw new Error(
+      "Fallback sender is disabled via FALLBACK_SENDER_ENABLED env var",
+    );
+  }
   return SMTP_USER;
+}
+
+function isFallbackSenderEnabled(): boolean {
+  return Boolean(SMTP_USER && FALLBACK_SENDER_ENABLED);
 }
 
 function parseErrorCode(error: unknown): string {
@@ -686,11 +697,12 @@ async function buildUserTransport(
 }
 
 async function resolveSenderOptions(authorization: string, userEmail: string) {
-  const fallbackSenderEmail = requireFallbackSenderEmail();
+  const fallbackSenderEmail = isFallbackSenderEnabled()
+    ? requireFallbackSenderEmail()
+    : "";
   const options: SenderOption[] = [];
-  const transportBySender: Record<string, Transport | null> = {
-    [fallbackSenderEmail]: null,
-  };
+  const transportBySender: Record<string, Transport | null> =
+    fallbackSenderEmail ? { [fallbackSenderEmail]: null } : {};
 
   const sources = listUniqueSenderSources(
     await getUserMiningSources(authorization),
@@ -802,14 +814,16 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     });
   }
 
-  const fallbackOption = options.find(
-    (option) => option.email === fallbackSenderEmail,
-  );
-  if (fallbackOption) {
-    fallbackOption.available = true;
-    delete fallbackOption.reason;
-  } else {
-    options.push({ email: fallbackSenderEmail, available: true });
+  if (fallbackSenderEmail) {
+    const fallbackOption = options.find(
+      (option) => option.email === fallbackSenderEmail,
+    );
+    if (fallbackOption) {
+      fallbackOption.available = true;
+      delete fallbackOption.reason;
+    } else {
+      options.push({ email: fallbackSenderEmail, available: true });
+    }
   }
 
   return {
@@ -1334,7 +1348,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 app.post(
   "/campaigns/create",
   authMiddleware,
-  campaignCheckMiddleware,
+  complianceMiddleware,
   async (c: Context, next: () => Promise<void>) => {
     const user = c.get("user");
     if (!user?.email) {
@@ -1531,6 +1545,8 @@ app.post(
       contact_email: contact.email,
       send_status: "pending" as RecipientStatus,
       contact_temperature: contact.temperature ?? 0,
+      open_short_token: generateShortToken(8),
+      unsubscribe_short_token: generateShortToken(8),
     }));
 
     const { error: recipientsError } = await supabaseAdmin
@@ -1562,7 +1578,7 @@ app.post(
 
     return await next();
   },
-  campaignBillMiddleware,
+  createFinalResponseMiddleware,
 );
 
 app.get("/campaigns/:id/status", authMiddleware, async (c: Context) => {
@@ -1689,6 +1705,15 @@ app.post(
   async (c: Context) => {
     const supabaseAdmin = createSupabaseAdmin();
     let fallbackSenderEmail = "";
+    if (!isFallbackSenderEnabled()) {
+      return c.json(
+        {
+          error: "Fallback sender is disabled",
+          code: "FALLBACK_SENDER_DISABLED",
+        },
+        500,
+      );
+    }
     try {
       fallbackSenderEmail = requireFallbackSenderEmail();
     } catch (error) {
@@ -1909,6 +1934,32 @@ app.post(
           continue;
         }
 
+        let unsubscribeToken = recipient.unsubscribe_short_token;
+        if (!unsubscribeToken) {
+          unsubscribeToken = generateShortToken(8);
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({ unsubscribe_short_token: unsubscribeToken })
+            .eq("id", recipient.id);
+          logger.debug("Generated missing unsubscribe token", {
+            recipientId: recipient.id,
+          });
+        }
+
+        let openToken = recipient.open_short_token;
+        if (!openToken) {
+          openToken = generateShortToken(8);
+          await supabaseAdmin
+            .schema("private")
+            .from("email_campaign_recipients")
+            .update({ open_short_token: openToken })
+            .eq("id", recipient.id);
+          logger.debug("Generated missing open token", {
+            recipientId: recipient.id,
+          });
+        }
+
         const {
           subject: renderedSubject,
           bodyHtml,
@@ -1922,9 +1973,7 @@ app.post(
             campaign.footer_text_template ||
             defaultFooterTemplate(campaign.owner_email),
           ownerEmail: campaign.owner_email,
-          unsubscribeUrl: buildUnsubscribeUrl(
-            recipient.unsubscribe_short_token,
-          ),
+          unsubscribeUrl: buildUnsubscribeUrl(unsubscribeToken),
           senderName: campaign.sender_name,
           plainTextOnly: campaign.plain_text_only,
         });
@@ -1937,7 +1986,7 @@ app.post(
                 supabaseAdmin,
                 campaign.id,
                 recipient.id,
-                recipient.open_short_token,
+                openToken,
                 bodyHtml,
                 campaign.track_click,
                 campaign.track_open,
@@ -2102,7 +2151,6 @@ app.post(
 app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
   const supabaseAdmin = createSupabaseAdmin();
-
   const { data: recipient, error } = await supabaseAdmin
     .schema("private")
     .from("email_campaign_recipients")
@@ -2234,6 +2282,15 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
 
   const subject = "Email sending request";
   let fallbackSenderEmail = "";
+  if (!isFallbackSenderEnabled()) {
+    return c.json(
+      {
+        error: "Fallback sender is disabled",
+        code: "FALLBACK_SENDER_DISABLED",
+      },
+      500,
+    );
+  }
   try {
     fallbackSenderEmail = requireFallbackSenderEmail();
   } catch (error) {

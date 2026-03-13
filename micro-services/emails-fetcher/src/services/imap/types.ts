@@ -32,4 +32,5 @@ export interface ImapEmailsFetcherOptions {
   boxes: string[];
   imapConnectionProvider: ImapConnectionProvider;
   fetchEmailBody: boolean;
+  since?: string;
 }

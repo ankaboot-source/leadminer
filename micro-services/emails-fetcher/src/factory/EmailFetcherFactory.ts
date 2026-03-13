@@ -13,6 +13,7 @@ interface Options {
   fetchEmailBody: boolean;
   maxConcurrentConnections: number;
   filterBodySize: number | undefined;
+  since: string | undefined;
 }
 
 export default class EmailFetcherFactory {
@@ -31,7 +32,8 @@ export default class EmailFetcherFactory {
     fetchEmailBody,
     batchSize,
     maxConcurrentConnections,
-    filterBodySize
+    filterBodySize,
+    since
   }: Options) {
     return new ImapEmailsFetcher(
       imapConnectionProvider,
@@ -44,6 +46,7 @@ export default class EmailFetcherFactory {
       fetchEmailBody,
       batchSize,
       filterBodySize,
+      since,
       maxConcurrentConnections
     );
   }

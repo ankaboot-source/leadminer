@@ -51,7 +51,7 @@ BEGIN
   PERFORM cron.schedule(
     'passive-cron-job',
     '0 2 * * *', -- At 02:00 AM
-    $$ SELECT invoke_edge_function('passive-mining'); $$
+    $cron$ SELECT invoke_edge_function('passive-mining'); $cron$
   );
 END
 $$;

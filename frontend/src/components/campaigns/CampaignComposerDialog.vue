@@ -64,7 +64,18 @@
               class="pi pi-info-circle text-xs text-surface-500"
             />
           </label>
+          <template v-if="hasNoSenderOptions">
+            <Message severity="warn" :closable="false" class="text-sm">
+              {{ t('no_sender_options') }}
+            </Message>
+            <Button
+              outlined
+              :label="t('go_to_sources')"
+              @click="navigateTo('/sources')"
+            />
+          </template>
           <Select
+            v-else
             v-model="form.senderEmail"
             :options="senderOptions"
             option-label="label"
@@ -334,35 +345,31 @@
             :label="t('send_campaign')"
             :loading="isSubmitting"
             :disabled="isActionDisabled"
-            @click="submit(false)"
+            @click="submit()"
           />
         </div>
       </div>
     </template>
   </Dialog>
 
-  <ComplianceDialog ref="complianceDialogRef" @confirm-partial="submit(true)" />
-
-  <component
-    :is="CreditsDialog"
-    ref="CreditsDialogCampaignRef"
-    engagement-type="contact"
-    action-type="campaign"
-    @secondary-action="submit(true)"
+  <GenericComplianceDialog
+    ref="genericComplianceDialogRef"
+    @action="handleComplianceAction"
   />
 </template>
 
 <script setup lang="ts">
 import type { Contact } from '@/types/contact';
-import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
+import {
+  extractUnavailableSenderEmails,
+  getSenderDisplayLabel,
+  getUnavailableSenderReconnectContext,
+} from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import Editor from 'primevue/editor';
-import ComplianceDialog from './ComplianceDialog.vue';
-import {
-  CreditsDialog,
-  CreditsDialogCampaignRef,
-  openCreditsDialog,
-} from '@/utils/credits';
+import GenericComplianceDialog, {
+  type ModalData,
+} from '@/components/GenericComplianceDialog.vue';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
 
@@ -372,11 +379,13 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
-const { $saasEdgeFunctions } = useNuxtApp();
+const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $screenStore = useScreenStore();
 const $leadminer = useLeadminerStore();
+const $imapDialogStore = useImapDialog();
 const $toast = useToast();
 const $user = useSupabaseUser();
+const $profile = useSupabaseUserProfile();
 
 const editorRef = ref<{
   quill?: {
@@ -416,11 +425,20 @@ type SenderOptionItem = {
 };
 
 const senderOptions = ref<SenderOptionItem[]>([]);
-const fallbackSenderEmail = ref('');
-const runtimeConfig = useRuntimeConfig();
-const complianceDialogRef = ref<InstanceType<typeof ComplianceDialog> | null>(
-  null,
+const hasNoSenderOptions = computed(
+  () => senderOptions.value.length === 0 && !isLoadingSenderOptions.value,
 );
+const senderEmailPrefix = computed(() =>
+  getSenderDisplayLabel($user.value?.email, undefined),
+);
+const fallbackSenderEmail = ref('');
+
+const partialOne = ref(false);
+const partialTwo = ref(false);
+
+const genericComplianceDialogRef = ref<InstanceType<
+  typeof GenericComplianceDialog
+> | null>(null);
 
 const DEFAULT_PROJECT_URL = 'https://example.com/project';
 const DEFAULT_PROJECT_IMAGE_SRC =
@@ -453,7 +471,7 @@ const DEFAULT_BODY_TEXT = () => {
 };
 
 const DEFAULT_FOOTER_TEXT = () =>
-  String(runtimeConfig.public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
+  String(useRuntimeConfig().public.CAMPAIGN_COMPLIANCE_FOOTER || '').trim() ||
   t('default_footer_template', {
     ownerEmailToken: '{{ownerEmail}}',
     unsubscribeToken: '{{unsubscribeUrl}}',
@@ -693,6 +711,9 @@ async function onDialogShow() {
   editorReady.value = false;
   imageResizeAvailable.value = await ensureQuillImageResizeModule();
   editorReady.value = true;
+  // Reset partial flags for new campaign
+  partialOne.value = false;
+  partialTwo.value = false;
 }
 
 function onDialogHide() {
@@ -869,6 +890,54 @@ function resolveErrorMessage(error: unknown, fallbackKey: string) {
   return t(fallbackKey);
 }
 
+async function reconnectSenderSource(email: string) {
+  const source = $leadminer.miningSources.find(
+    (item) => item.email.toLowerCase() === email.toLowerCase(),
+  );
+
+  if (!source) {
+    await navigateTo('/sources');
+    return;
+  }
+
+  if (source.type === 'imap') {
+    $imapDialogStore.imapEmail = source.email;
+    $imapDialogStore.showImapDialog = true;
+    return;
+  }
+
+  if (source.type !== 'google' && source.type !== 'azure') {
+    await navigateTo('/sources');
+    return;
+  }
+
+  try {
+    await useSupabaseClient().auth.refreshSession();
+    const { authorizationUri } = await $api<{ authorizationUri: string }>(
+      `/imap/mine/sources/${source.type}`,
+      {
+        method: 'POST',
+        body: {
+          redirect: '/sources',
+        },
+      },
+    );
+
+    if (!authorizationUri) {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
+    await navigateTo(authorizationUri, { external: true });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('reconnect_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  }
+}
+
 function startCampaignCompletionWatcher(campaignId: string) {
   const timer = setInterval(async () => {
     try {
@@ -918,6 +987,20 @@ function startCampaignCompletionWatcher(campaignId: string) {
   }, 60000);
 }
 
+function handleComplianceAction(action: string, data?: ModalData['data']) {
+  if (action === 'continue_partial' && data) {
+    // Check which partial flag to set based on backend response
+    if (data.partial_continue === 'partial_one') {
+      partialOne.value = true;
+    } else if (data.partial_continue === 'partial_two') {
+      partialTwo.value = true;
+    }
+    // User wants to proceed with partial campaign
+    submit();
+  }
+  // Other actions (cancel, upgrade) are handled by the dialog automatically
+}
+
 function normalizeBodyText() {
   if (form.plainTextOnly) {
     return form.bodyTextTemplate;
@@ -949,14 +1032,41 @@ async function loadSenderOptions() {
     );
 
     const unavailableEmails = extractUnavailableSenderEmails(allOptions);
-    if (unavailableEmails.length) {
+    const reconnectContext =
+      getUnavailableSenderReconnectContext(unavailableEmails);
+    if (reconnectContext.mode === 'single') {
       $toast.add({
+        group: 'has-links',
         severity: 'warn',
         summary: t('senders_unavailable_title'),
-        detail: t('senders_unavailable_notification', {
-          emails: unavailableEmails.join(', '),
-        }),
-        life: 6500,
+        detail: {
+          message: t('senders_unavailable_notification', {
+            emails: unavailableEmails.join(', '),
+          }),
+          button: {
+            text: t('reconnect_single_sender', {
+              email: reconnectContext.email,
+            }),
+            action: () => reconnectSenderSource(reconnectContext.email),
+          },
+        },
+        life: 12000,
+      });
+    } else if (reconnectContext.mode === 'multiple') {
+      $toast.add({
+        group: 'has-links',
+        severity: 'warn',
+        summary: t('senders_unavailable_title'),
+        detail: {
+          message: t('senders_unavailable_notification', {
+            emails: unavailableEmails.join(', '),
+          }),
+          button: {
+            text: t('reconnect_senders'),
+            action: () => navigateTo('/sources'),
+          },
+        },
+        life: 12000,
       });
     }
 
@@ -1064,7 +1174,7 @@ async function sendPreview() {
   }
 }
 
-async function submit(partialCampaign = false) {
+async function submit() {
   if (!ensureValidForm()) {
     return;
   }
@@ -1094,43 +1204,20 @@ async function submit(partialCampaign = false) {
         trackClick: form.trackClick,
         plainTextOnly: form.plainTextOnly,
         onlyValidContacts: form.onlyValidContacts,
-        partialCampaign,
+        partial_one: partialOne.value,
+        partial_two: partialTwo.value,
       },
       onResponse: ({ response }) => {
-        if (response.status === 402) {
-          openCreditsDialog(
-            CreditsDialogCampaignRef,
-            true,
-            response._data.total,
-            response._data.available,
-            response._data.availableAlready,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
-        }
+        // Handle modal responses (402 and 266)
+        if ([402, 266, 400].includes(response.status)) {
+          const modalData = response._data as ModalData;
 
-        if (response.status === 266 && response._data?.reason === 'credits') {
-          openCreditsDialog(
-            CreditsDialogCampaignRef,
-            false,
-            response._data.total,
-            response._data.available,
-            response._data.availableAlready,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
-        }
-
-        if (response.status === 266 && response._data?.reason === 'consent') {
-          complianceDialogRef.value?.openModal(
-            response._data.total,
-            response._data.available,
-          );
-          shouldCloseDialog = false;
-          showErrorToast = false;
-          return;
+          if (modalData?.type === 'modal') {
+            genericComplianceDialogRef.value?.openModal(modalData);
+            shouldCloseDialog = false;
+            showErrorToast = false;
+            return;
+          }
         }
 
         if (response.status === 200) {
@@ -1184,14 +1271,32 @@ async function submit(partialCampaign = false) {
 }
 
 watch(
+  () => $profile.value?.full_name,
+  (fullName) => {
+    if (!isVisible.value || !fullName?.trim()) {
+      return;
+    }
+
+    if (
+      !form.senderName ||
+      form.senderName.trim() === senderEmailPrefix.value
+    ) {
+      form.senderName = getSenderDisplayLabel($user.value?.email, fullName);
+    }
+  },
+);
+
+watch(
   isVisible,
   async (visible) => {
     if (!visible) return;
     resetTouched();
 
     if (!form.senderName) {
-      form.senderName =
-        ($user.value?.email || '').split('@')[0] || 'Leadminer user';
+      form.senderName = getSenderDisplayLabel(
+        $user.value?.email,
+        $profile.value?.full_name,
+      );
     }
     if (!form.bodyHtmlTemplate) {
       form.bodyHtmlTemplate = DEFAULT_BODY_HTML();
@@ -1264,7 +1369,12 @@ watch(
     "sender_email": "Sender email",
     "sender_email_help": "The email address used to send this campaign.",
     "senders_unavailable_title": "Some sender addresses are unavailable",
-    "senders_unavailable_notification": "The following addresses are no longer available: {emails}. Please reconnect them in Sources.",
+    "senders_unavailable_notification": "The following addresses are no longer available: {emails}.",
+    "reconnect_single_sender": "Reconnect {email}",
+    "reconnect_senders": "Reconnect",
+    "reconnect_failed": "Unable to reconnect source",
+    "reconnect_unavailable": "Reconnect URL is unavailable",
+    "no_sender_options": "No email source available. Add or reconnect a source to send campaigns.",
     "reply_to": "Reply-to",
     "reply_to_help": "Replies from recipients will be sent to this email address.",
     "subject": "Subject",
@@ -1358,7 +1468,12 @@ watch(
     "sender_email": "Adresse d'expédition",
     "sender_email_help": "Adresse email utilisée pour envoyer cette campagne.",
     "senders_unavailable_title": "Certaines adresses d'expédition sont indisponibles",
-    "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}. Veuillez les reconnecter dans les sources.",
+    "senders_unavailable_notification": "Les adresses suivantes ne sont plus disponibles : {emails}.",
+    "reconnect_single_sender": "Reconnecter {email}",
+    "reconnect_senders": "Reconnecter",
+    "reconnect_failed": "Impossible de reconnecter la source",
+    "reconnect_unavailable": "URL de reconnexion indisponible",
+    "no_sender_options": "Aucune source d'email disponible. Ajoutez ou reconnectez une source pour envoyer des campagnes.",
     "reply_to": "Répondre à",
     "reply_to_help": "Les réponses de vos destinataires seront envoyées à cette adresse.",
     "subject": "Sujet",

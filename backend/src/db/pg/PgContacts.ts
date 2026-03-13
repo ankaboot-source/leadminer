@@ -403,22 +403,42 @@ export default class PgContacts implements Contacts {
       const statusByEmail = new Map<string, string | null>();
       rows.forEach((row) => statusByEmail.set(row.email, row.status));
 
-      await this.pool.query(PgContacts.UPSERT_PERSONS_BULK_SQL, [
-        persons.map(({ person }) => person.name ?? null),
-        persons.map(({ person }) => person.email),
-        persons.map(({ person }) => person.url ?? null),
-        persons.map(({ person }) => person.image ?? null),
-        persons.map(({ person }) => person.location ?? null),
-        persons.map(({ person }) => person.sameAs ?? null),
-        persons.map(({ person }) => person.givenName ?? null),
-        persons.map(({ person }) => person.familyName ?? null),
-        persons.map(({ person }) => person.jobTitle ?? null),
-        persons.map(({ person }) => person.identifiers ?? null),
-        persons.map(() => userId),
-        persons.map(({ person }) => person.source),
-        persons.map(({ person }) => person.worksFor ?? null),
-        persons.map(() => miningId)
-      ]);
+      // await this.pool.query(PgContacts.UPSERT_PERSONS_BULK_SQL, [
+      //   persons.map(({ person }) => person.name ?? null),
+      //   persons.map(({ person }) => person.email),
+      //   persons.map(({ person }) => person.url ?? null),
+      //   persons.map(({ person }) => person.image ?? null),
+      //   persons.map(({ person }) => person.location ?? null),
+      //   persons.flatMap(({ person }) => person.sameAs?.length ? person.sameAs : null),
+      //   persons.map(({ person }) => person.givenName ?? null),
+      //   persons.map(({ person }) => person.familyName ?? null),
+      //   persons.map(({ person }) => person.jobTitle ?? null),
+      //   persons.flatMap(({ person }) => person.identifiers?.length ? person.identifiers : null),
+      //   persons.map(() => userId),
+      //   persons.map(({ person }) => person.source),
+      //   persons.map(({ person }) => person.worksFor ?? null),
+      //   persons.map(() => miningId)
+      // ]);
+
+      for (const { person } of persons) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+          person.name,
+          person.email,
+          person.url,
+          person.image,
+          person.location,
+          person.sameAs,
+          person.givenName,
+          person.familyName,
+          person.jobTitle,
+          person.identifiers,
+          userId,
+          person.source,
+          person.worksFor,
+          miningId
+        ]);
+      }
 
       const tagValues = persons.flatMap(({ person, tags }) => {
         if (statusByEmail.get(person.email) !== undefined) {

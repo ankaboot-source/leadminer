@@ -4,6 +4,46 @@
   >
     <div class="flex items-center justify-between">
       <h1 class="text-xl font-semibold">{{ t('sources') }}</h1>
+      <Button
+        v-if="$leadminer.miningSources.length > 0"
+        icon="pi pi-plus"
+        outlined
+        :label="t('add_source')"
+        @click="showAddSourceDialog = true"
+      />
+    </div>
+
+    <Dialog
+      v-model:visible="showAddSourceDialog"
+      modal
+      :header="t('add_source')"
+      :style="{ width: '30rem' }"
+    >
+      <div class="flex flex-col gap-3">
+        <Button class="w-full justify-start" outlined @click="addGoogleSource">
+          <i class="pi pi-google mr-2" />
+          Google
+        </Button>
+        <Button class="w-full justify-start" outlined @click="addAzureSource">
+          <i class="pi pi-microsoft mr-2" />
+          {{ t('microsoft_or_outlook') }}
+        </Button>
+        <Button
+          class="w-full justify-start"
+          outlined
+          @click="openImapFromAddSource"
+        >
+          <i class="pi pi-inbox mr-2" />
+          {{ t('other_email_provider') }}
+        </Button>
+      </div>
+    </Dialog>
+
+    <div class="hidden">
+      <AddSourceImap
+        v-model:source="imapSourceModel"
+        v-model:show="showAddSourceImapDialog"
+      />
     </div>
 
     <div
@@ -45,8 +85,15 @@
       :rows="10"
     >
       <template #empty>
-        <div class="text-center py-8 text-surface-500">
-          {{ t('no_sources') }}
+        <div
+          class="text-center py-8 text-surface-500 flex flex-col items-center gap-4"
+        >
+          <span>{{ t('no_sources') }}</span>
+          <Button
+            icon="pi pi-plus"
+            :label="t('add_source')"
+            @click="showAddSourceDialog = true"
+          />
         </div>
       </template>
       <template #list="slotProps">
@@ -84,18 +131,19 @@
                   @click="openDeleteDialog(source)"
                 />
 
-                <button
-                  v-if="!source.isValid"
-                  type="button"
-                  class="rounded-sm"
-                  @click="reconnectExpiredSource(source)"
-                >
+                <div v-if="!source.isValid" class="flex gap-2 items-center">
                   <Tag
                     :value="t(getSourceStatusBadge(source).labelKey)"
                     :severity="getSourceStatusBadge(source).severity"
                     :icon="getSourceStatusBadge(source).icon"
                   />
-                </button>
+                  <Button
+                    :label="t('reconnect')"
+                    size="small"
+                    severity="primary"
+                    @click="reconnectExpiredSource(source)"
+                  />
+                </div>
                 <Tag
                   v-else
                   :value="t(getSourceStatusBadge(source).labelKey)"
@@ -215,6 +263,9 @@
 </template>
 
 <script setup lang="ts">
+import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
+import { addOAuthAccount } from '@/utils/oauth';
+import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
@@ -224,10 +275,51 @@ const { t } = useI18n({
 });
 const { $api, $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
+const $route = useRoute();
+const $router = useRouter();
+const $imapDialogStore = useImapDialog();
 
 const deleteDialogVisible = ref(false);
 const deletingSource = ref<MiningSource | null>(null);
 const isDeleting = ref(false);
+const showAddSourceDialog = ref(false);
+const imapSourceModel = ref<MiningSource>();
+const showAddSourceImapDialog = ref(false);
+
+async function addGoogleSource() {
+  showAddSourceDialog.value = false;
+  try {
+    await addOAuthAccount('google', '/sources');
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: t('add_source_failed'),
+      detail: t('add_source_failed_detail'),
+      life: 4500,
+    });
+  }
+}
+
+async function addAzureSource() {
+  showAddSourceDialog.value = false;
+  try {
+    await addOAuthAccount('azure', '/sources');
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: t('add_source_failed'),
+      detail: t('add_source_failed_detail'),
+      life: 4500,
+    });
+  }
+}
+
+function openImapFromAddSource() {
+  showAddSourceDialog.value = false;
+  nextTick(() => {
+    showAddSourceImapDialog.value = true;
+  });
+}
 
 function getIcon(type: string) {
   switch (type) {
@@ -243,7 +335,7 @@ function getIcon(type: string) {
 function isActiveMiningSource(source: MiningSource): boolean {
   return Boolean(
     $leadminer.activeMiningSource?.email === source.email &&
-    $leadminer.miningTask,
+      $leadminer.miningTask,
   );
 }
 
@@ -348,17 +440,21 @@ function getSourceStatusBadge(source: MiningSource) {
 }
 
 async function reconnectExpiredSource(source: MiningSource) {
-  if (source.isValid || (source.type !== 'google' && source.type !== 'azure')) {
-    $toast.add({
-      severity: 'warn',
-      summary: t('reconnect_not_supported'),
-      detail: t('reconnect_not_supported_detail'),
-      life: 4500,
-    });
+  if (source.isValid) {
     return;
   }
 
   try {
+    if (source.type === 'imap') {
+      $imapDialogStore.imapEmail = source.email;
+      $imapDialogStore.showImapDialog = true;
+      return;
+    }
+
+    if (source.type !== 'google' && source.type !== 'azure') {
+      throw new Error(t('reconnect_unavailable'));
+    }
+
     await useSupabaseClient().auth.refreshSession();
     const { authorizationUri } = await $api<{ authorizationUri: string }>(
       `/imap/mine/sources/${source.type}`,
@@ -386,8 +482,52 @@ async function reconnectExpiredSource(source: MiningSource) {
 }
 
 onMounted(async () => {
+  const reconnectEmail = $route.query.reconnect as string;
+
   await $leadminer.fetchMiningSources();
   await $leadminer.getCurrentRunningMining();
+
+  if (reconnectEmail) {
+    const source = $leadminer.miningSources.find(
+      (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),
+    );
+
+    const clearReconnectQuery = () => $router.replace({ query: {} });
+
+    if (source && !source.isValid) {
+      clearReconnectQuery();
+
+      if (source.type === 'imap') {
+        $imapDialogStore.imapEmail = source.email;
+        $imapDialogStore.showImapDialog = true;
+      } else {
+        await reconnectExpiredSource(source);
+      }
+    } else if (!source) {
+      clearReconnectQuery();
+
+      const action = resolveReconnectFallbackAction(reconnectEmail);
+
+      try {
+        if (action === 'google' || action === 'azure') {
+          await addOAuthAccount(action, '/sources');
+          return;
+        }
+      } catch {
+        $toast.add({
+          severity: 'error',
+          summary: t('add_source_failed'),
+          detail: t('add_source_failed_detail'),
+          life: 4500,
+        });
+      }
+
+      $imapDialogStore.imapEmail = reconnectEmail;
+      $imapDialogStore.showImapDialog = true;
+    } else {
+      clearReconnectQuery();
+    }
+  }
 });
 </script>
 
@@ -395,6 +535,11 @@ onMounted(async () => {
 {
   "en": {
     "sources": "Sources",
+    "add_source": "Add source",
+    "microsoft_or_outlook": "Microsoft or Outlook",
+    "other_email_provider": "Other email provider (IMAP)",
+    "add_source_failed": "Unable to add source",
+    "add_source_failed_detail": "An error occurred while adding the source.",
     "no_sources": "No sources yet",
     "email": "Email",
     "provider": "Provider",
@@ -432,6 +577,7 @@ onMounted(async () => {
     "reconnect_unavailable": "Reconnect URL is unavailable",
     "reconnect_not_supported": "Reconnect not supported",
     "reconnect_not_supported_detail": "This source requires manual credential update.",
+    "reconnect": "Reconnect",
     "emails_scanned": "Scanned",
     "emails_extracted": "Extracted",
     "emails_cleaned": "Cleaned",
@@ -444,6 +590,11 @@ onMounted(async () => {
   },
   "fr": {
     "sources": "Sources",
+    "add_source": "Ajouter une source",
+    "microsoft_or_outlook": "Microsoft ou Outlook",
+    "other_email_provider": "Autre compte e-mail (IMAP)",
+    "add_source_failed": "Impossible d'ajouter la source",
+    "add_source_failed_detail": "Une erreur s'est produite lors de l'ajout de la source.",
     "no_sources": "Aucune source",
     "email": "Email",
     "provider": "Fournisseur",
@@ -481,6 +632,7 @@ onMounted(async () => {
     "reconnect_unavailable": "URL de reconnexion indisponible",
     "reconnect_not_supported": "Reconnexion non prise en charge",
     "reconnect_not_supported_detail": "Cette source nécessite une mise à jour manuelle des identifiants.",
+    "reconnect": "Reconnecter",
     "emails_scanned": "Scannés",
     "emails_extracted": "Extracts",
     "emails_cleaned": "Nettoyés",

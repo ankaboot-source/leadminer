@@ -65,6 +65,33 @@ async function getMiningSources() {
   return data;
 }
 
+async function getLatestPassiveMiningDate(
+  email: string,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .schema("private")
+    .from("tasks")
+    .select("started_at")
+    .eq("user_id", userId)
+    .eq("type", "fetch")
+    .eq("status", "done")
+    .contains("details", { passive_mining: true })
+    .order("started_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error("Error fetching latest passive mining date:", error.message);
+    return null;
+  }
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  return data[0].started_at;
+}
+
 async function getBoxes(miningSource: any) {
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
@@ -89,6 +116,11 @@ async function startMiningEmail(miningSource: any) {
   const boxes = await getBoxes(miningSource);
   const folders = getFolders(boxes);
 
+  const since = await getLatestPassiveMiningDate(
+    miningSource.email,
+    miningSource.user_id,
+  );
+
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
     {
@@ -101,6 +133,7 @@ async function startMiningEmail(miningSource: any) {
         miningSource: { email: miningSource.email },
         boxes: folders,
         extractSignatures: false,
+        since,
       }),
     },
   );

@@ -10,6 +10,7 @@ export interface FetchStartPayload {
   extractSignatures: boolean;
   contactStream: string;
   signatureStream: string;
+  since?: string;
 }
 
 export interface FetchStopPayload {

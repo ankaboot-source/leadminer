@@ -1,0 +1,31 @@
+{
+  "modal": {
+    "consent_required": {
+      "title": "Consentement ou Intérêt Légitime",
+      "description": "Seulement {{available}} sur {{total}} {{engagementType}} ont donné leur consentement.",
+      "buttons": {
+        "privacy_policy": "Politique de Confidentialité",
+        "continue_partial": "Continuer avec {{count}} {{engagementType}}",
+        "continue_partial_one": "Continuer avec {{count}} {{engagementType}}",
+        "cancel": "Annuler"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
+      }
+    },
+    "no_consented_contacts": {
+      "title": "Consentement ou Intérêt Légitime",
+      "description": "Aucun de vos contacts sélectionnés n'a donné son consentement pour être contacté. Le {{total}} {{engagementType}} s'est désinscrit.",
+      "description_plural": "Aucun de vos contacts sélectionnés n'a donné son consentement pour être contacté. Les {{total}} {{engagementType_plural}} se sont désinscrits.",
+      "buttons": {
+        "privacy_policy": "Politique de Confidentialité",
+        "cancel": "Annuler"
+      },
+      "engagement_types": {
+        "contact": "contact",
+        "contact_plural": "contacts"
+      }
+    }
+  }
+}

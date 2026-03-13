@@ -1,8 +1,8 @@
 <template>
   <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
     <div>
-      <div class="inline-flex p-3">
-        <i class="pi pi-envelope !text-7xl !text-orange-400"></i>
+      <div class="inline-flex items-center p-3 text-orange-400">
+        <i class="pi pi-user-minus !text-7xl"></i>
       </div>
       <div class="text-4xl font-bold font-serif">
         {{ t('unsubscribe_manage_preferences') }}
@@ -19,13 +19,16 @@
       </p>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 gap-3">
       <Button
+        class="w-full"
         severity="primary"
         :label="t('unsubscribe')"
         @click="goToUnsubscribe"
       />
       <Button
+        v-if="privacyPolicyUrl"
+        class="w-full"
         severity="primary"
         :label="t('learn_more_privacy')"
         @click="goToPrivacyPolicy"
@@ -35,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveDataPrivacyUrl } from '@/utils/privacy-link';
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -45,6 +49,9 @@ const sender = $route.query.sender as string | undefined;
 const config = useRuntimeConfig();
 
 const senderEmail = computed(() => sender || t('sender_fallback'));
+const privacyPolicyUrl = computed(() =>
+  resolveDataPrivacyUrl(config.public.DATA_PRIVACY_URL),
+);
 
 const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/email-campaigns`;
 const targetUrl = `${edgeFunctionUrl}/unsubscribe/${encodeURIComponent(token)}${sender ? `?sender=${encodeURIComponent(sender)}` : ''}`;
@@ -57,7 +64,13 @@ async function goToUnsubscribe() {
 }
 
 async function goToPrivacyPolicy() {
-  window.location.href = config.public.DATA_PRIVACY_URL;
+  if (!privacyPolicyUrl.value) {
+    return;
+  }
+
+  await navigateTo(privacyPolicyUrl.value, {
+    external: true,
+  });
 }
 </script>
 
@@ -71,11 +84,11 @@ async function goToPrivacyPolicy() {
     "sender_fallback": "the sender"
   },
   "fr": {
-    "unsubscribe_manage_preferences": "Gerez vos préférences d'abonnement",
+    "unsubscribe_manage_preferences": "Gérez vos préférences d'abonnement",
     "unsubscribe_warning_message": "Si vous vous désabonnez, {senderEmail} ne pourra plus vous contacter via leadminer.",
     "unsubscribe": "Se désabonner",
     "learn_more_privacy": "En savoir plus sur notre politique de confidentialité",
-    "sender_fallback": "l'expediteur"
+    "sender_fallback": "l'expéditeur"
   }
 }
 </i18n>
