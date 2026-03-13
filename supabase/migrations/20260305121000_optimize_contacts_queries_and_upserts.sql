@@ -7,7 +7,8 @@ CREATE INDEX IF NOT EXISTS persons_user_id_updated_at_idx
 CREATE INDEX IF NOT EXISTS refinedpersons_user_id_email_idx
   ON private.refinedpersons (user_id, email);
 
-CREATE OR REPLACE FUNCTION private.get_contacts_table(user_id uuid)
+DROP FUNCTION IF EXISTS private.get_contacts_table(uuid);
+CREATE FUNCTION private.get_contacts_table(user_id uuid)
 RETURNS TABLE(
   source text,
   email text,
@@ -85,7 +86,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[])
+DROP FUNCTION IF EXISTS private.get_contacts_table_by_emails(uuid, text[]);
+CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[])
 RETURNS TABLE(
   source text,
   email text,
