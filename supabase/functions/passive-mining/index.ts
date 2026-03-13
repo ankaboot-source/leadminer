@@ -76,7 +76,7 @@ async function getLatestPassiveMiningDate(
     .eq("user_id", userId)
     .eq("type", "fetch")
     .eq("status", "done")
-    .filter("details", "cs", JSON.stringify({ passive_mining: true }))
+    .contains("details", { passive_mining: true })
     .order("started_at", { ascending: false })
     .limit(1);
 
