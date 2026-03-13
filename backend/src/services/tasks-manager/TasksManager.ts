@@ -146,7 +146,7 @@ export default class TasksManager {
    * @throws {Error} If there is an error when creating the task.
    */
   async createTask(
-    { email, boxes, fetchEmailBody, userId }: ImapEmailsFetcherOptions,
+    { email, boxes, fetchEmailBody, userId, since }: ImapEmailsFetcherOptions,
     passive_mining = false
   ): Promise<RedactedTask> {
     let miningTaskId: string | null = null;
@@ -287,7 +287,8 @@ export default class TasksManager {
           miningId,
           contactStream: messagesStream,
           signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
-          extractSignatures: fetchEmailBody
+          extractSignatures: fetchEmailBody,
+          since
         });
 
         progress.totalMessages = totalMessages;

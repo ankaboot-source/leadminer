@@ -570,10 +570,51 @@ export default class ImapEmailsFetcher {
 
           if (totalInFolder === 0) return;
 
-          const ranges = buildSequenceRanges(
-            totalInFolder,
-            ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
-          );
+          let ranges: string[];
+
+          if (this.since) {
+            const searchDate = new Date(this.since);
+            searchDate.setHours(0, 0, 0, 0);
+
+            const searchResult = await connection.search(
+              { since: searchDate },
+              { uid: true }
+            );
+
+            if (!searchResult || searchResult.length === 0) {
+              logger.info(
+                `No new emails since ${this.since} in folder ${folder}`
+              );
+              return;
+            }
+
+            const uids = searchResult as number[];
+            const uidList = Array.from(uids);
+            ranges = buildSequenceRanges(
+              uidList.length,
+              ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+            );
+
+            ranges = ranges.map((_range, idx) => {
+              const startIdx = idx * ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION;
+              const endIdx = Math.min(
+                startIdx + ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION - 1,
+                uidList.length - 1
+              );
+              const startUid = uidList[startIdx];
+              const endUid = uidList[endIdx];
+              return `${startUid}:${endUid}`;
+            });
+
+            logger.info(
+              `Found ${uidList.length} emails since ${this.since} in folder ${folder}`
+            );
+          } else {
+            ranges = buildSequenceRanges(
+              totalInFolder,
+              ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+            );
+          }
 
           logger.debug(
             `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
@@ -581,7 +622,8 @@ export default class ImapEmailsFetcher {
           ranges.forEach((range) => {
             emailJobs.push({
               folder,
-              seqRange: range,
+              uidRange: this.since ? range : undefined,
+              seqRange: this.since ? undefined : range,
               totalInFolder
             });
           });

@@ -135,7 +135,8 @@ apiRoutes.post(
       signatureStream,
       extractSignatures,
       email,
-      boxes: folders
+      boxes: folders,
+      since
     }: FetchPostBody = req.body;
 
     const errors = [
@@ -229,7 +230,7 @@ apiRoutes.post(
         maxConcurrentConnections: totalApprovedImapConnections,
         filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
         imapConnectionProvider,
-        since: req.body.since
+        since
       });
 
       const totalMessages = await emailFetcher.getTotalMessages();

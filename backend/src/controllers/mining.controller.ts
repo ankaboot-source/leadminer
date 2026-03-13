@@ -299,13 +299,15 @@ export default function initializeMiningController(
       const {
         extractSignatures,
         miningSource: { email },
-        boxes: folders
+        boxes: folders,
+        since
       }: {
         miningSource: {
           email: string;
         };
         boxes: string[];
         extractSignatures: boolean;
+        since?: string;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -344,7 +346,8 @@ export default function initializeMiningController(
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
-          fetchEmailBody: extractSignatures
+          fetchEmailBody: extractSignatures,
+          since
         });
 
         const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
