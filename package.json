@@ -29,7 +29,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.8.1",
-    "supabase": "^2.19.7"
+    "supabase": "^2.78.1"
   },
   "lint-staged": {
     "**/*.{js,cjs,mjs,ts,tsx,jsx,vue,json,yml,yaml,md,css,scss}": "prettier --write --ignore-unknown"
