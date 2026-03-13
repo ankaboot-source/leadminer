@@ -40,6 +40,7 @@ export interface Contact {
   replied_conversations?: number;
   status: EmailStatus | null;
   consent_status?: ConsentStatus;
+  consent_changed_at?: Date;
   occurrence?: number;
   temperature: number | null;
   personid?: string;

@@ -7,6 +7,9 @@ CREATE INDEX IF NOT EXISTS persons_user_id_updated_at_idx
 CREATE INDEX IF NOT EXISTS refinedpersons_user_id_email_idx
   ON private.refinedpersons (user_id, email);
 
+CREATE INDEX IF NOT EXISTS persons_user_consent_idx
+  ON private.persons (user_id, consent_status);
+
 CREATE OR REPLACE FUNCTION private.get_contacts_table(user_id uuid)
 RETURNS TABLE(
   source text,
@@ -14,6 +17,7 @@ RETURNS TABLE(
   name text,
   status text,
   consent_status private.contact_consent_status,
+  consent_changed_at timestamptz,
   image text,
   location text,
   location_normalized jsonb,
@@ -48,7 +52,8 @@ BEGIN
     p.email,
     p.name,
     p.status,
-    rp.consent_status,
+    p.consent_status,
+    p.consent_changed_at,
     p.image,
     p.location,
     p.location_normalized,
@@ -90,6 +95,7 @@ RETURNS TABLE(
   name text,
   status text,
   consent_status private.contact_consent_status,
+  consent_changed_at timestamptz,
   image text,
   location text,
   location_normalized jsonb,
@@ -127,7 +133,8 @@ BEGIN
     p.email,
     p.name,
     p.status,
-    rp.consent_status,
+    p.consent_status,
+    p.consent_changed_at,
     p.image,
     p.location,
     p.location_normalized,

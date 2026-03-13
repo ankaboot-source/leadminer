@@ -7,6 +7,7 @@ const logger = createLogger("email-campaigns:check");
 interface ContactSnapshot {
   email: string;
   consent_status: "legitimate_interest" | "opt_out" | "opt_in";
+  updated_at: string;
 }
 
 async function getSelectedContacts(
@@ -16,19 +17,30 @@ async function getSelectedContacts(
 ): Promise<ContactSnapshot[]> {
   const { data, error } = await supabaseAdmin
     .schema("private")
-    .from("refinedpersons")
-    .select("email, consent_status")
+    .from("persons")
+    .select("email, consent_status, updated_at")
     .eq("user_id", userId)
-    .in("email", emails);
+    .in("email", emails)
+    .order("updated_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch contacts: ${error.message}`);
   }
 
-  return (data || []).map((row) => ({
-    email: row.email,
-    consent_status: row.consent_status || "legitimate_interest",
-  }));
+  const contactsByEmail = new Map<string, ContactSnapshot>();
+
+  for (const row of data || []) {
+    const key = row.email.toLowerCase();
+    if (contactsByEmail.has(key)) continue;
+
+    contactsByEmail.set(key, {
+      email: row.email,
+      consent_status: row.consent_status || "legitimate_interest",
+      updated_at: row.updated_at,
+    });
+  }
+
+  return [...contactsByEmail.values()];
 }
 
 export async function campaignCheckMiddleware(c: Context, next: Next) {
@@ -142,7 +154,7 @@ export async function campaignCheckMiddleware(c: Context, next: Next) {
           availableAlready: 0,
           reason,
         },
-        266,
+        266 as never,
       );
     }
 

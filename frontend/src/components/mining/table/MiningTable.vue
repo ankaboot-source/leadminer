@@ -628,11 +628,13 @@
         </div>
       </template>
       <template #body="{ data }">
-        <Tag
-          class="font-normal"
-          :value="getConsentLabel(data.consent_status)"
-          :severity="getConsentColor(data.consent_status)"
-        />
+        <div v-tooltip.bottom="getConsentTooltip(data)">
+          <Tag
+            class="font-normal"
+            :value="getConsentLabel(data.consent_status)"
+            :severity="getConsentColor(data.consent_status)"
+          />
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
@@ -1335,6 +1337,18 @@ function getTemperatureStyle(temp: number | null) {
     border: `1px solid ${borderColor}`,
   };
 }
+
+function getConsentTooltip(data: Contact) {
+  if (!data.consent_changed_at) return undefined;
+
+  const date = data.consent_changed_at.toLocaleString();
+
+  if (data.consent_status === 'opt_out') {
+    return t('consent_tooltip_opt_out', { date });
+  }
+
+  return t('consent_tooltip_default', { date });
+}
 </script>
 
 <style>
@@ -1427,6 +1441,8 @@ table.p-datatable-table {
     "consent_legitimate_interest": "Legitimate interest",
     "consent_opt_out": "Opt-out",
     "consent_opt_in": "Opt-in",
+    "consent_tooltip_default": "Updated on {date}",
+    "consent_tooltip_opt_out": "Opted out on {date}",
     "consent_all": "All",
     "recipient_definition": "How many times the contact has received emails",
     "sender_definition": "How many times the contact has sent emails",
@@ -1491,6 +1507,8 @@ table.p-datatable-table {
     "consent_legitimate_interest": "Intérêt légitime",
     "consent_opt_out": "Opposition (opt-out)",
     "consent_opt_in": "Consentement (opt-in)",
+    "consent_tooltip_default": "Mis à jour le {date}",
+    "consent_tooltip_opt_out": "Désinscrit le {date}",
     "consent_all": "Tous",
     "recipient_definition": "Nombre de fois que le contact a reçu des emails",
     "sender_definition": "Nombre de fois que le contact a envoyé des emails",

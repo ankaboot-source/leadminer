@@ -15,11 +15,14 @@ BEGIN
 END;
 $$;
 
-ALTER TABLE private.refinedpersons
+ALTER TABLE private.persons
   ADD COLUMN IF NOT EXISTS consent_status private.contact_consent_status NOT NULL DEFAULT 'legitimate_interest';
 
-CREATE INDEX IF NOT EXISTS refinedpersons_user_consent_idx
-  ON private.refinedpersons (user_id, consent_status);
+ALTER TABLE private.persons
+  ADD COLUMN IF NOT EXISTS consent_changed_at timestamptz;
+
+CREATE INDEX IF NOT EXISTS persons_user_consent_idx
+  ON private.persons (user_id, consent_status);
 
 ALTER TABLE private.email_campaigns
   ADD COLUMN IF NOT EXISTS owner_email TEXT,
@@ -57,7 +60,7 @@ END;
 $$;
 
 DROP FUNCTION private.get_contacts_table;
-CREATE FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, consent_status private.contact_consent_status, image text, location text, location_normalized jsonb, alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
+CREATE FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, consent_status private.contact_consent_status, consent_changed_at timestamptz, image text, location text, location_normalized jsonb, alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -68,7 +71,8 @@ BEGIN
       p.email as email_col,
       p.name as name_col,
       p.status as status_col,
-      rp.consent_status as consent_status_col,
+      p.consent_status as consent_status_col,
+      p.consent_changed_at as consent_changed_at_col,
       p.image as image_col,
       p.location as location_col,
       p.location_normalized as location_normalized_col,
@@ -112,6 +116,7 @@ BEGIN
     name_col AS name,
     status_col AS status,
     consent_status_col AS consent_status,
+    consent_changed_at_col AS consent_changed_at,
     image_col as image,
     location_col as location,
     location_normalized_col as location_normalized,
@@ -143,7 +148,7 @@ END;
 $$;
 
 DROP FUNCTION private.get_contacts_table_by_emails;
-CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, consent_status private.contact_consent_status, image text, location text, location_normalized jsonb, alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
+CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, consent_status private.contact_consent_status, consent_changed_at timestamptz, image text, location text, location_normalized jsonb, alternate_name text[], alternate_email text[], telephone text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamptz, seniority timestamptz, occurrence integer, temperature integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamptz, created_at timestamptz, mining_id text)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -154,7 +159,8 @@ BEGIN
       p.email as email_col,
       p.name as name_col,
       p.status as status_col,
-      rp.consent_status as consent_status_col,
+      p.consent_status as consent_status_col,
+      p.consent_changed_at as consent_changed_at_col,
       p.image as image_col,
       p.location as location_col,
       p.location_normalized as location_normalized_col,
@@ -200,6 +206,7 @@ BEGIN
     name_col AS name,
     status_col AS status,
     consent_status_col AS consent_status,
+    consent_changed_at_col AS consent_changed_at,
     image_col as image,
     location_col as location,
     location_normalized_col as location_normalized,

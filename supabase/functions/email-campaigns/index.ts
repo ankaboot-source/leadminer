@@ -1300,7 +1300,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     ),
     footerTextTemplate,
     ownerEmail,
-    unsubscribeUrl: buildUnsubscribeUrl("preview-unsubscribe"),
+    unsubscribeUrl: `${(FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "")}/unsubscribe/success`,
     senderName,
     plainTextOnly,
   });
@@ -2103,12 +2103,6 @@ app.get("/unsubscribe/:token", async (c: Context) => {
   const token = c.req.param("token");
   const supabaseAdmin = createSupabaseAdmin();
 
-  if (token === "preview-unsubscribe") {
-    return buildRedirectResponse(
-      `${FRONTEND_HOST}/unsubscribe/success?preview=true`,
-    );
-  }
-
   const { data: recipient, error } = await supabaseAdmin
     .schema("private")
     .from("email_campaign_recipients")
@@ -2122,8 +2116,11 @@ app.get("/unsubscribe/:token", async (c: Context) => {
 
   await supabaseAdmin
     .schema("private")
-    .from("refinedpersons")
-    .update({ consent_status: "opt_out" })
+    .from("persons")
+    .update({
+      consent_status: "opt_out",
+      consent_changed_at: new Date().toISOString(),
+    })
     .eq("user_id", recipient.user_id)
     .eq("email", recipient.contact_email);
 
