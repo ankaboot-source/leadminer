@@ -1299,6 +1299,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 
   const randomContact =
     eligibleContacts[Math.floor(Math.random() * eligibleContacts.length)];
+  const previewUnsubscribeToken = generateShortToken(8);
   const {
     subject: renderedSubject,
     bodyHtml,
@@ -1314,7 +1315,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     ),
     footerTextTemplate,
     ownerEmail,
-    unsubscribeUrl: `${(FRONTEND_HOST || PUBLIC_CAMPAIGN_BASE_URL).replace(/\/$/, "")}/unsubscribe/success`,
+    unsubscribeUrl: buildUnsubscribeUrl(previewUnsubscribeToken),
     senderName,
     plainTextOnly,
   });

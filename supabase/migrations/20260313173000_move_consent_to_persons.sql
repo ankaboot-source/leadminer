@@ -2,6 +2,23 @@
 -- This migration handles the case where earlier migrations may have partially applied consent to refinedpersons
 -- and ensures all consent data lives in persons going forward.
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type
+    WHERE typnamespace = 'private'::regnamespace
+      AND typname = 'contact_consent_status'
+  ) THEN
+    CREATE TYPE private.contact_consent_status AS ENUM (
+      'legitimate_interest',
+      'opt_out',
+      'opt_in'
+    );
+  END IF;
+END;
+$$;
+
 -- Ensure persons has consent columns (idempotent - will be NOOP if already exists from earlier migrations)
 ALTER TABLE private.persons
   ADD COLUMN IF NOT EXISTS consent_status private.contact_consent_status NOT NULL DEFAULT 'legitimate_interest';
@@ -10,8 +27,20 @@ ALTER TABLE private.persons
   ADD COLUMN IF NOT EXISTS consent_changed_at timestamptz;
 
 -- Ensure index exists for consent queries (idempotent)
-CREATE INDEX IF NOT EXISTS persons_user_consent_idx
-  ON private.persons (user_id, consent_status);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'private'
+      AND table_name = 'persons'
+      AND column_name = 'consent_status'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS persons_user_consent_idx
+      ON private.persons (user_id, consent_status);
+  END IF;
+END;
+$$;
 
 -- Cleanup: drop consent from refinedpersons if they exist
 DROP INDEX IF EXISTS private.refinedpersons_user_consent_idx;
