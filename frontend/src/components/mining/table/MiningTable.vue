@@ -76,7 +76,7 @@
       </div>
     </template>
     <template #header>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 flex-wrap md:flex-nowrap">
         <div>
           <EnrichButton
             source="datatable"
@@ -131,55 +131,56 @@
           />
         </div>
 
-        <div class="ml-2 leading-none">
+        <div class="mx-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
             <template v-if="!implicitSelectAll && contactsLength">
               {{
-                implicitlySelectedContactsLength.toLocaleString() +
+                formatContactsCountForHeader(implicitlySelectedContactsLength) +
                 ($screenStore.size.md ? ' ' : '') +
                 '/' +
                 ($screenStore.size.md ? ' ' : '') +
-                contactsLength.toLocaleString()
+                formatContactsCountForHeader(contactsLength)
               }}
             </template>
             <template v-else>
-              {{ contactsLength?.toLocaleString() ?? 0 }}
+              {{ formatContactsCountForHeader(contactsLength ?? 0) }}
             </template>
           </template>
           <template v-if="$screenStore.size.md">
             {{ ' ' + t('contacts') }}
           </template>
         </div>
-        <div class="grow" />
-        <div>
-          <Button
-            :disabled="
-              $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
-            "
-            icon="pi pi-filter-slash"
-            :label="$screenStore.size.md ? t('clear') : undefined"
-            outlined
-            @click="$filtersStore.clearFilter()"
-          />
-        </div>
-        <!-- Settings -->
-        <div>
-          <Button @click="toggleSettingsPanel">
-            {{ $screenStore.size.md ? t('filter') : undefined }}
-            <span class="p-button-label">
-              <OverlayBadge
-                v-if="$filtersStore.areToggledFilters > 0"
-                :value="$filtersStore.areToggledFilters"
-                pt:pcbadge:root:class="bg-white text-black outline-none"
-              >
-                <i class="pi pi-sliders-h" />
-              </OverlayBadge>
+        <div class="hidden md:block md:grow" />
+        <div class="ml-auto flex items-center gap-1 shrink-0">
+          <div>
+            <Button
+              :disabled="
+                $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+              "
+              icon="pi pi-filter-slash"
+              :label="$screenStore.size.md ? t('clear') : undefined"
+              outlined
+              @click="$filtersStore.clearFilter()"
+            />
+          </div>
+          <!-- Settings -->
+          <div>
+            <Button @click="toggleSettingsPanel">
+              {{ $screenStore.size.md ? t('filter') : undefined }}
+              <span class="p-button-label">
+                <OverlayBadge
+                  v-if="$filtersStore.areToggledFilters > 0"
+                  :value="$filtersStore.areToggledFilters"
+                  pt:pcbadge:root:class="bg-white text-black outline-none"
+                >
+                  <i class="pi pi-sliders-h" />
+                </OverlayBadge>
 
-              <i v-else class="pi pi-sliders-h" />
-            </span>
-          </Button>
-          <Popover ref="settingsPanel">
+                <i v-else class="pi pi-sliders-h" />
+              </span>
+            </Button>
+            <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
@@ -272,9 +273,10 @@
                 @change="onSelectColumnsChange"
               />
             </ul>
-          </Popover>
+            </Popover>
+          </div>
         </div>
-        <div>
+        <div class="hidden md:block">
           <Button
             :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
             @click="isFullscreen = !isFullscreen"
@@ -1153,6 +1155,21 @@ function openSendContactsDialog() {
 const isFullscreen = ref(false);
 
 const $screenStore = useScreenStore();
+
+function formatContactsCountForHeader(count: number) {
+  if ($screenStore.size.md || count < 10000) {
+    return count.toLocaleString();
+  }
+
+  return new Intl.NumberFormat('en', {
+    notation: 'compact',
+    maximumFractionDigits: 0,
+  })
+    .format(count)
+    .replace(/\s/g, '')
+    .toLowerCase();
+}
+
 const visibleColumnsOptions = [
   { label: t('emails'), value: 'contacts' },
   { label: t('source'), value: 'source' },

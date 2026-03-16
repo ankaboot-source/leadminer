@@ -102,6 +102,21 @@
             />
 
             <Button
+              icon="pi pi-envelope"
+              :label="$t('common.sources')"
+              outlined
+              class="border-l-4 border-0 rounded-sm"
+              :class="{
+                'border-primary bg-primary-50':
+                  $router.currentRoute.value.path === sourcesPath,
+              }"
+              @click="
+                navigateTo(sourcesPath);
+                closeCallback();
+              "
+            />
+
+            <Button
               type="button"
               :label="$t('common.start_mining')"
               @click="

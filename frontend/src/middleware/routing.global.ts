@@ -5,6 +5,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const homePath = '/';
   const minePath = '/mine';
   const contactsPath = '/contacts';
+  const protectedPaths = [
+    '/mine',
+    '/contacts',
+    '/sources',
+    '/campaigns',
+    '/account',
+  ];
 
   if (to.path === homePath) {
     if (!session) {
@@ -49,6 +56,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
         ...to.query,
       },
     });
+  }
+
+  if (!session && protectedPaths.some((path) => to.path.startsWith(path))) {
+    return navigateTo({ name: 'auth-login' });
   }
 
   return true;

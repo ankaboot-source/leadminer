@@ -86,29 +86,52 @@
   </Dialog>
 
   <div>
-    <SplitButton
-      id="export-dropdown"
-      v-tooltip.top="
-        disableExport &&
-        t('select_at_least_one_contact', { action: t('export_csv') })
-      "
-      :label="$screenStore.size.md ? t('export_csv') : undefined"
-      icon="pi pi-file-export"
-      :model="exportItems"
-      :disabled="disableExport"
-      :spinner="true"
-      :button-props="{
-        id: 'export-csv',
-        onClick: () => exportTable(ExportTypes.CSV),
-      }"
-    >
-      <template #icon>
-        <span class="p-button-icon p-button-icon-left">
-          <i v-if="!activeExport" class="pi pi-file-export"></i>
-          <i v-else class="pi pi-spin pi-spinner mr-1.5" />
-        </span>
-      </template>
-    </SplitButton>
+    <template v-if="$screenStore.size.md">
+      <SplitButton
+        id="export-dropdown"
+        v-tooltip.top="
+          disableExport &&
+          t('select_at_least_one_contact', { action: t('export_csv') })
+        "
+        :label="t('export_csv')"
+        icon="pi pi-file-export"
+        :model="exportItems"
+        :disabled="disableExport"
+        :spinner="true"
+        :button-props="{
+          id: 'export-csv',
+          onClick: () => exportTable(ExportTypes.CSV),
+        }"
+      >
+        <template #icon>
+          <span class="p-button-icon p-button-icon-left">
+            <i v-if="!activeExport" class="pi pi-file-export"></i>
+            <i v-else class="pi pi-spin pi-spinner mr-1.5" />
+          </span>
+        </template>
+      </SplitButton>
+    </template>
+
+    <template v-else>
+      <Button
+        id="export-dropdown"
+        v-tooltip.top="
+          disableExport &&
+          t('select_at_least_one_contact', { action: t('export_csv') })
+        "
+        icon="pi pi-file-export"
+        :disabled="disableExport"
+        @click="toggleMobileExportMenu"
+      >
+        <template #icon>
+          <span class="p-button-icon p-button-icon-left">
+            <i v-if="!activeExport" class="pi pi-file-export"></i>
+            <i v-else class="pi pi-spin pi-spinner mr-1.5" />
+          </span>
+        </template>
+      </Button>
+      <Menu ref="mobileExportMenu" :model="mobileExportItems" popup />
+    </template>
   </div>
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
@@ -176,6 +199,7 @@ const updateEmptyFieldsOnly = ref(false);
 const dialogVisible = ref(false);
 const accountSelectionDialogVisible = ref(false);
 const selectedGoogleAccount = ref<string | null>(null);
+const mobileExportMenu = ref();
 const $leadminerStore = useLeadminerStore();
 
 const googleMiningSources = computed(() =>
@@ -397,6 +421,10 @@ async function acceptAndCloseDialog(accepted: boolean) {
   );
 }
 
+function toggleMobileExportMenu(event: Event) {
+  mobileExportMenu.value?.toggle(event);
+}
+
 const $user = useSupabaseUser();
 const isGoogleUser = computed(
   () => $user.value?.email?.includes('@gmail.com') ?? false,
@@ -414,6 +442,15 @@ const exportItems = computed(() => [
     command: async () => await exportToGoogle(ExportTypes.GOOGLE_CONTACTS),
     disabled: !isGoogleUser.value,
   },
+]);
+
+const mobileExportItems = computed(() => [
+  {
+    label: t('export_csv'),
+    icon: 'pi pi-file-export',
+    command: () => exportTable(ExportTypes.CSV),
+  },
+  ...exportItems.value,
 ]);
 </script>
 

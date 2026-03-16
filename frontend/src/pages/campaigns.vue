@@ -39,21 +39,23 @@
             :key="campaign.id"
             class="border border-surface-200 rounded-md p-4"
           >
-            <div class="flex items-center justify-between gap-2">
-              <div>
-                <div class="font-medium">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+            >
+              <div class="min-w-0">
+                <div class="font-medium break-words">
                   {{ campaign.subject }} par {{ campaign.sender_name }} &lt;{{
                     campaign.sender_email
                   }}&gt;
                 </div>
-                <div class="text-sm text-surface-500">
+                <div class="text-sm text-surface-500 break-words">
                   {{ campaign.total_batches }} lot(s) de
                   {{ campaign.sender_daily_limit }}/jour ·
                   {{ campaign.total_recipients }} destinataires ·
                   {{ formatDate(campaign.created_at) }}
                 </div>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <Button
                   v-if="canStopCampaign(campaign)"
                   size="small"
@@ -152,13 +154,13 @@
                 <div
                   v-for="link in campaign.link_clicks"
                   :key="`${campaign.id}:${link.url}`"
-                  class="flex items-center justify-between gap-3"
+                  class="flex items-center justify-between gap-3 min-w-0"
                 >
                   <a
                     :href="link.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="truncate text-primary hover:underline"
+                    class="truncate text-primary hover:underline min-w-0"
                   >
                     {{ link.url }}
                   </a>
