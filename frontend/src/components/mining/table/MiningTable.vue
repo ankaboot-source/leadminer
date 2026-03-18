@@ -948,7 +948,6 @@ import {
 import { getImageViaProxy } from '~/utils/images';
 import Normalizer from '~/utils/normalizer';
 
-const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
 );
@@ -1081,12 +1080,12 @@ function showSocialLinksAndPhones(contact: Contact) {
   return Boolean(contact.same_as?.length || contact.telephone?.length);
 }
 
-function getVisibleTags(tags?: string[] | null) {
-  return (tags ?? []).slice(0, 2);
+function getVisibleTags(tagValues?: string[] | null) {
+  return (tagValues ?? []).slice(0, 2);
 }
 
-function getHiddenTagsCount(tags?: string[] | null) {
-  const values = tags ?? [];
+function getHiddenTagsCount(tagValues?: string[] | null) {
+  const values = tagValues ?? [];
   return Math.max(values.length - 2, 0);
 }
 

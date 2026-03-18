@@ -122,7 +122,7 @@ class SSE {
             return;
           }
 
-          const status = response.status;
+          const { status } = response;
           const fatalStatus = [400, 401, 403, 404, 409, 422].includes(status);
           const message = `[SSE] HTTP ${status} while opening stream`;
 
