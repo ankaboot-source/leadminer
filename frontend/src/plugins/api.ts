@@ -1,9 +1,12 @@
 export default defineNuxtPlugin({
   setup() {
+    const supabase = useSupabaseClient();
+    const config = useRuntimeConfig();
+
     const api = $fetch.create({
-      baseURL: `${useRuntimeConfig().public.SERVER_ENDPOINT}/api`,
+      baseURL: `${config.public.SERVER_ENDPOINT}/api`,
       async onRequest({ options }) {
-        const token = (await useSupabaseClient().auth.getSession()).data.session
+        const token = (await supabase.auth.getSession()).data.session
           ?.access_token;
         if (token) {
           options.headers = { 'x-sb-jwt': token };
@@ -12,14 +15,12 @@ export default defineNuxtPlugin({
     });
 
     const saasEdgeFunctions = $fetch.create({
-      baseURL: `${
-        useRuntimeConfig().public.SAAS_SUPABASE_PROJECT_URL
-      }/functions/v1/`,
+      baseURL: `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/`,
       async onRequest({ options }) {
-        const token = (await useSupabaseClient().auth.getSession()).data.session
+        const token = (await supabase.auth.getSession()).data.session
           ?.access_token;
         options.headers = {
-          Authorization: `Bearer ${token || useRuntimeConfig().public.SAAS_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${token || config.public.SAAS_SUPABASE_ANON_KEY}`,
         };
       },
     });

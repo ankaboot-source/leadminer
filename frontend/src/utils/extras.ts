@@ -4,11 +4,20 @@ export const PrivacyPolicyButton = null;
 export const AcceptNewsLetter = null;
 export const CampaignButton = null;
 
-export function startMiningNotification() {
-  const { t } = useI18n({ useScope: 'global' });
-  const $toast = useToast();
+type ToastLike = {
+  add: (payload: {
+    severity: string;
+    summary: string;
+    detail: string;
+    life: number;
+  }) => void;
+};
 
-  $toast.add({
+export function startMiningNotification(
+  toast: ToastLike,
+  t: (key: string) => string,
+) {
+  toast.add({
     severity: 'info',
     summary: t('mining.contacts_got_rights_title'),
     detail: t('mining.contacts_got_rights_detail'),

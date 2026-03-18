@@ -15,6 +15,7 @@ import { FetchError } from 'ofetch';
 const { t } = useI18n({
   useScope: 'local',
 });
+const $toast = useToast();
 
 const $leadminer = useLeadminerStore();
 const $stepper = useMiningStepper();
@@ -22,19 +23,24 @@ const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );
 
-try {
-  await $leadminer.fetchMiningSources();
-  onMounted(async () => {
+onMounted(async () => {
+  try {
+    await $leadminer.fetchMiningSources();
     const step = await $leadminer.getCurrentRunningMining();
     if (step !== undefined && step > 1) {
       $stepper.go(step);
     }
-  });
-} catch (error) {
-  onMounted(() => {
-    throw error instanceof FetchError && error.response?.status === 401
-      ? error
-      : new Error(t('fetch_sources_failed'));
-  });
-}
+  } catch (error) {
+    if (error instanceof FetchError && error.response?.status === 401) {
+      throw error;
+    }
+
+    $toast.add({
+      severity: 'warn',
+      summary: t('fetch_sources_failed'),
+      detail: t('fetch_sources_failed'),
+      life: 4000,
+    });
+  }
+});
 </script>

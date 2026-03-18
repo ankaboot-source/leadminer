@@ -4,6 +4,30 @@ import {
 } from '@microsoft/fetch-event-source';
 import type { MiningType } from '~/types/mining';
 
+const MAX_RETRIES = 3;
+const FATAL_SSE_MARKERS = [
+  'must set up',
+  'task not found',
+  '404-not-found',
+  'no active task found',
+];
+
+export function isFatalSseErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return FATAL_SSE_MARKERS.some((marker) => normalized.includes(marker));
+}
+
+export function computeRetryDelay(
+  retryAttempt: number,
+  maxRetries = MAX_RETRIES,
+) {
+  if (retryAttempt >= maxRetries) {
+    return null;
+  }
+
+  return retryAttempt * 1000;
+}
+
 class SSE {
   private ctrl?: AbortController;
   private pendingCleanupTimeout: NodeJS.Timeout | null = null;
@@ -52,6 +76,18 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
+    let hasFatalError = false;
+    let retries = 0;
+
+    const stopWithFatalError = () => {
+      if (hasFatalError) {
+        return;
+      }
+
+      hasFatalError = true;
+      onError();
+      this.closeConnection();
+    };
 
     return fetchEventSource(
       `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
@@ -73,6 +109,7 @@ class SSE {
         },
         onopen: async (response) => {
           if (response.status === 200) {
+            retries = 0;
             console.debug(
               '[SSE] Connection established successfully',
               response,
@@ -82,7 +119,19 @@ class SSE {
               response,
             );
             this.clearPendingCleanup();
+            return;
           }
+
+          const status = response.status;
+          const fatalStatus = [400, 401, 403, 404, 409, 422].includes(status);
+          const message = `[SSE] HTTP ${status} while opening stream`;
+
+          if (fatalStatus) {
+            stopWithFatalError();
+            throw new Error(`${message} (fatal)`);
+          }
+
+          throw new Error(`${message} (retryable)`);
         },
         onmessage: (msg: EventSourceMessage) => {
           this.clearPendingCleanup();
@@ -91,8 +140,7 @@ class SSE {
           if (event === 'close') {
             if (id === '404-not-found') {
               console.warn('[SSE] Task not found, closing connection.');
-              this.closeConnection();
-              onError();
+              stopWithFatalError();
             } else {
               console.log('[SSE] Server requested close.');
               onClose();
@@ -116,6 +164,22 @@ class SSE {
           }
         },
         onerror: (err: unknown) => {
+          const message = (err as Error)?.message || '';
+
+          if (isFatalSseErrorMessage(message)) {
+            stopWithFatalError();
+            throw err;
+          }
+
+          retries += 1;
+          const retryDelay = computeRetryDelay(retries);
+
+          if (retryDelay === null) {
+            console.error('[SSE] Retry limit reached, aborting connection.');
+            stopWithFatalError();
+            throw new Error('[SSE] Retry limit reached');
+          }
+
           if (!this.pendingCleanupTimeout) {
             console.warn(
               '[SSE] Connection lost, scheduling cleanup in 10 minutes.',
@@ -131,6 +195,8 @@ class SSE {
               (err as Error).message
             }. Connection will retry automatically.`,
           );
+
+          return retryDelay;
         },
         signal: this.ctrl.signal,
         openWhenHidden: true,

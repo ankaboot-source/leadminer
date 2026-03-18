@@ -44,6 +44,8 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw new Error('User not authenticated');
   }
 
+  const userId = user.value.id || (user.value as { sub?: string } | null)?.sub;
+
   const { data: miningSources, error } = await supabase
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
@@ -55,10 +57,18 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw error;
   }
 
-  const { data: overviewData, error: overviewError } = await supabase
-    // @ts-expect-error: Issue with nuxt/supabase
-    .schema('private')
-    .rpc('get_mining_source_overview', { user_id: user.value.sub });
+  let overviewData: MiningSourceOverview[] | null = null;
+  let overviewError: Error | null = null;
+
+  if (userId) {
+    const overviewResponse = await supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .rpc('get_mining_source_overview', { user_id: userId });
+
+    overviewData = (overviewResponse.data as MiningSourceOverview[]) ?? null;
+    overviewError = overviewResponse.error;
+  }
 
   if (overviewError) {
     console.error(

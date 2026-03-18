@@ -71,6 +71,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   );
 
   const passiveMiningDialog = ref(false);
+  const SENDER_OPTIONS_TIMEOUT_MS = 3000;
 
   const miningStartedAndFinished = computed(() =>
     Boolean(miningStartedAt.value && miningCompleted.value),
@@ -149,35 +150,48 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningSources.value.map((s) => [s.email.toLowerCase(), s.isValid]),
       );
 
-      let unavailableEmails: string[] = [];
-      try {
-        const senderOptionsData = await $saasEdgeFunctions(
-          'email-campaigns/campaigns/sender-options',
-          { method: 'POST' },
-        );
-        const allOptions = (senderOptionsData.options || []).map(
-          (option: { email: string; available: boolean }) => ({
-            email: option.email,
-            available: option.available,
-          }),
-        );
-        unavailableEmails = extractUnavailableSenderEmails(allOptions);
-      } catch (error) {
-        console.warn(
-          'Failed to fetch sender-options, preserving previous validity:',
-          error,
-        );
-        miningSources.value = sources.map((source) => ({
-          ...source,
-          isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
-        }));
-        return;
-      }
+      miningSources.value = sources.map((source) => ({
+        ...source,
+        isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
+      }));
 
-      miningSources.value = updateMiningSourcesValidityFromUnavailable(
-        sources,
-        unavailableEmails,
-      );
+      void (async () => {
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('sender-options timeout')),
+              SENDER_OPTIONS_TIMEOUT_MS,
+            ),
+          );
+
+          const senderOptionsData = (await Promise.race([
+            $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
+              method: 'POST',
+            }),
+            timeoutPromise,
+          ])) as {
+            options?: { email: string; available: boolean }[];
+          };
+
+          const allOptions = (senderOptionsData.options || []).map(
+            (option) => ({
+              email: option.email,
+              available: option.available,
+            }),
+          );
+          const unavailableEmails = extractUnavailableSenderEmails(allOptions);
+
+          miningSources.value = updateMiningSourcesValidityFromUnavailable(
+            sources,
+            unavailableEmails,
+          );
+        } catch (error) {
+          console.warn(
+            'Failed to fetch sender-options, preserving previous validity:',
+            error,
+          );
+        }
+      })();
     } finally {
       isLoadingMiningSources.value = false;
     }
@@ -452,7 +466,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
-      startMiningNotification();
+      startMiningNotification($toast, t);
     } catch (err) {
       sse.closeConnection();
       throw err;
