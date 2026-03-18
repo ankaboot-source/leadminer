@@ -10,7 +10,7 @@
   <h1 align="center">Leadminer</h1>
   <div align="center">
     <p>
-    Extract, clean and enrich email addresses from your own mailbox.
+    Take back control of your contacts: extract, clean, enrich and send email & SMS campaigns.
     </p>
 
   </div>
