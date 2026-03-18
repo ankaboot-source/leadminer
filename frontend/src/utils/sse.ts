@@ -92,7 +92,7 @@ class SSE {
     return fetchEventSource(
       `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
-        fetch: async (input, init) => {
+        fetch: (input, init) => {
           const token = useSupabaseSession().value?.access_token;
 
           if (!token) {
@@ -107,7 +107,7 @@ class SSE {
             },
           });
         },
-        onopen: async (response) => {
+        onopen: (response) => {
           if (response.status === 200) {
             retries = 0;
             console.debug(
