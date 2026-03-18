@@ -96,7 +96,8 @@ function checkCompliance(
           count: total,
           total,
           engagementType: t(
-            "modal.no_consented_contacts.engagement_types.contact_plural",
+            "modal.no_consented_contacts.engagement_types.contact",
+            { count: total },
           ),
         }),
         data: { total, available: 0, availableAlready: 0, reason: "consent" },
@@ -121,9 +122,9 @@ function checkCompliance(
         description: t("modal.consent_required.description", {
           available: consentedContacts.length,
           total,
-          engagementType: t(
-            "modal.consent_required.engagement_types.contact_plural",
-          ),
+          engagementType: t("modal.consent_required.engagement_types.contact", {
+            count: total,
+          }),
         }),
         data: {
           total: selectedEmails.length,
