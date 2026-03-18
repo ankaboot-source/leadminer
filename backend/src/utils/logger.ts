@@ -47,7 +47,7 @@ function initLogger() {
         new LokiTransport({
           host: ENV.GRAFANA_LOKI_HOST,
           labels: { app: ENV.APP_NAME },
-          json: false,
+          json: true,
           replaceTimestamp: true,
           format: format.combine(commonFormat, format.json()),
           gracefulShutdown: true,

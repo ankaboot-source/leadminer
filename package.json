@@ -33,5 +33,8 @@
   },
   "lint-staged": {
     "**/*.{js,cjs,mjs,ts,tsx,jsx,vue,json,yml,yaml,md,css,scss}": "prettier --write --ignore-unknown"
+  },
+  "dependencies": {
+    "winston-loki": "6.1.3"
   }
 }
