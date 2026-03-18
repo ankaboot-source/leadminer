@@ -5,26 +5,26 @@
       "description": "Only {{available}} of {{total}} {{engagementType}} have given consent to be contacted.",
       "buttons": {
         "privacy_policy": "Learn more about our data privacy policy",
-        "continue_partial": "Continue with {{count}} {{engagementType}}",
         "continue_partial_one": "Continue with {{count}} {{engagementType}}",
+        "continue_partial_other": "Continue with {{count}} {{engagementType}}",
         "cancel": "Cancel"
       },
       "engagement_types": {
-        "contact": "contact",
-        "contact_plural": "contacts"
+        "contact_one": "contact",
+        "contact_other": "contacts"
       }
     },
     "no_consented_contacts": {
       "title": "Consent or Legitimate Interest",
       "description": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType}} has opted out.",
-      "description_plural": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_plural}} have opted out.",
+      "description_other": "None of your selected contacts have given consent to be contacted. All {{total}} {{engagementType_other}} have opted out.",
       "buttons": {
         "privacy_policy": "Learn more about our data privacy policy",
         "cancel": "Cancel"
       },
       "engagement_types": {
-        "contact": "contact",
-        "contact_plural": "contacts"
+        "contact_one": "contact",
+        "contact_other": "contacts"
       }
     }
   }
