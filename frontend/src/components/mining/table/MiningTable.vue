@@ -24,7 +24,7 @@
     striped-rows
     :select-all="selectAll"
     :value="sourceRows"
-    data-key="id"
+    data-key="email"
     paginator
     filter-display="menu"
     :global-filter-fields="globalFilterFields"
