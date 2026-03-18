@@ -1215,7 +1215,7 @@ const isFullscreen = ref(false);
 const $screenStore = useScreenStore();
 
 function formatContactsCountForHeader(count: number) {
-  if (count < 1000) {
+  if ($screenStore.size.md || count < 1000) {
     return count.toLocaleString();
   }
 
