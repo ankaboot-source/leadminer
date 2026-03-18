@@ -3,7 +3,7 @@
     v-model:visible="isVisible"
     modal
     :header="modalData?.title"
-    :style="{ width: '35rem' }"
+    :style="{ maxWidth: '40rem' }"
   >
     <p class="m-0">
       {{ modalData?.description }}
@@ -17,11 +17,12 @@
           :label="button.title"
           :severity="button.severity"
           :variant="button.variant"
-          :class="
+          :class="[
             button.icon
               ? 'flex space-x-1 items-center justify-center lg:rounded-l-none'
-              : ''
-          "
+              : '',
+            button.variant === 'link' ? '-ml-2' : '',
+          ]"
           @click="handleButtonClick(button)"
         >
           <template v-if="button.icon" #icon>
