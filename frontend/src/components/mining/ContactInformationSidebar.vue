@@ -255,7 +255,6 @@
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
-import EnrichButton from './enrich/EnrichButton.vue';
 
 import {
   getConsentColor,
@@ -276,6 +275,9 @@ import Normalizer from '~/utils/normalizer';
 
 const ExportContacts = defineAsyncComponent(
   () => import('./buttons/ExportContacts.vue'),
+);
+const EnrichButton = defineAsyncComponent(
+  () => import('./enrich/EnrichButton.vue'),
 );
 
 const { t } = useI18n({

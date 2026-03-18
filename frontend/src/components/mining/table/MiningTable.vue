@@ -1066,15 +1066,15 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
+const applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
+  filteredContacts.value = rows;
+}, 100);
+
 function onFilter($event: DataTableFilterEvent) {
   applyFilteredContacts(
     ($event.filteredValue as Contact[] | undefined) ?? sourceRows.value,
   );
 }
-
-const applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
-  filteredContacts.value = rows;
-}, 100);
 
 function showSocialLinksAndPhones(contact: Contact) {
   return Boolean(contact.same_as?.length || contact.telephone?.length);

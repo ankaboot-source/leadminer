@@ -155,45 +155,45 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
       }));
 
-      void (async () => {
-        try {
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error('sender-options timeout')),
-              SENDER_OPTIONS_TIMEOUT_MS,
-            ),
-          );
-
-          const senderOptionsData = (await Promise.race([
-            $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
-              method: 'POST',
-            }),
-            timeoutPromise,
-          ])) as {
-            options?: { email: string; available: boolean }[];
-          };
-
-          const allOptions = (senderOptionsData.options || []).map(
-            (option) => ({
-              email: option.email,
-              available: option.available,
-            }),
-          );
-          const unavailableEmails = extractUnavailableSenderEmails(allOptions);
-
-          miningSources.value = updateMiningSourcesValidityFromUnavailable(
-            sources,
-            unavailableEmails,
-          );
-        } catch (error) {
-          console.warn(
-            'Failed to fetch sender-options, preserving previous validity:',
-            error,
-          );
-        }
-      })();
+      fetchSenderOptionsInBackground(sources);
     } finally {
       isLoadingMiningSources.value = false;
+    }
+  }
+
+  async function fetchSenderOptionsInBackground(sources: MiningSource[]) {
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('sender-options timeout')),
+          SENDER_OPTIONS_TIMEOUT_MS,
+        ),
+      );
+
+      const senderOptionsData = (await Promise.race([
+        $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
+          method: 'POST',
+        }),
+        timeoutPromise,
+      ])) as {
+        options?: { email: string; available: boolean }[];
+      };
+
+      const allOptions = (senderOptionsData.options || []).map((option) => ({
+        email: option.email,
+        available: option.available,
+      }));
+      const unavailableEmails = extractUnavailableSenderEmails(allOptions);
+
+      miningSources.value = updateMiningSourcesValidityFromUnavailable(
+        sources,
+        unavailableEmails,
+      );
+    } catch (error) {
+      console.warn(
+        'Failed to fetch sender-options, preserving previous validity:',
+        error,
+      );
     }
   }
 
