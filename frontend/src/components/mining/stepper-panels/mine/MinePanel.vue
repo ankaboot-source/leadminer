@@ -159,15 +159,43 @@ async function handleAuthErrorAndRetry(
         '/mine',
       );
     } else {
+      const detail = getMiningErrorDetail(error, sourceTypeVal);
       console.error('Mining error:', error);
       $toast.add({
         severity: 'error',
         summary: $t('common.start_mining'),
-        detail: t('mining_issue'),
+        detail,
         life: 3000,
       });
     }
   }
+}
+
+function getMiningErrorDetail(error: unknown, sourceTypeVal?: string) {
+  if (!error || typeof error !== 'object') {
+    return t('mining_issue');
+  }
+
+  const fetchError = error as FetchError<{
+    message?: string;
+    error?: string;
+  }>;
+
+  const backendMessage =
+    fetchError.data?.message ||
+    fetchError.data?.error ||
+    fetchError.statusMessage ||
+    fetchError.message;
+
+  if (
+    sourceTypeVal === 'pst' &&
+    fetchError.response?.status === 422 &&
+    (backendMessage || '').toLowerCase().includes('failed to parse pst file')
+  ) {
+    return t('pst_file_corrupted');
+  }
+
+  return backendMessage || t('mining_issue');
 }
 
 function closeAutoExtractDialog() {
@@ -448,6 +476,7 @@ async function haltMining() {
     "mining_started": "Mining Started",
     "mining_success": "Your mining is successfully started.",
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
+    "pst_file_corrupted": "The PST/OST file seems corrupted or unreadable.",
     "mining_stopped": "Mining Stopped",
     "mining_canceled": "Your mining is successfully canceled.",
     "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled.",
@@ -473,6 +502,7 @@ async function haltMining() {
     "mining_started": "Extraction commencée",
     "mining_success": "Votre extraction a été lancée avec succès.",
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
+    "pst_file_corrupted": "Le fichier PST/OST semble corrompu ou illisible.",
     "mining_stopped": "Extraction arrêtée",
     "mining_canceled": "Votre extraction a été annulée avec succès.",
     "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée.",
