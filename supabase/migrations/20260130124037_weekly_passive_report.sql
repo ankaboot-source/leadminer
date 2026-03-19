@@ -1,18 +1,13 @@
 -- This cron job calls a Supabase Edge Function via authenticated HTTP.
--- It WILL FAIL if the required Vault secrets are missing.
 --
 -- Required Vault secrets:
 --
 -- 1. project_url
---    Supabase project base URL (e.g. https://project-ref.supabase.co)
---    select vault.create_secret('https://project-ref.supabase.co', 'project_url');
---
 -- 2. service_role_key
---    Supabase SERVICE ROLE key (NOT anon / publishable)
---    select vault.create_secret('YOUR_SUPABASE_SERVICE_ROLE_KEY', 'service_role_key');
--- 3.
--- for local development, you can use:
-select vault.create_secret('http://127.0.0.1:54321', 'project_url');
+
+select vault.create_secret('http://kong:8000', 'project_url');
+
+-- Replace this for Production accordingly:
 select vault.create_secret('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81I','service_role_key');
 --
 
