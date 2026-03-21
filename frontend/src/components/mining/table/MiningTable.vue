@@ -4,6 +4,11 @@
     v-model:visible="sendCampaignDialogVisible"
     :selected-contacts="implicitlySelectedContacts"
   />
+  <SmsCampaignComposerDialog
+    v-model:visible="sendSmsCampaignDialogVisible"
+    :selected-contacts="implicitlySelectedContacts"
+    @campaign-created="onSmsCampaignCreated"
+  />
   <DataTable
     v-show="showTable"
     ref="TableRef"
@@ -85,27 +90,33 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <div>
-          <!-- TODO: There is two campaign buttons,  -->
-          <Button
-            v-tooltip.top="
-              isSendByEmailDisabled &&
-              t('select_at_least_one_contact', {
-                action: t('send_email_campaign').toLowerCase(),
-              })
-            "
+        <div
+          v-tooltip.top="
+            isSendByEmailDisabled &&
+            isSendBySmsDisabled &&
+            t('select_at_least_one_contact', {
+              action: t('send_campaign').toLowerCase(),
+            })
+          "
+          class="flex gap-2"
+        >
+          <SplitButton
             severity="contrast"
-            :label="t('send_email_campaign')"
+            :label="t('send_campaign')"
+            :model="sendCampaignMenuItems"
+            :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
+            :button-props="{
+              disabled: isSendByEmailDisabled,
+              onClick: () => openSendContactsDialog(),
+            }"
             pt:label:class="hidden md:block"
-            :disabled="isSendByEmailDisabled"
-            @click="openSendContactsDialog"
           >
             <template #icon>
               <span class="p-button-icon p-button-icon-left">
                 <i class="pi pi-send" />
               </span>
             </template>
-          </Button>
+          </SplitButton>
         </div>
 
         <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
@@ -966,6 +977,9 @@ const ContactInformationSidebar = defineAsyncComponent(
 const CampaignComposerDialog = defineAsyncComponent(
   () => import('~/components/campaigns/CampaignComposerDialog.vue'),
 );
+const SmsCampaignComposerDialog = defineAsyncComponent(
+  () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
+);
 
 const { showTable, origin } = defineProps<{
   showTable: boolean;
@@ -1203,11 +1217,42 @@ const isExportDisabled = computed(
 );
 
 const sendCampaignDialogVisible = ref(false);
+const sendSmsCampaignDialogVisible = ref(false);
+
+const sendCampaignMenuItems = computed(() => [
+  {
+    label: t('send_email_campaign'),
+    icon: 'pi pi-envelope',
+    command: () => openSendContactsDialog(),
+    disabled: isSendByEmailDisabled.value,
+  },
+  {
+    label: t('send_sms_campaign'),
+    icon: 'pi pi-comments',
+    command: () => openSendSmsContactsDialog(),
+    disabled: isSendBySmsDisabled.value,
+  },
+]);
 
 const isSendByEmailDisabled = computed(() => isExportDisabled.value);
 
+const isSendBySmsDisabled = computed(() => {
+  const hasPhones = implicitlySelectedContacts.value.some(
+    (c) => c.telephone && c.telephone.length > 0,
+  );
+  return !hasPhones || isExportDisabled.value;
+});
+
 function openSendContactsDialog() {
   sendCampaignDialogVisible.value = true;
+}
+
+function openSendSmsContactsDialog() {
+  sendSmsCampaignDialogVisible.value = true;
+}
+
+function onSmsCampaignCreated(campaignId: string) {
+  void campaignId;
 }
 
 const isFullscreen = ref(false);
@@ -1533,6 +1578,7 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "send_email_campaign": "Send email campaign",
+    "send_sms_campaign": "Send SMS campaign",
     "any": "Any",
     "contact_information": "Contact Information"
   },
@@ -1599,6 +1645,7 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "send_email_campaign": "Envoyer une campagne email",
+    "send_sms_campaign": "Envoyer une campagne SMS",
     "any": "N'importe lequel",
     "contact_information": "Information de contact"
   }
