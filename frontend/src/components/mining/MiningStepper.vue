@@ -50,6 +50,7 @@
 
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
+import { resolvePostOauthSourceSelection } from '@/utils/mining-oauth-redirect';
 import MiningConsentSidebar from './MiningConsentSidebar.vue';
 import CleanPanel from './stepper-panels/clean/CleanPanel.vue';
 import MinePanel from './stepper-panels/mine/MinePanel.vue';
@@ -70,27 +71,87 @@ const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
 const importPstDialogRef = ref();
 
-const { error, provider, source } = $route.query;
+const provider = computed(() => {
+  const providerValue = $route.query.provider;
+  return typeof providerValue === 'string' ? providerValue : undefined;
+});
 
-const selectedSource = source
-  ? $leadminerStore.getMiningSourceByEmail(source as string)
-  : null;
+const error = computed(() => {
+  const errorValue = $route.query.error;
+  return typeof errorValue === 'string' ? errorValue : undefined;
+});
 
-if (selectedSource) {
-  $leadminerStore.boxes = [];
-  $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = selectedSource;
-  $stepper.go(2);
-} else {
-  $stepper.go(1);
+const source = computed(() => {
+  const sourceValue = $route.query.source;
+  return typeof sourceValue === 'string' ? sourceValue : undefined;
+});
+
+const handledSourceQuery = ref<string | null>(null);
+
+function clearOauthQueryParams() {
+  const {
+    provider: _provider,
+    error: _error,
+    source: _source,
+    ...query
+  } = $route.query;
+
+  $router.replace({ query: Object.keys(query).length ? query : undefined });
 }
 
+watch(
+  [
+    source,
+    () => $leadminerStore.miningSources,
+    () => $leadminerStore.isLoadingMiningSources,
+  ],
+  ([sourceEmail, miningSources, isLoadingMiningSources]) => {
+    if (!sourceEmail) {
+      if (!handledSourceQuery.value) {
+        $stepper.go(1);
+      }
+      return;
+    }
+
+    if (handledSourceQuery.value === sourceEmail) {
+      return;
+    }
+
+    const resolution = resolvePostOauthSourceSelection({
+      querySource: sourceEmail,
+      miningSources,
+      isLoadingMiningSources,
+    });
+
+    if (resolution.status === 'wait') {
+      return;
+    }
+
+    if (resolution.status === 'select') {
+      $leadminerStore.boxes = [];
+      $leadminerStore.selectedBoxes = [];
+      $leadminerStore.activeMiningSource = resolution.source;
+      $stepper.go(2);
+    } else {
+      $stepper.go(1);
+    }
+
+    handledSourceQuery.value = sourceEmail;
+    clearOauthQueryParams();
+  },
+  { immediate: true },
+);
+
 onNuxtReady(() => {
-  if (provider && error === 'oauth-consent') {
-    $consentSidebar.show(provider as MiningSourceType, undefined, '/mine');
-    if (provider === 'azure') importPstDialogRef.value.openModal();
+  if (provider.value && error.value === 'oauth-consent') {
+    $consentSidebar.show(
+      provider.value as MiningSourceType,
+      undefined,
+      '/mine',
+    );
+    if (provider.value === 'azure') importPstDialogRef.value.openModal();
+    clearOauthQueryParams();
   }
-  $router.replace({ query: undefined });
 });
 </script>
 
