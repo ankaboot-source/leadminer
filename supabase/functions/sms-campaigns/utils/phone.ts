@@ -9,7 +9,7 @@ export function normalizePhoneNumber(phone: string): string | null {
     normalized = `+${normalized.slice(2)}`;
   }
 
-  const cleaned = normalized.replace(/[\s\-\(\)\.]/g, "");
+  const cleaned = normalized.replace(/[\s\-().]/g, "");
   const e164Match = cleaned.match(/^\+?(\d{10,15})$/);
   if (!e164Match) return null;
 

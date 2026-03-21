@@ -116,6 +116,7 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
 
   c.set("user", data.user);
   await next();
+  return;
 }
 
 app.use("*", async (c, next) => {
@@ -863,7 +864,6 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     messageTemplate,
     footerTextTemplate,
     useShortLinks,
-    selectedPhones,
     provider,
     smsgateConfig,
     simpleSmsGatewayConfig,

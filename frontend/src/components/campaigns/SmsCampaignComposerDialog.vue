@@ -319,6 +319,18 @@ const providerStatus = ref({
   twilioAvailable: false,
 });
 
+const form = reactive({
+  smsgateBaseUrl: 'https://api.sms-gate.app/3rdparty/v1/messages',
+  smsgateUsername: '',
+  smsgatePassword: '',
+  simpleSmsGatewayBaseUrl: 'http://192.168.1.100:8080/send-sms',
+  provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
+  messageTemplate: '',
+  footerTextTemplate: t('default_footer_template'),
+  useShortLinks: true,
+  monthlyRecipientLimit: 200,
+});
+
 async function fetchProviderStatus() {
   try {
     const data = await $saasEdgeFunctions('sms-campaigns/providers/status', {
@@ -348,27 +360,11 @@ async function fetchProviderStatus() {
   }
 }
 
-const form = reactive({
-  smsgateBaseUrl: 'https://api.sms-gate.app/3rdparty/v1/messages',
-  smsgateUsername: '',
-  smsgatePassword: '',
-  simpleSmsGatewayBaseUrl: 'http://192.168.1.100:8080/send-sms',
-  provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
-  messageTemplate: '',
-  footerTextTemplate: t('default_footer_template'),
-  useShortLinks: true,
-  monthlyRecipientLimit: 200,
-});
-
 type FormField = 'messageTemplate';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
 });
-
-const showFieldError = (field: FormField) => {
-  return touched[field] && validationErrors.value[field];
-};
 
 const charCount = ref(0);
 const encoding = ref('GSM-7');
@@ -378,7 +374,7 @@ const UNSUBSCRIBE_FOOTER_LENGTH = '\n\nUnsubscribe me: https://example.com'
   .length;
 
 const hasUnicodeChars = (text: string) =>
-  Array.from(text).some((char) => char.codePointAt(0)! > 127);
+  Array.from(text).some((char) => (char.codePointAt(0) ?? 0) > 127);
 
 const updateCharCount = () => {
   const text = form.messageTemplate || '';
@@ -441,6 +437,10 @@ const validationErrors = computed<Record<FormField, string>>(() => {
       : t('message_required'),
   };
 });
+
+const showFieldError = (field: FormField) => {
+  return touched[field] && validationErrors.value[field];
+};
 
 const isFormValid = computed(() =>
   Object.values(validationErrors.value).every((value) => !value),
@@ -642,7 +642,7 @@ const submitCampaign = async () => {
   }
 };
 
-const resetForm = () => {
+function resetForm() {
   form.smsgateBaseUrl = 'https://api.sms-gate.app/3rdparty/v1/messages';
   form.smsgateUsername = '';
   form.smsgatePassword = '';
@@ -656,7 +656,7 @@ const resetForm = () => {
   Object.keys(touched).forEach((key) => {
     touched[key as FormField] = false;
   });
-};
+}
 
 const onDialogShow = () => {
   updateCharCount();

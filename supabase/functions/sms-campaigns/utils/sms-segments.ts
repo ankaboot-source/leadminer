@@ -7,7 +7,7 @@ export function estimateSmsSegments(
   const base = message || "";
   const totalLength =
     base.length + (includeFooter ? FOOTER_TEMPLATE.length : 0);
-  const isUnicode = /[^\u0000-\u007F]/.test(base);
+  const isUnicode = /[^\u{0}-\u{7F}]/u.test(base);
   const encoding = isUnicode ? "Unicode" : "GSM-7";
   const maxPerSms = isUnicode ? 70 : 160;
   const parts = Math.max(1, Math.ceil(totalLength / maxPerSms));

@@ -1219,6 +1219,15 @@ const isExportDisabled = computed(
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
 
+const isSendByEmailDisabled = computed(() => isExportDisabled.value);
+
+const isSendBySmsDisabled = computed(() => {
+  const hasPhones = implicitlySelectedContacts.value.some(
+    (c) => c.telephone && c.telephone.length > 0,
+  );
+  return !hasPhones || isExportDisabled.value;
+});
+
 const sendCampaignMenuItems = computed(() => [
   {
     label: t('send_email_campaign'),
@@ -1234,15 +1243,6 @@ const sendCampaignMenuItems = computed(() => [
   },
 ]);
 
-const isSendByEmailDisabled = computed(() => isExportDisabled.value);
-
-const isSendBySmsDisabled = computed(() => {
-  const hasPhones = implicitlySelectedContacts.value.some(
-    (c) => c.telephone && c.telephone.length > 0,
-  );
-  return !hasPhones || isExportDisabled.value;
-});
-
 function openSendContactsDialog() {
   sendCampaignDialogVisible.value = true;
 }
@@ -1251,9 +1251,7 @@ function openSendSmsContactsDialog() {
   sendSmsCampaignDialogVisible.value = true;
 }
 
-function onSmsCampaignCreated(campaignId: string) {
-  void campaignId;
-}
+function onSmsCampaignCreated(_campaignId: string) {}
 
 const isFullscreen = ref(false);
 
