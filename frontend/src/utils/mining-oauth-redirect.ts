@@ -7,6 +7,7 @@ type PostOauthSourceSelectionInput = {
 };
 
 type PostOauthSourceSelectionResult =
+  | { status: 'idle' }
   | { status: 'wait' }
   | { status: 'fallback' }
   | { status: 'select'; source: MiningSource };
@@ -32,7 +33,7 @@ export function resolvePostOauthSourceSelection({
   isLoadingMiningSources,
 }: PostOauthSourceSelectionInput): PostOauthSourceSelectionResult {
   if (!querySource) {
-    return { status: 'fallback' };
+    return { status: 'idle' };
   }
 
   const selectedSource = findMiningSourceByEmail(miningSources, querySource);

@@ -107,9 +107,6 @@ watch(
   ],
   ([sourceEmail, miningSources, isLoadingMiningSources]) => {
     if (!sourceEmail) {
-      if (!handledSourceQuery.value) {
-        $stepper.go(1);
-      }
       return;
     }
 
