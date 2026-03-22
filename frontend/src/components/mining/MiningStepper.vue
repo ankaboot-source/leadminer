@@ -50,7 +50,10 @@
 
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
-import { resolvePostOauthSourceSelection } from '@/utils/mining-oauth-redirect';
+import {
+  resolvePostOauthSourceSelection,
+  shouldInitializeStepperToSourceStep,
+} from '@/utils/mining-oauth-redirect';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -99,6 +102,16 @@ watch(
     () => $leadminerStore.isLoadingMiningSources,
   ],
   ([sourceEmail, miningSources, isLoadingMiningSources]) => {
+    if (
+      shouldInitializeStepperToSourceStep({
+        querySource: sourceEmail,
+        currentStep: $stepper.index,
+      })
+    ) {
+      $stepper.go(1);
+      return;
+    }
+
     if (!sourceEmail) {
       return;
     }
