@@ -12,6 +12,11 @@ type PostOauthSourceSelectionResult =
   | { status: 'fallback' }
   | { status: 'select'; source: MiningSource };
 
+type StepperInitializationInput = {
+  querySource?: string;
+  currentStep: number;
+};
+
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
@@ -50,4 +55,11 @@ export function resolvePostOauthSourceSelection({
   }
 
   return { status: 'fallback' };
+}
+
+export function shouldInitializeStepperToSourceStep({
+  querySource,
+  currentStep,
+}: StepperInitializationInput) {
+  return !querySource && currentStep === -1;
 }

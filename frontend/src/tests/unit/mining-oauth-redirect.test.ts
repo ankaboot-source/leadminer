@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolvePostOauthSourceSelection } from '@/utils/mining-oauth-redirect';
+import {
+  resolvePostOauthSourceSelection,
+  shouldInitializeStepperToSourceStep,
+} from '@/utils/mining-oauth-redirect';
 import type { MiningSource } from '@/types/mining';
 
 const googleSource: MiningSource = {
@@ -57,5 +60,34 @@ describe('resolvePostOauthSourceSelection', () => {
     expect(result).toEqual({
       status: 'fallback',
     });
+  });
+});
+
+describe('shouldInitializeStepperToSourceStep', () => {
+  it('initializes to source step when stepper is uninitialized and no oauth source query exists', () => {
+    expect(
+      shouldInitializeStepperToSourceStep({
+        querySource: undefined,
+        currentStep: -1,
+      }),
+    ).toBe(true);
+  });
+
+  it('does not reset stepper when it is already initialized', () => {
+    expect(
+      shouldInitializeStepperToSourceStep({
+        querySource: undefined,
+        currentStep: 2,
+      }),
+    ).toBe(false);
+  });
+
+  it('does not initialize default source step when oauth source query is present', () => {
+    expect(
+      shouldInitializeStepperToSourceStep({
+        querySource: 'user@example.com',
+        currentStep: -1,
+      }),
+    ).toBe(false);
   });
 });
