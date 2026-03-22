@@ -963,7 +963,10 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
-import { resolveMiningTableRows } from '~/utils/mining-table';
+import {
+  resolveContactsLoadingStrategy,
+  resolveMiningTableRows,
+} from '~/utils/mining-table';
 import Normalizer from '~/utils/normalizer';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
@@ -1044,6 +1047,10 @@ const tableRows = computed(() =>
     contacts: contacts.value,
     jobDetailsContacts: jobDetailsContacts.value,
   }),
+);
+
+const contactsLoadingStrategy = computed(() =>
+  resolveContactsLoadingStrategy({ showTable }),
 );
 
 /* *** Settings *** */
@@ -1282,6 +1289,85 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const scrollHeightObserver = ref<ResizeObserver | null>(null);
+let idlePrefetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let idlePrefetchCallbackId: number | null = null;
+let contactsLoadPromise: Promise<void> | null = null;
+const hasLoadedContacts = ref(false);
+
+function clearIdlePrefetch() {
+  if (idlePrefetchTimeoutId) {
+    clearTimeout(idlePrefetchTimeoutId);
+    idlePrefetchTimeoutId = null;
+  }
+
+  if (typeof window === 'undefined' || idlePrefetchCallbackId === null) {
+    return;
+  }
+
+  if ('cancelIdleCallback' in window) {
+    window.cancelIdleCallback(idlePrefetchCallbackId);
+  }
+
+  idlePrefetchCallbackId = null;
+}
+
+async function loadContactsData() {
+  if (hasLoadedContacts.value) {
+    return;
+  }
+
+  if (contactsLoadPromise) {
+    await contactsLoadPromise;
+    return;
+  }
+
+  contactsLoadPromise = (async () => {
+    await $contactsStore.reloadContacts();
+
+    if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
+      console.log(
+        'Data in persons table but not in refinedpersons, refining contacts...',
+      );
+      await $contactsStore.refineContacts();
+      await $contactsStore.reloadContacts();
+    }
+
+    const locationsToNormalize = $contactsStore.getLocationsToNormalize();
+
+    if (locationsToNormalize.length > 0) {
+      Normalizer.add(locationsToNormalize);
+    }
+
+    $contactsStore.subscribeToRealtimeUpdates();
+    hasLoadedContacts.value = true;
+  })();
+
+  try {
+    await contactsLoadPromise;
+  } finally {
+    contactsLoadPromise = null;
+    isLoading.value = false;
+  }
+}
+
+function scheduleIdleContactsPrefetch() {
+  clearIdlePrefetch();
+
+  const runPrefetch = () => {
+    idlePrefetchTimeoutId = null;
+    idlePrefetchCallbackId = null;
+    void loadContactsData();
+  };
+
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    idlePrefetchCallbackId = window.requestIdleCallback(runPrefetch, {
+      timeout: 1500,
+    });
+    return;
+  }
+
+  idlePrefetchTimeoutId = setTimeout(runPrefetch, 350);
+}
 
 onBeforeMount(() => {
   isLoading.value = true;
@@ -1302,22 +1388,12 @@ onNuxtReady(async () => {
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
 
-  await $contactsStore.reloadContacts();
-
-  if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
-    console.log(
-      'Data in persons table but not in refinedpersons, refining contacts...',
-    );
-    await $contactsStore.refineContacts();
-    await $contactsStore.reloadContacts();
+  if (contactsLoadingStrategy.value === 'immediate') {
+    await loadContactsData();
+  } else {
+    isLoading.value = false;
+    scheduleIdleContactsPrefetch();
   }
-  const locationsToNormalize = $contactsStore.getLocationsToNormalize();
-
-  if (locationsToNormalize.length > 0) {
-    Normalizer.add(locationsToNormalize);
-  }
-
-  $contactsStore.subscribeToRealtimeUpdates();
 
   scrollHeightObserver.value = new ResizeObserver(() => {
     scrollHeight.value = document.documentElement.scrollHeight;
@@ -1331,10 +1407,26 @@ onNuxtReady(async () => {
     removeQueryParam(MINING_ID_PARAM);
   }
 
-  isLoading.value = false;
+  if (contactsLoadingStrategy.value === 'immediate') {
+    isLoading.value = false;
+  }
 });
 
+watch(
+  () => showTable,
+  (isVisible) => {
+    if (!isVisible || hasLoadedContacts.value) {
+      return;
+    }
+
+    clearIdlePrefetch();
+    isLoading.value = true;
+    void loadContactsData();
+  },
+);
+
 onUnmounted(() => {
+  clearIdlePrefetch();
   $screenStore.destroy();
   $contactsStore.$reset();
   scrollHeightObserver.value?.disconnect();
