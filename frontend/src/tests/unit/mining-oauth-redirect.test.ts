@@ -10,6 +10,18 @@ const googleSource: MiningSource = {
 };
 
 describe('resolvePostOauthSourceSelection', () => {
+  it('stays idle when there is no oauth source query', () => {
+    const result = resolvePostOauthSourceSelection({
+      querySource: undefined,
+      miningSources: [googleSource],
+      isLoadingMiningSources: false,
+    });
+
+    expect(result).toEqual({
+      status: 'idle',
+    });
+  });
+
   it('waits while sources are still loading after oauth redirect', () => {
     const result = resolvePostOauthSourceSelection({
       querySource: 'user@example.com',
