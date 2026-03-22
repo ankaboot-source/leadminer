@@ -496,14 +496,33 @@ async function startMining() {
     $stepper.next();
     visible.value = false;
   } catch (error) {
+    const detail = extractErrorMessage(error, t('mining_issue'));
     console.error('Mining error:', error);
     $toast.add({
       severity: 'error',
       summary: $t('common.start_mining'),
-      detail: t('mining_issue'),
+      detail,
       life: 3000,
     });
   }
+}
+
+function extractErrorMessage(error: unknown, fallback: string) {
+  if (!error || typeof error !== 'object') return fallback;
+
+  const maybeError = error as {
+    data?: { message?: string; error?: string };
+    message?: string;
+    statusMessage?: string;
+  };
+
+  return (
+    maybeError.data?.message ||
+    maybeError.data?.error ||
+    maybeError.statusMessage ||
+    maybeError.message ||
+    fallback
+  );
 }
 </script>
 <i18n lang="json">
