@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { createStartMiningToastPayload } from '@/utils/extras';
+import {
+  getToastHasLinksDetailMessage,
+  hasToastHasLinksButtonAction,
+  hasToastHasLinksLink,
+} from '@/utils/toast';
 
 describe('createStartMiningToastPayload', () => {
   const translations: Record<string, string> = {
@@ -46,5 +51,42 @@ describe('createStartMiningToastPayload', () => {
       message:
         "Vous avez besoin du consentement ou d'un intérêt légitime pour les contacter.",
     });
+  });
+});
+
+describe('toast has-links detail helpers', () => {
+  it('returns message when detail is a string', () => {
+    expect(getToastHasLinksDetailMessage('Simple detail')).toBe(
+      'Simple detail',
+    );
+  });
+
+  it('returns message when detail is an object', () => {
+    expect(
+      getToastHasLinksDetailMessage({
+        message: 'Object detail',
+      }),
+    ).toBe('Object detail');
+  });
+
+  it('returns empty string for unsupported detail values', () => {
+    expect(getToastHasLinksDetailMessage(undefined)).toBe('');
+    expect(getToastHasLinksDetailMessage(null)).toBe('');
+  });
+
+  it('detects object link and button action safely', () => {
+    const withAction = {
+      message: 'x',
+      button: { text: 'Retry', action: () => true },
+    };
+    const withLink = {
+      message: 'x',
+      link: { text: 'More', url: 'https://example.com' },
+    };
+
+    expect(hasToastHasLinksButtonAction(withAction)).toBe(true);
+    expect(hasToastHasLinksButtonAction(withLink)).toBe(false);
+    expect(hasToastHasLinksLink(withLink)).toBe(true);
+    expect(hasToastHasLinksLink('plain detail')).toBe(false);
   });
 });
