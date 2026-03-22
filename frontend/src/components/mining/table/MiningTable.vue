@@ -23,7 +23,7 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="hardFilter ? jobDetailsContacts : contacts"
+    :value="tableRows"
     data-key="email"
     paginator
     filter-display="menu"
@@ -963,6 +963,7 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
+import { resolveMiningTableRows } from '~/utils/mining-table';
 import Normalizer from '~/utils/normalizer';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
@@ -1037,6 +1038,13 @@ const jobDetailsContacts = computed(
 const hardFilter = computed(() => $filtersStore.jobDetailsToggle);
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
+const tableRows = computed(() =>
+  resolveMiningTableRows({
+    hardFilter: hardFilter.value,
+    contacts: contacts.value,
+    jobDetailsContacts: jobDetailsContacts.value,
+  }),
+);
 
 /* *** Settings *** */
 const settingsPanel = ref();
