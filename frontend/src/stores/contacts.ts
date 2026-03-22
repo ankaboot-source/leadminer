@@ -3,6 +3,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
+import { defineStore } from 'pinia';
 import { convertDates } from '~/utils/contacts';
 import Normalizer from '~/utils/normalizer';
 

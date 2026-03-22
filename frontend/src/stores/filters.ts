@@ -53,7 +53,7 @@ const areToggledFilters = computed(
 function checkValidStatus(statusValue = filters.value.status.value) {
   return Boolean(
     statusValue.length === VALID_STATUSES.length &&
-      statusValue.every((status: string) => VALID_STATUSES.includes(status)),
+    statusValue.every((status: string) => VALID_STATUSES.includes(status)),
   );
 }
 
@@ -284,7 +284,7 @@ function registerFiltersAndStartWatchers() {
 
   const debouncedUpdate = useDebounceFn((newValue: string) => {
     filters.value.global.value = newValue;
-  }, 500);
+  }, 250);
 
   watch(searchContactModel, (newValue: string) => {
     debouncedUpdate(newValue);

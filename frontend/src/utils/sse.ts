@@ -71,7 +71,7 @@ class SSE {
             },
           });
         },
-        onopen: async (response) => {
+        onopen: (response) => {
           if (response.status === 200) {
             console.debug(
               '[SSE] Connection established successfully',

@@ -156,7 +156,8 @@
           <div>
             <Button
               :disabled="
-                $filtersStore.isDefaultFilters && !$filtersStore.areToggledFilters
+                $filtersStore.isDefaultFilters &&
+                !$filtersStore.areToggledFilters
               "
               icon="pi pi-filter-slash"
               :label="$screenStore.size.md ? t('clear') : undefined"
@@ -181,98 +182,98 @@
               </span>
             </Button>
             <Popover ref="settingsPanel">
-            <ul class="list-none p-0 m-0 flex flex-col gap-3">
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_valid_tooltip')">
-                  {{ t('toggle_valid_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.validToggle"
-                  @update:model-value="$filtersStore.onValidToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_hide_unsubscribed_tooltip')">
-                  {{ t('toggle_hide_unsubscribed_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.hideUnsubscribedToggle"
-                  @update:model-value="$filtersStore.onHideUnsubscribedToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div
-                  v-tooltip.left="
-                    t('toggle_recent_tooltip', {
-                      recentYearsAgo: $filtersStore.recentYearsAgo,
-                    })
+              <ul class="list-none p-0 m-0 flex flex-col gap-3">
+                <li class="flex justify-between gap-2">
+                  <div v-tooltip.left="t('toggle_valid_tooltip')">
+                    {{ t('toggle_valid_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.validToggle"
+                    @update:model-value="$filtersStore.onValidToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div v-tooltip.left="t('toggle_hide_unsubscribed_tooltip')">
+                    {{ t('toggle_hide_unsubscribed_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.hideUnsubscribedToggle"
+                    @update:model-value="$filtersStore.onHideUnsubscribedToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div
+                    v-tooltip.left="
+                      t('toggle_recent_tooltip', {
+                        recentYearsAgo: $filtersStore.recentYearsAgo,
+                      })
+                    "
+                  >
+                    {{ t('toggle_recent_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.recentToggle"
+                    @update:model-value="$filtersStore.onRecentToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div v-tooltip.left="t('toggle_replies_tooltip')">
+                    {{ t('toggle_replies_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.repliesToggle"
+                    @update:model-value="$filtersStore.onRepliesToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div v-tooltip.left="t('toggle_name_tooltip')">
+                    {{ t('toggle_name_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.nameToggle"
+                    @update:model-value="$filtersStore.onNameToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div>
+                    {{ t('toggle_location_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.locationToggle"
+                    @update:model-value="$filtersStore.onLocationToggle"
+                  />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div v-tooltip.left="toggleJobDetailsTooltip">
+                    {{ t('toggle_job_details_label') }}
+                  </div>
+                  <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
+                </li>
+                <li class="flex justify-between gap-2">
+                  <div>
+                    {{ t('toggle_phone_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.phoneToggle"
+                    @update:model-value="$filtersStore.onPhoneToggle"
+                  />
+                </li>
+                <Divider class="my-0" />
+                <MultiSelect
+                  v-model="$contactsStore.visibleColumns"
+                  :options="visibleColumnsOptions"
+                  :option-disabled="disabledColumns"
+                  option-label="label"
+                  class="min-w-56"
+                  fluid
+                  option-value="value"
+                  :selected-items-label="
+                    t('visible_columns', $contactsStore.visibleColumns.length)
                   "
-                >
-                  {{ t('toggle_recent_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.recentToggle"
-                  @update:model-value="$filtersStore.onRecentToggle"
+                  :max-selected-labels="0"
+                  @change="onSelectColumnsChange"
                 />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_replies_tooltip')">
-                  {{ t('toggle_replies_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.repliesToggle"
-                  @update:model-value="$filtersStore.onRepliesToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('toggle_name_tooltip')">
-                  {{ t('toggle_name_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.nameToggle"
-                  @update:model-value="$filtersStore.onNameToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div>
-                  {{ t('toggle_location_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.locationToggle"
-                  @update:model-value="$filtersStore.onLocationToggle"
-                />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div v-tooltip.left="toggleJobDetailsTooltip">
-                  {{ t('toggle_job_details_label') }}
-                </div>
-                <ToggleSwitch v-model="$filtersStore.jobDetailsToggle" />
-              </li>
-              <li class="flex justify-between gap-2">
-                <div>
-                  {{ t('toggle_phone_label') }}
-                </div>
-                <ToggleSwitch
-                  v-model="$filtersStore.phoneToggle"
-                  @update:model-value="$filtersStore.onPhoneToggle"
-                />
-              </li>
-              <Divider class="my-0" />
-              <MultiSelect
-                v-model="$contactsStore.visibleColumns"
-                :options="visibleColumnsOptions"
-                :option-disabled="disabledColumns"
-                option-label="label"
-                class="min-w-56"
-                fluid
-                option-value="value"
-                :selected-items-label="
-                  t('visible_columns', $contactsStore.visibleColumns.length)
-                "
-                :max-selected-labels="0"
-                @change="onSelectColumnsChange"
-              />
-            </ul>
+              </ul>
             </Popover>
           </div>
         </div>
@@ -1157,7 +1158,7 @@ const isFullscreen = ref(false);
 const $screenStore = useScreenStore();
 
 function formatContactsCountForHeader(count: number) {
-  if ($screenStore.size.md || count < 10000) {
+  if ($screenStore.size.md || count < 1000) {
     return count.toLocaleString();
   }
 
