@@ -8,7 +8,7 @@
     v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
-    v-model:filters="filtersModel"
+    v-model:filters="$filtersStore.filters"
     :loading="isLoading"
     resizable-columns
     reorderable-columns
@@ -23,11 +23,18 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="sourceRows"
+    :value="hardFilter ? jobDetailsContacts : contacts"
     data-key="email"
     paginator
     filter-display="menu"
-    :global-filter-fields="globalFilterFields"
+    :global-filter-fields="[
+      'email',
+      'name',
+      'location',
+      'works_for',
+      'job_title',
+      'location_normalized',
+    ]"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
@@ -62,7 +69,8 @@
       </div>
     </template>
     <template #loading>
-      <div class="text-center">
+      <TableSkeleton v-if="tablePosTop === 0" />
+      <div v-else class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
       </div>
@@ -252,7 +260,7 @@
                 </li>
                 <Divider class="my-0" />
                 <MultiSelect
-                  v-model="visibleColumns"
+                  v-model="$contactsStore.visibleColumns"
                   :options="visibleColumnsOptions"
                   :option-disabled="disabledColumns"
                   option-label="label"
@@ -260,7 +268,7 @@
                   fluid
                   option-value="value"
                   :selected-items-label="
-                    t('visible_columns', visibleColumns.length)
+                    t('visible_columns', $contactsStore.visibleColumns.length)
                   "
                   :max-selected-labels="0"
                   @change="onSelectColumnsChange"
@@ -300,7 +308,7 @@
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
-              v-model="searchContactModel"
+              v-model="$filtersStore.searchContactModel"
               :placeholder="t('search_contacts')"
               class="w-full"
             />
@@ -311,7 +319,9 @@
         <div class="flex items-center justify-between gap-2 w-full min-w-0">
           <div class="flex items-center gap-2 min-w-0">
             <Image
-              v-if="data.image && columnVisibility.image"
+              v-if="
+                data.image && $contactsStore.visibleColumns.includes('image')
+              "
               :src="getImageViaProxy(data.image)"
               class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
@@ -320,7 +330,9 @@
 
             <div class="min-w-0">
               <div
-                v-if="data.name && columnVisibility.name"
+                v-if="
+                  data.name && $contactsStore.visibleColumns.includes('name')
+                "
                 class="truncate cursor-pointer"
                 @click="openContactInformation(data)"
               >
@@ -330,7 +342,9 @@
               <div
                 class="truncate cursor-pointer"
                 :class="{
-                  'font-extralight': !(!data.name && columnVisibility.name),
+                  'font-extralight': !(
+                    !data.name && $contactsStore.visibleColumns.includes('name')
+                  ),
                 }"
                 @click="openContactInformation(data)"
               >
@@ -341,16 +355,22 @@
             <!-- RIGHT -->
             <div
               v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
+                (data.same_as &&
+                  $contactsStore.visibleColumns.includes('same_as')) ||
+                (data.telephone &&
+                  $contactsStore.visibleColumns.includes('telephone'))
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="
+                  $contactsStore.visibleColumns.includes('same_as')
+                "
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="
+                  $contactsStore.visibleColumns.includes('telephone')
+                "
                 :small="true"
               />
             </div>
@@ -359,16 +379,22 @@
           <div class="flex items-center gap-2 flex-shrink-0">
             <div
               v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
+                (data.same_as &&
+                  $contactsStore.visibleColumns.includes('same_as')) ||
+                (data.telephone &&
+                  $contactsStore.visibleColumns.includes('telephone'))
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="
+                  $contactsStore.visibleColumns.includes('same_as')
+                "
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="
+                  $contactsStore.visibleColumns.includes('telephone')
+                "
                 :small="true"
               />
             </div>
@@ -385,7 +411,7 @@
     </Column>
     <!-- Source -->
     <Column
-      v-if="columnVisibility.source"
+      v-if="$contactsStore.visibleColumns.includes('source')"
       field="source"
       sortable
       :show-filter-operator="false"
@@ -402,7 +428,7 @@
     </Column>
     <!-- Occurrence -->
     <Column
-      v-if="columnVisibility.occurrence"
+      v-if="$contactsStore.visibleColumns.includes('occurrence')"
       field="occurrence"
       sortable
       data-type="numeric"
@@ -421,7 +447,7 @@
 
     <!-- Recency -->
     <Column
-      v-if="columnVisibility.recency"
+      v-if="$contactsStore.visibleColumns.includes('recency')"
       field="recency"
       sortable
       data-type="date"
@@ -446,7 +472,7 @@
 
     <!-- Replied conversations -->
     <Column
-      v-if="columnVisibility.replied_conversations"
+      v-if="$contactsStore.visibleColumns.includes('replied_conversations')"
       field="replied_conversations"
       data-type="numeric"
       sortable
@@ -463,7 +489,7 @@
 
     <!-- Temperature -->
     <Column
-      v-if="columnVisibility.temperature"
+      v-if="$contactsStore.visibleColumns.includes('temperature')"
       field="temperature"
       data-type="numeric"
       sortable
@@ -501,7 +527,7 @@
 
     <!-- Tags -->
     <Column
-      v-if="columnVisibility.tags"
+      v-if="$contactsStore.visibleColumns.includes('tags')"
       field="tags"
       sortable
       :show-filter-operator="false"
@@ -515,18 +541,12 @@
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
-            v-for="tag of getVisibleTags(data.tags)"
+            v-for="tag of data.tags"
             :key="tag"
             :value="getTagLabel(tag)"
             :severity="getTagColor(tag)"
             class="capitalize font-normal"
           />
-          <span
-            v-if="getHiddenTagsCount(data.tags)"
-            class="text-xs text-surface-600 px-1"
-          >
-            +{{ getHiddenTagsCount(data.tags) }}
-          </span>
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -552,7 +572,7 @@
 
     <!-- Status | Reachable -->
     <Column
-      v-if="columnVisibility.status"
+      v-if="$contactsStore.visibleColumns.includes('status')"
       field="status"
       filter-field="status"
       sortable
@@ -567,9 +587,11 @@
         </div>
       </template>
       <template #body="{ data }">
-        <span class="state-pill" :class="getStatusClass(data.status)">{{
-          getStatusLabel(data.status)
-        }}</span>
+        <Tag
+          class="font-normal"
+          :value="getStatusLabel(data.status)"
+          :severity="getStatusColor(data.status)"
+        />
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
@@ -594,7 +616,7 @@
 
     <!-- Consent -->
     <Column
-      v-if="columnVisibility.consent_status"
+      v-if="$contactsStore.visibleColumns.includes('consent_status')"
       field="consent_status"
       filter-field="consent_status"
       sortable
@@ -610,11 +632,11 @@
       </template>
       <template #body="{ data }">
         <div v-tooltip.bottom="getConsentTooltip(data)">
-          <span
-            class="state-pill"
-            :class="getConsentClass(data.consent_status)"
-            >{{ getConsentLabel(data.consent_status) }}</span
-          >
+          <Tag
+            class="font-normal"
+            :value="getConsentLabel(data.consent_status)"
+            :severity="getConsentColor(data.consent_status)"
+          />
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -640,7 +662,7 @@
 
     <!-- Recipient -->
     <Column
-      v-if="columnVisibility.recipient"
+      v-if="$contactsStore.visibleColumns.includes('recipient')"
       field="recipient"
       data-type="numeric"
       sortable
@@ -659,7 +681,7 @@
 
     <!-- Sender -->
     <Column
-      v-if="columnVisibility.sender"
+      v-if="$contactsStore.visibleColumns.includes('sender')"
       field="sender"
       data-type="numeric"
       sortable
@@ -678,7 +700,7 @@
 
     <!-- Seniority -->
     <Column
-      v-if="columnVisibility.seniority"
+      v-if="$contactsStore.visibleColumns.includes('seniority')"
       field="seniority"
       sortable
       data-type="date"
@@ -703,7 +725,7 @@
 
     <!-- Given name -->
     <Column
-      v-if="columnVisibility.given_name"
+      v-if="$contactsStore.visibleColumns.includes('given_name')"
       field="given_name"
       sortable
       :show-filter-operator="false"
@@ -721,7 +743,7 @@
 
     <!-- Family name -->
     <Column
-      v-if="columnVisibility.family_name"
+      v-if="$contactsStore.visibleColumns.includes('family_name')"
       field="family_name"
       sortable
       :show-filter-operator="false"
@@ -739,7 +761,7 @@
 
     <!-- Alternate names -->
     <Column
-      v-if="columnVisibility.alternate_name"
+      v-if="$contactsStore.visibleColumns.includes('alternate_name')"
       field="alternate_name"
       sortable
       :show-filter-operator="false"
@@ -760,7 +782,7 @@
 
     <!-- Alternate emails -->
     <Column
-      v-if="columnVisibility.alternate_email"
+      v-if="$contactsStore.visibleColumns.includes('alternate_email')"
       field="alternate_email"
       sortable
       :show-filter-operator="false"
@@ -781,7 +803,7 @@
 
     <!-- Location -->
     <Column
-      v-if="columnVisibility.location"
+      v-if="$contactsStore.visibleColumns.includes('location')"
       field="location"
       sortable
       :show-filter-operator="false"
@@ -811,7 +833,7 @@
 
     <!-- Works for -->
     <Column
-      v-if="columnVisibility.works_for"
+      v-if="$contactsStore.visibleColumns.includes('works_for')"
       field="works_for"
       sortable
       :show-filter-operator="false"
@@ -829,7 +851,7 @@
 
     <!-- Job title	 -->
     <Column
-      v-if="columnVisibility.job_title"
+      v-if="$contactsStore.visibleColumns.includes('job_title')"
       field="job_title"
       sortable
       :show-filter-operator="false"
@@ -847,7 +869,7 @@
 
     <!-- Updated at -->
     <Column
-      v-if="columnVisibility.updated_at"
+      v-if="$contactsStore.visibleColumns.includes('updated_at')"
       field="updated_at"
       sortable
       data-type="date"
@@ -874,7 +896,7 @@
 
     <!-- Created at -->
     <Column
-      v-if="columnVisibility.created_at"
+      v-if="$contactsStore.visibleColumns.includes('created_at')"
       field="created_at"
       sortable
       data-type="date"
@@ -901,7 +923,7 @@
 
     <!-- Mining ID	 -->
     <Column
-      v-if="columnVisibility.mining_id"
+      v-if="$contactsStore.visibleColumns.includes('mining_id')"
       field="mining_id"
       sortable
       :show-filter-operator="false"
@@ -924,16 +946,11 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-import { useDebounceFn } from '@vueuse/core';
 // import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
-import {
-  buildColumnVisibility,
-  toStateClass,
-} from '~/utils/mining-table-performance';
 import {
   consentStatuses,
   getConsentColor,
@@ -948,6 +965,7 @@ import {
 import { getImageViaProxy } from '~/utils/images';
 import Normalizer from '~/utils/normalizer';
 
+const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
 );
@@ -993,24 +1011,10 @@ const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
-const visibleColumns = computed({
-  get: () => $contactsStore.visibleColumns,
-  set: (value: string[]) => {
-    $contactsStore.visibleColumns = value;
-  },
-});
 
 const DEFAULT_ROWS_PER_PAGE = 150;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
-const globalFilterFields = [
-  'email',
-  'name',
-  'location',
-  'works_for',
-  'job_title',
-  'location_normalized',
-];
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
@@ -1018,18 +1022,6 @@ function openContactInformation(data: Contact) {
 
 /* *** Filters *** */
 const $filtersStore = useFiltersStore();
-const filtersModel = computed({
-  get: () => $filtersStore.filters,
-  set: (value) => {
-    $filtersStore.filters = value;
-  },
-});
-const searchContactModel = computed({
-  get: () => $filtersStore.searchContactModel,
-  set: (value: string) => {
-    $filtersStore.searchContactModel = value;
-  },
-});
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
@@ -1043,20 +1035,6 @@ const jobDetailsContacts = computed(
 );
 
 const hardFilter = computed(() => $filtersStore.jobDetailsToggle);
-
-const sourceRows = computed(() =>
-  hardFilter.value ? jobDetailsContacts.value : (contacts.value ?? []),
-);
-watch(
-  sourceRows,
-  (rows) => {
-    filteredContacts.value = rows;
-  },
-  { immediate: true },
-);
-const columnVisibility = computed(() =>
-  buildColumnVisibility(visibleColumns.value),
-);
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
 
@@ -1066,35 +1044,8 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
-const applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
-  filteredContacts.value = rows;
-}, 100);
-
 function onFilter($event: DataTableFilterEvent) {
-  applyFilteredContacts(
-    ($event.filteredValue as Contact[] | undefined) ?? sourceRows.value,
-  );
-}
-
-function showSocialLinksAndPhones(contact: Contact) {
-  return Boolean(contact.same_as?.length || contact.telephone?.length);
-}
-
-function getVisibleTags(tagValues?: string[] | null) {
-  return (tagValues ?? []).slice(0, 2);
-}
-
-function getHiddenTagsCount(tagValues?: string[] | null) {
-  const values = tagValues ?? [];
-  return Math.max(values.length - 2, 0);
-}
-
-function getStatusClass(status: Contact['status']) {
-  return toStateClass(getStatusColor(status));
-}
-
-function getConsentClass(consentStatus: Contact['consent_status']) {
-  return toStateClass(getConsentColor(consentStatus));
+  filteredContacts.value = $event.filteredValue;
 }
 function optimizeTableForMining() {
   $filtersStore.onNameToggle(true); // toggle on name filter on start mining
@@ -1172,24 +1123,16 @@ const contactsToTreat = computed<string[] | undefined>(() =>
     : implicitlySelectedContacts.value.map((item: Contact) => item.email),
 );
 
-const updateSelectedEmails = useDebounceFn((emails: string[] | undefined) => {
-  $contactsStore.selectedEmails = emails;
-}, 120);
-
-const updateSelectedContactsCount = useDebounceFn((count: number) => {
-  $contactsStore.selectedContactsCount = count;
-}, 120);
-
 watch(
   contactsToTreat,
-  (value) => {
-    updateSelectedEmails(value);
+  () => {
+    $contactsStore.selectedEmails = contactsToTreat.value;
   },
-  { immediate: true },
+  { deep: true, immediate: true },
 );
 
 watch(implicitlySelectedContactsLength, () => {
-  updateSelectedContactsCount(implicitlySelectedContactsLength.value);
+  $contactsStore.selectedContactsCount = implicitlySelectedContactsLength.value;
 });
 
 /* *** Export CSV *** */
@@ -1262,13 +1205,82 @@ function disabledColumns(column: { label: string; value: string }) {
 }
 function onSelectColumnsChange() {
   // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
-  if (!visibleColumns.value.includes('contacts')) {
-    visibleColumns.value.push('contacts');
+  if (!$contactsStore.visibleColumns.includes('contacts')) {
+    $contactsStore.visibleColumns.push('contacts');
   }
 }
 
-function getDefaultVisibleColumns() {
-  return [
+/* Table dynamic Height */
+const TableRef = ref();
+const tablePosTop = ref(0);
+
+const tableHeight = ref('flex');
+const scrollHeightTable = computed(() =>
+  !isFullscreen.value ? tableHeight.value : '',
+);
+const scrollHeight = ref($screenStore.height);
+
+function observeTop() {
+  const stopWatch = watch(
+    () => TableRef.value,
+    (newValue) => {
+      if (newValue) {
+        const resizeObserver = new ResizeObserver(() => {
+          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
+        });
+        resizeObserver.observe(newValue.$el);
+        try {
+          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    },
+    { immediate: true },
+  );
+}
+
+const isExceedingScreenHeight = computed(
+  () => scrollHeight.value !== $screenStore.height,
+);
+const stopShowTableFirstTimeWatcher = watch(
+  () => contactsLength.value,
+  () => {
+    if (contactsLength.value !== undefined) {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+      if (contactsLength.value > 0) {
+        observeTop();
+        watchEffect(() => {
+          tableHeight.value = isExceedingScreenHeight.value
+            ? `${$screenStore.height - tablePosTop.value - 120}px`
+            : 'flex';
+        });
+        try {
+          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    }
+  },
+  { deep: true, immediate: true },
+);
+const scrollHeightObserver = ref<ResizeObserver | null>(null);
+
+onBeforeMount(() => {
+  isLoading.value = true;
+});
+onNuxtReady(async () => {
+  $screenStore.init();
+  $contactsStore.visibleColumns = [
     'contacts',
     'name',
     'same_as',
@@ -1281,41 +1293,6 @@ function getDefaultVisibleColumns() {
     ...($screenStore.width > 700 ? ['tags'] : []),
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
-}
-
-/* Table dynamic Height */
-const TableRef = ref();
-const scrollHeightTable = computed(() => (isFullscreen.value ? '' : 'flex'));
-
-const stopShowTableFirstTimeWatcher = watch(
-  () => contactsLength.value,
-  () => {
-    if (contactsLength.value !== undefined) {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-      if (contactsLength.value > 0) {
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    }
-  },
-  { immediate: true },
-);
-
-onBeforeMount(() => {
-  isLoading.value = true;
-});
-onNuxtReady(async () => {
-  $screenStore.init();
-  $filtersStore.initializeTableFilters(origin);
-  $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);
 
   await $contactsStore.reloadContacts();
 
@@ -1328,16 +1305,21 @@ onNuxtReady(async () => {
   }
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
-  if (origin === 'mine' && locationsToNormalize.length > 0) {
+  if (locationsToNormalize.length > 0) {
     Normalizer.add(locationsToNormalize);
   }
 
   $contactsStore.subscribeToRealtimeUpdates();
 
+  scrollHeightObserver.value = new ResizeObserver(() => {
+    scrollHeight.value = document.documentElement.scrollHeight;
+  });
+  scrollHeightObserver.value.observe(document.documentElement);
+
   const miningId = getParam(MINING_ID_PARAM);
   if (miningId) {
     $filtersStore.filterByMiningId(miningId as string);
-    visibleColumns.value.push(MINING_ID_PARAM);
+    $contactsStore.visibleColumns.push(MINING_ID_PARAM);
     removeQueryParam(MINING_ID_PARAM);
   }
 
@@ -1347,6 +1329,7 @@ onNuxtReady(async () => {
 onUnmounted(() => {
   $screenStore.destroy();
   $contactsStore.$reset();
+  scrollHeightObserver.value?.disconnect();
 });
 
 function getTemperatureStyle(temp: number | null) {
@@ -1416,46 +1399,6 @@ table.p-datatable-table {
 .p-datatable-paginator-bottom,
 .p-datatable-header {
   border: 0;
-}
-
-.p-datatable .p-datatable-tbody > tr > td {
-  height: 48px;
-  vertical-align: middle;
-}
-
-.state-pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.1rem 0.5rem;
-  font-size: 0.75rem;
-  line-height: 1.2;
-  font-weight: 500;
-}
-
-.state-success {
-  color: #166534;
-  background: #dcfce7;
-}
-
-.state-warn {
-  color: #92400e;
-  background: #fef3c7;
-}
-
-.state-danger {
-  color: #991b1b;
-  background: #fee2e2;
-}
-
-.state-secondary {
-  color: #334155;
-  background: #e2e8f0;
-}
-
-.state-info {
-  color: #0c4a6e;
-  background: #e0f2fe;
 }
 
 /* Use passthrough if able */
