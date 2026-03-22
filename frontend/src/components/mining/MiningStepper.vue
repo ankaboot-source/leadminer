@@ -54,6 +54,12 @@ import {
   resolvePostOauthSourceSelection,
   shouldInitializeStepperToSourceStep,
 } from '@/utils/mining-oauth-redirect';
+import MiningConsentSidebar from './MiningConsentSidebar.vue';
+import CleanPanel from './stepper-panels/clean/CleanPanel.vue';
+import MinePanel from './stepper-panels/mine/MinePanel.vue';
+import ImportPstDialog from './stepper-panels/source/ImportPstDialog.vue';
+import SourcePanel from './stepper-panels/source/SourcePanel.vue';
+import StepWithPopover from './stepper-panels/StepWithPopover.vue';
 
 const { t } = useI18n({
   useScope: 'local',
