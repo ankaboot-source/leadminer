@@ -17,13 +17,9 @@ jobs:
         run: |
           git clone https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer.io.git leadminer.io
 
-      - name: Delete existing files in destination repo
+      - name: Sync leadminer.io with leadminer repo
         run: |
-          rm -rf leadminer.io/supabase/functions/*
-
-      - name: Copy new files to destination repo
-        run: |
-          cp -r supabase/functions/. leadminer.io/supabase/functions/
+          rsync -av supabase/functions/. leadminer.io/supabase/functions/
 
       - name: Commit and push changes
         run: |
