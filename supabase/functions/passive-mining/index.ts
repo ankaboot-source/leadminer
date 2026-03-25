@@ -9,6 +9,10 @@ const LEADMINER_SECRET_TOKEN = Deno.env.get("LEADMINER_SECRET_TOKEN");
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
 
+type MiningSource = {
+  email: string;
+  user_id: string;
+};
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
@@ -86,7 +90,8 @@ async function getLatestPassiveMiningDate(userId: string): Promise<string | null
   return data[0].started_at;
 }
 
-async function getBoxes(miningSource: any) {
+async function getBoxes(miningSource: MiningSource) {
+  console.log(`Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`);
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
     {
@@ -99,16 +104,19 @@ async function getBoxes(miningSource: any) {
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
+  console.log(`Received response for boxes of ${miningSource.email}:`, res);
 
   const { folders } = (await res.json()).data || {};
   return [...folders];
 }
 
-async function startMiningEmail(miningSource: any) {
+async function startMiningEmail(miningSource: MiningSource) {
   // Get default folders
   // we should save checked boxes from the frontend in miningSource later on
   const boxes = await getBoxes(miningSource);
+  console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
   const folders = getFolders(boxes);
+  console.log(`Extracted folders for ${miningSource.email}:`, folders);
 
   const since = await getLatestPassiveMiningDate(miningSource.user_id);
 
