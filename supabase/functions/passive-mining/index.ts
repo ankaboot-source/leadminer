@@ -40,15 +40,6 @@ app.post("/", async (c: Context) => {
   }
 });
 
-app.get("/", (c: Context) => {
-  try {
-    return c.json({ msg: "Passive mining is running" });
-  } catch (error) {
-    console.error("Error in passive-mining:", error);
-    return c.json({ error: "Failed to check passive-mining" }, 500);
-  }
-});
-
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
