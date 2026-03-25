@@ -3,6 +3,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import {
   ANY_SELECTED,
+  CLEARED_TOGGLES,
   createConstraint,
   DEFAULT_FILTERS,
   DEFAULT_TOGGLES,
@@ -396,7 +397,7 @@ function clearFilter() {
   searchContactModel.value = '';
   jobDetailsToggle.value = false;
   $reset();
-  toggleFilters(DEFAULT_TOGGLES);
+  toggleFilters(CLEARED_TOGGLES);
 }
 
 function filterByMiningId(miningId: string) {
