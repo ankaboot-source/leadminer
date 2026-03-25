@@ -52,6 +52,30 @@ describe('createStartMiningToastPayload', () => {
         "Vous avez besoin du consentement ou d'un intérêt légitime pour les contacter.",
     });
   });
+
+  it('coerces non-string translation results to readable strings', () => {
+    const weirdT = ((key: string) => {
+      if (key === 'mining.contacts_got_rights_title') {
+        return ['Vos contacts', 'ont des droits'];
+      }
+
+      if (key === 'mining.contacts_got_rights_detail') {
+        return ['Vous avez besoin', "d'un intérêt légitime"];
+      }
+
+      return key;
+    }) as unknown as (key: string) => string;
+
+    const payload = createStartMiningToastPayload({
+      t: weirdT,
+      dataPrivacyUrl: undefined,
+    });
+
+    expect(payload.summary).toBe('Vos contacts ont des droits');
+    expect(payload.detail).toEqual({
+      message: "Vous avez besoin d'un intérêt légitime",
+    });
+  });
 });
 
 describe('toast has-links detail helpers', () => {
