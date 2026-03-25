@@ -4,7 +4,7 @@ import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
-const LEADMINER_SECRET_TOKEN = Deno.env.get("LEADMINER_SECRET_TOKEN");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
@@ -66,7 +66,9 @@ async function getMiningSources() {
   return data;
 }
 
-async function getLatestPassiveMiningDate(userId: string): Promise<string | null> {
+async function getLatestPassiveMiningDate(
+  userId: string,
+): Promise<string | null> {
   const { data, error } = await supabase
     .schema("private")
     .from("tasks")
@@ -91,14 +93,16 @@ async function getLatestPassiveMiningDate(userId: string): Promise<string | null
 }
 
 async function getBoxes(miningSource: MiningSource) {
-  console.log(`Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`);
+  console.log(
+    `Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+  );
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LEADMINER_SECRET_TOKEN}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         // originally its x-sb-jwt
       },
       body: JSON.stringify({ email: miningSource.email }),
@@ -126,7 +130,7 @@ async function startMiningEmail(miningSource: MiningSource) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LEADMINER_SECRET_TOKEN}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({
         miningSource: { email: miningSource.email },
