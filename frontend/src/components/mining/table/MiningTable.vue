@@ -1049,7 +1049,10 @@ const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
 
 function getJobDetailsFieldsCount(contact: Contact): number {
-  return Number(!!contact.job_title) + Number(!!contact.works_for?.length);
+  return (
+    Number(Boolean(contact.job_title)) +
+    Number(Boolean(contact.works_for?.length))
+  );
 }
 
 const jobDetailsContacts = computed(
@@ -1255,7 +1258,9 @@ function openSendSmsContactsDialog() {
   sendSmsCampaignDialogVisible.value = true;
 }
 
-function onSmsCampaignCreated(_campaignId: string) {}
+function onSmsCampaignCreated(_campaignId: string) {
+  // skipcq: JS-0099 - Placeholder for future SMS campaign tracking
+}
 
 const isFullscreen = ref(false);
 

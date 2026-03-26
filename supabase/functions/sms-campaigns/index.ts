@@ -104,7 +104,6 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
 
   if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
     await next();
-    return;
   }
 
   const supabase = createSupabaseClient(authHeader);
@@ -116,7 +115,6 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
 
   c.set("user", data.user);
   await next();
-  return;
 }
 
 app.use("*", async (c, next) => {
@@ -169,7 +167,7 @@ async function saveProfileFields(
 }
 
 async function triggerSmsCampaignProcessorFromEdge() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!Boolean(SUPABASE_URL) || !SUPABASE_SERVICE_ROLE_KEY) {
     logger.error("Missing required environment variables", {
       supabaseUrl: !!SUPABASE_URL,
       serviceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
