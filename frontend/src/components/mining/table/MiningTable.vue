@@ -4,11 +4,16 @@
     v-model:visible="sendCampaignDialogVisible"
     :selected-contacts="implicitlySelectedContacts"
   />
+  <SmsCampaignComposerDialog
+    v-model:visible="sendSmsCampaignDialogVisible"
+    :selected-contacts="implicitlySelectedContacts"
+    @campaign-created="onSmsCampaignCreated"
+  />
   <DataTable
     v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
-    v-model:filters="$filtersStore.filters"
+    v-model:filters="filtersModel"
     :loading="isLoading"
     resizable-columns
     reorderable-columns
@@ -23,18 +28,11 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="tableRows"
+    :value="sourceRows"
     data-key="email"
     paginator
     filter-display="menu"
-    :global-filter-fields="[
-      'email',
-      'name',
-      'location',
-      'works_for',
-      'job_title',
-      'location_normalized',
-    ]"
+    :global-filter-fields="globalFilterFields"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
@@ -69,8 +67,7 @@
       </div>
     </template>
     <template #loading>
-      <TableSkeleton v-if="tablePosTop === 0" />
-      <div v-else class="text-center">
+      <div class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
       </div>
@@ -93,27 +90,33 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <div>
-          <!-- TODO: There is two campaign buttons,  -->
-          <Button
-            v-tooltip.top="
-              isSendByEmailDisabled &&
-              t('select_at_least_one_contact', {
-                action: t('send_email_campaign').toLowerCase(),
-              })
-            "
+        <div
+          v-tooltip.top="
+            isSendByEmailDisabled &&
+            isSendBySmsDisabled &&
+            t('select_at_least_one_contact', {
+              action: t('send_campaign').toLowerCase(),
+            })
+          "
+          class="flex gap-2"
+        >
+          <SplitButton
             severity="contrast"
-            :label="t('send_email_campaign')"
+            :label="t('send_campaign')"
+            :model="sendCampaignMenuItems"
+            :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
+            :button-props="{
+              disabled: isSendByEmailDisabled,
+              onClick: () => openSendContactsDialog(),
+            }"
             pt:label:class="hidden md:block"
-            :disabled="isSendByEmailDisabled"
-            @click="openSendContactsDialog"
           >
             <template #icon>
               <span class="p-button-icon p-button-icon-left">
                 <i class="pi pi-send" />
               </span>
             </template>
-          </Button>
+          </SplitButton>
         </div>
 
         <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
@@ -260,7 +263,7 @@
                 </li>
                 <Divider class="my-0" />
                 <MultiSelect
-                  v-model="$contactsStore.visibleColumns"
+                  v-model="visibleColumns"
                   :options="visibleColumnsOptions"
                   :option-disabled="disabledColumns"
                   option-label="label"
@@ -268,7 +271,7 @@
                   fluid
                   option-value="value"
                   :selected-items-label="
-                    t('visible_columns', $contactsStore.visibleColumns.length)
+                    t('visible_columns', visibleColumns.length)
                   "
                   :max-selected-labels="0"
                   @change="onSelectColumnsChange"
@@ -308,7 +311,7 @@
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
-              v-model="$filtersStore.searchContactModel"
+              v-model="searchContactModel"
               :placeholder="t('search_contacts')"
               class="w-full"
             />
@@ -319,9 +322,7 @@
         <div class="flex items-center justify-between gap-2 w-full min-w-0">
           <div class="flex items-center gap-2 min-w-0">
             <Image
-              v-if="
-                data.image && $contactsStore.visibleColumns.includes('image')
-              "
+              v-if="data.image && columnVisibility.image"
               :src="getImageViaProxy(data.image)"
               class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
@@ -330,9 +331,7 @@
 
             <div class="min-w-0">
               <div
-                v-if="
-                  data.name && $contactsStore.visibleColumns.includes('name')
-                "
+                v-if="data.name && columnVisibility.name"
                 class="truncate cursor-pointer"
                 @click="openContactInformation(data)"
               >
@@ -342,9 +341,7 @@
               <div
                 class="truncate cursor-pointer"
                 :class="{
-                  'font-extralight': !(
-                    !data.name && $contactsStore.visibleColumns.includes('name')
-                  ),
+                  'font-extralight': !(!data.name && columnVisibility.name),
                 }"
                 @click="openContactInformation(data)"
               >
@@ -355,22 +352,16 @@
             <!-- RIGHT -->
             <div
               v-if="
-                (data.same_as &&
-                  $contactsStore.visibleColumns.includes('same_as')) ||
-                (data.telephone &&
-                  $contactsStore.visibleColumns.includes('telephone'))
+                showSocialLinksAndPhones(data) &&
+                (columnVisibility.same_as || columnVisibility.telephone)
               "
               class="flex md:hidden gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="
-                  $contactsStore.visibleColumns.includes('same_as')
-                "
+                :show-social-links="columnVisibility.same_as"
                 :phones="data.telephone"
-                :show-phones="
-                  $contactsStore.visibleColumns.includes('telephone')
-                "
+                :show-phones="columnVisibility.telephone"
                 :small="true"
               />
             </div>
@@ -379,22 +370,16 @@
           <div class="flex items-center gap-2 flex-shrink-0">
             <div
               v-if="
-                (data.same_as &&
-                  $contactsStore.visibleColumns.includes('same_as')) ||
-                (data.telephone &&
-                  $contactsStore.visibleColumns.includes('telephone'))
+                showSocialLinksAndPhones(data) &&
+                (columnVisibility.same_as || columnVisibility.telephone)
               "
               class="hidden md:flex gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="
-                  $contactsStore.visibleColumns.includes('same_as')
-                "
+                :show-social-links="columnVisibility.same_as"
                 :phones="data.telephone"
-                :show-phones="
-                  $contactsStore.visibleColumns.includes('telephone')
-                "
+                :show-phones="columnVisibility.telephone"
                 :small="true"
               />
             </div>
@@ -411,7 +396,7 @@
     </Column>
     <!-- Source -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('source')"
+      v-if="columnVisibility.source"
       field="source"
       sortable
       :show-filter-operator="false"
@@ -428,7 +413,7 @@
     </Column>
     <!-- Occurrence -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('occurrence')"
+      v-if="columnVisibility.occurrence"
       field="occurrence"
       sortable
       data-type="numeric"
@@ -447,7 +432,7 @@
 
     <!-- Recency -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('recency')"
+      v-if="columnVisibility.recency"
       field="recency"
       sortable
       data-type="date"
@@ -472,7 +457,7 @@
 
     <!-- Replied conversations -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('replied_conversations')"
+      v-if="columnVisibility.replied_conversations"
       field="replied_conversations"
       data-type="numeric"
       sortable
@@ -489,7 +474,7 @@
 
     <!-- Temperature -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('temperature')"
+      v-if="columnVisibility.temperature"
       field="temperature"
       data-type="numeric"
       sortable
@@ -527,7 +512,7 @@
 
     <!-- Tags -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('tags')"
+      v-if="columnVisibility.tags"
       field="tags"
       sortable
       :show-filter-operator="false"
@@ -541,12 +526,18 @@
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
-            v-for="tag of data.tags"
+            v-for="tag of getVisibleTags(data.tags)"
             :key="tag"
             :value="getTagLabel(tag)"
             :severity="getTagColor(tag)"
             class="capitalize font-normal"
           />
+          <span
+            v-if="getHiddenTagsCount(data.tags)"
+            class="text-xs text-surface-600 px-1"
+          >
+            +{{ getHiddenTagsCount(data.tags) }}
+          </span>
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -572,7 +563,7 @@
 
     <!-- Status | Reachable -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('status')"
+      v-if="columnVisibility.status"
       field="status"
       filter-field="status"
       sortable
@@ -587,11 +578,9 @@
         </div>
       </template>
       <template #body="{ data }">
-        <Tag
-          class="font-normal"
-          :value="getStatusLabel(data.status)"
-          :severity="getStatusColor(data.status)"
-        />
+        <span class="state-pill" :class="getStatusClass(data.status)">{{
+          getStatusLabel(data.status)
+        }}</span>
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
@@ -616,7 +605,7 @@
 
     <!-- Consent -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('consent_status')"
+      v-if="columnVisibility.consent_status"
       field="consent_status"
       filter-field="consent_status"
       sortable
@@ -632,11 +621,11 @@
       </template>
       <template #body="{ data }">
         <div v-tooltip.bottom="getConsentTooltip(data)">
-          <Tag
-            class="font-normal"
-            :value="getConsentLabel(data.consent_status)"
-            :severity="getConsentColor(data.consent_status)"
-          />
+          <span
+            class="state-pill"
+            :class="getConsentClass(data.consent_status)"
+            >{{ getConsentLabel(data.consent_status) }}</span
+          >
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -662,7 +651,7 @@
 
     <!-- Recipient -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('recipient')"
+      v-if="columnVisibility.recipient"
       field="recipient"
       data-type="numeric"
       sortable
@@ -681,7 +670,7 @@
 
     <!-- Sender -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('sender')"
+      v-if="columnVisibility.sender"
       field="sender"
       data-type="numeric"
       sortable
@@ -700,7 +689,7 @@
 
     <!-- Seniority -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('seniority')"
+      v-if="columnVisibility.seniority"
       field="seniority"
       sortable
       data-type="date"
@@ -725,7 +714,7 @@
 
     <!-- Given name -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('given_name')"
+      v-if="columnVisibility.given_name"
       field="given_name"
       sortable
       :show-filter-operator="false"
@@ -743,7 +732,7 @@
 
     <!-- Family name -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('family_name')"
+      v-if="columnVisibility.family_name"
       field="family_name"
       sortable
       :show-filter-operator="false"
@@ -761,7 +750,7 @@
 
     <!-- Alternate names -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('alternate_name')"
+      v-if="columnVisibility.alternate_name"
       field="alternate_name"
       sortable
       :show-filter-operator="false"
@@ -782,7 +771,7 @@
 
     <!-- Alternate emails -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('alternate_email')"
+      v-if="columnVisibility.alternate_email"
       field="alternate_email"
       sortable
       :show-filter-operator="false"
@@ -803,7 +792,7 @@
 
     <!-- Location -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('location')"
+      v-if="columnVisibility.location"
       field="location"
       sortable
       :show-filter-operator="false"
@@ -833,7 +822,7 @@
 
     <!-- Works for -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('works_for')"
+      v-if="columnVisibility.works_for"
       field="works_for"
       sortable
       :show-filter-operator="false"
@@ -851,7 +840,7 @@
 
     <!-- Job title	 -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('job_title')"
+      v-if="columnVisibility.job_title"
       field="job_title"
       sortable
       :show-filter-operator="false"
@@ -869,7 +858,7 @@
 
     <!-- Updated at -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('updated_at')"
+      v-if="columnVisibility.updated_at"
       field="updated_at"
       sortable
       data-type="date"
@@ -896,7 +885,7 @@
 
     <!-- Created at -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('created_at')"
+      v-if="columnVisibility.created_at"
       field="created_at"
       sortable
       data-type="date"
@@ -923,7 +912,7 @@
 
     <!-- Mining ID	 -->
     <Column
-      v-if="$contactsStore.visibleColumns.includes('mining_id')"
+      v-if="columnVisibility.mining_id"
       field="mining_id"
       sortable
       :show-filter-operator="false"
@@ -946,11 +935,16 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
+import { useDebounceFn } from '@vueuse/core';
 // import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
+import {
+  buildColumnVisibility,
+  toStateClass,
+} from '~/utils/mining-table-performance';
 import {
   consentStatuses,
   getConsentColor,
@@ -963,13 +957,8 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
-import {
-  resolveContactsLoadingStrategy,
-  resolveMiningTableRows,
-} from '~/utils/mining-table';
 import Normalizer from '~/utils/normalizer';
 
-const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
 );
@@ -987,6 +976,9 @@ const ContactInformationSidebar = defineAsyncComponent(
 );
 const CampaignComposerDialog = defineAsyncComponent(
   () => import('~/components/campaigns/CampaignComposerDialog.vue'),
+);
+const SmsCampaignComposerDialog = defineAsyncComponent(
+  () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
 
 const { showTable, origin } = defineProps<{
@@ -1015,10 +1007,24 @@ const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
+const visibleColumns = computed({
+  get: () => $contactsStore.visibleColumns,
+  set: (value: string[]) => {
+    $contactsStore.visibleColumns = value;
+  },
+});
 
 const DEFAULT_ROWS_PER_PAGE = 150;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
+const globalFilterFields = [
+  'email',
+  'name',
+  'location',
+  'works_for',
+  'job_title',
+  'location_normalized',
+];
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
@@ -1026,6 +1032,18 @@ function openContactInformation(data: Contact) {
 
 /* *** Filters *** */
 const $filtersStore = useFiltersStore();
+const filtersModel = computed({
+  get: () => $filtersStore.filters,
+  set: (value) => {
+    $filtersStore.filters = value;
+  },
+});
+const searchContactModel = computed({
+  get: () => $filtersStore.searchContactModel,
+  set: (value: string) => {
+    $filtersStore.searchContactModel = value;
+  },
+});
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
@@ -1039,19 +1057,22 @@ const jobDetailsContacts = computed(
 );
 
 const hardFilter = computed(() => $filtersStore.jobDetailsToggle);
+
+const sourceRows = computed(() =>
+  hardFilter.value ? jobDetailsContacts.value : (contacts.value ?? []),
+);
+watch(
+  sourceRows,
+  (rows) => {
+    filteredContacts.value = rows;
+  },
+  { immediate: true },
+);
+const columnVisibility = computed(() =>
+  buildColumnVisibility(visibleColumns.value),
+);
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
-const tableRows = computed(() =>
-  resolveMiningTableRows({
-    hardFilter: hardFilter.value,
-    contacts: contacts.value,
-    jobDetailsContacts: jobDetailsContacts.value,
-  }),
-);
-
-const contactsLoadingStrategy = computed(() =>
-  resolveContactsLoadingStrategy({ showTable }),
-);
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -1059,8 +1080,35 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
+const applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
+  filteredContacts.value = rows;
+}, 100);
+
 function onFilter($event: DataTableFilterEvent) {
-  filteredContacts.value = $event.filteredValue;
+  applyFilteredContacts(
+    ($event.filteredValue as Contact[] | undefined) ?? sourceRows.value,
+  );
+}
+
+function showSocialLinksAndPhones(contact: Contact) {
+  return Boolean(contact.same_as?.length || contact.telephone?.length);
+}
+
+function getVisibleTags(tagValues?: string[] | null) {
+  return (tagValues ?? []).slice(0, 2);
+}
+
+function getHiddenTagsCount(tagValues?: string[] | null) {
+  const values = tagValues ?? [];
+  return Math.max(values.length - 2, 0);
+}
+
+function getStatusClass(status: Contact['status']) {
+  return toStateClass(getStatusColor(status));
+}
+
+function getConsentClass(consentStatus: Contact['consent_status']) {
+  return toStateClass(getConsentColor(consentStatus));
 }
 function optimizeTableForMining() {
   $filtersStore.onNameToggle(true); // toggle on name filter on start mining
@@ -1138,16 +1186,24 @@ const contactsToTreat = computed<string[] | undefined>(() =>
     : implicitlySelectedContacts.value.map((item: Contact) => item.email),
 );
 
+const updateSelectedEmails = useDebounceFn((emails: string[] | undefined) => {
+  $contactsStore.selectedEmails = emails;
+}, 120);
+
+const updateSelectedContactsCount = useDebounceFn((count: number) => {
+  $contactsStore.selectedContactsCount = count;
+}, 120);
+
 watch(
   contactsToTreat,
-  () => {
-    $contactsStore.selectedEmails = contactsToTreat.value;
+  (value) => {
+    updateSelectedEmails(value);
   },
-  { deep: true, immediate: true },
+  { immediate: true },
 );
 
 watch(implicitlySelectedContactsLength, () => {
-  $contactsStore.selectedContactsCount = implicitlySelectedContactsLength.value;
+  updateSelectedContactsCount(implicitlySelectedContactsLength.value);
 });
 
 /* *** Export CSV *** */
@@ -1161,12 +1217,45 @@ const isExportDisabled = computed(
 );
 
 const sendCampaignDialogVisible = ref(false);
+const sendSmsCampaignDialogVisible = ref(false);
 
 const isSendByEmailDisabled = computed(() => isExportDisabled.value);
+
+const isSendBySmsDisabled = computed(() => {
+  const hasPhones = implicitlySelectedContacts.value.some(
+    (c) => c.telephone && c.telephone.length > 0,
+  );
+  return !hasPhones || isExportDisabled.value;
+});
+
+const sendCampaignMenuItems = computed(() => [
+  {
+    label: t('send_email_campaign'),
+    icon: 'pi pi-envelope',
+    command: () => {
+      openSendContactsDialog();
+    },
+    disabled: isSendByEmailDisabled.value,
+  },
+  {
+    label: t('send_sms_campaign'),
+    icon: 'pi pi-comments',
+    command: () => {
+      openSendSmsContactsDialog();
+    },
+    disabled: isSendBySmsDisabled.value,
+  },
+]);
 
 function openSendContactsDialog() {
   sendCampaignDialogVisible.value = true;
 }
+
+function openSendSmsContactsDialog() {
+  sendSmsCampaignDialogVisible.value = true;
+}
+
+function onSmsCampaignCreated(_campaignId: string) {}
 
 const isFullscreen = ref(false);
 
@@ -1220,161 +1309,13 @@ function disabledColumns(column: { label: string; value: string }) {
 }
 function onSelectColumnsChange() {
   // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
-  if (!$contactsStore.visibleColumns.includes('contacts')) {
-    $contactsStore.visibleColumns.push('contacts');
+  if (!visibleColumns.value.includes('contacts')) {
+    visibleColumns.value.push('contacts');
   }
 }
 
-/* Table dynamic Height */
-const TableRef = ref();
-const tablePosTop = ref(0);
-
-const tableHeight = ref('flex');
-const scrollHeightTable = computed(() =>
-  !isFullscreen.value ? tableHeight.value : '',
-);
-const scrollHeight = ref($screenStore.height);
-
-function observeTop() {
-  const stopWatch = watch(
-    () => TableRef.value,
-    (newValue) => {
-      if (newValue) {
-        const resizeObserver = new ResizeObserver(() => {
-          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
-        });
-        resizeObserver.observe(newValue.$el);
-        try {
-          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    },
-    { immediate: true },
-  );
-}
-
-const isExceedingScreenHeight = computed(
-  () => scrollHeight.value !== $screenStore.height,
-);
-const stopShowTableFirstTimeWatcher = watch(
-  () => contactsLength.value,
-  () => {
-    if (contactsLength.value !== undefined) {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-      if (contactsLength.value > 0) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = isExceedingScreenHeight.value
-            ? `${$screenStore.height - tablePosTop.value - 120}px`
-            : 'flex';
-        });
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    }
-  },
-  { deep: true, immediate: true },
-);
-const scrollHeightObserver = ref<ResizeObserver | null>(null);
-let idlePrefetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
-let idlePrefetchCallbackId: number | null = null;
-let contactsLoadPromise: Promise<void> | null = null;
-const hasLoadedContacts = ref(false);
-
-function clearIdlePrefetch() {
-  if (idlePrefetchTimeoutId) {
-    clearTimeout(idlePrefetchTimeoutId);
-    idlePrefetchTimeoutId = null;
-  }
-
-  if (typeof window === 'undefined' || idlePrefetchCallbackId === null) {
-    return;
-  }
-
-  if ('cancelIdleCallback' in window) {
-    window.cancelIdleCallback(idlePrefetchCallbackId);
-  }
-
-  idlePrefetchCallbackId = null;
-}
-
-async function loadContactsData() {
-  if (hasLoadedContacts.value) {
-    return;
-  }
-
-  if (contactsLoadPromise) {
-    await contactsLoadPromise;
-    return;
-  }
-
-  contactsLoadPromise = (async () => {
-    await $contactsStore.reloadContacts();
-
-    if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
-      console.log(
-        'Data in persons table but not in refinedpersons, refining contacts...',
-      );
-      await $contactsStore.refineContacts();
-      await $contactsStore.reloadContacts();
-    }
-
-    const locationsToNormalize = $contactsStore.getLocationsToNormalize();
-
-    if (locationsToNormalize.length > 0) {
-      Normalizer.add(locationsToNormalize);
-    }
-
-    $contactsStore.subscribeToRealtimeUpdates();
-    hasLoadedContacts.value = true;
-  })();
-
-  try {
-    await contactsLoadPromise;
-  } finally {
-    contactsLoadPromise = null;
-    isLoading.value = false;
-  }
-}
-
-function scheduleIdleContactsPrefetch() {
-  clearIdlePrefetch();
-
-  const runPrefetch = () => {
-    idlePrefetchTimeoutId = null;
-    idlePrefetchCallbackId = null;
-    void loadContactsData();
-  };
-
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    idlePrefetchCallbackId = window.requestIdleCallback(runPrefetch, {
-      timeout: 1500,
-    });
-    return;
-  }
-
-  idlePrefetchTimeoutId = setTimeout(runPrefetch, 350);
-}
-
-onBeforeMount(() => {
-  isLoading.value = true;
-});
-onNuxtReady(async () => {
-  $screenStore.init();
-  $contactsStore.visibleColumns = [
+function getDefaultVisibleColumns() {
+  return [
     'contacts',
     'name',
     'same_as',
@@ -1387,49 +1328,72 @@ onNuxtReady(async () => {
     ...($screenStore.width > 700 ? ['tags'] : []),
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
+}
 
-  if (contactsLoadingStrategy.value === 'immediate') {
-    await loadContactsData();
-  } else {
-    isLoading.value = false;
-    scheduleIdleContactsPrefetch();
+/* Table dynamic Height */
+const TableRef = ref();
+const scrollHeightTable = computed(() => (isFullscreen.value ? '' : 'flex'));
+
+const stopShowTableFirstTimeWatcher = watch(
+  () => contactsLength.value,
+  () => {
+    if (contactsLength.value !== undefined) {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+      if (contactsLength.value > 0) {
+        try {
+          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeMount(() => {
+  isLoading.value = true;
+});
+onNuxtReady(async () => {
+  $screenStore.init();
+  $filtersStore.initializeTableFilters(origin);
+  $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);
+
+  await $contactsStore.reloadContacts();
+
+  if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
+    console.log(
+      'Data in persons table but not in refinedpersons, refining contacts...',
+    );
+    await $contactsStore.refineContacts();
+    await $contactsStore.reloadContacts();
+  }
+  const locationsToNormalize = $contactsStore.getLocationsToNormalize();
+
+  if (origin === 'mine' && locationsToNormalize.length > 0) {
+    Normalizer.add(locationsToNormalize);
   }
 
-  scrollHeightObserver.value = new ResizeObserver(() => {
-    scrollHeight.value = document.documentElement.scrollHeight;
-  });
-  scrollHeightObserver.value.observe(document.documentElement);
+  $contactsStore.subscribeToRealtimeUpdates();
 
   const miningId = getParam(MINING_ID_PARAM);
   if (miningId) {
     $filtersStore.filterByMiningId(miningId as string);
-    $contactsStore.visibleColumns.push(MINING_ID_PARAM);
+    visibleColumns.value.push(MINING_ID_PARAM);
     removeQueryParam(MINING_ID_PARAM);
   }
 
-  if (contactsLoadingStrategy.value === 'immediate') {
-    isLoading.value = false;
-  }
+  isLoading.value = false;
 });
 
-watch(
-  () => showTable,
-  (isVisible) => {
-    if (!isVisible || hasLoadedContacts.value) {
-      return;
-    }
-
-    clearIdlePrefetch();
-    isLoading.value = true;
-    void loadContactsData();
-  },
-);
-
 onUnmounted(() => {
-  clearIdlePrefetch();
   $screenStore.destroy();
   $contactsStore.$reset();
-  scrollHeightObserver.value?.disconnect();
 });
 
 function getTemperatureStyle(temp: number | null) {
@@ -1499,6 +1463,46 @@ table.p-datatable-table {
 .p-datatable-paginator-bottom,
 .p-datatable-header {
   border: 0;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  height: 48px;
+  vertical-align: middle;
+}
+
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.state-success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.state-warn {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.state-danger {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.state-secondary {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.state-info {
+  color: #0c4a6e;
+  background: #e0f2fe;
 }
 
 /* Use passthrough if able */
@@ -1576,6 +1580,7 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "send_email_campaign": "Send email campaign",
+    "send_sms_campaign": "Send SMS campaign",
     "any": "Any",
     "contact_information": "Contact Information"
   },
@@ -1642,6 +1647,7 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "send_email_campaign": "Envoyer une campagne email",
+    "send_sms_campaign": "Envoyer une campagne SMS",
     "any": "N'importe lequel",
     "contact_information": "Information de contact"
   }
