@@ -1487,7 +1487,6 @@ onBeforeMount(() => {
 onNuxtReady(async () => {
   $screenStore.init();
   $contactsStore.visibleColumns = [
->>>>>>> origin/main
     'contacts',
     'name',
     'same_as',
