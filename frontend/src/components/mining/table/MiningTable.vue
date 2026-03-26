@@ -1328,13 +1328,7 @@ function onSelectColumnsChange() {
 }
 
 function getDefaultVisibleColumns() {
-  return [
-    'contacts',
-    'location',
-    'works_for',
-    'job_title',
-    'actions',
-  ];
+  return ['contacts', 'location', 'works_for', 'job_title', 'actions'];
 }
 
 /* Table dynamic Height */
@@ -1499,7 +1493,7 @@ onNuxtReady(async () => {
     ...($screenStore.width > 700 ? ['tags'] : []),
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
-}
+});
 
 /* Table dynamic Height */
 const TableRef = ref();
