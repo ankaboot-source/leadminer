@@ -262,13 +262,22 @@
                   />
                 </li>
                 <Divider class="my-0" />
-                v-model="$contactsStore.visibleColumns"
-                :options="visibleColumnsOptions"
-                :option-disabled="disabledColumns" option-label="label"
-                class="min-w-56" fluid option-value="value"
-                :selected-items-label=" t('visible_columns',
-                $contactsStore.visibleColumns.length) " :max-selected-labels="0"
-                @change="onSelectColumnsChange" />
+                <li>
+                  <MultiSelect
+                    v-model="$contactsStore.visibleColumns"
+                    :options="visibleColumnsOptions"
+                    :option-disabled="disabledColumns"
+                    option-label="label"
+                    class="min-w-56"
+                    fluid
+                    option-value="value"
+                    :selected-items-label="
+                      t('visible_columns', $contactsStore.visibleColumns.length)
+                    "
+                    :max-selected-labels="0"
+                    @change="onSelectColumnsChange"
+                  />
+                </li>
               </ul>
             </Popover>
           </div>
@@ -1394,7 +1403,7 @@ const stopShowTableFirstTimeWatcher = watch(
   },
   { deep: true, immediate: true },
 );
-const scrollHeightObserver = ref<ResizeObserver | null>(null);
+const _scrollHeightObserver = ref<ResizeObserver | null>(null);
 let idlePrefetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let idlePrefetchCallbackId: number | null = null;
 let contactsLoadPromise: Promise<void> | null = null;
