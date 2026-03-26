@@ -39,32 +39,27 @@
 
         <div class="p-toast-detail">
           <div>
-            {{ (slotProps.message.detail as ToastHasLinksGroupDetail).message }}
+            {{ getToastHasLinksDetailMessage(slotProps.message.detail) }}
           </div>
           <div
-            v-if="
-              (slotProps.message.detail as ToastHasLinksGroupDetail).button
-                ?.action
-            "
+            v-if="hasToastHasLinksButtonAction(slotProps.message.detail)"
             class="mt-2"
           >
             <Button
               size="small"
               :label="
-                (slotProps.message.detail as ToastHasLinksGroupDetail).button
+                asToastHasLinksGroupDetail(slotProps.message.detail)?.button
                   ?.text
               "
               @click="
-                (
-                  slotProps.message.detail as ToastHasLinksGroupDetail
-                ).button?.action?.()
+                asToastHasLinksGroupDetail(
+                  slotProps.message.detail,
+                )?.button?.action?.()
               "
             ></Button>
           </div>
           <div
-            v-else-if="
-              (slotProps.message.detail as ToastHasLinksGroupDetail).link
-            "
+            v-else-if="hasToastHasLinksLink(slotProps.message.detail)"
             class="mt-2"
           >
             <Button
@@ -73,11 +68,10 @@
               as="a"
               variant="link"
               :label="
-                (slotProps.message.detail as ToastHasLinksGroupDetail).link
-                  ?.text
+                asToastHasLinksGroupDetail(slotProps.message.detail)?.link?.text
               "
               :href="
-                (slotProps.message.detail as ToastHasLinksGroupDetail).link?.url
+                asToastHasLinksGroupDetail(slotProps.message.detail)?.link?.url
               "
               target="_blank"
               rel="noopener noreferrer"
@@ -98,21 +92,15 @@
 </template>
 
 <script setup lang="ts">
-type ToastHasLinksGroupDetail = {
-  message: string;
-  link?: {
-    text: string;
-    url: string;
-  };
-  button?: {
-    text: string;
-    action?: () => void;
-  };
-};
-
 import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
 import type { MiningSource } from '@/types/mining';
+import {
+  asToastHasLinksGroupDetail,
+  getToastHasLinksDetailMessage,
+  hasToastHasLinksButtonAction,
+  hasToastHasLinksLink,
+} from '@/utils/toast';
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import Normalizer from '~/utils/normalizer';

@@ -32,6 +32,16 @@ export const DEFAULT_TOGGLES = {
   hideUnsubscribed: true,
 };
 
+export const CLEARED_TOGGLES = {
+  valid: false,
+  recent: false,
+  name: false,
+  replies: false,
+  telephone: false,
+  location: false,
+  hideUnsubscribed: false,
+};
+
 export const DEFAULT_FILTERS = {
   global: createConstraint(GLOBAL_SEARCH),
   name: { value: null, matchMode: NOT_EMPTY },

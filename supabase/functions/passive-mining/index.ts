@@ -4,11 +4,15 @@ import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
-const LEADMINER_SECRET_TOKEN = Deno.env.get("LEADMINER_SECRET_TOKEN");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
 
+type MiningSource = {
+  email: string;
+  user_id: string;
+};
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
@@ -33,15 +37,6 @@ app.post("/", async (c: Context) => {
   } catch (error) {
     console.error("Error in passive-mining:", error);
     return c.json({ error: "Failed to start passive-mining" }, 500);
-  }
-});
-
-app.get("/", (c: Context) => {
-  try {
-    return c.json({ msg: "Passive mining is running" });
-  } catch (error) {
-    console.error("Error in passive-mining:", error);
-    return c.json({ error: "Failed to check passive-mining" }, 500);
   }
 });
 
@@ -88,29 +83,35 @@ async function getLatestPassiveMiningDate(
   return data[0].started_at;
 }
 
-async function getBoxes(miningSource: any) {
+async function getBoxes(miningSource: MiningSource) {
+  console.log(
+    `Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+  );
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LEADMINER_SECRET_TOKEN}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         // originally its x-sb-jwt
       },
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
+  console.log(`Received response for boxes of ${miningSource.email}:`, res);
 
   const { folders } = (await res.json()).data || {};
   return [...folders];
 }
 
-async function startMiningEmail(miningSource: any) {
+async function startMiningEmail(miningSource: MiningSource) {
   // Get default folders
   // we should save checked boxes from the frontend in miningSource later on
   const boxes = await getBoxes(miningSource);
+  console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
   const folders = getFolders(boxes);
+  console.log(`Extracted folders for ${miningSource.email}:`, folders);
 
   const since = await getLatestPassiveMiningDate(miningSource.user_id);
 
@@ -120,7 +121,7 @@ async function startMiningEmail(miningSource: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LEADMINER_SECRET_TOKEN}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({
         miningSource: { email: miningSource.email },

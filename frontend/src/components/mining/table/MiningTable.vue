@@ -28,7 +28,7 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="sourceRows"
+    :value="tableRows"
     data-key="email"
     paginator
     filter-display="menu"
@@ -262,20 +262,13 @@
                   />
                 </li>
                 <Divider class="my-0" />
-                <MultiSelect
-                  v-model="visibleColumns"
-                  :options="visibleColumnsOptions"
-                  :option-disabled="disabledColumns"
-                  option-label="label"
-                  class="min-w-56"
-                  fluid
-                  option-value="value"
-                  :selected-items-label="
-                    t('visible_columns', visibleColumns.length)
-                  "
-                  :max-selected-labels="0"
-                  @change="onSelectColumnsChange"
-                />
+                v-model="$contactsStore.visibleColumns"
+                :options="visibleColumnsOptions"
+                :option-disabled="disabledColumns" option-label="label"
+                class="min-w-56" fluid option-value="value"
+                :selected-items-label=" t('visible_columns',
+                $contactsStore.visibleColumns.length) " :max-selected-labels="0"
+                @change="onSelectColumnsChange" />
               </ul>
             </Popover>
           </div>
@@ -957,6 +950,10 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
+import {
+  resolveContactsLoadingStrategy,
+  resolveMiningTableRows,
+} from '~/utils/mining-table';
 import Normalizer from '~/utils/normalizer';
 
 const SocialLinksAndPhones = defineAsyncComponent(
@@ -1076,6 +1073,17 @@ const columnVisibility = computed(() =>
 );
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
+const tableRows = computed(() =>
+  resolveMiningTableRows({
+    hardFilter: hardFilter.value,
+    contacts: contacts.value,
+    jobDetailsContacts: jobDetailsContacts.value,
+  }),
+);
+
+const contactsLoadingStrategy = computed(() =>
+  resolveContactsLoadingStrategy({ showTable }),
+);
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -1322,6 +1330,165 @@ function onSelectColumnsChange() {
 function getDefaultVisibleColumns() {
   return [
     'contacts',
+    'location',
+    'works_for',
+    'job_title',
+    'actions',
+  ];
+}
+
+/* Table dynamic Height */
+const TableRef = ref();
+const tablePosTop = ref(0);
+
+const tableHeight = ref('flex');
+const scrollHeightTable = computed(() =>
+  !isFullscreen.value ? tableHeight.value : '',
+);
+const scrollHeight = ref($screenStore.height);
+
+function observeTop() {
+  const stopWatch = watch(
+    () => TableRef.value,
+    (newValue) => {
+      if (newValue) {
+        const resizeObserver = new ResizeObserver(() => {
+          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
+        });
+        resizeObserver.observe(newValue.$el);
+        try {
+          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    },
+    { immediate: true },
+  );
+}
+
+const isExceedingScreenHeight = computed(
+  () => scrollHeight.value !== $screenStore.height,
+);
+const stopShowTableFirstTimeWatcher = watch(
+  () => contactsLength.value,
+  () => {
+    if (contactsLength.value !== undefined) {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+      if (contactsLength.value > 0) {
+        observeTop();
+        watchEffect(() => {
+          tableHeight.value = isExceedingScreenHeight.value
+            ? `${$screenStore.height - tablePosTop.value - 120}px`
+            : 'flex';
+        });
+        try {
+          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    }
+  },
+  { deep: true, immediate: true },
+);
+const scrollHeightObserver = ref<ResizeObserver | null>(null);
+let idlePrefetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let idlePrefetchCallbackId: number | null = null;
+let contactsLoadPromise: Promise<void> | null = null;
+const hasLoadedContacts = ref(false);
+
+function clearIdlePrefetch() {
+  if (idlePrefetchTimeoutId) {
+    clearTimeout(idlePrefetchTimeoutId);
+    idlePrefetchTimeoutId = null;
+  }
+
+  if (typeof window === 'undefined' || idlePrefetchCallbackId === null) {
+    return;
+  }
+
+  if ('cancelIdleCallback' in window) {
+    window.cancelIdleCallback(idlePrefetchCallbackId);
+  }
+
+  idlePrefetchCallbackId = null;
+}
+
+async function loadContactsData() {
+  if (hasLoadedContacts.value) {
+    return;
+  }
+
+  if (contactsLoadPromise) {
+    await contactsLoadPromise;
+    return;
+  }
+
+  contactsLoadPromise = (async () => {
+    await $contactsStore.reloadContacts();
+
+    if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
+      console.log(
+        'Data in persons table but not in refinedpersons, refining contacts...',
+      );
+      await $contactsStore.refineContacts();
+      await $contactsStore.reloadContacts();
+    }
+
+    const locationsToNormalize = $contactsStore.getLocationsToNormalize();
+
+    if (locationsToNormalize.length > 0) {
+      Normalizer.add(locationsToNormalize);
+    }
+
+    $contactsStore.subscribeToRealtimeUpdates();
+    hasLoadedContacts.value = true;
+  })();
+
+  try {
+    await contactsLoadPromise;
+  } finally {
+    contactsLoadPromise = null;
+    isLoading.value = false;
+  }
+}
+
+function scheduleIdleContactsPrefetch() {
+  clearIdlePrefetch();
+
+  const runPrefetch = () => {
+    idlePrefetchTimeoutId = null;
+    idlePrefetchCallbackId = null;
+    void loadContactsData();
+  };
+
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    idlePrefetchCallbackId = window.requestIdleCallback(runPrefetch, {
+      timeout: 1500,
+    });
+    return;
+  }
+
+  idlePrefetchTimeoutId = setTimeout(runPrefetch, 350);
+}
+
+onBeforeMount(() => {
+  isLoading.value = true;
+});
+onNuxtReady(async () => {
+  $screenStore.init();
+  $contactsStore.visibleColumns = [
+>>>>>>> origin/main
+    'contacts',
     'name',
     'same_as',
     'telephone',
@@ -1369,14 +1536,11 @@ onNuxtReady(async () => {
   $filtersStore.initializeTableFilters(origin);
   $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);
 
-  await $contactsStore.reloadContacts();
-
-  if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
-    console.log(
-      'Data in persons table but not in refinedpersons, refining contacts...',
-    );
-    await $contactsStore.refineContacts();
-    await $contactsStore.reloadContacts();
+  if (contactsLoadingStrategy.value === 'immediate') {
+    await loadContactsData();
+  } else {
+    isLoading.value = false;
+    scheduleIdleContactsPrefetch();
   }
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
@@ -1393,10 +1557,26 @@ onNuxtReady(async () => {
     removeQueryParam(MINING_ID_PARAM);
   }
 
-  isLoading.value = false;
+  if (contactsLoadingStrategy.value === 'immediate') {
+    isLoading.value = false;
+  }
 });
 
+watch(
+  () => showTable,
+  (isVisible) => {
+    if (!isVisible || hasLoadedContacts.value) {
+      return;
+    }
+
+    clearIdlePrefetch();
+    isLoading.value = true;
+    void loadContactsData();
+  },
+);
+
 onUnmounted(() => {
+  clearIdlePrefetch();
   $screenStore.destroy();
   $contactsStore.$reset();
 });
