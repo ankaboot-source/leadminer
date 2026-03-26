@@ -350,6 +350,35 @@ describe('Email Message', () => {
               reachable: REACHABILITY.DIRECT_PERSON
             }
           ]
+        },
+        {
+          person: {
+            name: 'test',
+            email: 'invalid@leadminer.io',
+            identifiers: ['invalid'],
+            source: 'miningSource@leadminer.io'
+          },
+          pointOfContact: {
+            name: 'test',
+            to: false,
+            cc: false,
+            bcc: false,
+            body: false,
+            from: true,
+            replyTo: false
+          },
+          tags: [
+            {
+              name: 'transactional',
+              source: 'refined#message_header',
+              reachable: 3
+            },
+            {
+              name: 'no-reply',
+              source: 'refined#email_address',
+              reachable: 3
+            }
+          ]
         }
       ];
       const contacts = await message.getContacts();

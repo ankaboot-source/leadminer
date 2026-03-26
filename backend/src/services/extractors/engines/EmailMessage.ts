@@ -333,12 +333,14 @@ export default class EmailMessage {
             field: validContact.sourceField
           });
 
-          // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
-          if (
-            tags.some((t) => EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name))
-          ) {
-            return;
-          }
+          // TODO: [BUG] Re-enable once refine process properly handles transactional tag
+          // Previously this filtered out contacts from transactional emails, but it caused
+          // transactional-tagged contacts to be missing from the refined table.
+          // if (
+          //   tags.some((t) => EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name))
+          // ) {
+          //   return;
+          // }
 
           if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
             if (
