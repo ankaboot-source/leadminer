@@ -11,6 +11,11 @@ import {
   MAX_YEARS_AGO_TO_FILTER,
   NOT_EMPTY,
 } from '~/utils/filters-defaults';
+import {
+  buildTableStorageKey,
+  parseStoredFilters,
+  type TableOrigin,
+} from '~/utils/table-preferences';
 
 type TogglesType = {
   valid: boolean;
@@ -34,6 +39,7 @@ const phoneToggle = ref(false);
 const locationToggle = ref(false);
 const jobDetailsToggle = ref(false);
 const hideUnsubscribedToggle = ref(true);
+const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(null);
 
 const isDefaultFilters = computed(
   () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
@@ -237,6 +243,69 @@ function syncTogglesWithFilters() {
     !consentSet.has('opt_out');
 }
 
+function persistTableFilters() {
+  if (!import.meta.client || !tableContext.value) {
+    return;
+  }
+
+  const { userId, origin } = tableContext.value;
+  const key = buildTableStorageKey('filters', userId, origin);
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      filters: filters.value,
+      searchContactModel: searchContactModel.value,
+      jobDetailsToggle: jobDetailsToggle.value,
+    }),
+  );
+}
+
+const persistTableFiltersDebounced = useDebounceFn(persistTableFilters, 250);
+
+function initializeTableFilters(origin: TableOrigin) {
+  const $user = useSupabaseUser();
+  const userId =
+    $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
+
+  if (!userId || !import.meta.client) {
+    return;
+  }
+
+  tableContext.value = { userId, origin };
+  const key = buildTableStorageKey('filters', userId, origin);
+  const raw = localStorage.getItem(key);
+
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      filters?: unknown;
+      searchContactModel?: unknown;
+      jobDetailsToggle?: unknown;
+    };
+    const restoredFilters = parseStoredFilters(
+      parsed.filters ? JSON.stringify(parsed.filters) : null,
+    );
+
+    if (restoredFilters) {
+      filters.value = restoredFilters;
+      syncTogglesWithFilters();
+    }
+
+    if (typeof parsed.searchContactModel === 'string') {
+      searchContactModel.value = parsed.searchContactModel;
+    }
+
+    if (typeof parsed.jobDetailsToggle === 'boolean') {
+      jobDetailsToggle.value = parsed.jobDetailsToggle;
+    }
+  } catch {
+    /* empty */
+  }
+}
+
 function registerFiltersAndStartWatchers() {
   const $contactsStore = useContactsStore();
 
@@ -289,6 +358,10 @@ function registerFiltersAndStartWatchers() {
   watch(searchContactModel, (newValue: string) => {
     debouncedUpdate(newValue);
   });
+
+  watch(filters, persistTableFiltersDebounced, { deep: true });
+  watch(searchContactModel, persistTableFiltersDebounced);
+  watch(jobDetailsToggle, persistTableFiltersDebounced);
 
   watchStatusToggle();
   watchRepliesToggle();
@@ -366,6 +439,7 @@ export const useFiltersStore = defineStore('filters', () => {
     clearFilter,
 
     filterByMiningId,
+    initializeTableFilters,
 
     $reset,
   };

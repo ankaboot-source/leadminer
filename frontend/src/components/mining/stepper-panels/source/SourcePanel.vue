@@ -113,7 +113,7 @@ const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $sourcePanelStore = useStepperSourcePanel();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
-const sourceModel = ref<MiningSource | undefined>();
+const sourceModel = ref<MiningSource | undefined>(sourceOptions?.value[0]);
 
 function extractContacts(miningSource?: MiningSource) {
   if (miningSource) {
@@ -124,30 +124,6 @@ function extractContacts(miningSource?: MiningSource) {
 }
 
 $sourcePanelStore.showOtherSourcesByDefault();
-
-watch(
-  sourceOptions,
-  (options) => {
-    if (options.length > 0) {
-      $sourcePanelStore.hideOtherSources();
-
-      const selectedSourceIsStillAvailable = options.some(
-        (option) =>
-          option.email === sourceModel.value?.email &&
-          option.type === sourceModel.value?.type,
-      );
-
-      if (!selectedSourceIsStillAvailable) {
-        sourceModel.value = options[0];
-      }
-
-      return;
-    }
-
-    sourceModel.value = undefined;
-  },
-  { immediate: true },
-);
 
 function getIcon(type: string) {
   switch (type) {
