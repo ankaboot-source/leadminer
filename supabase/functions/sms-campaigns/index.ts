@@ -74,6 +74,26 @@ type SmsCampaignCreatePayload = {
     baseUrl?: string;
   };
   timezone?: string;
+  fleetMode?: boolean;
+  selectedGatewayIds?: string[];
+};
+
+type SmsFleetGateway = {
+  id: string;
+  user_id: string;
+  name: string;
+  provider: "smsgate" | "simple-sms-gateway" | "twilio";
+  config: {
+    baseUrl?: string;
+    username?: string;
+    password?: string;
+    simpleSmsGatewayBaseUrl?: string;
+  };
+  is_active: boolean;
+  daily_limit: number;
+  monthly_limit: number;
+  sent_today: number;
+  sent_this_month: number;
 };
 
 type SmsTemplateContext = Record<string, unknown>;
@@ -605,6 +625,82 @@ function getUniqueShortToken(length = 8): string {
   return generateShortToken(length);
 }
 
+async function getUserFleetGateways(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  userId: string,
+  gatewayIds?: string[],
+): Promise<SmsFleetGateway[]> {
+  let query = supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true);
+
+  if (gatewayIds && gatewayIds.length > 0) {
+    query = query.in("id", gatewayIds);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as SmsFleetGateway[];
+}
+
+function distributeRecipientsToGateways(
+  recipients: string[],
+  gateways: SmsFleetGateway[],
+): Map<string, SmsFleetGateway> {
+  const assignments = new Map<string, SmsFleetGateway>();
+  
+  if (gateways.length === 0) {
+    return assignments;
+  }
+
+  // Sort gateways by daily usage (ascending) to distribute load
+  const sortedGateways = [...gateways].sort((a, b) => {
+    const aUsage = a.daily_limit > 0 ? a.sent_today / a.daily_limit : 0;
+    const bUsage = b.daily_limit > 0 ? b.sent_today / b.daily_limit : 0;
+    return aUsage - bUsage;
+  });
+
+  let gatewayIndex = 0;
+  
+  for (const recipient of recipients) {
+    // Find next available gateway with capacity
+    let attempts = 0;
+    let assigned = false;
+    
+    while (attempts < sortedGateways.length && !assigned) {
+      const gateway = sortedGateways[gatewayIndex % sortedGateways.length];
+      
+      // Check if gateway has capacity (0 = unlimited)
+      const hasCapacity = gateway.daily_limit === 0 || 
+        gateway.sent_today < gateway.daily_limit;
+      
+      if (hasCapacity) {
+        assignments.set(recipient, gateway);
+        gateway.sent_today++;
+        assigned = true;
+      }
+      
+      gatewayIndex++;
+      attempts++;
+    }
+    
+    // If no gateway has capacity, assign to first gateway anyway
+    // (it will fail during processing but be tracked)
+    if (!assigned) {
+      assignments.set(recipient, sortedGateways[0]);
+    }
+  }
+  
+  return assignments;
+}
+
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -625,7 +721,11 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     smsgateConfig,
     simpleSmsGatewayConfig,
     timezone,
+    fleetMode,
+    selectedGatewayIds,
   } = payload;
+  
+  const isFleetMode = fleetMode === true;
 
   if (!senderName || !messageTemplate) {
     return c.json(
@@ -659,7 +759,30 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
-  const selectedProvider = provider || "smsgate";
+  const userTimezone = timezone || "UTC";
+  const supabaseAdmin = createSupabaseAdmin();
+  
+  // Handle Fleet Mode
+  let fleetGateways: SmsFleetGateway[] = [];
+  if (isFleetMode) {
+    if (!selectedGatewayIds || selectedGatewayIds.length === 0) {
+      return c.json(
+        { error: "No gateways selected for fleet mode", code: "NO_GATEWAYS_SELECTED" },
+        400,
+      );
+    }
+    
+    fleetGateways = await getUserFleetGateways(supabaseAdmin, user.id, selectedGatewayIds);
+    
+    if (fleetGateways.length === 0) {
+      return c.json(
+        { error: "Selected gateways not found or inactive", code: "GATEWAYS_NOT_FOUND" },
+        400,
+      );
+    }
+  }
+
+  const selectedProvider = isFleetMode ? "fleet" : (provider || "smsgate");
   const smsgateUsername = smsgateConfig?.username?.trim() || "";
   const smsgatePassword = smsgateConfig?.password?.trim() || "";
   const smsgateBaseUrl =
@@ -669,26 +792,26 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     simpleSmsGatewayConfig?.baseUrl?.trim() ||
     "http://192.168.1.100:8080/send-sms";
 
-  const userTimezone = timezone || "UTC";
-  const supabaseAdmin = createSupabaseAdmin();
-
-  if (selectedProvider === "smsgate") {
-    const fields: Partial<SmsProviderProfileConfig> = {
-      smsgate_base_url: smsgateBaseUrl,
-    };
-    if (smsgateUsername) {
-      fields.smsgate_username = smsgateUsername;
+  // Only validate single provider config if not in fleet mode
+  if (!isFleetMode) {
+    if (selectedProvider === "smsgate") {
+      const fields: Partial<SmsProviderProfileConfig> = {
+        smsgate_base_url: smsgateBaseUrl,
+      };
+      if (smsgateUsername) {
+        fields.smsgate_username = smsgateUsername;
+      }
+      if (smsgatePassword) {
+        fields.smsgate_password = smsgatePassword;
+      }
+      await saveProfileFields(supabaseAdmin, user.id, fields);
     }
-    if (smsgatePassword) {
-      fields.smsgate_password = smsgatePassword;
-    }
-    await saveProfileFields(supabaseAdmin, user.id, fields);
-  }
 
-  if (selectedProvider === "simple-sms-gateway") {
-    await saveProfileFields(supabaseAdmin, user.id, {
-      simple_sms_gateway_base_url: simpleSmsGatewayBaseUrl,
-    });
+    if (selectedProvider === "simple-sms-gateway") {
+      await saveProfileFields(supabaseAdmin, user.id, {
+        simple_sms_gateway_base_url: simpleSmsGatewayBaseUrl,
+      });
+    }
   }
 
   const profileConfig = await getUserSmsProviderConfig(supabaseAdmin, user.id);
@@ -703,46 +826,49 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       : null);
   const simpleSmsGatewayCredentials =
     toSimpleSmsGatewayCredentials(profileConfig) ||
-    (selectedProvider === "simple-sms-gateway"
+    (!isFleetMode && selectedProvider === "simple-sms-gateway"
       ? {
           baseUrl: simpleSmsGatewayBaseUrl,
         }
       : null);
 
-  if (selectedProvider === "smsgate" && !smsgateCredentials) {
-    return c.json(
-      {
-        error:
-          "SMSGate is not configured. Please add your SMSGate credentials.",
-        code: "SMSGATE_NOT_CONFIGURED",
-      },
-      400,
-    );
-  }
+  // Validate single provider configuration (only for non-fleet mode)
+  if (!isFleetMode) {
+    if (selectedProvider === "smsgate" && !smsgateCredentials) {
+      return c.json(
+        {
+          error:
+            "SMSGate is not configured. Please add your SMSGate credentials.",
+          code: "SMSGATE_NOT_CONFIGURED",
+        },
+        400,
+      );
+    }
 
-  if (
-    selectedProvider === "simple-sms-gateway" &&
-    !simpleSmsGatewayCredentials
-  ) {
-    return c.json(
-      {
-        error:
-          "simple-sms-gateway is not configured. Please add your credentials.",
-        code: "SIMPLE_SMS_GATEWAY_NOT_CONFIGURED",
-      },
-      400,
-    );
-  }
+    if (
+      selectedProvider === "simple-sms-gateway" &&
+      !simpleSmsGatewayCredentials
+    ) {
+      return c.json(
+        {
+          error:
+            "simple-sms-gateway is not configured. Please add your credentials.",
+          code: "SIMPLE_SMS_GATEWAY_NOT_CONFIGURED",
+        },
+        400,
+      );
+    }
 
-  if (selectedProvider === "twilio" && !TwilioProvider.isConfigured()) {
-    return c.json(
-      {
-        error:
-          "Twilio is not configured. Please configure Twilio environment variables.",
-        code: "TWILIO_NOT_CONFIGURED",
-      },
-      400,
-    );
+    if (selectedProvider === "twilio" && !TwilioProvider.isConfigured()) {
+      return c.json(
+        {
+          error:
+            "Twilio is not configured. Please configure Twilio environment variables.",
+          code: "TWILIO_NOT_CONFIGURED",
+        },
+        400,
+      );
+    }
   }
 
   const quotaCheck = await checkSmsQuota(
@@ -785,6 +911,8 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       use_short_links: useShortLinks || false,
       recipient_count: uniquePhones.length,
       status: "queued",
+      fleet_mode_enabled: isFleetMode,
+      selected_gateway_ids: isFleetMode ? selectedGatewayIds : [],
     })
     .select()
     .single();
@@ -845,6 +973,51 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
       },
       500,
     );
+  }
+
+  // Distribute recipients to gateways in fleet mode
+  if (isFleetMode && fleetGateways.length > 0) {
+    // Fetch the inserted recipients to get their IDs
+    const { data: insertedRecipients } = await supabaseAdmin
+      .schema("private")
+      .from("sms_campaign_recipients")
+      .select("id, phone")
+      .eq("campaign_id", campaign.id);
+
+    if (insertedRecipients) {
+      const gatewayAssignments = distributeRecipientsToGateways(
+        uniquePhones,
+        fleetGateways,
+      );
+
+      const recipientGatewayRecords = [];
+      for (const [phone, gateway] of gatewayAssignments.entries()) {
+        const recipient = insertedRecipients.find((r) => r.phone === phone);
+        if (recipient) {
+          recipientGatewayRecords.push({
+            campaign_id: campaign.id,
+            recipient_id: recipient.id,
+            gateway_id: gateway.id,
+            gateway_name: gateway.name,
+            gateway_provider: gateway.provider,
+          });
+        }
+      }
+
+      if (recipientGatewayRecords.length > 0) {
+        const { error: assignmentError } = await supabaseAdmin
+          .schema("private")
+          .from("sms_campaign_recipient_gateways")
+          .insert(recipientGatewayRecords);
+
+        if (assignmentError) {
+          logger.error("Failed to create gateway assignments", {
+            error: assignmentError.message,
+            campaignId: campaign.id,
+          });
+        }
+      }
+    }
   }
 
   triggerSmsCampaignProcessorFromEdge().catch((error) => {
@@ -1255,10 +1428,55 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
+  const isFleetMode = campaign.fleet_mode_enabled === true;
   const selectedProvider = campaign.provider as
     | "smsgate"
     | "simple-sms-gateway"
-    | "twilio";
+    | "twilio"
+    | "fleet";
+
+  // Load gateway assignments for fleet mode
+  let gatewayAssignments: Map<
+    string,
+    { id: string; name: string; provider: string; config: Record<string, string> }
+  > = new Map();
+  
+  if (isFleetMode) {
+    const { data: assignments } = await supabaseAdmin
+      .schema("private")
+      .from("sms_campaign_recipient_gateways")
+      .select("recipient_id, gateway_id, gateway_name, gateway_provider")
+      .eq("campaign_id", resolvedCampaignId);
+
+    if (assignments) {
+      // Fetch gateway configs
+      const gatewayIds = assignments
+        .map((a) => a.gateway_id)
+        .filter((id): id is string => id !== null);
+      
+      const { data: gateways } = await supabaseAdmin
+        .schema("private")
+        .from("sms_fleet_gateways")
+        .select("id, config")
+        .in("id", gatewayIds);
+
+      const gatewayConfigs = new Map(
+        (gateways || []).map((g) => [g.id, g.config]),
+      );
+
+      for (const assignment of assignments) {
+        if (assignment.recipient_id && assignment.gateway_id) {
+          gatewayAssignments.set(assignment.recipient_id, {
+            id: assignment.gateway_id,
+            name: assignment.gateway_name || "Unknown",
+            provider: assignment.gateway_provider || "smsgate",
+            config: gatewayConfigs.get(assignment.gateway_id) || {},
+          });
+        }
+      }
+    }
+  }
+
   let smsProvider;
 
   if (selectedProvider === "twilio") {
@@ -1305,8 +1523,65 @@ app.post("/process", authMiddleware, async (c: Context) => {
   let sentCount = 0;
   let failedCount = 0;
 
+  // Provider cache for fleet mode to avoid recreating providers
+  const providerCache = new Map<string, ReturnType<typeof createSmsProvider>>();
+
   for (const recipient of recipients || []) {
     try {
+      // For fleet mode, get the assigned gateway and create provider
+      let currentProvider: ReturnType<typeof createSmsProvider> | undefined = smsProvider;
+      let providerUsed = selectedProvider;
+
+      if (isFleetMode) {
+        const gateway = gatewayAssignments.get(recipient.id);
+        if (!gateway) {
+          throw new Error("No gateway assigned to recipient");
+        }
+
+        providerUsed = gateway.provider as "smsgate" | "simple-sms-gateway";
+
+        // Check cache for provider
+        const cacheKey = `${gateway.id}`;
+        if (!providerCache.has(cacheKey)) {
+          if (gateway.provider === "smsgate") {
+            const config = gateway.config;
+            if (config.baseUrl && config.username && config.password) {
+              providerCache.set(
+                cacheKey,
+                createSmsProvider("smsgate", {
+                  smsgate: {
+                    baseUrl: config.baseUrl,
+                    username: config.username,
+                    password: config.password,
+                  },
+                }),
+              );
+            }
+          } else if (gateway.provider === "simple-sms-gateway") {
+            const config = gateway.config;
+            if (config.simpleSmsGatewayBaseUrl) {
+              providerCache.set(
+                cacheKey,
+                createSmsProvider("simple-sms-gateway", {
+                  simpleSmsGateway: {
+                    baseUrl: config.simpleSmsGatewayBaseUrl,
+                  },
+                }),
+              );
+            }
+          }
+        }
+
+        currentProvider = providerCache.get(cacheKey);
+        if (!currentProvider) {
+          throw new Error(`Failed to create provider for gateway ${gateway.name}`);
+        }
+      }
+
+      if (!currentProvider) {
+        throw new Error("SMS provider not available");
+      }
+
       const templateContext = buildSmsTemplateContext(
         recipient.personalization_data as Record<string, unknown> | null,
       );
@@ -1343,13 +1618,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
         messageWithTrackers += `\n\n${renderedFooter}`;
       }
 
-      let result: SendSmsResult = await smsProvider.send({
+      const result: SendSmsResult = await currentProvider.send({
         to: recipient.phone,
         from: "",
         body: messageWithTrackers,
       });
-
-      const providerUsed = selectedProvider;
 
       if (result.success) {
         await supabaseAdmin
@@ -1402,6 +1675,208 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("id", resolvedCampaignId);
 
   return c.json({ success: true, sentCount, failedCount });
+});
+
+// Fleet Gateway Management Endpoints
+
+app.get("/fleet/gateways", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const supabaseAdmin = createSupabaseAdmin();
+  const { data, error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return c.json(
+      { error: extractErrorMessage(error), code: "FETCH_FAILED" },
+      500,
+    );
+  }
+
+  return c.json({ gateways: data || [] });
+});
+
+app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const payload = (await c.req.json().catch(() => ({}))) as {
+    name?: string;
+    provider?: "smsgate" | "simple-sms-gateway" | "twilio";
+    config?: Record<string, string>;
+    daily_limit?: number;
+    monthly_limit?: number;
+  };
+
+  if (!payload.name || !payload.provider) {
+    return c.json(
+      { error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" },
+      400,
+    );
+  }
+
+  const supabaseAdmin = createSupabaseAdmin();
+  const { data, error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .insert({
+      user_id: user.id,
+      name: payload.name,
+      provider: payload.provider,
+      config: payload.config || {},
+      daily_limit: payload.daily_limit ?? 0,
+      monthly_limit: payload.monthly_limit ?? 0,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return c.json(
+      { error: extractErrorMessage(error), code: "CREATE_FAILED" },
+      500,
+    );
+  }
+
+  return c.json({ gateway: data });
+});
+
+app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const gatewayId = c.req.param("id");
+  const payload = (await c.req.json().catch(() => ({}))) as {
+    name?: string;
+    config?: Record<string, string>;
+    daily_limit?: number;
+    monthly_limit?: number;
+    is_active?: boolean;
+  };
+
+  const supabaseAdmin = createSupabaseAdmin();
+  
+  // Verify ownership
+  const { data: existing } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select("id")
+    .eq("id", gatewayId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!existing) {
+    return c.json({ error: "Gateway not found", code: "NOT_FOUND" }, 404);
+  }
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .update({
+      ...payload,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", gatewayId);
+
+  if (error) {
+    return c.json(
+      { error: extractErrorMessage(error), code: "UPDATE_FAILED" },
+      500,
+    );
+  }
+
+  return c.json({ success: true });
+});
+
+app.delete("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const gatewayId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .delete()
+    .eq("id", gatewayId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return c.json(
+      { error: extractErrorMessage(error), code: "DELETE_FAILED" },
+      500,
+    );
+  }
+
+  return c.json({ success: true });
+});
+
+app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const gatewayId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  // Get gateway details
+  const { data: gateway, error: fetchError } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select("*")
+    .eq("id", gatewayId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !gateway) {
+    return c.json({ error: "Gateway not found", code: "NOT_FOUND" }, 404);
+  }
+
+  // Test the gateway connection
+  try {
+    let testResult: { success: boolean; message: string };
+
+    if (gateway.provider === "smsgate") {
+      const config = gateway.config as { baseUrl?: string; username?: string; password?: string };
+      if (!config.baseUrl || !config.username || !config.password) {
+        testResult = { success: false, message: "Missing SMSGate credentials" };
+      } else {
+        // Simple connectivity test - try to reach the endpoint
+        const response = await fetch(config.baseUrl, {
+          method: "HEAD",
+        }).catch(() => null);
+        testResult = response
+          ? { success: true, message: "Gateway is reachable" }
+          : { success: false, message: "Gateway is not reachable" };
+      }
+    } else if (gateway.provider === "simple-sms-gateway") {
+      const config = gateway.config as { simpleSmsGatewayBaseUrl?: string };
+      if (!config.simpleSmsGatewayBaseUrl) {
+        testResult = { success: false, message: "Missing gateway URL" };
+      } else {
+        const response = await fetch(config.simpleSmsGatewayBaseUrl, {
+          method: "HEAD",
+        }).catch(() => null);
+        testResult = response
+          ? { success: true, message: "Gateway is reachable" }
+          : { success: false, message: "Gateway is not reachable" };
+      }
+    } else {
+      testResult = { success: false, message: "Unsupported provider" };
+    }
+
+    return c.json(testResult);
+  } catch (error) {
+    return c.json({
+      success: false,
+      message: error instanceof Error ? error.message : "Test failed",
+    }, 500);
+  }
 });
 
 Deno.serve((req) => app.fetch(req));

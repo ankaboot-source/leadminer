@@ -30,42 +30,67 @@
         {{ t('sms_limit_note') }}
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium">
-          {{ t('provider') }}
-        </label>
+      <!-- Fleet Mode Toggle -->
+      <div class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
-          <SelectButton
-            v-model="form.provider"
-            :options="providerOptions"
-            option-label="label"
-            option-value="value"
-            :allow-empty="false"
-          />
-          <Button
-            v-if="
-              form.provider === 'smsgate' ||
-              form.provider === 'simple-sms-gateway'
-            "
-            text
-            size="small"
-            icon="pi pi-question-circle"
-            :label="t('setup_help')"
-            @click="openSetupDialog(form.provider)"
+          <InputSwitch v-model="form.fleetMode" input-id="fleetMode" />
+          <label for="fleetMode" class="font-medium cursor-pointer">
+            {{ t('fleet_mode') }}
+          </label>
+          <i
+            v-tooltip.top="t('fleet_mode_help')"
+            class="pi pi-info-circle text-surface-500"
           />
         </div>
-        <small
-          v-if="form.provider === 'twilio' && !providerStatus.twilioAvailable"
-          class="text-orange-500"
-        >
-          {{ t('twilio_not_configured') }}
-        </small>
+        <small class="text-surface-500">{{ t('fleet_mode_description') }}</small>
       </div>
 
-      <div
-        v-if="form.provider === 'smsgate'"
-        class="grid grid-cols-1 md:grid-cols-2 gap-2"
-      >
+      <!-- Fleet Mode: Gateway Selector -->
+      <FleetGatewaySelector
+        v-if="form.fleetMode"
+        v-model="form.selectedGatewayIds"
+        :show-validation="touched.gateways"
+        @add-gateway="openFleetGatewayDialog"
+      />
+
+      <!-- Single Provider Mode -->
+      <template v-else>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium">
+            {{ t('provider') }}
+          </label>
+          <div class="flex items-center gap-2">
+            <SelectButton
+              v-model="form.provider"
+              :options="providerOptions"
+              option-label="label"
+              option-value="value"
+              :allow-empty="false"
+            />
+            <Button
+              v-if="
+                form.provider === 'smsgate' ||
+                form.provider === 'simple-sms-gateway'
+              "
+              text
+              size="small"
+              icon="pi pi-question-circle"
+              :label="t('setup_help')"
+              @click="openSetupDialog(form.provider)"
+            />
+          </div>
+          <small
+            v-if="form.provider === 'twilio' && !providerStatus.twilioAvailable"
+            class="text-orange-500"
+          >
+            {{ t('twilio_not_configured') }}
+          </small>
+        </div>
+
+        <div
+          v-if="form.provider === 'smsgate'"
+          class="grid grid-cols-1 md:grid-cols-2 gap-2"
+        >
         <div class="flex flex-col gap-1 md:col-span-2">
           <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
           <InputText
@@ -117,13 +142,24 @@
         </div>
       </div>
 
+      </template>
+
       <Message
-        v-if="!hasUsableProviderConfig"
+        v-if="!form.fleetMode && !hasUsableProviderConfig"
         severity="warn"
         :closable="false"
         size="small"
       >
         {{ providerConfigError }}
+      </Message>
+
+      <Message
+        v-if="form.fleetMode && form.selectedGatewayIds.length === 0"
+        severity="warn"
+        :closable="false"
+        size="small"
+      >
+        {{ t('select_at_least_one_gateway') }}
       </Message>
 
       <div class="flex flex-col gap-1">
@@ -376,6 +412,8 @@ const form = reactive({
   }),
   useShortLinks: true,
   monthlyRecipientLimit: 200,
+  fleetMode: false,
+  selectedGatewayIds: [] as string[],
 });
 
 const asBooleanFlag = (value: unknown): boolean => {
@@ -423,12 +461,13 @@ async function fetchProviderStatus() {
   }
 }
 
-type FormField = 'messageTemplate' | 'smsgateUsername' | 'smsgatePassword';
+type FormField = 'messageTemplate' | 'smsgateUsername' | 'smsgatePassword' | 'gateways';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
   smsgateUsername: false,
   smsgatePassword: false,
+  gateways: false,
 });
 
 const charCount = ref(0);
@@ -612,11 +651,17 @@ const dialogHeader = computed(() =>
 
 const isSubmitting = ref(false);
 
+const hasFleetModeConfig = computed(() => {
+  if (!form.fleetMode) return true;
+  return form.selectedGatewayIds.length > 0;
+});
+
 const isActionDisabled = computed(
   () =>
     selectedContactsLength.value === 0 ||
     exceedsMonthlyRecipientLimit.value ||
-    !hasUsableProviderConfig.value ||
+    (!form.fleetMode && !hasUsableProviderConfig.value) ||
+    (form.fleetMode && !hasFleetModeConfig.value) ||
     isSubmitting.value ||
     !isFormValid.value,
 );
@@ -672,26 +717,34 @@ const submitCampaign = async () => {
     const recipients = getSelectedRecipients();
     const phones = recipients.map((recipient) => recipient.phone);
 
+    const payload: Record<string, unknown> = {
+      senderName: 'Campaign',
+      messageTemplate: form.messageTemplate,
+      useShortLinks: form.useShortLinks,
+      footerTextTemplate: form.footerTextTemplate,
+      selectedRecipients: recipients,
+      selectedPhones: phones,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      fleetMode: form.fleetMode,
+    };
+
+    if (form.fleetMode) {
+      payload.selectedGatewayIds = form.selectedGatewayIds;
+    } else {
+      payload.provider = form.provider;
+      payload.smsgateConfig = {
+        baseUrl: form.smsgateBaseUrl,
+        username: form.smsgateUsername,
+        password: form.smsgatePassword,
+      };
+      payload.simpleSmsGatewayConfig = {
+        baseUrl: form.simpleSmsGatewayBaseUrl,
+      };
+    }
+
     const data = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
       method: 'POST',
-      body: JSON.stringify({
-        senderName: 'Campaign',
-        messageTemplate: form.messageTemplate,
-        useShortLinks: form.useShortLinks,
-        provider: form.provider,
-        footerTextTemplate: form.footerTextTemplate,
-        smsgateConfig: {
-          baseUrl: form.smsgateBaseUrl,
-          username: form.smsgateUsername,
-          password: form.smsgatePassword,
-        },
-        simpleSmsGatewayConfig: {
-          baseUrl: form.simpleSmsGatewayBaseUrl,
-        },
-        selectedRecipients: recipients,
-        selectedPhones: phones,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      }),
+      body: JSON.stringify(payload),
     });
 
     $toast.add({
@@ -749,6 +802,8 @@ function resetForm() {
     placeholder: UNSUBSCRIBE_PLACEHOLDER,
   });
   form.useShortLinks = true;
+  form.fleetMode = false;
+  form.selectedGatewayIds = [];
   charCount.value = 0;
   smsParts.value = 1;
   Object.keys(touched).forEach((key) => {
@@ -756,9 +811,17 @@ function resetForm() {
   });
 }
 
+function openFleetGatewayDialog() {
+  // Navigate to profile page with fleet management tab open
+  window.open('/settings?tab=sms-fleet', '_blank');
+}
+
 const onDialogShow = () => {
   updateCharCount();
   fetchProviderStatus();
+  // Load fleet gateways
+  const $smsFleetStore = useSmsFleetStore();
+  $smsFleetStore.fetchGateways();
 };
 
 const onDialogHide = () => {
@@ -821,7 +884,11 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "preview_failed": "Preview failed",
     "campaign_created": "Campaign Created",
     "campaign_created_detail": "{count} SMS will be sent",
-    "campaign_creation_failed": "Campaign creation failed"
+    "campaign_creation_failed": "Campaign creation failed",
+    "fleet_mode": "Fleet Mode",
+    "fleet_mode_help": "Distributes SMS across multiple gateways for faster sending",
+    "fleet_mode_description": "Use multiple SMS gateways to send your campaigns faster",
+    "select_at_least_one_gateway": "Please select at least one gateway"
   },
   "fr": {
     "send_sms_campaign": "Envoyer une campagne SMS",
@@ -873,7 +940,11 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "preview_failed": "Échec de l'aperçu",
     "campaign_created": "Campagne créée",
     "campaign_created_detail": "{count} SMS seront envoyés",
-    "campaign_creation_failed": "Échec de la création de la campagne"
+    "campaign_creation_failed": "Échec de la création de la campagne",
+    "fleet_mode": "Mode flotte",
+    "fleet_mode_help": "Distribue les SMS sur plusieurs passerelles pour un envoi plus rapide",
+    "fleet_mode_description": "Utilisez plusieurs passerelles SMS pour envoyer vos campagnes plus rapidement",
+    "select_at_least_one_gateway": "Veuillez sélectionner au moins une passerelle"
   }
 }
 </i18n>
