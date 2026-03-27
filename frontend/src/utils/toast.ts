@@ -36,7 +36,7 @@ export function getToastHasLinksDetailMessage(detail: unknown) {
 export function hasToastHasLinksButtonAction(detail: unknown) {
   return Boolean(
     isToastHasLinksGroupDetail(detail) &&
-      typeof detail.button?.action === 'function',
+    typeof detail.button?.action === 'function',
   );
 }
 
