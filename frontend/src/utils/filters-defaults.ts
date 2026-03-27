@@ -49,7 +49,7 @@ export const DEFAULT_FILTERS = {
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
   consent_status: {
-    value: ['legitimate_interest', 'opt_in'],
+    value: [],
     matchMode: FilterMatchMode.IN,
   },
   location: createOperatorFilter(createConstraint(LOCATION_MATCH)),
