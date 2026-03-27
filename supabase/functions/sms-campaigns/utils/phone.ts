@@ -1,3 +1,5 @@
+import { parsePhoneNumberFromString } from "https://esm.sh/libphonenumber-js@1.12.38";
+
 export function normalizePhoneNumber(phone: string): string | null {
   const trimmed = phone.trim();
 
@@ -7,6 +9,11 @@ export function normalizePhoneNumber(phone: string): string | null {
   normalized = normalized.replace(/\(\s*0\s*\)/g, "");
   if (normalized.startsWith("00")) {
     normalized = `+${normalized.slice(2)}`;
+  }
+
+  const parsedNumber = parsePhoneNumberFromString(normalized);
+  if (parsedNumber?.isPossible()) {
+    return parsedNumber.number;
   }
 
   const cleaned = normalized.replace(/[\s\-().]/g, "");

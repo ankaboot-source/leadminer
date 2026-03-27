@@ -40,3 +40,7 @@ Deno.test("phone normalization handles various formats", () => {
     assertEquals(normalizePhoneNumber(input), expected);
   }
 });
+
+Deno.test("normalizePhoneNumber parses RFC3966 tel format", () => {
+  assertEquals(normalizePhoneNumber("tel:+33 1 23 45 67 89"), "+33123456789");
+});
