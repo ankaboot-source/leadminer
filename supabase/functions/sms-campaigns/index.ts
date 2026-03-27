@@ -189,16 +189,15 @@ async function triggerSmsCampaignProcessorFromEdge() {
 function toSmsGateCredentials(
   config: SmsProviderProfileConfig,
 ): SmsGateCredentials | null {
+  const baseUrl = config.smsgate_base_url?.trim() || "";
   const username = config.smsgate_username?.trim() || "";
   const password = config.smsgate_password?.trim() || "";
-  if (!username || !password) {
+  if (!baseUrl || !username || !password) {
     return null;
   }
 
   return {
-    baseUrl:
-      config.smsgate_base_url?.trim() ||
-      "https://api.sms-gate.app/3rdparty/v1/messages",
+    baseUrl,
     username,
     password,
   };
@@ -226,18 +225,16 @@ app.get("/providers/status", authMiddleware, async (c: Context) => {
 
   return c.json({
     smsgateConfigured: Boolean(
-      config.smsgate_username?.trim() && config.smsgate_password?.trim(),
+      config.smsgate_base_url?.trim() &&
+      config.smsgate_username?.trim() &&
+      config.smsgate_password?.trim(),
     ),
-    smsgateBaseUrl:
-      config.smsgate_base_url ||
-      "https://api.sms-gate.app/3rdparty/v1/messages",
+    smsgateBaseUrl: config.smsgate_base_url?.trim() || "",
     smsgateUsername: config.smsgate_username || "",
     simpleSmsGatewayConfigured: Boolean(
       config.simple_sms_gateway_base_url?.trim(),
     ),
-    simpleSmsGatewayBaseUrl:
-      config.simple_sms_gateway_base_url ||
-      "http://192.168.1.100:8080/send-sms",
+    simpleSmsGatewayBaseUrl: config.simple_sms_gateway_base_url?.trim() || "",
     twilioAvailable: isTwilioFallbackAvailable(),
   });
 });
@@ -260,11 +257,9 @@ app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
   const password =
     payload.password?.trim() || existingConfig.smsgate_password || "";
   const baseUrl =
-    payload.baseUrl?.trim() ||
-    existingConfig.smsgate_base_url ||
-    "https://api.sms-gate.app/3rdparty/v1/messages";
+    payload.baseUrl?.trim() || existingConfig.smsgate_base_url?.trim() || "";
 
-  if (!username || !password) {
+  if (!baseUrl || !username || !password) {
     return c.json(
       {
         error: "Missing SMSGate credentials",
@@ -309,8 +304,8 @@ app.post(
 
     const baseUrl =
       payload.baseUrl?.trim() ||
-      existingConfig.simple_sms_gateway_base_url ||
-      "http://192.168.1.100:8080/send-sms";
+      existingConfig.simple_sms_gateway_base_url?.trim() ||
+      "";
 
     if (!baseUrl) {
       return c.json(
@@ -662,12 +657,8 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const selectedProvider = provider || "smsgate";
   const smsgateUsername = smsgateConfig?.username?.trim() || "";
   const smsgatePassword = smsgateConfig?.password?.trim() || "";
-  const smsgateBaseUrl =
-    smsgateConfig?.baseUrl?.trim() ||
-    "https://api.sms-gate.app/3rdparty/v1/messages";
-  const simpleSmsGatewayBaseUrl =
-    simpleSmsGatewayConfig?.baseUrl?.trim() ||
-    "http://192.168.1.100:8080/send-sms";
+  const smsgateBaseUrl = smsgateConfig?.baseUrl?.trim() || "";
+  const simpleSmsGatewayBaseUrl = simpleSmsGatewayConfig?.baseUrl?.trim() || "";
 
   const userTimezone = timezone || "UTC";
   const supabaseAdmin = createSupabaseAdmin();
@@ -694,7 +685,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const profileConfig = await getUserSmsProviderConfig(supabaseAdmin, user.id);
   const smsgateCredentials =
     toSmsGateCredentials(profileConfig) ||
-    (smsgateUsername && smsgatePassword
+    (smsgateBaseUrl && smsgateUsername && smsgatePassword
       ? {
           baseUrl: smsgateBaseUrl,
           username: smsgateUsername,
@@ -880,12 +871,8 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 
   const smsgateUsername = smsgateConfig?.username?.trim() || "";
   const smsgatePassword = smsgateConfig?.password?.trim() || "";
-  const smsgateBaseUrl =
-    smsgateConfig?.baseUrl?.trim() ||
-    "https://api.sms-gate.app/3rdparty/v1/messages";
-  const simpleSmsGatewayBaseUrl =
-    simpleSmsGatewayConfig?.baseUrl?.trim() ||
-    "http://192.168.1.100:8080/send-sms";
+  const smsgateBaseUrl = smsgateConfig?.baseUrl?.trim() || "";
+  const simpleSmsGatewayBaseUrl = simpleSmsGatewayConfig?.baseUrl?.trim() || "";
 
   if (!senderName || !messageTemplate) {
     return c.json(

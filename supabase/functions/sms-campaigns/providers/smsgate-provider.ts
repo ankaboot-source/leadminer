@@ -13,11 +13,11 @@ export class SmsGateProvider implements SmsProvider {
   private password: string;
 
   constructor(credentials: SmsGateCredentials) {
-    if (!credentials.username || !credentials.password) {
+    const baseUrl = credentials.baseUrl?.trim() || "";
+    if (!baseUrl || !credentials.username || !credentials.password) {
       throw new Error("SMSGate credentials not configured");
     }
-    this.baseUrl =
-      credentials.baseUrl || "https://api.sms-gate.app/3rdparty/v1/messages";
+    this.baseUrl = baseUrl;
     this.username = credentials.username;
     this.password = credentials.password;
   }

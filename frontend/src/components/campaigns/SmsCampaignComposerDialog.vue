@@ -71,7 +71,11 @@
           <InputText
             v-model="form.smsgateBaseUrl"
             placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
+            @blur="markTouched('smsgateBaseUrl')"
           />
+          <small v-if="showFieldError('smsgateBaseUrl')" class="text-red-500">
+            {{ validationErrors.smsgateBaseUrl }}
+          </small>
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium"
@@ -365,10 +369,10 @@ const providerStatus = ref({
 });
 
 const form = reactive({
-  smsgateBaseUrl: 'https://api.sms-gate.app/3rdparty/v1/messages',
+  smsgateBaseUrl: '',
   smsgateUsername: '',
   smsgatePassword: '',
-  simpleSmsGatewayBaseUrl: 'http://192.168.1.100:8080/send-sms',
+  simpleSmsGatewayBaseUrl: '',
   provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
   messageTemplate: '',
   footerTextTemplate: t('default_footer_template', {
@@ -423,10 +427,15 @@ async function fetchProviderStatus() {
   }
 }
 
-type FormField = 'messageTemplate' | 'smsgateUsername' | 'smsgatePassword';
+type FormField =
+  | 'messageTemplate'
+  | 'smsgateBaseUrl'
+  | 'smsgateUsername'
+  | 'smsgatePassword';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
+  smsgateBaseUrl: false,
   smsgateUsername: false,
   smsgatePassword: false,
 });
@@ -517,6 +526,10 @@ const validationErrors = computed<Record<FormField, string>>(() => {
     messageTemplate: form.messageTemplate.trim().length
       ? ''
       : t('message_required'),
+    smsgateBaseUrl:
+      form.provider === 'smsgate' && form.smsgateBaseUrl.trim().length === 0
+        ? t('smsgate_base_url_required')
+        : '',
     smsgateUsername:
       form.provider === 'smsgate' && form.smsgateUsername.trim().length === 0
         ? t('smsgate_username_required')
@@ -538,6 +551,7 @@ const isFormValid = computed(() =>
 
 const hasProvidedSmsGateCredentials = computed(
   () =>
+    form.smsgateBaseUrl.trim().length > 0 &&
     form.smsgateUsername.trim().length > 0 &&
     form.smsgatePassword.trim().length > 0,
 );
@@ -795,6 +809,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "smsgate_base_url": "SMSGate API URL",
     "smsgate_username": "SMSGate Username",
     "smsgate_password": "SMSGate Password",
+    "smsgate_base_url_required": "SMSGate API URL is required",
     "smsgate_username_required": "SMSGate username is required",
     "smsgate_password_required": "SMSGate password is required",
     "smsgate_credentials_required": "SMSGate username and password are required.",
@@ -847,6 +862,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "smsgate_base_url": "URL API SMSGate",
     "smsgate_username": "Nom d'utilisateur SMSGate",
     "smsgate_password": "Mot de passe SMSGate",
+    "smsgate_base_url_required": "L'URL API SMSGate est requise",
     "smsgate_username_required": "Le nom d'utilisateur SMSGate est requis",
     "smsgate_password_required": "Le mot de passe SMSGate est requis",
     "smsgate_credentials_required": "Le nom d'utilisateur et le mot de passe SMSGate sont requis.",
