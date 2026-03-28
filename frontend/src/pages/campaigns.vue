@@ -43,16 +43,35 @@
               class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
             >
               <div class="min-w-0">
-                <div class="font-medium break-words">
-                  {{ campaign.subject }} par {{ campaign.sender_name }} &lt;{{
-                    campaign.sender_email
-                  }}&gt;
+                <div class="flex items-center gap-2">
+                  <Tag
+                    :value="campaign.channel === 'sms' ? 'SMS' : 'Email'"
+                    :severity="campaign.channel === 'sms' ? 'info' : 'primary'"
+                    class="text-xs"
+                  />
+                  <span class="font-medium break-words">
+                    <template v-if="campaign.channel === 'sms'">
+                      {{ campaign.sender_name }} ({{ campaign.provider }})
+                    </template>
+                    <template v-else>
+                      {{ campaign.subject }} par
+                      {{ campaign.sender_name }} &lt;{{
+                        campaign.sender_email
+                      }}&gt;
+                    </template>
+                  </span>
                 </div>
                 <div class="text-sm text-surface-500 break-words">
-                  {{ campaign.total_batches }} lot(s) de
-                  {{ campaign.sender_daily_limit }}/jour ·
-                  {{ campaign.total_recipients }} destinataires ·
-                  {{ formatDate(campaign.created_at) }}
+                  <template v-if="campaign.channel === 'sms'">
+                    {{ campaign.recipient_count || 0 }} destinataires ·
+                    {{ formatDate(campaign.created_at) }}
+                  </template>
+                  <template v-else>
+                    {{ campaign.total_batches }} lot(s) de
+                    {{ campaign.sender_daily_limit }}/jour ·
+                    {{ campaign.total_recipients }} destinataires ·
+                    {{ formatDate(campaign.created_at) }}
+                  </template>
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -84,62 +103,96 @@
             </div>
 
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500 flex items-center gap-1">
-                  <span>{{ t('delivery') }}</span>
-                  <i
-                    v-tooltip.top="deliveryTooltip(campaign)"
-                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                    tabindex="0"
-                  />
+              <template v-if="campaign.channel === 'sms'">
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('delivery') }}</span>
+                  </div>
+                  <div class="font-semibold">
+                    {{ campaign.delivered || 0 }}/{{
+                      campaign.recipient_count || 0
+                    }}
+                  </div>
                 </div>
-                <div class="font-semibold">
-                  {{ campaign.attempted }}/{{ campaign.total_recipients }}
-                </div>
-                <div>{{ getBatchProgress(campaign) }}</div>
-              </div>
 
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500 flex items-center gap-1">
-                  <span>{{ t('opens') }}</span>
-                  <i
-                    v-tooltip.top="opensTooltip(campaign)"
-                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                    tabindex="0"
-                  />
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('clicks') }}</span>
+                  </div>
+                  <div class="font-semibold">{{ campaign.clicked || 0 }}</div>
                 </div>
-                <div class="font-semibold">{{ campaign.opened }}</div>
-                <div>{{ formatRate(campaign.opening_rate) }}</div>
-              </div>
 
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500 flex items-center gap-1">
-                  <span>{{ t('clicks') }}</span>
-                  <i
-                    v-tooltip.top="clicksTooltip(campaign)"
-                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                    tabindex="0"
-                  />
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('unsubscribes') }}</span>
+                  </div>
+                  <div class="font-semibold">
+                    {{ campaign.unsubscribed || 0 }}
+                  </div>
                 </div>
-                <div class="font-semibold">{{ campaign.clicked }}</div>
-                <div>{{ formatRate(campaign.clicking_rate) }}</div>
-              </div>
+              </template>
 
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500 flex items-center gap-1">
-                  <span>{{ t('unsubscribes') }}</span>
-                  <i
-                    v-tooltip.top="unsubscribeTooltip(campaign)"
-                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                    tabindex="0"
-                  />
+              <template v-else>
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('delivery') }}</span>
+                    <i
+                      v-tooltip.top="deliveryTooltip(campaign)"
+                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                      tabindex="0"
+                    />
+                  </div>
+                  <div class="font-semibold">
+                    {{ campaign.attempted }}/{{ campaign.total_recipients }}
+                  </div>
+                  <div>{{ getBatchProgress(campaign) }}</div>
                 </div>
-                <div class="font-semibold">{{ campaign.unsubscribed }}</div>
-                <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
-              </div>
+
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('opens') }}</span>
+                    <i
+                      v-tooltip.top="opensTooltip(campaign)"
+                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                      tabindex="0"
+                    />
+                  </div>
+                  <div class="font-semibold">{{ campaign.opened }}</div>
+                  <div>{{ formatRate(campaign.opening_rate) }}</div>
+                </div>
+
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('clicks') }}</span>
+                    <i
+                      v-tooltip.top="clicksTooltip(campaign)"
+                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                      tabindex="0"
+                    />
+                  </div>
+                  <div class="font-semibold">{{ campaign.clicked }}</div>
+                  <div>{{ formatRate(campaign.clicking_rate) }}</div>
+                </div>
+
+                <div class="p-2 rounded bg-surface-50">
+                  <div class="text-surface-500 flex items-center gap-1">
+                    <span>{{ t('unsubscribes') }}</span>
+                    <i
+                      v-tooltip.top="unsubscribeTooltip(campaign)"
+                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                      tabindex="0"
+                    />
+                  </div>
+                  <div class="font-semibold">{{ campaign.unsubscribed }}</div>
+                  <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
+                </div>
+              </template>
             </div>
 
-            <div v-if="campaign.link_clicks?.length" class="mt-4">
+            <div
+              v-if="campaign.channel !== 'sms' && campaign.link_clicks?.length"
+              class="mt-4"
+            >
               <div
                 class="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1"
               >
@@ -394,10 +447,13 @@ async function confirmActionDialog() {
   isDialogSubmitting.value = true;
   actionLoading.value[campaign.id] = actionDialogType.value;
 
+  const channelPrefix =
+    campaign.channel === 'sms' ? 'sms-campaigns' : 'email-campaigns';
+
   try {
     if (actionDialogType.value === 'stop') {
       await $saasEdgeFunctions(
-        `email-campaigns/campaigns/${campaign.id}/stop`,
+        `${channelPrefix}/campaigns/${campaign.id}/stop`,
         {
           method: 'POST',
         },
@@ -409,7 +465,7 @@ async function confirmActionDialog() {
         life: 3500,
       });
     } else {
-      await $saasEdgeFunctions(`email-campaigns/campaigns/${campaign.id}`, {
+      await $saasEdgeFunctions(`${channelPrefix}/campaigns/${campaign.id}`, {
         method: 'DELETE',
       });
       $toast.add({

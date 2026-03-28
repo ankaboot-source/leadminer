@@ -203,7 +203,8 @@
       "failure_header": "Unsubscribe failed",
       "failure_message": "We couldn't find your subscription. Please contact support.",
       "go_home": "Go to home"
-    }
+    },
+    "send_campaign": "Send campaign"
   },
   "fr": {
     "common": {
@@ -375,6 +376,7 @@
       "failure_header": "Désabonnement échoué",
       "failure_message": "Nous n'avons pas trouvé votre abonnement. Veuillez contacter le support.",
       "go_home": "Aller à l'accueil"
-    }
+    },
+    "send_campaign": "Envoyer la campagne"
   }
 }

@@ -4,4 +4,8 @@ export interface Profile {
   full_name: string;
   credits: number;
   gdpr_details: { hasAcceptedEnriching: boolean };
+  smsgate_base_url?: string | null;
+  smsgate_username?: string | null;
+  smsgate_password?: string | null;
+  simple_sms_gateway_base_url?: string | null;
 }
