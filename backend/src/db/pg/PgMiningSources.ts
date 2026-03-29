@@ -2,11 +2,52 @@ import { Pool } from 'pg';
 import { Logger } from 'winston';
 import {
   MiningSource,
+  MiningSourceByUser,
   MiningSources,
-  MiningSourceType,
+  ExtendedMiningSourceType,
   ImapMiningSourceCredentials,
-  OAuthMiningSourceCredentials
+  OAuthMiningSourceCredentials,
+  PostgreSQLMiningSourceCredentials
 } from '../interfaces/MiningSources';
+
+export function isPostgreSQLMiningSourceCredentials(
+  credentials: unknown
+): credentials is PostgreSQLMiningSourceCredentials {
+  if (!credentials || typeof credentials !== 'object') {
+    return false;
+  }
+
+  const sourceCredentials = credentials as Record<string, unknown>;
+
+  return (
+    typeof sourceCredentials.host === 'string' &&
+    typeof sourceCredentials.port === 'number' &&
+    typeof sourceCredentials.database === 'string' &&
+    typeof sourceCredentials.username === 'string' &&
+    typeof sourceCredentials.password === 'string' &&
+    (sourceCredentials.ssl === undefined ||
+      typeof sourceCredentials.ssl === 'boolean')
+  );
+}
+
+function parseMiningSourceCredentials(
+  credentials: unknown
+):
+  | ImapMiningSourceCredentials
+  | OAuthMiningSourceCredentials
+  | PostgreSQLMiningSourceCredentials {
+  if (typeof credentials === 'string') {
+    return JSON.parse(credentials) as
+      | ImapMiningSourceCredentials
+      | OAuthMiningSourceCredentials
+      | PostgreSQLMiningSourceCredentials;
+  }
+
+  return credentials as
+    | ImapMiningSourceCredentials
+    | OAuthMiningSourceCredentials
+    | PostgreSQLMiningSourceCredentials;
+}
 
 export default class PgMiningSources implements MiningSources {
   private static readonly UPSERT_SQL = `
@@ -47,6 +88,13 @@ export default class PgMiningSources implements MiningSources {
     type
   }: MiningSource): Promise<void> {
     try {
+      if (
+        type === 'postgresql' &&
+        !isPostgreSQLMiningSourceCredentials(credentials)
+      ) {
+        throw new Error('Invalid PostgreSQL source credentials');
+      }
+
       await this.client.query(PgMiningSources.UPSERT_SQL, [
         userId,
         email,
@@ -56,34 +104,38 @@ export default class PgMiningSources implements MiningSources {
       ]);
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed upserting credentials', error);
+        this.logger.error('Failed upserting credentials', {
+          userId,
+          email,
+          type,
+          error: error.message
+        });
       }
       throw error;
     }
   }
 
-  async getByUser(userId: string): Promise<
-    {
-      email: string;
-      type: MiningSourceType;
-      credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-      passive_mining: boolean;
-    }[]
-  > {
+  async getByUser(
+    userId: string
+  ): Promise<(MiningSourceByUser & { passive_mining: boolean })[]> {
     try {
       const { rows } = await this.client.query(
         PgMiningSources.GET_BY_USER_SQL,
         [this.encryptionKey, userId]
       );
-      return rows as {
-        email: string;
-        type: MiningSourceType;
-        credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-        passive_mining: boolean;
-      }[];
+
+      return rows.map((row) => ({
+        email: row.email as string,
+        type: row.type as ExtendedMiningSourceType,
+        credentials: parseMiningSourceCredentials(row.credentials),
+        passive_mining: row.passive_mining as boolean
+      }));
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed retrieving credentials', error);
+        this.logger.error('Failed retrieving credentials', {
+          userId,
+          error: error.message
+        });
       }
       return [];
     }

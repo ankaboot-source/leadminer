@@ -30,8 +30,7 @@ export interface TaskCleanStreamInfo {
 }
 
 export interface StreamInfo
-  extends TaskExtractStreamInfo,
-    TaskCleanStreamInfo {}
+  extends TaskExtractStreamInfo, TaskCleanStreamInfo {}
 
 export interface TaskProgress {
   totalMessages: number;
@@ -117,7 +116,7 @@ export interface TaskEnrich extends Task {
 
 export interface MiningSource {
   source: string;
-  type: 'email' | 'file' | 'pst';
+  type: 'email' | 'file' | 'pst' | 'postgresql';
 }
 
 export interface MiningTask {

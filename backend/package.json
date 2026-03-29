@@ -12,13 +12,15 @@
     "dev:worker": "nodemon src/messageWorker.ts",
     "dev:email-worker": "nodemon src/emailVerificationWorker.ts",
     "dev:email-signature-worker": "nodemon src/emailSignatureWorker.ts",
+    "dev:postgresql-worker": "nodemon src/workers/postgresql-import/index.ts",
     "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",
     "dev:inspect": "node --inspect -r ts-node/register src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
-    "update-providers": "ts-node src/fetchProviders.ts"
+    "update-providers": "ts-node src/fetchProviders.ts",
+    "start:postgresql-worker": "node dist/workers/postgresql-import/index.js"
   },
   "keywords": [
     "nodejs",

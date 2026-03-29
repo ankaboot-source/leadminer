@@ -1,12 +1,13 @@
 export type OAuthMiningSource = 'azure' | 'google';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
-export type MiningType = 'file' | 'email' | 'pst';
+export type MiningType = 'file' | 'email' | 'pst' | 'postgresql';
 
 export enum MiningTypes {
   FILE = 'file',
   EMAIL = 'email',
   PST = 'pst',
+  POSTGRESQL = 'postgresql',
 }
 
 export interface MiningSource {

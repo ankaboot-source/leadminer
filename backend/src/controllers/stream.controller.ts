@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
+import TasksManagerPostgreSQL from '../services/tasks-manager/TasksManagerPostgreSQL';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 import logger from '../utils/logger';
 
 export default function initializeStreamController(
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST
+  tasksManagerPST: TasksManagerPST,
+  tasksManagerPostgreSQL: TasksManagerPostgreSQL
 ) {
   return {
     /**
@@ -21,6 +23,8 @@ export default function initializeStreamController(
         manager = tasksManagerFile;
       } else if (miningType === 'pst') {
         manager = tasksManagerPST;
+      } else if (miningType === 'postgresql') {
+        manager = tasksManagerPostgreSQL;
       } else {
         manager = tasksManager;
       }

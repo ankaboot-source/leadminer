@@ -4,12 +4,14 @@ import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
+import TasksManagerPostgreSQL from '../services/tasks-manager/TasksManagerPostgreSQL';
 import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
 
 export default function initializeStreamRouter(
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
   tasksManagerPST: TasksManagerPST,
+  tasksManagerPostgreSQL: TasksManagerPostgreSQL,
   authResolver: AuthResolver
 ) {
   const router = Router();
@@ -19,7 +21,8 @@ export default function initializeStreamRouter(
   const { streamProgress } = initializeStreamController(
     tasksManager,
     tasksManagerFile,
-    tasksManagerPST
+    tasksManagerPST,
+    tasksManagerPostgreSQL
   );
   router.get('/mine/:type/:id/progress/', authMiddleware, streamProgress);
 

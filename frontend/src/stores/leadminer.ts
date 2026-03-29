@@ -395,6 +395,44 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const pstFilePath = ref('');
 
+  async function startMiningPostgreSQL(
+    userId: string,
+    options: {
+      connection: {
+        host: string;
+        port: number;
+        database: string;
+        username: string;
+        password: string;
+        ssl: boolean;
+      };
+      query: string;
+      mapping: Record<string, string>;
+      saveConnection: boolean;
+      connectionName: string;
+    },
+  ) {
+    miningType.value = 'postgresql';
+    fetchingFinished.value = true;
+    scannedEmails.value = 1;
+
+    const { data: task } = await $api<{ data: MiningTask }>(
+      `/imap/mine/postgresql/${userId}`,
+      {
+        method: 'POST',
+        body: {
+          connection: options.connection,
+          query: options.query,
+          mapping: options.mapping,
+          saveConnection: options.saveConnection,
+          connectionName: options.connectionName,
+        },
+      },
+    );
+
+    return task;
+  }
+
   /**
    * Starts the mining process.
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
@@ -455,6 +493,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           if (!storagePath)
             throw new Error('Storage path is required for mining PST');
           task = await startMiningPST(userId, storagePath);
+          break;
+        case 'postgresql':
+          if (!storagePath)
+            throw new Error('Storage path is required for mining PostgreSQL');
+          task = await startMiningPostgreSQL(userId, JSON.parse(storagePath));
           break;
         default:
           throw new Error(`Unknown mining source: ${source}`);

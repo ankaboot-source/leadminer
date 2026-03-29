@@ -9,6 +9,20 @@ export interface ImapMiningSourceCredentials {
 export type OAuthMiningSourceProvider = 'azure' | 'google';
 export type MiningSourceType = OAuthMiningSourceProvider | 'imap';
 
+export interface PostgreSQLMiningSourceCredentials {
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  ssl?: boolean;
+}
+
+export type PostgreSQLMiningSourceType = 'postgresql';
+export type ExtendedMiningSourceType =
+  | MiningSourceType
+  | PostgreSQLMiningSourceType;
+
 export interface OAuthMiningSourceCredentials {
   email: string;
   accessToken: string;
@@ -17,23 +31,45 @@ export interface OAuthMiningSourceCredentials {
   provider: OAuthMiningSourceProvider;
 }
 
-export interface MiningSource {
+interface BaseMiningSource {
   email: string;
   userId: string;
-  credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-  type: MiningSourceType;
+}
+
+export interface ImapMiningSource extends BaseMiningSource {
+  credentials: ImapMiningSourceCredentials;
+  type: 'imap';
+}
+
+export interface OAuthMiningSource extends BaseMiningSource {
+  credentials: OAuthMiningSourceCredentials;
+  type: OAuthMiningSourceProvider;
+}
+
+export interface PostgreSQLMiningSource extends BaseMiningSource {
+  credentials: PostgreSQLMiningSourceCredentials;
+  type: 'postgresql';
+}
+
+export type MiningSource =
+  | ImapMiningSource
+  | OAuthMiningSource
+  | PostgreSQLMiningSource;
+
+export interface MiningSourceByUser {
+  email: string;
+  credentials:
+    | ImapMiningSourceCredentials
+    | OAuthMiningSourceCredentials
+    | PostgreSQLMiningSourceCredentials;
+  type: ExtendedMiningSourceType;
 }
 
 export interface MiningSources {
   upsert(source: MiningSource): Promise<void>;
-  getByUser(userId: string): Promise<
-    {
-      email: string;
-      type: MiningSourceType;
-      credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
-      passive_mining: boolean;
-    }[]
-  >;
+  getByUser(
+    userId: string
+  ): Promise<(MiningSourceByUser & { passive_mining: boolean })[]>;
   /**
    * 
     getCredentialsBySourceEmail(

@@ -22,6 +22,7 @@ import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
+import TasksManagerPostgreSQL from './services/tasks-manager/TasksManagerPostgreSQL';
 import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import Billing from './utils/billing-plugin';
 import { miningSourceService } from './db/supabase/MiningSourceService';
@@ -31,6 +32,7 @@ export default function initializeApp(
   tasksManager: TasksManager,
   tasksManagerFile: TasksManagerFile,
   tasksManagerPST: TasksManagerPST,
+  tasksManagerPostgreSQL: TasksManagerPostgreSQL,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
@@ -69,6 +71,7 @@ export default function initializeApp(
       tasksManager,
       tasksManagerFile,
       tasksManagerPST,
+      tasksManagerPostgreSQL,
       authResolver
     )
   );
@@ -78,6 +81,7 @@ export default function initializeApp(
       tasksManager,
       tasksManagerFile,
       tasksManagerPST,
+      tasksManagerPostgreSQL,
       miningSources,
       authResolver,
       contacts

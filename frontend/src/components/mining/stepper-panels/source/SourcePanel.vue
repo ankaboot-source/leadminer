@@ -89,6 +89,14 @@
             <img src="/icons/pst.svg" alt="PST Icon" class="w-6 h-6" />
           </template>
         </Button>
+        <Button
+          id="import-postgresql"
+          icon="pi pi-database"
+          :label="t('import_postgresql')"
+          outlined
+          @click="importPostgresqlDialogRef.openModal()"
+        />
+        <ImportPostgreSQLDialog ref="importPostgresqlDialogRef" />
       </div>
       <ImportPstDialog ref="importPstDialogRef" />
     </template>
@@ -101,9 +109,11 @@ import ImapSource from './AddSourceImap.vue';
 import OauthSource from './AddSourceOauth.vue';
 import ImportFileDialog from './ImportFileDialog.vue';
 import ImportPstDialog from './ImportPstDialog.vue';
+import ImportPostgreSQLDialog from './ImportPostgreSQLDialog.vue';
 
 const importFileDialogRef = ref();
 const importPstDialogRef = ref();
+const importPostgresqlDialogRef = ref();
 
 const { t } = useI18n({
   useScope: 'local',
@@ -172,7 +182,8 @@ function getIcon(type: string) {
     "extract_contacts": "Extract contacts",
     "microsoft_or_outlook": "Microsoft or Outlook",
     "import_csv_excel": "Import CSV or Excel",
-    "choose_pst_file": "Import Outlook Data File (PST or OST)"
+    "choose_pst_file": "Import Outlook Data File (PST or OST)",
+    "import_postgresql": "Import from PostgreSQL"
   },
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
@@ -183,7 +194,8 @@ function getIcon(type: string) {
     "extract_contacts": "Extraire les contacts",
     "microsoft_or_outlook": "Microsoft ou Outlook",
     "import_csv_excel": "Importer CSV ou Excel",
-    "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)"
+    "choose_pst_file": "Importer un fichier de données Outlook (PST ou OST)",
+    "import_postgresql": "Importer depuis PostgreSQL"
   }
 }
 </i18n>

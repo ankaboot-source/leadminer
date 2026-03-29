@@ -62,6 +62,18 @@ export default function initializeImapController(
             new Error('Unable to retrieve credentials for this mining source')
           );
         }
+
+        const isImapCredentials =
+          'tls' in data && 'email' in data && 'password' in data;
+
+        if (!('accessToken' in data) && !isImapCredentials) {
+          return res.status(400).send({
+            data: {
+              message: 'This mining source does not support IMAP folders lookup'
+            }
+          });
+        }
+
         if ('accessToken' in data) {
           const { token, refreshToken } = getTokenAndProvider(data);
 
@@ -92,11 +104,11 @@ export default function initializeImapController(
         );
 
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnection, logger);
-        const tree: any = await imapBoxesFetcher.getTree(data.email);
+        const tree: any = await imapBoxesFetcher.getTree(email);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
-            user: hashEmail(data.email, userId)
+            user: hashEmail(email, userId)
           }
         });
 

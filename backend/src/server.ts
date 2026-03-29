@@ -13,6 +13,7 @@ import PSTFetcherClient from './services/email-fetching/pst';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
 import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
+import TasksManagerPostgreSQL from './services/tasks-manager/TasksManagerPostgreSQL';
 import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
 import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
@@ -77,12 +78,19 @@ console.log(
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
+  const tasksManagerPostgreSQL = new TasksManagerPostgreSQL(
+    tasksResolver,
+    redis.getSubscriberClient(),
+    redis.getClient(),
+    new SSEBroadcasterFactory()
+  );
 
   const app = initializeApp(
     authResolver,
     tasksManager,
     tasksManagerFile,
     tasksManagerPST,
+    tasksManagerPostgreSQL,
     miningSources,
     contactsResolver,
     userResolver,

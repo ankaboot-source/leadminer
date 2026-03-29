@@ -335,7 +335,7 @@ export default function initializeMiningController(
       );
       const miningSourceCredentials = sources?.pop()?.credentials;
 
-      if (!miningSourceCredentials) {
+      if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
         return res.status(401).json({
           message: "This mining source isn't registered for this user"
         });
