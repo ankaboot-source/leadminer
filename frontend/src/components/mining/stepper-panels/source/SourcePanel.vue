@@ -112,7 +112,7 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $sourcePanelStore = useStepperSourcePanel();
-const sourceOptions = computed(() => useLeadminerStore().miningSources);
+const sourceOptions = computed(() => $leadminerStore.miningSources);
 const sourceModel = ref<MiningSource | undefined>();
 
 function extractContacts(miningSource?: MiningSource) {
