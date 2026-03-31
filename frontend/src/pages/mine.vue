@@ -25,8 +25,7 @@ const showTable = computed(
 
 onMounted(async () => {
   try {
-    await $leadminer.fetchMiningSources();
-    const step = await $leadminer.getCurrentRunningMining();
+    const step = $stepper.index;
     if (step !== undefined && step > 1) {
       $stepper.go(step);
     }
