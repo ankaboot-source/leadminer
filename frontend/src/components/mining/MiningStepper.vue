@@ -50,10 +50,7 @@
 
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
-import {
-  resolvePostOauthSourceSelection,
-  shouldInitializeStepperToSourceStep,
-} from '@/utils/mining-oauth-redirect';
+import { resolvePostOauthSourceSelection } from '@/utils/mining-oauth-redirect';
 import MiningConsentSidebar from './MiningConsentSidebar.vue';
 import CleanPanel from './stepper-panels/clean/CleanPanel.vue';
 import MinePanel from './stepper-panels/mine/MinePanel.vue';
@@ -102,19 +99,13 @@ function clearOauthQueryParams() {
 }
 
 watch(
-  [
-    source,
-    () => $leadminerStore.miningSources,
-    () => $leadminerStore.isLoadingMiningSources,
-  ],
-  ([sourceEmail, miningSources, isLoadingMiningSources]) => {
-    if (
-      shouldInitializeStepperToSourceStep({
-        querySource: sourceEmail,
-        currentStep: $stepper.index,
-      })
-    ) {
-      $stepper.go(1);
+  [source],
+  ([sourceEmail]) => {
+    if ($stepper.index !== -1) {
+      return;
+    }
+
+    if ($stepper.isInitializing) {
       return;
     }
 
@@ -126,10 +117,12 @@ watch(
       return;
     }
 
+    handledSourceQuery.value = sourceEmail;
+
     const resolution = resolvePostOauthSourceSelection({
       querySource: sourceEmail,
-      miningSources,
-      isLoadingMiningSources,
+      miningSources: $leadminerStore.miningSources,
+      isLoadingMiningSources: $leadminerStore.isLoadingMiningSources,
     });
 
     if (resolution.status === 'wait') {
@@ -145,7 +138,6 @@ watch(
       $stepper.go(1);
     }
 
-    handledSourceQuery.value = sourceEmail;
     clearOauthQueryParams();
   },
   { immediate: true },
