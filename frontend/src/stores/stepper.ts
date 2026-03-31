@@ -6,17 +6,6 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const index = ref(-1);
   const isInitializing = ref(false);
 
-  watch(
-    index,
-    () => {
-      console.log('Stepper index changed:', index.value);
-    },
-    {
-      immediate: true,
-      deep: true,
-    },
-  );
-
   function open() {
     collapsed.value = false;
   }
