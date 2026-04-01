@@ -15,7 +15,7 @@ import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignature
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
 import { SignatureLLM } from './services/signature/llm';
-import { SignatureExtractorCache } from './services/signature/llm/signature-extractor-cache';
+import SignatureExtractorCache from './services/signature/llm/signature-extractor-cache';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
 import { Distribution, TokenBucketRateLimiter } from './services/rate-limiter';
 import { SignatureRE } from './services/signature/regex';
