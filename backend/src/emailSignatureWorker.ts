@@ -107,6 +107,7 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
       logger.info('Consumer group already created');
     } else {
       logger.error('Failed to start consumer:', err);
+      // skipcq: JS-0263 - Intentional: worker must terminate on startup failure, cannot recover
       process.exit(1);
     }
   }
