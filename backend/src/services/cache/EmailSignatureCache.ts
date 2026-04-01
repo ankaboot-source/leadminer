@@ -40,6 +40,19 @@ export default interface EmailSignatureCache {
   isNewer(userId: string, email: string, messageDate: string): Promise<boolean>;
 
   /**
+   * Atomically checks if messageDate is newer and sets the signature
+   * @returns true if the signature was newer and was set, false otherwise
+   */
+  setIfNewer(
+    userId: string,
+    email: string,
+    signature: string,
+    messageId: string,
+    messageDate: string,
+    miningId: string
+  ): Promise<boolean>;
+
+  /**
    * Retrieves all signatures associated with a mining operation
    * @param miningId - The ID of the mining operation
    * @returns Array of signature data with metadata
