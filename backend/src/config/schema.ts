@@ -41,6 +41,7 @@ const schema = z.object({
 
   SIGNATURE_USE_LLM: boolean(),
   SIGNATURE_OPENROUTER_API_KEY: z.string().min(1).optional(),
+  SIGNATURE_LLM_CACHE_TTL_SECONDS: number().optional().default(86400),
 
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
