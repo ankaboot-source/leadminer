@@ -2,8 +2,9 @@ import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { ExtractSignature, PersonLD } from '../types';
 
-export class SignatureExtractorCache implements ExtractSignature {
+export default class SignatureExtractorCache implements ExtractSignature {
   private static readonly CACHE_PREFIX = 'llm-sig:';
+
   private static readonly DEFAULT_TTL = 86400;
 
   constructor(
@@ -16,16 +17,16 @@ export class SignatureExtractorCache implements ExtractSignature {
     return this.wrapped.isActive();
   }
 
-  private hashSignature(signature: string): string {
+  private static hashSignature(signature: string): string {
     return createHash('sha256').update(signature).digest('hex');
   }
 
-  private cacheKey(signature: string): string {
-    return `${SignatureExtractorCache.CACHE_PREFIX}${this.hashSignature(signature)}`;
+  private static cacheKey(signature: string): string {
+    return `${SignatureExtractorCache.CACHE_PREFIX}${SignatureExtractorCache.hashSignature(signature)}`;
   }
 
   async extract(email: string, signature: string): Promise<PersonLD | null> {
-    const key = this.cacheKey(signature);
+    const key = SignatureExtractorCache.cacheKey(signature);
 
     const cached = await this.redis.get(key);
     if (cached) {

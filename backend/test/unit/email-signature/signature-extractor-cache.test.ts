@@ -1,5 +1,5 @@
 import { describe, jest, beforeEach, it, expect } from '@jest/globals';
-import { SignatureExtractorCache } from '../../../src/services/signature/llm/signature-extractor-cache';
+import SignatureExtractorCache from '../../../src/services/signature/llm/signature-extractor-cache';
 import {
   ExtractSignature,
   PersonLD
@@ -85,7 +85,7 @@ describe('SignatureExtractorCache', () => {
       mockWrapped.isActive.mockReturnValue(true);
       let callCount = 0;
       mockRedis.get.mockImplementation(() => {
-        callCount++;
+        callCount += 1;
         if (callCount === 1) return Promise.resolve(null);
         return Promise.resolve(JSON.stringify(person));
       });
