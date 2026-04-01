@@ -3,14 +3,8 @@ import { parsePhoneNumberWithError } from 'libphonenumber-js';
 import { Logger } from 'winston';
 import { PersonLD } from '../types';
 
-const normalizeCache = new Map<string, string>();
-
 export function normalize(text: string): string {
-  const cached = normalizeCache.get(text);
-  if (cached) return cached;
-  const result = text.toLowerCase().replace(/[\s().-]/g, '');
-  normalizeCache.set(text, result);
-  return result;
+  return text.toLowerCase().replace(/[\s().-]/g, '');
 }
 
 export function validatePhones(
