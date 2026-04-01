@@ -136,7 +136,12 @@ watch(activeTask, () => {
 });
 
 if ($user.value) {
+  $stepper.isInitializing = true;
   await $leadminerStore.fetchMiningSources();
-  $stepper.index = await $leadminerStore.getCurrentRunningMining();
+  const step = await $leadminerStore.getCurrentRunningMining();
+  if (step !== undefined) {
+    $stepper.index = step;
+  }
+  $stepper.isInitializing = false;
 }
 </script>
