@@ -82,34 +82,7 @@ npm run build            # Compile TypeScript
 
 ```bash
 npm run dev:supabase-functions  # Serve functions locally
-```
-
-#### Creating New Edge Functions
-
-**Always use the Supabase CLI to create new edge functions:**
-
-```bash
-# Create new edge function (auto-generates proper structure)
-npx supabase functions new <function-name>
-```
-
-**Why?** The CLI:
-
-- Creates proper directory structure
-- Sets up deno.json with correct permissions
-- Ensures function is registered with Supabase
-
-**Example workflow:**
-
-```bash
-# 1. Create the function scaffold
-npx supabase functions new my-new-function
-
-# 2. Implement your code in the generated index.ts
-# (copy your implementation into the created file)
-
-# 3. Test locally
-npm run dev:supabase-functions
+npx supabase functions new <function-name>  # Create new function (auto-generates structure)
 ```
 
 ## Code Style Guidelines
@@ -266,6 +239,12 @@ logger.error("Operation failed", { error: error.message });
 - Branch naming: `feat/`, `fix/`, `docs/` prefixes
 - Commit messages: imperative mood, lowercase first letter
 - Run `npm run precommit:check` before committing (husky + lint-staged)
+- **IMPORTANT - Ask User Before Git Operations:**
+  - Ask before creating worktrees (using-git-worktrees skill)
+  - Ask before committing changes
+  - Ask before pushing to remote
+  - Ask before creating pull requests
+  - Never automatically commit or push without user approval
 
 ### Vue/Frontend Patterns
 
@@ -297,65 +276,50 @@ logger.error("Operation failed", { error: error.message });
 
 ### docs/plans Directory
 
-The `docs/plans/` directory contains local planning documents and implementation notes created during development. These files:
+Local planning documents for development reference. **Do NOT commit or push to remote.**
 
-- **Should NOT be pushed to the remote repository**
-- Are meant for local development reference only
-- Help track implementation details and decisions
-
-If you create plan documents in `docs/plans/`, they should remain local to your machine and not be shared with the team through git.
-
-### Creating Plan Documents
-
-When creating implementation plans:
-
-1. Save them to `docs/plans/YYYY-MM-DD-<feature-name>.md`
-2. Keep them local - do not commit to git
-3. Use them for local development reference during development
-4. Delete them once the feature is complete if desired
+When creating: `docs/plans/YYYY-MM-DD-<feature-name>.md`. Delete when feature is complete.
 
 ## Quality Assurance
 
-**MANDATORY:** After committing and pushing changes to remote branch (or creating a PR), you MUST use the deepsource-check skill:
+### DeepSource Code Quality Checks
 
-```
-Use skill: deepsource-check
-```
+After committing and pushing changes, you may optionally run DeepSource to check for code quality issues.
 
-**Workflow:**
+**Ask the user first:** "Would you like me to run a DeepSource check on your changes?"
 
-1. Complete your work and commit changes
-2. Push to remote branch
-3. Run deepsource-check skill to scan for issues
-4. Fix any issues found
-5. Commit and push fixes
-6. Repeat until clean
+If the user agrees, use the deepsource-check skill to scan and fix issues.
 
-This skill will:
-
-- Verify DeepSource CLI is installed
-- Prompt user for authentication (first time only)
-- Scan issues in your changes (via branch or PR)
-- Guide you through fixing each issue
-- Verify fixes by re-running scans
-
-**Run deepsource-check AFTER committing and pushing, not before.** This ensures DeepSource has analyzed your code and you can fix issues before code review.
-
-### Quick Reference
+#### Quick Reference Commands
 
 ```bash
-# Complete your work, then:
-git add .
-git commit -m "feat: your feature"
-git push origin your-branch-name
+# Check installation
+which deepsource
 
-# Then run deepsource-check (or use PR number if created)
+# Check authentication
+deepsource auth status
+
+# Scan issues (after pushing)
+deepsource issues --output json
+
+# Scan specific PR
 deepsource issues --pr <NUMBER> --output json
-```
 
+# Filter by severity
 deepsource issues --severity critical --output json
 deepsource issues --severity major --output json
-
 ```
 
+### Pre-commit Checks
+
+Before committing, run linting and formatting:
+
+```bash
+# Backend/Frontend
+npm run lint:fix && npm run prettier:fix
+
+# Or project-specific
+cd backend && npm run lint:fix && npm run prettier:fix
+cd frontend && npm run lint:fix && npm run prettier:fix
+cd micro-services/emails-fetcher && npm run lint && npm run prettier:fix
 ```
