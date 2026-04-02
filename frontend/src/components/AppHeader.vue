@@ -42,6 +42,9 @@
             $leadminerStore.activeMiningTask ||
             $leadminerStore.isLoadingStartMining
           "
+          v-tooltip.top="
+            $leadminerStore.activeMiningTask && $t('mining.mining_in_progress')
+          "
           @click="navigateToMine()"
         />
         <div class="ml-4">
@@ -119,6 +122,10 @@
             <Button
               type="button"
               :label="$t('common.start_mining')"
+              v-tooltip.top="
+                $leadminerStore.activeMiningTask &&
+                $t('mining.mining_in_progress')
+              "
               @click="
                 navigateToMine();
                 closeCallback();

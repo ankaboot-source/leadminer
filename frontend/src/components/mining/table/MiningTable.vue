@@ -90,21 +90,22 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <div
-          v-tooltip.top="
-            isSendByEmailDisabled &&
-            isSendBySmsDisabled &&
-            t('select_at_least_one_contact', {
-              action: t('send_campaign').toLowerCase(),
-            })
-          "
-          class="flex gap-2"
-        >
+        <div class="flex gap-2">
+          <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
           <SplitButton
             severity="contrast"
             :label="t('send_campaign')"
             :model="sendCampaignMenuItems"
             :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
+            v-tooltip.top="
+              $leadminerStore.activeMiningTask
+                ? t('mining.mining_in_progress')
+                : isSendByEmailDisabled &&
+                  isSendBySmsDisabled &&
+                  t('select_at_least_one_contact', {
+                    action: t('send_campaign').toLowerCase(),
+                  })
+            "
             :button-props="{
               disabled: isSendByEmailDisabled,
               onClick: () => openSendContactsDialog(),
@@ -117,21 +118,6 @@
               </span>
             </template>
           </SplitButton>
-        </div>
-
-        <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
-        <div
-          v-tooltip.top="
-            (isExportDisabled || !selectedContactsLength) &&
-            t('select_at_least_one_contact', { action: t('remove') })
-          "
-        >
-          <RemoveContactButton
-            :contacts-to-delete="contactsToTreat"
-            :contacts-to-delete-length="selectedContactsLength"
-            :is-remove-disabled="isExportDisabled || !selectedContactsLength"
-            :deselect-contacts="deselectContacts"
-          />
         </div>
 
         <div class="mx-2 leading-none">
