@@ -36,14 +36,14 @@
       <div class="grow" />
       <div id="desktop-navbar" class="hidden lg:flex lg:items-center lg:gap-1">
         <Button
+          v-tooltip.top="
+            $leadminerStore.activeMiningTask && $t('mining.mining_in_progress')
+          "
           type="button"
           :label="$t('common.start_mining')"
           :disabled="
             $leadminerStore.activeMiningTask ||
             $leadminerStore.isLoadingStartMining
-          "
-          v-tooltip.top="
-            $leadminerStore.activeMiningTask && $t('mining.mining_in_progress')
           "
           @click="navigateToMine()"
         />
@@ -120,12 +120,12 @@
             />
 
             <Button
-              type="button"
-              :label="$t('common.start_mining')"
               v-tooltip.top="
                 $leadminerStore.activeMiningTask &&
                 $t('mining.mining_in_progress')
               "
+              type="button"
+              :label="$t('common.start_mining')"
               @click="
                 navigateToMine();
                 closeCallback();
