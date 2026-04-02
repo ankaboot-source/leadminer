@@ -367,7 +367,7 @@ async function testAndContinue() {
 
   try {
     const { $api } = useNuxtApp();
-    await $api('/mine/sources/postgresql/test', {
+    await $api('/imap/mine/sources/postgresql/test', {
       method: 'POST',
       body: connection.value,
     });
@@ -388,7 +388,7 @@ async function loadPreview() {
       : `SELECT * FROM ${tableName.value}`;
 
     const { $api } = useNuxtApp();
-    const response = await $api('/mine/postgresql/preview', {
+    const response = await $api('/imap/mine/postgresql/preview', {
       method: 'POST',
       body: {
         connection: connection.value,
