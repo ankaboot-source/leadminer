@@ -11,9 +11,9 @@ import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 import EmailFetcherClient from './services/email-fetching';
 import PSTFetcherClient from './services/email-fetching/pst';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
-import TasksManager from './services/tasks-manager/TasksManager';
-import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
+import ImapTasksManager from './services/tasks-manager/ImapTasksManager';
+import FileTasksManager from './services/tasks-manager/FileTasksManager';
+import PstTasksManager from './services/tasks-manager/PstTasksManager';
 import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
@@ -45,7 +45,7 @@ console.log(
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
   const tasksResolver = new SupabaseTasks(supabaseClient, logger);
-  const tasksManager = new TasksManager(
+  const tasksManager = new ImapTasksManager(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
@@ -57,7 +57,7 @@ console.log(
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
-  const tasksManagerFile = new TasksManagerFile(
+  const tasksManagerFile = new FileTasksManager(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),
@@ -65,7 +65,7 @@ console.log(
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
-  const tasksManagerPST = new TasksManagerPST(
+  const tasksManagerPST = new PstTasksManager(
     tasksResolver,
     redis.getSubscriberClient(),
     redis.getClient(),

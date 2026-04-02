@@ -20,17 +20,17 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
-import TasksManager from './services/tasks-manager/TasksManager';
-import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
+import ImapTasksManager from './services/tasks-manager/ImapTasksManager';
+import FileTasksManager from './services/tasks-manager/FileTasksManager';
+import PstTasksManager from './services/tasks-manager/PstTasksManager';
 import Billing from './utils/billing-plugin';
 import { miningSourceService } from './db/supabase/MiningSourceService';
 
 export default function initializeApp(
   authResolver: AuthResolver,
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST,
+  tasksManager: ImapTasksManager,
+  tasksManagerFile: FileTasksManager,
+  tasksManagerPST: PstTasksManager,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,

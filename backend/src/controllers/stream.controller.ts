@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
-import TasksManager from '../services/tasks-manager/TasksManager';
-import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
+import ImapTasksManager from '../services/tasks-manager/ImapTasksManager';
+import FileTasksManager from '../services/tasks-manager/FileTasksManager';
+import PstTasksManager from '../services/tasks-manager/PstTasksManager';
 import logger from '../utils/logger';
 
 export default function initializeStreamController(
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST
+  tasksManager: ImapTasksManager,
+  tasksManagerFile: FileTasksManager,
+  tasksManagerPST: PstTasksManager
 ) {
   return {
     /**

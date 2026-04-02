@@ -2,6 +2,8 @@ import { Contact, TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 
+export type MiningSourceType = 'email' | 'file' | 'pst';
+
 export type RedisCommand = 'REGISTER' | 'DELETE';
 export type TaskProgressType =
   | 'fetched'
@@ -30,8 +32,7 @@ export interface TaskCleanStreamInfo {
 }
 
 export interface StreamInfo
-  extends TaskExtractStreamInfo,
-    TaskCleanStreamInfo {}
+  extends TaskExtractStreamInfo, TaskCleanStreamInfo {}
 
 export interface TaskProgress {
   totalMessages: number;
