@@ -23,7 +23,7 @@
         <Textarea
           id="connectionString"
           v-model="connectionString"
-          :placeholder="t('connection_string_placeholder')"
+          :placeholder="connectionStringPlaceholder"
           class="font-mono"
           rows="2"
           @blur="parseConnectionString"
@@ -254,6 +254,9 @@ const startingMining = ref(false);
 
 const ROWS_PREVIEW_COUNT = 5;
 
+const connectionStringPlaceholder =
+  'postgresql://user:password@host:port/database?sslmode=require';
+
 const contactFieldOptions: { value: keyof Contact; label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'name', label: t('contact.name') },
@@ -475,7 +478,6 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "import_postgresql": "Import from PostgreSQL",
     "connection_description": "Enter your PostgreSQL database connection details or paste a connection string.",
     "connection_string": "Connection String (optional)",
-    "connection_string_placeholder": "postgresql://user:password\\@host:port/database?sslmode=require",
     "or_individual_fields": "— or enter individual fields —",
     "host": "Host",
     "host_placeholder": "db.example.com",
@@ -523,7 +525,6 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "import_postgresql": "Importer depuis PostgreSQL",
     "connection_description": "Entrez les détails de connexion à votre base de données PostgreSQL ou collez une chaîne de connexion.",
     "connection_string": "Chaîne de connexion (optionnel)",
-    "connection_string_placeholder": "postgresql://utilisateur:motdepasse\\@hote:port/base?sslmode=require",
     "or_individual_fields": "— ou entrez les champs individuellement —",
     "host": "Hôte",
     "host_placeholder": "db.exemple.com",
