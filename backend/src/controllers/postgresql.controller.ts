@@ -11,7 +11,7 @@ import {
   QueryPreviewResult
 } from '../services/postgresql/PostgresQueryService';
 import { testPostgresConnection } from '../utils/helpers/postgresConnection';
-import { validateSelectQuery } from '../utils/helpers/sqlValidator';
+import validateSelectQuery from '../utils/helpers/sqlValidator';
 import validateType from '../utils/helpers/validation';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -95,7 +95,7 @@ async function resolvePostgresCredentials(
     return null;
   }
 
-  const sourceId = body.sourceId;
+  const { sourceId } = body;
 
   const sources = await miningSources.getSourcesForUser(userId);
   const source = sources.find((item) =>

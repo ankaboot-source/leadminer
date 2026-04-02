@@ -17,23 +17,31 @@
         {{ t('connection_description') }}
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Connection String Input -->
+      <div class="flex flex-col gap-2">
+        <label for="connectionString">{{ t('connection_string') }}</label>
+        <Textarea
+          id="connectionString"
+          v-model="connectionString"
+          :placeholder="t('connection_string_placeholder')"
+          class="font-mono"
+          rows="2"
+          @blur="parseConnectionString"
+        />
+      </div>
+
+      <div class="text-center text-muted-color text-sm">
+        {{ t('or_individual_fields') }}
+      </div>
+
+      <!-- Individual Connection Fields -->
+      <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-2">
           <label for="host">{{ t('host') }}</label>
           <InputText
             id="host"
             v-model="connection.host"
             :placeholder="t('host_placeholder')"
-          />
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label for="port">{{ t('port') }}</label>
-          <InputNumber
-            id="port"
-            v-model="connection.port"
-            :min="1"
-            :max="65535"
           />
         </div>
 
@@ -47,6 +55,18 @@
         </div>
 
         <div class="flex flex-col gap-2">
+          <label for="port">{{ t('port') }}</label>
+          <InputNumber
+            id="port"
+            v-model="connection.port"
+            :min="1"
+            :max="65535"
+            :use-grouping="false"
+            class="w-32"
+          />
+        </div>
+
+        <div class="flex flex-col gap-2">
           <label for="username">{{ t('username') }}</label>
           <InputText
             id="username"
@@ -55,7 +75,7 @@
           />
         </div>
 
-        <div class="flex flex-col gap-2 col-span-2">
+        <div class="flex flex-col gap-2">
           <label for="password">{{ t('password') }}</label>
           <Password
             id="password"
@@ -63,29 +83,6 @@
             :placeholder="t('password_placeholder')"
             toggle-mask
             :feedback="false"
-          />
-        </div>
-
-        <div class="flex items-center gap-2 col-span-2">
-          <Checkbox v-model="connection.ssl" :binary="true" input-id="ssl" />
-          <label for="ssl">{{ t('use_ssl') }}</label>
-        </div>
-
-        <div class="flex items-center gap-2 col-span-2">
-          <Checkbox
-            v-model="saveConnection"
-            :binary="true"
-            input-id="saveConnection"
-          />
-          <label for="saveConnection">{{ t('save_connection') }}</label>
-        </div>
-
-        <div v-if="saveConnection" class="flex flex-col gap-2 col-span-2">
-          <label for="connectionName">{{ t('connection_name') }}</label>
-          <InputText
-            id="connectionName"
-            v-model="connectionName"
-            :placeholder="t('connection_name_placeholder')"
           />
         </div>
       </div>
@@ -230,6 +227,7 @@ const visible = ref(false);
 const currentStep = ref<'connection' | 'query'>('connection');
 
 // Connection form
+const connectionString = ref('');
 const connection = ref({
   host: '',
   port: 5432,
@@ -238,8 +236,6 @@ const connection = ref({
   password: '',
   ssl: true,
 });
-const saveConnection = ref(false);
-const connectionName = ref('');
 const connectionError = ref('');
 const testingConnection = ref(false);
 
@@ -276,8 +272,7 @@ const isConnectionValid = computed(() => {
     connection.value.host &&
     connection.value.database &&
     connection.value.username &&
-    connection.value.password &&
-    (!saveConnection.value || connectionName.value)
+    connection.value.password
   );
 });
 
@@ -316,6 +311,7 @@ function close() {
 
 function reset() {
   currentStep.value = 'connection';
+  connectionString.value = '';
   connection.value = {
     host: '',
     port: 5432,
@@ -324,8 +320,6 @@ function reset() {
     password: '',
     ssl: true,
   };
-  saveConnection.value = false;
-  connectionName.value = '';
   connectionError.value = '';
   showAdvancedMode.value = false;
   sqlQuery.value = '';
@@ -337,13 +331,43 @@ function reset() {
 
 defineExpose({ openModal });
 
+function parseConnectionString() {
+  const uri = connectionString.value.trim();
+  if (!uri) return;
+
+  try {
+    // Support postgresql:// and postgres:// schemes
+    const url = new URL(uri.replace(/^postgres:/, 'postgresql:'));
+
+    connection.value.host = url.hostname;
+    connection.value.port = parseInt(url.port || '5432', 10);
+    connection.value.database = url.pathname.replace(/^\//, '');
+    connection.value.username = decodeURIComponent(url.username || '');
+    connection.value.password = decodeURIComponent(url.password || '');
+
+    // Check for sslmode query parameter
+    const sslmode = url.searchParams.get('sslmode');
+    if (sslmode) {
+      connection.value.ssl = sslmode !== 'disable';
+    }
+
+    // Clear the connection string after parsing
+    connectionString.value = '';
+  } catch {
+    // Invalid URL, ignore and let user fill fields manually
+  }
+}
+
 async function testAndContinue() {
   testingConnection.value = true;
   connectionError.value = '';
 
   try {
     const { $api } = useNuxtApp();
-    await $api.post('/api/imap/mine/sources/postgresql/test', connection.value);
+    await $api('/mine/sources/postgresql/test', {
+      method: 'POST',
+      body: connection.value,
+    });
     currentStep.value = 'query';
   } catch (error: unknown) {
     connectionError.value = extractErrorMessage(error, t('connection_failed'));
@@ -361,9 +385,12 @@ async function loadPreview() {
       : `SELECT * FROM ${tableName.value}`;
 
     const { $api } = useNuxtApp();
-    const response = await $api.post('/api/imap/mine/postgresql/preview', {
-      connection: connection.value,
-      query,
+    const response = await $api('/mine/postgresql/preview', {
+      method: 'POST',
+      body: {
+        connection: connection.value,
+        query,
+      },
     });
 
     previewData.value = {
@@ -399,15 +426,13 @@ async function startMining() {
       ? sqlQuery.value
       : `SELECT * FROM ${tableName.value}`;
 
-    const { $api } = useNuxtApp();
     await $leadminerStore.startMining(
       SOURCE,
       JSON.stringify({
         connection: connection.value,
         query,
         mapping: columnMapping.value,
-        saveConnection: saveConnection.value,
-        connectionName: connectionName.value,
+        saveConnection: true,
       }),
     );
 
@@ -448,7 +473,10 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 {
   "en": {
     "import_postgresql": "Import from PostgreSQL",
-    "connection_description": "Enter your PostgreSQL database connection details.",
+    "connection_description": "Enter your PostgreSQL database connection details or paste a connection string.",
+    "connection_string": "Connection String (optional)",
+    "connection_string_placeholder": "postgresql://user:password\\@host:port/database?sslmode=require",
+    "or_individual_fields": "— or enter individual fields —",
     "host": "Host",
     "host_placeholder": "db.example.com",
     "port": "Port",
@@ -458,10 +486,6 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "username_placeholder": "db_user",
     "password": "Password",
     "password_placeholder": "Enter password",
-    "use_ssl": "Use SSL connection",
-    "save_connection": "Save this connection for future use",
-    "connection_name": "Connection name",
-    "connection_name_placeholder": "My Database",
     "test_and_continue": "Test Connection & Continue",
     "connection_failed": "Failed to connect to database",
     "back": "Back",
@@ -497,7 +521,10 @@ function extractErrorMessage(error: unknown, fallback: string): string {
   },
   "fr": {
     "import_postgresql": "Importer depuis PostgreSQL",
-    "connection_description": "Entrez les détails de connexion à votre base de données PostgreSQL.",
+    "connection_description": "Entrez les détails de connexion à votre base de données PostgreSQL ou collez une chaîne de connexion.",
+    "connection_string": "Chaîne de connexion (optionnel)",
+    "connection_string_placeholder": "postgresql://utilisateur:motdepasse\\@hote:port/base?sslmode=require",
+    "or_individual_fields": "— ou entrez les champs individuellement —",
     "host": "Hôte",
     "host_placeholder": "db.exemple.com",
     "port": "Port",
@@ -507,10 +534,6 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "username_placeholder": "utilisateur_db",
     "password": "Mot de passe",
     "password_placeholder": "Entrez le mot de passe",
-    "use_ssl": "Utiliser une connexion SSL",
-    "save_connection": "Sauvegarder cette connexion pour plus tard",
-    "connection_name": "Nom de la connexion",
-    "connection_name_placeholder": "Ma Base de Données",
     "test_and_continue": "Tester la connexion et continuer",
     "connection_failed": "Échec de la connexion à la base de données",
     "back": "Retour",

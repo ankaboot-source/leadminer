@@ -227,7 +227,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         mockTotalRows
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       // Act
       const task = tasksManager.getTaskOrThrow(miningId);
@@ -267,7 +267,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         mockTotalRows
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       // Act
       const task = tasksManager.getActiveTask(miningId);
@@ -311,7 +311,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         mockTotalRows
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       // Act
       const result = await tasksManager.deleteTask(miningId, null);
@@ -352,7 +352,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         mockTotalRows
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       // Act & Assert
       await expect(
@@ -388,7 +388,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         mockTotalRows
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       const mockReq = {} as Request;
       const mockRes = {} as Response;
@@ -448,7 +448,7 @@ describe('TasksManagerPostgreSQL', () => {
         mockSourceName,
         1
       );
-      const miningId = createdTask.miningId;
+      const { miningId } = createdTask;
 
       // Act - Simulate Redis message for extraction progress
       const validMessage = JSON.stringify({

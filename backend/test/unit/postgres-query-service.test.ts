@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
+import { Client } from 'pg';
+import { PostgresQueryService } from '../../src/services/postgresql/PostgresQueryService';
+
 jest.mock('pg', () => ({
   Client: jest.fn()
 }));
-
-import { Client } from 'pg';
-import { PostgresQueryService } from '../../src/services/postgresql/PostgresQueryService';
 
 const MockedClient = Client as unknown as jest.Mock;
 
@@ -136,10 +136,10 @@ describe('PostgresQueryService', () => {
     const service = new PostgresQueryService(credentials);
 
     await expect(async () => {
-      for await (const _batch of service.executeQueryStream(
+      for await (const batch of service.executeQueryStream(
         'SELECT email FROM contacts; SELECT now()'
       )) {
-        // no-op
+        expect(batch).toBeDefined();
       }
     }).rejects.toThrow('Only a single SELECT statement is allowed');
   });
@@ -240,11 +240,11 @@ describe('PostgresQueryService', () => {
     const service = new PostgresQueryService(credentials);
 
     await expect(async () => {
-      for await (const _batch of service.executeQueryStream(
+      for await (const batch of service.executeQueryStream(
         'SELECT email FROM contacts',
         2
       )) {
-        // no-op
+        expect(batch).toBeDefined();
       }
     }).rejects.toThrow('fetch failed');
 
@@ -277,11 +277,11 @@ describe('PostgresQueryService', () => {
     const service = new PostgresQueryService(credentials);
 
     await expect(async () => {
-      for await (const _batch of service.executeQueryStream(
+      for await (const batch of service.executeQueryStream(
         'SELECT email FROM contacts',
         2
       )) {
-        // no-op
+        expect(batch).toBeDefined();
       }
     }).rejects.toThrow('fetch failed');
     expect(mockClient.end).toHaveBeenCalledTimes(1);

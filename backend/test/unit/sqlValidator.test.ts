@@ -1,4 +1,4 @@
-import { validateSelectQuery } from '../../src/utils/helpers/sqlValidator';
+import validateSelectQuery from '../../src/utils/helpers/sqlValidator';
 
 describe('sqlValidator', () => {
   describe('validateSelectQuery', () => {

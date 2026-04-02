@@ -16,7 +16,7 @@ const FORBIDDEN_KEYWORDS = [
   'ANALYZE'
 ];
 
-export function validateSelectQuery(query: string): string | null {
+export default function validateSelectQuery(query: string): string | null {
   if (!query || !query.trim()) {
     return 'Query is required';
   }

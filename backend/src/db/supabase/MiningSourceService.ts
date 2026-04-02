@@ -5,7 +5,6 @@ import {
   MiningSource,
   MiningSourceByUser,
   MiningSources,
-  MiningSourceType,
   OAuthMiningSourceProvider,
   OAuthMiningSourceCredentials
 } from '../interfaces/MiningSources';

@@ -132,7 +132,7 @@ export default class TasksManagerPostgreSQL {
    * Generates a unique mining ID for a given user.
    * @returns A Promise that resolves to the unique mining ID.
    */
-  private async generateMiningId() {
+  private static async generateMiningId() {
     return crypto.randomUUID();
   }
 
@@ -140,8 +140,8 @@ export default class TasksManagerPostgreSQL {
    * Generates a unique mining ID and stream name for a mining task.
    * @returns A Promise that resolves to an object containing the unique mining ID and stream name.
    */
-  private async generateTaskInformation() {
-    const miningId = await this.generateMiningId();
+  private static async generateTaskInformation() {
+    const miningId = await TasksManagerPostgreSQL.generateMiningId();
 
     return {
       miningId,
@@ -165,7 +165,8 @@ export default class TasksManagerPostgreSQL {
    */
   async createTask(userId: string, sourceName: string, totalRows: number) {
     try {
-      const { miningId, stream } = await this.generateTaskInformation();
+      const { miningId, stream } =
+        await TasksManagerPostgreSQL.generateTaskInformation();
       const {
         messagesStream,
         messagesConsumerGroup,

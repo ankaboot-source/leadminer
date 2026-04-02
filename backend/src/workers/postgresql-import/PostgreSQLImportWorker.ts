@@ -226,6 +226,8 @@ export default class PostgreSQLImportWorker {
             const message = JSON.parse(
               stringifiedMessage
             ) as PostgreSQLImportMessage;
+            // Message processing must remain sequential per stream.
+            // eslint-disable-next-line no-await-in-loop
             await this.processMessage(message);
           } catch (error) {
             this.logger.error('Failed to process message', {
@@ -239,6 +241,8 @@ export default class PostgreSQLImportWorker {
         const lastMessage = messages.at(-1);
         if (lastMessage) {
           const lastMessageId = lastMessage[0];
+          // Stream trimming must happen after each stream batch is handled.
+          // eslint-disable-next-line no-await-in-loop
           await this.redisClient.xtrim(streamName, 'MINID', lastMessageId);
         }
       }

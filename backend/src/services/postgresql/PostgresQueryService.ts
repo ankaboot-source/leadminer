@@ -1,6 +1,6 @@
 import { Client } from 'pg';
 import { PostgreSQLMiningSourceCredentials } from '../../db/interfaces/MiningSources';
-import { validateSelectQuery } from '../../utils/helpers/sqlValidator';
+import validateSelectQuery from '../../utils/helpers/sqlValidator';
 
 export interface QueryPreviewResult {
   columns: string[];
@@ -139,6 +139,8 @@ export class PostgresQueryService {
       );
 
       while (true) {
+        // Sequential FETCH calls are required for cursor-based streaming.
+        // eslint-disable-next-line no-await-in-loop
         const result = await client.query(
           `FETCH ${safeBatchSize} FROM leadminer_cursor`
         );
