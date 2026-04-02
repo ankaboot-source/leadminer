@@ -117,6 +117,8 @@ const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
 const $imapDialogStore = useImapDialog();
+const $leadminerStore = useLeadminerStore();
+const $stepper = useMiningStepper();
 
 const imapSource = defineModel<MiningSource>('source');
 
@@ -249,7 +251,19 @@ async function onSubmitImapCredentials() {
         isValid: true,
       };
       show.value = false;
-      $sourcePanel.hideOtherSources();
+
+      await $leadminerStore.fetchMiningSources();
+
+      const newSource = $leadminerStore.miningSources.find(
+        (s) => s.email.toLowerCase() === imapEmail.value.toLowerCase(),
+      );
+
+      if (newSource) {
+        $leadminerStore.activeMiningSource = newSource;
+        $stepper.go(2);
+      } else {
+        $sourcePanel.hideOtherSources();
+      }
     }
   } catch (error) {
     if (error instanceof FetchError) {
