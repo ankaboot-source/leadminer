@@ -1,14 +1,5 @@
 <template>
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
-  <CampaignComposerDialog
-    v-model:visible="sendCampaignDialogVisible"
-    :selected-contacts="implicitlySelectedContacts"
-  />
-  <SmsCampaignComposerDialog
-    v-model:visible="sendSmsCampaignDialogVisible"
-    :selected-contacts="implicitlySelectedContacts"
-    @campaign-created="onSmsCampaignCreated"
-  />
   <DataTable
     v-show="showTable"
     ref="TableRef"
@@ -90,35 +81,10 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <div class="flex gap-2">
-          <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
-          <SplitButton
-            severity="contrast"
-            :label="t('send_campaign')"
-            :model="sendCampaignMenuItems"
-            :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
-            v-tooltip.top="
-              $leadminerStore.activeMiningTask
-                ? t('mining.mining_in_progress')
-                : isSendByEmailDisabled &&
-                  isSendBySmsDisabled &&
-                  t('select_at_least_one_contact', {
-                    action: t('send_campaign').toLowerCase(),
-                  })
-            "
-            :button-props="{
-              disabled: isSendByEmailDisabled,
-              onClick: () => openSendContactsDialog(),
-            }"
-            pt:label:class="hidden md:block"
-          >
-            <template #icon>
-              <span class="p-button-icon p-button-icon-left">
-                <i class="pi pi-send" />
-              </span>
-            </template>
-          </SplitButton>
-        </div>
+        <CampaignButton
+          :selected-contacts="implicitlySelectedContacts"
+          :is-export-disabled="isExportDisabled"
+        />
 
         <div class="mx-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
@@ -960,17 +926,11 @@ const EnrichButton = defineAsyncComponent(
 const ExportContacts = defineAsyncComponent(
   () => import('../buttons/ExportContacts.vue'),
 );
-const RemoveContactButton = defineAsyncComponent(
-  () => import('../buttons/RemoveContactButton.vue'),
+const CampaignButton = defineAsyncComponent(
+  () => import('../buttons/CampaignButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
-);
-const CampaignComposerDialog = defineAsyncComponent(
-  () => import('~/components/campaigns/CampaignComposerDialog.vue'),
-);
-const SmsCampaignComposerDialog = defineAsyncComponent(
-  () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
 
 const { showTable, origin } = defineProps<{
@@ -1221,49 +1181,6 @@ const isExportDisabled = computed(
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );
-
-const sendCampaignDialogVisible = ref(false);
-const sendSmsCampaignDialogVisible = ref(false);
-
-const isSendByEmailDisabled = computed(() => isExportDisabled.value);
-
-const isSendBySmsDisabled = computed(() => {
-  const hasPhones = implicitlySelectedContacts.value.some(
-    (c) => c.telephone && c.telephone.length > 0,
-  );
-  return !hasPhones || isExportDisabled.value;
-});
-
-const sendCampaignMenuItems = computed(() => [
-  {
-    label: t('send_email_campaign'),
-    icon: 'pi pi-envelope',
-    command: () => {
-      openSendContactsDialog();
-    },
-    disabled: isSendByEmailDisabled.value,
-  },
-  {
-    label: t('send_sms_campaign'),
-    icon: 'pi pi-comments',
-    command: () => {
-      openSendSmsContactsDialog();
-    },
-    disabled: isSendBySmsDisabled.value,
-  },
-]);
-
-function openSendContactsDialog() {
-  sendCampaignDialogVisible.value = true;
-}
-
-function openSendSmsContactsDialog() {
-  sendSmsCampaignDialogVisible.value = true;
-}
-
-function onSmsCampaignCreated(_campaignId: string) {
-  // skipcq: JS-0099 - Placeholder for future SMS campaign tracking
-}
 
 const isFullscreen = ref(false);
 
