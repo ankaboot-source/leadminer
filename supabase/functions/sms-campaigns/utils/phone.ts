@@ -1,20 +1,25 @@
+import {
+  parsePhoneNumberFromString,
+  ParseError,
+} from "libphonenumber-js";
+
 export function normalizePhoneNumber(phone: string): string | null {
+  if (!phone?.trim()) return null;
+
   const trimmed = phone.trim();
 
-  if (!trimmed) return null;
-
-  let normalized = trimmed;
-  normalized = normalized.replace(/\(\s*0\s*\)/g, "");
-  if (normalized.startsWith("00")) {
-    normalized = `+${normalized.slice(2)}`;
+  try {
+    const phoneNumber = parsePhoneNumberFromString(trimmed);
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return null;
+    }
+    return phoneNumber.format("E.164");
+  } catch (error) {
+    if (error instanceof ParseError) {
+      return null;
+    }
+    throw error;
   }
-
-  const cleaned = normalized.replace(/[\s\-().]/g, "");
-  const e164Match = cleaned.match(/^\+?(\d{10,15})$/);
-  if (!e164Match) return null;
-
-  const digits = e164Match[1];
-  return `+${digits}`;
 }
 
 export function isValidPhoneNumber(phone: string | null): boolean {

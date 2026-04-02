@@ -275,15 +275,11 @@ const twilioAvailable = ref(false);
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const smsgateBaseUrlInput = ref(
-  $profile.value?.smsgate_base_url ||
-    'https://api.sms-gate.app/3rdparty/v1/messages',
-);
+const smsgateBaseUrlInput = ref($profile.value?.smsgate_base_url || '');
 const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
 const smsgatePasswordInput = ref('');
 const simpleSmsGatewayBaseUrlInput = ref(
-  $profile.value?.simple_sms_gateway_base_url ||
-    'http://192.168.1.100:8080/send-sms',
+  $profile.value?.simple_sms_gateway_base_url || '',
 );
 const simpleSmsGatewayDownloadUrl =
   'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
