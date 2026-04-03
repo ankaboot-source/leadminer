@@ -146,7 +146,14 @@ export default class TasksManager {
    * @throws {Error} If there is an error when creating the task.
    */
   async createTask(
-    { email, boxes, fetchEmailBody, userId, since }: ImapEmailsFetcherOptions,
+    {
+      email,
+      boxes,
+      fetchEmailBody,
+      userId,
+      since,
+      cleaningEnabled = true
+    }: ImapEmailsFetcherOptions,
     passive_mining = false
   ): Promise<RedactedTask> {
     let miningTaskId: string | null = null;
@@ -228,7 +235,7 @@ export default class TasksManager {
             status: TaskStatus.Running,
             details: {
               miningId,
-              enabled: true,
+              enabled: cleaningEnabled,
               stream: {
                 emailsStream,
                 emailsConsumerGroup
