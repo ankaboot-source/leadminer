@@ -211,8 +211,9 @@ export default function initializePostgresqlController(
   miningSources: MiningSources,
   queryServiceFactory: (
     credentials: PostgreSQLMiningSourceCredentials
-  ) => Pick<PostgresQueryService, 'previewQuery'> = (credentials) =>
-    new PostgresQueryService(credentials)
+  ) => Pick<PostgresQueryService, 'previewQuery' | 'listTables'> = (
+    credentials
+  ) => new PostgresQueryService(credentials)
 ) {
   return {
     async testConnection(req: Request, res: Response) {
