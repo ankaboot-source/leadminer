@@ -84,7 +84,7 @@ export class PostgresQueryService {
       database: this.credentials.database,
       user: this.credentials.username,
       password: this.credentials.password,
-      ssl: this.credentials.ssl ?? true,
+      ssl: this.credentials.ssl ? { rejectUnauthorized: false } : false,
       statement_timeout: statementTimeout,
       connectionTimeoutMillis: 10000
     });
