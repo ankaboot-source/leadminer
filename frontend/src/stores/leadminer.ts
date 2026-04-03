@@ -503,7 +503,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           throw new Error(`Unknown mining source: ${source}`);
       }
 
-      totalMessages.value = task.progress.totalMessages;
+      totalMessages.value = task.progress?.totalMessages ?? 0;
       sse.closeConnection();
       startProgressListener(miningType.value, task.miningId);
 
