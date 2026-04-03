@@ -65,18 +65,24 @@ class RedisManager {
 
   /**
    * Deletes all the keys of all the existing databases in redis.
+   * @param exceptKeys - Keys to preserve (exact match)
+   * @param exceptPrefixes - Key prefixes to preserve (prefix match)
    */
-  async flushAll(exceptStreams: string[]) {
+  async flushAll(exceptKeys: string[], exceptPrefixes: string[] = []) {
     try {
       const keys = await this.normalClient.keys('*');
-      const keysToDelete = keys.filter((key) => !exceptStreams.includes(key));
+      const keysToDelete = keys.filter(
+        (key) =>
+          !exceptKeys.includes(key) &&
+          !exceptPrefixes.some((prefix) => key.startsWith(prefix))
+      );
 
       if (keysToDelete.length > 0) {
         await this.normalClient.del(...keysToDelete);
       }
 
       logger.info(
-        `Deleted ${keysToDelete.length} keys except '${exceptStreams}' ✔️`
+        `Deleted ${keysToDelete.length} keys (exceptKeys: ${exceptKeys.join(', ')}, exceptPrefixes: ${exceptPrefixes.join(', ')}) ✔️`
       );
     } catch (error) {
       logger.error('Failed flushing Redis selectively.', error);
