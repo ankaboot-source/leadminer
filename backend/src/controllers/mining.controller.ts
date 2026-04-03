@@ -416,10 +416,12 @@ export default function initializeMiningController(
 
       const {
         name,
-        contacts
+        contacts,
+        cleaningEnabled
       }: {
         name: string;
         contacts: Partial<ContactFormat[]>;
+        cleaningEnabled: boolean;
       } = req.body;
 
       try {
@@ -433,7 +435,10 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const errors = [validateType('name', name, 'string')].filter(Boolean);
+        const errors = [
+          validateType('name', name, 'string'),
+          validateType('cleaningEnabled', cleaningEnabled, 'boolean')
+        ].filter(Boolean);
 
         if (errors.length) {
           return res
@@ -441,10 +446,14 @@ export default function initializeMiningController(
             .json({ message: `Invalid input: ${errors.join(', ')}` });
         }
 
+        const effectiveCleaningEnabled =
+          cleaningEnabled && hasEmailVerificationConfigured(ENV);
+
         const fileMiningTask = await tasksManagerFile.createTask(
           user.id,
           name,
-          1
+          contacts.length,
+          effectiveCleaningEnabled
         );
 
         const taskObject = tasksManagerFile.getTaskOrThrow(
@@ -452,16 +461,18 @@ export default function initializeMiningController(
         );
         const { userId, miningId } = taskObject;
 
-        const totalPublished =
-          await publishPreviouslyUnverifiedEmailsToCleaning(
-            contactsDB,
-            userId,
-            miningId,
-            taskObject.process.clean.details.stream.emailsStream!
-          );
-        taskObject.progress.createdContacts += totalPublished;
-        taskObject.process.clean.details.progress.createdContacts +=
-          totalPublished;
+        if (effectiveCleaningEnabled) {
+          const totalPublished =
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              taskObject.process.clean.details.stream.emailsStream!
+            );
+          taskObject.progress.createdContacts += totalPublished;
+          taskObject.process.clean.details.progress.createdContacts +=
+            totalPublished;
+        }
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(

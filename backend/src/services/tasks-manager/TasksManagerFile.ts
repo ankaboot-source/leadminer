@@ -189,7 +189,8 @@ export default class TasksManagerFile {
   async createTask(
     userId: string,
     fileName: string,
-    totalImportedFromFile: number
+    totalImportedFromFile: number,
+    cleaningEnabled: boolean
   ) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
@@ -235,7 +236,7 @@ export default class TasksManagerFile {
             status: TaskStatus.Running,
             details: {
               miningId,
-              enabled: true,
+              enabled: cleaningEnabled,
               stream: {
                 emailsStream,
                 emailsConsumerGroup
