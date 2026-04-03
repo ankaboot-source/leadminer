@@ -145,6 +145,42 @@ export function validatePostgresConnectionBody(body: unknown): string[] {
   return errors.filter(Boolean) as string[];
 }
 
+export function validatePostgresPreviewBody(body: unknown): string[] {
+  const errors: Array<string | null> = [];
+
+  if (!isRecord(body)) {
+    return ['Invalid input payload'];
+  }
+
+  const b = body as Record<string, unknown>;
+
+  if (!b.query || typeof b.query !== 'string') {
+    errors.push('query is required');
+  } else {
+    const queryError = validateSelectQuery(b.query);
+    if (queryError) {
+      errors.push(queryError);
+    }
+  }
+
+  if (
+    b.sourceId !== undefined &&
+    (typeof b.sourceId !== 'string' || !b.sourceId.trim())
+  ) {
+    errors.push('sourceId must be a non-empty string');
+  }
+
+  if (!b.sourceId && !b.connection) {
+    errors.push('Either sourceId or connection is required');
+  }
+
+  if (b.connection) {
+    errors.push(...validatePostgresConnectionBody(b.connection));
+  }
+
+  return errors.filter(Boolean) as string[];
+}
+
 export function validatePostgresMiningBody(body: unknown): string[] {
   const errors: Array<string | null> = [];
 
@@ -163,28 +199,26 @@ export function validatePostgresMiningBody(body: unknown): string[] {
     }
   }
 
-  if (b.mapping !== undefined) {
-    if (!isRecord(b.mapping)) {
-      errors.push('mapping must be an object');
+  if (!isRecord(b.mapping)) {
+    errors.push('mapping is required');
+  } else {
+    const values = Object.values(b.mapping);
+
+    if (!values.every((field) => typeof field === 'string')) {
+      errors.push('mapping values must be valid contact fields');
     } else {
-      const values = Object.values(b.mapping);
+      const mappedFields = values as string[];
 
-      if (!values.every((field) => typeof field === 'string')) {
-        errors.push('mapping values must be valid contact fields');
-      } else {
-        const mappedFields = values as string[];
+      if (!mappedFields.includes('email')) {
+        errors.push('Email mapping is required');
+      }
 
-        if (!mappedFields.includes('email')) {
-          errors.push('Email mapping is required');
-        }
+      const hasInvalidField = mappedFields.some(
+        (field) => !CONTACT_FIELDS.includes(field as keyof ContactFormat)
+      );
 
-        const hasInvalidField = mappedFields.some(
-          (field) => !CONTACT_FIELDS.includes(field as keyof ContactFormat)
-        );
-
-        if (hasInvalidField) {
-          errors.push('mapping contains unsupported contact fields');
-        }
+      if (hasInvalidField) {
+        errors.push('mapping contains unsupported contact fields');
       }
     }
   }
@@ -267,7 +301,7 @@ export default function initializePostgresqlController(
       try {
         const { body } = req;
         const user = res.locals.user as User;
-        const errors = validatePostgresMiningBody(body);
+        const errors = validatePostgresPreviewBody(body);
         if (errors.length) {
           return res
             .status(400)
