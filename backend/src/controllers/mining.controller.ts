@@ -494,16 +494,18 @@ export default function initializeMiningController(
 
       const {
         name,
-        extractSignatures
+        extractSignatures,
+        cleaningEnabled
       }: {
         name: string;
         extractSignatures: boolean;
-        // file
+        cleaningEnabled: boolean;
       } = req.body;
 
       const errors = [
         validateType('name', name, 'string'),
-        validateType('extractSignatures', extractSignatures, 'boolean')
+        validateType('extractSignatures', extractSignatures, 'boolean'),
+        validateType('cleaningEnabled', cleaningEnabled, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -511,25 +513,33 @@ export default function initializeMiningController(
           .status(400)
           .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      const effectiveCleaningEnabled =
+        cleaningEnabled && hasEmailVerificationConfigured(ENV);
+
       try {
         const miningTask = await tasksManagerPST.createTask(
           user.id,
           name,
-          extractSignatures
+          extractSignatures,
+          effectiveCleaningEnabled
         );
 
         const taskObject = tasksManagerPST.getTaskOrThrow(miningTask.miningId);
         const { userId, miningId } = taskObject;
-        const totalPublished =
-          await publishPreviouslyUnverifiedEmailsToCleaning(
-            contactsDB,
-            userId,
-            miningId,
-            taskObject.process.clean.details.stream.emailsStream!
-          );
-        taskObject.progress.createdContacts += totalPublished;
-        taskObject.process.clean.details.progress.createdContacts +=
-          totalPublished;
+
+        if (effectiveCleaningEnabled) {
+          const totalPublished =
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              taskObject.process.clean.details.stream.emailsStream!
+            );
+          taskObject.progress.createdContacts += totalPublished;
+          taskObject.process.clean.details.progress.createdContacts +=
+            totalPublished;
+        }
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {

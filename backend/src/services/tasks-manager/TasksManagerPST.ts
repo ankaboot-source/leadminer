@@ -146,8 +146,9 @@ export default class TasksManagerPST {
    */
   async createTask(
     userId: string,
-    source: string, // filename
-    fetchEmailBody: boolean
+    source: string,
+    fetchEmailBody: boolean,
+    cleaningEnabled: boolean
   ) {
     let miningTaskId: string | null = null;
     try {
@@ -225,7 +226,7 @@ export default class TasksManagerPST {
             status: TaskStatus.Running,
             details: {
               miningId,
-              enabled: true,
+              enabled: cleaningEnabled,
               stream: {
                 emailsStream,
                 emailsConsumerGroup
