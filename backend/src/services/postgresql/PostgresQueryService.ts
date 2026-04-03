@@ -8,6 +8,11 @@ export interface QueryPreviewResult {
   totalCount?: number;
 }
 
+export interface TableListItem {
+  tablename: string;
+  schema: string;
+}
+
 export interface QueryExecutionResult {
   columns: string[];
   rows: Record<string, unknown>[];
@@ -113,6 +118,35 @@ export class PostgresQueryService {
     } catch (error) {
       await rollbackIfNeeded(client, shouldRollback);
 
+      throw error;
+    } finally {
+      await closeClientSafely(client);
+    }
+  }
+
+  async listTables(): Promise<TableListItem[]> {
+    const client = this.createClient(PREVIEW_TIMEOUT_MS);
+
+    let shouldRollback = false;
+
+    try {
+      await client.connect();
+      await client.query('BEGIN READ ONLY');
+      shouldRollback = true;
+
+      const result = await client.query(`
+        SELECT tablename, schemaname AS schema
+        FROM pg_catalog.pg_tables
+        WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+        ORDER BY schemaname, tablename
+      `);
+
+      await client.query('ROLLBACK');
+      shouldRollback = false;
+
+      return result.rows as TableListItem[];
+    } catch (error) {
+      await rollbackIfNeeded(client, shouldRollback);
       throw error;
     } finally {
       await closeClientSafely(client);

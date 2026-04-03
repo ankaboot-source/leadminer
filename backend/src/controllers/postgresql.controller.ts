@@ -46,7 +46,7 @@ export interface PostgresMiningBody {
   sourceId?: string;
   connection?: PostgreSQLMiningSourceCredentials;
   query: string;
-  mapping: Record<string, keyof ContactFormat>;
+  mapping?: Record<string, keyof ContactFormat>;
 }
 
 function getConnectionCredentials(
@@ -163,26 +163,28 @@ export function validatePostgresMiningBody(body: unknown): string[] {
     }
   }
 
-  if (!isRecord(b.mapping)) {
-    errors.push('mapping is required');
-  } else {
-    const values = Object.values(b.mapping);
-
-    if (!values.every((field) => typeof field === 'string')) {
-      errors.push('mapping values must be valid contact fields');
+  if (b.mapping !== undefined) {
+    if (!isRecord(b.mapping)) {
+      errors.push('mapping must be an object');
     } else {
-      const mappedFields = values as string[];
+      const values = Object.values(b.mapping);
 
-      if (!mappedFields.includes('email')) {
-        errors.push('Email mapping is required');
-      }
+      if (!values.every((field) => typeof field === 'string')) {
+        errors.push('mapping values must be valid contact fields');
+      } else {
+        const mappedFields = values as string[];
 
-      const hasInvalidField = mappedFields.some(
-        (field) => !CONTACT_FIELDS.includes(field as keyof ContactFormat)
-      );
+        if (!mappedFields.includes('email')) {
+          errors.push('Email mapping is required');
+        }
 
-      if (hasInvalidField) {
-        errors.push('mapping contains unsupported contact fields');
+        const hasInvalidField = mappedFields.some(
+          (field) => !CONTACT_FIELDS.includes(field as keyof ContactFormat)
+        );
+
+        if (hasInvalidField) {
+          errors.push('mapping contains unsupported contact fields');
+        }
       }
     }
   }
@@ -299,6 +301,45 @@ export default function initializePostgresqlController(
         return res
           .status(500)
           .json({ message: 'Unable to preview PostgreSQL query' });
+      }
+    },
+
+    async listTables(req: Request, res: Response) {
+      try {
+        const { body } = req;
+
+        if (!body.connection) {
+          return res.status(400).json({ message: 'connection is required' });
+        }
+
+        const errors = validatePostgresConnectionBody(body.connection);
+        if (errors.length) {
+          return res
+            .status(400)
+            .json({ message: `Invalid connection: ${errors.join(', ')}` });
+        }
+
+        const credentials: PostgreSQLMiningSourceCredentials = {
+          host: body.connection.host,
+          port: body.connection.port,
+          database: body.connection.database,
+          username: body.connection.username,
+          password: body.connection.password,
+          ssl: body.connection.ssl ?? true
+        };
+
+        const queryService = queryServiceFactory(credentials);
+        const tables = await queryService.listTables();
+
+        return res.status(200).json({ tables });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('PostgreSQL list tables failed', {
+          error: err instanceof Error ? err.message : String(err)
+        });
+        return res
+          .status(500)
+          .json({ message: 'Unable to list PostgreSQL tables' });
       }
     },
 

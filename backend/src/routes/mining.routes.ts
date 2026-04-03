@@ -55,6 +55,11 @@ export default function initializeMiningRoutes(
     postgresqlController.previewQuery
   );
   router.post(
+    '/mine/postgresql/tables',
+    authMiddleware,
+    postgresqlController.listTables
+  );
+  router.post(
     '/mine/postgresql/:userId',
     authMiddleware,
     postgresqlController.startMining

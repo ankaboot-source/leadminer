@@ -118,10 +118,24 @@
 
       <div v-else class="flex flex-col gap-2">
         <label>{{ t('table_name') }}</label>
-        <InputText v-model="tableName" :placeholder="t('table_placeholder')" />
+        <Select
+          v-model="tableName"
+          :placeholder="t('table_placeholder')"
+          :options="tableList"
+          option-label="tablename"
+          option-value="tablename"
+          :loading="loadingTables"
+          class="w-full"
+          @change="onTableSelected"
+        >
+          <template #option="{ option }">
+            {{ option.schema }}.{{ option.tablename }}
+          </template>
+        </Select>
       </div>
 
       <Button
+        v-if="showAdvancedMode"
         :label="t('preview_query')"
         :loading="previewLoading"
         :disabled="!canPreview"
@@ -243,6 +257,8 @@ const testingConnection = ref(false);
 const showAdvancedMode = ref(false);
 const sqlQuery = ref('');
 const tableName = ref('');
+const tableList = ref<{ tablename: string; schema: string }[]>([]);
+const loadingTables = ref(false);
 const previewLoading = ref(false);
 const previewData = ref<{
   rows: Record<string, unknown>[];
@@ -327,6 +343,7 @@ function reset() {
   showAdvancedMode.value = false;
   sqlQuery.value = '';
   tableName.value = '';
+  tableList.value = [];
   previewData.value = null;
   totalRowCount.value = null;
   columnMapping.value = {};
@@ -372,10 +389,38 @@ async function testAndContinue() {
       body: connection.value,
     });
     currentStep.value = 'query';
+    await loadTables();
   } catch (error: unknown) {
     connectionError.value = extractErrorMessage(error, t('connection_failed'));
   } finally {
     testingConnection.value = false;
+  }
+}
+
+async function loadTables() {
+  loadingTables.value = true;
+  try {
+    const { $api } = useNuxtApp();
+    const response = await $api('/imap/mine/postgresql/tables', {
+      method: 'POST',
+      body: { connection: connection.value },
+    });
+    tableList.value = response.tables;
+  } catch (error: unknown) {
+    $toast.add({
+      severity: 'error',
+      summary: t('load_tables_failed'),
+      detail: extractErrorMessage(error, t('load_tables_error')),
+      life: 5000,
+    });
+  } finally {
+    loadingTables.value = false;
+  }
+}
+
+function onTableSelected() {
+  if (tableName.value) {
+    loadPreview();
   }
 }
 
@@ -509,6 +554,8 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "start_mining": "Start Import",
     "mining_failed": "Import Failed",
     "mining_error": "Could not start import",
+    "load_tables_failed": "Load Tables Failed",
+    "load_tables_error": "Could not load database tables",
     "contact": {
       "name": "Name",
       "given_name": "First Name",
@@ -556,6 +603,8 @@ function extractErrorMessage(error: unknown, fallback: string): string {
     "start_mining": "Démarrer l'import",
     "mining_failed": "Échec de l'import",
     "mining_error": "Impossible de démarrer l'import",
+    "load_tables_failed": "Échec du chargement des tables",
+    "load_tables_error": "Impossible de charger les tables de la base de données",
     "contact": {
       "name": "Nom",
       "given_name": "Prénom",
