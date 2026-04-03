@@ -45,16 +45,29 @@ export class Signature implements ExtractSignature {
     return fallbackEngine?.engine || null;
   }
 
+  /**
+   * Get display name for an engine, including wrapped engine if applicable
+   */
+  private static getEngineDisplayName(engine: ExtractSignature): string {
+    const baseName = engine.constructor.name;
+    if ('wrappedEngineName' in engine) {
+      return `${baseName} (${(engine as any).wrappedEngineName})`;
+    }
+    return baseName;
+  }
+
   async extract(email: string, signature: string): Promise<PersonLD | null> {
     const primary = this.getEngine();
     const fallback = this.getFallback();
     const engine = primary ?? fallback;
 
     if (engine && primary) {
-      this.logger.debug(`Using primary engine: ${primary.constructor.name}`);
+      this.logger.debug(
+        `Using primary engine: ${Signature.getEngineDisplayName(primary)}`
+      );
     } else if (engine && fallback) {
       this.logger.debug(
-        `Primary engine not available, falling back to: ${fallback.constructor.name}`
+        `Primary engine not available, falling back to: ${Signature.getEngineDisplayName(fallback)}`
       );
     } else {
       this.logger.error('No available engine for signature extraction');
@@ -63,12 +76,12 @@ export class Signature implements ExtractSignature {
 
     try {
       this.logger.debug(
-        `Attempting extraction with engine: ${engine.constructor.name}`
+        `Attempting extraction with engine: ${Signature.getEngineDisplayName(engine)}`
       );
       const result = await engine.extract(email, signature);
 
       this.logger.debug(
-        `Engine ${engine.constructor.name} extraction completed`,
+        `Engine ${Signature.getEngineDisplayName(engine)} extraction completed`,
         {
           success: result !== null
         }
@@ -77,7 +90,7 @@ export class Signature implements ExtractSignature {
       return result;
     } catch (err) {
       this.logger.error(
-        `Engine ${engine.constructor.name} failed during extraction`,
+        `Engine ${Signature.getEngineDisplayName(engine)} failed during extraction`,
         {
           error: err instanceof Error ? err.message : String(err)
         }

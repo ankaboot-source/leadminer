@@ -50,6 +50,7 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
   const signatureExtractorCache = new SignatureExtractorCache(
     signatureLLM,
     redisClient,
+    logger,
     ENV.SIGNATURE_LLM_CACHE_TTL_SECONDS ?? 86400
   );
 

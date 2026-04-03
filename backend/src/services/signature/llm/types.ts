@@ -5,11 +5,11 @@
  * Use `LLMModelsList[index]` to pick by priority.
  */
 export enum LLMModels {
-  nvidiaNemotronNano9bV2 = 'nvidia/nemotron-nano-9b-v2:free',
-  deepseekR1 = 'deepseek/deepseek-r1:free',
-  zAiGlm45Air = 'z-ai/glm-4.5-air:free',
-  metaLlama33Instruct70b = 'meta-llama/llama-3.3-70b-instruct:free',
-  openaiGptOss20b = 'openai/gpt-oss-20b:free'
+  xaiGrok4Fast = 'x-ai/grok-4-fast',
+  anthropicClaude37Sonnet = 'anthropic/claude-3.7-sonnet',
+  anthropicClaudeSonnet45 = 'anthropic/claude-sonnet-4.5',
+  openaiGpt41Nano = 'openai/gpt-4.1-nano',
+  anthropicClaude35Haiku = 'anthropic/claude-3.5-haiku'
 }
 
 export type LLMModelType = `${LLMModels}`;

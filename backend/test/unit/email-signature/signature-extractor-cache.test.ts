@@ -1,4 +1,5 @@
 import { describe, jest, beforeEach, it, expect } from '@jest/globals';
+import { Logger } from 'winston';
 import SignatureExtractorCache from '../../../src/services/signature/llm/signature-extractor-cache';
 import {
   ExtractSignature,
@@ -11,18 +12,26 @@ describe('SignatureExtractorCache', () => {
     get: (key: string) => Promise<string | null>;
     setex: (key: string, seconds: number, value: string) => Promise<'OK'>;
   }>;
+  let mockLogger: jest.Mocked<Logger>;
   const ttl = 3600;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockWrapped = {
       isActive: jest.fn(),
-      extract: jest.fn()
+      extract: jest.fn(),
+      constructor: { name: 'MockEngine' }
     };
     mockRedis = {
       get: jest.fn(),
       setex: jest.fn()
     };
+    mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn()
+    } as unknown as jest.Mocked<Logger>;
   });
 
   describe('extract', () => {
@@ -31,11 +40,22 @@ describe('SignatureExtractorCache', () => {
       mockWrapped.isActive.mockReturnValue(true);
       mockRedis.get.mockResolvedValue(JSON.stringify(cachedPerson));
 
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       const result = await cache.extract('test@example.com', 'signature');
 
       expect(result).toEqual(cachedPerson);
       expect(mockWrapped.extract).not.toHaveBeenCalled();
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        'LLM signature cache hit',
+        expect.objectContaining({
+          wrappedEngine: 'MockEngine'
+        })
+      );
     });
 
     it('should call wrapped.extract when cache miss', async () => {
@@ -44,7 +64,12 @@ describe('SignatureExtractorCache', () => {
       mockRedis.get.mockResolvedValue(null);
       mockWrapped.extract.mockResolvedValue(person);
 
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       const result = await cache.extract('test@example.com', 'signature');
 
       expect(result).toEqual(person);
@@ -57,6 +82,12 @@ describe('SignatureExtractorCache', () => {
         ttl,
         JSON.stringify(person)
       );
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        'LLM signature cache miss, calling wrapped engine',
+        expect.objectContaining({
+          wrappedEngine: 'MockEngine'
+        })
+      );
     });
 
     it('should not cache null results', async () => {
@@ -64,7 +95,12 @@ describe('SignatureExtractorCache', () => {
       mockRedis.get.mockResolvedValue(null);
       mockWrapped.extract.mockResolvedValue(null);
 
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       const result = await cache.extract('test@example.com', 'signature');
 
       expect(result).toBeNull();
@@ -82,7 +118,12 @@ describe('SignatureExtractorCache', () => {
       });
       mockWrapped.extract.mockResolvedValue(person);
 
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       await cache.extract('test@example.com', 'signature');
       await cache.extract('test@example.com', 'signature');
 
@@ -95,7 +136,12 @@ describe('SignatureExtractorCache', () => {
       mockRedis.get.mockResolvedValue(null);
       mockWrapped.extract.mockResolvedValue(person);
 
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       await cache.extract('test@example.com', 'signature1');
       await cache.extract('test@example.com', 'signature2');
 
@@ -106,16 +152,38 @@ describe('SignatureExtractorCache', () => {
   describe('isActive', () => {
     it('should delegate isActive to wrapped', () => {
       mockWrapped.isActive.mockReturnValue(true);
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       expect(cache.isActive()).toBe(true);
       expect(mockWrapped.isActive).toHaveBeenCalled();
     });
 
     it('should return false when wrapped is inactive', () => {
       mockWrapped.isActive.mockReturnValue(false);
-      const cache = new SignatureExtractorCache(mockWrapped, mockRedis, ttl);
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
       expect(cache.isActive()).toBe(false);
       expect(mockWrapped.isActive).toHaveBeenCalled();
+    });
+  });
+
+  describe('wrappedEngineName', () => {
+    it('should return the wrapped engine constructor name', () => {
+      const cache = new SignatureExtractorCache(
+        mockWrapped,
+        mockRedis,
+        mockLogger,
+        ttl
+      );
+      expect(cache.wrappedEngineName).toBe('MockEngine');
     });
   });
 });
