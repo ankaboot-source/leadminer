@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+// skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
 
 const { t } = useI18n({

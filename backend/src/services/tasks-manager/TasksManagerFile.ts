@@ -602,6 +602,7 @@ export default class TasksManagerFile {
     }
   }
 
+  // skipcq: JS-0116 - Pre-existing issue: async function without await for compatibility
   private static async getCompletionStatus(
     extract: TaskExtract,
     clean: TaskClean
