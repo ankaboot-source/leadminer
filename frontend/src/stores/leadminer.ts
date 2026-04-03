@@ -37,6 +37,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const isLoadingMiningSources = ref(false);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(true);
+  const cleaningEnabled = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
@@ -94,6 +95,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     excludedBoxes.value = new Set();
     selectedFile.value = null;
     extractSignatures.value = true;
+    cleaningEnabled.value = true;
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
@@ -346,6 +348,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           boxes: folders,
           miningSource,
           extractSignatures: extractSignatures.value,
+          cleaningEnabled: cleaningEnabled.value,
         },
       },
     );
@@ -369,6 +372,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           contacts: importedContacts,
+          cleaningEnabled: cleaningEnabled.value,
         },
       },
     );
@@ -386,6 +390,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           extractSignatures: extractSignatures.value,
+          cleaningEnabled: cleaningEnabled.value,
         },
       },
     );
@@ -600,6 +605,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes,
     excludedBoxes,
     extractSignatures,
+    cleaningEnabled,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,

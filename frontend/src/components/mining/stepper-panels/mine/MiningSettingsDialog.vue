@@ -22,6 +22,18 @@
       </label>
     </div>
 
+    <!-- Toggle cleaningEnabled -->
+    <div class="flex flex-row items-center gap-2 pb-4">
+      <ToggleSwitch
+        v-model="$leadminerStore.cleaningEnabled"
+        input-id="cleaningEnabled"
+      />
+      <label for="cleaningEnabled" class="cursor-pointer flex-1">
+        {{ $t('mining.cleaning_enabled_option') }}
+        <span>{{ $t('mining.cleaning_enabled_sub') }}</span>
+      </label>
+    </div>
+
     <div
       v-if="$leadminerStore.miningType === 'email'"
       class="flex items-center gap-2"
