@@ -357,7 +357,7 @@ export default function initializeMiningController(
             contactsDB,
             userId,
             miningId,
-            taskObject.process.clean.details.stream.emailsStream
+            taskObject.process.clean.details.stream.emailsStream!
           );
         taskObject.progress.createdContacts += totalPublished;
         taskObject.process.clean.details.progress.createdContacts +=
@@ -446,7 +446,7 @@ export default function initializeMiningController(
             contactsDB,
             userId,
             miningId,
-            taskObject.process.clean.details.stream.emailsStream
+            taskObject.process.clean.details.stream.emailsStream!
           );
         taskObject.progress.createdContacts += totalPublished;
         taskObject.process.clean.details.progress.createdContacts +=
@@ -514,7 +514,7 @@ export default function initializeMiningController(
             contactsDB,
             userId,
             miningId,
-            taskObject.process.clean.details.stream.emailsStream
+            taskObject.process.clean.details.stream.emailsStream!
           );
         taskObject.progress.createdContacts += totalPublished;
         taskObject.process.clean.details.progress.createdContacts +=

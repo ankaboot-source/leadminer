@@ -21,17 +21,16 @@ export interface TaskFetchStreamInfo {
 export interface TaskExtractStreamInfo {
   messagesStream: string;
   messagesConsumerGroup: string;
-  emailsVerificationStream: string;
+  emailsVerificationStream?: string;
 }
 
 export interface TaskCleanStreamInfo {
-  emailsStream: string;
-  emailsConsumerGroup: string;
+  emailsStream?: string;
+  emailsConsumerGroup?: string;
 }
 
 export interface StreamInfo
-  extends TaskExtractStreamInfo,
-    TaskCleanStreamInfo {}
+  extends TaskExtractStreamInfo, TaskCleanStreamInfo {}
 
 export interface TaskProgress {
   totalMessages: number;
@@ -88,6 +87,7 @@ export interface TaskClean extends Task {
   type: TaskType.Clean;
   details: {
     miningId: string;
+    enabled: boolean;
     stream: TaskCleanStreamInfo;
     progress: {
       verifiedContacts: number;

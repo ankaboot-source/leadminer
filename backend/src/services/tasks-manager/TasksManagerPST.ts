@@ -225,6 +225,7 @@ export default class TasksManagerPST {
             status: TaskStatus.Running,
             details: {
               miningId,
+              enabled: true,
               stream: {
                 emailsStream,
                 emailsConsumerGroup

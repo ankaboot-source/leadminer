@@ -235,6 +235,7 @@ export default class TasksManagerFile {
             status: TaskStatus.Running,
             details: {
               miningId,
+              enabled: true,
               stream: {
                 emailsStream,
                 emailsConsumerGroup
