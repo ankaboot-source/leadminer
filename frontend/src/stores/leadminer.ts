@@ -25,6 +25,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const $toast = useToast();
   const $stepper = useMiningStepper();
   const supabase = useSupabaseClient();
+  const config = useRuntimeConfig();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -276,9 +277,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   function startProgressListener(
     type: MiningType,
     miningId: string,
+    serverEndpoint: string,
     token: string | null,
   ) {
-    sse.initConnection(type, miningId, token, {
+    sse.initConnection(type, miningId, serverEndpoint, token, {
       onExtractedUpdate: (count) => {
         extractedEmails.value = count;
       },
@@ -510,7 +512,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       totalMessages.value = task.progress?.totalMessages ?? 0;
       sse.closeConnection();
-      startProgressListener(miningType.value, task.miningId, token);
+      startProgressListener(
+        miningType.value,
+        task.miningId,
+        config.public.SERVER_ENDPOINT,
+        token,
+      );
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
@@ -619,7 +626,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       cleaningFinished.value =
         clean && ['done', 'canceled'].includes(clean.status);
 
-      startProgressListener(miningType.value, miningTask.value.miningId, token);
+      startProgressListener(
+        miningType.value,
+        miningTask.value.miningId,
+        config.public.SERVER_ENDPOINT,
+        token,
+      );
 
       return extractionFinished.value ? 3 : 2;
     } catch (err) {

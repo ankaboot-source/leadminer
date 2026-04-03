@@ -26,6 +26,7 @@ class SSE {
   initConnection(
     miningType: MiningType,
     miningId: string,
+    serverEndpoint: string,
     token: string | null,
     {
       onFetchedUpdate,
@@ -60,7 +61,7 @@ class SSE {
     }
 
     return fetchEventSource(
-      `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
+      `${serverEndpoint}/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
         fetch: async (input, init) => {
           return fetch(input, {
