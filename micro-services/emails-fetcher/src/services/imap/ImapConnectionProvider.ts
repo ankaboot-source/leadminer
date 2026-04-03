@@ -51,7 +51,10 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       secure: true,
-      disableAutoIdle: true
+      disableAutoIdle: true,
+      tls: {
+        rejectUnauthorized: false
+      }
     };
 
     this.poolIsInitialized = false;
@@ -170,7 +173,10 @@ class ImapConnectionProvider {
       logger: false,
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
-      disableAutoIdle: true
+      disableAutoIdle: true,
+      tls: {
+        rejectUnauthorized: false
+      }
     };
 
     if (!options?.host || !options?.port) {
