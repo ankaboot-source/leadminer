@@ -184,7 +184,7 @@ function handleAuthenticationErrors(error: FetchError) {
       if (['host', 'port'].includes(field)) {
         imapAdvancedSettings.value = true;
       }
-      formErrors[field]!.value = true;
+      if (formErrors[field]) formErrors[field].value = true;
     });
   }
 
