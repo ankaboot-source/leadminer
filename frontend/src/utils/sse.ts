@@ -53,16 +53,17 @@ class SSE {
     this.closeConnection();
     this.ctrl = new AbortController();
 
+    const token = useSupabaseSession().value?.access_token;
+
+    if (!token) {
+      console.error('[SSE] No access token available.');
+      return;
+    }
+
     return fetchEventSource(
       `${useRuntimeConfig().public.SERVER_ENDPOINT}/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
         fetch: async (input, init) => {
-          const token = useSupabaseSession().value?.access_token;
-
-          if (!token) {
-            throw new Error('[SSE] No access token available.');
-          }
-
           return fetch(input, {
             ...init,
             headers: {
