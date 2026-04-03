@@ -30,7 +30,8 @@ export interface TaskCleanStreamInfo {
 }
 
 export interface StreamInfo
-  extends TaskExtractStreamInfo, TaskCleanStreamInfo {}
+  extends TaskExtractStreamInfo,
+    TaskCleanStreamInfo {}
 
 export interface TaskProgress {
   totalMessages: number;
