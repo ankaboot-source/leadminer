@@ -273,8 +273,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return res;
   }
 
-  function startProgressListener(type: MiningType, miningId: string) {
-    sse.initConnection(type, miningId, {
+  function startProgressListener(
+    type: MiningType,
+    miningId: string,
+    token: string | null,
+  ) {
+    sse.initConnection(type, miningId, token, {
       onExtractedUpdate: (count) => {
         extractedEmails.value = count;
       },
@@ -506,7 +510,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       totalMessages.value = task.progress?.totalMessages ?? 0;
       sse.closeConnection();
-      startProgressListener(miningType.value, task.miningId);
+      startProgressListener(miningType.value, task.miningId, token);
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
@@ -557,6 +561,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     // 1) GET running tasks for the current user
     try {
       const userId = getCurrentUserId();
+      const token = (await supabase.auth.getSession()).data.session
+        ?.access_token;
 
       if (!userId) return 1;
 
@@ -613,7 +619,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       cleaningFinished.value =
         clean && ['done', 'canceled'].includes(clean.status);
 
-      startProgressListener(miningType.value, miningTask.value.miningId);
+      startProgressListener(miningType.value, miningTask.value.miningId, token);
 
       return extractionFinished.value ? 3 : 2;
     } catch (err) {

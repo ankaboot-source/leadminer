@@ -26,6 +26,7 @@ class SSE {
   initConnection(
     miningType: MiningType,
     miningId: string,
+    token: string | null,
     {
       onFetchedUpdate,
       onExtractedUpdate,
@@ -52,8 +53,6 @@ class SSE {
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
-
-    const token = useSupabaseSession().value?.access_token;
 
     if (!token) {
       console.error('[SSE] No access token available.');
