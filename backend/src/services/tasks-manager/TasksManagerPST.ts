@@ -562,7 +562,10 @@ export default class TasksManagerPST {
       ...signature.details.progress
     };
 
-    if (!fetch.stoppedAt && fetch.status === TaskStatus.Done) {
+    if (
+      !fetch.stoppedAt &&
+      [TaskStatus.Done, TaskStatus.Canceled].includes(fetch.status)
+    ) {
       logger.debug('[Progress update]: stopping fetching task', {
         status: fetch.status,
         started_at: fetch.startedAt,

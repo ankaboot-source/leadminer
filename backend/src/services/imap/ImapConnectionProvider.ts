@@ -80,13 +80,15 @@ class ImapConnectionProvider {
     const imapConfig: Partial<ImapFlowOptions> = {
       auth: options?.oauthToken
         ? { user: email, accessToken: options.oauthToken }
-        : { user: email },
+        : { user: email, pass: options?.password },
+      host: options?.host,
+      port: options?.port,
+      secure: options?.tls ?? true,
       logger: false,
-      socketTimeout: 3600000, // Timeout after one hour
+      socketTimeout: 3600000,
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       disableAutoIdle: true,
-      secure: true,
       tls: {
         rejectUnauthorized: false
       }
@@ -101,7 +103,6 @@ class ImapConnectionProvider {
 
     const connection = new Connection(imapConfig as ImapFlowOptions);
 
-    // Optional logging
     connection.on('error', (err) => {
       logger.error('ImapFlow connection error:', err);
     });
@@ -110,7 +111,7 @@ class ImapConnectionProvider {
       await connection.connect();
       return connection;
     } catch (err) {
-      await connection.logout();
+      if (connection.usable) await connection.logout();
       throw err;
     }
   }
