@@ -71,12 +71,11 @@ class RedisManager {
   async flushAll(exceptKeys: string[], exceptPrefixes: string[] = []) {
     try {
       const keys = await this.normalClient.keys('*');
-      const keysToDelete = keys.filter((key) => {
-        if (exceptKeys.includes(key)) return false;
-        if (exceptPrefixes.some((prefix) => key.startsWith(prefix)))
-          return false;
-        return true;
-      });
+      const keysToDelete = keys.filter(
+        (key) =>
+          !exceptKeys.includes(key) &&
+          !exceptPrefixes.some((prefix) => key.startsWith(prefix))
+      );
 
       if (keysToDelete.length > 0) {
         await this.normalClient.del(...keysToDelete);
