@@ -50,8 +50,8 @@ export class Signature implements ExtractSignature {
    */
   private static getEngineDisplayName(engine: ExtractSignature): string {
     const baseName = engine.constructor.name;
-    if ('wrappedEngineName' in engine) {
-      return `${baseName} (${(engine as any).wrappedEngineName})`;
+    if (engine.wrappedEngineName) {
+      return `${baseName} (${engine.wrappedEngineName})`;
     }
     return baseName;
   }
