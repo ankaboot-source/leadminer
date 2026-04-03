@@ -24,6 +24,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const language = getBrowserLocale() || 'en';
   const $toast = useToast();
   const $stepper = useMiningStepper();
+  const supabase = useSupabaseClient();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -438,10 +439,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
   async function startMining(source: MiningType, storagePath?: string) {
-    await useSupabaseClient().auth.refreshSession(); // Refresh session on mining start
+    await supabase.auth.refreshSession(); // Refresh session on mining start
 
     const userId = getCurrentUserId();
-    const token = useSupabaseSession().value?.access_token;
+    const token = (await supabase.auth.getSession()).data.session?.access_token;
 
     if (!userId || !token) return;
     if (source === 'file' && !selectedBoxes.value) return;
