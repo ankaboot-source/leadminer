@@ -283,12 +283,12 @@ export function hasEmailVerificationConfigured(config: {
   MAILERCHECK_API_KEY?: string;
   ZEROBOUNCE_API_KEY?: string;
 }): boolean {
-  const hasReacher = !!(
+  const hasReacher = Boolean(
     config.REACHER_HOST &&
     (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET)
   );
-  const hasMailerCheck = !!config.MAILERCHECK_API_KEY;
-  const hasZeroBounce = !!config.ZEROBOUNCE_API_KEY;
+  const hasMailerCheck = Boolean(config.MAILERCHECK_API_KEY);
+  const hasZeroBounce = Boolean(config.ZEROBOUNCE_API_KEY);
 
   return hasReacher || hasMailerCheck || hasZeroBounce;
 }

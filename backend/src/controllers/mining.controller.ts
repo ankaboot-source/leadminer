@@ -367,6 +367,7 @@ export default function initializeMiningController(
               contactsDB,
               userId,
               miningId,
+              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
               taskObject.process.clean.details.stream.emailsStream!
             );
           taskObject.progress.createdContacts += totalPublished;
@@ -467,6 +468,7 @@ export default function initializeMiningController(
               contactsDB,
               userId,
               miningId,
+              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
               taskObject.process.clean.details.stream.emailsStream!
             );
           taskObject.progress.createdContacts += totalPublished;
@@ -545,6 +547,7 @@ export default function initializeMiningController(
               contactsDB,
               userId,
               miningId,
+              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
               taskObject.process.clean.details.stream.emailsStream!
             );
           taskObject.progress.createdContacts += totalPublished;
