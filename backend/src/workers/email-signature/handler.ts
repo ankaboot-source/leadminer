@@ -263,16 +263,7 @@ export class EmailSignatureHandler {
       return;
     }
 
-    const isNew = await this.cache.isNewer(userId, email, messageDate);
-    if (!isNew) {
-      this.logger.debug('Signature not newer than cached; skipping', {
-        email,
-        messageDate
-      });
-      return;
-    }
-
-    await this.cache.set(
+    const wasSet = await this.cache.setIfNewer(
       userId,
       email,
       signature,
@@ -280,6 +271,14 @@ export class EmailSignatureHandler {
       messageDate,
       miningId
     );
+
+    if (!wasSet) {
+      this.logger.debug('Signature not newer than cached; skipping', {
+        email,
+        messageDate
+      });
+      return;
+    }
 
     this.logger.debug('Cached new signature', {
       email,

@@ -974,8 +974,8 @@ const EnrichButton = defineAsyncComponent(
 const ExportContacts = defineAsyncComponent(
   () => import('../buttons/ExportContacts.vue'),
 );
-const RemoveContactButton = defineAsyncComponent(
-  () => import('../buttons/RemoveContactButton.vue'),
+const CampaignButton = defineAsyncComponent(
+  () => import('../buttons/CampaignButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
@@ -1503,10 +1503,6 @@ onNuxtReady(async () => {
     ...($screenStore.width > 800 ? ['status'] : []),
   ];
 });
-
-/* Table dynamic Height */
-const TableRef = ref();
-const scrollHeightTable = computed(() => (isFullscreen.value ? '' : 'flex'));
 
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,

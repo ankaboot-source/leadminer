@@ -1,16 +1,16 @@
-import { Factory, Pool, createPool } from 'generic-pool';
-import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
 import assert from 'assert';
+import { createPool, Factory, Pool } from 'generic-pool';
+import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
 import util from 'util';
 import ENV from '../../config';
-import logger from '../../utils/logger';
-import { getOAuthImapConfigByEmail } from '../auth/Provider';
 import {
   MiningSources,
   MiningSourceType,
   OAuthMiningSourceCredentials
 } from '../../db/interfaces/MiningSources';
 import { miningSourceService } from '../../db/supabase';
+import logger from '../../utils/logger';
+import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 type CurrentOAuthSource = {
   email: string;
@@ -51,7 +51,10 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       secure: true,
-      disableAutoIdle: true
+      disableAutoIdle: true,
+      tls: {
+        rejectUnauthorized: false
+      }
     };
 
     this.poolIsInitialized = false;
@@ -62,8 +65,9 @@ class ImapConnectionProvider {
   }
 
   updateOAuthToken(token: OAuthMiningSourceCredentials) {
-    if (!this.currentOAuthSourceDetails?.source.credentials)
+    if (!this.currentOAuthSourceDetails?.source.credentials) {
       throw Error('currentOAuthSourceDetails.source.credentials is undefined');
+    }
 
     this.currentOAuthSourceDetails.source.credentials.accessToken = String(
       token.accessToken
@@ -89,11 +93,14 @@ class ImapConnectionProvider {
 
   async refreshOAuthToken(retries = 10): Promise<void> {
     logger.debug(
-      `Refreshing OAuth token in ImapConfig that expired at ${new Date(this.currentOAuthSourceDetails?.source.credentials.expiresAt || 0).toLocaleString()}`
+      `Refreshing OAuth token in ImapConfig that expired at ${new Date(
+        this.currentOAuthSourceDetails?.source.credentials.expiresAt || 0
+      ).toLocaleString()}`
     );
 
-    if (!this.currentOAuthSourceDetails?.source.credentials)
+    if (!this.currentOAuthSourceDetails?.source.credentials) {
       throw Error('currentOAuthSourceDetails.source.credentials is undefined');
+    }
 
     /* eslint-disable no-await-in-loop */
     for (let attempt = 1; attempt <= retries; attempt += 1) {
@@ -170,7 +177,8 @@ class ImapConnectionProvider {
       logger: false,
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
-      disableAutoIdle: true
+      disableAutoIdle: true,
+      tls: options?.tls ? { rejectUnauthorized: false } : undefined
     };
 
     if (!options?.host || !options?.port) {

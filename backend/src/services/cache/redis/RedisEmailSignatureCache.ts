@@ -54,6 +54,53 @@ export default class RedisEmailSignatureCache implements EmailSignatureCache {
     return new Date(messageDate) > new Date(existingDateStr);
   }
 
+  public async setIfNewer(
+    userId: string,
+    email: string,
+    signature: string,
+    messageId: string,
+    messageDate: string,
+    miningId: string
+  ): Promise<boolean> {
+    const key = RedisEmailSignatureCache.getKey(userId, email);
+    const messageDateISO = new Date(messageDate).toISOString();
+
+    const pipeline = this.client.pipeline();
+    pipeline.hget(key, 'lastSeenDate');
+    pipeline.hgetall(key);
+
+    const results = await pipeline.exec();
+    if (!results) return false;
+
+    const [dateResult, allResult] = results as [
+      [Error, string | null],
+      [Error, Partial<EmailSignatureWithMetadata>]
+    ];
+
+    const existingDateStr = dateResult[1];
+    if (existingDateStr && new Date(messageDate) <= new Date(existingDateStr)) {
+      return false;
+    }
+
+    const existing = allResult[1];
+    const isNew = !existing || Object.keys(existing).length === 0;
+    const firstSeenDate = isNew
+      ? messageDateISO
+      : (existing.firstSeenDate ?? messageDateISO);
+
+    await this.client.hset(key, {
+      signature,
+      firstSeenDate,
+      lastSeenDate: messageDateISO,
+      messageId,
+      userId,
+      email
+    });
+
+    await this.client.sadd(`mining:${miningId}`, key);
+    return true;
+  }
+
   public async getAllFromMining(
     miningId: string
   ): Promise<EmailSignatureWithMetadata[]> {

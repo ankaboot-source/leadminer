@@ -484,9 +484,6 @@ async function reconnectExpiredSource(source: MiningSource) {
 onMounted(async () => {
   const reconnectEmail = $route.query.reconnect as string;
 
-  await $leadminer.fetchMiningSources();
-  await $leadminer.getCurrentRunningMining();
-
   if (reconnectEmail) {
     const source = $leadminer.miningSources.find(
       (s) => s.email.toLowerCase() === reconnectEmail.toLowerCase(),

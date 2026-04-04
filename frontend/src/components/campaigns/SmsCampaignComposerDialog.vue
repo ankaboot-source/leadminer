@@ -42,7 +42,9 @@
             class="pi pi-info-circle text-surface-500"
           />
         </div>
-        <small class="text-surface-500">{{ t('fleet_mode_description') }}</small>
+        <small class="text-surface-500">{{
+          t('fleet_mode_description')
+        }}</small>
       </div>
 
       <!-- Fleet Mode: Gateway Selector -->
@@ -91,57 +93,67 @@
           v-if="form.provider === 'smsgate'"
           class="grid grid-cols-1 md:grid-cols-2 gap-2"
         >
-        <div class="flex flex-col gap-1 md:col-span-2">
-          <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
-          <InputText
-            v-model="form.smsgateBaseUrl"
-            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
-          />
+          <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="text-sm font-medium">{{
+              t('smsgate_base_url')
+            }}</label>
+            <InputText
+              v-model="form.smsgateBaseUrl"
+              placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
+            />
+            <small v-if="showFieldError('smsgateBaseUrl')" class="text-red-500">
+              {{ validationErrors.smsgateBaseUrl }}
+            </small>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium"
+              >{{ t('smsgate_username') }} *</label
+            >
+            <InputText
+              v-model="form.smsgateUsername"
+              @blur="markTouched('smsgateUsername')"
+            />
+            <small
+              v-if="showFieldError('smsgateUsername')"
+              class="text-red-500"
+            >
+              {{ validationErrors.smsgateUsername }}
+            </small>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium"
+              >{{ t('smsgate_password') }} *</label
+            >
+            <Password
+              v-model="form.smsgatePassword"
+              :feedback="false"
+              toggle-mask
+              input-class="w-full"
+              @blur="markTouched('smsgatePassword')"
+            />
+            <small
+              v-if="showFieldError('smsgatePassword')"
+              class="text-red-500"
+            >
+              {{ validationErrors.smsgatePassword }}
+            </small>
+          </div>
         </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium"
-            >{{ t('smsgate_username') }} *</label
-          >
-          <InputText
-            v-model="form.smsgateUsername"
-            @blur="markTouched('smsgateUsername')"
-          />
-          <small v-if="showFieldError('smsgateUsername')" class="text-red-500">
-            {{ validationErrors.smsgateUsername }}
-          </small>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium"
-            >{{ t('smsgate_password') }} *</label
-          >
-          <Password
-            v-model="form.smsgatePassword"
-            :feedback="false"
-            toggle-mask
-            input-class="w-full"
-            @blur="markTouched('smsgatePassword')"
-          />
-          <small v-if="showFieldError('smsgatePassword')" class="text-red-500">
-            {{ validationErrors.smsgatePassword }}
-          </small>
-        </div>
-      </div>
 
-      <div
-        v-if="form.provider === 'simple-sms-gateway'"
-        class="grid grid-cols-1 gap-2"
-      >
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">{{
-            t('simple_sms_gateway_base_url')
-          }}</label>
-          <InputText
-            v-model="form.simpleSmsGatewayBaseUrl"
-            placeholder="http://192.168.1.100:8080/send-sms"
-          />
+        <div
+          v-if="form.provider === 'simple-sms-gateway'"
+          class="grid grid-cols-1 gap-2"
+        >
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium">{{
+              t('simple_sms_gateway_base_url')
+            }}</label>
+            <InputText
+              v-model="form.simpleSmsGatewayBaseUrl"
+              placeholder="http://192.168.1.100:8080/send-sms"
+            />
+          </div>
         </div>
-      </div>
-
       </template>
 
       <Message
@@ -461,7 +473,11 @@ async function fetchProviderStatus() {
   }
 }
 
-type FormField = 'messageTemplate' | 'smsgateUsername' | 'smsgatePassword' | 'gateways';
+type FormField =
+  | 'messageTemplate'
+  | 'smsgateUsername'
+  | 'smsgatePassword'
+  | 'gateways';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
@@ -577,6 +593,7 @@ const isFormValid = computed(() =>
 
 const hasProvidedSmsGateCredentials = computed(
   () =>
+    form.smsgateBaseUrl.trim().length > 0 &&
     form.smsgateUsername.trim().length > 0 &&
     form.smsgatePassword.trim().length > 0,
 );

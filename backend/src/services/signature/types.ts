@@ -11,4 +11,5 @@ export interface PersonLD {
 export interface ExtractSignature {
   isActive(): boolean;
   extract(email: string, signature: string): Promise<PersonLD | null>;
+  wrappedEngineName?: string;
 }

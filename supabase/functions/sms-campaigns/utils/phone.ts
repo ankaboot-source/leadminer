@@ -1,7 +1,4 @@
-import {
-  parsePhoneNumberFromString,
-  ParseError,
-} from "libphonenumber-js";
+import { parsePhoneNumberFromString, ParseError } from "libphonenumber-js";
 
 export function normalizePhoneNumber(phone: string): string | null {
   if (!phone?.trim()) return null;

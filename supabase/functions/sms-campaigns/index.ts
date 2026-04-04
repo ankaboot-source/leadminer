@@ -700,7 +700,6 @@ function distributeRecipientsToGateways(
   
   return assignments;
 }
-
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -759,7 +758,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
-  const userTimezone = timezone || "UTC";
+const userTimezone = timezone || "UTC";
   const supabaseAdmin = createSupabaseAdmin();
   
   // Handle Fleet Mode
@@ -832,7 +831,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
         }
       : null);
 
-  // Validate single provider configuration (only for non-fleet mode)
+// Validate single provider configuration (only for non-fleet mode)
   if (!isFleetMode) {
     if (selectedProvider === "smsgate" && !smsgateCredentials) {
       return c.json(
@@ -869,6 +868,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
         400,
       );
     }
+  }
   }
 
   const quotaCheck = await checkSmsQuota(
@@ -975,7 +975,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
-  // Distribute recipients to gateways in fleet mode
+// Distribute recipients to gateways in fleet mode
   if (isFleetMode && fleetGateways.length > 0) {
     // Fetch the inserted recipients to get their IDs
     const { data: insertedRecipients } = await supabaseAdmin
@@ -1020,7 +1020,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     }
   }
 
-  triggerSmsCampaignProcessorFromEdge().catch((error) => {
+triggerSmsCampaignProcessorFromEdge().catch((error) => {
     logger.error("Failed to trigger SMS campaign processor", {
       error: error instanceof Error ? error.message : String(error),
       campaignId: campaign.id,
@@ -1428,7 +1428,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
-  const isFleetMode = campaign.fleet_mode_enabled === true;
+const isFleetMode = campaign.fleet_mode_enabled === true;
   const selectedProvider = campaign.provider as
     | "smsgate"
     | "simple-sms-gateway"
@@ -1476,7 +1476,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
       }
     }
   }
-
   let smsProvider;
 
   if (selectedProvider === "twilio") {
@@ -1581,7 +1580,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
       if (!currentProvider) {
         throw new Error("SMS provider not available");
       }
-
       const templateContext = buildSmsTemplateContext(
         recipient.personalization_data as Record<string, unknown> | null,
       );
@@ -1618,11 +1616,13 @@ app.post("/process", authMiddleware, async (c: Context) => {
         messageWithTrackers += `\n\n${renderedFooter}`;
       }
 
-      const result: SendSmsResult = await currentProvider.send({
+const result: SendSmsResult = await currentProvider.send({
         to: recipient.phone,
         from: "",
         body: messageWithTrackers,
       });
+
+const providerUsed = selectedProvider;
 
       if (result.success) {
         await supabaseAdmin

@@ -92,8 +92,8 @@
 </template>
 
 <script setup lang="ts">
-import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import PassiveMiningDialog from '@/components/mining/PassiveMiningDialog.vue';
+import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import type { MiningSource } from '@/types/mining';
 import {
   asToastHasLinksGroupDetail,
@@ -109,6 +109,7 @@ import { signOutManually } from './utils/auth';
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
+const $stepper = useMiningStepper();
 const activeTask = computed(() => $leadminerStore.activeTask);
 const imapReconnectSource = ref<MiningSource>();
 const $supabaseClient = useSupabaseClient();
@@ -130,8 +131,17 @@ watch(idle, (isIdle) => {
 });
 
 Normalizer.setLang($leadminerStore.language || 'en');
-
 watch(activeTask, () => {
   reset();
 });
+
+if ($user.value) {
+  $stepper.isInitializing = true;
+  await $leadminerStore.fetchMiningSources();
+  const step = await $leadminerStore.getCurrentRunningMining();
+  if (step !== undefined) {
+    $stepper.index = step;
+  }
+  $stepper.isInitializing = false;
+}
 </script>
