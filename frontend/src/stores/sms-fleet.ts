@@ -27,14 +27,17 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
       if (fetchError) throw fetchError;
       gateways.value = (data || []) as SmsFleetGateway[];
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch gateways';
+      error.value =
+        err instanceof Error ? err.message : 'Failed to fetch gateways';
       console.error('Error fetching SMS fleet gateways:', err);
     } finally {
       isLoading.value = false;
     }
   }
 
-  async function createGateway(payload: SmsGatewayCreatePayload): Promise<SmsFleetGateway | null> {
+  async function createGateway(
+    payload: SmsGatewayCreatePayload,
+  ): Promise<SmsFleetGateway | null> {
     isLoading.value = true;
     error.value = null;
 
@@ -54,12 +57,13 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
         .single();
 
       if (createError) throw createError;
-      
+
       const gateway = data as SmsFleetGateway;
       gateways.value.unshift(gateway);
       return gateway;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to create gateway';
+      error.value =
+        err instanceof Error ? err.message : 'Failed to create gateway';
       console.error('Error creating SMS fleet gateway:', err);
       return null;
     } finally {
@@ -89,12 +93,16 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
       // Update local state
       const index = gateways.value.findIndex((g) => g.id === gatewayId);
       if (index !== -1) {
-        gateways.value[index] = { ...gateways.value[index], ...updates } as SmsFleetGateway;
+        gateways.value[index] = {
+          ...gateways.value[index],
+          ...updates,
+        } as SmsFleetGateway;
       }
 
       return true;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to update gateway';
+      error.value =
+        err instanceof Error ? err.message : 'Failed to update gateway';
       console.error('Error updating SMS fleet gateway:', err);
       return false;
     } finally {
@@ -118,7 +126,8 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
       gateways.value = gateways.value.filter((g) => g.id !== gatewayId);
       return true;
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to delete gateway';
+      error.value =
+        err instanceof Error ? err.message : 'Failed to delete gateway';
       console.error('Error deleting SMS fleet gateway:', err);
       return false;
     } finally {
@@ -126,9 +135,7 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     }
   }
 
-  async function testGateway(
-    gatewayId: string,
-  ): Promise<SmsGatewayTestResult> {
+  async function testGateway(gatewayId: string): Promise<SmsGatewayTestResult> {
     try {
       const result = await $saasEdgeFunctions(
         `sms-campaigns/fleet/gateways/${gatewayId}/test`,

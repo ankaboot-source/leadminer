@@ -45,7 +45,9 @@
           <div class="flex flex-col gap-2 text-sm">
             <div class="flex items-center gap-2 text-surface-600">
               <i class="pi pi-server text-xs" />
-              <span class="capitalize">{{ formatProvider(gateway.provider) }}</span>
+              <span class="capitalize">{{
+                formatProvider(gateway.provider)
+              }}</span>
             </div>
 
             <div class="flex items-center gap-2">
@@ -58,7 +60,9 @@
 
             <div class="flex items-center gap-2">
               <i class="pi pi-calendar text-xs" />
-              <span>{{ t('sent_this_month', { count: gateway.sent_this_month }) }}</span>
+              <span>{{
+                t('sent_this_month', { count: gateway.sent_this_month })
+              }}</span>
               <span v-if="gateway.monthly_limit > 0" class="text-surface-500">
                 / {{ gateway.monthly_limit }}
               </span>
@@ -131,24 +135,33 @@
         <!-- SMSGate Configuration -->
         <template v-if="form.provider === 'smsgate'">
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
+            <label class="text-sm font-medium">{{
+              t('smsgate_base_url')
+            }}</label>
             <InputText
               v-model="form.config.baseUrl"
               placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium">{{ t('smsgate_username') }} *</label>
+            <label class="text-sm font-medium"
+              >{{ t('smsgate_username') }} *</label
+            >
             <InputText
               v-model="form.config.username"
               @blur="markTouched('smsgateUsername')"
             />
-            <small v-if="showFieldError('smsgateUsername')" class="text-red-500">
+            <small
+              v-if="showFieldError('smsgateUsername')"
+              class="text-red-500"
+            >
               {{ validationErrors.smsgateUsername }}
             </small>
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium">{{ t('smsgate_password') }} *</label>
+            <label class="text-sm font-medium"
+              >{{ t('smsgate_password') }} *</label
+            >
             <Password
               v-model="form.config.password"
               :feedback="false"
@@ -156,7 +169,10 @@
               input-class="w-full"
               @blur="markTouched('smsgatePassword')"
             />
-            <small v-if="showFieldError('smsgatePassword')" class="text-red-500">
+            <small
+              v-if="showFieldError('smsgatePassword')"
+              class="text-red-500"
+            >
               {{ validationErrors.smsgatePassword }}
             </small>
           </div>
@@ -165,13 +181,18 @@
         <!-- Simple SMS Gateway Configuration -->
         <template v-if="form.provider === 'simple-sms-gateway'">
           <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium">{{ t('simple_sms_gateway_base_url') }} *</label>
+            <label class="text-sm font-medium"
+              >{{ t('simple_sms_gateway_base_url') }} *</label
+            >
             <InputText
               v-model="form.config.simpleSmsGatewayBaseUrl"
               placeholder="http://192.168.1.100:8080/send-sms"
               @blur="markTouched('simpleSmsGatewayBaseUrl')"
             />
-            <small v-if="showFieldError('simpleSmsGatewayBaseUrl')" class="text-red-500">
+            <small
+              v-if="showFieldError('simpleSmsGatewayBaseUrl')"
+              class="text-red-500"
+            >
               {{ validationErrors.simpleSmsGatewayBaseUrl }}
             </small>
           </div>
@@ -210,7 +231,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <Checkbox v-model="form.isActive" :binary="true" input-id="isActive" />
+          <Checkbox
+            v-model="form.isActive"
+            :binary="true"
+            input-id="isActive"
+          />
           <label for="isActive" class="text-sm cursor-pointer">
             {{ t('gateway_active') }}
           </label>
@@ -275,7 +300,11 @@ const form = reactive({
   isActive: true,
 });
 
-type FormField = 'name' | 'smsgateUsername' | 'smsgatePassword' | 'simpleSmsGatewayBaseUrl';
+type FormField =
+  | 'name'
+  | 'smsgateUsername'
+  | 'smsgatePassword'
+  | 'simpleSmsGatewayBaseUrl';
 
 const touched = reactive<Record<FormField, boolean>>({
   name: false,
@@ -296,7 +325,8 @@ const validationErrors = computed(() => {
         ? t('password_required')
         : '',
     simpleSmsGatewayBaseUrl:
-      form.provider === 'simple-sms-gateway' && !form.config.simpleSmsGatewayBaseUrl?.trim()
+      form.provider === 'simple-sms-gateway' &&
+      !form.config.simpleSmsGatewayBaseUrl?.trim()
         ? t('base_url_required')
         : '',
   };
@@ -345,7 +375,7 @@ const resetForm = () => {
   form.dailyLimit = 0;
   form.monthlyLimit = 0;
   form.isActive = true;
-  
+
   Object.keys(touched).forEach((key) => {
     touched[key as FormField] = false;
   });
@@ -361,14 +391,14 @@ const openAddDialog = () => {
 const openEditDialog = (gateway: SmsFleetGateway) => {
   isEditing.value = true;
   editingGatewayId.value = gateway.id;
-  
+
   form.name = gateway.name;
   form.provider = gateway.provider;
   form.config = { ...gateway.config };
   form.dailyLimit = gateway.daily_limit;
   form.monthlyLimit = gateway.monthly_limit;
   form.isActive = gateway.is_active;
-  
+
   showDialog.value = true;
 };
 
@@ -439,16 +469,16 @@ const saveGateway = async () => {
 
 const testGateway = async (gatewayId: string) => {
   testingGatewayId.value = gatewayId;
-  
+
   const result = await $smsFleetStore.testGateway(gatewayId);
-  
+
   $toast.add({
     severity: result.success ? 'success' : 'error',
     summary: result.success ? t('test_successful') : t('test_failed'),
     detail: result.message,
     life: 5000,
   });
-  
+
   testingGatewayId.value = null;
 };
 
