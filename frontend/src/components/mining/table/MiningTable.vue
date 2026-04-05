@@ -119,7 +119,6 @@
           </SplitButton>
         </div>
 
-        <!-- <CampaignButton :contacts-count="implicitlySelectedContactsLength" /> -->
         <div
           v-tooltip.top="
             (isExportDisabled || !selectedContactsLength) &&
@@ -974,9 +973,7 @@ const EnrichButton = defineAsyncComponent(
 const ExportContacts = defineAsyncComponent(
   () => import('../buttons/ExportContacts.vue'),
 );
-const CampaignButton = defineAsyncComponent(
-  () => import('../buttons/CampaignButton.vue'),
-);
+
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );

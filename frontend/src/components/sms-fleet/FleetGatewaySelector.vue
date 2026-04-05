@@ -47,16 +47,22 @@
           @click.stop
           @update:model-value="toggleGateway(gateway.id)"
         />
-        
+
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <i :class="getProviderIcon(gateway.provider)" class="text-surface-500" />
+            <i
+              :class="getProviderIcon(gateway.provider)"
+              class="text-surface-500"
+            />
             <span class="font-medium truncate">{{ gateway.name }}</span>
           </div>
           <div class="text-xs text-surface-500 mt-1">
-            <span class="capitalize">{{ formatProvider(gateway.provider) }}</span>
+            <span class="capitalize">{{
+              formatProvider(gateway.provider)
+            }}</span>
             <span v-if="gateway.daily_limit > 0" class="ml-2">
-              • {{ gateway.sent_today }}/{{ gateway.daily_limit }} {{ t('today') }}
+              • {{ gateway.sent_today }}/{{ gateway.daily_limit }}
+              {{ t('today') }}
             </span>
             <span v-else class="ml-2">
               • {{ gateway.sent_today }} {{ t('sent_today') }}
@@ -70,9 +76,11 @@
           severity="secondary"
           class="text-xs"
         />
-        
+
         <Badge
-          v-else-if="gateway.daily_limit > 0 && gateway.sent_today >= gateway.daily_limit"
+          v-else-if="
+            gateway.daily_limit > 0 && gateway.sent_today >= gateway.daily_limit
+          "
           :value="t('limit_reached')"
           severity="danger"
           class="text-xs"
@@ -80,7 +88,10 @@
       </div>
     </div>
 
-    <small v-if="selectedGatewayIds.length === 0 && showValidation" class="text-red-500">
+    <small
+      v-if="selectedGatewayIds.length === 0 && showValidation"
+      class="text-red-500"
+    >
       {{ t('select_at_least_one_gateway') }}
     </small>
 
@@ -93,7 +104,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { SmsFleetGateway, SmsGatewayProvider } from '@/types/sms-fleet';
+import type { SmsGatewayProvider } from '@/types/sms-fleet';
 
 const { t } = useI18n({ useScope: 'local' });
 const $smsFleetStore = useSmsFleetStore();
