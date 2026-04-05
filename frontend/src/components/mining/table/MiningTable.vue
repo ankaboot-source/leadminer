@@ -1501,28 +1501,6 @@ onNuxtReady(async () => {
   ];
 });
 
-const stopShowTableFirstTimeWatcher = watch(
-  () => contactsLength.value,
-  () => {
-    if (contactsLength.value !== undefined) {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-      if (contactsLength.value > 0) {
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    }
-  },
-  { immediate: true },
-);
-
 onBeforeMount(() => {
   isLoading.value = true;
 });
