@@ -716,13 +716,16 @@ export default class ImapEmailsFetcher {
 
       if (this.FETCHING_TOTAL_ERRORS >= this.FETCHING_MAX_ERRORS) {
         this.isCanceled = true;
+        logger.warn(
+          `[${this.miningId}:${folder}] Max errors reached (${this.FETCHING_TOTAL_ERRORS}/${this.FETCHING_MAX_ERRORS}), canceling`
+        );
         return;
       }
 
       this.FETCHING_TOTAL_ERRORS += 1;
 
-      logger.debug(
-        `[${this.miningId}:${folder}:${connection?.id}]: Pushing range again to queue for retry`
+      logger.warn(
+        `[${this.miningId}] Retry ${seqRange || uidRange} in ${folder} after error (${this.FETCHING_TOTAL_ERRORS}/${this.FETCHING_MAX_ERRORS} total errors)`
       );
 
       this.emailsQueue.add(() => this.worker(emailJob, workerFn));

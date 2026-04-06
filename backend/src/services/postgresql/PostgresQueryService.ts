@@ -104,8 +104,10 @@ export class PostgresQueryService {
     let shouldRollback = false;
 
     try {
-      await client.connect();
-      await client.query('BEGIN READ ONLY');
+      // eslint-disable-next-line no-void
+      void (await client.connect());
+      // eslint-disable-next-line no-void
+      void (await client.query('BEGIN READ ONLY'));
       shouldRollback = true;
       const result = await client.query(limitedQuery);
       await client.query('ROLLBACK');
@@ -131,8 +133,10 @@ export class PostgresQueryService {
     let shouldRollback = false;
 
     try {
-      await client.connect();
-      await client.query('BEGIN READ ONLY');
+      // eslint-disable-next-line no-void
+      void (await client.connect());
+      // eslint-disable-next-line no-void
+      void (await client.query('BEGIN READ ONLY'));
       shouldRollback = true;
 
       const result = await client.query(`
@@ -162,8 +166,10 @@ export class PostgresQueryService {
     let shouldRollback = false;
 
     try {
-      await client.connect();
-      await client.query('BEGIN READ ONLY');
+      // eslint-disable-next-line no-void
+      void (await client.connect());
+      // eslint-disable-next-line no-void
+      void (await client.query('BEGIN READ ONLY'));
       shouldRollback = true;
       const result = await client.query(countQuery);
       await client.query('ROLLBACK');

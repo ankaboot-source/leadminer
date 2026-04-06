@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'supabase/migrations/**'
+      - "supabase/migrations/**"
   workflow_dispatch:
 
 jobs:
@@ -11,16 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Push supabase migrations to leadminer.io
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_PAT }}
+      - name: Checkout leadminer.io
+        uses: actions/checkout@v4
         with:
-          source_file: 'supabase/migrations'
-          destination_repo: 'ankaboot-source/leadminer.io'
-          destination_folder: './supabase'
-          user_email: 'deploy@leadminer.io'
-          user_name: 'deploy-bot'
-          commit_message: 'Updating supabase migrations'
+          repository: ankaboot-source/leadminer.io
+          token: ${{ secrets.DEPLOY_PAT }}
+          path: leadminer-io
+
+      - name: Sync supabase migrations (mirror mode)
+        run: |
+          mkdir -p leadminer-io/supabase/migrations
+          rsync -a --delete supabase/migrations/ leadminer-io/supabase/migrations/
+
+      - name: Commit and push changes
+        run: |
+          cd leadminer-io
+          git config user.email "deploy@leadminer.io"
+          git config user.name "deploy-bot"
+          git add supabase/migrations
+
+          if git diff --cached --quiet; then
+            echo "No migration changes to push"
+            exit 0
+          fi
+
+          git commit -m "Updating supabase migrations"
+          git push origin HEAD:main

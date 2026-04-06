@@ -4,6 +4,11 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import { defineStore } from 'pinia';
+import {
+  buildTableStorageKey,
+  sanitizeVisibleColumns,
+  type TableOrigin,
+} from '~/utils/table-preferences';
 import { convertDates } from '~/utils/contacts';
 import Normalizer from '~/utils/normalizer';
 
@@ -17,6 +22,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   const selectedEmails = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
+  const visibleColumns = ref(['contacts']);
+
+  const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(
+    null,
+  );
 
   const contactCount = computed(() => contactsList.value?.length);
 
@@ -243,7 +253,54 @@ export const useContactsStore = defineStore('contacts-store', () => {
     return [...new Set(locations)];
   }
 
-  const visibleColumns = ref(['contacts']);
+  function initializeVisibleColumns(
+    defaultColumns: string[],
+    origin: TableOrigin,
+  ) {
+    const userId = getCurrentUserId();
+    if (!userId || !import.meta.client) {
+      visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
+      return;
+    }
+
+    tableContext.value = { userId, origin };
+    const key = buildTableStorageKey('columns', userId, origin);
+    const storedColumns = localStorage.getItem(key);
+
+    if (!storedColumns) {
+      visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
+      return;
+    }
+
+    try {
+      visibleColumns.value = sanitizeVisibleColumns(JSON.parse(storedColumns));
+    } catch {
+      visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
+    }
+  }
+
+  function persistVisibleColumns() {
+    if (!import.meta.client || !tableContext.value) {
+      return;
+    }
+
+    const { userId, origin } = tableContext.value;
+    const key = buildTableStorageKey('columns', userId, origin);
+    localStorage.setItem(key, JSON.stringify(visibleColumns.value));
+  }
+
+  watch(
+    visibleColumns,
+    () => {
+      const sanitized = sanitizeVisibleColumns(visibleColumns.value);
+      if (JSON.stringify(sanitized) !== JSON.stringify(visibleColumns.value)) {
+        visibleColumns.value = sanitized;
+        return;
+      }
+      persistVisibleColumns();
+    },
+    { deep: true },
+  );
 
   const combinedLocations = computed(() => {
     return contactsList.value
@@ -275,6 +332,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     selectedContactsCount,
     contactCount,
     visibleColumns,
+    initializeVisibleColumns,
     combinedLocations,
     $reset,
     loadContacts,

@@ -6,6 +6,7 @@ import { useLeadminerStore } from './leadminer';
 export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const collapsed = ref(false);
   const index = ref(-1);
+  const isInitializing = ref(false);
 
   function open() {
     collapsed.value = false;
@@ -34,11 +35,13 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
 
   function $reset() {
     index.value = -1;
+    isInitializing.value = false;
   }
 
   return {
     collapsed,
     index,
+    isInitializing,
     next,
     prev,
     go,

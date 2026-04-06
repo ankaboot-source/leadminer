@@ -1,7 +1,8 @@
 import type { H3Event } from 'h3';
 
-export function buildEmailCampaignEdgeUrl(
+function buildEdgeFunctionUrl(
   event: H3Event,
+  functionName: string,
   path: string,
 ): string {
   const config = useRuntimeConfig(event);
@@ -18,5 +19,16 @@ export function buildEmailCampaignEdgeUrl(
 
   const normalizedBase = String(baseUrl).replace(/\/$/, '');
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${normalizedBase}/functions/v1/email-campaigns${normalizedPath}`;
+  return `${normalizedBase}/functions/v1/${functionName}${normalizedPath}`;
+}
+
+export function buildEmailCampaignEdgeUrl(
+  event: H3Event,
+  path: string,
+): string {
+  return buildEdgeFunctionUrl(event, 'email-campaigns', path);
+}
+
+export function buildSmsCampaignEdgeUrl(event: H3Event, path: string): string {
+  return buildEdgeFunctionUrl(event, 'sms-campaigns', path);
 }

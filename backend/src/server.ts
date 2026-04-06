@@ -34,7 +34,7 @@ console.log(
 );
 
 (async () => {
-  await redis.flushAll([ENV.REDIS_SIGNATURE_STREAM_NAME]);
+  await redis.flushAll([ENV.REDIS_SIGNATURE_STREAM_NAME], ['llm-sig:']);
   await redis.initProviders();
 
   const miningSources = new PgMiningSources(

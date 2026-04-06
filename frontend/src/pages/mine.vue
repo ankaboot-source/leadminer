@@ -3,38 +3,30 @@
     <div
       class="flex flex-col grow border border-surface-200 rounded-md px-2 pt-6"
     >
-      <MiningStepper />
+      <ClientOnly>
+        <MiningStepper v-if="$stepper.index > 0" />
+        <template #fallback>
+          <div class="flex flex-col grow animate-pulse">
+            <div class="flex items-center">
+              <div class="w-10 h-10 bg-surface-200 rounded-full" />
+              <div class="flex-1 h-0.5 bg-surface-200 mx-2" />
+              <div class="w-10 h-10 bg-surface-200 rounded-full" />
+              <div class="flex-1 h-0.5 bg-surface-200 mx-2" />
+              <div class="w-10 h-10 bg-surface-200 rounded-full" />
+            </div>
+            <div class="flex-1 mt-4 bg-surface-200 rounded min-h-64" />
+          </div>
+        </template>
+      </ClientOnly>
     </div>
     <MiningTable :show-table="showTable" origin="mine" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { FetchError } from 'ofetch';
-
-const { t } = useI18n({
-  useScope: 'local',
-});
-
 const $leadminer = useLeadminerStore();
 const $stepper = useMiningStepper();
 const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );
-
-try {
-  await $leadminer.fetchMiningSources();
-  onMounted(async () => {
-    const step = await $leadminer.getCurrentRunningMining();
-    if (step !== undefined && step > 1) {
-      $stepper.go(step);
-    }
-  });
-} catch (error) {
-  onMounted(() => {
-    throw error instanceof FetchError && error.response?.status === 401
-      ? error
-      : new Error(t('fetch_sources_failed'));
-  });
-}
 </script>

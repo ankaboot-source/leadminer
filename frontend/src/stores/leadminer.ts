@@ -528,11 +528,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
-      startMiningNotification({
-        t,
-        dataPrivacyUrl: config.public.DATA_PRIVACY_URL,
-        toast: $toast,
-      });
+      startMiningNotification($toast, t, config.public.DATA_PRIVACY_URL);
     } catch (err) {
       sse.closeConnection();
       throw err;

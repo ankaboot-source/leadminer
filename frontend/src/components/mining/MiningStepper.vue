@@ -118,6 +118,14 @@ watch(
       return;
     }
 
+    if ($stepper.index !== -1) {
+      return;
+    }
+
+    if ($stepper.isInitializing) {
+      return;
+    }
+
     if (!sourceEmail) {
       return;
     }
@@ -125,6 +133,8 @@ watch(
     if (handledSourceQuery.value === sourceEmail) {
       return;
     }
+
+    handledSourceQuery.value = sourceEmail;
 
     const resolution = resolvePostOauthSourceSelection({
       querySource: sourceEmail,
@@ -145,7 +155,6 @@ watch(
       $stepper.go(1);
     }
 
-    handledSourceQuery.value = sourceEmail;
     clearOauthQueryParams();
   },
   { immediate: true },

@@ -175,6 +175,18 @@
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
           </td>
         </tr>
+        <tr class="p-row-odd">
+          <td class="md:font-medium">{{ t('consent') }}</td>
+          <td>
+            <div v-tooltip.bottom="getConsentTooltip(contact)">
+              <Tag
+                class="font-normal"
+                :value="getConsentLabel(contact.consent_status)"
+                :severity="getConsentColor(contact.consent_status)"
+              />
+            </div>
+          </td>
+        </tr>
 
         <template v-if="editingContact">
           <tr class="p-row-odd">
@@ -245,6 +257,8 @@ import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 
 import {
+  getConsentColor,
+  getConsentLabel,
   getStatusColor,
   getStatusLabel,
   getTagColor,
@@ -528,6 +542,18 @@ function copyContact(email: string, name?: string) {
     name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
 }
+
+function getConsentTooltip(data: Contact) {
+  if (!data.consent_changed_at) return undefined;
+
+  const date = data.consent_changed_at.toLocaleString();
+
+  if (data.consent_status === 'opt_out') {
+    return t('consent_tooltip_opt_out', { date });
+  }
+
+  return t('consent_tooltip_default', { date });
+}
 </script>
 <i18n lang="json">
 {
@@ -539,7 +565,10 @@ function copyContact(email: string, name?: string) {
     "url_invalid_summary": "Invalid URL",
     "url_invalid_detail": "Please enter a valid URL",
     "phone_invalid_summary": "Invalid phone number",
-    "phone_invalid_detail": "Invalid phone number: {phoneNumber}"
+    "phone_invalid_detail": "Invalid phone number: {phoneNumber}",
+    "consent": "Consent",
+    "consent_tooltip_default": "Updated on {date}",
+    "consent_tooltip_opt_out": "Opted out on {date}"
   },
   "fr": {
     "copy": "Copier",
@@ -549,7 +578,10 @@ function copyContact(email: string, name?: string) {
     "url_invalid_summary": "URL invalide",
     "url_invalid_detail": "Veuillez saisir une URL valide",
     "phone_invalid_summary": "Numéro de téléphone invalide",
-    "phone_invalid_detail": "Numéro de téléphone invalide : {phoneNumber}"
+    "phone_invalid_detail": "Numéro de téléphone invalide : {phoneNumber}",
+    "consent": "Consentement",
+    "consent_tooltip_default": "Mis à jour le {date}",
+    "consent_tooltip_opt_out": "Désinscrit le {date}"
   }
 }
 </i18n>

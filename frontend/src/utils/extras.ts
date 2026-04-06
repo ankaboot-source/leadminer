@@ -4,6 +4,16 @@ export const PrivacyPolicyButton = null;
 export const AcceptNewsLetter = null;
 export const CampaignButton = null;
 
+type ToastLike = {
+  add: (payload: {
+    severity: string;
+    summary: string;
+    detail: string | { message: string; link?: { text: string; url: string } };
+    group?: string;
+    life: number;
+  }) => void;
+};
+
 type StartMiningToastInput = {
   t: (key: string) => string;
   dataPrivacyUrl?: string;
@@ -71,17 +81,15 @@ export function createStartMiningToastPayload({
   };
 }
 
-export function startMiningNotification(params?: {
-  t: (key: string) => string;
-  dataPrivacyUrl?: string;
-  toast: { add: (toast: unknown) => void };
-}) {
-  if (!params) return;
-
-  params.toast.add(
+export function startMiningNotification(
+  toast: ToastLike,
+  t: (key: string) => string,
+  dataPrivacyUrl?: string,
+) {
+  toast.add(
     createStartMiningToastPayload({
-      t: params.t,
-      dataPrivacyUrl: params.dataPrivacyUrl,
+      t,
+      dataPrivacyUrl,
     }),
   );
 }

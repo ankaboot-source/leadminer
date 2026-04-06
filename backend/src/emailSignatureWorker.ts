@@ -15,6 +15,7 @@ import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignature
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
 import { SignatureLLM } from './services/signature/llm';
+import SignatureExtractorCache from './services/signature/llm/signature-extractor-cache';
 import { checkDomainStatus } from './utils/helpers/domainHelpers';
 import { Distribution, TokenBucketRateLimiter } from './services/rate-limiter';
 import { SignatureRE } from './services/signature/regex';
@@ -33,19 +34,28 @@ const signatureEngines: EngineConfig[] = [
 ];
 
 if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
+  const signatureLLM = new SignatureLLM(
+    new TokenBucketRateLimiter({
+      executeEvenly: false,
+      intervalSeconds: 60,
+      uniqueKey: 'email-signature-service',
+      distribution: Distribution.Memory,
+      requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 1000
+    }),
+    logger,
+    LLMModelsList,
+    ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''
+  );
+
+  const signatureExtractorCache = new SignatureExtractorCache(
+    signatureLLM,
+    redisClient,
+    logger,
+    ENV.SIGNATURE_LLM_CACHE_TTL_SECONDS ?? 86400
+  );
+
   signatureEngines.push({
-    engine: new SignatureLLM(
-      new TokenBucketRateLimiter({
-        executeEvenly: false,
-        intervalSeconds: 60,
-        uniqueKey: 'email-signature-service',
-        distribution: Distribution.Memory,
-        requests: LLMModelsList.every((m) => m.includes('free')) ? 15 : 1000
-      }),
-      logger,
-      LLMModelsList,
-      ENV.SIGNATURE_OPENROUTER_API_KEY ?? ''
-    ),
+    engine: signatureExtractorCache,
     useAsFallback: false
   });
 }
@@ -98,6 +108,7 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
       logger.info('Consumer group already created');
     } else {
       logger.error('Failed to start consumer:', err);
+      // skipcq: JS-0263 - Intentional: worker must terminate on startup failure, cannot recover
       process.exit(1);
     }
   }
