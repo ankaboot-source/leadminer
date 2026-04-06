@@ -8,8 +8,7 @@ import {
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import {
   PostgresQueryService,
-  QueryPreviewResult,
-  TableListItem
+  QueryPreviewResult
 } from '../services/postgresql/PostgresQueryService';
 import TasksManagerPostgreSQL from '../services/tasks-manager/TasksManagerPostgreSQL';
 import { testPostgresConnection } from '../utils/helpers/postgresConnection';
