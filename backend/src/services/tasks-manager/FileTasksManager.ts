@@ -51,8 +51,8 @@ export default class FileTasksManager extends BaseTasksManager {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected getProcessList() {
-    return ['extract', 'clean'] as const;
+  protected getProcessList(): (keyof MiningTask['process'])[] {
+    return ['extract', 'clean'];
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -167,7 +167,7 @@ export default class FileTasksManager extends BaseTasksManager {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _processList: (keyof MiningTask['process'])[]
   ): Promise<void> {
-    const fileTask = task as FileMiningTask;
+    const fileTask = task as unknown as FileMiningTask;
     const progress: TaskProgress = {
       totalMessages: 0,
       fetched: 0,

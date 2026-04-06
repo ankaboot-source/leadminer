@@ -49,7 +49,7 @@ export default abstract class BaseTasksManager {
   }
 
   protected async generateTaskInformation() {
-    const miningId = this.generateMiningId();
+    const miningId = await this.generateMiningId();
 
     return {
       miningId,

@@ -40,12 +40,17 @@ export default class PstTasksManager extends BaseTasksManager {
     startFetch: (opts: unknown) => Promise<{ data: { totalMessages: number } }>;
     stopFetch: (opts: unknown) => Promise<void>;
   } | null {
-    return this.fetcherClient;
+    return this.fetcherClient as {
+      startFetch: (
+        opts: unknown
+      ) => Promise<{ data: { totalMessages: number } }>;
+      stopFetch: (opts: unknown) => Promise<void>;
+    };
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected getProcessList() {
-    return ['fetch', 'extract', 'clean', 'signature'] as const;
+  protected getProcessList(): (keyof MiningTask['process'])[] {
+    return ['fetch', 'extract', 'clean', 'signature'];
   }
 
   // eslint-disable-next-line class-methods-use-this
