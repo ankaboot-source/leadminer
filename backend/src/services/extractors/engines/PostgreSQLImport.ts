@@ -76,13 +76,13 @@ export class PostgreSQLContactEngine {
     const {
       email,
       name,
-      given_name,
-      family_name,
-      alternate_name,
+      given_name: givenName,
+      family_name: familyName,
+      alternate_name: alternateName,
       location,
-      job_title,
-      same_as,
-      works_for,
+      job_title: jobTitle,
+      same_as: sameAs,
+      works_for: worksFor,
       image
     } = contact;
 
@@ -90,15 +90,15 @@ export class PostgreSQLContactEngine {
       email: email as string,
       source: this.format.sourceName,
       name: undefinedIfFalsy((name as string) ?? ''),
-      givenName: undefinedIfFalsy((given_name as string) ?? ''),
-      familyName: undefinedIfFalsy((family_name as string) ?? ''),
-      jobTitle: undefinedIfFalsy((job_title as string) ?? ''),
+      givenName: undefinedIfFalsy((givenName as string) ?? ''),
+      familyName: undefinedIfFalsy((familyName as string) ?? ''),
+      jobTitle: undefinedIfFalsy((jobTitle as string) ?? ''),
       image: undefinedIfFalsy((image as string) ?? ''),
       location: undefinedIfFalsy((location as string) ?? ''),
-      sameAs: undefinedIfEmpty(((same_as as string) ?? '').split(',')),
-      worksFor: undefinedIfFalsy((works_for as string) ?? ''),
+      sameAs: undefinedIfEmpty(((sameAs as string) ?? '').split(',')),
+      worksFor: undefinedIfFalsy((worksFor as string) ?? ''),
       alternateName: undefinedIfEmpty(
-        ((alternate_name as string) ?? '').split(',')
+        ((alternateName as string) ?? '').split(',')
       )
     };
   }
