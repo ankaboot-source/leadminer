@@ -11,7 +11,7 @@
     modal
     :draggable="false"
     :header="t('sign_in_with_imap')"
-    class="w-full md:w-[35rem] max-h-full h-full md:h-auto rounded-none md:rounded-md"
+    class="w-full md:w-140 max-h-full h-full md:h-auto rounded-none md:rounded-md"
   >
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
@@ -117,6 +117,8 @@ const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
 const $imapDialogStore = useImapDialog();
+const $leadminerStore = useLeadminerStore();
+const $stepper = useMiningStepper();
 
 const imapSource = defineModel<MiningSource>('source');
 
@@ -140,13 +142,13 @@ const formErrors: Record<string, Ref> = {
 const loadingSave = ref(false);
 
 const invalidImapPassword = (password: string | undefined) =>
-  formErrors.password.value || !password?.length || password.length === 0;
+  formErrors.password?.value || !password?.length || password.length === 0;
 
 const isInvalidImapPort = (port: number) =>
-  formErrors.port.value || !(port > 0 && port <= 65536);
+  formErrors.port?.value || !(port > 0 && port <= 65536);
 
 const invalidImapHost = (host: string | undefined) =>
-  formErrors.host.value || !host?.length || host.length === 0;
+  formErrors.host?.value || !host?.length || host.length === 0;
 
 function resetFormErrors() {
   Object.values(formErrors).forEach((error) => {
@@ -182,7 +184,7 @@ function handleAuthenticationErrors(error: FetchError) {
       if (['host', 'port'].includes(field)) {
         imapAdvancedSettings.value = true;
       }
-      formErrors[field].value = true;
+      if (formErrors[field]) formErrors[field].value = true;
     });
   }
 
@@ -249,7 +251,19 @@ async function onSubmitImapCredentials() {
         isValid: true,
       };
       show.value = false;
-      $sourcePanel.hideOtherSources();
+
+      await $leadminerStore.fetchMiningSources();
+
+      const newSource = $leadminerStore.miningSources.find(
+        (s) => s.email.toLowerCase() === imapEmail.value.toLowerCase(),
+      );
+
+      if (newSource) {
+        $leadminerStore.activeMiningSource = newSource;
+        $stepper.go(2);
+      } else {
+        $sourcePanel.hideOtherSources();
+      }
     }
   } catch (error) {
     if (error instanceof FetchError) {

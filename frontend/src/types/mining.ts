@@ -13,7 +13,7 @@ export interface MiningSource {
   type: MiningSourceType;
   email: string;
   isValid?: boolean;
-  passive_mining: boolean;
+  passive_mining?: boolean;
   totalContacts?: number;
   totalFromLastMining?: number;
   lastMiningDate?: string;
