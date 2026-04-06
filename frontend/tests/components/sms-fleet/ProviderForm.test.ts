@@ -8,7 +8,7 @@ const app = createApp({});
 app.use(PrimeVue);
 
 describe('ProviderForm', () => {
-  it('renders provider-specific fields based on provider type', () => {
+  it('renders provider configuration fields', () => {
     const wrapper = mount(ProviderForm, {
       props: {
         provider: 'smsgate',
@@ -56,7 +56,7 @@ describe('ProviderForm', () => {
       .find('input[name="baseUrl"]')
       .setValue('https://api.smsgate.com');
     await wrapper.find('input[name="apiKey"]').setValue('test-api-key');
-    expect(wrapper.emitted('valid')).toBeTruthy();
+    expect(wrapper.emitted('valid')?.at(-1)).toEqual([true]);
   });
 
   it('emits "submit" event with gateway data when form submitted', async () => {
