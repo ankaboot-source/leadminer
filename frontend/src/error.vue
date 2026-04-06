@@ -48,6 +48,10 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const $user = useSupabaseUser();
+const $userProfile = useSupabaseUserProfile();
+const router = useRouter();
+
 const handleError = () => {
   clearError({ redirect: '/' });
 };
@@ -85,7 +89,17 @@ onMounted(() => {
   console.error(error);
   if (!isUTF8Error.value) return;
   setTimeout(() => {
-    signOutManually();
+    signOutManually({
+      resetUser: () => {
+        $user.value = null;
+      },
+      resetProfile: () => {
+        $userProfile.value = null;
+      },
+      navigateToLogin: () => {
+        router.push('/auth/login');
+      },
+    });
   }, 1000);
 });
 </script>

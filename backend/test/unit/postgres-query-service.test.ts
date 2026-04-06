@@ -119,7 +119,7 @@ describe('PostgresQueryService', () => {
 
     expect(MockedClient).toHaveBeenCalledWith(
       expect.objectContaining({
-        ssl: true
+        ssl: { rejectUnauthorized: false }
       })
     );
   });

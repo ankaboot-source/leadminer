@@ -169,27 +169,25 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (realtimeChannel) return;
 
-    realtimeChannel = useSupabaseClient()
-      .channel(`contacts-table-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'private',
-          table: 'persons',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload: RealtimePostgresChangesPayload<Contact>) => {
-          if (payload.eventType === 'DELETE' && payload.old.email) {
-            removeOldContact(payload.old.email);
-          } else if (payload.new as Contact) {
-            setTimeout(async () => {
-              await updateContactsCache(payload.new as Contact);
-              updateContactList.value = true;
-            }, 0);
-          }
-        },
-      );
+    realtimeChannel = $supabase.channel(`contacts-table-${userId}`).on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'private',
+        table: 'persons',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: RealtimePostgresChangesPayload<Contact>) => {
+        if (payload.eventType === 'DELETE' && payload.old.email) {
+          removeOldContact(payload.old.email);
+        } else if (payload.new as Contact) {
+          setTimeout(async () => {
+            await updateContactsCache(payload.new as Contact);
+            updateContactList.value = true;
+          }, 0);
+        }
+      },
+    );
     realtimeChannelUserId = userId;
     startSyncInterval();
     realtimeChannel.subscribe();

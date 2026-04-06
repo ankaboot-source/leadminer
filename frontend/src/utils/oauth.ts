@@ -22,10 +22,12 @@ export async function addOAuthAccount(
 
 /**
  * Redirects to the OAuth consent error page.
+ * @param provider - The OAuth provider type
  * @returns {Promise<string>} The URL of the OAuth consent error page with provider and referrer parameters.
  */
-export async function redirectOauthConsentPage(): Promise<string> {
-  const provider = useLeadminerStore().activeMiningSource?.type;
+export async function redirectOauthConsentPage(
+  provider?: string,
+): Promise<string> {
   const referrer = (await useSupabaseClient().auth.getSession()).data.session
     ?.user.id;
   return `/oauth-consent-error?provider=${provider}&referrer=${referrer}`;

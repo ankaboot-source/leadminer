@@ -78,13 +78,14 @@ export class PostgresQueryService {
   ) {}
 
   private createClient(statementTimeout: number): Client {
+    const sslEnabled = this.credentials.ssl ?? true;
     return new Client({
       host: this.credentials.host,
       port: this.credentials.port,
       database: this.credentials.database,
       user: this.credentials.username,
       password: this.credentials.password,
-      ssl: this.credentials.ssl ? { rejectUnauthorized: false } : false,
+      ssl: sslEnabled ? { rejectUnauthorized: false } : false,
       statement_timeout: statementTimeout,
       connectionTimeoutMillis: 10000
     });
@@ -145,6 +146,31 @@ export class PostgresQueryService {
       shouldRollback = false;
 
       return result.rows as TableListItem[];
+    } catch (error) {
+      await rollbackIfNeeded(client, shouldRollback);
+      throw error;
+    } finally {
+      await closeClientSafely(client);
+    }
+  }
+
+  async countRows(query: string): Promise<number> {
+    const sanitizedQuery = getSafeSelectQuery(query);
+    const countQuery = `SELECT COUNT(*) AS total FROM (${sanitizedQuery}) AS leadminer_count`;
+    const client = this.createClient(PREVIEW_TIMEOUT_MS);
+
+    let shouldRollback = false;
+
+    try {
+      await client.connect();
+      await client.query('BEGIN READ ONLY');
+      shouldRollback = true;
+      const result = await client.query(countQuery);
+      await client.query('ROLLBACK');
+      shouldRollback = false;
+
+      const total = result.rows[0]?.total;
+      return typeof total === 'number' ? total : parseInt(total, 10);
     } catch (error) {
       await rollbackIfNeeded(client, shouldRollback);
       throw error;

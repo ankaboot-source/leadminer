@@ -21,7 +21,19 @@ export interface FileExtractionResult {
   }>;
 }
 
-export type ExtractionResult = EmailExtractionResult | FileExtractionResult;
+export interface PostgreSQLExtractionResult {
+  type: 'postgresql';
+  organizations: Organization[];
+  persons: Array<{
+    person: Person;
+    tags: Tag[];
+  }>;
+}
+
+export type ExtractionResult =
+  | EmailExtractionResult
+  | FileExtractionResult
+  | PostgreSQLExtractionResult;
 
 export interface Message {
   channel: string;

@@ -8,11 +8,17 @@ import {
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import {
   PostgresQueryService,
-  QueryPreviewResult
+  QueryPreviewResult,
+  TableListItem
 } from '../services/postgresql/PostgresQueryService';
+import TasksManagerPostgreSQL from '../services/tasks-manager/TasksManagerPostgreSQL';
 import { testPostgresConnection } from '../utils/helpers/postgresConnection';
 import validateSelectQuery from '../utils/helpers/sqlValidator';
 import validateType from '../utils/helpers/validation';
+import logger from '../utils/logger';
+import redis from '../utils/redis';
+import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
+import { EmailMessageData } from '../workers/email-message/emailMessageHandlers';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -243,11 +249,13 @@ export function validatePostgresMiningBody(body: unknown): string[] {
 
 export default function initializePostgresqlController(
   miningSources: MiningSources,
+  tasksManagerPostgreSQL: TasksManagerPostgreSQL,
   queryServiceFactory: (
     credentials: PostgreSQLMiningSourceCredentials
-  ) => Pick<PostgresQueryService, 'previewQuery' | 'listTables'> = (
-    credentials
-  ) => new PostgresQueryService(credentials)
+  ) => Pick<
+    PostgresQueryService,
+    'previewQuery' | 'listTables' | 'countRows'
+  > = (credentials) => new PostgresQueryService(credentials)
 ) {
   return {
     async testConnection(req: Request, res: Response) {
@@ -397,11 +405,64 @@ export default function initializePostgresqlController(
             .json({ message: `Invalid input: ${errors.join(', ')}` });
         }
 
+        const validatedBody = body as PostgresMiningBody;
+        const credentials = await resolvePostgresCredentials(
+          user.id,
+          validatedBody,
+          miningSources
+        );
+
+        if (!credentials) {
+          return res
+            .status(404)
+            .json({ message: 'PostgreSQL source not found' });
+        }
+
+        const queryService = queryServiceFactory(credentials);
+        const totalRows = await queryService.countRows(validatedBody.query);
+
+        const sourceName = validatedBody.sourceId ?? credentials.database;
+
+        const miningTask = await tasksManagerPostgreSQL.createTask(
+          user.id,
+          sourceName,
+          totalRows
+        );
+
+        const importMessage: EmailMessageData = {
+          type: 'postgresql',
+          miningId: miningTask.miningId,
+          userIdentifier: user.id,
+          userId: user.id,
+          userEmail: user.email ?? '',
+          data: {
+            query: validatedBody.query,
+            mapping: validatedBody.mapping ?? {},
+            credentials,
+            sourceName
+          }
+        };
+
+        const redisClient = redis.getClient();
+        const streamName = `messages_stream-${miningTask.miningId}`;
+        const producer = new RedisStreamProducer<EmailMessageData>(
+          redisClient,
+          streamName,
+          logger
+        );
+
+        await producer.produce([importMessage]);
+
+        logger.info('PostgreSQL import task started', {
+          miningId: miningTask.miningId,
+          userId: user.id,
+          sourceName,
+          totalRows
+        });
+
         return res.status(201).json({
           error: null,
-          data: {
-            miningId: 'pending-postgresql-task-manager'
-          }
+          data: miningTask
         });
       } catch (err) {
         // eslint-disable-next-line no-console

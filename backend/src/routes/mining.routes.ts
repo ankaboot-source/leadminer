@@ -41,7 +41,10 @@ export default function initializeMiningRoutes(
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
   // Initialize PostgreSQL controller
-  const postgresqlController = initializePostgresqlController(miningSource);
+  const postgresqlController = initializePostgresqlController(
+    miningSource,
+    tasksManagerPostgreSQL
+  );
 
   // PostgreSQL routes
   router.post(

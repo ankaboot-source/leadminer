@@ -31,19 +31,46 @@ export function clearPersistedData() {
   localStorage.clear();
 }
 
-export function signOutManually() {
+export function signOutManually(params?: {
+  resetUser?: () => void;
+  resetProfile?: () => void;
+  navigateToLogin?: () => void;
+}) {
   sse.closeConnection();
   clearPersistedData();
   useResetStore().all?.();
-  useSupabaseUser().value = null; // updates $user in AppHeader
-  useSupabaseUserProfile().value = null;
-  useRouter().push('/auth/login');
+
+  if (params?.resetUser) {
+    params.resetUser();
+  }
+  if (params?.resetProfile) {
+    params.resetProfile();
+  }
+  if (params?.navigateToLogin) {
+    params.navigateToLogin();
+  } else {
+    window.location.href = '/auth/login';
+  }
 }
 
-export async function signOut() {
-  const { error } = await useSupabaseClient().auth.signOut();
-  useSupabaseUser().value = null;
-  useSupabaseUserProfile().value = null;
+export async function signOut(params?: {
+  supabase: { auth: { signOut: () => Promise<{ error: unknown }> } };
+  resetUser?: () => void;
+  resetProfile?: () => void;
+}) {
+  if (!params?.supabase) {
+    throw new Error('signOut requires supabase client parameter');
+  }
+
+  const { error } = await params.supabase.auth.signOut();
+
+  if (params.resetUser) {
+    params.resetUser();
+  }
+  if (params.resetProfile) {
+    params.resetProfile();
+  }
+
   if (error) {
     reloadNuxtApp({ persistState: false });
   }

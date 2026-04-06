@@ -31,6 +31,7 @@ class SSE {
     {
       onFetchedUpdate,
       onExtractedUpdate,
+      onTotalImportedUpdate,
       onClose,
       onError,
       onFetchingDone,
@@ -42,6 +43,7 @@ class SSE {
     }: {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
+      onTotalImportedUpdate: (total: number) => void;
       onClose: () => void;
       onError: () => void;
       onFetchingDone: (totalFetched: number) => void;
@@ -89,6 +91,8 @@ class SSE {
           this.clearPendingCleanup();
           const { id, event, data } = msg;
 
+          console.debug('[SSE] Received event:', { event, data, id });
+
           if (event === 'close') {
             if (id === '404-not-found') {
               console.warn('[SSE] Task not found, closing connection.');
@@ -102,6 +106,9 @@ class SSE {
             onFetchedUpdate(parseInt(data));
           } else if (event === `extracted-${miningId}`) {
             onExtractedUpdate(parseInt(data));
+          } else if (event === `totalImported-${miningId}`) {
+            console.debug('[SSE] Updating totalImported:', parseInt(data));
+            onTotalImportedUpdate(parseInt(data));
           } else if (event === 'fetching-finished') {
             onFetchingDone(parseInt(data));
           } else if (event === 'extracting-finished') {
@@ -109,10 +116,13 @@ class SSE {
           } else if (event === 'cleaning-finished') {
             onCleaningDone(parseInt(data));
           } else if (event === `verifiedContacts-${miningId}`) {
+            console.debug('[SSE] Updating verifiedContacts:', parseInt(data));
             onVerifiedContacts(parseInt(data));
           } else if (event === `createdContacts-${miningId}`) {
+            console.debug('[SSE] Updating createdContacts:', parseInt(data));
             onCreatedContacts(parseInt(data));
           } else if (event === 'mining-completed') {
+            console.info('[SSE] Mining completed event received');
             onMiningCompleted();
           }
         },

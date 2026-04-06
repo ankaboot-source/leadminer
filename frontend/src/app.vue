@@ -107,6 +107,8 @@ import Normalizer from '~/utils/normalizer';
 import { signOutManually } from './utils/auth';
 
 const $user = useSupabaseUser();
+const $userProfile = useSupabaseUserProfile();
+const router = useRouter();
 const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const activeTask = computed(() => $leadminerStore.activeTask);
@@ -116,7 +118,17 @@ const { idle, reset } = useIdle(60 * 60 * 1000); // 1 hour timeout
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
-      signOutManually();
+      signOutManually({
+        resetUser: () => {
+          $user.value = null;
+        },
+        resetProfile: () => {
+          $userProfile.value = null;
+        },
+        navigateToLogin: () => {
+          router.push('/auth/login');
+        },
+      });
       reloadNuxtApp({ persistState: false, force: true });
       break;
     default:
@@ -125,7 +137,15 @@ $supabaseClient.auth.onAuthStateChange((event) => {
 });
 watch(idle, (isIdle) => {
   if (isIdle && !activeTask.value && $user.value) {
-    signOut();
+    signOut({
+      supabase: $supabaseClient,
+      resetUser: () => {
+        $user.value = null;
+      },
+      resetProfile: () => {
+        $userProfile.value = null;
+      },
+    });
   }
 });
 

@@ -172,7 +172,9 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
+const $user = useSupabaseUser();
 const $profile = useSupabaseUserProfile();
+const router = useRouter();
 
 const {
   data: { user },
@@ -319,7 +321,17 @@ async function deleteAccount() {
     await $api('/auth/users', {
       method: 'DELETE',
     });
-    signOutManually();
+    signOutManually({
+      resetUser: () => {
+        $user.value = null;
+      },
+      resetProfile: () => {
+        $profile.value = null;
+      },
+      navigateToLogin: () => {
+        router.push('/auth/login');
+      },
+    });
     $toast.add({
       severity: 'success',
       summary: t('account_deleted'),

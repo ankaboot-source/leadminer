@@ -235,9 +235,29 @@ export class EmailVerificationHandler {
         }
       });
     } finally {
-      // Update progress for ticker
-      const current = this.streamProgressDelta.get(streamId) ?? 0;
-      this.streamProgressDelta.set(streamId, current + 1);
+      // Reset delta to prevent double-counting by ticker
+      // Immediate publish sends count=1, ticker should not re-send this count
+      this.streamProgressDelta.set(streamId, 0);
+
+      // Publish progress immediately (don't wait for ticker)
+      const channelId = streamId.substring(streamId.indexOf('-') + 1);
+      const payload = JSON.stringify({
+        miningId: channelId,
+        progressType: 'verifiedContacts',
+        count: 1
+      });
+
+      this.redisClient
+        .publish(channelId, payload)
+        .then(() => {
+          this.logger.debug('Published verifiedContacts', {
+            miningId: channelId,
+            count: 1
+          });
+        })
+        .catch((err) => {
+          this.logger.error('Redis Publish Failed', { streamId, err });
+        });
     }
   }
 
@@ -253,16 +273,27 @@ export class EmailVerificationHandler {
       for (const [streamId, count] of this.streamProgressDelta.entries()) {
         if (count === 0) continue;
 
-        const channelId = streamId.split('-')[1] || streamId;
+        const channelId = streamId.substring(streamId.indexOf('-') + 1);
         const payload = JSON.stringify({
           miningId: channelId,
           progressType: 'verifiedContacts',
           count
         });
 
-        this.redisClient.publish(channelId, payload).catch((err) => {
-          this.logger.error('Redis Publish Failed', { streamId, err });
-        });
+        this.redisClient
+          .publish(channelId, payload)
+          .then(() => {
+            this.logger.debug('Published verifiedContacts via ticker', {
+              miningId: channelId,
+              count
+            });
+          })
+          .catch((err) => {
+            this.logger.error('Redis Publish Failed (ticker)', {
+              streamId,
+              err
+            });
+          });
 
         // Reset delta after publishing
         this.streamProgressDelta.set(streamId, 0);

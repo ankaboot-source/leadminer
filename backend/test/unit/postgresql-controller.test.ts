@@ -10,11 +10,57 @@ jest.mock('../../src/utils/helpers/postgresConnection', () => ({
   testPostgresConnection: jest.fn()
 }));
 
+jest.mock('../../src/utils/logger', () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn()
+  }
+}));
+
+jest.mock('../../src/utils/redis', () => ({
+  __esModule: true,
+  default: {
+    getClient: jest.fn(() => ({
+      xadd: jest.fn(),
+      pipeline: jest.fn(() => ({
+        exec: jest.fn()
+      }))
+    }))
+  }
+}));
+
+jest.mock('../../src/utils/streams/redis/RedisStreamProducer', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    produce: jest.fn().mockResolvedValue(undefined)
+  }))
+}));
+
 const { testPostgresConnection } = jest.requireMock(
   '../../src/utils/helpers/postgresConnection'
 ) as {
   testPostgresConnection: jest.Mock;
 };
+
+function createTasksManagerMock() {
+  return {
+    createTask: jest.fn().mockResolvedValue({
+      miningId: 'test-mining-id',
+      userId: 'user-id',
+      miningSource: { source: 'test-db', type: 'postgresql' },
+      progress: {
+        totalImported: 100,
+        extracted: 0,
+        verifiedContacts: 0,
+        createdContacts: 0
+      }
+    }),
+    getTaskOrThrow: jest.fn()
+  };
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -189,7 +235,8 @@ describe('postgresql controller validators', () => {
     it('tests connection and saves source when requested', async () => {
       const upsert = jest.fn().mockResolvedValue(undefined);
       const controller = initializePostgresqlController(
-        createMiningSourcesMock(upsert)
+        createMiningSourcesMock(upsert),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         body: {
@@ -236,7 +283,8 @@ describe('postgresql controller validators', () => {
     it('returns 400 when postgres connection test fails', async () => {
       const upsert = jest.fn().mockResolvedValue(undefined);
       const controller = initializePostgresqlController(
-        createMiningSourcesMock(upsert)
+        createMiningSourcesMock(upsert),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         body: {
@@ -266,7 +314,8 @@ describe('postgresql controller validators', () => {
     it('does not save source when saveConnection is false', async () => {
       const upsert = jest.fn().mockResolvedValue(undefined);
       const controller = initializePostgresqlController(
-        createMiningSourcesMock(upsert)
+        createMiningSourcesMock(upsert),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         body: {
@@ -291,7 +340,8 @@ describe('postgresql controller validators', () => {
 
     it('returns 500 when connection test throws unexpectedly', async () => {
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         body: {
@@ -316,12 +366,12 @@ describe('postgresql controller validators', () => {
 
     it('returns 400 on invalid preview payload', async () => {
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         body: {
           sourceId: 'source-id',
-          query: 'SELECT email FROM contacts',
           mapping: {
             col: 'not_a_contact_field'
           }
@@ -336,7 +386,10 @@ describe('postgresql controller validators', () => {
 
     it('returns 404 when sourceId does not exist for preview', async () => {
       const miningSources = createMiningSourcesMock();
-      const controller = initializePostgresqlController(miningSources);
+      const controller = initializePostgresqlController(
+        miningSources,
+        createTasksManagerMock()
+      );
       const req: MockRequest = {
         body: {
           sourceId: 'missing-source',
@@ -360,9 +413,11 @@ describe('postgresql controller validators', () => {
         columns: ['email'],
         totalCount: 1
       });
-      const queryServiceFactory = jest.fn(() => ({ previewQuery }));
+      const countRows = jest.fn().mockResolvedValue(100);
+      const queryServiceFactory = jest.fn(() => ({ previewQuery, countRows }));
       const controller = initializePostgresqlController(
         createMiningSourcesMock(),
+        createTasksManagerMock(),
         queryServiceFactory
       );
       const req: MockRequest = {
@@ -403,15 +458,26 @@ describe('postgresql controller validators', () => {
     });
 
     it('returns 201 for valid startMining payload', async () => {
+      const countRows = jest.fn().mockResolvedValue(100);
+      const queryServiceFactory = jest.fn(() => ({ countRows }));
+      const tasksManager = createTasksManagerMock();
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        tasksManager,
+        queryServiceFactory
       );
       const req: MockRequest = {
         params: { userId: 'user-id' },
         body: {
-          sourceId: 'source-id',
           query: 'SELECT email FROM contacts',
-          mapping: { email: 'email' }
+          mapping: { email: 'email' },
+          connection: {
+            host: 'localhost',
+            port: 5432,
+            database: 'contacts',
+            username: 'readonly_user',
+            password: 'secret'
+          }
         }
       };
       const res = makeRes();
@@ -419,15 +485,17 @@ describe('postgresql controller validators', () => {
       await controller.startMining(req as Request, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        error: null,
-        data: { miningId: 'pending-postgresql-task-manager' }
-      });
+      expect(tasksManager.createTask).toHaveBeenCalledWith(
+        'user-id',
+        'contacts',
+        100
+      );
     });
 
     it('returns 400 for invalid startMining payload', async () => {
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         params: { userId: 'user-id' },
@@ -446,7 +514,8 @@ describe('postgresql controller validators', () => {
 
     it('rejects unauthorized startMining', async () => {
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        createTasksManagerMock()
       );
       const req: MockRequest = {
         params: { userId: 'other-user' },
@@ -466,7 +535,8 @@ describe('postgresql controller validators', () => {
 
     it('returns 500 when previewQuery body throws', async () => {
       const controller = initializePostgresqlController(
-        createMiningSourcesMock()
+        createMiningSourcesMock(),
+        createTasksManagerMock()
       );
       const req = {
         get body() {

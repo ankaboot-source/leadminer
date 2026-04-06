@@ -6,6 +6,7 @@ import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
 import { createExtractor } from '../../services/extractors/Extractor';
 import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
 import { FileFormat } from '../../services/extractors/engines/FileImport';
+import { PostgreSQLFormat } from '../../services/extractors/engines/PostgreSQLImport';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
@@ -20,12 +21,12 @@ export interface EmailMessageData {
   /**
    * The hash of the userId
    */
-  type: 'file' | 'email';
+  type: 'file' | 'email' | 'postgresql';
   userIdentifier: string;
   userId: string;
   userEmail: string;
   miningId: string;
-  data: EmailFormat | FileFormat;
+  data: EmailFormat | FileFormat | PostgreSQLFormat;
 }
 
 /**
@@ -50,10 +51,28 @@ async function emailMessageHandler(
       catchAllDomainsCache,
       redisClientForNormalMode,
       taggingEngine: EmailTaggingEngine,
-      domainStatusVerification: checkDomainStatus
+      domainStatusVerification: checkDomainStatus,
+      logger,
+      onBatchProcessed: undefined
+    });
+
+    logger.info('Starting extraction', {
+      type: data.type,
+      miningId,
+      userId
     });
 
     const extractedContacts = await extractor.getContacts();
+
+    logger.info('Extraction completed', {
+      type: data.type,
+      miningId,
+      totalContacts: extractedContacts.persons.length,
+      totalOrganizations:
+        'organizations' in extractedContacts
+          ? extractedContacts.organizations.length
+          : 0
+    });
 
     let emails: string[] = [];
     try {
@@ -98,6 +117,31 @@ async function emailMessageHandler(
           miningId,
           progressType: 'createdContacts',
           count: input.length
+        })
+      );
+    }
+
+    // For PostgreSQL, publish totalImported FIRST so it's updated before extracted progress
+    if (data.type === 'postgresql') {
+      const totalCount = extractedContacts.persons.length;
+
+      // Publish totalImported FIRST to ensure backend updates task before extracted progress
+      redisClientForNormalMode.publish(
+        miningId,
+        JSON.stringify({
+          miningId,
+          progressType: 'totalImported',
+          count: totalCount
+        })
+      );
+
+      // THEN publish extracted count
+      redisClientForNormalMode.publish(
+        miningId,
+        JSON.stringify({
+          miningId,
+          progressType: 'extracted',
+          count: totalCount
         })
       );
     }

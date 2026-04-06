@@ -10,6 +10,9 @@ export default class RedisSubscriber<T> implements Subscriber<T> {
   ) {}
 
   subscribe(onMessage: (data: T) => void | Promise<void>) {
+    this.logger.info(
+      `Attempting to subscribe to redis channel ${this.channel}`
+    );
     try {
       this.redisClient.subscribe(this.channel, (err) => {
         if (err) {

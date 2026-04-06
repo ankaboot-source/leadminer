@@ -118,16 +118,25 @@ export default class MessagesConsumer {
             );
 
             const miningId = streamName.split('-')[1];
-            const extractionProgress = {
-              miningId,
-              progressType: 'extracted',
-              count: promises.length
-            };
 
-            this.redisClient.publish(
-              miningId,
-              JSON.stringify(extractionProgress)
+            // For PostgreSQL, progress is published incrementally via onBatchProcessed callback.
+            // Skip publishing extracted count here to avoid overwriting with incorrect value (1 message instead of actual rows).
+            const hasNonPostgreSQLMessages = data.some(
+              (message) => message.type !== 'postgresql'
             );
+
+            if (hasNonPostgreSQLMessages) {
+              const extractionProgress = {
+                miningId,
+                progressType: 'extracted',
+                count: promises.length
+              };
+
+              this.redisClient.publish(
+                miningId,
+                JSON.stringify(extractionProgress)
+              );
+            }
 
             return promises;
           } catch (err) {

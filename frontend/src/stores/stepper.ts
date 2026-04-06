@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
+import { useLeadminerStore } from './leadminer';
+
 export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const collapsed = ref(false);
   const index = ref(-1);
@@ -50,7 +52,8 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
 export const useStepperSourcePanel = defineStore(
   'mining-stepper-source-panel',
   () => {
-    const sourceOptions = computed(() => useLeadminerStore().miningSources);
+    const leadminerStore = useLeadminerStore();
+    const sourceOptions = computed(() => leadminerStore.miningSources);
 
     const showsOtherSources = ref(false);
 

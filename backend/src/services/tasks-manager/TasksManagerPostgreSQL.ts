@@ -20,6 +20,7 @@ interface TaskProcessProgress {
   verifiedContacts: number;
   createdContacts: number;
   extracted: number;
+  totalImported: number;
 }
 
 interface TaskProgress {
@@ -119,7 +120,10 @@ export default class TasksManagerPostgreSQL {
         return;
       }
 
-      if (count > 0) {
+      if (progressType === 'totalImported') {
+        this.updateTotalImported(miningId, count);
+        await this.hasCompleted(miningId);
+      } else if (count > 0) {
         this.updateProgress(miningId, progressType, count);
         this.notifyChanges(miningId, progressType);
 
@@ -247,6 +251,18 @@ export default class TasksManagerPostgreSQL {
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
+
+      logger.info('Stream registration commands sent', {
+        miningId,
+        extract: {
+          messagesStream: extract.details.stream.messagesStream,
+          emailsVerificationStream:
+            extract.details.stream.emailsVerificationStream
+        },
+        clean: {
+          emailsStream: clean.details.stream.emailsStream
+        }
+      });
 
       this.redisSubscriber.subscribe(miningId, (err) => {
         if (err) {
@@ -431,6 +447,27 @@ export default class TasksManagerPostgreSQL {
   }
 
   /**
+   * Updates the totalImported count for a mining task.
+   *
+   * @param miningId - The ID of the mining task to update.
+   * @param count - The new totalImported count.
+   */
+  private updateTotalImported(miningId: string, count: number): void {
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
+    if (!task) return;
+
+    task.progress.totalImported = count;
+
+    logger.debug('Updating totalImported', {
+      miningId,
+      totalImported: count
+    });
+
+    // Notify frontend about the updated total
+    this.notifyChanges(miningId, 'totalImported');
+  }
+
+  /**
    * Updates the progress of a mining task with a given mining ID.
    *
    * @param miningId - The ID of the mining task to update the progress for.
@@ -566,7 +603,8 @@ export default class TasksManagerPostgreSQL {
     const { extract, clean } = task.process;
     const progress = {
       ...extract.details.progress,
-      ...clean.details.progress
+      ...clean.details.progress,
+      totalImported: task.progress.totalImported
     };
     return progress;
   }

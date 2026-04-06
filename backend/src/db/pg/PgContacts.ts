@@ -11,6 +11,7 @@ import {
   ExportService,
   ExtractionResult,
   FileExtractionResult,
+  PostgreSQLExtractionResult,
   Tag
 } from '../types';
 
@@ -301,7 +302,7 @@ export default class PgContacts implements Contacts {
   }
 
   private async createContactsFromFile(
-    result: FileExtractionResult,
+    result: FileExtractionResult | PostgreSQLExtractionResult,
     userId: string,
     miningId: string
   ) {

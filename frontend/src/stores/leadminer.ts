@@ -54,6 +54,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const loadingStatusDns = ref(false);
 
   const totalMessages = ref(0);
+  const totalImported = ref(0);
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
   const verifiedContacts = ref(0);
@@ -103,6 +104,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatusDns.value = false;
 
     totalMessages.value = 0;
+    totalImported.value = 0;
     extractedEmails.value = 0;
     scannedEmails.value = 0;
     verifiedContacts.value = 0;
@@ -287,6 +289,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       onFetchedUpdate: (count) => {
         scannedEmails.value = count;
       },
+      onTotalImportedUpdate: (total) => {
+        totalImported.value = total;
+      },
       onClose: () => {
         sse.closeConnection();
       },
@@ -459,6 +464,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatusDns.value = true;
 
     totalMessages.value = 0;
+    totalImported.value = 0;
     scannedEmails.value = 0;
     extractedEmails.value = 0;
     createdContacts.value = 0;
@@ -511,6 +517,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       }
 
       totalMessages.value = task.progress?.totalMessages ?? 0;
+      totalImported.value = task.progress?.totalImported ?? 0;
       sse.closeConnection();
       startProgressListener(
         miningType.value,
@@ -521,7 +528,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
-      startMiningNotification();
+      startMiningNotification({
+        t,
+        dataPrivacyUrl: config.public.DATA_PRIVACY_URL,
+        toast: $toast,
+      });
     } catch (err) {
       sse.closeConnection();
       throw err;
@@ -610,6 +621,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       const { progress } = redactedTask;
       totalMessages.value = progress.totalMessages;
+      totalImported.value = progress.totalImported ?? 0;
       scannedEmails.value = progress.fetched ?? 0;
       extractedEmails.value = progress.extracted ?? 0;
       createdContacts.value = progress.createdContacts ?? 0;
@@ -669,6 +681,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatus,
     loadingStatusDns,
     totalMessages,
+    totalImported,
     extractedEmails,
     scannedEmails,
     createdContacts,

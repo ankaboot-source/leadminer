@@ -71,17 +71,17 @@ export function createStartMiningToastPayload({
   };
 }
 
-export function startMiningNotification() {
-  const { t } = useI18n({ useScope: 'global' });
-  const {
-    public: { DATA_PRIVACY_URL },
-  } = useRuntimeConfig();
-  const $toast = useToast();
+export function startMiningNotification(params?: {
+  t: (key: string) => string;
+  dataPrivacyUrl?: string;
+  toast: { add: (toast: unknown) => void };
+}) {
+  if (!params) return;
 
-  $toast.add(
+  params.toast.add(
     createStartMiningToastPayload({
-      t,
-      dataPrivacyUrl: DATA_PRIVACY_URL,
+      t: params.t,
+      dataPrivacyUrl: params.dataPrivacyUrl,
     }),
   );
 }

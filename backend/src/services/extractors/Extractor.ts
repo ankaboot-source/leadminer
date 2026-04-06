@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { Logger } from 'winston';
 import CatchAllDomainsCache from '../cache/CatchAllDomainsCache';
 import EmailStatusCache from '../cache/EmailStatusCache';
 import { TaggingEngine } from '../tagging/types';
@@ -7,8 +8,12 @@ import EmailMessage, {
   EmailFormat
 } from './engines/EmailMessage';
 import { CsvXlsxContactEngine, FileFormat } from './engines/FileImport';
+import {
+  PostgreSQLContactEngine,
+  PostgreSQLFormat
+} from './engines/PostgreSQLImport';
 
-export type ContactExtractorType = 'file' | 'email';
+export type ContactExtractorType = 'file' | 'email' | 'postgresql';
 
 export interface ExtractorEnablers {
   taggingEngine: TaggingEngine;
@@ -16,6 +21,8 @@ export interface ExtractorEnablers {
   emailStatusCache: EmailStatusCache;
   catchAllDomainsCache: CatchAllDomainsCache;
   domainStatusVerification: DomainStatusVerificationFunction;
+  logger?: Logger;
+  onBatchProcessed?: (batchSize: number) => void | Promise<void>;
 }
 
 /**
@@ -67,11 +74,28 @@ function createEmailExtractor(
   );
 }
 
+function createPostgreSQLExtractor(
+  enablers: ExtractorEnablers,
+  data: PostgreSQLFormat
+) {
+  if (!enablers.logger) {
+    throw new Error('Logger is required for PostgreSQL extractor');
+  }
+  return new PostgreSQLContactEngine(
+    enablers.taggingEngine,
+    enablers.redisClientForNormalMode,
+    enablers.domainStatusVerification,
+    enablers.logger,
+    data,
+    enablers.onBatchProcessed
+  );
+}
+
 export function createExtractor(
   type: ContactExtractorType,
   userId: string,
   userEmail: string,
-  data: EmailFormat | FileFormat,
+  data: EmailFormat | FileFormat | PostgreSQLFormat,
   enablers: ExtractorEnablers
 ) {
   if (['file'].includes(type)) {
@@ -84,6 +108,9 @@ export function createExtractor(
       data as EmailFormat,
       enablers
     );
+  }
+  if (type === 'postgresql') {
+    return createPostgreSQLExtractor(enablers, data as PostgreSQLFormat);
   }
 
   throw new Error(`Unsupported extractor type: ${type}`);

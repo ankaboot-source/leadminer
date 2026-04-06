@@ -31,6 +31,14 @@ export default class EmailVerificationConsumer {
 
     this.taskManagementSubscriber.subscribe(
       ({ miningId, command, emailsStream }) => {
+        this.logger.info('Received PubSub signal', {
+          miningId,
+          command,
+          emailsStream,
+          hasEmailsStream: !!emailsStream,
+          activeStreamsBefore: Array.from(this.activeStreams)
+        });
+
         if (emailsStream) {
           if (command === 'REGISTER') {
             this.activeStreams.add(emailsStream);
@@ -41,11 +49,12 @@ export default class EmailVerificationConsumer {
           }
         }
 
-        this.logger.debug('Received PubSub signal.', {
+        this.logger.debug('PubSub signal processed', {
           metadata: {
             miningId,
             command,
-            emailsStream
+            emailsStream,
+            activeStreamsAfter: Array.from(this.activeStreams)
           }
         });
       }
