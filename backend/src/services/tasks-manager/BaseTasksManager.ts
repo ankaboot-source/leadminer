@@ -486,10 +486,7 @@ export default abstract class BaseTasksManager {
     command: RedisCommand,
     stream: Partial<StreamInfo>
   ) {
-    const { streamName, consumerGroup } = stream as {
-      streamName?: string;
-      consumerGroup?: string;
-    };
+    const [streamName, consumerGroup] = Object.values(stream);
 
     if (!consumerGroup || !streamName) return;
 

@@ -6,7 +6,7 @@ import {
   RedactedTask,
   TaskProgressType
 } from './types';
-import { BaseTasksManager } from './BaseTasksManager';
+import BaseTasksManager from './BaseTasksManager';
 import ENV from '../../config';
 import SupabaseTasks from '../../db/supabase/tasks';
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';

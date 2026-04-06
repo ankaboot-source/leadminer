@@ -6,7 +6,7 @@ import {
   TaskProgress,
   TaskProgressType
 } from './types';
-import { BaseTasksManager } from './BaseTasksManager';
+import BaseTasksManager from './BaseTasksManager';
 import SupabaseTasks from '../../db/supabase/tasks';
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';

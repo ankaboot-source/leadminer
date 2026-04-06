@@ -29,7 +29,7 @@ import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../src/db/supabase/tasks';
-import TasksManager from '../../src/services/tasks-manager/TasksManager';
+import ImapTasksManager from '../../src/services/tasks-manager/ImapTasksManager';
 import redis from '../../src/utils/redis';
 import EmailFetcherClient from '../../src/services/email-fetching';
 
@@ -233,8 +233,8 @@ describe('Test TaskManager helper functions', () => {
   });
 });
 
-describe('TasksManager', () => {
-  let tasksManager: TasksManager;
+describe('ImapTasksManager', () => {
+  let tasksManager: ImapTasksManager;
   const fetcherOptions: ImapEmailsFetcherOptions = {
     email: 'abc123@test.io',
     userId: 'abc123',
@@ -243,8 +243,7 @@ describe('TasksManager', () => {
   };
 
   beforeEach(() => {
-    TasksManager.resetInstance(); // Reset singelton
-    tasksManager = new TasksManager(
+    tasksManager = new ImapTasksManager(
       tasksResolver,
       fakeRedisClient,
       fakeRedisClient,
@@ -258,272 +257,234 @@ describe('TasksManager', () => {
     jest.clearAllMocks();
   });
 
-  describe('TasksManager.constructor', () => {
-    it('should throw an error if constructed more than once', () => {
-      try {
-        /* eslint-disable-next-line no-new */
-        new TasksManager(
-          tasksResolver,
-          fakeRedisClient,
-          fakeRedisClient,
-          emailFetcherAPI as unknown as EmailFetcherClient,
-          sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
-          miningIdGenerator
-        );
+  describe('ImapTasksManager.createTask', () => {
+    it('should create a new mining task successfully', async () => {
+      const task = await tasksManager.createTask(fetcherOptions);
 
-        /* eslint-disable-next-line no-new */
-        new TasksManager(
-          tasksResolver,
-          fakeRedisClient,
-          fakeRedisClient,
-          emailFetcherAPI as unknown as EmailFetcherClient,
-          sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
-          miningIdGenerator
-        );
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error).toHaveProperty('message');
-        expect((error as Error).message).toEqual(
-          'TasksManager class cannot be instantiated more than once.'
-        );
-      }
-    });
+      expect(task).toBeDefined();
 
-    describe('TasksManager.createTask', () => {
-      it('should create a new mining task successfully', async () => {
-        const task = await tasksManager.createTask(fetcherOptions);
+      expect(miningIdGenerator).toHaveBeenCalledTimes(1);
+      expect(sseBroadcasterFactory.create).toHaveBeenCalledTimes(1);
+      expect(emailFetcherAPI.startFetch).toHaveBeenCalledTimes(1);
 
-        expect(task).toBeDefined();
-
-        expect(miningIdGenerator).toHaveBeenCalledTimes(1);
-        expect(sseBroadcasterFactory.create).toHaveBeenCalledTimes(1);
-        expect(emailFetcherAPI.startFetch).toHaveBeenCalledTimes(1);
-
-        expect(miningIdGenerator).toHaveBeenCalledWith();
-        expect(sseBroadcasterFactory.create).toHaveBeenCalledWith();
-        expect(emailFetcherAPI.startFetch).toHaveBeenCalledWith({
-          miningId: task.miningId,
-          contactStream: `messages_stream-${task.miningId}`,
-          userId: fetcherOptions.userId,
-          email: fetcherOptions.email,
-          boxes: fetcherOptions.boxes,
-          extractSignatures: ENV.IMAP_FETCH_BODY,
-          signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME
-        });
-
-        expect(tasksResolver.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'fetch',
-            category: TaskCategory.Mining,
-            status: TaskStatus.Running
-          })
-        );
-        expect(tasksResolver.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'extract',
-            category: TaskCategory.Mining,
-            status: TaskStatus.Running
-          })
-        );
-        expect(tasksResolver.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'clean',
-            category: TaskCategory.Cleaning,
-            status: TaskStatus.Running
-          })
-        );
-        expect(tasksResolver.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'enrich',
-            category: TaskCategory.Enriching,
-            status: TaskStatus.Running
-          })
-        );
-
-        expect(tasksResolver.create).toHaveBeenCalledTimes(4);
-        expect(fakeRedisClient.subscribe).toHaveBeenCalledTimes(1);
-        expect(fakeRedisClient.subscribe).toHaveBeenCalledWith(
-          task.miningId,
-          expect.any(Function)
-        );
-
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledTimes(2);
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
-          'CREATE',
-          `messages_stream-${task.miningId}`,
-          ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP,
-          '$',
-          'MKSTREAM'
-        );
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
-          'CREATE',
-          `emails_stream-${task.miningId}`,
-          ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP,
-          '$',
-          'MKSTREAM'
-        );
+      expect(miningIdGenerator).toHaveBeenCalledWith();
+      expect(sseBroadcasterFactory.create).toHaveBeenCalledWith();
+      expect(emailFetcherAPI.startFetch).toHaveBeenCalledWith({
+        miningId: task.miningId,
+        contactStream: `messages_stream-${task.miningId}`,
+        userId: fetcherOptions.userId,
+        email: fetcherOptions.email,
+        boxes: fetcherOptions.boxes,
+        extractSignatures: ENV.IMAP_FETCH_BODY,
+        signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME
       });
+
+      expect(tasksResolver.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'fetch',
+          category: TaskCategory.Mining,
+          status: TaskStatus.Running
+        })
+      );
+      expect(tasksResolver.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'extract',
+          category: TaskCategory.Mining,
+          status: TaskStatus.Running
+        })
+      );
+      expect(tasksResolver.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'clean',
+          category: TaskCategory.Cleaning,
+          status: TaskStatus.Running
+        })
+      );
+      expect(tasksResolver.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'enrich',
+          category: TaskCategory.Enriching,
+          status: TaskStatus.Running
+        })
+      );
+
+      expect(tasksResolver.create).toHaveBeenCalledTimes(4);
+      expect(fakeRedisClient.subscribe).toHaveBeenCalledTimes(1);
+      expect(fakeRedisClient.subscribe).toHaveBeenCalledWith(
+        task.miningId,
+        expect.any(Function)
+      );
+
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledTimes(2);
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+        'CREATE',
+        `messages_stream-${task.miningId}`,
+        ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP,
+        '$',
+        'MKSTREAM'
+      );
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+        'CREATE',
+        `emails_stream-${task.miningId}`,
+        ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP,
+        '$',
+        'MKSTREAM'
+      );
+    });
+  });
+
+  describe('ImapTasksManager.deleteTask', () => {
+    let task: RedactedTask;
+
+    beforeEach(async () => {
+      (fakeRedisClient.xgroup as jest.Mock).mockClear();
+      (tasksResolver.create as jest.Mock).mockClear();
+      (tasksResolver.update as jest.Mock).mockClear();
+      task = await tasksManager.createTask(fetcherOptions);
     });
 
-    describe('TasksManager.deleteTask', () => {
-      let task: RedactedTask;
+    it('should delete mining task successfully', async () => {
+      const deletedTask = await tasksManager.deleteTask(task.miningId, null);
 
-      beforeEach(async () => {
-        (fakeRedisClient.xgroup as jest.Mock).mockClear();
-        (tasksResolver.create as jest.Mock).mockClear();
+      expect(deletedTask).toBeDefined();
+      expect(deletedTask).toEqual(task);
+      expect(() => tasksManager.getActiveTask(deletedTask.miningId)).toThrow(
+        Error
+      );
+
+      expect(tasksResolver.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'fetch',
+          category: TaskCategory.Mining,
+          status: TaskStatus.Canceled
+        })
+      );
+      expect(tasksResolver.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'enrich',
+          category: TaskCategory.Enriching,
+          status: TaskStatus.Canceled
+        })
+      );
+      expect(tasksResolver.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'extract',
+          category: TaskCategory.Mining,
+          status: TaskStatus.Canceled
+        })
+      );
+      expect(tasksResolver.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'clean',
+          category: TaskCategory.Cleaning,
+          status: TaskStatus.Canceled
+        })
+      );
+
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledTimes(4);
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+        'DESTROY',
+        `messages_stream-${task.miningId}`,
+        ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
+      );
+      expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+        'DESTROY',
+        `emails_stream-${task.miningId}`,
+        ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
+      );
+    });
+
+    it('should stop process from list successfully', async () => {
+      const processKeys = Object.keys(task.processes);
+      for (let index = 0; index < processKeys.length; index += 1) {
         (tasksResolver.update as jest.Mock).mockClear();
-        task = await tasksManager.createTask(fetcherOptions);
-      });
+        (fakeRedisClient.xgroup as jest.Mock).mockClear();
+        const processKey = processKeys[index];
+        const process =
+          task.processes[processKey as keyof typeof task.processes];
 
-      it('should delete mining task successfully', async () => {
-        const deletedTask = await tasksManager.deleteTask(task.miningId, null);
+        // eslint-disable-next-line no-await-in-loop
+        const deletedTask = await tasksManager.deleteTask(task.miningId, [
+          process as string
+        ]);
 
         expect(deletedTask).toBeDefined();
         expect(deletedTask).toEqual(task);
-        expect(() => tasksManager.getActiveTask(deletedTask.miningId)).toThrow(
-          Error
-        );
+
+        const isLastProcess = index === processKeys.length - 1;
+        if (isLastProcess) {
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
+          expect(() => tasksManager.getActiveTask(task.miningId)).toThrow();
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
+          expect(() => tasksManager.getActiveTask(task.miningId)).not.toThrow();
+        }
 
         expect(tasksResolver.update).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: 'fetch',
-            category: TaskCategory.Mining,
-            status: TaskStatus.Canceled
-          })
-        );
-        expect(tasksResolver.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'enrich',
-            category: TaskCategory.Enriching,
-            status: TaskStatus.Canceled
-          })
-        );
-        expect(tasksResolver.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'extract',
-            category: TaskCategory.Mining,
-            status: TaskStatus.Canceled
-          })
-        );
-        expect(tasksResolver.update).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'clean',
-            category: TaskCategory.Cleaning,
+            type: processKey === 'signature' ? 'enrich' : processKey,
+            category:
+              // eslint-disable-next-line no-nested-ternary
+              processKey === 'clean'
+                ? TaskCategory.Cleaning
+                : processKey === 'signature'
+                  ? TaskCategory.Enriching
+                  : TaskCategory.Mining,
             status: TaskStatus.Canceled
           })
         );
 
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledTimes(4); // 4 commands: 2 CREATE 2 DESTROY
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
-          'DESTROY',
-          `messages_stream-${task.miningId}`,
-          ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
-        );
-        expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
-          'DESTROY',
-          `emails_stream-${task.miningId}`,
-          ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
-        );
-      });
+        const activeProcesses = processKeys.filter((key) => key !== processKey);
 
-      it('should stop process from list successfully', async () => {
-        const processKeys = Object.keys(task.processes);
-        for (let index = 0; index < processKeys.length; index += 1) {
-          (tasksResolver.update as jest.Mock).mockClear();
-          (fakeRedisClient.xgroup as jest.Mock).mockClear();
-          const processKey = processKeys[index];
-          const process =
-            task.processes[processKey as keyof typeof task.processes];
-
-          // eslint-disable-next-line no-await-in-loop
-          const deletedTask = await tasksManager.deleteTask(task.miningId, [
-            process as string
-          ]);
-
-          expect(deletedTask).toBeDefined();
-          expect(deletedTask).toEqual(task);
-
-          const isLastProcess = index === processKeys.length - 1;
-          if (isLastProcess) {
-            // eslint-disable-next-line @typescript-eslint/no-loop-func
-            expect(() => tasksManager.getActiveTask(task.miningId)).toThrow();
-          } else {
-            // eslint-disable-next-line @typescript-eslint/no-loop-func
-            expect(() =>
-              tasksManager.getActiveTask(task.miningId)
-            ).not.toThrow();
-          }
-
-          expect(tasksResolver.update).toHaveBeenCalledWith(
+        for (const activeProcessKey of activeProcesses) {
+          expect(tasksResolver.update).not.toHaveBeenCalledWith(
             expect.objectContaining({
-              type: processKey === 'signature' ? 'enrich' : processKey,
-              category:
-                // eslint-disable-next-line no-nested-ternary
-                processKey === 'clean'
-                  ? TaskCategory.Cleaning
-                  : processKey === 'signature'
-                    ? TaskCategory.Enriching
-                    : TaskCategory.Mining,
+              type: activeProcessKey,
               status: TaskStatus.Canceled
             })
           );
-
-          const activeProcesses = processKeys.filter(
-            (key) => key !== processKey
-          );
-
-          for (const activeProcessKey of activeProcesses) {
-            expect(tasksResolver.update).not.toHaveBeenCalledWith(
-              expect.objectContaining({
-                type: activeProcessKey,
-                status: TaskStatus.Canceled
-              })
-            );
-          }
-
-          if (['extract', 'clean'].includes(processKey)) {
-            const streamType =
-              processKey === 'clean' ? 'emails_stream' : 'messages_stream';
-            const consumerGroup =
-              processKey === 'clean'
-                ? ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
-                : ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP;
-            expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
-              'DESTROY',
-              `${streamType}-${task.miningId}`,
-              consumerGroup
-            );
-          }
         }
-      });
+
+        if (['extract', 'clean'].includes(processKey)) {
+          const streamType =
+            processKey === 'clean' ? 'emails_stream' : 'messages_stream';
+          const consumerGroup =
+            processKey === 'clean'
+              ? ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
+              : ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP;
+          expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+            'DESTROY',
+            `${streamType}-${task.miningId}`,
+            consumerGroup
+          );
+        }
+      }
+    });
+  });
+
+  describe('getActiveTask()', () => {
+    it('should return the task object if it exists', async () => {
+      const createdTask = await tasksManager.createTask(fetcherOptions);
+      const retrievedTask = tasksManager.getActiveTask(createdTask.miningId);
+
+      expect(retrievedTask.miningId).toBe(createdTask.miningId);
+      expect(retrievedTask).toEqual(createdTask);
     });
 
-    describe('getActiveTask()', () => {
-      it('should return the task object if it exists', async () => {
-        const createdTask = await tasksManager.createTask(fetcherOptions);
-        const retrievedTask = tasksManager.getActiveTask(createdTask.miningId);
-
-        expect(retrievedTask.miningId).toBe(createdTask.miningId);
-        expect(retrievedTask).toEqual(createdTask);
-      });
-
-      it('should throw an error if the task with the given mining ID does not exist', () => {
-        expect(() => tasksManager.getActiveTask('test-mining-id')).toThrow(
-          Error
-        );
-      });
+    it('should throw an error if the task with the given mining ID does not exist', () => {
+      expect(() => tasksManager.getActiveTask('test-mining-id')).toThrow(Error);
     });
+  });
 
-    describe('attachSSE()', () => {
-      it('should throw an error if the task with the given mining ID does not exist', () => {
-        const miningId = 'testing-mining-id';
-        const req = httpMocks.createRequest();
-        const res = httpMocks.createResponse();
+  describe('attachSSE()', () => {
+    it('should throw an error if the task with the given mining ID does not exist', () => {
+      const miningId = 'testing-mining-id';
+      const req = httpMocks.createRequest();
+      const res = httpMocks.createResponse();
 
-        expect(() => tasksManager.attachSSE(miningId, { req, res })).toThrow(
-          Error
-        );
-      });
+      expect(() => tasksManager.attachSSE(miningId, { req, res })).toThrow(
+        Error
+      );
     });
   });
 });
