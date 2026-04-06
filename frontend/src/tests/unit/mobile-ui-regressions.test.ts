@@ -20,24 +20,32 @@ describe('mobile ui regressions', () => {
     expect(routingMiddleware).toContain('const protectedPaths = [');
     expect(routingMiddleware).toContain("'/sources'");
     expect(routingMiddleware).toContain("'/campaigns'");
-    expect(routingMiddleware).toContain('if (!session && protectedPaths.some((path) => to.path.startsWith(path)))');
-    expect(routingMiddleware).toContain("return navigateTo({ name: 'auth-login' });");
+    expect(routingMiddleware).toContain(
+      'if (!session && protectedPaths.some((path) => to.path.startsWith(path)))',
+    );
+    expect(routingMiddleware).toContain(
+      "return navigateTo({ name: 'auth-login' });",
+    );
   });
 
   it('shows Sources in mobile burger menu', () => {
     const appHeader = readSource('src/components/AppHeader.vue');
 
-    expect(appHeader).toContain(":label=\"$t('common.sources')\"");
+    expect(appHeader).toContain(':label="$t(\'common.sources\')"');
     expect(appHeader).toContain('navigateTo(sourcesPath);');
   });
 
   it('uses compact contact count in table header on mobile', () => {
-    const miningTable = readSource('src/components/mining/table/MiningTable.vue');
+    const miningTable = readSource(
+      'src/components/mining/table/MiningTable.vue',
+    );
 
     expect(miningTable).toContain('formatContactsCountForHeader');
     expect(miningTable).toContain("notation: 'compact'");
     expect(miningTable).toContain('class="mx-2 leading-none"');
-    expect(miningTable).toContain('class="ml-auto flex items-center gap-1 shrink-0"');
+    expect(miningTable).toContain(
+      'class="ml-auto flex items-center gap-1 shrink-0"',
+    );
   });
 
   it('uses a single export menu button on mobile', () => {
@@ -46,12 +54,16 @@ describe('mobile ui regressions', () => {
     );
 
     expect(exportContacts).toContain('<template v-if="$screenStore.size.md">');
-    expect(exportContacts).toContain('<Menu ref="mobileExportMenu" :model="mobileExportItems" popup />');
+    expect(exportContacts).toContain(
+      '<Menu ref="mobileExportMenu" :model="mobileExportItems" popup />',
+    );
     expect(exportContacts).toContain('@click="toggleMobileExportMenu"');
   });
 
   it('hides fullscreen action on mobile', () => {
-    const miningTable = readSource('src/components/mining/table/MiningTable.vue');
+    const miningTable = readSource(
+      'src/components/mining/table/MiningTable.vue',
+    );
 
     expect(miningTable).toContain('class="hidden md:block"');
   });
