@@ -983,6 +983,9 @@ const CampaignComposerDialog = defineAsyncComponent(
 const SmsCampaignComposerDialog = defineAsyncComponent(
   () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
+const RemoveContactButton = defineAsyncComponent(
+  () => import('~/components/mining/buttons/RemoveContactButton.vue'),
+);
 
 const { showTable, origin } = defineProps<{
   showTable: boolean;

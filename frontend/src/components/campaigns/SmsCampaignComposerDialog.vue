@@ -368,6 +368,7 @@ import { useToast } from 'primevue/usetoast';
 import Menu from 'primevue/menu';
 import InputNumber from 'primevue/inputnumber';
 import type { Contact } from '~/types/contact';
+import FleetGatewaySelector from '~/components/sms-fleet/FleetGatewaySelector.vue';
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
