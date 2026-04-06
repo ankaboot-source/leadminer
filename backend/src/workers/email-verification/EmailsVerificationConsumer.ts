@@ -35,7 +35,7 @@ export default class EmailVerificationConsumer {
           miningId,
           command,
           emailsStream,
-          hasEmailsStream: !!emailsStream,
+          hasEmailsStream: Boolean(emailsStream),
           activeStreamsBefore: Array.from(this.activeStreams)
         });
 

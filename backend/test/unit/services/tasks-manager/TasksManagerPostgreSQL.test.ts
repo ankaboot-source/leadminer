@@ -279,7 +279,9 @@ describe('TasksManagerPostgreSQL', () => {
       expect(task.processes.extract).toBe(mockTaskExtract.id);
       expect(task.processes.clean).toBe(mockTaskClean.id);
       // Should be redacted - no progressHandlerSSE
-      expect((task as any).progressHandlerSSE).toBeUndefined();
+      expect(
+        (task as Record<string, unknown>).progressHandlerSSE
+      ).toBeUndefined();
     });
 
     it('should throw error when miningId does not exist', () => {
@@ -356,7 +358,7 @@ describe('TasksManagerPostgreSQL', () => {
 
       // Act & Assert
       await expect(
-        tasksManager.deleteTask(miningId, 'invalid' as any)
+        tasksManager.deleteTask(miningId, 'invalid' as unknown as string[])
       ).rejects.toThrow('processIds must be an array of strings');
     });
 

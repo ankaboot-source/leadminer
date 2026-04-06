@@ -181,7 +181,7 @@ export class PostgresQueryService {
 
   async *executeQueryStream(
     query: string,
-    batchSize: number = 1000
+    batchSize = 1000
   ): AsyncGenerator<QueryExecutionResult> {
     const safeBatchSize =
       Number.isInteger(batchSize) && batchSize > 0 ? batchSize : 1000;

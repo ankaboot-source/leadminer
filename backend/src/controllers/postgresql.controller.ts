@@ -280,9 +280,10 @@ export default function initializePostgresqlController(
         }
 
         if (validatedBody.saveConnection) {
+          const connectionName = validatedBody.connectionName?.trim() || '';
           await miningSources.upsert({
             userId: user.id,
-            email: validatedBody.connectionName!.trim(),
+            email: connectionName,
             type: 'postgresql',
             credentials
           });
