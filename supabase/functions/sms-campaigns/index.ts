@@ -1513,6 +1513,8 @@ app.post("/process", authMiddleware, async (c: Context) => {
     }
   > = new Map();
 
+  let fleetGateways: SmsFleetGateway[] = [];
+
   if (isFleetMode) {
     const { data: assignments } = await supabaseAdmin
       .schema("private")
@@ -1529,8 +1531,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
       const { data: gateways } = await supabaseAdmin
         .schema("private")
         .from("sms_fleet_gateways")
-        .select("id, config")
+        .select(
+          "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
+        )
         .in("id", gatewayIds);
+
+      fleetGateways = (gateways || []) as SmsFleetGateway[];
 
       const gatewayConfigs = new Map(
         (gateways || []).map((g) => [g.id, g.config]),
@@ -1757,7 +1763,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
           if (!currentProvider) {
             throw new Error(
-              `Failed to create provider for gateway ${gateway?.name || "unknown"}`,
+              `Failed to create provider for gateway ${
+                gateway?.name || "unknown"
+              }`,
             );
           }
         }
