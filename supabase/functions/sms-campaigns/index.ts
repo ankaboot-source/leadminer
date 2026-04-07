@@ -1603,6 +1603,25 @@ app.post("/process", authMiddleware, async (c: Context) => {
   const MAX_CONSECUTIVE_FAILURES = 5;
   const MAX_RETRIES = 2;
 
+  // Use Case 2 Fix: Check quota limits before processing
+  // Mark gateways as failed if they've exceeded their daily limit
+  if (isFleetMode && fleetGateways && fleetGateways.length > 0) {
+    for (const gateway of fleetGateways) {
+      if (
+        gateway.daily_limit > 0 &&
+        gateway.sent_today >= gateway.daily_limit
+      ) {
+        failedGateways.add(gateway.id);
+        logger.warn("Gateway quota exceeded, marking as unavailable", {
+          gatewayId: gateway.id,
+          gatewayName: gateway.name,
+          dailyLimit: gateway.daily_limit,
+          sentToday: gateway.sent_today,
+        });
+      }
+    }
+  }
+
   for (const recipient of recipients || []) {
     let currentAttempt = 0;
     let sendSuccess = false;
@@ -1615,11 +1634,17 @@ app.post("/process", authMiddleware, async (c: Context) => {
           smsProvider;
         let providerUsed = selectedProvider;
 
+        // Use Case 5 Fix: Track error types for differentiated handling
+        let isPermanentError = false;
+        let isRateLimitError = false;
+        let shouldSkipRetry = false;
+
         if (isFleetMode) {
           const gateway = gatewayAssignments.get(recipient.id);
 
-          // Check if gateway is marked as failed and we should try reassignment
-          if (gateway && failedGateways.has(gateway.id) && currentAttempt > 0) {
+          // UseCase 3 Fix: Immediate reassignment if gateway already marked as failed
+          // Don't waste retries on known-failed gateways
+          if (gateway && failedGateways.has(gateway.id)) {
             // Try to find alternative gateway
             const alternativeGateway = findAlternativeGateway(
               recipient.id,
@@ -1813,35 +1838,72 @@ app.post("/process", authMiddleware, async (c: Context) => {
             }
           }
         } else {
+          // Use Case 5 Fix: Categorize errors for differentiated handling
+          const errorMessage =
+            typeof result.error === "string"
+              ? result.error
+              : JSON.stringify(result.error);
+
+          // Permanent errors - no retry, mark gateway failed immediately
+          isPermanentError =
+            errorMessage.includes("401") ||
+            errorMessage.includes("403") ||
+            errorMessage.includes("invalid_credentials") ||
+            errorMessage.includes("authentication failed") ||
+            errorMessage.includes("unauthorized");
+
+          // Rate limit errors - longer backoff
+          isRateLimitError =
+            errorMessage.includes("429") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("too many requests");
+
           // Track gateway failure
           if (isFleetMode) {
             const gateway = gatewayAssignments.get(recipient.id);
             if (gateway) {
-              const failures = (gatewayFailureCount.get(gateway.id) || 0) + 1;
-              gatewayFailureCount.set(gateway.id, failures);
-
-              if (
-                failures >= MAX_CONSECUTIVE_FAILURES &&
-                !failedGateways.has(gateway.id)
-              ) {
+              if (isPermanentError) {
+                // Mark gateway as failed immediately, no retry
                 failedGateways.add(gateway.id);
-                logger.warn("Gateway marked as failed", {
+                logger.error("Permanent gateway error, marking as failed", {
                   gatewayId: gateway.id,
                   gatewayName: gateway.name,
-                  consecutiveFailures: failures,
+                  error: result.error,
+                  recipientId: recipient.id,
                 });
+                lastError = `Permanent error: ${result.error}`;
+                shouldSkipRetry = true;
+              } else {
+                const failures = (gatewayFailureCount.get(gateway.id) || 0) + 1;
+                gatewayFailureCount.set(gateway.id, failures);
+
+                if (
+                  failures >= MAX_CONSECUTIVE_FAILURES &&
+                  !failedGateways.has(gateway.id)
+                ) {
+                  failedGateways.add(gateway.id);
+                  logger.warn("Gateway marked as failed", {
+                    gatewayId: gateway.id,
+                    gatewayName: gateway.name,
+                    consecutiveFailures: failures,
+                  });
+                }
               }
             }
           }
 
-          lastError = result.error || "Unknown send error";
-          currentAttempt++;
+          if (!shouldSkipRetry) {
+            lastError = result.error || "Unknown send error";
+            currentAttempt++;
 
-          // Exponential backoff before retry
-          if (currentAttempt < MAX_RETRIES) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, Math.pow(2, currentAttempt) * 1000),
-            );
+            // Exponential backoff before retry
+            // Use Case 5 Fix: Longer backoff for rate limit errors
+            const backoffDelay = isRateLimitError
+              ? 60000
+              : Math.pow(2, currentAttempt) * 1000;
+            if (currentAttempt < MAX_RETRIES) {
+              await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+            }
           }
         }
       } catch (err) {
