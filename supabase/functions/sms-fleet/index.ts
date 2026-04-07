@@ -12,10 +12,19 @@ const logger = createLogger("sms-fleet");
 const functionName = "sms-fleet";
 
 const gatewaySchema = z.object({
+  name: z.string().min(1),
   provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
-  base_url: z.string().url().optional(),
-  api_key: z.string().min(1),
-  sender_id: z.string().optional(),
+  config: z.record(z.unknown()),
+  daily_limit: z.number().int().min(0).optional(),
+  monthly_limit: z.number().int().min(0).optional(),
+  is_active: z.boolean().optional(),
+});
+
+const updateSchema = z.object({
+  name: z.string().min(1).optional(),
+  config: z.record(z.unknown()).optional(),
+  daily_limit: z.number().int().min(0).optional(),
+  monthly_limit: z.number().int().min(0).optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -77,6 +86,7 @@ app.get("/gateways", authMiddleware, async (c) => {
     const supabaseAdmin = createSupabaseAdmin();
 
     const { data, error } = await supabaseAdmin
+      .schema("private")
       .from("sms_fleet_gateways")
       .select("*")
       .eq("user_id", user.id)
@@ -119,14 +129,16 @@ app.post("/gateways", authMiddleware, async (c) => {
 
     const gateway = {
       user_id: user.id,
+      name: validation.data.name,
       provider: validation.data.provider,
-      base_url: validation.data.base_url ?? null,
-      api_key: validation.data.api_key,
-      sender_id: validation.data.sender_id ?? null,
+      config: validation.data.config,
+      daily_limit: validation.data.daily_limit ?? 0,
+      monthly_limit: validation.data.monthly_limit ?? 0,
       is_active: validation.data.is_active ?? true,
     };
 
     const { data, error } = await supabaseAdmin
+      .schema("private")
       .from("sms_fleet_gateways")
       .insert(gateway)
       .select()
@@ -155,6 +167,64 @@ app.post("/gateways", authMiddleware, async (c) => {
   }
 });
 
+app.put("/gateways/:id", authMiddleware, async (c) => {
+  try {
+    const user = c.get("user");
+    const id = c.req.param("id");
+    const body = await c.req.json();
+
+    const validation = updateSchema.safeParse(body);
+    if (!validation.success) {
+      return c.json(
+        {
+          error: "Invalid gateway data",
+          details: validation.error.errors,
+        },
+        400,
+      );
+    }
+
+    const supabaseAdmin = createSupabaseAdmin();
+
+    const { data, error } = await supabaseAdmin
+      .schema("private")
+      .from("sms_fleet_gateways")
+      .update({
+        ...validation.data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error("Failed to update gateway", {
+        userId: user.id,
+        gatewayId: id,
+        error: error.message,
+      });
+      return c.json({ error: error.message }, 500);
+    }
+
+    if (!data) {
+      return c.json({ error: "Gateway not found" }, 404);
+    }
+
+    logger.info("Gateway updated", {
+      userId: user.id,
+      gatewayId: data.id,
+    });
+
+    return c.json(data);
+  } catch (error) {
+    logger.error("Unexpected error in PUT /gateways/:id", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 app.delete("/gateways/:id", authMiddleware, async (c) => {
   try {
     const user = c.get("user");
@@ -162,6 +232,7 @@ app.delete("/gateways/:id", authMiddleware, async (c) => {
     const supabaseAdmin = createSupabaseAdmin();
 
     const { error } = await supabaseAdmin
+      .schema("private")
       .from("sms_fleet_gateways")
       .delete()
       .eq("id", id)
