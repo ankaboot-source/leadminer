@@ -11,7 +11,7 @@ const mockEdgeFn = vi.fn();
 vi.mock('#imports', () => ({
   useSupabaseClient: () => mockSupabase,
   useNuxtApp: () => ({ $saasEdgeFunctions: mockEdgeFn }),
-  defineStore: (id: string, setup: Function) => setup,
+  defineStore: (id: string, setup: () => unknown) => setup,
   ref: ref,
   computed: computed,
 }));

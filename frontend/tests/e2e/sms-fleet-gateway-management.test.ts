@@ -6,7 +6,7 @@ import PrimeVue from 'primevue/config';
 import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
 import ProviderForm from '~/components/sms-fleet/ProviderForm.vue';
 
-let mockGateways = ref<any[]>([]);
+const mockGateways = ref<any[]>([]);
 const mockFetchGateways = vi.fn().mockResolvedValue(undefined);
 const mockCreateGateway = vi.fn().mockImplementation((data) => {
   const gateway = {
@@ -319,15 +319,6 @@ describe('SMS Fleet Gateway Management E2E', () => {
           updated_at: new Date().toISOString(),
         },
       ];
-
-      const wrapper = mount(SmsFleetManagement, {
-        global: {
-          plugins: [PrimeVue],
-          stubs: commonStubs,
-        },
-      });
-
-      await flushPromises();
 
       // Step 9: Verify 2 gateways in store
       expect(mockGateways.value).toHaveLength(2);

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { shallowMount } from '@vue/test-utils';
-import { createApp, ref, defineComponent } from 'vue';
+import { createApp, ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { readFileSync } from 'fs';
 import PrimeVue from 'primevue/config';
@@ -111,7 +110,6 @@ describe('SmsFleetManagement Store Integration', () => {
   });
 
   it('mocked store methods are properly defined', () => {
-    const store = vi.mocked(vi.importMock('~/stores/sms-fleet'));
     // This test verifies our mocks are working
     expect(mockCreateGateway).toBeDefined();
     expect(mockDeleteGateway).toBeDefined();
