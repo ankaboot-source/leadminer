@@ -655,7 +655,7 @@ function distributeRecipientsToGateways(
   gateways: SmsFleetGateway[],
 ): Map<string, SmsFleetGateway> {
   const assignments = new Map<string, SmsFleetGateway>();
-  
+
   if (gateways.length === 0) {
     return assignments;
   }
@@ -668,36 +668,36 @@ function distributeRecipientsToGateways(
   });
 
   let gatewayIndex = 0;
-  
+
   for (const recipient of recipients) {
     // Find next available gateway with capacity
     let attempts = 0;
     let assigned = false;
-    
+
     while (attempts < sortedGateways.length && !assigned) {
       const gateway = sortedGateways[gatewayIndex % sortedGateways.length];
-      
+
       // Check if gateway has capacity (0 = unlimited)
-      const hasCapacity = gateway.daily_limit === 0 || 
-        gateway.sent_today < gateway.daily_limit;
-      
+      const hasCapacity =
+        gateway.daily_limit === 0 || gateway.sent_today < gateway.daily_limit;
+
       if (hasCapacity) {
         assignments.set(recipient, gateway);
         gateway.sent_today++;
         assigned = true;
       }
-      
+
       gatewayIndex++;
       attempts++;
     }
-    
+
     // If no gateway has capacity, assign to first gateway anyway
     // (it will fail during processing but be tracked)
     if (!assigned) {
       assignments.set(recipient, sortedGateways[0]);
     }
   }
-  
+
   return assignments;
 }
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
@@ -723,7 +723,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     fleetMode,
     selectedGatewayIds,
   } = payload;
-  
+
   const isFleetMode = fleetMode === true;
 
   if (!senderName || !messageTemplate) {
@@ -758,30 +758,40 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
-const userTimezone = timezone || "UTC";
+  const userTimezone = timezone || "UTC";
   const supabaseAdmin = createSupabaseAdmin();
-  
+
   // Handle Fleet Mode
   let fleetGateways: SmsFleetGateway[] = [];
   if (isFleetMode) {
     if (!selectedGatewayIds || selectedGatewayIds.length === 0) {
       return c.json(
-        { error: "No gateways selected for fleet mode", code: "NO_GATEWAYS_SELECTED" },
+        {
+          error: "No gateways selected for fleet mode",
+          code: "NO_GATEWAYS_SELECTED",
+        },
         400,
       );
     }
-    
-    fleetGateways = await getUserFleetGateways(supabaseAdmin, user.id, selectedGatewayIds);
-    
+
+    fleetGateways = await getUserFleetGateways(
+      supabaseAdmin,
+      user.id,
+      selectedGatewayIds,
+    );
+
     if (fleetGateways.length === 0) {
       return c.json(
-        { error: "Selected gateways not found or inactive", code: "GATEWAYS_NOT_FOUND" },
+        {
+          error: "Selected gateways not found or inactive",
+          code: "GATEWAYS_NOT_FOUND",
+        },
         400,
       );
     }
   }
 
-  const selectedProvider = isFleetMode ? "fleet" : (provider || "smsgate");
+  const selectedProvider = isFleetMode ? "fleet" : provider || "smsgate";
   const smsgateUsername = smsgateConfig?.username?.trim() || "";
   const smsgatePassword = smsgateConfig?.password?.trim() || "";
   const smsgateBaseUrl =
@@ -831,7 +841,7 @@ const userTimezone = timezone || "UTC";
         }
       : null);
 
-// Validate single provider configuration (only for non-fleet mode)
+  // Validate single provider configuration (only for non-fleet mode)
   if (!isFleetMode) {
     if (selectedProvider === "smsgate" && !smsgateCredentials) {
       return c.json(
@@ -868,7 +878,6 @@ const userTimezone = timezone || "UTC";
         400,
       );
     }
-  }
   }
 
   const quotaCheck = await checkSmsQuota(
@@ -975,7 +984,7 @@ const userTimezone = timezone || "UTC";
     );
   }
 
-// Distribute recipients to gateways in fleet mode
+  // Distribute recipients to gateways in fleet mode
   if (isFleetMode && fleetGateways.length > 0) {
     // Fetch the inserted recipients to get their IDs
     const { data: insertedRecipients } = await supabaseAdmin
@@ -1020,7 +1029,7 @@ const userTimezone = timezone || "UTC";
     }
   }
 
-triggerSmsCampaignProcessorFromEdge().catch((error) => {
+  triggerSmsCampaignProcessorFromEdge().catch((error) => {
     logger.error("Failed to trigger SMS campaign processor", {
       error: error instanceof Error ? error.message : String(error),
       campaignId: campaign.id,
@@ -1428,7 +1437,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .eq("campaign_id", resolvedCampaignId)
     .eq("send_status", "pending");
 
-const isFleetMode = campaign.fleet_mode_enabled === true;
+  const isFleetMode = campaign.fleet_mode_enabled === true;
   const selectedProvider = campaign.provider as
     | "smsgate"
     | "simple-sms-gateway"
@@ -1438,9 +1447,14 @@ const isFleetMode = campaign.fleet_mode_enabled === true;
   // Load gateway assignments for fleet mode
   let gatewayAssignments: Map<
     string,
-    { id: string; name: string; provider: string; config: Record<string, string> }
+    {
+      id: string;
+      name: string;
+      provider: string;
+      config: Record<string, string>;
+    }
   > = new Map();
-  
+
   if (isFleetMode) {
     const { data: assignments } = await supabaseAdmin
       .schema("private")
@@ -1453,7 +1467,7 @@ const isFleetMode = campaign.fleet_mode_enabled === true;
       const gatewayIds = assignments
         .map((a) => a.gateway_id)
         .filter((id): id is string => id !== null);
-      
+
       const { data: gateways } = await supabaseAdmin
         .schema("private")
         .from("sms_fleet_gateways")
@@ -1528,7 +1542,8 @@ const isFleetMode = campaign.fleet_mode_enabled === true;
   for (const recipient of recipients || []) {
     try {
       // For fleet mode, get the assigned gateway and create provider
-      let currentProvider: ReturnType<typeof createSmsProvider> | undefined = smsProvider;
+      let currentProvider: ReturnType<typeof createSmsProvider> | undefined =
+        smsProvider;
       let providerUsed = selectedProvider;
 
       if (isFleetMode) {
@@ -1573,7 +1588,9 @@ const isFleetMode = campaign.fleet_mode_enabled === true;
 
         currentProvider = providerCache.get(cacheKey);
         if (!currentProvider) {
-          throw new Error(`Failed to create provider for gateway ${gateway.name}`);
+          throw new Error(
+            `Failed to create provider for gateway ${gateway.name}`,
+          );
         }
       }
 
@@ -1616,13 +1633,13 @@ const isFleetMode = campaign.fleet_mode_enabled === true;
         messageWithTrackers += `\n\n${renderedFooter}`;
       }
 
-const result: SendSmsResult = await currentProvider.send({
+      const result: SendSmsResult = await currentProvider.send({
         to: recipient.phone,
         from: "",
         body: messageWithTrackers,
       });
 
-const providerUsed = selectedProvider;
+      const providerUsed = selectedProvider;
 
       if (result.success) {
         await supabaseAdmin
@@ -1636,6 +1653,19 @@ const providerUsed = selectedProvider;
           })
           .eq("id", recipient.id);
         sentCount++;
+
+        // Increment gateway sent counters for fleet mode
+        if (isFleetMode) {
+          const gateway = gatewayAssignments.get(recipient.id);
+          if (gateway) {
+            await supabaseAdmin
+              .schema("private")
+              .rpc("increment_gateway_sent_count", {
+                p_gateway_id: gateway.id,
+                p_count: 1,
+              });
+          }
+        }
       } else {
         await supabaseAdmin
           .schema("private")
@@ -1760,7 +1790,7 @@ app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
   };
 
   const supabaseAdmin = createSupabaseAdmin();
-  
+
   // Verify ownership
   const { data: existing } = await supabaseAdmin
     .schema("private")
@@ -1842,7 +1872,11 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
     let testResult: { success: boolean; message: string };
 
     if (gateway.provider === "smsgate") {
-      const config = gateway.config as { baseUrl?: string; username?: string; password?: string };
+      const config = gateway.config as {
+        baseUrl?: string;
+        username?: string;
+        password?: string;
+      };
       if (!config.baseUrl || !config.username || !config.password) {
         testResult = { success: false, message: "Missing SMSGate credentials" };
       } else {
@@ -1872,10 +1906,13 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
 
     return c.json(testResult);
   } catch (error) {
-    return c.json({
-      success: false,
-      message: error instanceof Error ? error.message : "Test failed",
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Test failed",
+      },
+      500,
+    );
   }
 });
 
