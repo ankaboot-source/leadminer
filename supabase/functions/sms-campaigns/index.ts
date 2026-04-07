@@ -1539,6 +1539,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
   // Provider cache for fleet mode to avoid recreating providers
   const providerCache = new Map<string, ReturnType<typeof createSmsProvider>>();
 
+  // Track gateway failures for automatic failover
+  const gatewayFailureCount = new Map<string, number>();
+  const failedGateways = new Set<string>();
+  const MAX_CONSECUTIVE_FAILURES = 5;
+  const MAX_RETRIES = 2;
+
   for (const recipient of recipients || []) {
     try {
       // For fleet mode, get the assigned gateway and create provider
