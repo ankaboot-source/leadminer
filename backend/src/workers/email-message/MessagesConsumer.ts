@@ -14,11 +14,11 @@ export interface PubSubMessage {
   command: 'REGISTER' | 'DELETE';
   messagesStream: string;
   messagesConsumerGroup: string;
-  emailsVerificationStream: string;
+  emailsVerificationStream?: string;
 }
 
 interface StreamEntry {
-  emailsStreamProducer: StreamProducer<EmailVerificationData>;
+  emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
   queuedEmailsCache: QueuedEmailsCache;
 }
 
@@ -33,7 +33,7 @@ export default class MessagesConsumer {
     private readonly batchSize: number,
     private readonly messageProcessor: (
       data: EmailMessageData,
-      emailsStreamProducer: StreamProducer<EmailVerificationData>,
+      emailsStreamProducer: StreamProducer<EmailVerificationData> | null,
       queuedEmailsCache: QueuedEmailsCache
     ) => void,
     private readonly redisClient: Redis,
@@ -55,18 +55,19 @@ export default class MessagesConsumer {
               miningId
             );
 
-            const emailsStreamProducer =
-              new RedisStreamProducer<EmailVerificationData>(
-                redisClient,
-                emailsVerificationStream,
-                this.logger
-              );
+            const emailsStreamProducer = emailsVerificationStream
+              ? new RedisStreamProducer<EmailVerificationData>(
+                  redisClient,
+                  emailsVerificationStream,
+                  this.logger
+                )
+              : null;
 
             this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
               queuedEmailsCache
             });
-          } else {
+          } else if (command === 'DELETE') {
             const streamEntry = this.activeStreams.get(messagesStream);
             if (streamEntry) {
               await streamEntry.queuedEmailsCache.destroy();
@@ -80,7 +81,7 @@ export default class MessagesConsumer {
             miningId,
             command,
             messagesStream,
-            emailsVerificationStream
+            emailsVerificationStream: emailsVerificationStream ?? 'not provided'
           }
         });
       }

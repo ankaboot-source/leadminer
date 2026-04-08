@@ -146,7 +146,14 @@ export default class TasksManager {
    * @throws {Error} If there is an error when creating the task.
    */
   async createTask(
-    { email, boxes, fetchEmailBody, userId, since }: ImapEmailsFetcherOptions,
+    {
+      email,
+      boxes,
+      fetchEmailBody,
+      userId,
+      since,
+      cleaningEnabled = true
+    }: ImapEmailsFetcherOptions,
     passive_mining = false
   ): Promise<RedactedTask> {
     let miningTaskId: string | null = null;
@@ -213,7 +220,9 @@ export default class TasksManager {
               stream: {
                 messagesStream,
                 messagesConsumerGroup,
-                emailsVerificationStream: emailsStream
+                ...(cleaningEnabled && {
+                  emailsVerificationStream: emailsStream
+                })
               },
               progress: {
                 extracted: 0
@@ -225,19 +234,23 @@ export default class TasksManager {
             userId,
             category: TaskCategory.Cleaning,
             type: TaskType.Clean,
-            status: TaskStatus.Running,
+            status: cleaningEnabled ? TaskStatus.Running : TaskStatus.Done,
             details: {
               miningId,
-              stream: {
-                emailsStream,
-                emailsConsumerGroup
-              },
+              enabled: cleaningEnabled,
+              stream: cleaningEnabled
+                ? {
+                    emailsStream,
+                    emailsConsumerGroup
+                  }
+                : {},
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
               },
               passive_mining
-            }
+            },
+            ...(cleaningEnabled ? {} : { stoppedAt: new Date().toISOString() })
           }
         },
         progress: {
@@ -257,22 +270,29 @@ export default class TasksManager {
       const taskFetch = await this.tasksResolver.create(fetch);
       const taskSignature = await this.tasksResolver.create(signature);
       const taskExtract = await this.tasksResolver.create(extract);
-      const taskClean = await this.tasksResolver.create(clean);
+      const taskClean = cleaningEnabled
+        ? await this.tasksResolver.create(clean)
+        : null;
 
       miningTask.process.fetch.id = taskFetch.id;
       miningTask.process.signature.id = taskSignature.id;
       miningTask.process.extract.id = taskExtract.id;
-      miningTask.process.clean.id = taskClean.id;
+      if (taskClean) {
+        miningTask.process.clean.id = taskClean.id;
+        miningTask.process.clean.startedAt = taskClean.startedAt;
+      }
 
       miningTask.process.fetch.startedAt = taskFetch.startedAt;
       miningTask.process.signature.startedAt = taskSignature.startedAt;
       miningTask.process.extract.startedAt = taskExtract.startedAt;
-      miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
+      // Only register streams for enabled tasks
+      const tasksToRegister = cleaningEnabled ? [extract, clean] : [extract];
+
       await Promise.all(
-        [extract, clean].map((p) =>
+        tasksToRegister.map((p) =>
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
@@ -614,13 +634,16 @@ export default class TasksManager {
       this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
     }
 
+    // Stop clean task if disabled or completed
     if (
       !clean.stoppedAt &&
-      extract.stoppedAt &&
-      progress.verifiedContacts >= progress.createdContacts
+      (!clean.details.enabled ||
+        (extract.stoppedAt &&
+          progress.verifiedContacts >= progress.createdContacts))
     ) {
       logger.debug('[Progress update]: stopping cleaning task', {
         status: clean.status,
+        enabled: clean.details.enabled,
         started_at: clean.startedAt,
         stopped_at: clean.stoppedAt,
         progress
