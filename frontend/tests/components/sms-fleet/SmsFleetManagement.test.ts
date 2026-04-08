@@ -6,7 +6,7 @@ import PrimeVue from 'primevue/config';
 
 // Read component source to verify imports and store usage
 const COMPONENT_PATH =
-  '/home/badreddine/Projects/leadminer/.worktrees/sms-campaigns/.worktrees/fleet-mode/frontend/src/components/sms-fleet/SmsFleetManagement.vue';
+  '/home/badreddine/Projects/leadminer/.worktrees/sms-fleet-mode/frontend/src/components/sms-fleet/SmsFleetManagement.vue';
 
 const mockGateways = ref<any[]>([]);
 const mockFetchGateways = vi.fn().mockResolvedValue(undefined);

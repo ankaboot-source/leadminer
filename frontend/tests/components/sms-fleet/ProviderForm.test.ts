@@ -20,6 +20,10 @@ describe('ProviderForm', () => {
             template:
               '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" />',
           },
+          Password: {
+            template:
+              '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" />',
+          },
           Button: {
             template:
               '<button type="submit" :disabled="$attrs.disabled">{{ label }}</button>',
@@ -28,8 +32,9 @@ describe('ProviderForm', () => {
         },
       },
     });
+    expect(wrapper.find('input[name="username"]').exists()).toBe(true);
+    expect(wrapper.find('input[name="password"]').exists()).toBe(true);
     expect(wrapper.find('input[name="baseUrl"]').exists()).toBe(true);
-    expect(wrapper.find('input[name="apiKey"]').exists()).toBe(true);
   });
 
   it('emits "valid" event when form is valid', async () => {
@@ -44,6 +49,10 @@ describe('ProviderForm', () => {
             template:
               '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
           },
+          Password: {
+            template:
+              '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+          },
           Button: {
             template:
               '<button type="submit" :disabled="$attrs.disabled">{{ label }}</button>',
@@ -52,10 +61,11 @@ describe('ProviderForm', () => {
         },
       },
     });
+    await wrapper.find('input[name="username"]').setValue('testuser');
+    await wrapper.find('input[name="password"]').setValue('testpass');
     await wrapper
       .find('input[name="baseUrl"]')
       .setValue('https://api.smsgate.com');
-    await wrapper.find('input[name="apiKey"]').setValue('test-api-key');
     expect(wrapper.emitted('valid')?.at(-1)).toEqual([true]);
   });
 
@@ -71,6 +81,10 @@ describe('ProviderForm', () => {
             template:
               '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
           },
+          Password: {
+            template:
+              '<input :name="$attrs.name" :type="$attrs.type" :placeholder="$attrs.placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+          },
           Button: {
             template:
               '<button type="submit" :disabled="$attrs.disabled">{{ label }}</button>',
@@ -79,16 +93,20 @@ describe('ProviderForm', () => {
         },
       },
     });
+    await wrapper.find('input[name="username"]').setValue('testuser');
+    await wrapper.find('input[name="password"]').setValue('testpass');
     await wrapper
       .find('input[name="baseUrl"]')
       .setValue('https://api.smsgate.com');
-    await wrapper.find('input[name="apiKey"]').setValue('test-api-key');
     await wrapper.find('form').trigger('submit');
     expect(wrapper.emitted('submit')).toBeTruthy();
     expect(wrapper.emitted('submit')![0][0]).toEqual({
       provider: 'smsgate',
-      baseUrl: 'https://api.smsgate.com',
-      apiKey: 'test-api-key',
+      config: {
+        baseUrl: 'https://api.smsgate.com',
+        username: 'testuser',
+        password: 'testpass',
+      },
     });
   });
 });

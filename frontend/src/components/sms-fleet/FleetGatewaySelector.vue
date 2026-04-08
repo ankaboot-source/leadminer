@@ -1,16 +1,5 @@
 <template>
   <div class="flex flex-col gap-3">
-    <div class="flex items-center justify-between">
-      <label class="text-sm font-medium">{{ t('sms_gateways') }}</label>
-      <Button
-        text
-        size="small"
-        icon="pi pi-plus"
-        :label="t('add_gateway')"
-        @click="$emit('add-gateway')"
-      />
-    </div>
-
     <div v-if="$smsFleetStore.isLoading" class="flex justify-center py-4">
       <ProgressSpinner style="width: 2rem; height: 2rem" />
     </div>
@@ -24,7 +13,8 @@
       <Button
         text
         size="small"
-        :label="t('configure_gateway')"
+        icon="pi pi-plus"
+        :label="t('add_gateway')"
         @click="$emit('add-gateway')"
       />
     </div>
@@ -166,9 +156,8 @@ const formatProvider = (provider: SmsGatewayProvider) => {
 {
   "en": {
     "sms_gateways": "SMS Gateways",
-    "add_gateway": "Add Gateway",
+    "add_gateway": "Add a gateway",
     "no_gateways": "No SMS gateways configured",
-    "configure_gateway": "Configure a gateway",
     "today": "today",
     "sent_today": "sent today",
     "inactive": "Inactive",
@@ -180,7 +169,6 @@ const formatProvider = (provider: SmsGatewayProvider) => {
     "sms_gateways": "Passerelles SMS",
     "add_gateway": "Ajouter une passerelle",
     "no_gateways": "Aucune passerelle SMS configurée",
-    "configure_gateway": "Configurer une passerelle",
     "today": "aujourd'hui",
     "sent_today": "envoyés aujourd'hui",
     "inactive": "Inactif",

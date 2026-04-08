@@ -49,8 +49,8 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
           name: payload.name,
           provider: payload.provider,
           config: payload.config,
-          daily_limit: payload.daily_limit ?? 0,
-          monthly_limit: payload.monthly_limit ?? 0,
+          daily_limit: payload.daily_limit ?? 200,
+          monthly_limit: payload.monthly_limit ?? 200,
           is_active: true,
         })
         .select()

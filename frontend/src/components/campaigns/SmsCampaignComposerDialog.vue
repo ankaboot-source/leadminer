@@ -34,15 +34,7 @@
       <FleetGatewaySelector
         v-model="form.selectedGatewayIds"
         :show-validation="touched.gateways"
-        @add-gateway="openFleetGatewayDialog"
-      />
-
-      <Button
-        text
-        size="small"
-        icon="pi pi-cog"
-        :label="t('configure_gateways')"
-        @click="showFleetConfigDialog = true"
+        @add-gateway="$emit('add-gateway')"
       />
 
       <Message
@@ -107,7 +99,7 @@
             <InputNumber
               v-model="form.monthlyRecipientLimit"
               :min="1"
-              :max="250"
+              :max="200"
               show-buttons
             />
             <small v-if="exceedsMonthlyRecipientLimit" class="text-red-500">
@@ -174,16 +166,6 @@
       </div>
     </template>
   </Dialog>
-
-  <!-- Fleet Configuration Dialog -->
-  <Dialog
-    v-model:visible="showFleetConfigDialog"
-    modal
-    :header="t('sms_gateways')"
-    :style="{ width: '50rem', maxWidth: '95vw' }"
-  >
-    <SmsFleetManagement />
-  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -194,7 +176,6 @@ import Menu from 'primevue/menu';
 import InputNumber from 'primevue/inputnumber';
 import type { Contact } from '~/types/contact';
 import FleetGatewaySelector from '~/components/sms-fleet/FleetGatewaySelector.vue';
-import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
@@ -211,6 +192,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   'update:visible': [value: boolean];
   'campaign-created': [campaignId: string];
+  'add-gateway': [];
 }>();
 
 const isVisible = computed({
@@ -220,7 +202,6 @@ const isVisible = computed({
 
 const attributesMenu = ref();
 const showAdvanced = ref(false);
-const showFleetConfigDialog = ref(false);
 
 const UNSUBSCRIBE_PLACEHOLDER = '{{unsubscribeUrl}}';
 const UNSUBSCRIBE_SAMPLE_URL = 'https://example.com/unsubscribe';
@@ -494,10 +475,6 @@ const onDialogHide = () => {
   resetForm();
 };
 
-const openFleetGatewayDialog = () => {
-  showFleetConfigDialog.value = true;
-};
-
 watch(() => form.messageTemplate, updateCharCount);
 watch(() => form.footerTextTemplate, updateCharCount);
 </script>
@@ -508,9 +485,8 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "send_sms_campaign": "Send SMS Campaign",
     "send_sms_campaign_with_count": "Send SMS campaign ({count} contacts)",
     "gdpr_notice": "You may send campaigns only when you have a valid legal basis (legitimate interest or consent). For legitimate interest, target contacts with prior exchanges for a similar purpose, provide clear information, and always include an unsubscribe link.",
-    "sms_limit_note": "To help protect your campaign deliverability, {dailyLimit} SMS are sent per day by default. To learn more about this limit, contact your SMS provider.",
+    "sms_limit_note": "SMS is distributed across your gateways. Each gateway has a default limit of 200 SMS/day and 200 recipients/month.",
     "sms_gateways": "SMS Gateways",
-    "configure_gateways": "Configure Gateways",
     "message": "Message",
     "message_placeholder": "Enter your SMS message here...",
     "message_required": "Message is required",
@@ -519,7 +495,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
-    "monthly_recipient_limit_help": "Maximum number of recipients per month (max 250)",
+    "monthly_recipient_limit_help": "Maximum number of recipients per month (max 200)",
     "monthly_recipient_limit_exceeded": "You selected {selected} recipients, but the limit is {limit}.",
     "footer_template": "Footer template",
     "footer_template_help": "Editable footer appended to each SMS.",
@@ -537,9 +513,8 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "send_sms_campaign": "Envoyer une campagne SMS",
     "send_sms_campaign_with_count": "Envoyer une campagne SMS ({count} destinataires)",
     "gdpr_notice": "Vous pouvez envoyer une campagne si vous disposez d'une base légale valide (intérêt légitime ou consentement). En intérêt légitime, ciblez des contacts avec lesquels vous avez déjà échangé pour une finalité comparable, informez-les clairement et incluez toujours un lien de désinscription.",
-    "sms_limit_note": "Afin de garantir la déliverabilité de votre campagne SMS, par défaut 200 SMS sont envoyés par jour. Pour en savoir plus sur cette limite, contacter votre opérateur téléphonique.",
+    "sms_limit_note": "Les SMS sont distribués sur vos passerelles. Chaque passerelle a une limite par défaut de 200 SMS/jour et 200 destinataires/mois.",
     "sms_gateways": "Passerelles SMS",
-    "configure_gateways": "Configurer les passerelles",
     "message": "Message",
     "message_placeholder": "Entrez votre message SMS ici...",
     "message_required": "Le message est requis",
@@ -548,7 +523,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
-    "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 250)",
+    "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 200)",
     "monthly_recipient_limit_exceeded": "Vous avez sélectionné {selected} destinataires, mais la limite est de {limit}.",
     "footer_template": "Modèle de pied de message",
     "footer_template_help": "Pied de message modifiable ajouté à chaque SMS.",

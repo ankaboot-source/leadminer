@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { createPinia, setActivePinia } from 'pinia';
 
 const COMPONENT_PATH =
-  '/home/badreddine/Projects/leadminer/.worktrees/sms-campaigns/.worktrees/fleet-mode/frontend/src/components/campaigns/SmsCampaignComposerDialog.vue';
+  '/home/badreddine/Projects/leadminer/.worktrees/sms-fleet-mode/frontend/src/components/campaigns/SmsCampaignComposerDialog.vue';
 
 describe('SmsCampaignComposerDialog Structure Tests', () => {
   let componentContent: string;
@@ -14,7 +14,6 @@ describe('SmsCampaignComposerDialog Structure Tests', () => {
   });
 
   it('should NOT have fleet mode toggle (InputSwitch)', () => {
-    // Verify the fleet mode toggle has been completely removed
     expect(componentContent).not.toContain('InputSwitch');
     expect(componentContent).not.toContain('v-model="form.fleetMode"');
     expect(componentContent).not.toContain('input-id="fleetMode"');
@@ -24,20 +23,24 @@ describe('SmsCampaignComposerDialog Structure Tests', () => {
   });
 
   it('should always show FleetGatewaySelector (no v-if)', () => {
-    // FleetGatewaySelector should be present without conditional rendering
     expect(componentContent).toContain('FleetGatewaySelector');
-    // Should NOT have v-if="form.fleetMode" making it conditional
     expect(componentContent).not.toContain('v-if="form.fleetMode"');
   });
 
-  it('should have Configure Gateways button', () => {
-    expect(componentContent).toContain("'configure_gateways'");
-    expect(componentContent).toContain('showFleetConfigDialog = true');
+  it('should NOT have Configure Gateways button', () => {
+    expect(componentContent).not.toContain("'configure_gateways'");
+    expect(componentContent).not.toContain('showFleetConfigDialog');
+    expect(componentContent).not.toContain('SmsFleetManagement');
   });
 
-  it('should have SmsFleetManagement in dialog', () => {
-    expect(componentContent).toContain('SmsFleetManagement');
-    expect(componentContent).toContain('showFleetConfigDialog');
+  it('should NOT have showFleetConfigDialog state', () => {
+    expect(componentContent).not.toContain('showFleetConfigDialog');
+    expect(componentContent).not.toContain('const showFleetConfigDialog = ref');
+  });
+
+  it('should emit add-gateway event from FleetGatewaySelector', () => {
+    expect(componentContent).toContain('@add-gateway');
+    expect(componentContent).toContain("$emit('add-gateway')");
   });
 
   it('should NOT have single provider mode (smsgate, twilio, simple-sms-gateway)', () => {
@@ -58,17 +61,7 @@ describe('SmsCampaignComposerDialog Structure Tests', () => {
     );
   });
 
-  it('should have showFleetConfigDialog state', () => {
-    expect(componentContent).toContain('showFleetConfigDialog');
-    expect(componentContent).toContain('const showFleetConfigDialog = ref');
-  });
-
-  it('should open fleet config dialog on button click', () => {
-    expect(componentContent).toContain('@click="showFleetConfigDialog = true"');
-  });
-
   it('should NOT have fleetMode in form state', () => {
-    // The form reactive object should NOT have fleetMode property
     const formReactiveMatch = componentContent.match(
       /const form = reactive\(\{[\s\S]*?\}\)/,
     );
@@ -76,6 +69,11 @@ describe('SmsCampaignComposerDialog Structure Tests', () => {
       const formObject = formReactiveMatch[0];
       expect(formObject).not.toContain('fleetMode:');
     }
+  });
+
+  it('should have updated monthly recipient limit max to 200', () => {
+    expect(componentContent).toContain(':max="200"');
+    expect(componentContent).not.toContain(':max="250"');
   });
 });
 
@@ -86,13 +84,20 @@ describe('SmsCampaignComposerDialog i18n', () => {
     componentContent = readFileSync(COMPONENT_PATH, 'utf-8');
   });
 
-  it('should have new translation keys for fleet mode', () => {
+  it('should have updated sms_limit_note with fleet mode explanation', () => {
+    expect(componentContent).toContain('"sms_limit_note"');
+    expect(componentContent).toContain('200 SMS/day and 200 recipients/month');
+  });
+
+  it('should NOT have configure_gateways translation key', () => {
+    expect(componentContent).not.toContain('"configure_gateways"');
+  });
+
+  it('should have sms_gateways translation key', () => {
     expect(componentContent).toContain('"sms_gateways"');
-    expect(componentContent).toContain('"configure_gateways"');
   });
 
   it('should NOT have removed provider translation keys', () => {
-    // All provider-related translations should be removed
     expect(componentContent).not.toContain('"smsgate_base_url"');
     expect(componentContent).not.toContain('"smsgate_username"');
     expect(componentContent).not.toContain('"smsgate_password"');

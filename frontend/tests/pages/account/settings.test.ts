@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
 
 const COMPONENT_PATH =
-  '/home/badreddine/Projects/leadminer/.worktrees/sms-campaigns/.worktrees/fleet-mode/frontend/src/pages/account/settings.vue';
+  '/home/badreddine/Projects/leadminer/.worktrees/sms-fleet-mode/frontend/src/pages/account/settings.vue';
 
 describe('Settings Structure Tests', () => {
   let componentContent: string;

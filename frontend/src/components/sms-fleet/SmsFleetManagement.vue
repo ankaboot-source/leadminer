@@ -110,8 +110,8 @@ function openAddDialog() {
   isEditing.value = false;
   editingGatewayId.value = null;
   gatewayName.value = '';
-  dailyLimit.value = 0;
-  monthlyLimit.value = 0;
+  dailyLimit.value = 200;
+  monthlyLimit.value = 200;
   isActive.value = true;
   showDialog.value = true;
 }
@@ -348,7 +348,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div v-if="isEditing" class="flex items-center gap-2">
           <Checkbox v-model="isActive" :binary="true" input-id="isActive" />
           <label for="isActive" class="text-sm cursor-pointer">
             {{ t('gateway_active') }}
@@ -390,8 +390,8 @@ onMounted(() => {
     "edit_gateway": "Edit SMS Gateway",
     "gateway_name": "Gateway Name",
     "gateway_name_placeholder": "e.g., Office Phone",
-    "daily_limit": "Daily Limit",
-    "monthly_limit": "Monthly Limit",
+    "daily_limit": "Daily Limit (SMS/day)",
+    "monthly_limit": "Monthly Limit (recipients/month)",
     "limit_help": "0 = unlimited",
     "unlimited": "Unlimited",
     "gateway_active": "Gateway is active",
@@ -419,8 +419,8 @@ onMounted(() => {
     "edit_gateway": "Modifier la passerelle SMS",
     "gateway_name": "Nom de la passerelle",
     "gateway_name_placeholder": "ex: Téléphone bureau",
-    "daily_limit": "Limite quotidienne",
-    "monthly_limit": "Limite mensuelle",
+    "daily_limit": "Limite quotidienne (SMS/jour)",
+    "monthly_limit": "Limite mensuelle (destinataires/mois)",
     "limit_help": "0 = illimité",
     "unlimited": "Illimité",
     "gateway_active": "La passerelle est active",

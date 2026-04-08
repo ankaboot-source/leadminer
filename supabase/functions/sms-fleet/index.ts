@@ -132,8 +132,8 @@ app.post("/gateways", authMiddleware, async (c) => {
       name: validation.data.name,
       provider: validation.data.provider,
       config: validation.data.config,
-      daily_limit: validation.data.daily_limit ?? 0,
-      monthly_limit: validation.data.monthly_limit ?? 0,
+      daily_limit: validation.data.daily_limit ?? 200,
+      monthly_limit: validation.data.monthly_limit ?? 200,
       is_active: validation.data.is_active ?? true,
     };
 
