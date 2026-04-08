@@ -11,7 +11,7 @@
     "dev:all": "./run.sh",
     "dev:generate-env": "bash ./generate_env.sh",
     "dev:supabase": "supabase start",
-    "dev:supabase-functions": "supabase functions serve --no-verify-jwt",
+    "dev:supabase-functions": "supabase functions serve",
     "dev:frontend": "npm run dev --prefix ./frontend",
     "dev:backend-api": "npm run dev:api --prefix ./backend",
     "dev:backend-worker": "npm run dev:worker --prefix ./backend",

@@ -1,13 +1,4 @@
-import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
-import MiningManager from '../MiningManager';
-import { Task, TaskExtract, TaskClean } from '../../tasks/task';
-import { ImapEmailsFetcherOptions } from '../../imap/types';
-import ENV from '../../config';
-import SupabaseTasks from '../../db/supabase/tasks';
-import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
-import SSEBroadcasterFactory from '../../factory/SSEBroadcasterFactory';
-import { flickrBase58IdGenerator } from '../tasks-manager/utils';
 import {
   MiningSourceType,
   MiningTask,
@@ -15,6 +6,10 @@ import {
   TaskProgress,
   TaskProgressType
 } from './types';
+import BaseTasksManager from './BaseTasksManager';
+import SupabaseTasks from '../../db/supabase/tasks';
+import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
+import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 
 interface FileMiningTask extends Omit<MiningTask, 'process' | 'progress'> {
   process: {
@@ -29,28 +24,40 @@ interface FileMiningTask extends Omit<MiningTask, 'process' | 'progress'> {
   };
 }
 
-export default class FileTasksManager {
-  private readonly miningManager: MiningManager;
+export default class FileTasksManager extends BaseTasksManager {
+  protected readonly sourceType: MiningSourceType = 'file';
 
+  // eslint-disable-next-line no-unused-vars
   constructor(
     tasksResolver: SupabaseTasks,
     redisSubscriber: Redis,
     redisPublisher: Redis,
     _emailFetcherFactory: unknown,
     sseBroadcasterFactory: SSEBroadcasterFactory,
-    _idGenerator: () => Promise<string>
+    idGenerator: () => Promise<string>
   ) {
-    this.miningManager = new MiningManager({
+    super(
       tasksResolver,
       redisSubscriber,
       redisPublisher,
       sseBroadcasterFactory,
-      idGenerator: () => flickrBase58IdGenerator()()
-    });
+      idGenerator
+    );
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  protected getFetcherClient(): null {
+    return null;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  protected getProcessList(): (keyof MiningTask['process'])[] {
+    return ['extract', 'clean'];
+  }
+
+  // eslint-disable-next-line class-methods-use-this
   protected getProgressMappings(): Partial<
-    Record<TaskProgressType, keyof FileMiningTask['process']>
+    Record<TaskProgressType, keyof MiningTask['process']>
   > {
     return {
       extracted: 'extract',
@@ -64,97 +71,134 @@ export default class FileTasksManager {
     fileName: string,
     totalImportedFromFile: number
   ): Promise<RedactedTask> {
-    const miningId = await flickrBase58IdGenerator()();
-    const sseBroadcaster = this.miningManager
-      .getSSEBroadcasterFactory()
-      .create();
-    const messagesStream = `messages_stream-${miningId}`;
-    const emailsStream = `emails_stream-${miningId}`;
+    const { miningId, stream } = await this.generateTaskInformation();
+    const {
+      messagesStream,
+      messagesConsumerGroup,
+      emailsStream,
+      emailsConsumerGroup
+    } = stream;
 
-    const tasks: Task[] = [
-      new TaskExtract(
-        {
-          miningId,
-          userId,
-          redisSubscriber: this.miningManager.getRedisSubscriber(),
-          redisPublisher: this.miningManager.getRedisPublisher(),
-          streamName: messagesStream,
-          consumerGroup: ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
-        },
-        sseBroadcaster
-      ),
-      new TaskClean(
-        {
-          miningId,
-          userId,
-          redisSubscriber: this.miningManager.getRedisSubscriber(),
-          redisPublisher: this.miningManager.getRedisPublisher(),
-          streamName: emailsStream,
-          consumerGroup: ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
-        },
-        sseBroadcaster
-      )
-    ];
+    const progressHandlerSSE = this.createSSEBroadcaster();
 
-    const result = await this.miningManager.createTask(tasks, userId, {
-      source: fileName,
-      type: 'file'
-    });
-
-    return {
-      miningId: result.miningId,
-      miningSource: { source: fileName, type: 'file' as MiningSourceType },
-      userId: result.userId,
-      processes: result.processes,
-      progress: {
-        ...result.progress,
-        totalImported: totalImportedFromFile
-      }
-    };
-  }
-
-  getActiveTask(miningId: string): RedactedTask {
-    const tasks = (this.miningManager as any).activeTasks.get(miningId);
-    if (!tasks) {
-      throw new Error(`Mining task ${miningId} not found`);
-    }
-    return {
+    const miningTask: FileMiningTask = {
+      userId,
       miningId,
-      miningSource: { source: '', type: 'file' },
-      userId: '',
-      processes: {},
+      miningSource: { source: fileName, type: 'file' },
+      progressHandlerSSE,
+      process: {
+        extract: {
+          userId,
+          category: TaskCategory.Mining,
+          type: TaskType.Extract,
+          status: TaskStatus.Running,
+          details: {
+            miningId,
+            stream: {
+              messagesStream,
+              messagesConsumerGroup,
+              emailsVerificationStream: emailsStream
+            },
+            progress: { extracted: 0 }
+          }
+        },
+        clean: {
+          userId,
+          category: TaskCategory.Cleaning,
+          type: TaskType.Clean,
+          status: TaskStatus.Running,
+          details: {
+            miningId,
+            stream: { emailsStream, emailsConsumerGroup },
+            progress: { verifiedContacts: 0, createdContacts: 0 }
+          }
+        }
+      },
       progress: {
-        totalMessages: 0,
-        fetched: 0,
+        totalImported: totalImportedFromFile,
         extracted: 0,
         verifiedContacts: 0,
-        createdContacts: 0,
-        signatures: 0
-      }
+        createdContacts: 0
+      },
+      startedAt: performance.now()
     };
+
+    await this.createSubTasks(miningTask as unknown as MiningTask);
+    this.ACTIVE_MINING_TASKS.set(miningId, miningTask as unknown as MiningTask);
+    await this.registerStreams(miningId, miningTask as unknown as MiningTask);
+
+    this.subscribeToRedis(miningId);
+    return this.getActiveTask(miningId);
   }
 
-  attachSSE(
+  protected notifyChanges(
     miningId: string,
-    connection: { req: Request; res: Response }
+    progressType: TaskProgressType,
+    event: string | null = null
   ): void {
-    this.miningManager.attachSSE(miningId, connection);
+    const task = this.ACTIVE_MINING_TASKS.get(miningId) as
+      | FileMiningTask
+      | undefined;
+    if (!task?.progressHandlerSSE) return;
+
+    const { progressHandlerSSE, process } = task;
+
+    const progress: TaskProgress = {
+      totalMessages: 0,
+      fetched: 0,
+      extracted: 0,
+      verifiedContacts: 0,
+      createdContacts: 0,
+      signatures: 0
+    };
+
+    Object.assign(progress, process.extract.details.progress);
+    Object.assign(progress, process.clean.details.progress);
+
+    const value = progress[`${progressType}` as keyof TaskProgress];
+    const eventName = event ?? `${progressType}-${miningId}`;
+    progressHandlerSSE.sendSSE(value, eventName);
   }
 
-  async deleteTask(
+  // eslint-disable-next-line class-methods-use-this
+  protected async checkProcessCompletion(
     miningId: string,
-    _processIds: string[] | null
-  ): Promise<RedactedTask> {
-    const result = await this.miningManager.deleteTask(miningId);
-    if (!result) {
-      throw new Error(`Mining task ${miningId} not found`);
-    }
-    return {
-      miningId: result.miningId,
-      miningSource: result.miningSource,
-      userId: result.userId,
-      processes: result.processes,
-      progress: result.progress
+    task: MiningTask,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _processList: (keyof MiningTask['process'])[]
+  ): Promise<void> {
+    const fileTask = task as unknown as FileMiningTask;
+    const progress: TaskProgress = {
+      totalMessages: 0,
+      fetched: 0,
+      extracted: 0,
+      verifiedContacts: 0,
+      createdContacts: 0,
+      signatures: 0
     };
+
+    Object.assign(progress, fileTask.process.extract.details.progress);
+    Object.assign(progress, fileTask.process.clean.details.progress);
+
+    const { totalImported } = fileTask.progress;
+
+    if (
+      fileTask.process.extract &&
+      !fileTask.process.extract.stoppedAt &&
+      progress.extracted >= totalImported
+    ) {
+      await this.stopTask([fileTask.process.extract]);
+      this.notifyChanges(miningId, 'extracted', 'extracting-finished');
+    }
+
+    if (
+      fileTask.process.clean &&
+      !fileTask.process.clean.stoppedAt &&
+      fileTask.process.extract?.stoppedAt &&
+      progress.verifiedContacts >= progress.createdContacts
+    ) {
+      await this.stopTask([fileTask.process.clean]);
+      this.notifyChanges(miningId, 'verifiedContacts', 'cleaning-finished');
+    }
   }
 }

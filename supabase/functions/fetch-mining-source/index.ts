@@ -90,7 +90,6 @@ class FetchMiningSourceHandler {
     }
 
     try {
-      console.log("Received request to fetch mining sources");
       const body = await FetchMiningSourceHandler.parseAndValidateBody(req);
       const authHeader = req.headers.get("Authorization");
       const userId = await this.resolveUserId(authHeader, body.user_id);
