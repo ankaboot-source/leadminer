@@ -128,6 +128,7 @@ $sourcePanelStore.showOtherSourcesByDefault();
 watch(
   sourceOptions,
   (options) => {
+    console.log('Available sources updated:', options);
     if (options.length > 0) {
       $sourcePanelStore.hideOtherSources();
 

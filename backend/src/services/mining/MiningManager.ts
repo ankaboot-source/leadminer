@@ -52,6 +52,18 @@ export default class MiningManager {
 
   private readonly sseBroadcasters = new Map<string, RealtimeSSE>();
 
+  public getSSEBroadcasterFactory(): SSEBroadcasterFactory {
+    return this.sseBroadcasterFactory;
+  }
+
+  public getRedisSubscriber(): Redis {
+    return this.redisSubscriber;
+  }
+
+  public getRedisPublisher(): Redis {
+    return this.redisPublisher;
+  }
+
   constructor(options: MiningManagerOptions) {
     this.tasksResolver = options.tasksResolver;
     this.redisSubscriber = options.redisSubscriber;

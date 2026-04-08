@@ -34,6 +34,8 @@ export default function initializeImapController(
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
       const { email } = req.body;
 
+      console.log('Received request to fetch IMAP boxes for user', email);
+
       const errors = [validateType('email', email, 'string')].filter(Boolean);
 
       if (errors.length) {
@@ -53,9 +55,12 @@ export default function initializeImapController(
           email
         );
 
+        console.log({ userId, sources });
+
         const data =
           sources?.find((e) => e.email === email)?.credentials ?? null;
 
+        console.log({ data });
         if (!data) {
           res.status(400);
           return next(

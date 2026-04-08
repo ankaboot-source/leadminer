@@ -25,6 +25,7 @@ export class MiningSourceService implements MiningSources {
     userId: string,
     email?: string
   ): Promise<MiningSource[]> {
+    console.log('Fetching mining sources for user', { userId, email });
     const response = await supabaseClient.functions.invoke(
       'fetch-mining-source',
       {

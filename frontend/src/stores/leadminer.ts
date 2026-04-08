@@ -2,12 +2,12 @@ import { defineStore } from 'pinia';
 import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
+import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import {
   getMiningSources,
   updateMiningSourcesValidity,
   updateMiningSourcesValidityFromUnavailable,
 } from '@/utils/sources';
-import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -141,6 +141,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
   async function fetchMiningSources() {
+    console.log('Fetching mining sources...');
     isLoadingMiningSources.value = true;
 
     try {
@@ -510,6 +511,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   async function getCurrentRunningMining() {
+    console.log('Checking for running mining tasks...');
     // 1) GET running tasks for the current user
     try {
       const userId = getCurrentUserId();
@@ -571,6 +573,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       startProgressListener(miningType.value, miningTask.value.miningId);
 
+      console.log(extractionFinished.value ? 3 : 2);
       return extractionFinished.value ? 3 : 2;
     } catch (err) {
       console.error(err);

@@ -1,22 +1,33 @@
-import { AxiosError } from 'axios';
+import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
+import MiningManager, {
+  MiningSource,
+  RedactedTask as NewRedactedTask
+} from '../MiningManager';
+import {
+  Task,
+  TaskFetch,
+  TaskExtract,
+  TaskClean,
+  TaskSignature
+} from '../../tasks/task';
+import { EmailFetcherAdapter } from '../../tasks/fetcher/EmailFetcherAdapter';
+import { ImapEmailsFetcherOptions } from '../../imap/types';
+import ENV from '../../config';
+import SupabaseTasks from '../../db/supabase/tasks';
+import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
+import EmailFetcherClient from '../../email-fetching';
+import SSEBroadcasterFactory from '../../factory/SSEBroadcasterFactory';
+import { flickrBase58IdGenerator } from '../tasks-manager/utils';
 import {
   MiningSourceType,
   MiningTask,
   RedactedTask,
   TaskProgressType
 } from './types';
-import BaseTasksManager from './BaseTasksManager';
-import ENV from '../../config';
-import SupabaseTasks from '../../db/supabase/tasks';
-import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
-import EmailFetcherClient from '../email-fetching';
-import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
-import { ImapEmailsFetcherOptions } from '../imap/types';
 
-export default class ImapTasksManager extends BaseTasksManager {
-  protected readonly sourceType: MiningSourceType = 'email';
-
+export default class ImapTasksManager {
+  private readonly miningManager: MiningManager;
   private readonly fetcherClient: EmailFetcherClient;
 
   constructor(
@@ -25,191 +36,157 @@ export default class ImapTasksManager extends BaseTasksManager {
     redisPublisher: Redis,
     emailFetcherAPI: EmailFetcherClient,
     sseBroadcasterFactory: SSEBroadcasterFactory,
-    idGenerator: () => Promise<string>
+    _idGenerator: () => Promise<string>
   ) {
-    super(
+    this.fetcherClient = emailFetcherAPI;
+    this.miningManager = new MiningManager({
       tasksResolver,
       redisSubscriber,
       redisPublisher,
       sseBroadcasterFactory,
-      idGenerator
-    );
-    this.fetcherClient = emailFetcherAPI;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  protected getFetcherClient(): {
-    startFetch: (opts: unknown) => Promise<{ data: { totalMessages: number } }>;
-    stopFetch: (opts: unknown) => Promise<void>;
-  } | null {
-    return this.fetcherClient as {
-      startFetch: (
-        opts: unknown
-      ) => Promise<{ data: { totalMessages: number } }>;
-      stopFetch: (opts: unknown) => Promise<void>;
-    };
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  protected getProcessList(): (keyof MiningTask['process'])[] {
-    return ['fetch', 'extract', 'clean', 'signature'];
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  protected getProgressMappings(): Partial<
-    Record<TaskProgressType, keyof MiningTask['process']>
-  > {
-    return {
-      fetched: 'fetch',
-      extracted: 'extract',
-      createdContacts: 'clean',
-      verifiedContacts: 'clean',
-      signatures: 'signature'
-    };
+      idGenerator: () => flickrBase58IdGenerator()()
+    });
   }
 
   async createTask(
-    { email, boxes, fetchEmailBody, userId, since }: ImapEmailsFetcherOptions,
+    options: ImapEmailsFetcherOptions,
     passive_mining = false
   ): Promise<RedactedTask> {
-    let miningTaskId: string | null = null;
-    try {
-      const { miningId, stream } = await this.generateTaskInformation();
-      miningTaskId = miningId;
-      const {
-        messagesStream,
-        messagesConsumerGroup,
-        emailsStream,
-        emailsConsumerGroup
-      } = stream;
+    const { email, boxes, fetchEmailBody, userId, since } = options;
+    const miningId = await flickrBase58IdGenerator()();
+    const sseBroadcaster = this.miningManager.getSSEBroadcasterFactory().create();
+    const messagesStream = `messages_stream-${miningId}`;
+    const emailsStream = `emails_stream-${miningId}`;
 
-      const progressHandlerSSE = this.createSSEBroadcaster();
+    const emailFetcher = new EmailFetcherAdapter(this.fetcherClient);
 
-      const miningTask: MiningTask = {
-        userId,
-        miningId,
-        miningSource: { source: email, type: 'email' },
-        progressHandlerSSE,
-        process: {
-          signature: {
-            userId,
-            type: TaskType.Enrich,
-            category: TaskCategory.Enriching,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              enabled: fetchEmailBody,
-              stream: { signatureStream: 'email-signature' },
-              progress: { signatures: 0 },
-              passive_mining
-            }
-          },
-          fetch: {
-            userId,
-            category: TaskCategory.Mining,
-            type: TaskType.Fetch,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              stream: { messagesStream },
-              progress: { totalMessages: 0, folders: boxes, fetched: 0 },
-              passive_mining
-            }
-          },
-          extract: {
-            userId,
-            category: TaskCategory.Mining,
-            type: TaskType.Extract,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              stream: {
-                messagesStream,
-                messagesConsumerGroup,
-                emailsVerificationStream: emailsStream
-              },
-              progress: { extracted: 0 },
-              passive_mining
-            }
-          },
-          clean: {
-            userId,
-            category: TaskCategory.Cleaning,
-            type: TaskType.Clean,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              stream: { emailsStream, emailsConsumerGroup },
-              progress: { verifiedContacts: 0, createdContacts: 0 },
-              passive_mining
-            }
-          }
-        },
-        progress: {
-          totalMessages: 0,
-          fetched: 0,
-          extracted: 0,
-          verifiedContacts: 0,
-          createdContacts: 0,
-          signatures: 0
-        },
-        startedAt: performance.now()
-      };
-
-      await this.createSubTasks(miningTask);
-      this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
-      await this.registerStreams(miningId, miningTask);
-
-      try {
-        const {
-          data: { totalMessages }
-        } = await this.fetcherClient.startFetch({
-          boxes,
-          userId,
-          email,
+    const tasks: Task[] = [
+      new TaskFetch(
+        {
           miningId,
+          userId,
+          fetchers: [emailFetcher],
           contactStream: messagesStream,
           signatureStream: ENV.REDIS_SIGNATURE_STREAM_NAME,
-          extractSignatures: fetchEmailBody,
-          since
-        });
+          extractSignatures: fetchEmailBody
+        },
+        sseBroadcaster
+      ),
+      new TaskExtract(
+        {
+          miningId,
+          userId,
+          redisSubscriber: this.miningManager.getRedisSubscriber(),
+          redisPublisher: this.miningManager.getRedisPublisher(),
+          streamName: messagesStream,
+          consumerGroup: ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
+        },
+        sseBroadcaster
+      ),
+      new TaskClean(
+        {
+          miningId,
+          userId,
+          redisSubscriber: this.miningManager.getRedisSubscriber(),
+          redisPublisher: this.miningManager.getRedisPublisher(),
+          streamName: emailsStream,
+          consumerGroup: ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
+        },
+        sseBroadcaster
+      ),
+      new TaskSignature({ miningId, userId }, sseBroadcaster)
+    ];
 
-        miningTask.progress.totalMessages = totalMessages;
-        miningTask.process.fetch.details.progress.totalMessages = totalMessages;
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          throw new Error(`Failed to start fetching: ${error.message}`);
-        }
-        throw new Error('Failed to start fetching');
-      }
+    const result = await this.miningManager.createTask(tasks, userId, {
+      source: email,
+      type: 'email'
+    });
 
-      this.subscribeToRedis(miningId);
-      return this.getActiveTask(miningId);
-    } catch (error) {
-      if (miningTaskId) {
-        await this.deleteTask(miningTaskId, null);
-      }
-      throw error;
-    }
+    return {
+      miningId: result.miningId,
+      miningSource: { source: email, type: 'email' as MiningSourceType },
+      userId: result.userId,
+      processes: result.processes,
+      progress: result.progress,
+      passive_mining
+    };
   }
 
-  protected handleStatusUpdates(
+  getActiveTask(miningId: string): RedactedTask {
+    const tasks = (this.miningManager as any).activeTasks.get(miningId);
+    if (!tasks) {
+      throw new Error(`Mining task ${miningId} not found`);
+    }
+    return {
+      miningId,
+      miningSource: { source: '', type: 'email' },
+      userId: '',
+      processes: {},
+      progress: { totalMessages: 0, fetched: 0, extracted: 0, verifiedContacts: 0, createdContacts: 0, signatures: 0 }
+    };
+  }
+
+  attachSSE(miningId: string, connection: { req: Request; res: Response }): void {
+    this.miningManager.attachSSE(miningId, connection);
+  }
+
+  async deleteTask(miningId: string, _processIds: string[] | null): Promise<RedactedTask> {
+    const result = await this.miningManager.deleteTask(miningId);
+    if (!result) {
+      throw new Error(`Mining task ${miningId} not found`);
+    }
+    return {
+      miningId: result.miningId,
+      miningSource: result.miningSource,
+      userId: result.userId,
+      processes: result.processes,
+      progress: result.progress
+    };
+  }
+}
+
+  getActiveTask(miningId: string): RedactedTask {
+    const tasks = (this.miningManager as any).activeTasks.get(miningId);
+    if (!tasks) {
+      throw new Error(`Mining task ${miningId} not found`);
+    }
+    return {
+      miningId,
+      miningSource: { source: '', type: 'email' },
+      userId: '',
+      processes: {},
+      progress: {
+        totalMessages: 0,
+        fetched: 0,
+        extracted: 0,
+        verifiedContacts: 0,
+        createdContacts: 0,
+        signatures: 0
+      }
+    };
+  }
+
+  attachSSE(
     miningId: string,
-    progressType: TaskProgressType,
-    isCompleted?: boolean,
-    isCanceled?: boolean
+    connection: { req: Request; res: Response }
   ): void {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-    if (!task) return;
+    this.miningManager.attachSSE(miningId, connection);
+  }
 
-    if (progressType === 'signatures' && isCompleted) {
-      task.process.signature.status = TaskStatus.Done;
+  async deleteTask(
+    miningId: string,
+    _processIds: string[] | null
+  ): Promise<RedactedTask> {
+    const result = await this.miningManager.deleteTask(miningId);
+    if (!result) {
+      throw new Error(`Mining task ${miningId} not found`);
     }
-
-    if (progressType === 'fetched' && (isCanceled || isCompleted)) {
-      task.process.fetch.status = isCanceled
-        ? TaskStatus.Canceled
-        : TaskStatus.Done;
-    }
+    return {
+      miningId: result.miningId,
+      miningSource: result.miningSource,
+      userId: result.userId,
+      processes: result.processes,
+      progress: result.progress
+    };
   }
 }
