@@ -146,9 +146,8 @@ export default class TasksManagerPST {
    */
   async createTask(
     userId: string,
-    source: string,
-    fetchEmailBody: boolean,
-    cleaningEnabled: boolean
+    source: string, // filename
+    fetchEmailBody: boolean
   ) {
     let miningTaskId: string | null = null;
     try {
@@ -212,10 +211,7 @@ export default class TasksManagerPST {
               stream: {
                 messagesStream,
                 messagesConsumerGroup,
-                // Only include emailsVerificationStream if cleaning is enabled
-                ...(cleaningEnabled && {
-                  emailsVerificationStream: emailsStream
-                })
+                emailsVerificationStream: emailsStream
               },
               progress: {
                 extracted: 0
@@ -226,22 +222,18 @@ export default class TasksManagerPST {
             userId,
             category: TaskCategory.Cleaning,
             type: TaskType.Clean,
-            status: cleaningEnabled ? TaskStatus.Running : TaskStatus.Done,
+            status: TaskStatus.Running,
             details: {
               miningId,
-              enabled: cleaningEnabled,
-              stream: cleaningEnabled
-                ? {
-                    emailsStream,
-                    emailsConsumerGroup
-                  }
-                : {},
+              stream: {
+                emailsStream,
+                emailsConsumerGroup
+              },
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
               }
-            },
-            ...(cleaningEnabled ? {} : { stoppedAt: new Date().toISOString() })
+            }
           }
         },
         progress: {
@@ -261,29 +253,22 @@ export default class TasksManagerPST {
       const taskFetch = await this.tasksResolver.create(fetch);
       const taskSignature = await this.tasksResolver.create(signature);
       const taskExtract = await this.tasksResolver.create(extract);
-      const taskClean = cleaningEnabled
-        ? await this.tasksResolver.create(clean)
-        : null;
+      const taskClean = await this.tasksResolver.create(clean);
 
       miningTask.process.fetch.id = taskFetch.id;
       miningTask.process.signature.id = taskSignature.id;
       miningTask.process.extract.id = taskExtract.id;
-      if (taskClean) {
-        miningTask.process.clean.id = taskClean.id;
-        miningTask.process.clean.startedAt = taskClean.startedAt;
-      }
+      miningTask.process.clean.id = taskClean.id;
 
       miningTask.process.fetch.startedAt = taskFetch.startedAt;
       miningTask.process.signature.startedAt = taskSignature.startedAt;
       miningTask.process.extract.startedAt = taskExtract.startedAt;
+      miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
-      // Only register streams for enabled tasks
-      const tasksToRegister = cleaningEnabled ? [extract, clean] : [extract];
-
       await Promise.all(
-        tasksToRegister.map((p) =>
+        [extract, clean].map((p) =>
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
@@ -622,9 +607,8 @@ export default class TasksManagerPST {
 
     if (
       !clean.stoppedAt &&
-      (!clean.details.enabled ||
-        (extract.stoppedAt &&
-          progress.verifiedContacts >= progress.createdContacts))
+      extract.stoppedAt &&
+      progress.verifiedContacts >= progress.createdContacts
     ) {
       logger.debug('[Progress update]: stopping cleaning task', {
         status: clean.status,

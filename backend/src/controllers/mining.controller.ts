@@ -32,7 +32,6 @@ import {
   validateFileContactsData
 } from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
-import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -299,7 +298,6 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
       const {
         extractSignatures,
-        cleaningEnabled,
         miningSource: { email },
         boxes: folders,
         since
@@ -309,7 +307,6 @@ export default function initializeMiningController(
         };
         boxes: string[];
         extractSignatures: boolean;
-        cleaningEnabled: boolean;
         since?: string;
       } = req.body;
 
@@ -318,8 +315,7 @@ export default function initializeMiningController(
       const errors = [
         validateType('email', email, 'string'),
         validateType('boxes', folders, 'string[]'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType('cleaningEnabled', cleaningEnabled, 'boolean')
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -345,35 +341,27 @@ export default function initializeMiningController(
         });
       }
 
-      const effectiveCleaningEnabled =
-        cleaningEnabled && hasEmailVerificationConfigured(ENV);
-
       try {
         const miningTask = await tasksManager.createTask({
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
           fetchEmailBody: extractSignatures,
-          cleaningEnabled: effectiveCleaningEnabled,
           since
         });
 
         const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
         const { userId, miningId } = taskObject;
-
-        if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
@@ -417,12 +405,10 @@ export default function initializeMiningController(
 
       const {
         name,
-        contacts,
-        cleaningEnabled
+        contacts
       }: {
         name: string;
         contacts: Partial<ContactFormat[]>;
-        cleaningEnabled: boolean;
       } = req.body;
 
       try {
@@ -436,10 +422,7 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const errors = [
-          validateType('name', name, 'string'),
-          validateType('cleaningEnabled', cleaningEnabled, 'boolean')
-        ].filter(Boolean);
+        const errors = [validateType('name', name, 'string')].filter(Boolean);
 
         if (errors.length) {
           return res
@@ -447,14 +430,10 @@ export default function initializeMiningController(
             .json({ message: `Invalid input: ${errors.join(', ')}` });
         }
 
-        const effectiveCleaningEnabled =
-          cleaningEnabled && hasEmailVerificationConfigured(ENV);
-
         const fileMiningTask = await tasksManagerFile.createTask(
           user.id,
           name,
-          contacts.length,
-          effectiveCleaningEnabled
+          1
         );
 
         const taskObject = tasksManagerFile.getTaskOrThrow(
@@ -462,19 +441,16 @@ export default function initializeMiningController(
         );
         const { userId, miningId } = taskObject;
 
-        if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         // Publish contacts to extracting redis stream
         await redis.getClient().xadd(
@@ -507,18 +483,16 @@ export default function initializeMiningController(
 
       const {
         name,
-        extractSignatures,
-        cleaningEnabled
+        extractSignatures
       }: {
         name: string;
         extractSignatures: boolean;
-        cleaningEnabled: boolean;
+        // file
       } = req.body;
 
       const errors = [
         validateType('name', name, 'string'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType('cleaningEnabled', cleaningEnabled, 'boolean')
+        validateType('extractSignatures', extractSignatures, 'boolean')
       ].filter(Boolean);
 
       if (errors.length) {
@@ -526,34 +500,25 @@ export default function initializeMiningController(
           .status(400)
           .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
-
-      const effectiveCleaningEnabled =
-        cleaningEnabled && hasEmailVerificationConfigured(ENV);
-
       try {
         const miningTask = await tasksManagerPST.createTask(
           user.id,
           name,
-          extractSignatures,
-          effectiveCleaningEnabled
+          extractSignatures
         );
 
         const taskObject = tasksManagerPST.getTaskOrThrow(miningTask.miningId);
         const { userId, miningId } = taskObject;
-
-        if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
-        }
+        const totalPublished =
+          await publishPreviouslyUnverifiedEmailsToCleaning(
+            contactsDB,
+            userId,
+            miningId,
+            taskObject.process.clean.details.stream.emailsStream
+          );
+        taskObject.progress.createdContacts += totalPublished;
+        taskObject.process.clean.details.progress.createdContacts +=
+          totalPublished;
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {

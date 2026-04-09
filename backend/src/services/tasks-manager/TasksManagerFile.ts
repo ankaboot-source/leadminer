@@ -189,8 +189,7 @@ export default class TasksManagerFile {
   async createTask(
     userId: string,
     fileName: string,
-    totalImportedFromFile: number,
-    cleaningEnabled: boolean
+    totalImportedFromFile: number
   ) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
@@ -222,10 +221,7 @@ export default class TasksManagerFile {
               stream: {
                 messagesStream,
                 messagesConsumerGroup,
-                // Only include emailsVerificationStream if cleaning is enabled
-                ...(cleaningEnabled && {
-                  emailsVerificationStream: emailsStream
-                })
+                emailsVerificationStream: emailsStream
               },
               progress: {
                 extracted: 0
@@ -236,22 +232,18 @@ export default class TasksManagerFile {
             userId,
             category: TaskCategory.Cleaning,
             type: TaskType.Clean,
-            status: cleaningEnabled ? TaskStatus.Running : TaskStatus.Done,
+            status: TaskStatus.Running,
             details: {
               miningId,
-              enabled: cleaningEnabled,
-              stream: cleaningEnabled
-                ? {
-                    emailsStream,
-                    emailsConsumerGroup
-                  }
-                : {},
+              stream: {
+                emailsStream,
+                emailsConsumerGroup
+              },
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
               }
-            },
-            ...(cleaningEnabled ? {} : { stoppedAt: new Date().toISOString() })
+            }
           }
         },
         progress: {
@@ -267,24 +259,17 @@ export default class TasksManagerFile {
       const { extract, clean } = process;
 
       const taskExtract = await this.tasksResolver.create(extract);
-      const taskClean = cleaningEnabled
-        ? await this.tasksResolver.create(clean)
-        : null;
+      const taskClean = await this.tasksResolver.create(clean);
 
       miningTask.process.extract.id = taskExtract.id;
-      if (taskClean) {
-        miningTask.process.clean.id = taskClean.id;
-        miningTask.process.clean.startedAt = taskClean.startedAt;
-      }
+      miningTask.process.clean.id = taskClean.id;
       miningTask.process.extract.startedAt = taskExtract.startedAt;
+      miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
-      // Only register streams for enabled tasks
-      const tasksToRegister = cleaningEnabled ? [extract, clean] : [extract];
-
       await Promise.all(
-        tasksToRegister.map((p) =>
+        [extract, clean].map((p) =>
           this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
@@ -587,9 +572,8 @@ export default class TasksManagerFile {
   ) {
     if (
       !clean.stoppedAt &&
-      (!clean.details.enabled ||
-        (extract.stoppedAt &&
-          progress.verifiedContacts >= progress.createdContacts))
+      extract.stoppedAt &&
+      progress.verifiedContacts >= progress.createdContacts
     ) {
       logger.debug('[Progress update]: stopping cleaning task', {
         status: clean.status,
@@ -602,7 +586,6 @@ export default class TasksManagerFile {
     }
   }
 
-  // skipcq: JS-0116 - Pre-existing issue: async function without await for compatibility
   private static async getCompletionStatus(
     extract: TaskExtract,
     clean: TaskClean

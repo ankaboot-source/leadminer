@@ -28,6 +28,5 @@ export interface ImapEmailsFetcherOptions {
   userId: string;
   boxes: string[];
   fetchEmailBody: boolean;
-  cleaningEnabled?: boolean;
   since?: string;
 }

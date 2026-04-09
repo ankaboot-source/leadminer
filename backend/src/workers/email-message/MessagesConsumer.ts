@@ -14,11 +14,11 @@ export interface PubSubMessage {
   command: 'REGISTER' | 'DELETE';
   messagesStream: string;
   messagesConsumerGroup: string;
-  emailsVerificationStream?: string;
+  emailsVerificationStream: string;
 }
 
 interface StreamEntry {
-  emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
+  emailsStreamProducer: StreamProducer<EmailVerificationData>;
   queuedEmailsCache: QueuedEmailsCache;
 }
 
@@ -33,7 +33,7 @@ export default class MessagesConsumer {
     private readonly batchSize: number,
     private readonly messageProcessor: (
       data: EmailMessageData,
-      emailsStreamProducer: StreamProducer<EmailVerificationData> | null,
+      emailsStreamProducer: StreamProducer<EmailVerificationData>,
       queuedEmailsCache: QueuedEmailsCache
     ) => void,
     private readonly redisClient: Redis,
@@ -55,19 +55,18 @@ export default class MessagesConsumer {
               miningId
             );
 
-            const emailsStreamProducer = emailsVerificationStream
-              ? new RedisStreamProducer<EmailVerificationData>(
-                  redisClient,
-                  emailsVerificationStream,
-                  this.logger
-                )
-              : null;
+            const emailsStreamProducer =
+              new RedisStreamProducer<EmailVerificationData>(
+                redisClient,
+                emailsVerificationStream,
+                this.logger
+              );
 
             this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
               queuedEmailsCache
             });
-          } else if (command === 'DELETE') {
+          } else {
             const streamEntry = this.activeStreams.get(messagesStream);
             if (streamEntry) {
               await streamEntry.queuedEmailsCache.destroy();
@@ -81,7 +80,7 @@ export default class MessagesConsumer {
             miningId,
             command,
             messagesStream,
-            emailsVerificationStream: emailsVerificationStream ?? 'not provided'
+            emailsVerificationStream
           }
         });
       }

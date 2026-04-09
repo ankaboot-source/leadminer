@@ -22,18 +22,6 @@
       </label>
     </div>
 
-    <!-- Toggle cleaningEnabled -->
-    <div class="flex flex-row items-center gap-2 pb-4">
-      <ToggleSwitch
-        v-model="$leadminerStore.cleaningEnabled"
-        input-id="cleaningEnabled"
-      />
-      <label for="cleaningEnabled" class="cursor-pointer flex-1">
-        {{ $t('mining.cleaning_enabled_option') }}
-        <span>{{ $t('mining.cleaning_enabled_sub') }}</span>
-      </label>
-    </div>
-
     <div
       v-if="$leadminerStore.miningType === 'email'"
       class="flex items-center gap-2"
@@ -67,7 +55,6 @@
 </template>
 
 <script setup lang="ts">
-// skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
 
 const { t } = useI18n({

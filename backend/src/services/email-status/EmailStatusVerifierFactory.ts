@@ -269,26 +269,3 @@ export default class EmailStatusVerifierFactory {
     );
   }
 }
-
-/**
- * Checks if any email verification providers are configured.
- * Used to determine if email verification/cleaning should be available.
- * @param config - The configuration object containing API keys and host settings
- * @returns true if at least one verifier is properly configured, false otherwise
- */
-export function hasEmailVerificationConfigured(config: {
-  REACHER_HOST?: string;
-  REACHER_API_KEY?: string;
-  REACHER_HEADER_SECRET?: string;
-  MAILERCHECK_API_KEY?: string;
-  ZEROBOUNCE_API_KEY?: string;
-}): boolean {
-  const hasReacher = Boolean(
-    config.REACHER_HOST &&
-      (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET)
-  );
-  const hasMailerCheck = Boolean(config.MAILERCHECK_API_KEY);
-  const hasZeroBounce = Boolean(config.ZEROBOUNCE_API_KEY);
-
-  return hasReacher || hasMailerCheck || hasZeroBounce;
-}
