@@ -77,7 +77,8 @@ const isPostCleaningPhase = computed(
     ($leadminerStore.miningType === MiningTypes.EMAIL ||
       $leadminerStore.miningType === MiningTypes.PST) &&
     $leadminerStore.cleaningFinished &&
-    !$leadminerStore.miningCompleted,
+    !$leadminerStore.miningCompleted &&
+    $leadminerStore.extractSignatures,
 );
 
 function cleaningDoneNotification() {
