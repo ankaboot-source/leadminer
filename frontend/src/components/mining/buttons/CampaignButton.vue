@@ -7,7 +7,16 @@
     v-model:visible="sendSmsCampaignDialogVisible"
     :selected-contacts="selectedContacts"
     @campaign-created="onSmsCampaignCreated"
+    @add-gateway="showAddGatewayDialog = true"
   />
+  <Dialog
+    v-model:visible="showAddGatewayDialog"
+    modal
+    :header="t('sms_fleet_management')"
+    :style="{ width: '40rem', maxWidth: '95vw' }"
+  >
+    <SmsFleetManagement />
+  </Dialog>
 
   <SplitButton
     v-tooltip.top="
@@ -47,6 +56,9 @@ const CampaignComposerDialog = defineAsyncComponent(
 const SmsCampaignComposerDialog = defineAsyncComponent(
   () => import('@/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
+const SmsFleetManagement = defineAsyncComponent(
+  () => import('@/components/sms-fleet/SmsFleetManagement.vue'),
+);
 
 const props = defineProps<{
   selectedContacts: Contact[];
@@ -58,6 +70,7 @@ const { t } = useI18n();
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
+const showAddGatewayDialog = ref(false);
 
 const isSendByEmailDisabled = computed(() => props.isExportDisabled);
 
@@ -106,13 +119,15 @@ function onSmsCampaignCreated(_campaignId: string) {
     "send_campaign": "Send campaign",
     "send_email_campaign": "Send email campaign",
     "send_sms_campaign": "Send SMS campaign",
-    "select_at_least_one_contact": "Select at least one contact to {action}"
+    "select_at_least_one_contact": "Select at least one contact to {action}",
+    "sms_fleet_management": "SMS Fleet Management"
   },
   "fr": {
     "send_campaign": "Envoyer une campagne",
     "send_email_campaign": "Envoyer une campagne email",
     "send_sms_campaign": "Envoyer une campagne SMS",
-    "select_at_least_one_contact": "Sélectionnez au moins un contact pour {action}"
+    "select_at_least_one_contact": "Sélectionnez au moins un contact pour {action}",
+    "sms_fleet_management": "Gestion de la flotte SMS"
   }
 }
 </i18n>
