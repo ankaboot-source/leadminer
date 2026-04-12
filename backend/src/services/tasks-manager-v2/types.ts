@@ -19,7 +19,7 @@ export interface TaskProgress {
 export interface StreamPipe {
   streamName: string;
   consumerGroup?: string;
-  role?: string;
+  role?: StreamRole;
 }
 
 export interface ProgressMessage {
