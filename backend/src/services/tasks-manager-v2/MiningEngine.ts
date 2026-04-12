@@ -10,23 +10,31 @@ export interface MiningEngineDeps {
 export class MiningEngine {
   private pipelines: Map<string, Pipeline> = new Map();
 
-  constructor(private deps: MiningEngineDeps) {
-    this.deps.redisSubscriber.on('message', (channel: string, data: string) => {
-      const pipeline = this.pipelines.get(channel);
-      if (pipeline) {
-        try {
-          pipeline.onMessage(data);
-        } catch (error) {
-          logger.error(`Error processing message for mining ${channel}`, {
-            error
-          });
-        }
+  private messageHandler = (channel: string, data: string) => {
+    const pipeline = this.pipelines.get(channel);
+    if (pipeline) {
+      try {
+        pipeline.onMessage(data);
+      } catch (error) {
+        logger.error(`Error processing message for mining ${channel}`, {
+          error
+        });
       }
-    });
+    }
+  };
+
+  constructor(private deps: MiningEngineDeps) {
+    this.deps.redisSubscriber.on('message', this.messageHandler);
+  }
+
+  public destroy(): void {
+    this.deps.redisSubscriber.off('message', this.messageHandler);
   }
 
   private remove(miningId: string): void {
-    this.deps.redisSubscriber.unsubscribe(miningId);
+    this.deps.redisSubscriber.unsubscribe(miningId).catch((err) => {
+      logger.error(`Failed to unsubscribe from channel ${miningId}`, err);
+    });
     this.pipelines.delete(miningId);
   }
 
@@ -34,9 +42,15 @@ export class MiningEngine {
     const miningId = pipeline.miningId;
     this.pipelines.set(miningId, pipeline);
     this.deps.redisSubscriber.subscribe(miningId);
+
+    const originalOnComplete = pipeline.onComplete;
     pipeline.onComplete = async () => {
       this.remove(miningId);
+      if (originalOnComplete) {
+        await originalOnComplete();
+      }
     };
+
     try {
       await pipeline.start();
       return pipeline.getActiveTask();

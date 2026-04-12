@@ -12,8 +12,9 @@ jest.mock('../../../src/utils/logger', () => ({
 function makeServiceDeps() {
   const redisSubscriber = {
     on: jest.fn(),
+    off: jest.fn(),
     subscribe: jest.fn(),
-    unsubscribe: jest.fn()
+    unsubscribe: jest.fn().mockResolvedValue(undefined)
   };
 
   return {
@@ -33,6 +34,16 @@ describe('MiningEngine', () => {
   describe('Constructor', () => {
     it('should subscribe to Redis message events', () => {
       expect(deps.redisSubscriber.on).toHaveBeenCalledWith(
+        'message',
+        expect.any(Function)
+      );
+    });
+  });
+
+  describe('destroy', () => {
+    it('should unsubscribe from Redis message events', () => {
+      engine.destroy();
+      expect(deps.redisSubscriber.off).toHaveBeenCalledWith(
         'message',
         expect.any(Function)
       );
