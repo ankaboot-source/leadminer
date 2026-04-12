@@ -9,10 +9,7 @@ import {
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import TasksManager from '../services/tasks-manager/TasksManager';
-import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
-import { Task } from '../services/tasks-manager/types';
+import { Task, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
@@ -33,6 +30,10 @@ import {
 } from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
+import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
+import { CleanTask } from '../services/tasks-manager-v2/tasks/CleanTask';
+import { ExtractTask } from '../services/tasks-manager-v2/tasks/ExtractTask';
+import { TaskId } from '../services/tasks-manager-v2/types';
 
 /**
  * Exchanges an OAuth authorization code for tokens and extracts user email
@@ -161,11 +162,9 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
 }
 
 export default function initializeMiningController(
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST,
   miningSources: MiningSources,
-  contactsDB: Contacts
+  contactsDB: Contacts,
+  miningEngine: MiningEngine
 ) {
   return {
     createProviderMiningSource(req: Request, res: Response) {
@@ -349,7 +348,7 @@ export default function initializeMiningController(
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
       try {
-        const miningTask = await tasksManager.createTask({
+        const miningTask = await miningEngine.createImapTask({
           boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
@@ -358,21 +357,27 @@ export default function initializeMiningController(
           since
         });
 
-        const taskObject = tasksManager.getTaskOrThrow(miningTask.miningId);
-        const { userId, miningId } = taskObject;
+        const { userId, miningId } = miningTask;
 
         if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
+          const miningPipeline = miningEngine.getPipeline(miningId);
+          const cleanTask = miningPipeline.getTask<CleanTask>(TaskId.Clean);
+          const emailStream = cleanTask?.streams.input?.streamName;
+
+          if (emailStream) {
+            const totalPublished =
+              await publishPreviouslyUnverifiedEmailsToCleaning(
+                contactsDB,
+                userId,
+                miningId,
+                emailStream
+              );
+            const extractTask = miningPipeline.getTask<ExtractTask>(TaskId.Extract);
+            if (extractTask) {
+              extractTask.addCreatedContacts(totalPublished);
+            }
+          }
+          }
         }
 
         return res.status(201).send({ error: null, data: miningTask });
@@ -450,48 +455,56 @@ export default function initializeMiningController(
         const effectiveCleaningEnabled =
           cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
-        const fileMiningTask = await tasksManagerFile.createTask(
-          user.id,
-          name,
-          contacts.length,
-          effectiveCleaningEnabled
-        );
+        const fileMiningTask = await miningEngine.createFileTask({
+          userId: user.id,
+          fileName: name,
+          totalImported: contacts.length,
+          cleaningEnabled: effectiveCleaningEnabled
+        });
 
-        const taskObject = tasksManagerFile.getTaskOrThrow(
-          fileMiningTask.miningId
-        );
-        const { userId, miningId } = taskObject;
+        const { userId, miningId } = fileMiningTask;
 
         if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
+          const miningPipeline = miningEngine.getPipeline(miningId);
+          const cleanTask = miningPipeline.getTask<CleanTask>(TaskId.Clean);
+          const emailStream = cleanTask?.streams.input?.streamName;
+
+          if (emailStream) {
+            const totalPublished =
+              await publishPreviouslyUnverifiedEmailsToCleaning(
+                contactsDB,
+                userId,
+                miningId,
+                emailStream
+              );
+            const extractTask = miningPipeline.getTask<ExtractTask>(TaskId.Extract);
+            if (extractTask) {
+              extractTask.addCreatedContacts(totalPublished);
+            }
+          }
+          }
         }
 
-        // Publish contacts to extracting redis stream
-        await redis.getClient().xadd(
-          `messages_stream-${fileMiningTask.miningId}`,
-          '*',
-          'message',
-          JSON.stringify({
-            type: 'file',
-            miningId: fileMiningTask.miningId,
-            userId: user.id,
-            userEmail: user.email,
-            data: {
-              fileName: name,
-              contacts
-            }
-          })
-        );
+        // Publish contacts individually to extracting redis stream
+        const pipeline = redis.getClient().pipeline();
+        for (const contact of contacts) {
+          pipeline.xadd(
+            `messages_stream-${fileMiningTask.miningId}`,
+            '*',
+            'message',
+            JSON.stringify({
+              type: 'file',
+              miningId: fileMiningTask.miningId,
+              userId: user.id,
+              userEmail: user.email,
+              data: {
+                fileName: name,
+                contacts: [contact]
+              }
+            })
+          );
+        }
+        await pipeline.exec();
 
         return res.status(201).send({
           error: null,
@@ -531,28 +544,34 @@ export default function initializeMiningController(
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
       try {
-        const miningTask = await tasksManagerPST.createTask(
-          user.id,
-          name,
-          extractSignatures,
-          effectiveCleaningEnabled
-        );
+        const miningTask = await miningEngine.createPstTask({
+          userId: user.id,
+          source: name,
+          fetchEmailBody: extractSignatures,
+          cleaningEnabled: effectiveCleaningEnabled
+        });
 
-        const taskObject = tasksManagerPST.getTaskOrThrow(miningTask.miningId);
-        const { userId, miningId } = taskObject;
+        const { userId, miningId } = miningTask;
 
         if (effectiveCleaningEnabled) {
-          const totalPublished =
-            await publishPreviouslyUnverifiedEmailsToCleaning(
-              contactsDB,
-              userId,
-              miningId,
-              // skipcq: JS-0339 - Safe because we're inside effectiveCleaningEnabled check
-              taskObject.process.clean.details.stream.emailsStream!
-            );
-          taskObject.progress.createdContacts += totalPublished;
-          taskObject.process.clean.details.progress.createdContacts +=
-            totalPublished;
+          const miningPipeline = miningEngine.getPipeline(miningId);
+          const cleanTask = miningPipeline.getTask<CleanTask>(TaskId.Clean);
+          const emailStream = cleanTask?.streams.input?.streamName;
+
+          if (emailStream) {
+            const totalPublished =
+              await publishPreviouslyUnverifiedEmailsToCleaning(
+                contactsDB,
+                userId,
+                miningId,
+                emailStream
+              );
+            const extractTask = miningPipeline.getTask<ExtractTask>(TaskId.Extract);
+            if (extractTask) {
+              extractTask.addCreatedContacts(totalPublished);
+            }
+          }
+          }
         }
 
         return res.status(201).send({ error: null, data: miningTask });
@@ -583,24 +602,9 @@ export default function initializeMiningController(
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {
-      const { type: miningType } = req.params;
+      const { id: taskId } = req.params;
       const { user } = res.locals;
 
-      if (!user) {
-        res.status(404);
-        return next(new Error('user does not exists.'));
-      }
-
-      let manager;
-      if (miningType === 'file') {
-        manager = tasksManagerFile;
-      } else if (miningType === 'pst') {
-        manager = tasksManagerPST;
-      } else {
-        manager = tasksManager;
-      }
-
-      const { id: taskId } = req.params;
       const {
         processes,
         endEntireTask
@@ -616,7 +620,7 @@ export default function initializeMiningController(
       }
 
       try {
-        const task = manager.getActiveTask(taskId);
+        const task = miningEngine.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res
@@ -624,7 +628,7 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        const deletedTask = await manager.deleteTask(
+        const deletedTask = await miningEngine.deleteTask(
           taskId,
           endEntireTask ? null : processes
         );
@@ -651,14 +655,17 @@ export default function initializeMiningController(
           throw new Error('Unable to get active mining task');
         }
 
-        const fetchTask = (userActiveTasks as Task[]).find(
-          (t) => t.type === 'fetch'
-        );
         const extractTask = (userActiveTasks as Task[]).find(
-          (t) => t.type === 'extract'
+          (t) => t.type === TaskType.Extract
+        );
+        const fetchTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === TaskType.Fetch
         );
         const cleanTask = (userActiveTasks as Task[]).find(
-          (t) => t.type === 'clean'
+          (t) => t.type === TaskType.Clean
+        );
+        const signatureTask = (userActiveTasks as Task[]).find(
+          (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
         );
 
         const miningId = extractTask?.details?.miningId;
@@ -670,42 +677,15 @@ export default function initializeMiningController(
         let task = null;
 
         try {
-          task = tasksManager.getActiveTask(miningId);
+          task = miningEngine.getActiveTask(miningId);
         } catch {
           logger.error(
-            `Task not found in tasksManager for miningId=${miningId}`
+            `Task not found in miningEngine for miningId=${miningId}`
           );
         }
 
         if (!task) {
-          try {
-            task = tasksManagerFile.getActiveTask(miningId);
-          } catch {
-            logger.error(
-              `Task not found in tasksManagerFile for miningId=${miningId}`
-            );
-          }
-        }
-
-        if (!task) {
           throw new Error(`No active task found for miningId=${miningId}`);
-        }
-
-        if (
-          task.miningSource.type === 'email' &&
-          (!fetchTask || !extractTask || !cleanTask)
-        ) {
-          throw new Error(`Email mining with id: ${miningId} not found`);
-        } else if (
-          task.miningSource.type === 'file' &&
-          (!extractTask || !cleanTask)
-        ) {
-          throw new Error(`File mining with id: ${miningId} not found`);
-        } else if (
-          task.miningSource.type === 'pst' &&
-          (!extractTask || !cleanTask)
-        ) {
-          throw new Error(`PST mining with id: ${miningId} not found`);
         }
 
         if (user.id !== task.userId) {
@@ -718,7 +698,8 @@ export default function initializeMiningController(
           task,
           fetch: fetchTask,
           extract: extractTask,
-          clean: cleanTask
+          clean: cleanTask,
+          signature: signatureTask ?? null
         });
       } catch (err) {
         res.status(204);

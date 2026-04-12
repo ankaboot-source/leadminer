@@ -19,6 +19,7 @@ export class ExtractTask extends Task {
 
   addCreatedContacts(count: number): void {
     this.createdContactsCount += count;
+    this.emitProgress('createdContacts', this.createdContactCount);
   }
 
   constructor(config: ExtractTaskConfig) {
@@ -42,7 +43,6 @@ export class ExtractTask extends Task {
     }
     if (msg.progressType === 'createdContacts') {
       this.addCreatedContacts(msg.count);
-      this.emitProgress('createdContacts', this.createdContactCount);
     }
   }
 
