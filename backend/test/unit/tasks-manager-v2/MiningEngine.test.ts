@@ -1,4 +1,11 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import {
+  describe,
+  expect,
+  it,
+  jest,
+  beforeEach,
+  afterEach
+} from '@jest/globals';
 import type Redis from 'ioredis';
 import {
   MiningEngine,
@@ -33,6 +40,10 @@ describe('MiningEngine', () => {
   beforeEach(() => {
     deps = makeServiceDeps();
     engine = new MiningEngine(deps as unknown as MiningEngineDeps);
+  });
+
+  afterEach(() => {
+    engine.destroy();
   });
 
   describe('Constructor', () => {
