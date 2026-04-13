@@ -38,10 +38,10 @@ jest.mock('../../../src/db/mail', () => ({
 
 describe('Pipeline Integration', () => {
   let miningEngine: MiningEngine;
-  let mockRedisSubscriber: any;
-  let mockRedisPublisher: any;
-  let mockSSE: any;
-  let mockSSEFactory: any;
+  let mockRedisSubscriber: Redis;
+  let mockRedisPublisher: Redis;
+  let mockSSE: { subscribeSSE: jest.Mock; sendSSE: jest.Mock; stop: jest.Mock };
+  let mockSSEFactory: SSEBroadcasterFactory;
   let pipelineDeps: PipelineDeps;
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -113,7 +113,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -142,7 +142,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -172,7 +172,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -197,7 +197,7 @@ describe('Pipeline Integration', () => {
   });
 
   describe('File mining scenario', () => {
-    it('should create pipeline with extract task and set upstreamDone=true', async () => {
+    it('should create pipeline with extract task and set upstreamDone=true', () => {
       const pipeline = createFileMining(
         {
           miningId: 'test-file-1',
@@ -217,12 +217,12 @@ describe('Pipeline Integration', () => {
   });
 
   describe('PST mining scenario', () => {
-    it('should create pipeline with fetch, extract, and signature tasks', async () => {
+    it('should create pipeline with fetch, extract, and signature tasks', () => {
       const mockPstFetcher = {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 200 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const pipeline = createPstMining(
