@@ -1,14 +1,9 @@
 export { Task } from './tasks/Task';
 export type { TaskConfig } from './tasks/Task';
-export { MiningManager } from './MiningManager';
-export type { MiningManagerConfig, MiningManagerDeps } from './MiningManager';
-export { MiningManagerService } from './MiningManagerService';
-export type {
-  MiningManagerServiceDeps,
-  CreateImapTaskOptions,
-  CreateFileTaskOptions,
-  CreatePstTaskOptions
-} from './MiningManagerService';
+export { MiningEngine } from './MiningEngine';
+export type { MiningEngineDeps } from './MiningEngine';
+export { Pipeline } from './Pipeline';
+export type { PipelineConfig, PipelineDeps } from './Pipeline';
 export {
   createImapMining,
   createFileMining,
