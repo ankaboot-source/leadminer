@@ -85,7 +85,7 @@ describe('Pipeline', () => {
 
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -144,7 +144,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -165,7 +165,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -189,7 +189,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -255,7 +255,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -288,7 +288,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
@@ -354,7 +354,7 @@ describe('Pipeline', () => {
       const { factory, mockSSE } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
