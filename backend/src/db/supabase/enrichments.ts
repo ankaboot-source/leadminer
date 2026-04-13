@@ -1,8 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
-import { TaskCategory, TaskStatus, TaskType } from '../types';
+import { TaskCategory, TaskStatus, TaskType , EnrichTask } from '../types';
 
-import { EnrichTask } from '../types';
 import Engagements from './engagements';
 import SupabaseTasks from './tasks';
 

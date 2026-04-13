@@ -392,7 +392,7 @@ describe('Pipeline', () => {
         streams: {}
       });
 
-      const pipeline = makePipeline([mockTask], factory);
+      makePipeline([mockTask], factory);
 
       (mockTask as any).emit('progress', { key: 'test-event', value: 123 });
 

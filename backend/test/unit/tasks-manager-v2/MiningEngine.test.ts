@@ -1,7 +1,7 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import type Redis from 'ioredis';
 import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
 import { Pipeline } from '../../../src/services/tasks-manager-v2/Pipeline';
-import type Redis from 'ioredis';
 
 jest.mock('../../../src/utils/logger', () => ({
   debug: jest.fn(),

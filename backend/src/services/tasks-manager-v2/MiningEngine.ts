@@ -39,11 +39,12 @@ export class MiningEngine {
   }
 
   public async submit(pipeline: Pipeline): Promise<RedactedTask> {
-    const miningId = pipeline.miningId;
+    const { miningId } = pipeline;
     this.pipelines.set(miningId, pipeline);
     this.deps.redisSubscriber.subscribe(miningId);
 
     const originalOnComplete = pipeline.onComplete;
+    // eslint-disable-next-line no-param-reassign
     pipeline.onComplete = async () => {
       this.remove(miningId);
       if (originalOnComplete) {
@@ -73,6 +74,6 @@ export class MiningEngine {
     processIds?: string[]
   ): Promise<RedactedTask> {
     const pipeline = this.getPipeline(miningId);
-    return await pipeline.cancel(processIds);
+    return pipeline.cancel(processIds);
   }
 }

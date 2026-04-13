@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import initializeMiningController from '../controllers/mining.controller';
+import initializeMiningController, { MiningControllerDeps } from '../controllers/mining.controller';
 import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
 import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
-import { MiningControllerDeps } from '../controllers/mining.controller';
 
 export default function initializeMiningRoutes(
   miningEngine: MiningEngine,

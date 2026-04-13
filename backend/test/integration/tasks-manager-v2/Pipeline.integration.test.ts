@@ -1,5 +1,16 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 
+import type { Redis } from 'ioredis';
+import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
+import {
+  createImapMining,
+  createFileMining,
+  createPstMining
+} from '../../../src/services/tasks-manager-v2';
+import type { PipelineDeps } from '../../../src/services/tasks-manager-v2/Pipeline';
+import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
+import type { Tasks } from '../../../src/db/interfaces/Tasks';
+
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
@@ -22,18 +33,6 @@ jest.mock('../../../src/db/mail', () => ({
   refineContacts: jest.fn().mockResolvedValue(undefined as never),
   mailMiningComplete: jest.fn().mockResolvedValue(undefined as never)
 }));
-
-import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
-import {
-  createImapMining,
-  createFileMining,
-  createPstMining,
-  Pipeline
-} from '../../../src/services/tasks-manager-v2';
-import type { PipelineDeps } from '../../../src/services/tasks-manager-v2/Pipeline';
-import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
-import type { Tasks } from '../../../src/db/interfaces/Tasks';
-import type { Redis } from 'ioredis';
 
 describe('Pipeline Integration', () => {
   let miningEngine: MiningEngine;

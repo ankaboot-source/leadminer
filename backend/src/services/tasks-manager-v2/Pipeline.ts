@@ -10,7 +10,6 @@ import type {
   StreamCommand,
   StreamRole
 } from './types';
-import { TaskId } from './types';
 import SupabaseTasks from '../../db/supabase/tasks';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
