@@ -553,4 +553,38 @@ describe('Pipeline', () => {
       );
     });
   });
+
+  describe('cancel', () => {
+    it('should stop all tasks when called without processIds', async () => {
+      const { factory } = makeMockSSEFactory();
+
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const fetch = new FetchTask({
+        miningId: 'test',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: mockFetcher
+      });
+
+      const pipeline = makePipeline([fetch], factory);
+
+      const result = await pipeline.cancel();
+
+      expect(result.miningId).toBe('test-mining-id');
+      // The pipeline should have stopped the fetch task
+    });
+
+    it('should throw if processIds is not an array', async () => {
+      const { factory } = makeMockSSEFactory();
+      const pipeline = makePipeline([], factory);
+
+      await expect(
+        pipeline.cancel('not-an-array' as unknown as string[])
+      ).rejects.toThrow('processIds must be an array of strings');
+    });
+  });
 });
