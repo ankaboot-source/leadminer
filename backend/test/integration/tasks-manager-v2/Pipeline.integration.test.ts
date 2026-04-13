@@ -1,0 +1,241 @@
+import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+
+jest.mock('../../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'error',
+  SUPABASE_PROJECT_URL: 'fake',
+  SUPABASE_SECRET_PROJECT_TOKEN: 'fake',
+  REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: 'fake-group-extracting',
+  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning',
+  REDIS_SIGNATURE_STREAM_NAME: 'signature-test-stream',
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'fake-pubsub-channel',
+  IMAP_FETCH_BODY: true
+}));
+
+jest.mock('../../../src/utils/logger', () => ({
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn()
+}));
+
+jest.mock('../../../src/db/mail', () => ({
+  refineContacts: jest.fn().mockResolvedValue(undefined),
+  mailMiningComplete: jest.fn().mockResolvedValue(undefined)
+}));
+
+import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
+import {
+  createImapMining,
+  createFileMining,
+  createPstMining,
+  Pipeline
+} from '../../../src/services/tasks-manager-v2';
+import type { PipelineDeps } from '../../../src/services/tasks-manager-v2/Pipeline';
+
+describe('Pipeline Integration', () => {
+  let miningEngine: MiningEngine;
+  let mockRedisSubscriber: any;
+  let mockRedisPublisher: any;
+  let mockSSE: any;
+  let mockSSEFactory: any;
+  let pipelineDeps: PipelineDeps;
+
+  beforeEach(() => {
+    mockRedisSubscriber = {
+      on: jest.fn(),
+      off: jest.fn(),
+      subscribe: jest.fn(),
+      unsubscribe: jest.fn()
+    };
+    mockRedisPublisher = {
+      publish: jest.fn().mockResolvedValue(undefined),
+      xgroup: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1)
+    };
+    mockSSE = {
+      subscribeSSE: jest.fn(),
+      sendSSE: jest.fn(),
+      stop: jest.fn()
+    };
+    mockSSEFactory = {
+      create: jest.fn().mockReturnValue(mockSSE)
+    };
+    const mockTasksResolver = {
+      create: jest.fn().mockResolvedValue({ id: 'db-task-id' }),
+      update: jest.fn().mockResolvedValue(undefined)
+    };
+    pipelineDeps = {
+      tasksResolver: mockTasksResolver as any,
+      redisPublisher: mockRedisPublisher as any,
+      sseBroadcasterFactory: mockSSEFactory as any
+    };
+    miningEngine = new MiningEngine({
+      redisSubscriber: mockRedisSubscriber as any
+    });
+  });
+
+  describe('IMAP mining scenario', () => {
+    it('should create pipeline with fetch, extract, clean tasks and submit to engine', async () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      };
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-imap-1',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: true,
+          fetcherClient: mockFetcher
+        },
+        pipelineDeps
+      );
+
+      const result = await miningEngine.submit(pipeline);
+
+      expect(result.miningId).toBe('test-imap-1');
+      expect(result.processes).toHaveProperty('fetch');
+      expect(result.processes).toHaveProperty('extract');
+      expect(result.processes).toHaveProperty('clean');
+    });
+
+    it('should broadcast progress events through SSE', async () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      };
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-imap-2',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: false,
+          fetcherClient: mockFetcher
+        },
+        pipelineDeps
+      );
+
+      await miningEngine.submit(pipeline);
+
+      const fetchTask = pipeline.getTask('fetch');
+      (fetchTask as any).emit('progress', { key: 'fetched', value: 50 });
+
+      expect(mockSSE.sendSSE).toHaveBeenCalledWith(50, 'fetched-test-imap-2');
+    });
+
+    it('should publish StreamCommand to Redis on pipeline start', async () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      };
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-imap-3',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: true,
+          fetcherClient: mockFetcher
+        },
+        pipelineDeps
+      );
+
+      await miningEngine.submit(pipeline);
+
+      expect(mockRedisPublisher.xgroup).toHaveBeenCalled();
+      expect(mockRedisPublisher.publish).toHaveBeenCalledWith(
+        'fake-pubsub-channel',
+        expect.stringContaining('"command":"REGISTER"')
+      );
+    });
+
+    it('should terminate pipeline when miningEngine.terminate is called', async () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      };
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-imap-4',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: false,
+          fetcherClient: mockFetcher
+        },
+        pipelineDeps
+      );
+
+      await miningEngine.submit(pipeline);
+
+      const result = await miningEngine.terminate('test-imap-4');
+
+      expect(result.miningId).toBe('test-imap-4');
+    });
+  });
+
+  describe('File mining scenario', () => {
+    it('should create pipeline with extract task and set upstreamDone=true', async () => {
+      const pipeline = createFileMining(
+        {
+          miningId: 'test-file-1',
+          userId: 'user-1',
+          fileName: 'contacts.csv',
+          totalImported: 500,
+          cleaningEnabled: false
+        },
+        pipelineDeps
+      );
+
+      const extractTask = pipeline.getTask('extract');
+
+      expect(extractTask?.upstreamDone).toBe(true);
+      expect(extractTask?.progress.total).toBe(500);
+    });
+  });
+
+  describe('PST mining scenario', () => {
+    it('should create pipeline with fetch, extract, and signature tasks', async () => {
+      const mockPstFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 200 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      };
+
+      const pipeline = createPstMining(
+        {
+          miningId: 'test-pst-1',
+          userId: 'user-1',
+          source: 'file.pst',
+          fetchEmailBody: true,
+          cleaningEnabled: false,
+          fetcherClient: mockPstFetcher
+        },
+        pipelineDeps
+      );
+
+      expect(pipeline.getTask('fetch')).toBeDefined();
+      expect(pipeline.getTask('extract')).toBeDefined();
+      expect(pipeline.getTask('signature')).toBeDefined();
+    });
+  });
+});
