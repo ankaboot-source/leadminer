@@ -339,7 +339,11 @@ describe('SignatureTask', () => {
     it('should return correct map for FetchTask', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+        stopFetch: jest
+          .fn<
+            (opts: { miningId: string; canceled: boolean }) => Promise<void>
+          >()
+          .mockResolvedValue()
       } as unknown as FetcherClient;
       const fetch = new FetchTask({
         miningId: 'test',
@@ -398,7 +402,11 @@ describe('SignatureTask', () => {
     it('should return zero values when progress is zero', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+        stopFetch: jest
+          .fn<
+            (opts: { miningId: string; canceled: boolean }) => Promise<void>
+          >()
+          .mockResolvedValue()
       } as unknown as FetcherClient;
       const fetch = new FetchTask({
         miningId: 'test',
@@ -417,7 +425,9 @@ describe('FetchTask', () => {
   it('should set upstreamDone to true', () => {
     const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-      stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      stopFetch: jest
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
+        .mockResolvedValue()
     } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
@@ -435,7 +445,9 @@ describe('FetchTask', () => {
   it('should handle totalMessages and fetched messages', () => {
     const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-      stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      stopFetch: jest
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
+        .mockResolvedValue()
     } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
@@ -468,7 +480,9 @@ describe('FetchTask', () => {
   it('should handle cancellation', () => {
     const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-      stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      stopFetch: jest
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
+        .mockResolvedValue()
     } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
