@@ -24,7 +24,7 @@ export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
-  /\s(?:(?:\(via\s[\w\s]{1,50}?\))|(?:via\s[\w\s]{1,50}?)|(?:\((?:Google|Drive)[\w\s]{0,50}?\)))$/i;
+  /\s(\(?(via\s?.{1,20}?)|\((Google|Drive)\s?.{0,20}\))$/i;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 export const MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =

@@ -1,6 +1,7 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
 import { Pipeline } from '../../../src/services/tasks-manager-v2/Pipeline';
+import type Redis from 'ioredis';
 
 jest.mock('../../../src/utils/logger', () => ({
   debug: jest.fn(),
@@ -15,7 +16,7 @@ function makeServiceDeps() {
     off: jest.fn(),
     subscribe: jest.fn(),
     unsubscribe: jest.fn().mockResolvedValue(undefined)
-  };
+  } as unknown as Redis;
 
   return {
     redisSubscriber

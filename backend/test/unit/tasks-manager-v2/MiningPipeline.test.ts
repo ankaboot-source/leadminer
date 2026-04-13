@@ -6,6 +6,8 @@ import { FetchTask } from '../../../src/services/tasks-manager-v2/tasks/FetchTas
 import { ExtractTask } from '../../../src/services/tasks-manager-v2/tasks/ExtractTask';
 import { CleanTask } from '../../../src/services/tasks-manager-v2/tasks/CleanTask';
 import { SignatureTask } from '../../../src/services/tasks-manager-v2/tasks/SignatureTask';
+import SSEBroadcasterFactory from '../../../src/services/factory/SSEBroadcasterFactory';
+import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -40,23 +42,19 @@ jest.mock('../../../src/db/mail', () => ({
   mailMiningComplete: jest.fn()
 }));
 
-function makeMockSSE() {
-  return {
+function makeMockSSEFactory() {
+  const mockSSE = {
     subscribeSSE: jest.fn(),
     sendSSE: jest.fn(),
     stop: jest.fn()
   };
-}
-
-function makeMockSSEFactory() {
-  const mockSSE = makeMockSSE();
   const factory = {
-    create: jest.fn(() => mockSSE)
-  };
+    create: jest.fn().mockReturnValue(mockSSE)
+  } as unknown as SSEBroadcasterFactory;
   return { factory, mockSSE };
 }
 
-function makeManager(tasks: Task[], factory: { create: jest.Mock }) {
+function makePipeline(tasks: Task[], factory: SSEBroadcasterFactory) {
   return new Pipeline(
     {
       miningId: 'test-mining-id',
@@ -78,7 +76,10 @@ describe('Pipeline', () => {
     it('should merge all task progress maps', () => {
       const { factory } = makeMockSSEFactory();
 
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -111,9 +112,9 @@ describe('Pipeline', () => {
       });
       sig.progress = { total: 0, processed: 5 };
 
-      const manager = makeManager([fetch, extract, clean, sig], factory);
+      const pipeline = makePipeline([fetch, extract, clean, sig], factory);
 
-      const progress = manager.getFlattenedProgress();
+      const progress = pipeline.getFlattenedProgress();
 
       expect(progress.fetched).toBe(50);
       expect(progress.totalMessages).toBe(100);
@@ -125,16 +126,19 @@ describe('Pipeline', () => {
 
     it('should return empty when no tasks', () => {
       const { factory } = makeMockSSEFactory();
-      const manager = makeManager([], factory);
+      const pipeline = makePipeline([], factory);
 
-      const progress = manager.getFlattenedProgress();
+      const progress = pipeline.getFlattenedProgress();
 
       expect(progress).toEqual({});
     });
 
     it('should return zero for tasks with no progress', () => {
       const { factory } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -143,8 +147,8 @@ describe('Pipeline', () => {
         fetcherClient: mockFetcher
       });
 
-      const manager = makeManager([fetch], factory);
-      const progress = manager.getFlattenedProgress();
+      const pipeline = makePipeline([fetch], factory);
+      const progress = pipeline.getFlattenedProgress();
 
       expect(progress.fetched).toBe(0);
       expect(progress.totalMessages).toBe(0);
@@ -152,7 +156,10 @@ describe('Pipeline', () => {
 
     it('should work with single task', () => {
       const { factory } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -162,8 +169,8 @@ describe('Pipeline', () => {
       });
       fetch.progress = { total: 200, processed: 100 };
 
-      const manager = makeManager([fetch], factory);
-      const progress = manager.getFlattenedProgress();
+      const pipeline = makePipeline([fetch], factory);
+      const progress = pipeline.getFlattenedProgress();
 
       expect(progress.fetched).toBe(100);
       expect(progress.totalMessages).toBe(200);
@@ -173,7 +180,10 @@ describe('Pipeline', () => {
   describe('propagateProgress', () => {
     it('should propagate upstream processed as downstream total by default', () => {
       const { factory } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -191,10 +201,10 @@ describe('Pipeline', () => {
         outputStream: { streamName: 'out' }
       });
 
-      const manager = makeManager([fetch, extract], factory);
-      manager.addProgressLink('extract', 'fetch');
+      const pipeline = makePipeline([fetch, extract], factory);
+      pipeline.addProgressLink('extract', 'fetch');
 
-      (manager as any).propagateProgress();
+      (pipeline as any).propagateProgress();
 
       expect(extract.upstreamDone).toBe(true);
       expect(extract.progress.total).toBe(100);
@@ -219,12 +229,12 @@ describe('Pipeline', () => {
         inputStream: { streamName: 'clean-in', consumerGroup: 'cg' }
       });
 
-      const manager = makeManager([extract, clean], factory);
-      manager.addProgressLink('clean', 'extract', {
+      const pipeline = makePipeline([extract, clean], factory);
+      pipeline.addProgressLink('clean', 'extract', {
         totalFrom: 'createdContacts'
       });
 
-      (manager as any).propagateProgress();
+      (pipeline as any).propagateProgress();
 
       expect(clean.upstreamDone).toBe(true);
       expect(clean.progress.total).toBe(30);
@@ -232,7 +242,10 @@ describe('Pipeline', () => {
 
     it('should not propagate total when skipTotal is true', () => {
       const { factory } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -249,10 +262,10 @@ describe('Pipeline', () => {
         streamName: 'sig-stream'
       });
 
-      const manager = makeManager([fetch, sig], factory);
-      manager.addProgressLink('signature', 'fetch', { skipTotal: true });
+      const pipeline = makePipeline([fetch, sig], factory);
+      pipeline.addProgressLink('signature', 'fetch', { skipTotal: true });
 
-      (manager as any).propagateProgress();
+      (pipeline as any).propagateProgress();
 
       expect(sig.upstreamDone).toBe(true);
       expect(sig.progress.total).toBe(0);
@@ -260,7 +273,10 @@ describe('Pipeline', () => {
 
     it('should not propagate until all upstreams are complete', () => {
       const { factory } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -277,10 +293,10 @@ describe('Pipeline', () => {
         outputStream: { streamName: 'out' }
       });
 
-      const manager = makeManager([fetch, extract], factory);
-      manager.addProgressLink('extract', 'fetch');
+      const pipeline = makePipeline([fetch, extract], factory);
+      pipeline.addProgressLink('extract', 'fetch');
 
-      (manager as any).propagateProgress();
+      (pipeline as any).propagateProgress();
 
       expect(extract.upstreamDone).toBe(false);
       expect(extract.progress.total).toBe(0);
@@ -304,12 +320,12 @@ describe('Pipeline', () => {
         inputStream: { streamName: 'clean-in', consumerGroup: 'cg' }
       });
 
-      const manager = makeManager([extract, clean], factory);
-      manager.addProgressLink('clean', 'extract', {
+      const pipeline = makePipeline([extract, clean], factory);
+      pipeline.addProgressLink('clean', 'extract', {
         totalFrom: 'createdContacts'
       });
 
-      (manager as any).propagateProgress();
+      (pipeline as any).propagateProgress();
 
       expect(clean.upstreamDone).toBe(true);
       expect(clean.progress.total).toBe(0);
@@ -319,7 +335,10 @@ describe('Pipeline', () => {
   describe('broadcastTaskFinished', () => {
     it('should send task.processed value for finished event', () => {
       const { factory, mockSSE } = makeMockSSEFactory();
-      const mockFetcher = { startFetch: jest.fn(), stopFetch: jest.fn() };
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn().mockResolvedValue(undefined)
+      } as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test-mining-id',
@@ -329,9 +348,9 @@ describe('Pipeline', () => {
       });
       fetch.progress = { total: 100, processed: 100 };
 
-      const manager = makeManager([fetch], factory);
+      const pipeline = makePipeline([fetch], factory);
 
-      (manager as any).broadcastTaskFinished(fetch);
+      (pipeline as any).broadcastTaskFinished(fetch);
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(
         100,
@@ -349,13 +368,37 @@ describe('Pipeline', () => {
       });
       extract.progress = { total: 0, processed: 99 };
 
-      const manager = makeManager([extract], factory);
+      const pipeline = makePipeline([extract], factory);
 
-      (manager as any).broadcastTaskFinished(extract);
+      (pipeline as any).broadcastTaskFinished(extract);
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(
         99,
         'extract-finished-test-mining-id'
+      );
+    });
+  });
+
+  describe('listenToTasks', () => {
+    it('should broadcast progress events from tasks to SSE', () => {
+      const { factory, mockSSE } = makeMockSSEFactory();
+
+      const mockTask = new Task({
+        id: 'mock-task',
+        type: 'mock' as any,
+        category: 'mock' as any,
+        miningId: 'test-mining-id',
+        userId: 'test-user',
+        streams: {}
+      });
+
+      const pipeline = makePipeline([mockTask], factory);
+
+      (mockTask as any).emit('progress', { key: 'test-event', value: 123 });
+
+      expect(mockSSE.sendSSE).toHaveBeenCalledWith(
+        123,
+        'test-event-test-mining-id'
       );
     });
   });

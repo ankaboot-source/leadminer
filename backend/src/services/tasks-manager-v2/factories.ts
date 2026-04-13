@@ -183,17 +183,17 @@ export function createFileMining(
     deps
   );
 
-  const extractTask = manager.getTask(TaskId.Extract)!;
+  const extractTask = pipeline.getTask(TaskId.Extract)!;
   extractTask.progress.total = params.totalImported;
   extractTask.upstreamDone = true;
 
   if (params.cleaningEnabled) {
-    manager.addProgressLink(TaskId.Clean, TaskId.Extract, {
+    pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
   }
 
-  return manager;
+  return pipeline;
 }
 
 export interface CreatePstMiningParams {

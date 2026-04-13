@@ -9,7 +9,7 @@ import {
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import { Task as DBTask, TaskType } from '../db/types';
+import { SupabaseTask as DBTask, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
 import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
@@ -221,14 +221,14 @@ export default function initializeMiningController(
           type: provider
         });
         redirect = afterCallbackRedirect.startsWith('/mine')
-          ? \`\${afterCallbackRedirect}?source=\${exchangedTokens.email}\`
+          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
           : afterCallbackRedirect;
-        res.redirect(301, \`\${ENV.FRONTEND_HOST}\${redirect}\`);
+        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
       } catch (error) {
         logger.error(error);
         res.redirect(
           301,
-          \`\${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=\${provider}&referrer=\${state}&navigate_to=\${redirect}\`
+          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
         );
       }
     },
@@ -264,7 +264,7 @@ export default function initializeMiningController(
       if (errors.length) {
         return res
           .status(400)
-          .json({ message: \`Invalid input: \${errors.join(', ')}\` });
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
 
       const sanitizedHost = sanitizeImapInput(host);
@@ -339,7 +339,7 @@ export default function initializeMiningController(
       if (errors.length) {
         return res
           .status(400)
-          .json({ message: \`Invalid input: \${errors.join(', ')}\` });
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
 
       const sanitizedEmail = sanitizeImapInput(email);
@@ -365,16 +365,19 @@ export default function initializeMiningController(
       try {
         const miningId = await deps.idGenerator();
 
-        const pipeline = createImapMining({
-          miningId,
-          userId: user.id,
-          email: miningSourceCredentials.email,
-          boxes: sanitizedFolders,
-          fetchEmailBody: extractSignatures,
-          cleaningEnabled: effectiveCleaningEnabled,
-          since,
-          fetcherClient: deps.emailFetcherClient
-        }, deps.pipelineDeps);
+        const pipeline = createImapMining(
+          {
+            miningId,
+            userId: user.id,
+            email: miningSourceCredentials.email,
+            boxes: sanitizedFolders,
+            fetchEmailBody: extractSignatures,
+            cleaningEnabled: effectiveCleaningEnabled,
+            since,
+            fetcherClient: deps.emailFetcherClient
+          },
+          deps.pipelineDeps
+        );
 
         const miningTask = await miningEngine.submit(pipeline);
 
@@ -468,7 +471,7 @@ export default function initializeMiningController(
         if (errors.length) {
           return res
             .status(400)
-            .json({ message: \`Invalid input: \${errors.join(', ')}\` });
+            .json({ message: `Invalid input: ${errors.join(', ')}` });
         }
 
         const effectiveCleaningEnabled =
@@ -476,13 +479,16 @@ export default function initializeMiningController(
 
         const miningId = await deps.idGenerator();
 
-        const pipeline = createFileMining({
-          miningId,
-          userId: user.id,
-          fileName: name,
-          totalImported: contacts.length,
-          cleaningEnabled: effectiveCleaningEnabled
-        }, deps.pipelineDeps);
+        const pipeline = createFileMining(
+          {
+            miningId,
+            userId: user.id,
+            fileName: name,
+            totalImported: contacts.length,
+            cleaningEnabled: effectiveCleaningEnabled
+          },
+          deps.pipelineDeps
+        );
 
         const fileMiningTask = await miningEngine.submit(pipeline);
 
@@ -511,7 +517,7 @@ export default function initializeMiningController(
         const redisPipeline = redis.getClient().pipeline();
         for (const contact of contacts) {
           redisPipeline.xadd(
-            \`messages_stream-\${fileMiningTask.miningId}\`,
+            `messages_stream-${fileMiningTask.miningId}`,
             '*',
             'message',
             JSON.stringify({
@@ -559,7 +565,7 @@ export default function initializeMiningController(
       if (errors.length) {
         return res
           .status(400)
-          .json({ message: \`Invalid input: \${errors.join(', ')}\` });
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
 
       const effectiveCleaningEnabled =
@@ -568,14 +574,17 @@ export default function initializeMiningController(
       try {
         const miningId = await deps.idGenerator();
 
-        const pipeline = createPstMining({
-          miningId,
-          userId: user.id,
-          source: name,
-          fetchEmailBody: extractSignatures,
-          cleaningEnabled: effectiveCleaningEnabled,
-          fetcherClient: deps.pstFetcherClient
-        }, deps.pipelineDeps);
+        const pipeline = createPstMining(
+          {
+            miningId,
+            userId: user.id,
+            source: name,
+            fetchEmailBody: extractSignatures,
+            cleaningEnabled: effectiveCleaningEnabled,
+            fetcherClient: deps.pstFetcherClient
+          },
+          deps.pipelineDeps
+        );
 
         const miningTask = await miningEngine.submit(pipeline);
 
@@ -707,12 +716,12 @@ export default function initializeMiningController(
           task = miningEngine.getPipeline(miningId).getActiveTask();
         } catch {
           logger.error(
-            \`Task not found in miningEngine for miningId=\${miningId}\`
+            `Task not found in miningEngine for miningId=${miningId}`
           );
         }
 
         if (!task) {
-          throw new Error(\`No active task found for miningId=\${miningId}\`);
+          throw new Error(`No active task found for miningId=${miningId}`);
         }
 
         if (user.id !== task.userId) {
