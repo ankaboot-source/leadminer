@@ -55,10 +55,14 @@ function makeMockSSEFactory() {
     sendSSE: jest.fn(),
     stop: jest.fn()
   };
+  const mockRedisPublisher = {
+    publish: jest.fn(),
+    xgroup: jest.fn()
+  } as unknown as Redis;
   const factory = {
     create: jest.fn().mockReturnValue(mockSSE)
   } as unknown as SSEBroadcasterFactory;
-  return { factory, mockSSE };
+  return { factory, mockSSE, mockRedisPublisher };
 }
 
 function makePipeline(tasks: Task[], factory: SSEBroadcasterFactory) {
@@ -476,13 +480,13 @@ describe('Pipeline', () => {
     });
 
     it('should publish REGISTER command to Redis', async () => {
-      const { factory } = makeMockSSEFactory();
+      const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
         create: jest.fn().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
-          type: 'fetch',
+          type: 'extract',
           category: 'mining',
           details: {},
           status: 'pending',
@@ -490,20 +494,15 @@ describe('Pipeline', () => {
         })
       } as unknown as SupabaseTasks;
 
-      const mockRedisPublisher = {
-        publish: jest.fn()
-      } as unknown as Redis;
-
-      const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
-        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
-      } as unknown as FetcherClient;
-
-      const fetch = new FetchTask({
+      const extract = new ExtractTask({
         miningId: 'test-start',
         userId: 'test-user',
-        outputStream: 'messages_stream-test',
-        fetcherClient: mockFetcher
+        inputStream: {
+          streamName: 'messages_stream-test',
+          consumerGroup: 'test-consumer-group',
+          role: 'extract'
+        },
+        outputStream: { streamName: 'contacts_stream-test' }
       });
 
       const pipeline = new Pipeline(
@@ -511,7 +510,7 @@ describe('Pipeline', () => {
           miningId: 'test-start',
           userId: 'test-user',
           source: { type: 'email' as const, source: 'test@test.com' },
-          tasks: [fetch],
+          tasks: [extract],
           onComplete: undefined
         },
         {
@@ -526,6 +525,13 @@ describe('Pipeline', () => {
       expect(mockRedisPublisher.publish).toHaveBeenCalledWith(
         'fake-pubsub-channel',
         expect.stringContaining('REGISTER')
+      );
+      expect(mockRedisPublisher.xgroup).toHaveBeenCalledWith(
+        'CREATE',
+        expect.any(String),
+        expect.any(String),
+        '$',
+        'MKSTREAM'
       );
     });
   });
