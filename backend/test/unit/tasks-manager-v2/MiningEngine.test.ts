@@ -18,7 +18,7 @@ function makeServiceDeps() {
     on: jest.fn(),
     off: jest.fn(),
     subscribe: jest.fn(),
-    unsubscribe: jest.fn().mockResolvedValue(undefined)
+    unsubscribe: jest.fn<() => Promise<void>>().mockResolvedValue()
   } as unknown as Redis;
 
   return {
@@ -59,7 +59,7 @@ describe('MiningEngine', () => {
       const mockActiveTask = { id: 'test-task', miningId: 'test-mining-id' };
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockResolvedValue(undefined),
+        start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn().mockReturnValue(mockActiveTask),
         onComplete: undefined
       } as unknown as Pipeline;
@@ -94,7 +94,7 @@ describe('MiningEngine', () => {
     it('should remove the pipeline when onComplete is called', async () => {
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockResolvedValue(undefined),
+        start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn(),
         onComplete: undefined
       } as unknown as Pipeline;
@@ -122,7 +122,7 @@ describe('MiningEngine', () => {
       const mockCanceledTask = { id: 'test-task', miningId: 'test-mining-id' };
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockResolvedValue(undefined),
+        start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn(),
         cancel: jest.fn().mockResolvedValue(mockCanceledTask)
       } as unknown as Pipeline;
@@ -146,7 +146,7 @@ describe('MiningEngine', () => {
     it('should route redis messages to the correct pipeline', async () => {
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockResolvedValue(undefined),
+        start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn(),
         onMessage: jest.fn()
       } as unknown as Pipeline;
@@ -155,7 +155,7 @@ describe('MiningEngine', () => {
 
       const messageHandler = (
         deps.redisSubscriber.on as jest.Mock
-      ).mock.calls.find((call: any) => call[0] === 'message')?.[1] as (
+      ).mock.calls.find((call: unknown[]) => call[0] === 'message')?.[1] as (
         channel: string,
         data: string
       ) => void;
@@ -170,7 +170,7 @@ describe('MiningEngine', () => {
     it('should handle onMessage throwing an error gracefully', async () => {
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockResolvedValue(undefined),
+        start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn(),
         onMessage: jest.fn().mockImplementation(() => {
           throw new Error('Message error');
@@ -181,7 +181,7 @@ describe('MiningEngine', () => {
 
       const messageHandler = (
         deps.redisSubscriber.on as jest.Mock
-      ).mock.calls.find((call: any) => call[0] === 'message')?.[1] as (
+      ).mock.calls.find((call: unknown[]) => call[0] === 'message')?.[1] as (
         channel: string,
         data: string
       ) => void;
@@ -195,7 +195,7 @@ describe('MiningEngine', () => {
     it('should ignore messages for unknown pipelines', () => {
       const messageHandler = (
         deps.redisSubscriber.on as jest.Mock
-      ).mock.calls.find((call: any) => call[0] === 'message')?.[1] as (
+      ).mock.calls.find((call: unknown[]) => call[0] === 'message')?.[1] as (
         channel: string,
         data: string
       ) => void;
