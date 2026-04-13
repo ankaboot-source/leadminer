@@ -93,7 +93,7 @@ export function createImapMining(
     );
   }
 
-  const manager = new Pipeline(
+  const pipeline = new Pipeline(
     {
       miningId,
       userId: params.userId,
@@ -104,21 +104,21 @@ export function createImapMining(
     deps
   );
 
-  manager.addProgressLink(TaskId.Extract, TaskId.Fetch);
+  pipeline.addProgressLink(TaskId.Extract, TaskId.Fetch);
 
   if (params.cleaningEnabled) {
-    manager.addProgressLink(TaskId.Clean, TaskId.Extract, {
+    pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
   }
 
   if (params.fetchEmailBody) {
-    manager.addProgressLink(TaskId.Signature, TaskId.Fetch, {
+    pipeline.addProgressLink(TaskId.Signature, TaskId.Fetch, {
       skipTotal: true
     });
   }
 
-  return manager;
+  return pipeline;
 }
 
 export interface CreateFileMiningParams {
@@ -173,7 +173,7 @@ export function createFileMining(
     );
   }
 
-  const manager = new Pipeline(
+  const pipeline = new Pipeline(
     {
       miningId,
       userId: params.userId,
@@ -274,7 +274,7 @@ export function createPstMining(
     );
   }
 
-  const manager = new Pipeline(
+  const pipeline = new Pipeline(
     {
       miningId,
       userId: params.userId,
@@ -284,19 +284,19 @@ export function createPstMining(
     deps
   );
 
-  manager.addProgressLink(TaskId.Extract, TaskId.Fetch);
+  pipeline.addProgressLink(TaskId.Extract, TaskId.Fetch);
 
   if (params.cleaningEnabled) {
-    manager.addProgressLink(TaskId.Clean, TaskId.Extract, {
+    pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
   }
 
   if (params.fetchEmailBody) {
-    manager.addProgressLink(TaskId.Signature, TaskId.Fetch, {
+    pipeline.addProgressLink(TaskId.Signature, TaskId.Fetch, {
       skipTotal: true
     });
   }
 
-  return manager;
+  return pipeline;
 }
