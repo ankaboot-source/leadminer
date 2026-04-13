@@ -19,8 +19,8 @@ jest.mock('../../../src/utils/logger', () => ({
 }));
 
 jest.mock('../../../src/db/mail', () => ({
-  refineContacts: jest.fn().mockResolvedValue(undefined),
-  mailMiningComplete: jest.fn().mockResolvedValue(undefined)
+  refineContacts: jest.fn().mockResolvedValue(undefined as never),
+  mailMiningComplete: jest.fn().mockResolvedValue(undefined as never)
 }));
 
 import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
@@ -31,6 +31,9 @@ import {
   Pipeline
 } from '../../../src/services/tasks-manager-v2';
 import type { PipelineDeps } from '../../../src/services/tasks-manager-v2/Pipeline';
+import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
+import type { Tasks } from '../../../src/db/interfaces/Tasks';
+import type { Redis } from 'ioredis';
 
 describe('Pipeline Integration', () => {
   let miningEngine: MiningEngine;
@@ -48,10 +51,10 @@ describe('Pipeline Integration', () => {
       unsubscribe: jest.fn()
     };
     mockRedisPublisher = {
-      publish: jest.fn().mockResolvedValue(undefined),
-      xgroup: jest.fn().mockResolvedValue('OK'),
-      del: jest.fn().mockResolvedValue(1)
-    };
+      publish: jest.fn().mockResolvedValue(undefined as never),
+      xgroup: jest.fn().mockResolvedValue('OK' as never),
+      del: jest.fn().mockResolvedValue(1 as never)
+    } as unknown as Redis;
     mockSSE = {
       subscribeSSE: jest.fn(),
       sendSSE: jest.fn(),
@@ -61,9 +64,9 @@ describe('Pipeline Integration', () => {
       create: jest.fn().mockReturnValue(mockSSE)
     };
     const mockTasksResolver = {
-      create: jest.fn().mockResolvedValue({ id: 'db-task-id' }),
-      update: jest.fn().mockResolvedValue(undefined)
-    };
+      create: jest.fn().mockResolvedValue({ id: 'db-task-id' } as never),
+      update: jest.fn().mockResolvedValue(undefined as never)
+    } as unknown as Tasks;
     pipelineDeps = {
       tasksResolver: mockTasksResolver as any,
       redisPublisher: mockRedisPublisher as any,
@@ -79,9 +82,9 @@ describe('Pipeline Integration', () => {
       const mockFetcher = {
         startFetch: jest
           .fn()
-          .mockResolvedValue({ data: { totalMessages: 100 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
-      };
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+      } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
         {
@@ -108,9 +111,9 @@ describe('Pipeline Integration', () => {
       const mockFetcher = {
         startFetch: jest
           .fn()
-          .mockResolvedValue({ data: { totalMessages: 100 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
-      };
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+      } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
         {
@@ -137,9 +140,9 @@ describe('Pipeline Integration', () => {
       const mockFetcher = {
         startFetch: jest
           .fn()
-          .mockResolvedValue({ data: { totalMessages: 100 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
-      };
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+      } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
         {
@@ -167,9 +170,9 @@ describe('Pipeline Integration', () => {
       const mockFetcher = {
         startFetch: jest
           .fn()
-          .mockResolvedValue({ data: { totalMessages: 100 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
-      };
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+      } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
         {
@@ -217,9 +220,9 @@ describe('Pipeline Integration', () => {
       const mockPstFetcher = {
         startFetch: jest
           .fn()
-          .mockResolvedValue({ data: { totalMessages: 200 } }),
-        stopFetch: jest.fn().mockResolvedValue(undefined)
-      };
+          .mockResolvedValue({ data: { totalMessages: 200 } } as never),
+        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+      } as unknown as FetcherClient;
 
       const pipeline = createPstMining(
         {
