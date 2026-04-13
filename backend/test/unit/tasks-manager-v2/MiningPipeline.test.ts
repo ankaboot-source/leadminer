@@ -1,5 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import type { Redis } from 'ioredis';
+import { Request, Response } from 'express';
 
 import { Pipeline } from '../../../src/services/tasks-manager-v2/Pipeline';
 import { Task } from '../../../src/services/tasks-manager-v2/tasks/Task';
@@ -585,6 +586,26 @@ describe('Pipeline', () => {
       await expect(
         pipeline.cancel('not-an-array' as unknown as string[])
       ).rejects.toThrow('processIds must be an array of strings');
+    });
+  });
+
+  describe('attachSSE', () => {
+    it('should subscribe SSE connection to progress handler', () => {
+      const { factory, mockSSE } = makeMockSSEFactory();
+      const pipeline = makePipeline([], factory);
+
+      const mockReq = { on: jest.fn() };
+      const mockRes = { on: jest.fn(), write: jest.fn() };
+
+      pipeline.attachSSE({
+        req: mockReq as unknown as Request,
+        res: mockRes as unknown as Response
+      });
+
+      expect(mockSSE.subscribeSSE).toHaveBeenCalledWith({
+        req: mockReq,
+        res: mockRes
+      });
     });
   });
 });
