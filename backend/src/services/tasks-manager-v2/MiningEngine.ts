@@ -69,7 +69,7 @@ export class MiningEngine {
     return pipeline;
   }
 
-  public async terminate(
+  public terminate(
     miningId: string,
     processIds?: string[]
   ): Promise<RedactedTask> {

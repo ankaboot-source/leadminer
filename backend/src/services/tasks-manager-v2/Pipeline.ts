@@ -1,4 +1,5 @@
 import { Redis } from 'ioredis';
+import { Request, Response } from 'express';
 import { Task } from './tasks/Task';
 import type {
   TaskProgress,
@@ -107,7 +108,7 @@ export class Pipeline {
           this.deps.redisPublisher.xgroup(
             'CREATE',
             stream.streamName,
-            stream.consumerGroup!,
+            stream.consumerGroup as string,
             '$',
             'MKSTREAM'
           )
@@ -233,13 +234,16 @@ export class Pipeline {
 
     await Promise.all(
       streams
-        .filter((stream) => stream.consumerGroup)
+        .filter(
+          (stream): stream is StreamInfo & { consumerGroup: string } =>
+            stream.consumerGroup !== undefined
+        )
         .map(async (stream) => {
           try {
             await this.deps.redisPublisher.xgroup(
               'DESTROY',
               stream.streamName,
-              stream.consumerGroup!
+              stream.consumerGroup
             );
 
             await this.deps.redisPublisher.del(stream.streamName);
@@ -305,7 +309,7 @@ export class Pipeline {
     };
   }
 
-  attachSSE(connection: { req: any; res: any }): void {
+  attachSSE(connection: { req: Request; res: Response }): void {
     this.progressHandlerSSE.subscribeSSE(connection);
   }
 
@@ -348,11 +352,12 @@ export class Pipeline {
     }
 
     const endEntireTask = !processIds || processIds.length === 0;
-    const tasksToStop = [...this.tasks.values()].filter(
-      (t) =>
-        !t.stoppedAt &&
-        (endEntireTask || (t.dbId && processIds!.includes(t.dbId)))
-    );
+    const tasksToStop = [...this.tasks.values()].filter((t) => {
+      if (t.stoppedAt) return false;
+      if (endEntireTask) return true;
+      if (!t.dbId) return false;
+      return (processIds as string[]).includes(t.dbId);
+    });
 
     if (tasksToStop.length) {
       await Promise.all(

@@ -1,6 +1,9 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import type Redis from 'ioredis';
-import { MiningEngine } from '../../../src/services/tasks-manager-v2/MiningEngine';
+import {
+  MiningEngine,
+  type MiningEngineDeps
+} from '../../../src/services/tasks-manager-v2/MiningEngine';
 import { Pipeline } from '../../../src/services/tasks-manager-v2/Pipeline';
 
 jest.mock('../../../src/utils/logger', () => ({
@@ -29,7 +32,7 @@ describe('MiningEngine', () => {
 
   beforeEach(() => {
     deps = makeServiceDeps();
-    engine = new MiningEngine(deps as any);
+    engine = new MiningEngine(deps as unknown as MiningEngineDeps);
   });
 
   describe('Constructor', () => {
@@ -94,14 +97,16 @@ describe('MiningEngine', () => {
         start: jest.fn().mockResolvedValue(undefined),
         getActiveTask: jest.fn(),
         onComplete: undefined
-      } as any as Pipeline;
+      } as unknown as Pipeline;
 
       await engine.submit(pipeline);
 
       expect(pipeline.onComplete).toBeDefined();
 
       // Simulate completion
-      await pipeline.onComplete!();
+      if (pipeline.onComplete) {
+        await pipeline.onComplete();
+      }
 
       expect(() => engine.getPipeline('test-mining-id')).toThrow(
         'Task with mining ID test-mining-id does not exist.'
@@ -130,8 +135,8 @@ describe('MiningEngine', () => {
       expect(result).toBe(mockCanceledTask);
     });
 
-    it('should throw if pipeline does not exist', async () => {
-      await expect(engine.terminate('non-existent')).rejects.toThrow(
+    it('should throw if pipeline does not exist', () => {
+      expect(() => engine.terminate('non-existent')).toThrow(
         'Task with mining ID non-existent does not exist.'
       );
     });

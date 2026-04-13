@@ -11,7 +11,7 @@ export interface ExtractTaskConfig {
 }
 
 export class ExtractTask extends Task {
-  private createdContactsCount: number = 0;
+  private createdContactsCount = 0;
 
   get createdContactCount(): number {
     return this.createdContactsCount;

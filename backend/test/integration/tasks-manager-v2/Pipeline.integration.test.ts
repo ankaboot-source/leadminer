@@ -10,6 +10,8 @@ import {
 import type { PipelineDeps } from '../../../src/services/tasks-manager-v2/Pipeline';
 import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
 import type { Tasks } from '../../../src/db/interfaces/Tasks';
+import SSEBroadcasterFactory from '../../../src/services/factory/SSEBroadcasterFactory';
+import SupabaseTasks from '../../../src/db/supabase/tasks';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -67,12 +69,12 @@ describe('Pipeline Integration', () => {
       update: jest.fn().mockResolvedValue(undefined as never)
     } as unknown as Tasks;
     pipelineDeps = {
-      tasksResolver: mockTasksResolver as any,
-      redisPublisher: mockRedisPublisher as any,
-      sseBroadcasterFactory: mockSSEFactory as any
+      tasksResolver: mockTasksResolver as unknown as SupabaseTasks,
+      redisPublisher: mockRedisPublisher as unknown as Redis,
+      sseBroadcasterFactory: mockSSEFactory as unknown as SSEBroadcasterFactory
     };
     miningEngine = new MiningEngine({
-      redisSubscriber: mockRedisSubscriber as any
+      redisSubscriber: mockRedisSubscriber as unknown as Redis
     });
   });
 
@@ -82,7 +84,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+        stopFetch: jest.fn().mockResolvedValue(undefined)
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -111,7 +113,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+        stopFetch: jest.fn().mockResolvedValue(undefined)
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -130,7 +132,7 @@ describe('Pipeline Integration', () => {
       await miningEngine.submit(pipeline);
 
       const fetchTask = pipeline.getTask('fetch');
-      (fetchTask as any).emit('progress', { key: 'fetched', value: 50 });
+      fetchTask?.emit('progress', { key: 'fetched', value: 50 });
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(50, 'fetched-test-imap-2');
     });
@@ -140,7 +142,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+        stopFetch: jest.fn().mockResolvedValue(undefined)
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -170,7 +172,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 100 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+        stopFetch: jest.fn().mockResolvedValue(undefined)
       } as unknown as FetcherClient;
 
       const pipeline = createImapMining(
@@ -220,7 +222,7 @@ describe('Pipeline Integration', () => {
         startFetch: jest
           .fn()
           .mockResolvedValue({ data: { totalMessages: 200 } } as never),
-        stopFetch: jest.fn().mockResolvedValue(undefined as never)
+        stopFetch: jest.fn().mockResolvedValue(undefined)
       } as unknown as FetcherClient;
 
       const pipeline = createPstMining(

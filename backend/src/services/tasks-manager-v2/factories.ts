@@ -183,7 +183,10 @@ export function createFileMining(
     deps
   );
 
-  const extractTask = pipeline.getTask(TaskId.Extract)!;
+  const extractTask = pipeline.getTask<ExtractTask>(TaskId.Extract);
+  if (!extractTask) {
+    throw new Error(`ExtractTask not found in pipeline ${miningId}`);
+  }
   extractTask.progress.total = params.totalImported;
   extractTask.upstreamDone = true;
 

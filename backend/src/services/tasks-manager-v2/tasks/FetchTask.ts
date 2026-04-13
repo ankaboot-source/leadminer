@@ -55,7 +55,7 @@ export class FetchTask extends Task {
     try {
       const result = await this.fetcherClient.startFetch({
         miningId: this.miningId,
-        contactStream: this.streams.output!.streamName,
+        contactStream: this.streams.output?.streamName ?? '',
         signatureStream: this.config.signatureStream as string,
         extractSignatures: this.config.extractSignatures as boolean,
         userId: this.userId,
@@ -74,9 +74,9 @@ export class FetchTask extends Task {
             type: this.type,
             category: this.category,
             status: this.status,
-            details: this.toDetails()
-          } as any);
-        } catch (updateError) {
+            details: this.toDetails() as unknown as Record<string, never>
+          });
+        } catch {
           // Best effort — the main error is the fetcher failure
         }
       }

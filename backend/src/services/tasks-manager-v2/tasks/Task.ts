@@ -32,7 +32,7 @@ export class Task extends EventEmitter {
 
   progress: TaskProgress = { total: 0, processed: 0 };
 
-  upstreamDone: boolean = false;
+  upstreamDone = false;
 
   streams: { input?: StreamPipe; output?: StreamPipe };
 
@@ -67,8 +67,8 @@ export class Task extends EventEmitter {
       type: this.type,
       category: this.category,
       status: this.status,
-      details: this.toDetails()
-    } as any);
+      details: this.toDetails() as unknown as Record<string, never>
+    });
 
     this.dbId = record.id;
     this.startedAt = record.startedAt;
@@ -92,11 +92,11 @@ export class Task extends EventEmitter {
           type: this.type,
           category: this.category,
           status: this.status,
-          details: this.toDetails(),
+          details: this.toDetails() as unknown as Record<string, never>,
           stoppedAt: this.stoppedAt,
           startedAt: this.startedAt,
           duration: this.duration
-        } as any);
+        });
       } catch (error) {
         logger.error(`Failed to update task ${this.id} in database`, { error });
       }
@@ -115,9 +115,7 @@ export class Task extends EventEmitter {
 
   isComplete(): boolean {
     if (this.status !== TaskStatus.Running) return true;
-    if (this.upstreamDone && this.progress.processed >= this.progress.total)
-      return true;
-    return false;
+    return this.upstreamDone && this.progress.processed >= this.progress.total;
   }
 
   toDetails(): Record<string, unknown> {

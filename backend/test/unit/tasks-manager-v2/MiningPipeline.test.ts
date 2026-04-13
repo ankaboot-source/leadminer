@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import type { Redis } from 'ioredis';
 
 import { Pipeline } from '../../../src/services/tasks-manager-v2/Pipeline';
 import { Task } from '../../../src/services/tasks-manager-v2/tasks/Task';
@@ -8,6 +9,12 @@ import { CleanTask } from '../../../src/services/tasks-manager-v2/tasks/CleanTas
 import { SignatureTask } from '../../../src/services/tasks-manager-v2/tasks/SignatureTask';
 import SSEBroadcasterFactory from '../../../src/services/factory/SSEBroadcasterFactory';
 import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks/FetchTask';
+import {
+  TaskStatus,
+  TaskType,
+  TaskCategory
+} from '../../../src/services/tasks-manager-v2/types';
+import SupabaseTasks from '../../../src/db/supabase/tasks';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -64,8 +71,8 @@ function makePipeline(tasks: Task[], factory: SSEBroadcasterFactory) {
       onComplete: undefined
     },
     {
-      tasksResolver: {} as any,
-      redisPublisher: { publish: jest.fn() } as any,
+      tasksResolver: {} as unknown as SupabaseTasks,
+      redisPublisher: { publish: jest.fn() } as unknown as Redis,
       sseBroadcasterFactory: factory
     }
   );
@@ -192,7 +199,7 @@ describe('Pipeline', () => {
         fetcherClient: mockFetcher
       });
       fetch.progress = { total: 100, processed: 100 };
-      fetch.status = 'done' as any;
+      fetch.status = TaskStatus.Done;
 
       const extract = new ExtractTask({
         miningId: 'test',
@@ -204,7 +211,9 @@ describe('Pipeline', () => {
       const pipeline = makePipeline([fetch, extract], factory);
       pipeline.addProgressLink('extract', 'fetch');
 
-      (pipeline as any).propagateProgress();
+      (
+        pipeline as unknown as { propagateProgress: () => void }
+      ).propagateProgress();
 
       expect(extract.upstreamDone).toBe(true);
       expect(extract.progress.total).toBe(100);
@@ -221,7 +230,7 @@ describe('Pipeline', () => {
       });
       extract.progress = { total: 50, processed: 50 };
       extract.addCreatedContacts(30);
-      extract.status = 'done' as any;
+      extract.status = TaskStatus.Done;
 
       const clean = new CleanTask({
         miningId: 'test',
@@ -234,7 +243,9 @@ describe('Pipeline', () => {
         totalFrom: 'createdContacts'
       });
 
-      (pipeline as any).propagateProgress();
+      (
+        pipeline as unknown as { propagateProgress: () => void }
+      ).propagateProgress();
 
       expect(clean.upstreamDone).toBe(true);
       expect(clean.progress.total).toBe(30);
@@ -254,7 +265,7 @@ describe('Pipeline', () => {
         fetcherClient: mockFetcher
       });
       fetch.progress = { total: 200, processed: 200 };
-      fetch.status = 'done' as any;
+      fetch.status = TaskStatus.Done;
 
       const sig = new SignatureTask({
         miningId: 'test',
@@ -265,7 +276,9 @@ describe('Pipeline', () => {
       const pipeline = makePipeline([fetch, sig], factory);
       pipeline.addProgressLink('signature', 'fetch', { skipTotal: true });
 
-      (pipeline as any).propagateProgress();
+      (
+        pipeline as unknown as { propagateProgress: () => void }
+      ).propagateProgress();
 
       expect(sig.upstreamDone).toBe(true);
       expect(sig.progress.total).toBe(0);
@@ -296,7 +309,9 @@ describe('Pipeline', () => {
       const pipeline = makePipeline([fetch, extract], factory);
       pipeline.addProgressLink('extract', 'fetch');
 
-      (pipeline as any).propagateProgress();
+      (
+        pipeline as unknown as { propagateProgress: () => void }
+      ).propagateProgress();
 
       expect(extract.upstreamDone).toBe(false);
       expect(extract.progress.total).toBe(0);
@@ -312,7 +327,7 @@ describe('Pipeline', () => {
         outputStream: { streamName: 'out' }
       });
       extract.progress = { total: 0, processed: 0 };
-      extract.status = 'done' as any;
+      extract.status = TaskStatus.Done;
 
       const clean = new CleanTask({
         miningId: 'test',
@@ -325,7 +340,9 @@ describe('Pipeline', () => {
         totalFrom: 'createdContacts'
       });
 
-      (pipeline as any).propagateProgress();
+      (
+        pipeline as unknown as { propagateProgress: () => void }
+      ).propagateProgress();
 
       expect(clean.upstreamDone).toBe(true);
       expect(clean.progress.total).toBe(0);
@@ -350,7 +367,9 @@ describe('Pipeline', () => {
 
       const pipeline = makePipeline([fetch], factory);
 
-      (pipeline as any).broadcastTaskFinished(fetch);
+      (
+        pipeline as unknown as { broadcastTaskFinished: (task: Task) => void }
+      ).broadcastTaskFinished(fetch);
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(
         100,
@@ -370,7 +389,9 @@ describe('Pipeline', () => {
 
       const pipeline = makePipeline([extract], factory);
 
-      (pipeline as any).broadcastTaskFinished(extract);
+      (
+        pipeline as unknown as { broadcastTaskFinished: (task: Task) => void }
+      ).broadcastTaskFinished(extract);
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(
         99,
@@ -385,8 +406,8 @@ describe('Pipeline', () => {
 
       const mockTask = new Task({
         id: 'mock-task',
-        type: 'mock' as any,
-        category: 'mock' as any,
+        type: 'fetch' as TaskType,
+        category: 'mining' as TaskCategory,
         miningId: 'test-mining-id',
         userId: 'test-user',
         streams: {}
@@ -394,7 +415,10 @@ describe('Pipeline', () => {
 
       makePipeline([mockTask], factory);
 
-      (mockTask as any).emit('progress', { key: 'test-event', value: 123 });
+      (mockTask as unknown as Task).emit('progress', {
+        key: 'test-event',
+        value: 123
+      });
 
       expect(mockSSE.sendSSE).toHaveBeenCalledWith(
         123,

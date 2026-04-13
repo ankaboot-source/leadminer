@@ -30,7 +30,7 @@ export default function initializeStreamController(miningEngine: MiningEngine) {
         res.end();
       }
 
-      req.on('close', async () => {
+      req.on('close', () => {
         logger.warn(`SSE Connection lost for mining task with id: ${taskId}`);
       });
     }
