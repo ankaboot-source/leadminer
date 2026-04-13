@@ -6,13 +6,7 @@ import {
   EmailVerificationData,
   EmailVerificationHandler
 } from './emailVerificationHandlers';
-
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  emailsStream: string;
-  emailsConsumerGroup: string;
-}
+import { StreamCommand } from '../types';
 
 export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
@@ -20,7 +14,7 @@ export default class EmailVerificationConsumer {
   private readonly activeStreams = new Set<string>();
 
   constructor(
-    private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
+    private readonly taskManagementSubscriber: RedisSubscriber<StreamCommand>,
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailVerificationData>,
     private readonly batchSize: number,
     private readonly streamsHandler: EmailVerificationHandler,
@@ -29,27 +23,30 @@ export default class EmailVerificationConsumer {
   ) {
     this.isInterrupted = true;
 
-    this.taskManagementSubscriber.subscribe(
-      ({ miningId, command, emailsStream }) => {
-        if (emailsStream) {
-          if (command === 'REGISTER') {
-            this.activeStreams.add(emailsStream);
-            this.streamsHandler.registerStream(emailsStream);
-          } else {
-            this.activeStreams.delete(emailsStream);
-            this.streamsHandler.unregisterStream(emailsStream);
-          }
-        }
+    this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
+      const { miningId, command, streams } = msg;
+      const cleanStream = streams.find((s) => s.role === 'clean');
+      if (!cleanStream) return;
+      const emailsStream = cleanStream.streamName;
 
-        this.logger.debug('Received PubSub signal.', {
-          metadata: {
-            miningId,
-            command,
-            emailsStream
-          }
-        });
+      if (emailsStream) {
+        if (command === 'REGISTER') {
+          this.activeStreams.add(emailsStream);
+          this.streamsHandler.registerStream(emailsStream);
+        } else {
+          this.activeStreams.delete(emailsStream);
+          this.streamsHandler.unregisterStream(emailsStream);
+        }
       }
-    );
+
+      this.logger.debug('Received PubSub signal.', {
+        metadata: {
+          miningId,
+          command,
+          emailsStream
+        }
+      });
+    });
   }
 
   /**

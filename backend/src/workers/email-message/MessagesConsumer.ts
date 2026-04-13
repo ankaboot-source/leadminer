@@ -8,14 +8,7 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
-
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  messagesStream: string;
-  messagesConsumerGroup: string;
-  emailsVerificationStream?: string;
-}
+import { StreamCommand } from '../types';
 
 interface StreamEntry {
   emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
@@ -28,7 +21,7 @@ export default class MessagesConsumer {
   private readonly activeStreams = new Map<string, StreamEntry>();
 
   constructor(
-    private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
+    private readonly taskManagementSubscriber: RedisSubscriber<StreamCommand>,
     private readonly emailMessagesStreamsConsumer: MultipleStreamsConsumer<EmailMessageData>,
     private readonly batchSize: number,
     private readonly messageProcessor: (
@@ -41,51 +34,50 @@ export default class MessagesConsumer {
   ) {
     this.isInterrupted = true;
 
-    this.taskManagementSubscriber.subscribe(
-      async ({
-        miningId,
-        command,
-        messagesStream,
-        emailsVerificationStream
-      }) => {
-        if (messagesStream && emailMessagesStreamsConsumer) {
-          if (command === 'REGISTER') {
-            const queuedEmailsCache = new RedisQueuedEmailsCache(
-              redisClient,
-              miningId
-            );
+    this.taskManagementSubscriber.subscribe(async (msg: StreamCommand) => {
+      const { miningId, command, streams } = msg;
+      const extractStream = streams.find((s) => s.role === 'extract');
+      const cleanStream = streams.find((s) => s.role === 'clean');
+      const messagesStream = extractStream?.streamName;
+      const emailsVerificationStream = cleanStream?.streamName;
 
-            const emailsStreamProducer = emailsVerificationStream
-              ? new RedisStreamProducer<EmailVerificationData>(
-                  redisClient,
-                  emailsVerificationStream,
-                  this.logger
-                )
-              : null;
+      if (messagesStream) {
+        if (command === 'REGISTER') {
+          const queuedEmailsCache = new RedisQueuedEmailsCache(
+            redisClient,
+            miningId
+          );
 
-            this.activeStreams.set(messagesStream, {
-              emailsStreamProducer,
-              queuedEmailsCache
-            });
-          } else if (command === 'DELETE') {
-            const streamEntry = this.activeStreams.get(messagesStream);
-            if (streamEntry) {
-              await streamEntry.queuedEmailsCache.destroy();
-              this.activeStreams.delete(messagesStream);
-            }
+          const emailsStreamProducer = emailsVerificationStream
+            ? new RedisStreamProducer<EmailVerificationData>(
+                redisClient,
+                emailsVerificationStream,
+                this.logger
+              )
+            : null;
+
+          this.activeStreams.set(messagesStream, {
+            emailsStreamProducer,
+            queuedEmailsCache
+          });
+        } else if (command === 'DELETE') {
+          const streamEntry = this.activeStreams.get(messagesStream);
+          if (streamEntry) {
+            await streamEntry.queuedEmailsCache.destroy();
+            this.activeStreams.delete(messagesStream);
           }
         }
-
-        this.logger.debug('Received PubSub signal.', {
-          metadata: {
-            miningId,
-            command,
-            messagesStream,
-            emailsVerificationStream: emailsVerificationStream ?? 'not provided'
-          }
-        });
       }
-    );
+
+      this.logger.debug('Received PubSub signal.', {
+        metadata: {
+          miningId,
+          command,
+          messagesStream,
+          emailsVerificationStream: emailsVerificationStream ?? 'not provided'
+        }
+      });
+    });
   }
 
   /**
