@@ -433,7 +433,7 @@ describe('Pipeline', () => {
 
   describe('start', () => {
     it('should start all tasks and register streams', async () => {
-      const { factory } = makeMockSSEFactory();
+      const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
         create: jest.fn().mockResolvedValue({
@@ -459,17 +459,27 @@ describe('Pipeline', () => {
         fetcherClient: mockFetcher
       });
 
+      const clean = new CleanTask({
+        miningId: 'test',
+        userId: 'test-user',
+        inputStream: {
+          streamName: 'messages_stream-test',
+          consumerGroup: 'test-consumer-group',
+          role: 'clean'
+        }
+      });
+
       const pipeline = new Pipeline(
         {
           miningId: 'test',
           userId: 'test-user',
           source: { type: 'email' as const, source: 'test@test.com' },
-          tasks: [fetch],
+          tasks: [fetch, clean],
           onComplete: undefined
         },
         {
           tasksResolver: mockTasksResolver,
-          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          redisPublisher: mockRedisPublisher,
           sseBroadcasterFactory: factory
         }
       );
@@ -477,6 +487,14 @@ describe('Pipeline', () => {
       await pipeline.start();
 
       expect(mockTasksResolver.create).toHaveBeenCalled();
+      expect(mockFetcher.startFetch).toHaveBeenCalled();
+      expect(mockRedisPublisher.xgroup).toHaveBeenCalledWith(
+        'CREATE',
+        expect.any(String),
+        expect.any(String),
+        '$',
+        'MKSTREAM'
+      );
     });
 
     it('should publish REGISTER command to Redis', async () => {
