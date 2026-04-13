@@ -426,4 +426,107 @@ describe('Pipeline', () => {
       );
     });
   });
+
+  describe('start', () => {
+    it('should start all tasks and register streams', async () => {
+      const { factory } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: 'fetch',
+          category: 'mining',
+          details: {},
+          status: 'pending',
+          startedAt: new Date().toISOString()
+        })
+      } as unknown as SupabaseTasks;
+
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const fetch = new FetchTask({
+        miningId: 'test',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: mockFetcher
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      await pipeline.start();
+
+      expect(mockTasksResolver.create).toHaveBeenCalled();
+    });
+
+    it('should publish REGISTER command to Redis', async () => {
+      const { factory } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: 'fetch',
+          category: 'mining',
+          details: {},
+          status: 'pending',
+          startedAt: new Date().toISOString()
+        })
+      } as unknown as SupabaseTasks;
+
+      const mockRedisPublisher = {
+        publish: jest.fn()
+      } as unknown as Redis;
+
+      const mockFetcher = {
+        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const fetch = new FetchTask({
+        miningId: 'test-start',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: mockFetcher
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-start',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: mockRedisPublisher,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      await pipeline.start();
+
+      expect(mockRedisPublisher.publish).toHaveBeenCalledWith(
+        'fake-pubsub-channel',
+        expect.stringContaining('REGISTER')
+      );
+    });
+  });
 });
