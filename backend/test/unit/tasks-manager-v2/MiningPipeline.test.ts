@@ -575,7 +575,7 @@ describe('Pipeline', () => {
       const result = await pipeline.cancel();
 
       expect(result.miningId).toBe('test-mining-id');
-      // The pipeline should have stopped the fetch task
+      expect(mockFetcher.stopFetch).toHaveBeenCalled();
     });
 
     it('should throw if processIds is not an array', async () => {
