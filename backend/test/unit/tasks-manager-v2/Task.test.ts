@@ -340,7 +340,7 @@ describe('SignatureTask', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
       const fetch = new FetchTask({
         miningId: 'test',
         userId: 'test-user',
@@ -399,7 +399,7 @@ describe('SignatureTask', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
       const fetch = new FetchTask({
         miningId: 'test',
         userId: 'test-user',
@@ -415,10 +415,10 @@ describe('SignatureTask', () => {
 
 describe('FetchTask', () => {
   it('should set upstreamDone to true', () => {
-    const mockFetcher: FetcherClient = {
+    const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest.fn().mockResolvedValue(undefined)
-    };
+    } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
       miningId: 'test',
@@ -433,10 +433,10 @@ describe('FetchTask', () => {
   });
 
   it('should handle totalMessages and fetched messages', () => {
-    const mockFetcher: FetcherClient = {
+    const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest.fn().mockResolvedValue(undefined)
-    };
+    } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
       miningId: 'test',
@@ -466,10 +466,10 @@ describe('FetchTask', () => {
   });
 
   it('should handle cancellation', () => {
-    const mockFetcher: FetcherClient = {
+    const mockFetcher = {
       startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest.fn().mockResolvedValue(undefined)
-    };
+    } as unknown as FetcherClient;
 
     const fetch = new FetchTask({
       miningId: 'test',

@@ -79,7 +79,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -138,7 +138,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -159,7 +159,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -183,7 +183,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -245,7 +245,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -276,7 +276,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test',
@@ -338,7 +338,7 @@ describe('Pipeline', () => {
       const mockFetcher = {
         startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn().mockResolvedValue(undefined)
-      } as FetcherClient;
+      } as unknown as FetcherClient;
 
       const fetch = new FetchTask({
         miningId: 'test-mining-id',
