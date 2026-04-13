@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import initializeMiningController, { MiningControllerDeps } from '../controllers/mining.controller';
+import initializeMiningController, {
+  MiningControllerDeps
+} from '../controllers/mining.controller';
 import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';

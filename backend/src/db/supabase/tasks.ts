@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { SupabaseTask , Task } from '../types';
+import { SupabaseTask, Task } from '../types';
 import { Tasks } from '../interfaces/Tasks';
 
 export default class SupabaseTasks implements Tasks {
