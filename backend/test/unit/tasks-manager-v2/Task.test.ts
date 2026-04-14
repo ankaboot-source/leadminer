@@ -500,4 +500,60 @@ describe('FetchTask', () => {
     });
     expect(fetch.status).toBe(TaskStatus.Canceled);
   });
+
+  describe('with PST source', () => {
+    it('should pass source in fetchParams to startFetch for PST mining', async () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
+          .mockResolvedValue({
+            data: { totalMessages: 50 }
+          }),
+        stopFetch: jest
+          .fn<
+            (opts: { miningId: string; canceled: boolean }) => Promise<void>
+          >()
+          .mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const fetchTask = new FetchTask({
+        miningId: 'test-pst-mining',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: mockFetcher,
+        extractSignatures: true,
+        signatureStream: 'signature_stream',
+        fetchParams: { source: 'test-user/file.pst' }
+      });
+
+      const mockTasksResolver = {
+        create: jest
+          .fn()
+          .mockResolvedValue({
+            id: 'task-id',
+            startedAt: new Date().toISOString()
+          }),
+        update: jest.fn().mockResolvedValue({})
+      };
+
+      await fetchTask.start(mockTasksResolver as any);
+
+      expect(mockFetcher.startFetch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          miningId: 'test-pst-mining',
+          fetchParams: { source: 'test-user/file.pst' }
+        })
+      );
+      expect(fetchTask.progress.total).toBe(50);
+    });
+  });
 });
