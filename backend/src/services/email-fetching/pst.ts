@@ -35,15 +35,22 @@ class PSTFetcherClient {
   /**
    * Start fetch job
    */
-  async startFetch(payload: FetchStartPayload) {
+  async startFetch(
+    payload: FetchStartPayload & { fetchParams?: Record<string, unknown> }
+  ) {
     try {
-      const { data } = await this.client.post('api/pst/fetch/start', payload);
+      const { fetchParams, ...topLevel } = payload;
+      const flatPayload = fetchParams
+        ? { ...topLevel, ...fetchParams }
+        : topLevel;
+
+      const { data } = await this.client.post(
+        'api/pst/fetch/start',
+        flatPayload
+      );
       return data;
     } catch (error) {
-      this.logger.error('Start fetching request failed', {
-        error,
-        payload
-      });
+      this.logger.error('Start fetching request failed', { error, payload });
       if (
         axios.isAxiosError(error) &&
         error.response &&
