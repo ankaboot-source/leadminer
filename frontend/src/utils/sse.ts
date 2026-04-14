@@ -61,6 +61,7 @@ class SSE {
       onVerifiedContacts,
       onCreatedContacts,
       onMiningCompleted,
+      onSignatureExtractionDone,
     }: {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
@@ -72,6 +73,7 @@ class SSE {
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
       onMiningCompleted: () => void;
+      onSignatureExtractionDone: () => void;
     },
   ) {
     this.closeConnection();
@@ -164,6 +166,8 @@ class SSE {
             event === 'cleaning-finished'
           ) {
             onCleaningDone(parseInt(data));
+          } else if (event === `signature-finished-${miningId}`) {
+            onSignatureExtractionDone();
           } else if (event === `verifiedContacts-${miningId}`) {
             onVerifiedContacts(parseInt(data));
           } else if (event === `createdContacts-${miningId}`) {

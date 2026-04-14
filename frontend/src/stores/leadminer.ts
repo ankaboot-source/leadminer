@@ -61,6 +61,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
   const cleaningFinished = ref(true);
+  const signatureExtractionFinished = ref(false);
 
   const miningCompleted = ref(false);
 
@@ -111,6 +112,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = true;
     extractionFinished.value = true;
     cleaningFinished.value = true;
+    signatureExtractionFinished.value = false;
 
     miningCompleted.value = false;
 
@@ -316,6 +318,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         verifiedContacts.value = totalCleaned;
         cleaningFinished.value = true;
       },
+      onSignatureExtractionDone: () => {
+        signatureExtractionFinished.value = true;
+      },
       onVerifiedContacts: (totalVerified) => {
         verifiedContacts.value = totalVerified;
       },
@@ -427,6 +432,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = false;
     extractionFinished.value = false;
     cleaningFinished.value = false;
+    signatureExtractionFinished.value = false;
 
     try {
       isLoadingStartMining.value = true;
@@ -499,15 +505,18 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         miningTask.value = undefined;
         fetchingFinished.value = true;
         cleaningFinished.value = true;
+        signatureExtractionFinished.value = true;
       }
       fetchingFinished.value = true;
       extractionFinished.value = true;
+      signatureExtractionFinished.value = true;
       isLoadingStopMining.value = false;
       await fetchMiningSources();
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
       cleaningFinished.value = true;
+      signatureExtractionFinished.value = true;
       isLoadingStopMining.value = false;
       await fetchMiningSources();
       throw err;
@@ -620,6 +629,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished,
     extractionFinished,
     cleaningFinished,
+    signatureExtractionFinished,
     miningCompleted,
     activeMiningTask,
     activeTask,
