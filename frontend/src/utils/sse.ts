@@ -149,11 +149,20 @@ class SSE {
             onFetchedUpdate(parseInt(data));
           } else if (event === `extracted-${miningId}`) {
             onExtractedUpdate(parseInt(data));
-          } else if (event === 'fetching-finished') {
+          } else if (
+            event === `fetch-finished-${miningId}` ||
+            event === 'fetching-finished'
+          ) {
             onFetchingDone(parseInt(data));
-          } else if (event === 'extracting-finished') {
+          } else if (
+            event === `extract-finished-${miningId}` ||
+            event === 'extracting-finished'
+          ) {
             onExtractionDone(parseInt(data));
-          } else if (event === 'cleaning-finished') {
+          } else if (
+            event === `clean-finished-${miningId}` ||
+            event === 'cleaning-finished'
+          ) {
             onCleaningDone(parseInt(data));
           } else if (event === `verifiedContacts-${miningId}`) {
             onVerifiedContacts(parseInt(data));
