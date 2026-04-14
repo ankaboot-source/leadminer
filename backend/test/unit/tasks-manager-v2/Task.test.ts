@@ -322,6 +322,50 @@ describe('SignatureTask', () => {
     expect(sig.progress.processed).toBe(8);
     expect(sig.status).toBe(TaskStatus.Done);
   });
+
+  describe('isComplete', () => {
+    it('should return false while Running, even if upstream is done', () => {
+      const sig = new SignatureTask({
+        miningId: 'test',
+        userId: 'test-user',
+        streamName: 'email-signature'
+      });
+      sig.upstreamDone = true;
+      expect(sig.isComplete()).toBe(false);
+    });
+
+    it('should return true when status is Done', () => {
+      const sig = new SignatureTask({
+        miningId: 'test',
+        userId: 'test-user',
+        streamName: 'email-signature'
+      });
+      sig.onMessage({
+        miningId: 'test',
+        progressType: 'signatures',
+        count: 0,
+        isCompleted: true
+      });
+      expect(sig.isComplete()).toBe(true);
+    });
+
+    it('should return true when status is Canceled', () => {
+      const sig = new SignatureTask({
+        miningId: 'test',
+        userId: 'test-user',
+        streamName: 'email-signature'
+      });
+      sig.onMessage({
+        miningId: 'test',
+        progressType: 'signatures',
+        count: 0,
+        isCanceled: true
+      });
+      expect(sig.status).toBe(TaskStatus.Canceled);
+      expect(sig.isComplete()).toBe(true);
+    });
+  });
+
   describe('getProgressMap', () => {
     it('should return empty object by default', () => {
       const task = new Task({
@@ -536,12 +580,10 @@ describe('FetchTask', () => {
       });
 
       const mockTasksResolver = {
-        create: jest
-          .fn()
-          .mockResolvedValue({
-            id: 'task-id',
-            startedAt: new Date().toISOString()
-          }),
+        create: jest.fn().mockResolvedValue({
+          id: 'task-id',
+          startedAt: new Date().toISOString()
+        }),
         update: jest.fn().mockResolvedValue({})
       };
 

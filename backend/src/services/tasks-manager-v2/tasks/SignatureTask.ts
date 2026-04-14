@@ -28,8 +28,11 @@ export class SignatureTask extends Task {
       this.progress.processed += msg.count;
       this.emitProgress('signatures', this.progress.processed);
     }
-    if (msg.progressType === 'signatures' && msg.isCompleted) {
-      this.status = TaskStatus.Done;
+    if (
+      msg.progressType === 'signatures' &&
+      (msg.isCompleted || msg.isCanceled)
+    ) {
+      this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
     }
   }
 
@@ -37,5 +40,9 @@ export class SignatureTask extends Task {
     return {
       signatures: this.progress.processed
     };
+  }
+
+  isComplete(): boolean {
+    return this.status !== TaskStatus.Running;
   }
 }
