@@ -90,6 +90,56 @@ describe('generateErrorObjectFromImapError', () => {
       });
     }
   );
+
+  it('should not throw when error.response is an object (AxiosError)', () => {
+    const axiosError = {
+      message: 'Request failed with status code 500',
+      response: {
+        status: 500,
+        data: {
+          message:
+            'Inconsistent connection state: available IMAP connections below zero'
+        }
+      }
+    };
+    const result = generateErrorObjectFromImapError(axiosError);
+    expect(result).toBeInstanceOf(ImapAuthError);
+    expect(result.message).toBe('Request failed with status code 500');
+  });
+
+  it('should extract message from AxiosError response.data string', () => {
+    const axiosError = {
+      message: 'Request failed',
+      response: {
+        data: 'Some error string from server'
+      }
+    };
+    const result = generateErrorObjectFromImapError(axiosError);
+    expect(result).toBeInstanceOf(ImapAuthError);
+    expect(result.message).toBe('Request failed');
+  });
+
+  it('should identify AUTHENTICATION-DISABLED from AxiosError response.data.message', () => {
+    const axiosError = {
+      response: {
+        data: { message: 'Logging in is disabled on this server' }
+      }
+    };
+    const result = generateErrorObjectFromImapError(axiosError);
+    expect(result.status).toBe(402);
+    expect(result.fields).toEqual(['host', 'port']);
+  });
+
+  it('should identify APPLICATION-SPECIFIC-PASSWORD from AxiosError response.data.message', () => {
+    const axiosError = {
+      response: {
+        data: { message: 'Application-specific password is required' }
+      }
+    };
+    const result = generateErrorObjectFromImapError(axiosError);
+    expect(result.status).toBe(401);
+    expect(result.fields).toEqual(['password']);
+  });
 });
 
 describe('sanitizeImapInput', () => {

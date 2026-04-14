@@ -77,11 +77,20 @@ export function generateErrorObjectFromImapError(error: any) {
     `${error.code ?? error.serverResponseCode}`
   );
 
-  if (error.response?.toLowerCase().includes('logging in is disabled')) {
+  const responseString =
+    typeof error.response === 'string'
+      ? error.response
+      : typeof error.response?.data?.message === 'string'
+        ? error.response.data.message
+        : typeof error.response?.data === 'string'
+          ? error.response.data
+          : '';
+
+  if (responseString.toLowerCase().includes('logging in is disabled')) {
     errorMessage = IMAP_ERROR_CODES.get('AUTHENTICATION-DISABLED');
   }
 
-  if (error.response?.toLowerCase().includes('application-specific password')) {
+  if (responseString.toLowerCase().includes('application-specific password')) {
     errorMessage = IMAP_ERROR_CODES.get('AUTHENTICATION-APP-PASSWORD');
   }
 
