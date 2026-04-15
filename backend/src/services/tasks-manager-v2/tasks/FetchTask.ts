@@ -100,10 +100,14 @@ export class FetchTask extends Task {
     if (msg.progressType === 'fetched') {
       this.progress.processed += msg.count;
       this.emitProgress('fetched', this.progress.processed);
-      if (msg.isCompleted || msg.isCanceled) {
-        this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
-      }
     }
+    if (msg.progressType === 'fetched' && (msg.isCompleted || msg.isCanceled)) {
+      this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
+    }
+  }
+
+  isComplete(): boolean {
+    return this.status !== TaskStatus.Running;
   }
 
   getProgressMap(): Record<string, number> {
