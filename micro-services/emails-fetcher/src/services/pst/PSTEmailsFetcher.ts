@@ -363,7 +363,7 @@ export default class PSTEmailsFetcher {
             body,
             header,
             seq,
-            isLastMessageInFolder,
+            false,
             folder.displayName,
             email
           );
