@@ -1,4 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import type { Logger } from 'winston';
 import PSTFetcherClient from '../../../src/services/email-fetching/pst';
 
 describe('PSTFetcherClient', () => {
@@ -23,12 +24,14 @@ describe('PSTFetcherClient', () => {
       });
 
       const client = new PSTFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:3000'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -64,17 +67,21 @@ describe('PSTFetcherClient', () => {
       });
 
       const client = new PSTFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:3000'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
 
-      await (client as any).startFetch({
+      await (
+        client as unknown as { startFetch: typeof client.startFetch }
+      ).startFetch({
         userId: 'user-123',
         miningId: 'mining-456',
         source: 'user-123/file.pst',
@@ -98,12 +105,14 @@ describe('PSTFetcherClient', () => {
       mockPost.mockRejectedValueOnce(axiosError);
 
       const client = new PSTFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:3000'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };

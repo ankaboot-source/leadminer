@@ -681,7 +681,7 @@ describe('Pipeline', () => {
           .fn<
             (opts: { miningId: string; canceled: boolean }) => Promise<void>
           >()
-          .mockResolvedValue(undefined)
+          .mockResolvedValue()
       } as unknown as FetcherClient;
 
       // Realistic scenario: 1 failing Fetch task, 1 Extract task
@@ -856,7 +856,7 @@ describe('Pipeline', () => {
             .fn<
               (opts: { miningId: string; canceled: boolean }) => Promise<void>
             >()
-            .mockResolvedValue(undefined)
+            .mockResolvedValue()
         } as unknown as FetcherClient
       });
 

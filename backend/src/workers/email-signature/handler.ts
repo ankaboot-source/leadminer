@@ -5,9 +5,7 @@ import { assert } from 'console';
 import Redis from 'ioredis';
 import PQueue from 'p-queue';
 import planer from 'planer';
-import EmailSignatureCache, {
-  EmailSignatureWithMetadata
-} from '../../services/cache/EmailSignatureCache';
+import EmailSignatureCache from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import loggerInstance from '../../utils/logger';
 import { isUsefulSignatureContent, upsertSignaturesDB } from './utils';
