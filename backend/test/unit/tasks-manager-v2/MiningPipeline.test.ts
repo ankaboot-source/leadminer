@@ -780,12 +780,12 @@ describe('Pipeline', () => {
         }
       );
 
-      pipeline.addProgressLink('extract-task', {
-        upstreamIds: ['fetch-task'],
+      pipeline.addProgressLink('extract-task', ['fetch-task'], {
         totalFrom: 'fetched'
       });
 
       fetch.onMessage({
+        miningId: 'test',
         progressType: 'fetched',
         count: 0,
         isCompleted: false,
@@ -799,6 +799,7 @@ describe('Pipeline', () => {
       extract.progress.processed = 0;
 
       extract.onMessage({
+        miningId: 'test',
         progressType: 'extracted',
         count: 0,
         isCompleted: true,
