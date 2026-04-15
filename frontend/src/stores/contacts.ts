@@ -24,6 +24,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const selectedContactsCount = ref<number>(0);
   const visibleColumns = ref(['contacts']);
 
+  const totalContactsCount = ref<number>(0);
+
   const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(
     null,
   );
@@ -86,6 +88,46 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (error) throw error;
     return data as Contact[];
+  }
+
+  async function loadContactsPage(
+    limit = 20,
+    offset = 0,
+    userId = getCurrentUserId(),
+  ) {
+    if (!userId) return [];
+
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .rpc('get_contacts_page', {
+        user_id: userId,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+    if (error) throw error;
+    return data as Contact[];
+  }
+
+  async function loadContactsCount(userId = getCurrentUserId()) {
+    if (!userId) return 0;
+
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .rpc('get_contacts_count', { user_id: userId });
+
+    if (error) throw error;
+    return (data as number) ?? 0;
+  }
+
+  function setContactsList(contacts: Contact[]) {
+    contactsList.value = contacts;
+  }
+
+  function setTotalContactsCount(count: number) {
+    totalContactsCount.value = count;
   }
 
   /**
@@ -333,11 +375,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
     selectedEmails,
     selectedContactsCount,
     contactCount,
+    totalContactsCount,
     visibleColumns,
     initializeVisibleColumns,
     combinedLocations,
     $reset,
     loadContacts,
+    loadContactsPage,
+    loadContactsCount,
+    setContactsList,
+    setTotalContactsCount,
     reloadContacts,
     refineContacts,
     subscribeToRealtimeUpdates,

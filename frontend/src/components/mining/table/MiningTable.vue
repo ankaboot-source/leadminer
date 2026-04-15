@@ -19,17 +19,21 @@
     size="small"
     striped-rows
     :select-all="selectAll"
-    :value="tableRows"
+    :value="paginatedContacts"
     data-key="email"
     paginator
+    lazy
     filter-display="menu"
     :global-filter-fields="globalFilterFields"
     removable-sort
+    :total-records="totalContactsCount"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="rowsPerPage"
     :rows-per-page-options="rowsPerPageOptions"
+    v-model:first="firstRecord"
     @filter="onFilter($event)"
+    @page="onPage($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
@@ -887,6 +891,7 @@
 <script setup lang="ts">
 import type {
   DataTableFilterEvent,
+  DataTablePageEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 import { useDebounceFn } from '@vueuse/core';
@@ -969,6 +974,11 @@ const visibleColumns = computed({
 const DEFAULT_ROWS_PER_PAGE = 150;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
+const firstRecord = ref(0);
+const totalContactsCount = computed(() => $contactsStore.totalContactsCount);
+const paginatedContacts = computed(() => contacts.value ?? []);
+
+let lastLoadedPage = { first: 0, rows: DEFAULT_ROWS_PER_PAGE };
 const globalFilterFields = [
   'email',
   'name',
@@ -1028,7 +1038,7 @@ const columnVisibility = computed(() =>
 );
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
-const tableRows = computed(() =>
+const _tableRows = computed(() =>
   resolveMiningTableRows({
     hardFilter: hardFilter.value,
     contacts: contacts.value,
@@ -1054,6 +1064,13 @@ function onFilter($event: DataTableFilterEvent) {
   applyFilteredContacts(
     ($event.filteredValue as Contact[] | undefined) ?? sourceRows.value,
   );
+}
+
+async function onPage($event: DataTablePageEvent) {
+  const { first, rows } = $event;
+  firstRecord.value = first;
+  rowsPerPage.value = rows;
+  await loadContactsData();
 }
 
 function showSocialLinksAndPhones(contact: Contact) {
@@ -1330,7 +1347,12 @@ function clearIdlePrefetch() {
 }
 
 async function loadContactsData() {
-  if (hasLoadedContacts.value) {
+  const currentPage = { first: firstRecord.value, rows: rowsPerPage.value };
+  const pageChanged =
+    lastLoadedPage.first !== currentPage.first ||
+    lastLoadedPage.rows !== currentPage.rows;
+
+  if (hasLoadedContacts.value && !pageChanged) {
     return;
   }
 
@@ -1340,14 +1362,25 @@ async function loadContactsData() {
   }
 
   contactsLoadPromise = (async () => {
-    await $contactsStore.reloadContacts();
+    const totalCount = await $contactsStore.loadContactsCount();
+    $contactsStore.setTotalContactsCount(totalCount);
+
+    const pageContacts = await $contactsStore.loadContactsPage(
+      rowsPerPage.value,
+      firstRecord.value,
+    );
+    $contactsStore.setContactsList(pageContacts);
 
     if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
       console.log(
         'Data in persons table but not in refinedpersons, refining contacts...',
       );
       await $contactsStore.refineContacts();
-      await $contactsStore.reloadContacts();
+      const refinedPageContacts = await $contactsStore.loadContactsPage(
+        rowsPerPage.value,
+        firstRecord.value,
+      );
+      $contactsStore.setContactsList(refinedPageContacts);
     }
 
     const locationsToNormalize = $contactsStore.getLocationsToNormalize();
@@ -1358,6 +1391,7 @@ async function loadContactsData() {
 
     $contactsStore.subscribeToRealtimeUpdates();
     hasLoadedContacts.value = true;
+    lastLoadedPage = { first: firstRecord.value, rows: rowsPerPage.value };
   })();
 
   try {
