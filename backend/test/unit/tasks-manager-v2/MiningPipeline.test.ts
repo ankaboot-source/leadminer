@@ -89,7 +89,9 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
 
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -148,7 +150,9 @@ describe('Pipeline', () => {
     it('should return zero for tasks with no progress', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -169,7 +173,9 @@ describe('Pipeline', () => {
     it('should work with single task', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -193,7 +199,9 @@ describe('Pipeline', () => {
     it('should propagate upstream processed as downstream total by default', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -259,7 +267,9 @@ describe('Pipeline', () => {
     it('should not propagate total when skipTotal is true', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -292,7 +302,9 @@ describe('Pipeline', () => {
     it('should not propagate until all upstreams are complete', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -358,7 +370,9 @@ describe('Pipeline', () => {
     it('should send task.processed value for finished event', () => {
       const { factory, mockSSE } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -449,7 +463,9 @@ describe('Pipeline', () => {
       } as unknown as SupabaseTasks;
 
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -636,6 +652,77 @@ describe('Pipeline', () => {
       expect(extract.status).toBe(TaskStatus.Canceled);
       expect(extract.stoppedAt).toBeDefined();
     });
+
+    it('should emit task-finished events before mining-completed event', async () => {
+      const { factory, mockSSE, mockRedisPublisher } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn<any>().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: 'extract',
+          category: 'mining',
+          details: {},
+          status: 'pending',
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<any>().mockResolvedValue({})
+      } as unknown as SupabaseTasks;
+
+      const extract = new ExtractTask({
+        id: 'extract-task',
+        miningId: 'test',
+        userId: 'test-user',
+        inputStream: {
+          streamName: 'messages_stream-test',
+          consumerGroup: 'test-consumer-group',
+          role: 'extract'
+        },
+        outputStream: { streamName: 'contacts_stream-test' }
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [extract],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: mockRedisPublisher,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      pipeline.attachSSE({
+        req: { on: jest.fn() } as any,
+        res: { on: jest.fn(), write: jest.fn() } as any
+      });
+
+      extract.status = TaskStatus.Done;
+
+      // @ts-ignore - accessing private method for testing
+      pipeline.checkCompletion();
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const calls = mockSSE.sendSSE.mock.calls;
+
+      const taskFinishedIndices = calls
+        .map((call, index) =>
+          call[1] === 'extract-task-finished-test' ? index : -1
+        )
+        .filter((index) => index !== -1);
+      const miningCompletedIndex = calls.findIndex(
+        (call) => call[0] === 'mining-completed'
+      );
+
+      expect(taskFinishedIndices.length).toBeGreaterThan(0);
+      expect(miningCompletedIndex).toBeGreaterThanOrEqual(0);
+      expect(taskFinishedIndices[0]).toBeLessThan(miningCompletedIndex);
+    });
   });
 
   describe('cancel', () => {
@@ -643,7 +730,9 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
 
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<any>()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
