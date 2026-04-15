@@ -1,1 +1,0 @@
-SELECT * FROM private.get_contacts_table('da9fe53f-e381-4e48-a414-c87821de3ba3') WHERE status IS NULL
