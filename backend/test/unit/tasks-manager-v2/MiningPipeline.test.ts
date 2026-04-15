@@ -89,7 +89,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
 
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -148,7 +148,7 @@ describe('Pipeline', () => {
     it('should return zero for tasks with no progress', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -169,7 +169,7 @@ describe('Pipeline', () => {
     it('should work with single task', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -193,7 +193,7 @@ describe('Pipeline', () => {
     it('should propagate upstream processed as downstream total by default', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -259,7 +259,7 @@ describe('Pipeline', () => {
     it('should not propagate total when skipTotal is true', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -292,7 +292,7 @@ describe('Pipeline', () => {
     it('should not propagate until all upstreams are complete', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -358,7 +358,7 @@ describe('Pipeline', () => {
     it('should send task.processed value for finished event', () => {
       const { factory, mockSSE } = makeMockSSEFactory();
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -437,7 +437,7 @@ describe('Pipeline', () => {
       const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn().mockResolvedValue({
+        create: jest.fn<any>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
           type: 'fetch',
@@ -449,7 +449,7 @@ describe('Pipeline', () => {
       } as unknown as SupabaseTasks;
 
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
@@ -502,7 +502,7 @@ describe('Pipeline', () => {
       const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn().mockResolvedValue({
+        create: jest.fn<any>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
           type: 'extract',
@@ -553,6 +553,89 @@ describe('Pipeline', () => {
         'MKSTREAM'
       );
     });
+
+    it('should cancel all successfully started tasks if Pipeline.start() throws', async () => {
+      const { factory, mockRedisPublisher } = makeMockSSEFactory();
+
+      let createCallCount = 0;
+      const mockTasksResolver = {
+        create: jest.fn().mockImplementation(async () => {
+          // Add a tiny delay so the promise yields the event loop,
+          // allowing concurrent tasks to register their DB IDs before the throw happens
+          await new Promise<void>((r) => {
+            setImmediate(r);
+          });
+          createCallCount += 1;
+          return {
+            id: `test-task-id-${createCallCount}`,
+            userId: 'test-user',
+            type: 'extract',
+            category: 'mining',
+            details: {},
+            status: 'pending',
+            startedAt: new Date().toISOString()
+          };
+        }),
+        update: jest.fn<any>().mockResolvedValue({})
+      } as unknown as SupabaseTasks;
+
+      const failingFetcherClient = {
+        startFetch: jest
+          .fn<() => Promise<{ data: { totalMessages: number } }>>()
+          .mockRejectedValue(new Error('IMAP auth failed')),
+        stopFetch: jest
+          .fn<
+            (opts: { miningId: string; canceled: boolean }) => Promise<void>
+          >()
+          .mockResolvedValue(undefined)
+      } as unknown as FetcherClient;
+
+      // Realistic scenario: 1 failing Fetch task, 1 Extract task
+      const failingFetch = new FetchTask({
+        id: 'fetch-task',
+        miningId: 'test',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: failingFetcherClient
+      });
+
+      const extract = new ExtractTask({
+        id: 'extract-task',
+        miningId: 'test',
+        userId: 'test-user',
+        inputStream: {
+          streamName: 'messages_stream-test',
+          consumerGroup: 'test-consumer-group',
+          role: 'extract'
+        },
+        outputStream: { streamName: 'contacts_stream-test' }
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [failingFetch, extract],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: mockRedisPublisher,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      // Verify that the pipeline throws the original error
+      await expect(pipeline.start()).rejects.toThrow('IMAP auth failed');
+
+      // The failing fetch task should be marked as canceled natively by its own try/catch
+      expect(failingFetch.status).toBe(TaskStatus.Canceled);
+
+      // The extract task should have been manually canceled by Pipeline.cancel()
+      expect(extract.status).toBe(TaskStatus.Canceled);
+      expect(extract.stoppedAt).toBeDefined();
+    });
   });
 
   describe('cancel', () => {
@@ -560,7 +643,7 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
 
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
