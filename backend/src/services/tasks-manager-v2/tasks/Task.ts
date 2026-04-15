@@ -76,7 +76,10 @@ export class Task extends EventEmitter {
 
   async stop(canceled = false, tasksResolver?: SupabaseTasks): Promise<void> {
     this.stoppedAt = new Date().toUTCString();
-    this.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
+    this.status =
+      canceled || this.status === TaskStatus.Canceled
+        ? TaskStatus.Canceled
+        : TaskStatus.Done;
 
     if (this.startedAt && this.stoppedAt) {
       const start = new Date(this.startedAt).getTime();
