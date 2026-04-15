@@ -93,7 +93,12 @@ export class Pipeline {
 
   async start(): Promise<void> {
     const taskList = [...this.tasks.values()];
-    await Promise.all(taskList.map((t) => t.start(this.deps.tasksResolver)));
+    try {
+      await Promise.all(taskList.map((t) => t.start(this.deps.tasksResolver)));
+    } catch (err) {
+      await this.cancel();
+      throw err;
+    }
 
     await this.registerStreams();
   }
