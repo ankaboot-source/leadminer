@@ -115,6 +115,7 @@ async function reacherRequestWithRetry<T>(callback: () => Promise<T>) {
     if (!shouldRetry) throw err;
 
     const waitTime = extractWaitTime(message);
+    // eslint-disable-next-line no-console
     console.info(
       `[ReacherClient.reacherRequestWithRetry]: Rate limited. Waiting ${waitTime}ms before retrying`
     );

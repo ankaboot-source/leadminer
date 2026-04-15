@@ -158,6 +158,7 @@ export class EmailSignatureHandler {
                 maxRetries: this.MAX_RETRIES
               }
             );
+            // eslint-disable-next-line no-await-in-loop
             await this.publishProgressEvent(
               message.miningId,
               'totalSignatures',
@@ -187,6 +188,7 @@ export class EmailSignatureHandler {
               error
             }
           );
+          // eslint-disable-next-line no-await-in-loop
           await this.publishProgressEvent(miningId, 'totalSignatures', 0);
         } else {
           this.logger.error('Signature processing failed', {
