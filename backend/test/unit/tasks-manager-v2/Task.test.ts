@@ -310,17 +310,22 @@ describe('SignatureTask', () => {
       streamName: 'email-signature'
     });
 
+    sig.onMessage({
+      miningId: 'test',
+      progressType: 'totalSignatures',
+      count: 8
+    });
+    expect(sig.progress.total).toBe(8);
+
     sig.onMessage({ miningId: 'test', progressType: 'signatures', count: 5 });
     expect(sig.progress.processed).toBe(5);
 
     sig.onMessage({
       miningId: 'test',
       progressType: 'signatures',
-      count: 3,
-      isCompleted: true
+      count: 3
     });
     expect(sig.progress.processed).toBe(8);
-    expect(sig.status).toBe(TaskStatus.Done);
   });
 
   describe('isComplete', () => {
@@ -334,34 +339,45 @@ describe('SignatureTask', () => {
       expect(sig.isComplete()).toBe(false);
     });
 
-    it('should return true when status is Done', () => {
+    it('should return false when total not yet received', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
         streamName: 'email-signature'
       });
+      sig.upstreamDone = true;
+      sig.onMessage({ miningId: 'test', progressType: 'signatures', count: 5 });
+      expect(sig.isComplete()).toBe(false);
+    });
+
+    it('should return true when processed >= total and upstreamDone', () => {
+      const sig = new SignatureTask({
+        miningId: 'test',
+        userId: 'test-user',
+        streamName: 'email-signature'
+      });
+      sig.upstreamDone = true;
       sig.onMessage({
         miningId: 'test',
-        progressType: 'signatures',
-        count: 0,
-        isCompleted: true
+        progressType: 'totalSignatures',
+        count: 5
       });
+      sig.onMessage({ miningId: 'test', progressType: 'signatures', count: 5 });
       expect(sig.isComplete()).toBe(true);
     });
 
-    it('should return true when status is Canceled', () => {
+    it('should return true when total is 0 and upstreamDone', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
         streamName: 'email-signature'
       });
+      sig.upstreamDone = true;
       sig.onMessage({
         miningId: 'test',
-        progressType: 'signatures',
-        count: 0,
-        isCanceled: true
+        progressType: 'totalSignatures',
+        count: 0
       });
-      expect(sig.status).toBe(TaskStatus.Canceled);
       expect(sig.isComplete()).toBe(true);
     });
   });
@@ -437,10 +453,10 @@ describe('SignatureTask', () => {
         streamName: 'sig-stream'
       });
 
-      sig.progress = { total: 0, processed: 5 };
+      sig.progress = { total: 10, processed: 5 };
 
       const map = sig.getProgressMap();
-      expect(map).toEqual({ signatures: 5 });
+      expect(map).toEqual({ signatures: 5, totalSignatures: 10 });
     });
 
     it('should return zero values when progress is zero', () => {

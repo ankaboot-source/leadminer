@@ -286,7 +286,7 @@ describe('Pipeline', () => {
       ).propagateProgress();
 
       expect(sig.upstreamDone).toBe(true);
-      expect(sig.progress.total).toBe(0);
+      expect(sig.progress.total).toBe(-1);
     });
 
     it('should not propagate until all upstreams are complete', () => {

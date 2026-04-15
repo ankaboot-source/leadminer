@@ -10,11 +10,7 @@ import EmailSignatureCache, {
 } from '../../services/cache/EmailSignatureCache';
 import { Contact } from '../../db/types';
 import loggerInstance from '../../utils/logger';
-import {
-  isUsefulSignatureContent,
-  pushNotificationDB,
-  upsertSignaturesDB
-} from './utils';
+import { isUsefulSignatureContent, upsertSignaturesDB } from './utils';
 import { ExtractSignature } from '../../services/signature/types';
 import { DomainStatusVerificationFunction } from '../../services/extractors/engines/EmailMessage';
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
@@ -59,8 +55,6 @@ export class EmailSignatureHandler {
 
   private readonly queue: PQueue;
 
-  private readonly streamProgressDelta = new Map<string, number>();
-
   constructor(
     private readonly supabase: SupabaseClient,
     private readonly signature: ExtractSignature,
@@ -74,6 +68,28 @@ export class EmailSignatureHandler {
       interval: 10,
       intervalCap: 1
     });
+  }
+
+  private async publishProgressEvent(
+    miningId: string,
+    progressType: 'totalSignatures' | 'signatures',
+    count: number
+  ): Promise<void> {
+    try {
+      await this.redisClient.publish(
+        miningId,
+        JSON.stringify({
+          miningId,
+          progressType,
+          count
+        })
+      );
+    } catch (error) {
+      this.logger.error(`Failed to publish ${progressType} event`, {
+        miningId,
+        error
+      });
+    }
   }
 
   private async hasReachedRetryCount(data: EmailData) {
@@ -144,8 +160,11 @@ export class EmailSignatureHandler {
                 maxRetries: this.MAX_RETRIES
               }
             );
-            // eslint-disable-next-line no-await-in-loop
-            await this.completed(message.miningId);
+            await this.publishProgressEvent(
+              message.miningId,
+              'totalSignatures',
+              0
+            );
             return;
           }
           // eslint-disable-next-line no-await-in-loop
@@ -170,8 +189,7 @@ export class EmailSignatureHandler {
               error
             }
           );
-          // eslint-disable-next-line no-await-in-loop
-          await this.completed(miningId);
+          await this.publishProgressEvent(miningId, 'totalSignatures', 0);
         } else {
           this.logger.error('Signature processing failed', {
             miningId,
@@ -324,17 +342,16 @@ export class EmailSignatureHandler {
     const { miningId, userId } = data;
     const signatures = await this.cache.getAllFromMining(miningId);
 
+    await this.publishProgressEvent(
+      miningId,
+      'totalSignatures',
+      signatures.length
+    );
+
     if (signatures.length === 0) {
-      const progress = this.streamProgressDelta.get(miningId) ?? 0;
       this.logger.info('No signatures to process for batch', { miningId });
-      await pushNotificationDB(this.supabase, {
-        userId,
-        type: 'signature',
-        details: {
-          signatures: progress
-        }
-      });
-      await this.completed(miningId);
+      await this.cache.clearCachedSignature(miningId);
+      await this.cache.clearProgress(miningId);
       return;
     }
 
@@ -343,45 +360,22 @@ export class EmailSignatureHandler {
       count: signatures.length
     });
 
-    const lastSignature = signatures.pop() as EmailSignatureWithMetadata;
-
     signatures.forEach((sig) => {
-      this.queue.add(
-        async () => {
-          const progress = this.streamProgressDelta.get(miningId) ?? 0;
-          try {
-            await this.processSignatureJob(miningId, userId, sig);
-            this.streamProgressDelta.set(miningId, progress + 1);
-          } catch (error) {
-            this.logger.error('Failed to process signature job', {
-              error
-            });
-          }
-        },
-        { priority: 1 }
-      );
+      this.queue.add(async () => {
+        try {
+          await this.processSignatureJob(miningId, userId, sig);
+        } catch (error) {
+          this.logger.error('Failed to process signature job', {
+            error
+          });
+        } finally {
+          await this.publishProgressEvent(miningId, 'signatures', 1);
+        }
+      });
     });
 
-    this.queue.add(async () => {
-      const progress = this.streamProgressDelta.get(miningId) ?? 0;
-      try {
-        await this.processSignatureJob(miningId, userId, lastSignature);
-        this.streamProgressDelta.set(miningId, progress + 1);
-      } catch (error) {
-        this.logger.error('Failed to process signature job', {
-          error
-        });
-      } finally {
-        await pushNotificationDB(this.supabase, {
-          userId,
-          type: 'signature',
-          details: {
-            signatures: progress
-          }
-        });
-        await this.completed(miningId);
-      }
-    });
+    await this.cache.clearCachedSignature(miningId);
+    await this.cache.clearProgress(miningId);
   }
 
   /**
@@ -508,45 +502,6 @@ export class EmailSignatureHandler {
       durationMs: duration.toFixed(2),
       newSize: this.queue.size
     });
-  }
-
-  /**
-   * Cleans up cached signatures and progress tracking
-   */
-  private async completed(miningId: string): Promise<void> {
-    const progress = this.streamProgressDelta.get(miningId) ?? 0;
-    this.streamProgressDelta.delete(miningId);
-    await this.publishCompletion(miningId, progress, false);
-    await this.cache.clearCachedSignature(miningId);
-    await this.cache.clearProgress(miningId);
-  }
-
-  /**
-   * Publishes final completion notification
-   */
-  private async publishCompletion(
-    miningId: string,
-    count: number,
-    failed: boolean
-  ): Promise<void> {
-    // Publish to Redis
-    try {
-      await this.redisClient.publish(
-        miningId,
-        JSON.stringify({
-          miningId,
-          progressType: 'signatures',
-          isCompleted: !failed,
-          count,
-          failed
-        })
-      );
-    } catch (error) {
-      this.logger.error('Failed to publish completion', {
-        miningId,
-        error
-      });
-    }
   }
 }
 

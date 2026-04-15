@@ -21,28 +21,31 @@ export class SignatureTask extends Task {
         output: { streamName: config.streamName }
       }
     });
+
+    this.progress.total = -1;
   }
 
   onMessage(msg: ProgressMessage): void {
+    if (msg.progressType === 'totalSignatures') {
+      this.progress.total = msg.count;
+      this.emitProgress('totalSignatures', this.progress.total);
+    }
     if (msg.progressType === 'signatures') {
       this.progress.processed += msg.count;
       this.emitProgress('signatures', this.progress.processed);
-    }
-    if (
-      msg.progressType === 'signatures' &&
-      (msg.isCompleted || msg.isCanceled)
-    ) {
-      this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
     }
   }
 
   getProgressMap(): Record<string, number> {
     return {
-      signatures: this.progress.processed
+      signatures: this.progress.processed,
+      totalSignatures: this.progress.total
     };
   }
 
   isComplete(): boolean {
-    return this.status !== TaskStatus.Running;
+    if (this.status !== TaskStatus.Running) return true;
+    if (!this.upstreamDone || this.progress.total === -1) return false;
+    return this.progress.processed >= this.progress.total;
   }
 }
