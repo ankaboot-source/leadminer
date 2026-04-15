@@ -173,6 +173,23 @@ describe('Task', () => {
 
       expect(task.status).toBe(TaskStatus.Canceled);
     });
+
+    it('should not overwrite Canceled status with Done when stop(false) is called', async () => {
+      const task = new Task({
+        id: 'test',
+        type: TaskType.Extract,
+        category: TaskCategory.Mining,
+        miningId: 'test',
+        userId: 'test-user',
+        streams: {}
+      });
+      task.startedAt = new Date().toUTCString();
+      task.status = TaskStatus.Canceled;
+
+      await task.stop(false);
+
+      expect(task.status).toBe(TaskStatus.Canceled);
+    });
   });
 
   describe('toDetails', () => {
@@ -398,7 +415,7 @@ describe('SignatureTask', () => {
 
     it('should return correct map for FetchTask', () => {
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest
           .fn<
             (opts: { miningId: string; canceled: boolean }) => Promise<void>
@@ -461,7 +478,7 @@ describe('SignatureTask', () => {
 
     it('should return zero values when progress is zero', () => {
       const mockFetcher = {
-        startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest
           .fn<
             (opts: { miningId: string; canceled: boolean }) => Promise<void>
@@ -484,7 +501,7 @@ describe('SignatureTask', () => {
 describe('FetchTask', () => {
   it('should set upstreamDone to true', () => {
     const mockFetcher = {
-      startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -504,7 +521,7 @@ describe('FetchTask', () => {
 
   it('should handle totalMessages and fetched messages', () => {
     const mockFetcher = {
-      startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -539,7 +556,7 @@ describe('FetchTask', () => {
 
   it('should handle cancellation', () => {
     const mockFetcher = {
-      startFetch: jest.fn().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -596,11 +613,11 @@ describe('FetchTask', () => {
       });
 
       const mockTasksResolver = {
-        create: jest.fn().mockResolvedValue({
+        create: jest.fn<any>().mockResolvedValue({
           id: 'task-id',
           startedAt: new Date().toISOString()
         }),
-        update: jest.fn().mockResolvedValue({})
+        update: jest.fn<any>().mockResolvedValue({})
       };
 
       await fetchTask.start(mockTasksResolver as any);
