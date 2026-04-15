@@ -1,4 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import type { Logger } from 'winston';
 import EmailFetcherClient from '../../../src/services/email-fetching/index';
 
 describe('EmailFetcherClient', () => {
@@ -23,12 +24,14 @@ describe('EmailFetcherClient', () => {
       });
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -70,12 +73,14 @@ describe('EmailFetcherClient', () => {
       });
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -107,12 +112,14 @@ describe('EmailFetcherClient', () => {
       });
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -146,12 +153,14 @@ describe('EmailFetcherClient', () => {
       mockPost.mockRejectedValueOnce(axiosError);
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -184,12 +193,14 @@ describe('EmailFetcherClient', () => {
       });
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };
@@ -215,12 +226,14 @@ describe('EmailFetcherClient', () => {
       mockDelete.mockRejectedValueOnce(axiosError);
 
       const client = new EmailFetcherClient(
-        mockLogger as any,
+        mockLogger as unknown as Logger,
         'test-token',
         'http://localhost:8084'
       );
 
-      (client as any).client = {
+      (
+        client as unknown as { client: { post: jest.Mock; delete: jest.Mock } }
+      ).client = {
         post: mockPost,
         delete: mockDelete
       };

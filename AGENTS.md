@@ -284,15 +284,31 @@ When creating: `docs/plans/YYYY-MM-DD-<feature-name>.md`. Delete when feature is
 
 ### DeepSource Code Quality Checks
 
-After committing and pushing changes, use the official DeepSource skill to scan and fix code quality issues.
+After committing and pushing changes, you may optionally run DeepSource to check for code quality issues.
 
-**Setup (one-time):**
+**Ask the user first:** "Would you like me to run a DeepSource check on your changes?"
+
+If the user agrees, use the deepsource-check skill to scan and fix issues.
+
+#### Quick Reference Commands
 
 ```bash
-npx skills add DeepSourceCorp/skills -s deepsource -y
-```
+# Check installation
+which deepsource
 
-**Usage:** Ask the agent naturally — e.g., "Show me the critical code issues from DeepSource" or "Check for dependency vulnerabilities on DeepSource."
+# Check authentication
+deepsource auth status
+
+# Scan issues (after pushing)
+deepsource issues --output json
+
+# Scan specific PR
+deepsource issues --pr <NUMBER> --output json
+
+# Filter by severity
+deepsource issues --severity critical --output json
+deepsource issues --severity major --output json
+```
 
 **Important:** Prefer real code fixes over `skipcq` comments. Type assertions should use `as unknown as Type` instead of `as any`.
 
