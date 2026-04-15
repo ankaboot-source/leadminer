@@ -88,7 +88,9 @@ describe('MiningEngine', () => {
     it('should remove the pipeline if start fails', async () => {
       const pipeline = {
         miningId: 'test-mining-id',
-        start: jest.fn().mockRejectedValue(new Error('Start failed')),
+        start: jest
+          .fn<() => Promise<void>>()
+          .mockRejectedValue(new Error('Start failed')),
         onComplete: undefined
       } as unknown as Pipeline;
 
@@ -135,7 +137,11 @@ describe('MiningEngine', () => {
         miningId: 'test-mining-id',
         start: jest.fn<() => Promise<void>>().mockResolvedValue(),
         getActiveTask: jest.fn(),
-        cancel: jest.fn().mockResolvedValue(mockCanceledTask)
+        cancel: jest
+          .fn<
+            (processIds?: string[]) => Promise<{ id: string; miningId: string }>
+          >()
+          .mockResolvedValue(mockCanceledTask)
       } as unknown as Pipeline;
 
       await engine.submit(pipeline);

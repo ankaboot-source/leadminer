@@ -11,6 +11,8 @@ import {
   TaskCategory,
   TaskStatus
 } from '../../../src/services/tasks-manager-v2/types';
+import type { Task as DbTask } from '../../../src/db/types';
+import SupabaseTasks from '../../../src/db/supabase/tasks';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -415,7 +417,18 @@ describe('SignatureTask', () => {
 
     it('should return correct map for FetchTask', () => {
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest
           .fn<
             (opts: { miningId: string; canceled: boolean }) => Promise<void>
@@ -478,7 +491,18 @@ describe('SignatureTask', () => {
 
     it('should return zero values when progress is zero', () => {
       const mockFetcher = {
-        startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+        startFetch: jest
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
+          .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest
           .fn<
             (opts: { miningId: string; canceled: boolean }) => Promise<void>
@@ -501,7 +525,18 @@ describe('SignatureTask', () => {
 describe('FetchTask', () => {
   it('should set upstreamDone to true', () => {
     const mockFetcher = {
-      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest
+        .fn<
+          (opts: {
+            miningId: string;
+            contactStream: string;
+            signatureStream?: string;
+            extractSignatures?: boolean;
+            userId: string;
+            fetchParams?: Record<string, unknown>;
+          }) => Promise<{ data: { totalMessages: number } }>
+        >()
+        .mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -521,7 +556,18 @@ describe('FetchTask', () => {
 
   it('should handle totalMessages and fetched messages', () => {
     const mockFetcher = {
-      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest
+        .fn<
+          (opts: {
+            miningId: string;
+            contactStream: string;
+            signatureStream?: string;
+            extractSignatures?: boolean;
+            userId: string;
+            fetchParams?: Record<string, unknown>;
+          }) => Promise<{ data: { totalMessages: number } }>
+        >()
+        .mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -556,7 +602,18 @@ describe('FetchTask', () => {
 
   it('should handle cancellation', () => {
     const mockFetcher = {
-      startFetch: jest.fn<any>().mockResolvedValue({ data: { totalMessages: 0 } }),
+      startFetch: jest
+        .fn<
+          (opts: {
+            miningId: string;
+            contactStream: string;
+            signatureStream?: string;
+            extractSignatures?: boolean;
+            userId: string;
+            fetchParams?: Record<string, unknown>;
+          }) => Promise<{ data: { totalMessages: number } }>
+        >()
+        .mockResolvedValue({ data: { totalMessages: 0 } }),
       stopFetch: jest
         .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
@@ -613,14 +670,26 @@ describe('FetchTask', () => {
       });
 
       const mockTasksResolver = {
-        create: jest.fn<any>().mockResolvedValue({
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
           id: 'task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          status: TaskStatus.Running,
+          details: {},
           startedAt: new Date().toISOString()
         }),
-        update: jest.fn<any>().mockResolvedValue({})
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          status: TaskStatus.Running,
+          details: {}
+        })
       };
 
-      await fetchTask.start(mockTasksResolver as any);
+      await fetchTask.start(mockTasksResolver as unknown as SupabaseTasks);
 
       expect(mockFetcher.startFetch).toHaveBeenCalledWith(
         expect.objectContaining({

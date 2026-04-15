@@ -16,6 +16,7 @@ import {
   TaskCategory
 } from '../../../src/services/tasks-manager-v2/types';
 import SupabaseTasks from '../../../src/db/supabase/tasks';
+import type { Task as DbTask } from '../../../src/db/types';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -90,7 +91,16 @@ describe('Pipeline', () => {
 
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -151,7 +161,16 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -174,7 +193,16 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -200,7 +228,16 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -268,7 +305,16 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -303,7 +349,16 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -371,7 +426,16 @@ describe('Pipeline', () => {
       const { factory, mockSSE } = makeMockSSEFactory();
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -451,20 +515,29 @@ describe('Pipeline', () => {
       const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn<any>().mockResolvedValue({
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
-          type: 'fetch',
-          category: 'mining',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
           details: {},
-          status: 'pending',
+          status: TaskStatus.Running,
           startedAt: new Date().toISOString()
         })
       } as unknown as SupabaseTasks;
 
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
@@ -518,13 +591,13 @@ describe('Pipeline', () => {
       const { factory, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn<any>().mockResolvedValue({
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
-          type: 'extract',
-          category: 'mining',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
           details: {},
-          status: 'pending',
+          status: TaskStatus.Running,
           startedAt: new Date().toISOString()
         })
       } as unknown as SupabaseTasks;
@@ -576,8 +649,6 @@ describe('Pipeline', () => {
       let createCallCount = 0;
       const mockTasksResolver = {
         create: jest.fn().mockImplementation(async () => {
-          // Add a tiny delay so the promise yields the event loop,
-          // allowing concurrent tasks to register their DB IDs before the throw happens
           await new Promise<void>((r) => {
             setImmediate(r);
           });
@@ -585,14 +656,21 @@ describe('Pipeline', () => {
           return {
             id: `test-task-id-${createCallCount}`,
             userId: 'test-user',
-            type: 'extract',
-            category: 'mining',
+            type: TaskType.Extract,
+            category: TaskCategory.Mining,
             details: {},
-            status: 'pending',
+            status: TaskStatus.Running,
             startedAt: new Date().toISOString()
           };
         }),
-        update: jest.fn<any>().mockResolvedValue({})
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
       } as unknown as SupabaseTasks;
 
       const failingFetcherClient = {
@@ -657,16 +735,23 @@ describe('Pipeline', () => {
       const { factory, mockSSE, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn<any>().mockResolvedValue({
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
-          type: 'extract',
-          category: 'mining',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
           details: {},
-          status: 'pending',
+          status: TaskStatus.Running,
           startedAt: new Date().toISOString()
         }),
-        update: jest.fn<any>().mockResolvedValue({})
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
       } as unknown as SupabaseTasks;
 
       const extract = new ExtractTask({
@@ -697,8 +782,8 @@ describe('Pipeline', () => {
       );
 
       pipeline.attachSSE({
-        req: { on: jest.fn() } as any,
-        res: { on: jest.fn(), write: jest.fn() } as any
+        req: { on: jest.fn() } as unknown as Request,
+        res: { on: jest.fn(), write: jest.fn() } as unknown as Response
       });
 
       extract.status = TaskStatus.Done;
@@ -706,9 +791,11 @@ describe('Pipeline', () => {
       // @ts-ignore - accessing private method for testing
       pipeline.checkCompletion();
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
 
-      const calls = mockSSE.sendSSE.mock.calls;
+      const { calls } = mockSSE.sendSSE.mock;
 
       const taskFinishedIndices = calls
         .map((call, index) =>
@@ -728,16 +815,23 @@ describe('Pipeline', () => {
       const { factory, mockSSE, mockRedisPublisher } = makeMockSSEFactory();
 
       const mockTasksResolver = {
-        create: jest.fn<any>().mockResolvedValue({
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
           id: 'test-task-id',
           userId: 'test-user',
-          type: 'extract',
-          category: 'mining',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
           details: {},
-          status: 'pending',
+          status: TaskStatus.Running,
           startedAt: new Date().toISOString()
         }),
-        update: jest.fn<any>().mockResolvedValue({})
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
       } as unknown as SupabaseTasks;
 
       const fetch = new FetchTask({
@@ -747,9 +841,22 @@ describe('Pipeline', () => {
         outputStream: 'messages_stream-test',
         fetcherClient: {
           startFetch: jest
-            .fn<any>()
+            .fn<
+              (opts: {
+                miningId: string;
+                contactStream: string;
+                signatureStream?: string;
+                extractSignatures?: boolean;
+                userId: string;
+                fetchParams?: Record<string, unknown>;
+              }) => Promise<{ data: { totalMessages: number } }>
+            >()
             .mockResolvedValue({ data: { totalMessages: 0 } }),
-          stopFetch: jest.fn<any>().mockResolvedValue(undefined)
+          stopFetch: jest
+            .fn<
+              (opts: { miningId: string; canceled: boolean }) => Promise<void>
+            >()
+            .mockResolvedValue(undefined)
         } as unknown as FetcherClient
       });
 
@@ -810,7 +917,9 @@ describe('Pipeline', () => {
 
       // @ts-ignore - accessing private method for testing
       pipeline.checkCompletion();
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
 
       const miningCompletedCalls = mockSSE.sendSSE.mock.calls.filter(
         (call) => call[0] === 'mining-completed'
@@ -825,7 +934,16 @@ describe('Pipeline', () => {
 
       const mockFetcher = {
         startFetch: jest
-          .fn<any>()
+          .fn<
+            (opts: {
+              miningId: string;
+              contactStream: string;
+              signatureStream?: string;
+              extractSignatures?: boolean;
+              userId: string;
+              fetchParams?: Record<string, unknown>;
+            }) => Promise<{ data: { totalMessages: number } }>
+          >()
           .mockResolvedValue({ data: { totalMessages: 0 } }),
         stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
