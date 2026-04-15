@@ -50,7 +50,7 @@ describe('Pipeline Integration', () => {
       off: jest.fn(),
       subscribe: jest.fn(),
       unsubscribe: jest.fn()
-    };
+    } as unknown as Redis;
     mockRedisPublisher = {
       publish: jest.fn().mockResolvedValue(undefined as never),
       xgroup: jest.fn().mockResolvedValue('OK' as never),
@@ -63,18 +63,18 @@ describe('Pipeline Integration', () => {
     };
     mockSSEFactory = {
       create: jest.fn().mockReturnValue(mockSSE)
-    };
+    } as unknown as SSEBroadcasterFactory;
     const mockTasksResolver = {
       create: jest.fn().mockResolvedValue({ id: 'db-task-id' } as never),
       update: jest.fn().mockResolvedValue(undefined as never)
     } as unknown as Tasks;
     pipelineDeps = {
       tasksResolver: mockTasksResolver as unknown as SupabaseTasks,
-      redisPublisher: mockRedisPublisher as unknown as Redis,
-      sseBroadcasterFactory: mockSSEFactory as unknown as SSEBroadcasterFactory
+      redisPublisher: mockRedisPublisher,
+      sseBroadcasterFactory: mockSSEFactory
     };
     miningEngine = new MiningEngine({
-      redisSubscriber: mockRedisSubscriber as unknown as Redis
+      redisSubscriber: mockRedisSubscriber
     });
   });
 

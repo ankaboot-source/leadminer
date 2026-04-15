@@ -4,14 +4,14 @@ import PSTFetcherClient from '../../../src/services/email-fetching/pst';
 
 describe('PSTFetcherClient', () => {
   let mockLogger: { error: jest.Mock; info: jest.Mock; warn: jest.Mock };
-  let mockPost: jest.Mock;
-  let mockDelete: jest.Mock;
+  let mockPost: jest.Mock<() => Promise<{ data: unknown }>>;
+  let mockDelete: jest.Mock<() => Promise<{ data: unknown }>>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockLogger = { error: jest.fn(), info: jest.fn(), warn: jest.fn() };
-    mockPost = jest.fn();
-    mockDelete = jest.fn();
+    mockPost = jest.fn<() => Promise<{ data: unknown }>>();
+    mockDelete = jest.fn<() => Promise<{ data: unknown }>>();
   });
 
   describe('startFetch', () => {

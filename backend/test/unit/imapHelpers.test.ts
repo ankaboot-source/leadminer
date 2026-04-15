@@ -161,9 +161,13 @@ describe('sanitizeImapInput', () => {
   });
 
   it('should throw a TypeError for non-string inputs', () => {
-    expect(() => sanitizeImapInput(123 as unknown)).toThrow(TypeError);
-    expect(() => sanitizeImapInput(null as unknown)).toThrow(TypeError);
-    expect(() => sanitizeImapInput({} as unknown)).toThrow(TypeError);
+    expect(() => sanitizeImapInput(123 as unknown as string)).toThrow(
+      TypeError
+    );
+    expect(() => sanitizeImapInput(null as unknown as string)).toThrow(
+      TypeError
+    );
+    expect(() => sanitizeImapInput({} as unknown as string)).toThrow(TypeError);
   });
 
   it('should strip leading and trailing whitespace', () => {
