@@ -80,43 +80,36 @@ async function getAvailableConnections(
   credentials: Credentials
 ): Promise<number> {
   const clients: Connection[] = [];
-  const attempts = Array.from(
-    { length: ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER },
-    (_, i) => i
-  );
+  const limit = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER;
 
-  // Continue getting connections until an error is thrown
-  await Promise.all(
-    attempts.map(async () => {
-      try {
-        const conn = await ImapConnectionProvider.getSingleConnection(
-          email,
-          credentials
-        );
-        logger.debug(
-          `Server approved connection #${
-            clients.length + 1
-          } with id: ${conn.id}`
-        );
-        clients.push(conn);
-        return true;
-      } catch (err) {
-        logger.error('Error getting test connection', err);
-        return null;
-      }
-    })
-  );
+  // Sequential connections to prevent IMAP server rate limiting/throttling
+  // eslint-disable-next-line no-plusplus
+  for (let i = 0; i < limit; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    try {
+      const conn = await ImapConnectionProvider.getSingleConnection(
+        email,
+        credentials
+      );
+      logger.debug(
+        `Server approved connection #${clients.length + 1} with id: ${conn.id}`
+      );
+      clients.push(conn);
+    } catch (err) {
+      logger.error(`Error getting test connection #${i + 1}`, err);
+      break;
+    }
+  }
 
-  // Count how many succeeded
   const count = clients.length;
 
-  // Cleanup
   await Promise.all(
     clients.map(async (c) => {
       try {
         await c.logout();
       } catch (err) {
         logger.error(`Error closing test connection with id: ${c?.id}`, err);
+        c.close();
       }
     })
   );
