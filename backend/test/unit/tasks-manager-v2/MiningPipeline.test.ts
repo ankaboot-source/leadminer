@@ -723,6 +723,99 @@ describe('Pipeline', () => {
       expect(miningCompletedIndex).toBeGreaterThanOrEqual(0);
       expect(taskFinishedIndices[0]).toBeLessThan(miningCompletedIndex);
     });
+
+    it('should allow downstream tasks to finish and complete pipeline after upstream task natively cancels', async () => {
+      const { factory, mockSSE, mockRedisPublisher } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn<any>().mockResolvedValue({
+          id: 'test-task-id',
+          userId: 'test-user',
+          type: 'extract',
+          category: 'mining',
+          details: {},
+          status: 'pending',
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<any>().mockResolvedValue({})
+      } as unknown as SupabaseTasks;
+
+      const fetch = new FetchTask({
+        id: 'fetch-task',
+        miningId: 'test',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: {
+          startFetch: jest
+            .fn<any>()
+            .mockResolvedValue({ data: { totalMessages: 0 } }),
+          stopFetch: jest.fn<any>().mockResolvedValue(undefined)
+        } as unknown as FetcherClient
+      });
+
+      const extract = new ExtractTask({
+        id: 'extract-task',
+        miningId: 'test',
+        userId: 'test-user',
+        inputStream: {
+          streamName: 'messages_stream-test',
+          consumerGroup: 'test-consumer-group',
+          role: 'extract'
+        },
+        outputStream: { streamName: 'contacts_stream-test' }
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch, extract],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: mockRedisPublisher,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      pipeline.addProgressLink('extract-task', {
+        upstreamIds: ['fetch-task'],
+        totalFrom: 'fetched'
+      });
+
+      fetch.onMessage({
+        progressType: 'fetched',
+        count: 0,
+        isCompleted: false,
+        isCanceled: true
+      });
+      expect(fetch.status).toBe(TaskStatus.Canceled);
+      expect(fetch.isComplete()).toBe(true);
+
+      extract.upstreamDone = true;
+      extract.progress.total = 0;
+      extract.progress.processed = 0;
+
+      extract.onMessage({
+        progressType: 'extracted',
+        count: 0,
+        isCompleted: true,
+        isCanceled: false
+      });
+      extract.status = TaskStatus.Done;
+      extract.stoppedAt = new Date().toUTCString();
+
+      // @ts-ignore - accessing private method for testing
+      pipeline.checkCompletion();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const miningCompletedCalls = mockSSE.sendSSE.mock.calls.filter(
+        (call) => call[0] === 'mining-completed'
+      );
+      expect(miningCompletedCalls.length).toBeGreaterThan(0);
+    });
   });
 
   describe('cancel', () => {
