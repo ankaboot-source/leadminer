@@ -199,7 +199,13 @@ class ImapConnectionProvider {
       await connection.connect();
       return connection;
     } catch (err) {
-      if (connection) await connection.logout();
+      logger.error(
+        'ImapFlow connection error during getSingleConnection:',
+        err
+      );
+      if (connection) {
+        connection.close();
+      }
       throw err;
     }
   }
