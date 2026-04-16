@@ -25,13 +25,29 @@ export default class EmailSignatureConsumer {
 
     this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
       const { miningId, command, streams } = msg;
-      this.isInterrupted = false;
-      this.logger.debug('Received PubSub signal.', {
+      const signatureStream = streams.find(
+        (s) => s.role === 'signature'
+      )?.streamName;
+
+      if (command === 'REGISTER' && signatureStream) {
+        this.isInterrupted = false;
+        this.logger.info(
+          `[EmailSignatureConsumer] Registered stream for miningId ${miningId}`,
+          { signatureStream }
+        );
+      } else if (command === 'DELETE' && signatureStream) {
+        this.isInterrupted = true;
+        this.logger.info(
+          `[EmailSignatureConsumer] Deleted stream for miningId ${miningId}`,
+          { signatureStream }
+        );
+      }
+
+      this.logger.debug('[EmailSignatureConsumer] Received PubSub signal.', {
         metadata: {
           miningId,
           command,
-          signatureStream: streams.find((s) => s.role === 'signature')
-            ?.streamName
+          signatureStream
         }
       });
     });

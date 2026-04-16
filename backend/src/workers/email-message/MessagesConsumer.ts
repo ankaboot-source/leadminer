@@ -60,16 +60,26 @@ export default class MessagesConsumer {
             emailsStreamProducer,
             queuedEmailsCache
           });
+
+          this.logger.info(
+            `[MessagesConsumer] Registered streams for miningId ${miningId}`,
+            { messagesStream, emailsVerificationStream }
+          );
         } else if (command === 'DELETE') {
           const streamEntry = this.activeStreams.get(messagesStream);
           if (streamEntry) {
             await streamEntry.queuedEmailsCache.destroy();
             this.activeStreams.delete(messagesStream);
           }
+
+          this.logger.info(
+            `[MessagesConsumer] Deleted streams for miningId ${miningId}`,
+            { messagesStream }
+          );
         }
       }
 
-      this.logger.debug('Received PubSub signal.', {
+      this.logger.debug('[MessagesConsumer] Received PubSub signal.', {
         metadata: {
           miningId,
           command,

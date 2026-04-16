@@ -1,8 +1,17 @@
 import { EventEmitter } from 'events';
+import { Redis } from 'ioredis';
 import { TaskCategory, TaskStatus, TaskType } from '../types';
-import type { TaskProgress, StreamPipe, ProgressMessage } from '../types';
+import type {
+  TaskProgress,
+  StreamPipe,
+  ProgressMessage,
+  StreamInfo,
+  StreamRole,
+  StreamCommand
+} from '../types';
 import SupabaseTasks from '../../../db/supabase/tasks';
 import logger from '../../../utils/logger';
+import ENV from '../../../config';
 
 export interface TaskConfig {
   id: string;
@@ -61,7 +70,33 @@ export class Task extends EventEmitter {
       (params.config?.finishedEventName as string) || `${this.id}-finished`;
   }
 
-  async start(tasksResolver: SupabaseTasks): Promise<void> {
+  protected getStreamInfo(inputOnly = false): StreamInfo[] {
+    const streams: StreamInfo[] = [];
+    if (this.streams.input?.streamName && this.streams.input.role) {
+      streams.push({
+        streamName: this.streams.input.streamName,
+        consumerGroup: this.streams.input.consumerGroup,
+        role: this.streams.input.role as StreamRole
+      });
+    }
+    if (
+      !inputOnly &&
+      this.streams.output?.streamName &&
+      this.streams.output.role
+    ) {
+      streams.push({
+        streamName: this.streams.output.streamName,
+        consumerGroup: this.streams.output.consumerGroup,
+        role: this.streams.output.role as StreamRole
+      });
+    }
+    return streams;
+  }
+
+  async start(
+    tasksResolver: SupabaseTasks,
+    redisPublisher?: Redis
+  ): Promise<void> {
     const record = await tasksResolver.create({
       userId: this.userId,
       type: this.type,
@@ -72,9 +107,27 @@ export class Task extends EventEmitter {
 
     this.dbId = record.id;
     this.startedAt = record.startedAt;
+
+    if (redisPublisher) {
+      const streams = this.getStreamInfo();
+      if (streams.length > 0) {
+        await redisPublisher.publish(
+          ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+          JSON.stringify({
+            miningId: this.miningId,
+            command: 'REGISTER',
+            streams
+          } as StreamCommand)
+        );
+      }
+    }
   }
 
-  async stop(canceled = false, tasksResolver?: SupabaseTasks): Promise<void> {
+  async stop(
+    canceled = false,
+    tasksResolver?: SupabaseTasks,
+    redisPublisher?: Redis
+  ): Promise<void> {
     this.stoppedAt = new Date().toUTCString();
     this.status =
       canceled || this.status === TaskStatus.Canceled
@@ -85,6 +138,26 @@ export class Task extends EventEmitter {
       const start = new Date(this.startedAt).getTime();
       const stop = new Date(this.stoppedAt).getTime();
       this.duration = stop - start;
+    }
+
+    if (redisPublisher) {
+      const streams = this.getStreamInfo(true);
+      if (streams.length > 0) {
+        try {
+          await redisPublisher.publish(
+            ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+            JSON.stringify({
+              miningId: this.miningId,
+              command: 'DELETE',
+              streams
+            } as StreamCommand)
+          );
+        } catch (err) {
+          logger.error(`Failed to publish DELETE command for task ${this.id}`, {
+            error: err
+          });
+        }
+      }
     }
 
     if (tasksResolver && this.dbId) {
@@ -101,7 +174,9 @@ export class Task extends EventEmitter {
           duration: this.duration
         });
       } catch (error) {
-        logger.error(`Failed to update task ${this.id} in database`, { error });
+        logger.error(`Failed to update task ${this.id} in database`, {
+          error
+        });
       }
     }
   }

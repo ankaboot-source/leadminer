@@ -33,19 +33,32 @@ export default class EmailVerificationConsumer {
         if (command === 'REGISTER') {
           this.activeStreams.add(emailsStream);
           this.streamsHandler.registerStream(emailsStream);
+
+          this.logger.info(
+            `[EmailsVerificationConsumer] Registered stream for miningId ${miningId}`,
+            { emailsStream }
+          );
         } else {
           this.activeStreams.delete(emailsStream);
           this.streamsHandler.unregisterStream(emailsStream);
+
+          this.logger.info(
+            `[EmailsVerificationConsumer] Deleted stream for miningId ${miningId}`,
+            { emailsStream }
+          );
         }
       }
 
-      this.logger.debug('Received PubSub signal.', {
-        metadata: {
-          miningId,
-          command,
-          emailsStream
+      this.logger.debug(
+        '[EmailsVerificationConsumer] Received PubSub signal.',
+        {
+          metadata: {
+            miningId,
+            command,
+            emailsStream
+          }
         }
-      });
+      );
     });
   }
 

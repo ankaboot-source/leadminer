@@ -64,7 +64,8 @@ export function createImapMining(
         role: 'extract'
       },
       outputStream: {
-        streamName: streams.emailsStream
+        streamName: streams.emailsStream,
+        role: 'clean'
       }
     })
   );
@@ -143,6 +144,22 @@ export function createFileMining(
   };
 
   const tasks: Task[] = [];
+
+  tasks.push(
+    new ExtractTask({
+      miningId,
+      userId: params.userId,
+      inputStream: {
+        streamName: streams.messagesStream,
+        consumerGroup: streams.messagesConsumerGroup,
+        role: 'extract'
+      },
+      outputStream: {
+        streamName: streams.emailsStream,
+        role: 'clean'
+      }
+    })
+  );
 
   tasks.push(
     new ExtractTask({
@@ -248,7 +265,8 @@ export function createPstMining(
         role: 'extract'
       },
       outputStream: {
-        streamName: streams.emailsStream
+        streamName: streams.emailsStream,
+        role: 'clean'
       }
     })
   );
