@@ -5,7 +5,7 @@
     ref="TableRef"
     v-model:selection="selectedContacts"
     v-model:filters="filtersModel"
-    :loading="isLoading"
+    :loading="isLoading || isPageLoading"
     resizable-columns
     reorderable-columns
     show-gridlines
@@ -33,6 +33,7 @@
     :rows-per-page-options="rowsPerPageOptions"
     v-model:first="firstRecord"
     @filter="onFilter($event)"
+    @sort="onSort($event)"
     @page="onPage($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -62,9 +63,12 @@
       </div>
     </template>
     <template #loading>
-      <div class="text-center">
-        <ProgressSpinner />
-        <div class="font-semibold text-white">{{ loadingLabel }}</div>
+      <div class="p-4">
+        <Skeleton width="100%" height="2rem" class="mb-2" />
+        <Skeleton width="100%" height="2rem" class="mb-2" />
+        <Skeleton width="100%" height="2rem" class="mb-2" />
+        <Skeleton width="100%" height="2rem" class="mb-2" />
+        <Skeleton width="100%" height="2rem" />
       </div>
     </template>
     <template #header>
@@ -891,6 +895,7 @@
 <script setup lang="ts">
 import type {
   DataTableFilterEvent,
+  DataTableSortEvent,
   DataTablePageEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
@@ -960,10 +965,12 @@ const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const isLoading = ref(true);
-const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contactsList);
-const contactsLength = computed(() => $contactsStore.contactCount);
+const contactsLength = computed(() => {
+  const hasFilters = filteredContactsLength.value !== pageContactsCount.value;
+  return hasFilters ? filteredContactsLength.value : pageContactsCount.value;
+});
 const visibleColumns = computed({
   get: () => $contactsStore.visibleColumns,
   set: (value: string[]) => {
@@ -971,14 +978,29 @@ const visibleColumns = computed({
   },
 });
 
-const DEFAULT_ROWS_PER_PAGE = 150;
+const DEFAULT_ROWS_PER_PAGE = 100;
 const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const firstRecord = ref(0);
-const totalContactsCount = computed(() => $contactsStore.totalContactsCount);
+const isPageLoading = ref(false);
+const currentSearch = ref<string | null>(null);
+const currentSortField = ref<string | null>(null);
+const currentSortOrder = ref<string>('DESC');
+const totalContactsCount = computed(() => {
+  const count = $contactsStore.totalContactsCount;
+  console.log('totalContactsCount computed:', count);
+  return count;
+});
+const pageContactsCount = computed(() => contacts.value?.length ?? 0);
 const paginatedContacts = computed(() => contacts.value ?? []);
 
-let lastLoadedPage = { first: 0, rows: DEFAULT_ROWS_PER_PAGE };
+let lastLoadedPage = {
+  first: 0,
+  rows: DEFAULT_ROWS_PER_PAGE,
+  search: null,
+  sortField: null,
+  sortOrder: 'DESC',
+};
 const globalFilterFields = [
   'email',
   'name',
@@ -1056,21 +1078,48 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
-const applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
+const _applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
   filteredContacts.value = rows;
 }, 100);
 
 function onFilter($event: DataTableFilterEvent) {
-  applyFilteredContacts(
-    ($event.filteredValue as Contact[] | undefined) ?? sourceRows.value,
-  );
+  console.log('Filter event:', { filters: $event.filters });
+  // Extract search from global filter or individual column filters
+  const globalFilter = $event.filters?.global?.value || $event.filters?.global;
+  currentSearch.value = globalFilter || null;
+  // Reset to first page and reload with search
+  firstRecord.value = 0;
+  isPageLoading.value = true;
+  loadContactsData().finally(() => {
+    isPageLoading.value = false;
+  });
+}
+
+function onSort($event: DataTableSortEvent) {
+  console.log('Sort event:', {
+    sortField: $event.sortField,
+    sortOrder: $event.sortOrder,
+  });
+  currentSortField.value = $event.sortField || null;
+  currentSortOrder.value = $event.sortOrder === 1 ? 'ASC' : 'DESC';
+  // Reset to first page and reload with sort
+  firstRecord.value = 0;
+  isPageLoading.value = true;
+  loadContactsData().finally(() => {
+    isPageLoading.value = false;
+  });
 }
 
 async function onPage($event: DataTablePageEvent) {
   const { first, rows } = $event;
   firstRecord.value = first;
   rowsPerPage.value = rows;
-  await loadContactsData();
+  isPageLoading.value = true;
+  try {
+    await loadContactsData();
+  } finally {
+    isPageLoading.value = false;
+  }
 }
 
 function showSocialLinksAndPhones(contact: Contact) {
@@ -1137,21 +1186,23 @@ const onRowUnselect = () => {
 
 const implicitlySelectedContacts = computed(() => {
   if (contacts.value === undefined) return [];
-  // If (Filter) & (No selection) : user implicitly selected all filtered contacts
-  if (
-    selectedContactsLength.value === 0 &&
-    filteredContactsLength.value !== contactsLength.value
-  ) {
+
+  const totalSelected = selectedContactsLength.value;
+  const pageCount = pageContactsCount.value;
+  const filteredCount = filteredContacts.value?.length ?? 0;
+  const hasActiveFilter = filteredCount !== pageCount;
+
+  // If no explicit selection but filters active -> implicit filtered selection
+  if (totalSelected === 0 && hasActiveFilter) {
     return filteredContacts.value;
   }
-  // (Partial selection) : user explicitly selected contacts partially
-  if (
-    selectedContactsLength.value !== 0 &&
-    selectedContactsLength.value !== contactsLength.value
-  ) {
+
+  // If some explicit selection but not all page -> use selection
+  if (totalSelected > 0 && totalSelected !== pageCount) {
     return selectedContacts.value;
   }
-  // If (selection of All or None) && (No filter) : user implicitly selected all contacts
+
+  // If all on page selected (explicit) or no filters + no selection -> use page contacts
   return contacts.value;
 });
 
@@ -1163,11 +1214,23 @@ const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value,
 );
 
-const contactsToTreat = computed<string[] | undefined>(() =>
-  implicitSelectAll.value
-    ? undefined
-    : implicitlySelectedContacts.value.map((item: Contact) => item.email),
-);
+const contactsToTreat = computed<string[] | undefined>(() => {
+  const pageCount = pageContactsCount.value;
+  const selectedOnPage = selectedContacts.value.length;
+
+  // If all current page selected -> return undefined (all actions will prompt)
+  if (selectedOnPage === pageCount) {
+    return undefined;
+  }
+
+  // If none selected but filters active -> use filtered
+  if (selectedOnPage === 0 && filteredContacts.value.length > 0) {
+    return filteredContacts.value.map((item: Contact) => item.email);
+  }
+
+  // Otherwise use selected
+  return selectedContacts.value.map((item: Contact) => item.email);
+});
 
 const updateSelectedEmails = useDebounceFn((emails: string[] | undefined) => {
   $contactsStore.selectedEmails = emails;
@@ -1347,10 +1410,26 @@ function clearIdlePrefetch() {
 }
 
 async function loadContactsData() {
-  const currentPage = { first: firstRecord.value, rows: rowsPerPage.value };
+  const currentPage = {
+    first: firstRecord.value,
+    rows: rowsPerPage.value,
+    search: currentSearch.value,
+    sortField: currentSortField.value,
+    sortOrder: currentSortOrder.value,
+  };
   const pageChanged =
     lastLoadedPage.first !== currentPage.first ||
-    lastLoadedPage.rows !== currentPage.rows;
+    lastLoadedPage.rows !== currentPage.rows ||
+    lastLoadedPage.search !== currentPage.search ||
+    lastLoadedPage.sortField !== currentPage.sortField ||
+    lastLoadedPage.sortOrder !== currentPage.sortOrder;
+
+  console.log('loadContactsData:', {
+    hasLoadedContacts: hasLoadedContacts.value,
+    pageChanged,
+    currentPage,
+    lastLoadedPage,
+  });
 
   if (hasLoadedContacts.value && !pageChanged) {
     return;
@@ -1362,14 +1441,25 @@ async function loadContactsData() {
   }
 
   contactsLoadPromise = (async () => {
-    const totalCount = await $contactsStore.loadContactsCount();
+    console.log('Loading with:', {
+      limit: rowsPerPage.value,
+      offset: firstRecord.value,
+    });
+    const totalCount = await $contactsStore.loadContactsCount(
+      currentSearch.value,
+    );
     $contactsStore.setTotalContactsCount(totalCount);
+    console.log('Total count set to:', totalCount);
 
     const pageContacts = await $contactsStore.loadContactsPage(
       rowsPerPage.value,
       firstRecord.value,
+      currentSearch.value,
+      currentSortField.value,
+      currentSortOrder.value,
     );
     $contactsStore.setContactsList(pageContacts);
+    console.log('Loaded contacts:', pageContacts?.length, 'total:', totalCount);
 
     if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
       console.log(
@@ -1379,6 +1469,9 @@ async function loadContactsData() {
       const refinedPageContacts = await $contactsStore.loadContactsPage(
         rowsPerPage.value,
         firstRecord.value,
+        currentSearch.value,
+        currentSortField.value,
+        currentSortOrder.value,
       );
       $contactsStore.setContactsList(refinedPageContacts);
     }
@@ -1391,7 +1484,13 @@ async function loadContactsData() {
 
     $contactsStore.subscribeToRealtimeUpdates();
     hasLoadedContacts.value = true;
-    lastLoadedPage = { first: firstRecord.value, rows: rowsPerPage.value };
+    lastLoadedPage = {
+      first: firstRecord.value,
+      rows: rowsPerPage.value,
+      search: currentSearch.value,
+      sortField: currentSortField.value,
+      sortOrder: currentSortOrder.value,
+    };
   })();
 
   try {

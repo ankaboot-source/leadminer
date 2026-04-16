@@ -93,8 +93,18 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function loadContactsPage(
     limit = 20,
     offset = 0,
+    search = null,
+    sortField = null,
+    sortOrder = 'DESC',
     userId = getCurrentUserId(),
   ) {
+    console.log('loadContactsPage called:', {
+      limit,
+      offset,
+      search,
+      sortField,
+      sortOrder,
+    });
     if (!userId) return [];
 
     const { data, error } = await $supabase
@@ -104,19 +114,22 @@ export const useContactsStore = defineStore('contacts-store', () => {
         user_id: userId,
         p_limit: limit,
         p_offset: offset,
+        p_search: search,
+        p_sort_field: sortField,
+        p_sort_order: sortOrder,
       });
 
     if (error) throw error;
-    return data as Contact[];
+    return convertDates(data as Contact[]);
   }
 
-  async function loadContactsCount(userId = getCurrentUserId()) {
+  async function loadContactsCount(search = null, userId = getCurrentUserId()) {
     if (!userId) return 0;
 
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_count', { user_id: userId });
+      .rpc('get_contacts_count', { user_id: userId, p_search: search });
 
     if (error) throw error;
     return (data as number) ?? 0;
