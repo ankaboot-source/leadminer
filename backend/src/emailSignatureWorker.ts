@@ -9,7 +9,7 @@ import initializeEmailSignatureProcessor, {
   EmailData
 } from './workers/email-signature/handler';
 import EmailSignatureConsumer from './workers/email-signature/consumer';
-import { StreamCommand } from './workers/types';
+import { StreamCommand } from './services/tasks-manager-v2/types';
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';

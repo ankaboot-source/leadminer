@@ -8,7 +8,7 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
-import { StreamCommand } from '../types';
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 interface StreamEntry {
   emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
@@ -35,11 +35,12 @@ export default class MessagesConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe(async (msg: StreamCommand) => {
-      const { miningId, command, streams } = msg;
-      const extractStream = streams.find((s) => s.role === 'extract');
-      const cleanStream = streams.find((s) => s.role === 'clean');
-      const messagesStream = extractStream?.streamName;
-      const emailsVerificationStream = cleanStream?.streamName;
+      const { miningId, role, command, streams } = msg;
+
+      if (role !== 'extract') return;
+
+      const messagesStream = streams.input[0]?.streamName;
+      const emailsVerificationStream = streams.output[0]?.streamName;
 
       if (messagesStream) {
         if (command === 'REGISTER') {
@@ -82,6 +83,7 @@ export default class MessagesConsumer {
       this.logger.debug('[MessagesConsumer] Received PubSub signal.', {
         metadata: {
           miningId,
+          role,
           command,
           messagesStream,
           emailsVerificationStream: emailsVerificationStream ?? 'not provided'

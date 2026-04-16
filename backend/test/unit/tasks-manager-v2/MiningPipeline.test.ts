@@ -13,10 +13,12 @@ import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks
 import {
   TaskStatus,
   TaskType,
-  TaskCategory
+  TaskCategory,
+  TaskId
 } from '../../../src/services/tasks-manager-v2/types';
 import SupabaseTasks from '../../../src/db/supabase/tasks';
 import type { Task as DbTask } from '../../../src/db/types';
+import { mailMiningComplete, refineContacts } from '../../../src/db/mail';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -58,8 +60,8 @@ function makeMockSSEFactory() {
     stop: jest.fn()
   };
   const mockRedisPublisher = {
-    publish: jest.fn(),
-    xgroup: jest.fn()
+    publish: jest.fn().mockResolvedValue(1),
+    xgroup: jest.fn().mockResolvedValue('OK')
   } as unknown as Redis;
   const factory = {
     create: jest.fn().mockReturnValue(mockSSE)
@@ -552,10 +554,15 @@ describe('Pipeline', () => {
       const clean = new CleanTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: {
-          streamName: 'messages_stream-test',
-          consumerGroup: 'test-consumer-group',
-          role: 'clean'
+        streams: {
+          role: TaskId.Clean,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: []
         }
       });
 
@@ -605,12 +612,16 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test-start',
         userId: 'test-user',
-        inputStream: {
-          streamName: 'messages_stream-test',
-          consumerGroup: 'test-consumer-group',
-          role: 'extract'
-        },
-        outputStream: { streamName: 'contacts_stream-test' }
+        streams: {
+          role: TaskId.Extract,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
+        }
       });
 
       const pipeline = new Pipeline(
@@ -729,6 +740,81 @@ describe('Pipeline', () => {
       // The extract task should have been manually canceled by Pipeline.cancel()
       expect(extract.status).toBe(TaskStatus.Canceled);
       expect(extract.stoppedAt).toBeDefined();
+
+      // Side effects should NOT be called when start() fails
+      expect(mailMiningComplete).not.toHaveBeenCalled();
+      expect(refineContacts).not.toHaveBeenCalled();
+    });
+
+    it('should skip email notification and refinement when start() fails but still call onComplete', async () => {
+      const { factory, mockSSE, mockRedisPublisher } = makeMockSSEFactory();
+
+      let createCallCount = 0;
+      const mockTasksResolver = {
+        create: jest.fn().mockImplementation(async () => {
+          await new Promise<void>((r) => {
+            setImmediate(r);
+          });
+          createCallCount += 1;
+          return {
+            id: `test-task-id-${createCallCount}`,
+            userId: 'test-user',
+            type: TaskType.Fetch,
+            category: TaskCategory.Mining,
+            details: {},
+            status: TaskStatus.Running,
+            startedAt: new Date().toISOString()
+          };
+        }),
+        update: jest.fn()
+      } as unknown as SupabaseTasks;
+
+      const failingFetcherClient = {
+        startFetch: jest
+          .fn<() => Promise<{ data: { totalMessages: number } }>>()
+          .mockRejectedValue(new Error('Task Failed to Start')),
+        stopFetch: jest.fn().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const failingFetch = new FetchTask({
+        id: 'fetch-task',
+        miningId: 'test',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: failingFetcherClient
+      });
+
+      const onCompleteMock = jest.fn().mockResolvedValue(undefined);
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [failingFetch],
+          onComplete: onCompleteMock
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: mockRedisPublisher,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      await expect(pipeline.start()).rejects.toThrow('Task Failed to Start');
+
+      // onComplete should be called for cleanup (from MiningEngine)
+      expect(onCompleteMock).toHaveBeenCalled();
+
+      // Side effects should NOT be called
+      expect(mailMiningComplete).not.toHaveBeenCalled();
+      expect(refineContacts).not.toHaveBeenCalled();
+
+      // SSE should send failure event
+      expect(mockSSE.sendSSE).toHaveBeenCalledWith(
+        'mining-failed',
+        'mining-failed'
+      );
     });
 
     it('should emit task-finished events before mining-completed event', async () => {

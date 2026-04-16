@@ -1,6 +1,6 @@
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskStatus, TaskId } from '../types';
-import type { ProgressMessage } from '../types';
+import type { ProgressMessage, TaskStreamConfig } from '../types';
 import SupabaseTasks from '../../../db/supabase/tasks';
 
 export interface FetcherClient {
@@ -37,12 +37,13 @@ export class FetchTask extends Task {
       category: TaskCategory.Mining,
       miningId: config.miningId,
       userId: config.userId,
-      streams: { output: { streamName: config.outputStream } },
+      streams: undefined,
       config: {
         extractSignatures: config.extractSignatures,
         signatureStream: config.signatureStream,
         fetchParams: config.fetchParams,
-        passiveMining: config.passiveMining
+        passiveMining: config.passiveMining,
+        outputStream: config.outputStream
       }
     });
     this.fetcherClient = config.fetcherClient;
@@ -55,7 +56,7 @@ export class FetchTask extends Task {
     try {
       const result = await this.fetcherClient.startFetch({
         miningId: this.miningId,
-        contactStream: this.streams.output?.streamName ?? '',
+        contactStream: this.config.outputStream as string,
         signatureStream: this.config.signatureStream as string,
         extractSignatures: this.config.extractSignatures as boolean,
         userId: this.userId,

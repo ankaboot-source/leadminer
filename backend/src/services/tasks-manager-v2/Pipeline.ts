@@ -7,9 +7,9 @@ import type {
   ProgressMessage,
   ProgressLink,
   RedactedTask,
-  StreamInfo,
   StreamCommand,
-  StreamRole
+  StreamDetails,
+  TaskStreamConfig
 } from './types';
 import SupabaseTasks from '../../db/supabase/tasks';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
@@ -49,6 +49,8 @@ export class Pipeline {
   private startedAt: number;
 
   onComplete?: () => Promise<void>;
+
+  public failed: boolean = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -94,39 +96,45 @@ export class Pipeline {
   async start(): Promise<void> {
     const taskList = [...this.tasks.values()];
     try {
-      await Promise.all(taskList.map((t) => t.start(this.deps.tasksResolver)));
+      await this.createConsumerGroups();
+      await Promise.all(
+        taskList.map((t) =>
+          t.start(this.deps.tasksResolver, this.deps.redisPublisher)
+        )
+      );
     } catch (err) {
+      this.failed = true;
       await this.cancel();
       throw err;
     }
-
-    await this.registerStreams();
   }
 
-  private async registerStreams(): Promise<void> {
+  private async createConsumerGroups(): Promise<void> {
     const streams = this.getStreamInfo();
 
-    await Promise.all(
-      streams
-        .filter((stream) => stream.consumerGroup)
-        .map((stream) =>
-          this.deps.redisPublisher.xgroup(
-            'CREATE',
-            stream.streamName,
-            stream.consumerGroup as string,
-            '$',
-            'MKSTREAM'
-          )
-        )
-    );
+    const streamDetails: { streamName: string; consumerGroup?: string }[] = [];
+    for (const config of streams) {
+      streamDetails.push(...config.input);
+    }
 
-    await this.deps.redisPublisher.publish(
-      ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-      JSON.stringify({
-        miningId: this.miningId,
-        command: 'REGISTER',
-        streams
-      } as StreamCommand)
+    await Promise.all(
+      streamDetails
+        .filter((s) => s.consumerGroup)
+        .map((s) =>
+          this.deps.redisPublisher
+            .xgroup(
+              'CREATE',
+              s.streamName,
+              s.consumerGroup as string,
+              '$',
+              'MKSTREAM'
+            )
+            .catch((err: Error) => {
+              if (!err.message.includes('BUSYGROUP')) {
+                throw err;
+              }
+            })
+        )
     );
   }
 
@@ -185,18 +193,19 @@ export class Pipeline {
 
     if (tasksToStop.length > 0) {
       Promise.all(
-        tasksToStop.map((t) => t.stop(false, this.deps.tasksResolver))
-      )
-        .then(() => {
-          tasksToStop.forEach((t) => this.broadcastTaskFinished(t));
-
-          if (this.isAllCompleted()) {
-            this.complete();
+        tasksToStop.map((t) => {
+          try {
+            t.stop(false, this.deps.tasksResolver, this.deps.redisPublisher);
+            this.broadcastTaskFinished(t);
+          } catch (err) {
+            logger.error('Error stopping completed tasks', err);
           }
         })
-        .catch((err) => {
-          logger.error('Error stopping completed tasks', err);
-        });
+      );
+
+      if (this.isAllCompleted()) {
+        this.complete();
+      }
     }
   }
 
@@ -215,21 +224,26 @@ export class Pipeline {
 
     try {
       await this.cleanupStreams();
-      await refineContacts(this.userId);
-      await mailMiningComplete(this.miningId);
+      if (!this.failed) {
+        await refineContacts(this.userId);
+        await mailMiningComplete(this.miningId);
+      }
     } catch (err) {
       logger.error(
         'Failed to trigger email notification, refine contacts',
         err
       );
     } finally {
-      this.progressHandlerSSE.sendSSE('mining-completed', 'mining-completed');
+      const eventName = this.failed ? 'mining-failed' : 'mining-completed';
+      this.progressHandlerSSE.sendSSE(eventName, eventName);
       this.progressHandlerSSE.stop();
     }
 
     const duration = performance.now() - this.startedAt;
     logger.info(
-      `Mining completed in ${(duration / 1000).toFixed(2)}s`,
+      `Mining ${this.failed ? 'failed' : 'completed'} in ${(
+        duration / 1000
+      ).toFixed(2)}s`,
       this.getFlattenedProgress()
     );
   }
@@ -237,36 +251,33 @@ export class Pipeline {
   private async cleanupStreams(): Promise<void> {
     const streams = this.getStreamInfo();
 
+    const streamDetails: { streamName: string; consumerGroup?: string }[] = [];
+    for (const config of streams) {
+      streamDetails.push(...config.input);
+    }
+
     await Promise.all(
-      streams
+      streamDetails
         .filter(
-          (stream): stream is StreamInfo & { consumerGroup: string } =>
-            stream.consumerGroup !== undefined
+          (s): s is { streamName: string; consumerGroup: string } =>
+            s.consumerGroup !== undefined
         )
-        .map(async (stream) => {
+        .map(async (s) => {
           try {
             await this.deps.redisPublisher.xgroup(
               'DESTROY',
-              stream.streamName,
-              stream.consumerGroup
+              s.streamName,
+              s.consumerGroup
             );
 
-            await this.deps.redisPublisher.del(stream.streamName);
+            await this.deps.redisPublisher.del(s.streamName);
           } catch (err) {
             logger.error('Failed to cleanup stream', {
-              streamName: stream.streamName,
+              streamName: s.streamName,
               error: err
             });
           }
         })
-    );
-    await this.deps.redisPublisher.publish(
-      ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-      JSON.stringify({
-        miningId: this.miningId,
-        command: 'DELETE',
-        streams
-      } as StreamCommand)
     );
   }
 
@@ -318,34 +329,17 @@ export class Pipeline {
     this.progressHandlerSSE.subscribeSSE(connection);
   }
 
-  getTaskStreams(taskId: string):
-    | {
-        input?: { streamName: string; consumerGroup?: string };
-        output?: { streamName: string; consumerGroup?: string };
-      }
-    | undefined {
+  getTaskStreams(taskId: string): TaskStreamConfig | undefined {
     const task = this.tasks.get(taskId);
     return task?.streams;
   }
 
-  getStreamInfo(): StreamInfo[] {
-    const streams: StreamInfo[] = [];
+  getStreamInfo(): TaskStreamConfig[] {
+    const streams: TaskStreamConfig[] = [];
 
     for (const task of this.tasks.values()) {
-      if (task.streams.input?.consumerGroup && task.streams.input.role) {
-        streams.push({
-          streamName: task.streams.input.streamName,
-          consumerGroup: task.streams.input.consumerGroup,
-          role: task.streams.input.role as StreamRole
-        });
-      }
-      if (task.streams.output?.consumerGroup && task.streams.output.role) {
-        streams.push({
-          streamName: task.streams.output.streamName,
-          consumerGroup: task.streams.output.consumerGroup,
-          role: task.streams.output.role as StreamRole
-        });
-      }
+      if (!task.streams) continue;
+      streams.push(task.streams);
     }
 
     return streams;
@@ -365,9 +359,17 @@ export class Pipeline {
     });
 
     if (tasksToStop.length) {
-      await Promise.all(
-        tasksToStop.map((t) => t.stop(true, this.deps.tasksResolver))
-      );
+      // eslint-disable-next-line no-await-in-loop
+      for (const t of tasksToStop) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await t.stop(true, this.deps.tasksResolver, this.deps.redisPublisher);
+          this.propagateProgress();
+          this.broadcastTaskFinished(t);
+        } catch (err) {
+          logger.error(`Failed to stop task ${t.id ?? 'unknown'}`, err);
+        }
+      }
     }
 
     if (this.isAllCompleted()) {

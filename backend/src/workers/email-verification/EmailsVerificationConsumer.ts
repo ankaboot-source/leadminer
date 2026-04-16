@@ -6,7 +6,7 @@ import {
   EmailVerificationData,
   EmailVerificationHandler
 } from './emailVerificationHandlers';
-import { StreamCommand } from '../types';
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
@@ -24,10 +24,12 @@ export default class EmailVerificationConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
-      const { miningId, command, streams } = msg;
-      const cleanStream = streams.find((s) => s.role === 'clean');
-      if (!cleanStream) return;
-      const emailsStream = cleanStream.streamName;
+      const { miningId, role, command, streams } = msg;
+
+      if (role !== 'clean') return;
+
+      const emailsStream = streams.input[0]?.streamName;
+      const consumerGroup = streams.input[0]?.consumerGroup;
 
       if (emailsStream) {
         if (command === 'REGISTER') {
@@ -36,7 +38,7 @@ export default class EmailVerificationConsumer {
 
           this.logger.info(
             `[EmailsVerificationConsumer] Registered stream for miningId ${miningId}`,
-            { emailsStream }
+            { emailsStream, consumerGroup }
           );
         } else {
           this.activeStreams.delete(emailsStream);
@@ -54,6 +56,7 @@ export default class EmailVerificationConsumer {
         {
           metadata: {
             miningId,
+            role,
             command,
             emailsStream
           }

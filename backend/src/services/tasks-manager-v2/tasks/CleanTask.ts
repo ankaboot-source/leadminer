@@ -1,12 +1,12 @@
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskId } from '../types';
-import type { ProgressMessage, StreamPipe } from '../types';
+import type { ProgressMessage, TaskStreamConfig } from '../types';
 
 export interface CleanTaskConfig {
   id?: string;
   miningId: string;
   userId: string;
-  inputStream: StreamPipe;
+  streams: TaskStreamConfig;
 }
 
 export class CleanTask extends Task {
@@ -17,9 +17,7 @@ export class CleanTask extends Task {
       category: TaskCategory.Cleaning,
       miningId: config.miningId,
       userId: config.userId,
-      streams: {
-        input: config.inputStream
-      }
+      streams: config.streams
     });
   }
 

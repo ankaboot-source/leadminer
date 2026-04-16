@@ -58,14 +58,19 @@ export function createImapMining(
     new ExtractTask({
       miningId,
       userId: params.userId,
-      inputStream: {
-        streamName: streams.messagesStream,
-        consumerGroup: streams.messagesConsumerGroup,
-        role: 'extract'
-      },
-      outputStream: {
-        streamName: streams.emailsStream,
-        role: 'clean'
+      streams: {
+        role: TaskId.Extract,
+        input: [
+          {
+            streamName: streams.messagesStream,
+            consumerGroup: streams.messagesConsumerGroup
+          }
+        ],
+        output: [
+          {
+            streamName: streams.emailsStream
+          }
+        ]
       }
     })
   );
@@ -75,10 +80,15 @@ export function createImapMining(
       new CleanTask({
         miningId,
         userId: params.userId,
-        inputStream: {
-          streamName: streams.emailsStream,
-          consumerGroup: streams.emailsConsumerGroup,
-          role: 'clean'
+        streams: {
+          role: TaskId.Clean,
+          input: [
+            {
+              streamName: streams.emailsStream,
+              consumerGroup: streams.emailsConsumerGroup
+            }
+          ],
+          output: []
         }
       })
     );
@@ -89,7 +99,11 @@ export function createImapMining(
       new SignatureTask({
         miningId,
         userId: params.userId,
-        streamName: streams.signatureStream
+        streams: {
+          role: TaskId.Signature,
+          input: [{ streamName: streams.signatureStream }],
+          output: []
+        }
       })
     );
   }
@@ -149,29 +163,19 @@ export function createFileMining(
     new ExtractTask({
       miningId,
       userId: params.userId,
-      inputStream: {
-        streamName: streams.messagesStream,
-        consumerGroup: streams.messagesConsumerGroup,
-        role: 'extract'
-      },
-      outputStream: {
-        streamName: streams.emailsStream,
-        role: 'clean'
-      }
-    })
-  );
-
-  tasks.push(
-    new ExtractTask({
-      miningId,
-      userId: params.userId,
-      inputStream: {
-        streamName: streams.messagesStream,
-        consumerGroup: streams.messagesConsumerGroup,
-        role: 'extract'
-      },
-      outputStream: {
-        streamName: streams.emailsStream
+      streams: {
+        role: TaskId.Extract,
+        input: [
+          {
+            streamName: streams.messagesStream,
+            consumerGroup: streams.messagesConsumerGroup
+          }
+        ],
+        output: [
+          {
+            streamName: streams.emailsStream
+          }
+        ]
       }
     })
   );
@@ -181,10 +185,15 @@ export function createFileMining(
       new CleanTask({
         miningId,
         userId: params.userId,
-        inputStream: {
-          streamName: streams.emailsStream,
-          consumerGroup: streams.emailsConsumerGroup,
-          role: 'clean'
+        streams: {
+          role: TaskId.Clean,
+          input: [
+            {
+              streamName: streams.emailsStream,
+              consumerGroup: streams.emailsConsumerGroup
+            }
+          ],
+          output: []
         }
       })
     );
@@ -200,18 +209,18 @@ export function createFileMining(
     deps
   );
 
+  if (params.cleaningEnabled) {
+    pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
+      totalFrom: 'createdContacts'
+    });
+  }
+
   const extractTask = pipeline.getTask<ExtractTask>(TaskId.Extract);
   if (!extractTask) {
     throw new Error(`ExtractTask not found in pipeline ${miningId}`);
   }
   extractTask.progress.total = params.totalImported;
   extractTask.upstreamDone = true;
-
-  if (params.cleaningEnabled) {
-    pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
-      totalFrom: 'createdContacts'
-    });
-  }
 
   return pipeline;
 }
@@ -259,14 +268,19 @@ export function createPstMining(
     new ExtractTask({
       miningId,
       userId: params.userId,
-      inputStream: {
-        streamName: streams.messagesStream,
-        consumerGroup: streams.messagesConsumerGroup,
-        role: 'extract'
-      },
-      outputStream: {
-        streamName: streams.emailsStream,
-        role: 'clean'
+      streams: {
+        role: TaskId.Extract,
+        input: [
+          {
+            streamName: streams.messagesStream,
+            consumerGroup: streams.messagesConsumerGroup
+          }
+        ],
+        output: [
+          {
+            streamName: streams.emailsStream
+          }
+        ]
       }
     })
   );
@@ -276,10 +290,15 @@ export function createPstMining(
       new CleanTask({
         miningId,
         userId: params.userId,
-        inputStream: {
-          streamName: streams.emailsStream,
-          consumerGroup: streams.emailsConsumerGroup,
-          role: 'clean'
+        streams: {
+          role: TaskId.Clean,
+          input: [
+            {
+              streamName: streams.emailsStream,
+              consumerGroup: streams.emailsConsumerGroup
+            }
+          ],
+          output: []
         }
       })
     );
@@ -290,7 +309,11 @@ export function createPstMining(
       new SignatureTask({
         miningId,
         userId: params.userId,
-        streamName: streams.signatureStream
+        streams: {
+          role: TaskId.Signature,
+          input: [{ streamName: streams.signatureStream }],
+          output: []
+        }
       })
     );
   }

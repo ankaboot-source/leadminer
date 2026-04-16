@@ -16,10 +16,15 @@ export interface TaskProgress {
   processed: number;
 }
 
-export interface StreamPipe {
+export interface StreamDetails {
   streamName: string;
   consumerGroup?: string;
-  role?: StreamRole;
+}
+
+export interface TaskStreamConfig {
+  role: StreamRole;
+  input: StreamDetails[];
+  output: StreamDetails[];
 }
 
 export interface ProgressMessage {
@@ -35,16 +40,14 @@ export interface MiningSource {
   source: string;
 }
 
-export interface StreamInfo {
-  streamName: string;
-  consumerGroup?: string;
-  role: StreamRole;
-}
-
 export interface StreamCommand {
   miningId: string;
+  role: StreamRole;
   command: 'REGISTER' | 'DELETE';
-  streams: StreamInfo[];
+  streams: {
+    input: StreamDetails[];
+    output: StreamDetails[];
+  };
 }
 
 export interface ProgressLink {

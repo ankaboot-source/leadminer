@@ -1,12 +1,12 @@
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskStatus, TaskId } from '../types';
-import type { ProgressMessage } from '../types';
+import type { ProgressMessage, TaskStreamConfig } from '../types';
 
 export interface SignatureTaskConfig {
   id?: string;
   miningId: string;
   userId: string;
-  streamName: string;
+  streams: TaskStreamConfig;
 }
 
 export class SignatureTask extends Task {
@@ -17,9 +17,7 @@ export class SignatureTask extends Task {
       category: TaskCategory.Enriching,
       miningId: config.miningId,
       userId: config.userId,
-      streams: {
-        output: { streamName: config.streamName }
-      }
+      streams: config.streams
     });
 
     this.progress.total = -1;

@@ -385,7 +385,7 @@ export default function initializeMiningController(
 
         if (effectiveCleaningEnabled) {
           const cleanTask = pipeline.getTask<CleanTask>(TaskId.Clean);
-          const emailStream = cleanTask?.streams.input?.streamName;
+          const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
             const totalPublished =
@@ -496,7 +496,7 @@ export default function initializeMiningController(
 
         if (effectiveCleaningEnabled) {
           const cleanTask = pipeline.getTask<CleanTask>(TaskId.Clean);
-          const emailStream = cleanTask?.streams.input?.streamName;
+          const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
             const totalPublished =
@@ -592,7 +592,7 @@ export default function initializeMiningController(
 
         if (effectiveCleaningEnabled) {
           const cleanTask = pipeline.getTask<CleanTask>(TaskId.Clean);
-          const emailStream = cleanTask?.streams.input?.streamName;
+          const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
             const totalPublished =

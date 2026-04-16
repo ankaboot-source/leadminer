@@ -10,7 +10,7 @@ import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
 import EmailVerificationConsumer from './workers/email-verification/EmailsVerificationConsumer';
-import { StreamCommand } from './workers/types';
+import { StreamCommand } from './services/tasks-manager-v2/types';
 import initializeEmailVerificationProcessor, {
   EmailVerificationData
 } from './workers/email-verification/emailVerificationHandlers';

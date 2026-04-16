@@ -1,13 +1,12 @@
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskId } from '../types';
-import type { ProgressMessage, StreamPipe } from '../types';
+import type { ProgressMessage, TaskStreamConfig } from '../types';
 
 export interface ExtractTaskConfig {
   id?: string;
   miningId: string;
   userId: string;
-  inputStream: StreamPipe;
-  outputStream: StreamPipe;
+  streams: TaskStreamConfig;
 }
 
 export class ExtractTask extends Task {
@@ -29,10 +28,7 @@ export class ExtractTask extends Task {
       category: TaskCategory.Mining,
       miningId: config.miningId,
       userId: config.userId,
-      streams: {
-        input: config.inputStream,
-        output: config.outputStream
-      }
+      streams: config.streams
     });
   }
 

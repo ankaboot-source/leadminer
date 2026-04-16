@@ -3,9 +3,9 @@ import { Redis } from 'ioredis';
 import { TaskCategory, TaskStatus, TaskType } from '../types';
 import type {
   TaskProgress,
-  StreamPipe,
+  TaskStreamConfig,
   ProgressMessage,
-  StreamInfo,
+  StreamDetails,
   StreamRole,
   StreamCommand
 } from '../types';
@@ -19,10 +19,7 @@ export interface TaskConfig {
   category: TaskCategory;
   miningId: string;
   userId: string;
-  streams: {
-    input?: StreamPipe;
-    output?: StreamPipe;
-  };
+  streams?: TaskStreamConfig;
   config?: Record<string, unknown>;
 }
 
@@ -43,7 +40,7 @@ export class Task extends EventEmitter {
 
   upstreamDone = false;
 
-  streams: { input?: StreamPipe; output?: StreamPipe };
+  streams?: TaskStreamConfig;
 
   config: Record<string, unknown>;
 
@@ -70,27 +67,18 @@ export class Task extends EventEmitter {
       (params.config?.finishedEventName as string) || `${this.id}-finished`;
   }
 
-  protected getStreamInfo(inputOnly = false): StreamInfo[] {
-    const streams: StreamInfo[] = [];
-    if (this.streams.input?.streamName && this.streams.input.role) {
-      streams.push({
-        streamName: this.streams.input.streamName,
-        consumerGroup: this.streams.input.consumerGroup,
-        role: this.streams.input.role as StreamRole
-      });
+  protected getStreamConfig(inputOnly = false): {
+    input: StreamDetails[];
+    output: StreamDetails[];
+  } {
+    if (!this.streams) {
+      return { input: [], output: [] };
     }
-    if (
-      !inputOnly &&
-      this.streams.output?.streamName &&
-      this.streams.output.role
-    ) {
-      streams.push({
-        streamName: this.streams.output.streamName,
-        consumerGroup: this.streams.output.consumerGroup,
-        role: this.streams.output.role as StreamRole
-      });
-    }
-    return streams;
+
+    const input = this.streams.input ?? [];
+    const output = inputOnly ? [] : (this.streams.output ?? []);
+
+    return { input, output };
   }
 
   async start(
@@ -108,15 +96,16 @@ export class Task extends EventEmitter {
     this.dbId = record.id;
     this.startedAt = record.startedAt;
 
-    if (redisPublisher) {
-      const streams = this.getStreamInfo();
-      if (streams.length > 0) {
+    if (redisPublisher && this.streams) {
+      const streamConfig = this.getStreamConfig(false);
+      if (streamConfig.input.length > 0 || streamConfig.output.length > 0) {
         await redisPublisher.publish(
           ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
           JSON.stringify({
             miningId: this.miningId,
+            role: this.streams.role,
             command: 'REGISTER',
-            streams
+            streams: streamConfig
           } as StreamCommand)
         );
       }
@@ -140,16 +129,17 @@ export class Task extends EventEmitter {
       this.duration = stop - start;
     }
 
-    if (redisPublisher) {
-      const streams = this.getStreamInfo(true);
-      if (streams.length > 0) {
+    if (redisPublisher && this.streams) {
+      const streamConfig = this.getStreamConfig(true);
+      if (streamConfig.input.length > 0) {
         try {
           await redisPublisher.publish(
             ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
             JSON.stringify({
               miningId: this.miningId,
+              role: this.streams.role,
               command: 'DELETE',
-              streams
+              streams: streamConfig
             } as StreamCommand)
           );
         } catch (err) {

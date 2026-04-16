@@ -4,7 +4,7 @@ import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
 import { EmailData, EmailSignatureHandler } from './handler';
 import { Contact } from '../../db/types';
-import { StreamCommand } from '../types';
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 export default class EmailSignatureConsumer {
   private isInterrupted: boolean;
@@ -24,19 +24,18 @@ export default class EmailSignatureConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
-      const { miningId, command, streams } = msg;
-      const signatureStream = streams.find(
-        (s) => s.role === 'signature'
-      )?.streamName;
+      const { miningId, role, command, streams } = msg;
+
+      if (role !== 'signature') return;
+
+      const signatureStream = streams.input[0]?.streamName;
 
       if (command === 'REGISTER' && signatureStream) {
-        this.isInterrupted = false;
         this.logger.info(
           `[EmailSignatureConsumer] Registered stream for miningId ${miningId}`,
           { signatureStream }
         );
       } else if (command === 'DELETE' && signatureStream) {
-        this.isInterrupted = true;
         this.logger.info(
           `[EmailSignatureConsumer] Deleted stream for miningId ${miningId}`,
           { signatureStream }
@@ -46,6 +45,7 @@ export default class EmailSignatureConsumer {
       this.logger.debug('[EmailSignatureConsumer] Received PubSub signal.', {
         metadata: {
           miningId,
+          role,
           command,
           signatureStream
         }
