@@ -50,7 +50,8 @@ export function createImapMining(
         folders: params.boxes,
         since: params.since
       },
-      passiveMining: params.passiveMining
+      passiveMining: params.passiveMining,
+      passive_mining: params.passiveMining
     })
   );
 
@@ -71,7 +72,8 @@ export function createImapMining(
             streamName: streams.emailsStream
           }
         ]
-      }
+      },
+      passive_mining: params.passiveMining
     })
   );
 
@@ -89,7 +91,8 @@ export function createImapMining(
             }
           ],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -103,7 +106,8 @@ export function createImapMining(
           role: TaskId.Signature,
           input: [{ streamName: streams.signatureStream }],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -176,7 +180,8 @@ export function createFileMining(
             streamName: streams.emailsStream
           }
         ]
-      }
+      },
+      passive_mining: params.passiveMining
     })
   );
 
@@ -194,7 +199,8 @@ export function createFileMining(
             }
           ],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -281,7 +287,8 @@ export function createPstMining(
             streamName: streams.emailsStream
           }
         ]
-      }
+      },
+      passive_mining: params.passiveMining
     })
   );
 
@@ -299,7 +306,8 @@ export function createPstMining(
             }
           ],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -313,7 +321,8 @@ export function createPstMining(
           role: TaskId.Signature,
           input: [{ streamName: streams.signatureStream }],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }

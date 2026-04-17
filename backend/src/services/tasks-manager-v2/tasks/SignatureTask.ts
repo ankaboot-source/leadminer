@@ -7,6 +7,7 @@ export interface SignatureTaskConfig {
   miningId: string;
   userId: string;
   streams: TaskStreamConfig;
+  passive_mining?: boolean;
 }
 
 export class SignatureTask extends Task {
@@ -17,7 +18,8 @@ export class SignatureTask extends Task {
       category: TaskCategory.Enriching,
       miningId: config.miningId,
       userId: config.userId,
-      streams: config.streams
+      streams: config.streams,
+      passive_mining: config.passive_mining
     });
 
     this.progress.total = -1;

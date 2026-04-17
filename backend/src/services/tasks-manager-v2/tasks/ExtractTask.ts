@@ -7,6 +7,7 @@ export interface ExtractTaskConfig {
   miningId: string;
   userId: string;
   streams: TaskStreamConfig;
+  passive_mining?: boolean;
 }
 
 export class ExtractTask extends Task {
@@ -28,7 +29,8 @@ export class ExtractTask extends Task {
       category: TaskCategory.Mining,
       miningId: config.miningId,
       userId: config.userId,
-      streams: config.streams
+      streams: config.streams,
+      passive_mining: config.passive_mining
     });
   }
 

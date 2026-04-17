@@ -395,10 +395,15 @@ function getIcon(type: string) {
 }
 
 function isActiveMiningSource(source: MiningSource): boolean {
-  return Boolean(
+  const isActiveForeground =
     $leadminer.activeMiningSource?.email === source.email &&
-    $leadminer.miningTask,
+    $leadminer.miningTask;
+
+  const isPassiveBackground = $leadminer.passiveMinings?.some(
+    (group: any) => group.task?.miningSource?.email === source.email,
   );
+
+  return Boolean(isActiveForeground || isPassiveBackground);
 }
 
 function formatDate(dateString: string) {

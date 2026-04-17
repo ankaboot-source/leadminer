@@ -7,6 +7,7 @@ export interface CleanTaskConfig {
   miningId: string;
   userId: string;
   streams: TaskStreamConfig;
+  passive_mining?: boolean;
 }
 
 export class CleanTask extends Task {
@@ -17,7 +18,8 @@ export class CleanTask extends Task {
       category: TaskCategory.Cleaning,
       miningId: config.miningId,
       userId: config.userId,
-      streams: config.streams
+      streams: config.streams,
+      passive_mining: config.passive_mining
     });
   }
 

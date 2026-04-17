@@ -32,6 +32,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const miningTask = ref<MiningTask | undefined>();
 
+  const passiveMinings = ref<any[]>([]);
+
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
   const isLoadingMiningSources = ref(false);
@@ -91,6 +93,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningTask.value = undefined;
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
+    passiveMinings.value = [];
     boxes.value = [];
     selectedBoxes.value = [];
     excludedBoxes.value = new Set();
@@ -531,15 +534,33 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (!userId) return 1;
 
       const response = await $api<{
-        task: MiningTask;
-        fetch: MiningTask;
-        extract: MiningTask;
-        clean: MiningTask;
+        active: Array<{
+          task: MiningTask;
+          fetch: MiningTask;
+          extract: MiningTask;
+          clean: MiningTask;
+        }>;
+        passive: Array<{
+          task: MiningTask;
+          fetch: MiningTask;
+          extract: MiningTask;
+          clean: MiningTask;
+        }>;
       }>(`/imap/mine/${userId}/`);
 
       if (!response) return 1;
 
-      const { task: redactedTask, fetch, clean, extract } = response;
+      // Save passive minings
+      passiveMinings.value = response.passive || [];
+
+      // If no active tasks, return
+      if (!response.active || response.active.length === 0) {
+        return 1;
+      }
+
+      // Get the most recent active task
+      const firstActive = response.active[0];
+      const { task: redactedTask, fetch, clean, extract } = firstActive;
 
       if (!redactedTask || !redactedTask.miningSource.type) return 1;
 
@@ -634,6 +655,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     passiveMiningDialog,
+    passiveMinings,
     miningStartedAndFinished,
     miningInterrupted,
     errors,

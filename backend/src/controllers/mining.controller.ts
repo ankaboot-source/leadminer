@@ -684,87 +684,97 @@ export default function initializeMiningController(
           .from('tasks')
           .select('*')
           .eq('user_id', user.id)
-          .order('started_at', { ascending: false })
-          .limit(4);
+          .order('started_at', { ascending: false });
 
         if (error || !userActiveTasks || userActiveTasks.length === 0) {
-          throw new Error('Unable to get active mining task');
+          return res.status(204).send({ active: [], passive: [] });
         }
 
-        const taskWithMiningId = (userActiveTasks as DBTask[]).find(
-          (t) => t.details?.miningId
-        );
-
-        const miningId = taskWithMiningId?.details?.miningId;
-
-        if (!miningId) {
-          throw new Error('Mining id not found');
-        }
-
-        const currentSessionTasks = (userActiveTasks as DBTask[]).filter(
-          (t) => t.details?.miningId === miningId
-        );
-
-        const allTasksStopped = currentSessionTasks.every(
-          (t) => t.stopped_at !== null
-        );
-
-        if (allTasksStopped) {
-          try {
-            const pipeline = miningEngine.getPipeline(miningId);
-            if (pipeline) {
-              logger.info(
-                `Cleaning up stale in-memory task for miningId=${miningId}`
-              );
-              await miningEngine.terminate(miningId);
+        const tasksByMiningId = (userActiveTasks as DBTask[]).reduce(
+          (acc, task) => {
+            const mId = task.details?.miningId;
+            if (mId) {
+              if (!acc[mId]) acc[mId] = [];
+              acc[mId].push(task);
             }
-          } catch {
-            logger.debug(`Pipeline already removed for miningId=${miningId}`);
+            return acc;
+          },
+          {} as Record<string, DBTask[]>
+        );
+
+        const active: any[] = [];
+        const passive: any[] = [];
+
+        for (const [miningId, sessionTasks] of Object.entries(
+          tasksByMiningId
+        )) {
+          const allTasksStopped = sessionTasks.every(
+            (t) => t.stopped_at !== null
+          );
+
+          if (allTasksStopped) {
+            try {
+              const pipeline = miningEngine.getPipeline(miningId);
+              if (pipeline) {
+                logger.info(
+                  `Cleaning up stale in-memory task for miningId=${miningId}`
+                );
+                // eslint-disable-next-line no-await-in-loop
+                await miningEngine.terminate(miningId);
+              }
+            } catch {
+              logger.debug(`Pipeline already removed for miningId=${miningId}`);
+            }
+            continue;
           }
 
-          return res.status(204).send();
-        }
-
-        const extractTask = currentSessionTasks.find(
-          (t) => t.type === TaskType.Extract
-        );
-        const fetchTask = currentSessionTasks.find(
-          (t) => t.type === TaskType.Fetch
-        );
-        const cleanTask = currentSessionTasks.find(
-          (t) => t.type === TaskType.Clean
-        );
-        const signatureTask = currentSessionTasks.find(
-          (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
-        );
-
-        let task = null;
-
-        try {
-          task = miningEngine.getPipeline(miningId).getActiveTask();
-        } catch {
-          logger.error(
-            `Task not found in miningEngine for miningId=${miningId}`
+          const extractTask = sessionTasks.find(
+            (t) => t.type === TaskType.Extract
           );
+          const fetchTask = sessionTasks.find((t) => t.type === TaskType.Fetch);
+          const cleanTask = sessionTasks.find((t) => t.type === TaskType.Clean);
+          const signatureTask = sessionTasks.find(
+            (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
+          );
+
+          let task = null;
+          try {
+            task = miningEngine.getPipeline(miningId).getActiveTask();
+          } catch {
+            logger.error(
+              `Task not found in miningEngine for miningId=${miningId}`
+            );
+          }
+
+          if (!task) continue;
+
+          if (user.id !== task.userId) {
+            continue;
+          }
+
+          const group = {
+            task,
+            fetch: fetchTask,
+            extract: extractTask,
+            clean: cleanTask,
+            signature: signatureTask ?? null
+          };
+
+          const isPassive = sessionTasks.some(
+            (t) => t.details?.passive_mining === true
+          );
+          if (isPassive) {
+            passive.push(group);
+          } else {
+            active.push(group);
+          }
         }
 
-        if (!task) {
-          throw new Error(`No active task found for miningId=${miningId}`);
+        if (active.length === 0 && passive.length === 0) {
+          return res.status(204).send({ active: [], passive: [] });
         }
 
-        if (user.id !== task.userId) {
-          return res
-            .status(401)
-            .json({ error: { message: 'User not authorized.' } });
-        }
-
-        return res.status(200).send({
-          task,
-          fetch: fetchTask,
-          extract: extractTask,
-          clean: cleanTask,
-          signature: signatureTask ?? null
-        });
+        return res.status(200).send({ active, passive });
       } catch (err) {
         res.status(204);
         return next(err);
