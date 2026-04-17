@@ -51,3 +51,8 @@ export interface MiningTask {
   progress: MiningProgress;
   fetcher: FetcherStatus;
 }
+
+export interface TaskState {
+  status: string;
+  started_at: string;
+}

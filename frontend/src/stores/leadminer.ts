@@ -13,6 +13,7 @@ import {
   type MiningSource,
   type MiningTask,
   type MiningType,
+  type TaskState,
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
@@ -536,15 +537,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const response = await $api<{
         active: Array<{
           task: MiningTask;
-          fetch: MiningTask;
-          extract: MiningTask;
-          clean: MiningTask;
+          fetch: TaskState;
+          extract: TaskState;
+          clean: TaskState;
         }>;
         passive: Array<{
           task: MiningTask;
-          fetch: MiningTask;
-          extract: MiningTask;
-          clean: MiningTask;
+          fetch: TaskState;
+          extract: TaskState;
+          clean: TaskState;
         }>;
       }>(`/imap/mine/${userId}/`);
 

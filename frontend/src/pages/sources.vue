@@ -77,70 +77,7 @@
       </div>
     </div>
 
-    <div
-      v-if="$leadminer.activeMiningTask && !$leadminer.activeMiningSource"
-      class="border border-primary rounded-md p-4 bg-primary/5"
-    >
-      <div class="flex items-center justify-between flex-wrap gap-4">
-        <div class="flex flex-col gap-1">
-          <div class="flex items-center gap-2">
-            <span class="relative flex h-2 w-2">
-              <span
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
-              ></span>
-              <span
-                class="relative inline-flex h-2 w-2 rounded-full bg-primary"
-              ></span>
-            </span>
-            <span class="text-sm font-medium text-primary">{{
-              t('mining_in_progress')
-            }}</span>
-          </div>
-          <div class="font-medium text-lg flex items-center gap-2">
-            <i
-              :class="
-                $leadminer.miningType === 'pst'
-                  ? 'pi pi-database text-surface-500'
-                  : 'pi pi-file-excel text-green-600'
-              "
-            />
-            <span>{{
-              $leadminer.pstFilePath?.split('/').pop() ||
-              $leadminer.selectedFile?.name ||
-              t('active_mining')
-            }}</span>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4 flex-wrap">
-          <div class="flex items-center gap-2 text-sm text-surface-600">
-            <span
-              >{{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }}</span
-            >
-            <span class="text-surface-400">|</span>
-            <span
-              >{{ t('emails_extracted') }}:
-              {{ $leadminer.extractedEmails }}</span
-            >
-            <span class="text-surface-400">|</span>
-            <span
-              >{{ t('emails_cleaned') }}:
-              {{ $leadminer.verifiedContacts }}</span
-            >
-          </div>
-          <Button
-            severity="primary"
-            :label="t('view_mining')"
-            icon="pi pi-arrow-right"
-            icon-pos="right"
-            @click="navigateTo('/mine')"
-          />
-        </div>
-      </div>
-    </div>
-
     <DataView
-      v-else
       :value="$leadminer.miningSources"
       data-key="email"
       :paginator="true"
@@ -257,7 +194,7 @@
             >
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
-                  <span class="relative flex h-2 w-2">
+                  <span class="relative flex h-2 w-2" v-if="!isStrictlyPassive(source)">
                     <span
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
                     ></span>
@@ -268,11 +205,17 @@
                   <span class="text-sm font-medium text-primary">{{
                     t('mining_in_progress')
                   }}</span>
+                  <Tag
+                    v-if="isStrictlyPassive(source)"
+                    severity="info"
+                    :value="t('passive')"
+                    class="text-xs ml-1"
+                  />
                 </div>
                 <div class="flex items-center gap-2 text-sm text-surface-600">
                   <span
                     >{{ t('emails_scanned') }}:
-                    {{ $leadminer.scannedEmails }}</span
+                    {{ $leadminer.scannedEmails }} </span
                   >
                   <span class="text-surface-400">|</span>
                   <span
@@ -285,6 +228,7 @@
                     {{ $leadminer.verifiedContacts }}</span
                   >
                   <Button
+                    v-if="!isStrictlyPassive(source)"
                     size="small"
                     severity="secondary"
                     :label="t('view_mining')"
@@ -400,10 +344,21 @@ function isActiveMiningSource(source: MiningSource): boolean {
     $leadminer.miningTask;
 
   const isPassiveBackground = $leadminer.passiveMinings?.some(
-    (group: any) => group.task?.miningSource?.email === source.email,
+    (group: any) => group.task?.miningSource?.source === source.email,
   );
 
   return Boolean(isActiveForeground || isPassiveBackground);
+}
+function isStrictlyPassive(source: MiningSource): boolean {
+  return Boolean(
+    $leadminer.passiveMinings?.some(
+      (group: any) => group.task?.miningSource?.source === source.email,
+    ) &&
+    !(
+      $leadminer.activeMiningTask &&
+      $leadminer.activeMiningSource?.email === source.email
+    ),
+  );
 }
 
 function formatDate(dateString: string) {
@@ -629,6 +584,7 @@ onMounted(async () => {
     "delete_source_failed": "Unable to delete source",
     "stop_mining": "Stop mining",
     "view_mining": "View mining",
+    "passive": "Passive",
     "mining_in_progress": "Mining in progress",
     "mining_status_running": "Mining in progress",
     "mining_status_done": "Mining completed",
@@ -650,9 +606,7 @@ onMounted(async () => {
     "stop_mining_failed": "Unable to stop mining",
     "total_contacts": "Contacts (Total)",
     "last_mining": "Last mining",
-    "contacts": "contacts",
-    "active_one_shot_mining": "Active one-shot mining",
-    "passive": "Passive"
+    "contacts": "contacts"
   },
   "fr": {
     "sources": "Sources",
@@ -686,6 +640,7 @@ onMounted(async () => {
     "delete_source_failed": "Impossible de supprimer la source",
     "stop_mining": "Arrêter le minage",
     "view_mining": "Voir le minage",
+    "passive": "Passif",
     "mining_in_progress": "Extraction en cours",
     "mining_status_running": "Extraction en cours",
     "mining_status_done": "Extraction terminée",
