@@ -650,7 +650,9 @@ onMounted(async () => {
     "stop_mining_failed": "Unable to stop mining",
     "total_contacts": "Contacts (Total)",
     "last_mining": "Last mining",
-    "contacts": "contacts"
+    "contacts": "contacts",
+    "active_one_shot_mining": "Active one-shot mining",
+    "passive": "Passive"
   },
   "fr": {
     "sources": "Sources",
