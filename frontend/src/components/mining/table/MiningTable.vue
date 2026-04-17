@@ -1177,7 +1177,6 @@ watch(implicitlySelectedContactsLength, () => {
 const isExportDisabled = computed(
   () =>
     contactsLength.value === 0 ||
-    $leadminerStore.activeMiningTask ||
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );
