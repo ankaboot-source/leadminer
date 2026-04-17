@@ -11,10 +11,8 @@ import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 import EmailFetcherClient from './services/email-fetching';
 import PSTFetcherClient from './services/email-fetching/pst';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
-import TasksManager from './services/tasks-manager/TasksManager';
-import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
-import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
+import { MiningEngine } from './services/tasks-manager-v2/MiningEngine';
+import { flickrBase58IdGenerator } from './services/tasks-manager-v2/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
@@ -45,48 +43,39 @@ console.log(
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
   const tasksResolver = new SupabaseTasks(supabaseClient, logger);
-  const tasksManager = new TasksManager(
+  const miningEngine = new MiningEngine({
+    redisSubscriber: redis.getSubscriberClient()
+  });
+
+  const pipelineDeps = {
     tasksResolver,
-    redis.getSubscriberClient(),
-    redis.getClient(),
-    new EmailFetcherClient(
+    redisPublisher: redis.getClient(),
+    sseBroadcasterFactory: new SSEBroadcasterFactory()
+  };
+
+  const miningControllerDeps = {
+    pipelineDeps,
+    emailFetcherClient: new EmailFetcherClient(
       logger,
       ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
       ENV.EMAIL_FETCHING_SERVICE_URL
     ),
-    new SSEBroadcasterFactory(),
-    flickrBase58IdGenerator()
-  );
-  const tasksManagerFile = new TasksManagerFile(
-    tasksResolver,
-    redis.getSubscriberClient(),
-    redis.getClient(),
-    undefined,
-    new SSEBroadcasterFactory(),
-    flickrBase58IdGenerator()
-  );
-  const tasksManagerPST = new TasksManagerPST(
-    tasksResolver,
-    redis.getSubscriberClient(),
-    redis.getClient(),
-    new PSTFetcherClient(
+    pstFetcherClient: new PSTFetcherClient(
       logger,
-      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN, //! RDNDNT
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
       ENV.EMAIL_FETCHING_SERVICE_URL
     ),
-    new SSEBroadcasterFactory(),
-    flickrBase58IdGenerator()
-  );
+    idGenerator: flickrBase58IdGenerator()
+  };
 
   const app = initializeApp(
     authResolver,
-    tasksManager,
-    tasksManagerFile,
-    tasksManagerPST,
+    miningEngine,
     miningSources,
     contactsResolver,
     userResolver,
-    logger
+    logger,
+    miningControllerDeps
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {

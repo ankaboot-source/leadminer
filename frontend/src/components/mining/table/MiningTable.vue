@@ -142,6 +142,13 @@
           />
         </div>
 
+        <RemoveContactButton
+          :contacts-to-delete="contactsToTreat"
+          :contacts-to-delete-length="selectedContactsLength"
+          :is-remove-disabled="isExportDisabled || !selectedContactsLength"
+          :deselect-contacts="deselectContacts"
+        />
+
         <div class="mx-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>
@@ -941,20 +948,16 @@
 </template>
 
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-import { useDebounceFn } from '@vueuse/core';
 // import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
-import {
-  buildColumnVisibility,
-  toStateClass,
-} from '~/utils/mining-table-performance';
 import {
   consentStatuses,
   getConsentColor,
@@ -971,6 +974,10 @@ import {
   resolveContactsLoadingStrategy,
   resolveMiningTableRows,
 } from '~/utils/mining-table';
+import {
+  buildColumnVisibility,
+  toStateClass,
+} from '~/utils/mining-table-performance';
 import Normalizer from '~/utils/normalizer';
 
 const SocialLinksAndPhones = defineAsyncComponent(
@@ -1243,7 +1250,6 @@ watch(implicitlySelectedContactsLength, () => {
 const isExportDisabled = computed(
   () =>
     contactsLength.value === 0 ||
-    $leadminerStore.activeMiningTask ||
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );
@@ -1484,7 +1490,7 @@ function scheduleIdleContactsPrefetch() {
   const runPrefetch = () => {
     idlePrefetchTimeoutId = null;
     idlePrefetchCallbackId = null;
-    void loadContactsData();
+    loadContactsData();
   };
 
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -1500,7 +1506,7 @@ function scheduleIdleContactsPrefetch() {
 onBeforeMount(() => {
   isLoading.value = true;
 });
-onNuxtReady(async () => {
+onNuxtReady(() => {
   $screenStore.init();
   $contactsStore.visibleColumns = [
     'contacts',
@@ -1560,7 +1566,7 @@ watch(
 
     clearIdlePrefetch();
     isLoading.value = true;
-    void loadContactsData();
+    loadContactsData();
   },
 );
 

@@ -19,6 +19,7 @@ export interface ContactFormat {
   job_title: string | null;
   same_as: string | null;
   image: string | null;
+  telephone: string | null;
 }
 export interface FileFormat {
   fileName: string;
@@ -70,7 +71,8 @@ export class CsvXlsxContactEngine {
       job_title: jobTitle,
       same_as: sameAs,
       works_for: worksFor,
-      image
+      image,
+      telephone
     } = contact;
 
     assert(Boolean(email), '<email> is required');
@@ -86,7 +88,8 @@ export class CsvXlsxContactEngine {
       location: undefinedIfFalsy(location ?? ''),
       sameAs: undefinedIfEmpty(sameAs?.split(',') ?? []),
       worksFor: undefinedIfFalsy(worksFor ?? ''),
-      alternateName: undefinedIfEmpty(alternateName?.split(',') ?? [])
+      alternateName: undefinedIfEmpty(alternateName?.split(',') ?? []),
+      telephone: undefinedIfEmpty(telephone?.split(',') ?? [])
     };
   }
 

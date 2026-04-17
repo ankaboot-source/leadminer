@@ -9,9 +9,8 @@ import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
-import EmailVerificationConsumer, {
-  PubSubMessage
-} from './workers/email-verification/EmailsVerificationConsumer';
+import EmailVerificationConsumer from './workers/email-verification/EmailsVerificationConsumer';
+import { StreamCommand } from './services/tasks-manager-v2/types';
 import initializeEmailVerificationProcessor, {
   EmailVerificationData
 } from './workers/email-verification/emailVerificationHandlers';
@@ -31,7 +30,7 @@ const streamsHandler = initializeEmailVerificationProcessor(
   logger
 );
 
-const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
+const tasksManagementSubscriber = new RedisSubscriber<StreamCommand>(
   subscriberRedisClient,
   logger,
   ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL

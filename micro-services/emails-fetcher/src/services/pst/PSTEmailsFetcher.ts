@@ -363,7 +363,7 @@ export default class PSTEmailsFetcher {
             body,
             header,
             seq,
-            isLastMessageInFolder,
+            false,
             folder.displayName,
             email
           );
@@ -480,6 +480,7 @@ export default class PSTEmailsFetcher {
    * Performs a pre-scan of the PST file to count all emails across folders.
    * Downloads the PST from supabase, scans it and returns the total.
    */
+  // skipcq: JS-0116 - async needed for consistent Promise return type and try/catch error handling
   async getTotalMessages(): Promise<number> {
     try {
       // skipcq: JS-0339 non null assertion is safe as pstFile is on class creation

@@ -8,9 +8,8 @@ import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStr
 import initializeEmailSignatureProcessor, {
   EmailData
 } from './workers/email-signature/handler';
-import EmailSignatureConsumer, {
-  PubSubMessage
-} from './workers/email-signature/consumer';
+import EmailSignatureConsumer from './workers/email-signature/consumer';
+import { StreamCommand } from './services/tasks-manager-v2/types';
 import RedisEmailSignatureCache from './services/cache/redis/RedisEmailSignatureCache';
 import supabaseClient from './utils/supabase';
 import { EngineConfig, Signature } from './services/signature';
@@ -68,7 +67,7 @@ const { processStreamData, handler } = initializeEmailSignatureProcessor(
   redisClient
 );
 
-const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
+const tasksManagementSubscriber = new RedisSubscriber<StreamCommand>(
   subscriberRedisClient,
   logger,
   ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL

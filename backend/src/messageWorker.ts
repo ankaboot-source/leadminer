@@ -10,9 +10,8 @@ import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
-import MessagesConsumer, {
-  PubSubMessage
-} from './workers/email-message/MessagesConsumer';
+import MessagesConsumer from './workers/email-message/MessagesConsumer';
+import { StreamCommand } from './services/tasks-manager-v2/types';
 import initializeEmailMessageProcessor, {
   EmailMessageData
 } from './workers/email-message/emailMessageHandlers';
@@ -32,7 +31,7 @@ const { processStreamData } = initializeEmailMessageProcessor(
   catchAllDomainsCache
 );
 
-const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
+const tasksManagementSubscriber = new RedisSubscriber<StreamCommand>(
   subscriberRedisClient,
   logger,
   ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL

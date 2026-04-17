@@ -38,7 +38,7 @@ async function emailMessageHandler(
   data: EmailMessageData,
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
-  emailsStreamProducer: StreamProducer<EmailVerificationData>,
+  emailsStreamProducer: StreamProducer<EmailVerificationData> | null,
   queuedEmailsCache: QueuedEmailsCache,
   catchAllDomainsCache: CatchAllDomainsCache
 ) {
@@ -90,9 +90,11 @@ async function emailMessageHandler(
         })
       );
 
-      await emailsStreamProducer.produce(input);
+      if (emailsStreamProducer) {
+        await emailsStreamProducer.produce(input);
+      }
 
-      redisClientForNormalMode.publish(
+      await redisClientForNormalMode.publish(
         miningId,
         JSON.stringify({
           miningId,
@@ -121,7 +123,7 @@ export default function initializeMessageProcessor(
   return {
     processStreamData: (
       message: EmailMessageData,
-      emailsStreamProducer: StreamProducer<EmailVerificationData>,
+      emailsStreamProducer: StreamProducer<EmailVerificationData> | null,
       queuedEmailsCache: QueuedEmailsCache
     ) =>
       emailMessageHandler(

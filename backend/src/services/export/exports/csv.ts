@@ -37,6 +37,7 @@ export default class CsvExport implements ExportStrategy<Contact> {
       works_for: contact.works_for,
       job_title: contact.job_title,
       same_as: contact.same_as?.join(','),
+      telephone: contact.telephone?.join(','),
       image: contact.image
     }));
 
@@ -60,6 +61,7 @@ export default class CsvExport implements ExportStrategy<Contact> {
         { key: 'works_for', header: 'Works for' },
         { key: 'job_title', header: 'Job title' },
         { key: 'same_as', header: 'Same as' },
+        { key: 'telephone', header: 'Telephone' },
         { key: 'image', header: 'Avatar URL' }
       ],
       csvData,

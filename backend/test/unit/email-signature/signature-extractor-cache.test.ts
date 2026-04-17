@@ -1,5 +1,6 @@
 import { describe, jest, beforeEach, it, expect } from '@jest/globals';
 import { Logger } from 'winston';
+import Redis from 'ioredis';
 import SignatureExtractorCache from '../../../src/services/signature/llm/signature-extractor-cache';
 import {
   ExtractSignature,
@@ -8,10 +9,12 @@ import {
 
 describe('SignatureExtractorCache', () => {
   let mockWrapped: jest.Mocked<ExtractSignature>;
-  let mockRedis: jest.Mocked<{
-    get: (key: string) => Promise<string | null>;
-    setex: (key: string, seconds: number, value: string) => Promise<'OK'>;
-  }>;
+  let mockRedis: {
+    get: jest.Mock<(key: string) => Promise<string | null>>;
+    setex: jest.Mock<
+      (key: string, seconds: number, value: string) => Promise<'OK'>
+    >;
+  };
   let mockLogger: jest.Mocked<Logger>;
   const ttl = 3600;
 
@@ -19,12 +22,19 @@ describe('SignatureExtractorCache', () => {
     jest.clearAllMocks();
     mockWrapped = {
       isActive: jest.fn(),
-      extract: jest.fn(),
-      constructor: { name: 'MockEngine' }
-    };
+      extract: jest.fn()
+    } as unknown as jest.Mocked<ExtractSignature>;
+    // Mock constructor name for wrappedEngineName getter
+    Object.defineProperty(mockWrapped, 'constructor', {
+      value: { name: 'MockEngine' }
+    });
+
     mockRedis = {
-      get: jest.fn(),
-      setex: jest.fn()
+      get: jest.fn<(key: string) => Promise<string | null>>(),
+      setex:
+        jest.fn<
+          (key: string, seconds: number, value: string) => Promise<'OK'>
+        >()
     };
     mockLogger = {
       debug: jest.fn(),
@@ -42,7 +52,7 @@ describe('SignatureExtractorCache', () => {
 
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -66,7 +76,7 @@ describe('SignatureExtractorCache', () => {
 
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -97,7 +107,7 @@ describe('SignatureExtractorCache', () => {
 
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -120,7 +130,7 @@ describe('SignatureExtractorCache', () => {
 
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -138,7 +148,7 @@ describe('SignatureExtractorCache', () => {
 
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -154,7 +164,7 @@ describe('SignatureExtractorCache', () => {
       mockWrapped.isActive.mockReturnValue(true);
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -166,7 +176,7 @@ describe('SignatureExtractorCache', () => {
       mockWrapped.isActive.mockReturnValue(false);
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );
@@ -179,7 +189,7 @@ describe('SignatureExtractorCache', () => {
     it('should return the wrapped engine constructor name', () => {
       const cache = new SignatureExtractorCache(
         mockWrapped,
-        mockRedis,
+        mockRedis as unknown as Redis,
         mockLogger,
         ttl
       );

@@ -1,57 +1,74 @@
 <template>
-  <ProgressCard
-    v-if="isPostCleaningPhase"
-    :rate="AVERAGE_CLEANING_RATE"
-    :status="$leadminerStore.activeTask"
-    :progress-time="t('processing_signatures_time')"
-    :progress-title="t('processing_signatures')"
-    :mode="isPostCleaningPhase ? 'indeterminate' : 'determinate'"
+  <div
+    v-if="isMiningFinished"
+    class="flex flex-col items-center justify-center grow text-center py-2"
   >
-  </ProgressCard>
-
-  <ProgressCard
-    v-else
-    :status="$leadminerStore.activeTask"
-    :total="contactsToVerify"
-    :current="verifiedContacts"
-    :rate="AVERAGE_CLEANING_RATE"
-    :started="taskStartedAt"
-    :progress="verificationProgress"
-    :progress-tooltip="progressTooltip"
-  >
-    <template #progress-title>
-      {{ contactsToVerify.toLocaleString() }}
-      {{
-        verificationProgress < 1
-          ? t('contacts_to_clean', contactsToVerify)
-          : t('contacts_cleaned', contactsToVerify)
-      }}
-    </template>
-  </ProgressCard>
-  <div class="flex flex-col md:flex-row justify-center gap-2">
-    <Button
-      v-if="$leadminerStore.activeTask && !$leadminerStore.miningCompleted"
-      class="w-full md:w-max"
-      icon="pi pi-stop"
-      icon-pos="right"
-      severity="danger"
-      outlined
-      :loading="$leadminerStore.isLoadingStopMining"
-      :label="t('halt_cleaning')"
-      @click="haltCleaning"
-    />
+    <div class="text-2xl mb-6 font-medium text-center">
+      {{ t('mining_complete') }} 🎉
+    </div>
   </div>
-  <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
+  <template v-else>
+    <ProgressCard
+      v-if="isPostCleaningPhase"
+      :rate="AVERAGE_CLEANING_RATE"
+      :status="$leadminerStore.activeTask"
+      :progress-time="t('processing_signatures_time')"
+      :progress-title="t('processing_signatures')"
+      :mode="isPostCleaningPhase ? 'indeterminate' : 'determinate'"
+    >
+    </ProgressCard>
+
+    <ProgressCard
+      v-else
+      :status="$leadminerStore.activeTask"
+      :total="contactsToVerify"
+      :current="verifiedContacts"
+      :rate="AVERAGE_CLEANING_RATE"
+      :started="taskStartedAt"
+      :progress="verificationProgress"
+      :progress-tooltip="progressTooltip"
+    >
+      <template #progress-title>
+        {{ contactsToVerify.toLocaleString() }}
+        {{
+          verificationProgress < 1
+            ? t('contacts_to_clean', contactsToVerify)
+            : t('contacts_cleaned', contactsToVerify)
+        }}
+      </template>
+    </ProgressCard>
+    <div class="flex flex-col md:flex-row justify-center gap-2">
+      <Button
+        v-if="$leadminerStore.activeTask && !$leadminerStore.miningCompleted"
+        class="w-full md:w-max"
+        icon="pi pi-stop"
+        icon-pos="right"
+        severity="danger"
+        outlined
+        :loading="$leadminerStore.isLoadingStopMining"
+        :label="t('halt_cleaning')"
+        @click="haltCleaning"
+      />
+    </div>
+    <component
+      :is="AcceptNewsLetter"
+      v-if="verificationFinished"
+      type="dialog"
+    />
+  </template>
 </template>
 <script setup lang="ts">
 import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { FetchError } from 'ofetch';
 import { MiningTypes } from '~/types/mining';
 import { AcceptNewsLetter } from '~/utils/extras';
+import { useMiningCompletionRedirect } from '@/composables/useMiningCompletionRedirect';
 
 const { t } = useI18n({
   useScope: 'local',
 });
+
+useMiningCompletionRedirect();
 
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
@@ -59,7 +76,7 @@ const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
-  () => !$leadminerStore.miningInterrupted && $leadminerStore.miningCompleted,
+  () => $leadminerStore.cleaningEnabled && !$leadminerStore.miningInterrupted,
 );
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
@@ -76,9 +93,12 @@ const isPostCleaningPhase = computed(
   () =>
     ($leadminerStore.miningType === MiningTypes.EMAIL ||
       $leadminerStore.miningType === MiningTypes.PST) &&
-    $leadminerStore.cleaningFinished &&
-    !$leadminerStore.miningCompleted,
+    ($leadminerStore.cleaningFinished || !$leadminerStore.cleaningEnabled) &&
+    !$leadminerStore.miningCompleted &&
+    $leadminerStore.extractSignatures,
 );
+
+const isMiningFinished = computed(() => $leadminerStore.miningCompleted);
 
 function cleaningDoneNotification() {
   $toast.add({
@@ -92,22 +112,13 @@ function cleaningDoneNotification() {
   });
 }
 
-function cleaningFinished() {
-  cleaningDoneNotification();
-  const timeoutId = setTimeout(() => navigateTo('/contacts'), 10000);
-
-  onBeforeUnmount(() => {
-    clearTimeout(timeoutId);
-  });
-}
-
 onMounted(() => {
   if (verificationFinished.value) {
-    cleaningFinished();
+    cleaningDoneNotification();
   } else {
     watch(verificationFinished, (finished) => {
       if (finished) {
-        cleaningFinished();
+        cleaningDoneNotification();
       }
     });
   }
@@ -162,7 +173,8 @@ async function haltCleaning() {
     "cleaning_canceled": "Your cleaning is successfully canceled.",
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled.",
     "processing_signatures": "Extracting signatures from your emails",
-    "processing_signatures_time": "Signature processing may take around 10 minutes"
+    "processing_signatures_time": "Signature processing may take around 10 minutes",
+    "mining_complete": "Mining complete"
   },
   "fr": {
     "enrich_button_tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
@@ -178,7 +190,8 @@ async function haltCleaning() {
     "cleaning_canceled": "Votre nettoyage a été annulé avec succès.",
     "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée.",
     "processing_signatures": "Extraction des signatures provenant de vos e-mails",
-    "processing_signatures_time": "Le traitement des signatures peut prendre environ 10 minutes"
+    "processing_signatures_time": "Le traitement des signatures peut prendre environ 10 minutes",
+    "mining_complete": "Extraction terminée"
   }
 }
 </i18n>

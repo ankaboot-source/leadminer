@@ -208,6 +208,7 @@ const options: {
   { value: 'job_title', label: $t('contact.job_title') },
   { value: 'same_as', label: $t('contact.same_as') },
   { value: 'image', label: $t('contact.image') },
+  { value: 'telephone', label: $t('contact.telephone') },
 ];
 
 const URL_OPTIONS: (keyof Contact)[] = ['image', 'same_as'];

@@ -22,5 +22,6 @@ frontend-v4/*
 .worktrees/
 .opencode/plans/
 docs/plans/
-.worktrees/
-.worktrees/
+.opencode/
+.agents/
+skills-lock.json

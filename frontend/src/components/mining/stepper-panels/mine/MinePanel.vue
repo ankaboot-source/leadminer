@@ -469,7 +469,7 @@ async function haltMining() {
     "fine_tune_mining": "Fine tune mining",
     "back": "Back",
     "mined_total_emails": "Mined / Total emails\n{extractedEmails} / {totalEmails}",
-    "mining_done": "Mining done",
+    "mining_done": "Extraction completed",
     "contacts_extracted": "{extractedEmails} email messages extracted from your mailbox",
     "select_folders": "Select folders",
     "select_at_least_one_folder": "Please select at least one folder to start mining.",
