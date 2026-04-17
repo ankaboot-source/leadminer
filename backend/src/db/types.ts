@@ -1,9 +1,9 @@
-import { Details, Status } from "../services/email-status/EmailStatusVerifier";
+import { Details, Status } from '../services/email-status/EmailStatusVerifier';
 
-import { REACHABILITY } from "../utils/constants";
+import { REACHABILITY } from '../utils/constants';
 
 export interface EmailExtractionResult {
-  type: "email";
+  type: 'email';
   message: Message;
   persons: Array<{
     person: Person;
@@ -13,7 +13,7 @@ export interface EmailExtractionResult {
 }
 
 export interface FileExtractionResult {
-  type: "file";
+  type: 'file';
   organizations: Organization[];
   persons: Array<{
     person: Person;
@@ -146,23 +146,23 @@ export interface Profile {
   stripe_customer_id: string;
 }
 export enum TaskType {
-  Fetch = "fetch",
-  Extract = "extract",
-  Clean = "clean",
-  Enrich = "enrich",
-  Signature = "signature",
+  Fetch = 'fetch',
+  Extract = 'extract',
+  Clean = 'clean',
+  Enrich = 'enrich',
+  Signature = 'signature'
 }
 
 export enum TaskCategory {
-  Mining = "mining",
-  Enriching = "enriching",
-  Cleaning = "cleaning",
+  Mining = 'mining',
+  Enriching = 'enriching',
+  Cleaning = 'cleaning'
 }
 
 export enum TaskStatus {
-  Running = "running",
-  Canceled = "canceled",
-  Done = "done",
+  Running = 'running',
+  Canceled = 'canceled',
+  Done = 'done'
 }
 
 export interface SupabaseTask {
@@ -226,7 +226,7 @@ export type Organization = {
 };
 
 export enum ExportService {
-  CSV = "csv",
-  VCARD = "vcard",
-  GOOGLE_CONTACTS = "google_contacts",
+  CSV = 'csv',
+  VCARD = 'vcard',
+  GOOGLE_CONTACTS = 'google_contacts'
 }
