@@ -94,7 +94,7 @@ async function emailMessageHandler(
         await emailsStreamProducer.produce(input);
       }
 
-      redisClientForNormalMode.publish(
+      await redisClientForNormalMode.publish(
         miningId,
         JSON.stringify({
           miningId,
