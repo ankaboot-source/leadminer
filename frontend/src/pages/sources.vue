@@ -77,6 +77,68 @@
       </div>
     </div>
 
+    <div
+      v-if="$leadminer.activeMiningTask && !$leadminer.activeMiningSource"
+      class="border border-primary rounded-md p-4 bg-primary/5"
+    >
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex h-2 w-2 rounded-full bg-primary"
+              ></span>
+            </span>
+            <span class="text-sm font-medium text-primary">{{
+              t('mining_in_progress')
+            }}</span>
+          </div>
+          <div class="font-medium text-lg flex items-center gap-2">
+            <i
+              :class="
+                $leadminer.miningType === 'pst'
+                  ? 'pi pi-database text-surface-500'
+                  : 'pi pi-file-excel text-green-600'
+              "
+            />
+            <span>{{
+              $leadminer.pstFilePath?.split('/').pop() ||
+              $leadminer.selectedFile?.name ||
+              t('active_mining')
+            }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="flex items-center gap-2 text-sm text-surface-600">
+            <span
+              >{{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }}</span
+            >
+            <span class="text-surface-400">|</span>
+            <span
+              >{{ t('emails_extracted') }}:
+              {{ $leadminer.extractedEmails }}</span
+            >
+            <span class="text-surface-400">|</span>
+            <span
+              >{{ t('emails_cleaned') }}:
+              {{ $leadminer.verifiedContacts }}</span
+            >
+          </div>
+          <Button
+            severity="primary"
+            :label="t('view_mining')"
+            icon="pi pi-arrow-right"
+            icon-pos="right"
+            @click="navigateTo('/mine')"
+          />
+        </div>
+      </div>
+    </div>
+
     <DataView
       v-else
       :value="$leadminer.miningSources"
