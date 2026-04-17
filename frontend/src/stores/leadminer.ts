@@ -581,21 +581,21 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const firstActive = response.active[0];
       if (!firstActive) return 1;
 
-      const task = firstActive.task;
+      const { task } = firstActive;
       if (!task || !task.miningSource.type) return 1;
 
       const {
         miningSource: { type: mType },
       } = task;
 
-      const fetch = firstActive.fetch;
-      const extract = firstActive.extract;
-      const clean = firstActive.clean;
+      const { fetch } = firstActive;
+      const { extract } = firstActive;
+      const { clean } = firstActive;
 
       const hasRequiredPhases =
         mType === MiningTypes.FILE
-          ? !!extract && !!clean
-          : !!fetch && !!extract && !!clean;
+          ? Boolean(extract) && Boolean(clean)
+          : Boolean(fetch) && Boolean(extract) && Boolean(clean);
 
       if (!hasRequiredPhases) return 1;
 
@@ -605,12 +605,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         ({ email }) => email === task.miningSource.source,
       );
 
-      miningStartedAt.value =
-        miningType.value === MiningTypes.EMAIL && fetch
-          ? performance.now() -
-            (Date.now() - new Date(fetch.started_at).getTime())
-          : performance.now() -
-            (Date.now() - new Date(extract!.started_at).getTime());
+      const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
+
+      if (firstStepFetch) {
+        miningStartedAt.value =
+          performance.now() -
+          (Date.now() - new Date(fetch.started_at).getTime());
+      } else if (extract) {
+        miningStartedAt.value =
+          performance.now() -
+          (Date.now() - new Date(extract.started_at).getTime());
+      }
 
       updateMiningProgress(task, fetch, extract, clean);
 
