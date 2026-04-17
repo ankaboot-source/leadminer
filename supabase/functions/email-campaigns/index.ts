@@ -745,7 +745,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       );
       await verifyTransport(transport);
       options.push({ email: source.email, available: true });
-      transportBySender[source.email] = transport;
+      transportBySender[normalizeEmail(source.email)] = transport;
     } catch (error) {
       const errorMessage = getUserFriendlyError(error);
       const isOAuthError =
@@ -782,7 +782,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
               email: source.email,
             });
             options.push({ email: source.email, available: true });
-            transportBySender[source.email] = retryTransport;
+            transportBySender[normalizeEmail(source.email)] = retryTransport;
             continue;
           }
         } catch (refreshError) {
@@ -1825,7 +1825,8 @@ app.post(
           campaign.user_id,
         );
         const sourceAsCredential = sources.find(
-          (row: { email: string }) => row.email === campaign.sender_email,
+          (row: { email: string }) =>
+            normalizeEmail(row.email) === normalizeEmail(campaign.sender_email),
         );
 
         if (!sourceAsCredential) {
