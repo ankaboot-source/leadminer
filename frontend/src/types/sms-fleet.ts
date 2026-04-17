@@ -35,6 +35,7 @@ export interface SmsGatewayCreatePayload {
   config: SmsGatewayConfig;
   daily_limit?: number;
   monthly_limit?: number;
+  is_active?: boolean;
 }
 
 export interface SmsGatewayTestResult {

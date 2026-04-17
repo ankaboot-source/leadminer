@@ -6,7 +6,6 @@ import type {
 } from '@/types/sms-fleet';
 
 export const useSmsFleetStore = defineStore('sms-fleet', () => {
-  const $supabase = useSupabaseClient();
   const { $saasEdgeFunctions } = useNuxtApp();
 
   const gateways = ref<SmsFleetGateway[]>([]);
@@ -18,14 +17,18 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
-      const { data, error: fetchError } = await $supabase
-        .schema('private')
-        .from('sms_fleet_gateways')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = (await $saasEdgeFunctions(
+        'sms-campaigns/fleet/gateways',
+        {
+          method: 'GET',
+        },
+      )) as { gateways: SmsFleetGateway[] };
 
-      if (fetchError) throw fetchError;
-      gateways.value = (data || []) as SmsFleetGateway[];
+      if (!response?.gateways || !Array.isArray(response.gateways)) {
+        throw new Error('Failed to fetch gateways');
+      }
+
+      gateways.value = response.gateways;
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to fetch gateways';
@@ -42,25 +45,28 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
-      const { data, error: createError } = await $supabase
-        .schema('private')
-        .from('sms_fleet_gateways')
-        .insert({
-          name: payload.name,
-          provider: payload.provider,
-          config: payload.config,
-          daily_limit: payload.daily_limit ?? 200,
-          monthly_limit: payload.monthly_limit ?? 200,
-          is_active: true,
-        })
-        .select()
-        .single();
+      const response = (await $saasEdgeFunctions(
+        'sms-campaigns/fleet/gateways',
+        {
+          method: 'POST',
+          body: {
+            name: payload.name,
+            provider: payload.provider,
+            config: payload.config,
+            daily_limit: payload.daily_limit ?? 200,
+            monthly_limit: payload.monthly_limit ?? 200,
+            is_active: true,
+          },
+        },
+      )) as { gateway: SmsFleetGateway };
 
-      if (createError) throw createError;
+      if (!response?.gateway?.id) {
+        throw new Error('Failed to create gateway');
+      }
 
-      const gateway = data as SmsFleetGateway;
-      gateways.value.unshift(gateway);
-      return gateway;
+      const result = response.gateway;
+      gateways.value.unshift(result);
+      return result;
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to create gateway';
@@ -79,18 +85,22 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
-      const { error: updateError } = await $supabase
-        .schema('private')
-        .from('sms_fleet_gateways')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', gatewayId);
+      const response = await $saasEdgeFunctions(
+        `sms-campaigns/fleet/gateways/${gatewayId}`,
+        {
+          method: 'PUT',
+          body: {
+            ...updates,
+            updated_at: new Date().toISOString(),
+          },
+        },
+      );
 
-      if (updateError) throw updateError;
+      const result = response as { success?: boolean; error?: string };
+      if (!result?.success) {
+        throw new Error(result?.error ?? 'Failed to update gateway');
+      }
 
-      // Update local state
       const index = gateways.value.findIndex((g) => g.id === gatewayId);
       if (index !== -1) {
         gateways.value[index] = {
@@ -115,13 +125,16 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
-      const { error: deleteError } = await $supabase
-        .schema('private')
-        .from('sms_fleet_gateways')
-        .delete()
-        .eq('id', gatewayId);
+      const response = (await $saasEdgeFunctions(
+        `sms-campaigns/fleet/gateways/${gatewayId}`,
+        {
+          method: 'DELETE',
+        },
+      )) as { success?: boolean };
 
-      if (deleteError) throw deleteError;
+      if (!response?.success) {
+        throw new Error('Failed to delete gateway');
+      }
 
       gateways.value = gateways.value.filter((g) => g.id !== gatewayId);
       return true;

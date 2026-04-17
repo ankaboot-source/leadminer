@@ -1653,6 +1653,60 @@ app.post("/campaigns/:id/stop", authMiddleware, async (c: Context) => {
   return c.json({ msg: "Campaign stopped", campaignId });
 });
 
+app.post("/campaigns/:id/restart", authMiddleware, async (c: Context) => {
+  const auth = await getAuthenticatedUser(c);
+  if ("error" in auth) return auth.error;
+
+  const campaignId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { data: campaign, error: campaignError } = await supabaseAdmin
+    .schema("private")
+    .from("email_campaigns")
+    .select("id, status")
+    .eq("id", campaignId)
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (campaignError || !campaign) {
+    return c.json(
+      { error: "Campaign not found", code: "CAMPAIGN_NOT_FOUND" },
+      404,
+    );
+  }
+
+  if (campaign.status !== "cancelled" && campaign.status !== "failed") {
+    return c.json(
+      {
+        error: "Cannot restart campaign in current status",
+        code: "INVALID_STATUS",
+      },
+      400,
+    );
+  }
+
+  await supabaseAdmin
+    .schema("private")
+    .from("email_campaigns")
+    .update({ status: "queued", completed_at: null })
+    .eq("id", campaignId);
+
+  await supabaseAdmin
+    .schema("private")
+    .from("email_campaign_recipients")
+    .update({ send_status: "pending", last_error: null })
+    .eq("campaign_id", campaignId)
+    .eq("send_status", "skipped");
+
+  triggerCampaignProcessorFromEdge().catch((error: unknown) => {
+    logger.error("Failed to trigger email campaign processor after restart", {
+      error,
+    });
+  });
+
+  return c.json({ msg: "Campaign restarted", campaignId });
+});
+
 app.delete("/campaigns/:id", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;

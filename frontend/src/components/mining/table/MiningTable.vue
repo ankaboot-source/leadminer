@@ -8,16 +8,7 @@
     v-model:visible="sendSmsCampaignDialogVisible"
     :selected-contacts="implicitlySelectedContacts"
     @campaign-created="onSmsCampaignCreated"
-    @add-gateway="showAddGatewayDialog = true"
   />
-  <Dialog
-    v-model:visible="showAddGatewayDialog"
-    modal
-    :header="t('sms_fleet_management')"
-    :style="{ width: '40rem', maxWidth: '95vw' }"
-  >
-    <SmsFleetManagement />
-  </Dialog>
   <DataTable
     v-show="showTable"
     ref="TableRef"
@@ -999,9 +990,7 @@ const CampaignComposerDialog = defineAsyncComponent(
 const SmsCampaignComposerDialog = defineAsyncComponent(
   () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
-const SmsFleetManagement = defineAsyncComponent(
-  () => import('~/components/sms-fleet/SmsFleetManagement.vue'),
-);
+
 const RemoveContactButton = defineAsyncComponent(
   () => import('~/components/mining/buttons/RemoveContactButton.vue'),
 );
@@ -1256,7 +1245,6 @@ const isExportDisabled = computed(
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
-const showAddGatewayDialog = ref(false);
 
 const isSendByEmailDisabled = computed(() => isExportDisabled.value);
 

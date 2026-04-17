@@ -7,16 +7,7 @@
     v-model:visible="sendSmsCampaignDialogVisible"
     :selected-contacts="selectedContacts"
     @campaign-created="onSmsCampaignCreated"
-    @add-gateway="showAddGatewayDialog = true"
   />
-  <Dialog
-    v-model:visible="showAddGatewayDialog"
-    modal
-    :header="t('sms_fleet_management')"
-    :style="{ width: '40rem', maxWidth: '95vw' }"
-  >
-    <SmsFleetManagement />
-  </Dialog>
 
   <SplitButton
     v-tooltip.top="
@@ -56,9 +47,6 @@ const CampaignComposerDialog = defineAsyncComponent(
 const SmsCampaignComposerDialog = defineAsyncComponent(
   () => import('@/components/campaigns/SmsCampaignComposerDialog.vue'),
 );
-const SmsFleetManagement = defineAsyncComponent(
-  () => import('@/components/sms-fleet/SmsFleetManagement.vue'),
-);
 
 const props = defineProps<{
   selectedContacts: Contact[];
@@ -70,7 +58,6 @@ const { t } = useI18n();
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
-const showAddGatewayDialog = ref(false);
 
 const isSendByEmailDisabled = computed(() => props.isExportDisabled);
 

@@ -116,10 +116,6 @@
       <component :is="AcceptNewsLetter" type="checkbox" />
     </Panel>
 
-    <Panel :header="t('sms_gateways')">
-      <SmsFleetManagement />
-    </Panel>
-
     <!-- Warning modal Section -->
     <Dialog
       v-model:visible="showDeleteModal"
@@ -164,7 +160,6 @@ import {
   isInvalidPassword,
 } from '@/utils/password';
 import LegalInformation from '~/components/auth/LegalInformation.vue';
-import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
 import type { Profile } from '~/types/profile';
 
 const { t } = useI18n({

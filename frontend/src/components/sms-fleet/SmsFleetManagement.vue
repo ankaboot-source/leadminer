@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
@@ -18,13 +18,31 @@ import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
 type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
+const props = defineProps<{
+  autoAdd?: boolean;
+}>();
+
+const emit = defineEmits<{
+  gatewayCreated: [gateway: SmsFleetGateway];
+}>();
+
+watch(
+  () => props.autoAdd,
+  (shouldAutoAdd) => {
+    if (shouldAutoAdd) {
+      openAddDialog();
+    }
+  },
+  { immediate: true },
+);
+
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
 const $toast = useToast();
 const $smsFleetStore = useSmsFleetStore();
 
-const selectedProvider = ref<SupportedProvider | null>(null);
+const selectedProvider = ref<SupportedProvider | null>('simple-sms-gateway');
 const isFormValid = ref(false);
 const showDialog = ref(false);
 const isEditing = ref(false);
@@ -44,6 +62,11 @@ const providerOptions = computed(() => [
 
 function handleFormValid(valid: boolean) {
   isFormValid.value = valid;
+}
+
+function submitGatewayForm() {
+  if (!selectedProvider.value || !providerFormRef.value) return;
+  providerFormRef.value.handleSubmit();
 }
 
 async function handleGatewaySubmit(config: {
@@ -77,12 +100,13 @@ async function handleGatewaySubmit(config: {
   } else {
     const result = await $smsFleetStore.createGateway(gatewayData);
     success = !!result;
-    if (success) {
+    if (success && result) {
       $toast.add({
         severity: 'success',
         summary: t('gateway_created'),
         life: 3000,
       });
+      emit('gatewayCreated', result);
     }
   }
 
@@ -192,8 +216,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold">{{ t('sms_fleet_management') }}</h3>
+    <div class="flex items-center justify-end">
       <Button
         :label="t('add_gateway')"
         icon="pi pi-plus"
@@ -363,10 +386,11 @@ onMounted(() => {
           @click="closeDialog"
         />
         <Button
+          v-if="selectedProvider"
           :label="isEditing ? t('save_changes') : t('add_gateway')"
           :loading="$smsFleetStore.isLoading"
-          :disabled="!isFormValid"
-          @click="providerFormRef?.handleSubmit?.()"
+          :disabled="!isFormValid || !selectedProvider"
+          @click="submitGatewayForm"
         />
       </template>
     </Dialog>

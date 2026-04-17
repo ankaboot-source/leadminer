@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
-import Button from 'primevue/button';
 import { z } from 'zod';
+
+const { t } = useI18n({ useScope: 'local' });
 
 const props = defineProps<{
   provider: 'smsgate' | 'simple-sms-gateway';
@@ -83,7 +85,7 @@ function resetForm() {
   password.value = '';
 }
 
-defineExpose({ resetForm });
+defineExpose({ resetForm, handleSubmit });
 </script>
 
 <template>
@@ -93,26 +95,26 @@ defineExpose({ resetForm });
       <template v-if="provider === 'smsgate'">
         <div>
           <label for="smsgate-username" class="block mb-2 font-medium">
-            Username *
+            {{ t('username') }} *
           </label>
           <InputText
             id="smsgate-username"
             v-model="username"
             name="username"
-            placeholder="Enter username"
+            :placeholder="t('username_placeholder')"
             class="w-full"
             required
           />
         </div>
         <div>
           <label for="smsgate-password" class="block mb-2 font-medium">
-            Password *
+            {{ t('password') }} *
           </label>
           <Password
             id="smsgate-password"
             v-model="password"
             name="password"
-            placeholder="Enter password"
+            :placeholder="t('password_placeholder')"
             :feedback="false"
             toggle-mask
             input-class="w-full"
@@ -121,18 +123,16 @@ defineExpose({ resetForm });
         </div>
         <div>
           <label for="smsgate-baseurl" class="block mb-2 font-medium">
-            API Base URL
+            {{ t('api_base_url') }}
           </label>
           <InputText
             id="smsgate-baseurl"
             v-model="baseUrl"
             name="baseUrl"
-            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
+            :placeholder="t('api_base_url_placeholder')"
             class="w-full"
           />
-          <small class="text-surface-500"
-            >Optional - uses default if not specified</small
-          >
+          <small class="text-surface-500">{{ t('api_base_url_help') }}</small>
         </div>
       </template>
 
@@ -140,28 +140,48 @@ defineExpose({ resetForm });
       <template v-else-if="provider === 'simple-sms-gateway'">
         <div>
           <label for="simple-baseurl" class="block mb-2 font-medium">
-            Gateway URL *
+            {{ t('gateway_url') }} *
           </label>
           <InputText
             id="simple-baseurl"
             v-model="baseUrl"
             name="baseUrl"
-            placeholder="http://192.168.1.100:8080/send-sms"
+            :placeholder="t('gateway_url_placeholder')"
             class="w-full"
             required
           />
-          <small class="text-surface-500"
-            >The URL of your SMS gateway endpoint</small
-          >
+          <small class="text-surface-500">{{ t('gateway_url_help') }}</small>
         </div>
       </template>
-
-      <Button
-        type="submit"
-        label="Add Gateway"
-        icon="pi pi-plus"
-        :disabled="!isValid"
-      />
     </div>
   </form>
 </template>
+
+<i18n lang="json">
+{
+  "en": {
+    "username": "Username",
+    "username_placeholder": "Enter username",
+    "password": "Password",
+    "password_placeholder": "Enter password",
+    "api_base_url": "API Base URL",
+    "api_base_url_placeholder": "https://api.sms-gate.app/3rdparty/v1/messages",
+    "api_base_url_help": "Optional - uses default if not specified",
+    "gateway_url": "Gateway URL",
+    "gateway_url_placeholder": "http://192.168.1.100:8080/send-sms",
+    "gateway_url_help": "The URL of your SMS gateway endpoint"
+  },
+  "fr": {
+    "username": "Nom d'utilisateur",
+    "username_placeholder": "Entrez le nom d'utilisateur",
+    "password": "Mot de passe",
+    "password_placeholder": "Entrez le mot de passe",
+    "api_base_url": "URL de base de l'API",
+    "api_base_url_placeholder": "https://api.sms-gate.app/3rdparty/v1/messages",
+    "api_base_url_help": "Optionnel - utilise la valeur par défaut si non spécifié",
+    "gateway_url": "URL de la passerelle",
+    "gateway_url_placeholder": "http://192.168.1.100:8080/send-sms",
+    "gateway_url_help": "L'URL de votre point d'accès SMS"
+  }
+}
+</i18n>

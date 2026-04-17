@@ -1,278 +1,322 @@
 <template>
-  <div
-    class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
-  >
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
-      <Button
-        icon="pi pi-refresh"
-        :label="t('refresh')"
-        :loading="$campaignsStore.isLoading"
-        outlined
-        @click="refresh"
-      />
-    </div>
+  <div class="flex flex-col gap-4">
+    <Panel toggleable class="border border-surface-200 rounded-md p-4">
+      <template #header>
+        <h1 class="text-xl font-semibold">{{ t('sms_gateways') }}</h1>
+      </template>
+      <SmsFleetManagement />
+    </Panel>
 
     <div
-      v-if="$campaignsStore.isLoading && !$campaignsStore.campaigns.length"
-      class="grid gap-3"
+      class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
     >
-      <CampaignsSkeleton />
-    </div>
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
+        <Button
+          icon="pi pi-refresh"
+          :label="t('refresh')"
+          :loading="$campaignsStore.isLoading"
+          outlined
+          @click="refresh"
+        />
+      </div>
 
-    <DataView
-      v-else
-      :value="$campaignsStore.campaigns"
-      data-key="id"
-      :paginator="true"
-      :rows="10"
-    >
-      <template #empty>
-        <div class="text-center py-8 text-surface-500">
-          {{ t('no_campaigns') }}
-        </div>
-      </template>
-      <template #list="slotProps">
-        <div class="grid gap-3">
-          <div
-            v-for="campaign in slotProps.items"
-            :key="campaign.id"
-            class="border border-surface-200 rounded-md p-4"
-          >
+      <div
+        v-if="$campaignsStore.isLoading && !$campaignsStore.campaigns.length"
+        class="grid gap-3"
+      >
+        <CampaignsSkeleton />
+      </div>
+
+      <DataView
+        v-else
+        :value="$campaignsStore.campaigns"
+        data-key="id"
+        :paginator="true"
+        :rows="10"
+      >
+        <template #empty>
+          <div class="text-center py-8 text-surface-500">
+            {{ t('no_campaigns') }}
+          </div>
+        </template>
+        <template #list="slotProps">
+          <div class="grid gap-3">
             <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-            >
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <Tag
-                    :value="campaign.channel === 'sms' ? 'SMS' : 'Email'"
-                    :severity="campaign.channel === 'sms' ? 'info' : 'primary'"
-                    class="text-xs"
-                  />
-                  <span class="font-medium break-words">
-                    <template v-if="campaign.channel === 'sms'">
-                      {{ campaign.sender_name }} ({{ campaign.provider }})
-                    </template>
-                    <template v-else>
-                      {{ campaign.subject }} par
-                      {{ campaign.sender_name }} &lt;{{
-                        campaign.sender_email
-                      }}&gt;
-                    </template>
-                  </span>
-                </div>
-                <div class="text-sm text-surface-500 break-words">
-                  <template v-if="campaign.channel === 'sms'">
-                    {{ campaign.recipient_count || 0 }} destinataires ·
-                    {{ formatDate(campaign.created_at) }}
-                  </template>
-                  <template v-else>
-                    {{ campaign.total_batches }} lot(s) de
-                    {{ campaign.sender_daily_limit }}/jour ·
-                    {{ campaign.total_recipients }} destinataires ·
-                    {{ formatDate(campaign.created_at) }}
-                  </template>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <Button
-                  v-if="canStopCampaign(campaign)"
-                  size="small"
-                  outlined
-                  severity="warning"
-                  icon="pi pi-stop"
-                  :label="t('stop_campaign')"
-                  :loading="isActionLoading(campaign.id, 'stop')"
-                  @click="openStopDialog(campaign)"
-                />
-                <Button
-                  v-if="canDeleteCampaign(campaign)"
-                  size="small"
-                  outlined
-                  severity="danger"
-                  icon="pi pi-trash"
-                  :label="t('delete_campaign')"
-                  :loading="isActionLoading(campaign.id, 'delete')"
-                  @click="openDeleteDialog(campaign)"
-                />
-                <Tag
-                  :value="statusLabel(campaign)"
-                  :severity="statusSeverity(campaign.status)"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
-              <template v-if="campaign.channel === 'sms'">
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('delivery') }}</span>
-                  </div>
-                  <div class="font-semibold">
-                    {{ campaign.delivered || 0 }}/{{
-                      campaign.recipient_count || 0
-                    }}
-                  </div>
-                </div>
-
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('clicks') }}</span>
-                  </div>
-                  <div class="font-semibold">{{ campaign.clicked || 0 }}</div>
-                </div>
-
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('unsubscribes') }}</span>
-                  </div>
-                  <div class="font-semibold">
-                    {{ campaign.unsubscribed || 0 }}
-                  </div>
-                </div>
-              </template>
-
-              <template v-else>
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('delivery') }}</span>
-                    <i
-                      v-tooltip.top="deliveryTooltip(campaign)"
-                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                      tabindex="0"
-                    />
-                  </div>
-                  <div class="font-semibold">
-                    {{ campaign.attempted }}/{{ campaign.total_recipients }}
-                  </div>
-                  <div>{{ getBatchProgress(campaign) }}</div>
-                </div>
-
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('opens') }}</span>
-                    <i
-                      v-tooltip.top="opensTooltip(campaign)"
-                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                      tabindex="0"
-                    />
-                  </div>
-                  <div class="font-semibold">{{ campaign.opened }}</div>
-                  <div>{{ formatRate(campaign.opening_rate) }}</div>
-                </div>
-
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('clicks') }}</span>
-                    <i
-                      v-tooltip.top="clicksTooltip(campaign)"
-                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                      tabindex="0"
-                    />
-                  </div>
-                  <div class="font-semibold">{{ campaign.clicked }}</div>
-                  <div>{{ formatRate(campaign.clicking_rate) }}</div>
-                </div>
-
-                <div class="p-2 rounded bg-surface-50">
-                  <div class="text-surface-500 flex items-center gap-1">
-                    <span>{{ t('unsubscribes') }}</span>
-                    <i
-                      v-tooltip.top="unsubscribeTooltip(campaign)"
-                      class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                      tabindex="0"
-                    />
-                  </div>
-                  <div class="font-semibold">{{ campaign.unsubscribed }}</div>
-                  <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
-                </div>
-              </template>
-            </div>
-
-            <div
-              v-if="campaign.channel !== 'sms' && campaign.link_clicks?.length"
-              class="mt-4"
+              v-for="campaign in slotProps.items"
+              :key="campaign.id"
+              class="border border-surface-200 rounded-md p-4"
             >
               <div
-                class="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"
               >
-                <span>{{ t('top_clicked_links') }}</span>
-                <i
-                  v-tooltip.top="t('top_clicked_links_tooltip')"
-                  class="pi pi-info-circle text-xs text-surface-500 cursor-help"
-                  tabindex="0"
-                />
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <Tag
+                      :value="campaign.channel === 'sms' ? 'SMS' : 'Email'"
+                      :severity="
+                        campaign.channel === 'sms' ? 'info' : 'primary'
+                      "
+                      class="text-xs"
+                    />
+                    <span class="font-medium break-words">
+                      <template v-if="campaign.channel === 'sms'">
+                        {{ campaign.sender_name }}
+                        <template v-if="campaign.gateway_names?.length">
+                          ({{ campaign.gateway_names.join(', ') }})
+                        </template>
+                        <template v-else-if="campaign.provider !== 'fleet'">
+                          ({{ campaign.provider }})
+                        </template>
+                      </template>
+                      <template v-else>
+                        {{ campaign.subject }} par
+                        {{ campaign.sender_name }} &lt;{{
+                          campaign.sender_email
+                        }}&gt;
+                      </template>
+                    </span>
+                  </div>
+                  <div class="text-sm text-surface-500 break-words">
+                    <template v-if="campaign.channel === 'sms'">
+                      {{ campaign.recipient_count || 0 }} destinataires ·
+                      {{ formatDate(campaign.created_at) }}
+                    </template>
+                    <template v-else>
+                      {{ campaign.total_batches }} lot(s) de
+                      {{ campaign.sender_daily_limit }}/jour ·
+                      {{ campaign.total_recipients }} destinataires ·
+                      {{ formatDate(campaign.created_at) }}
+                    </template>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <Button
+                    v-if="canStopCampaign(campaign)"
+                    size="small"
+                    outlined
+                    severity="warning"
+                    icon="pi pi-stop"
+                    :label="t('stop_campaign')"
+                    :loading="isActionLoading(campaign.id, 'stop')"
+                    @click="openStopDialog(campaign)"
+                  />
+                  <Button
+                    v-if="canRestartCampaign(campaign)"
+                    size="small"
+                    outlined
+                    severity="success"
+                    icon="pi pi-refresh"
+                    :label="t('restart_campaign')"
+                    :loading="isActionLoading(campaign.id, 'restart')"
+                    @click="openRestartDialog(campaign)"
+                  />
+                  <Button
+                    v-if="canDeleteCampaign(campaign)"
+                    size="small"
+                    outlined
+                    severity="danger"
+                    icon="pi pi-trash"
+                    :label="t('delete_campaign')"
+                    :loading="isActionLoading(campaign.id, 'delete')"
+                    @click="openDeleteDialog(campaign)"
+                  />
+                  <Tag
+                    :value="statusLabel(campaign)"
+                    :severity="statusSeverity(campaign.status)"
+                  />
+                </div>
               </div>
-              <div class="flex flex-col gap-1 text-sm">
+
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm">
+                <template v-if="campaign.channel === 'sms'">
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('delivery') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.delivered || 0 }}/{{
+                        campaign.recipient_count || 0
+                      }}
+                    </div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('clicks') }}</span>
+                    </div>
+                    <div class="font-semibold">{{ campaign.clicked || 0 }}</div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('unsubscribes') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.unsubscribed || 0 }}
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('delivery') }}</span>
+                      <i
+                        v-tooltip.top="deliveryTooltip(campaign)"
+                        class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                        tabindex="0"
+                      />
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.attempted }}/{{ campaign.total_recipients }}
+                    </div>
+                    <div>{{ getBatchProgress(campaign) }}</div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('opens') }}</span>
+                      <i
+                        v-tooltip.top="opensTooltip(campaign)"
+                        class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                        tabindex="0"
+                      />
+                    </div>
+                    <div class="font-semibold">{{ campaign.opened }}</div>
+                    <div>{{ formatRate(campaign.opening_rate) }}</div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('clicks') }}</span>
+                      <i
+                        v-tooltip.top="clicksTooltip(campaign)"
+                        class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                        tabindex="0"
+                      />
+                    </div>
+                    <div class="font-semibold">{{ campaign.clicked }}</div>
+                    <div>{{ formatRate(campaign.clicking_rate) }}</div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('unsubscribes') }}</span>
+                      <i
+                        v-tooltip.top="unsubscribeTooltip(campaign)"
+                        class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                        tabindex="0"
+                      />
+                    </div>
+                    <div class="font-semibold">{{ campaign.unsubscribed }}</div>
+                    <div>{{ formatRate(campaign.unsubscribe_rate) }}</div>
+                  </div>
+                </template>
+              </div>
+
+              <div
+                v-if="
+                  campaign.channel !== 'sms' && campaign.link_clicks?.length
+                "
+                class="mt-4"
+              >
                 <div
-                  v-for="link in campaign.link_clicks"
-                  :key="`${campaign.id}:${link.url}`"
-                  class="flex items-center justify-between gap-3 min-w-0"
+                  class="text-sm font-medium text-surface-600 mb-2 flex items-center gap-1"
                 >
-                  <a
-                    :href="link.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="truncate text-primary hover:underline min-w-0"
+                  <span>{{ t('top_clicked_links') }}</span>
+                  <i
+                    v-tooltip.top="t('top_clicked_links_tooltip')"
+                    class="pi pi-info-circle text-xs text-surface-500 cursor-help"
+                    tabindex="0"
+                  />
+                </div>
+                <div class="flex flex-col gap-1 text-sm">
+                  <div
+                    v-for="link in campaign.link_clicks"
+                    :key="`${campaign.id}:${link.url}`"
+                    class="flex items-center justify-between gap-3 min-w-0"
                   >
-                    {{ link.url }}
-                  </a>
-                  <span class="text-surface-600 shrink-0">
-                    {{
-                      t('unique_clicks_count', { count: link.unique_clicks })
-                    }}
-                  </span>
+                    <a
+                      :href="link.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="truncate text-primary hover:underline min-w-0"
+                    >
+                      {{ link.url }}
+                    </a>
+                    <span class="text-surface-600 shrink-0">
+                      {{
+                        t('unique_clicks_count', { count: link.unique_clicks })
+                      }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </template>
-    </DataView>
+        </template>
+      </DataView>
 
-    <Dialog
-      v-model:visible="actionDialogVisible"
-      modal
-      :header="
-        actionDialogType === 'stop' ? t('stop_campaign') : t('delete_campaign')
-      "
-      :style="{ width: '28rem', maxWidth: '95vw' }"
-    >
-      <div class="text-sm text-surface-700">
-        {{
+      <Dialog
+        v-model:visible="actionDialogVisible"
+        modal
+        :header="
           actionDialogType === 'stop'
-            ? t('stop_campaign_confirm')
-            : t('delete_campaign_confirm')
-        }}
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end gap-2 w-full">
-          <Button outlined :label="t('cancel')" @click="closeActionDialog" />
-          <Button
-            :severity="actionDialogType === 'stop' ? 'warning' : 'danger'"
-            :label="
-              actionDialogType === 'stop'
-                ? t('stop_campaign')
-                : t('delete_campaign')
-            "
-            :loading="isDialogSubmitting"
-            @click="confirmActionDialog"
-          />
+            ? t('stop_campaign')
+            : actionDialogType === 'restart'
+              ? t('restart_campaign')
+              : t('delete_campaign')
+        "
+        :style="{ width: '28rem', maxWidth: '95vw' }"
+      >
+        <div class="text-sm text-surface-700">
+          {{
+            actionDialogType === 'stop'
+              ? t('stop_campaign_confirm')
+              : actionDialogType === 'restart'
+                ? t('restart_campaign_confirm')
+                : t('delete_campaign_confirm')
+          }}
         </div>
-      </template>
-    </Dialog>
+
+        <template #footer>
+          <div class="flex justify-end gap-2 w-full">
+            <Button outlined :label="t('cancel')" @click="closeActionDialog" />
+            <Button
+              :severity="
+                actionDialogType === 'stop'
+                  ? 'warning'
+                  : actionDialogType === 'restart'
+                    ? 'success'
+                    : 'danger'
+              "
+              :label="
+                actionDialogType === 'stop'
+                  ? t('stop_campaign')
+                  : actionDialogType === 'restart'
+                    ? t('restart_campaign')
+                    : t('delete_campaign')
+              "
+              :loading="isDialogSubmitting"
+              @click="confirmActionDialog"
+            />
+          </div>
+        </template>
+      </Dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { CampaignOverview, CampaignStatus } from '@/types/campaign';
+import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
 
 const $campaignsStore = useCampaignsStore();
 const { t } = useI18n({ useScope: 'local' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
-type CampaignActionType = 'stop' | 'delete';
+type CampaignActionType = 'stop' | 'delete' | 'restart';
 const actionDialogVisible = ref(false);
 const actionDialogCampaign = ref<CampaignOverview | null>(null);
 const actionDialogType = ref<CampaignActionType>('stop');
@@ -418,6 +462,10 @@ function canDeleteCampaign(campaign: CampaignOverview) {
   return campaign.status !== 'processing';
 }
 
+function canRestartCampaign(campaign: CampaignOverview) {
+  return campaign.status === 'cancelled' || campaign.status === 'failed';
+}
+
 function openStopDialog(campaign: CampaignOverview) {
   actionDialogCampaign.value = campaign;
   actionDialogType.value = 'stop';
@@ -427,6 +475,12 @@ function openStopDialog(campaign: CampaignOverview) {
 function openDeleteDialog(campaign: CampaignOverview) {
   actionDialogCampaign.value = campaign;
   actionDialogType.value = 'delete';
+  actionDialogVisible.value = true;
+}
+
+function openRestartDialog(campaign: CampaignOverview) {
+  actionDialogCampaign.value = campaign;
+  actionDialogType.value = 'restart';
   actionDialogVisible.value = true;
 }
 
@@ -464,6 +518,19 @@ async function confirmActionDialog() {
         detail: t('campaign_stopped_detail'),
         life: 3500,
       });
+    } else if (actionDialogType.value === 'restart') {
+      await $saasEdgeFunctions(
+        `${channelPrefix}/campaigns/${campaign.id}/restart`,
+        {
+          method: 'POST',
+        },
+      );
+      $toast.add({
+        severity: 'success',
+        summary: t('campaign_restarted'),
+        detail: t('campaign_restarted_detail'),
+        life: 3500,
+      });
     } else {
       await $saasEdgeFunctions(`${channelPrefix}/campaigns/${campaign.id}`, {
         method: 'DELETE',
@@ -484,7 +551,9 @@ async function confirmActionDialog() {
       summary:
         actionDialogType.value === 'stop'
           ? t('campaign_stop_failed')
-          : t('campaign_delete_failed'),
+          : actionDialogType.value === 'restart'
+            ? t('campaign_restart_failed')
+            : t('campaign_delete_failed'),
       detail: parseActionError(error),
       life: 4500,
     });
@@ -561,6 +630,7 @@ onBeforeUnmount(() => {
 <i18n lang="json">
 {
   "en": {
+    "sms_gateways": "SMS Gateways",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -597,6 +667,11 @@ onBeforeUnmount(() => {
     "campaign_deleted": "Campaign deleted",
     "campaign_deleted_detail": "The campaign has been permanently deleted.",
     "campaign_delete_failed": "Unable to delete campaign",
+    "restart_campaign": "Restart",
+    "restart_campaign_confirm": "Restart this campaign? Pending and skipped recipients will be retried.",
+    "campaign_restarted": "Campaign restarted",
+    "campaign_restarted_detail": "The campaign has been restarted and is now queued.",
+    "campaign_restart_failed": "Unable to restart campaign",
     "action_failed": "Request failed",
     "status_queued": "Queued",
     "status_processing": "Processing",
@@ -606,6 +681,7 @@ onBeforeUnmount(() => {
     "status_cancelled": "Cancelled"
   },
   "fr": {
+    "sms_gateways": "Passerelles SMS",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",
@@ -642,6 +718,11 @@ onBeforeUnmount(() => {
     "campaign_deleted": "Campagne supprimée",
     "campaign_deleted_detail": "La campagne a été supprimée définitivement.",
     "campaign_delete_failed": "Impossible de supprimer la campagne",
+    "restart_campaign": "Relancer",
+    "restart_campaign_confirm": "Relancer cette campagne ? Les destinataires en attente et ignorés seront retentés.",
+    "campaign_restarted": "Campagne relancée",
+    "campaign_restarted_detail": "La campagne a été relancée et est maintenant en file d'attente.",
+    "campaign_restart_failed": "Impossible de relancer la campagne",
     "action_failed": "Échec de la requête",
     "status_queued": "En file d'attente",
     "status_processing": "En cours",
