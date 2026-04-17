@@ -6,7 +6,6 @@ import type {
   TaskStreamConfig,
   ProgressMessage,
   StreamDetails,
-  StreamRole,
   StreamCommand
 } from '../types';
 import SupabaseTasks from '../../../db/supabase/tasks';

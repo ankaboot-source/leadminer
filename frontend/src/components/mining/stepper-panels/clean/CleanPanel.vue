@@ -3,7 +3,9 @@
     v-if="isMiningFinished"
     class="flex flex-col items-center justify-center grow text-center py-2"
   >
-    <div class="text-2xl mb-6 font-medium text-center">{{ t('mining_complete') }} 🎉</div>
+    <div class="text-2xl mb-6 font-medium text-center">
+      {{ t('mining_complete') }} 🎉
+    </div>
   </div>
   <template v-else>
     <ProgressCard
@@ -74,9 +76,7 @@ const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
-  () =>
-    $leadminerStore.cleaningEnabled &&
-    !$leadminerStore.miningInterrupted
+  () => $leadminerStore.cleaningEnabled && !$leadminerStore.miningInterrupted,
 );
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
@@ -98,9 +98,7 @@ const isPostCleaningPhase = computed(
     $leadminerStore.extractSignatures,
 );
 
-const isMiningFinished = computed(
-  () =>
-    $leadminerStore.miningCompleted);
+const isMiningFinished = computed(() => $leadminerStore.miningCompleted);
 
 function cleaningDoneNotification() {
   $toast.add({

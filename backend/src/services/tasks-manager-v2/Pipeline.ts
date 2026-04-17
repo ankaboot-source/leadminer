@@ -7,8 +7,6 @@ import type {
   ProgressMessage,
   ProgressLink,
   RedactedTask,
-  StreamCommand,
-  StreamDetails,
   TaskStreamConfig
 } from './types';
 import SupabaseTasks from '../../db/supabase/tasks';
@@ -16,7 +14,6 @@ import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
 import logger from '../../utils/logger';
-import ENV from '../../config';
 
 export interface PipelineConfig {
   miningId: string;
@@ -50,7 +47,7 @@ export class Pipeline {
 
   onComplete?: () => Promise<void>;
 
-  public failed: boolean = false;
+  public failed = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -183,7 +180,7 @@ export class Pipeline {
     }
   }
 
-  private checkCompletion(): void {
+  private async checkCompletion(): Promise<void> {
     const tasksToStop: Task[] = [];
     for (const task of this.tasks.values()) {
       if (!task.stoppedAt && task.isComplete()) {
@@ -192,16 +189,19 @@ export class Pipeline {
     }
 
     if (tasksToStop.length > 0) {
-      Promise.all(
-        tasksToStop.map((t) => {
-          try {
-            t.stop(false, this.deps.tasksResolver, this.deps.redisPublisher);
-            this.broadcastTaskFinished(t);
-          } catch (err) {
-            logger.error('Error stopping completed tasks', err);
-          }
-        })
-      );
+      for (const t of tasksToStop) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await t.stop(
+            false,
+            this.deps.tasksResolver,
+            this.deps.redisPublisher
+          );
+          this.broadcastTaskFinished(t);
+        } catch (err) {
+          logger.error('Error stopping completed tasks', err);
+        }
+      }
 
       if (this.isAllCompleted()) {
         this.complete();

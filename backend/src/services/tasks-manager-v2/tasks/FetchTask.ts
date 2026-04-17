@@ -1,6 +1,6 @@
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskStatus, TaskId } from '../types';
-import type { ProgressMessage, TaskStreamConfig } from '../types';
+import type { ProgressMessage } from '../types';
 import SupabaseTasks from '../../../db/supabase/tasks';
 
 export interface FetcherClient {
