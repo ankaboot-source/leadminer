@@ -316,7 +316,8 @@ export default function initializeMiningController(
         cleaningEnabled,
         miningSource: { email },
         boxes: folders,
-        since
+        since,
+        passive_mining
       }: {
         miningSource: {
           email: string;
@@ -325,6 +326,7 @@ export default function initializeMiningController(
         extractSignatures: boolean;
         cleaningEnabled: boolean;
         since?: string;
+        passive_mining?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -374,6 +376,7 @@ export default function initializeMiningController(
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
             since,
+            passiveMining: passive_mining ?? false,
             fetcherClient: deps.emailFetcherClient
           },
           deps.pipelineDeps
@@ -684,7 +687,8 @@ export default function initializeMiningController(
           .from('tasks')
           .select('*')
           .eq('user_id', user.id)
-          .order('started_at', { ascending: false });
+          .order('started_at', { ascending: false })
+          .limit(20);
 
         if (error || !userActiveTasks || userActiveTasks.length === 0) {
           return res.status(204).send({ active: [], passive: [] });
@@ -723,7 +727,7 @@ export default function initializeMiningController(
                 await miningEngine.terminate(miningId);
               }
             } catch {
-              logger.debug(`Pipeline already removed for miningId=${miningId}`);
+              // Error thrown by getPipeline means task doesn't exists in memory
             }
             continue;
           }
@@ -740,11 +744,7 @@ export default function initializeMiningController(
           let task = null;
           try {
             task = miningEngine.getPipeline(miningId).getActiveTask();
-          } catch {
-            logger.error(
-              `Task not found in miningEngine for miningId=${miningId}`
-            );
-          }
+          } catch {}
 
           if (!task) continue;
 
@@ -752,12 +752,15 @@ export default function initializeMiningController(
             continue;
           }
 
+          const mapState = (t: DBTask | null | undefined) =>
+            t ? { status: t.status, started_at: t.started_at } : null;
+
           const group = {
             task,
-            fetch: fetchTask,
-            extract: extractTask,
-            clean: cleanTask,
-            signature: signatureTask ?? null
+            fetch: mapState(fetchTask),
+            extract: mapState(extractTask),
+            clean: mapState(cleanTask),
+            signature: mapState(signatureTask ?? null)
           };
 
           const isPassive = sessionTasks.some(
