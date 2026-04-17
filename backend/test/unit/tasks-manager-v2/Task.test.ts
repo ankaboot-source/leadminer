@@ -40,7 +40,7 @@ describe('Task', () => {
       category: TaskCategory.Mining,
       miningId: 'test-mining-id',
       userId: 'test-user',
-      streams: {}
+      streams: { role: 'extract' as const, input: [], output: [] }
     });
 
     expect(task.id).toBe('test-task');
@@ -59,7 +59,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.progress = { total: 100, processed: 50 };
 
@@ -73,7 +73,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.status = TaskStatus.Done;
 
@@ -87,7 +87,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.status = TaskStatus.Canceled;
 
@@ -101,7 +101,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.upstreamDone = true;
       task.progress = { total: 100, processed: 100 };
@@ -116,7 +116,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.upstreamDone = true;
       task.progress = { total: 100, processed: 50 };
@@ -131,7 +131,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.upstreamDone = true;
       task.progress = { total: 0, processed: 0 };
@@ -148,7 +148,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.startedAt = new Date().toUTCString();
 
@@ -167,7 +167,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.startedAt = new Date().toUTCString();
 
@@ -183,7 +183,7 @@ describe('Task', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
       task.startedAt = new Date().toUTCString();
       task.status = TaskStatus.Canceled;
@@ -202,7 +202,11 @@ describe('Task', () => {
         category: TaskCategory.Cleaning,
         miningId: 'test-mining',
         userId: 'test-user',
-        streams: { input: { streamName: 'emails_stream-test' } },
+        streams: {
+          role: 'clean' as const,
+          input: [{ streamName: 'emails_stream-test' }],
+          output: []
+        },
         config: { customField: 'value' }
       });
       task.progress = { total: 10, processed: 5 };
@@ -210,7 +214,9 @@ describe('Task', () => {
       const details = task.toDetails();
       expect(details.miningId).toBe('test-mining');
       expect(details.stream).toEqual({
-        input: { streamName: 'emails_stream-test' }
+        role: 'clean',
+        input: [{ streamName: 'emails_stream-test' }],
+        output: []
       });
       expect(details.progress).toEqual({ total: 10, processed: 5 });
       expect((details as Record<string, unknown>).customField).toBe('value');
@@ -223,9 +229,12 @@ describe('CleanTask', () => {
     const clean = new CleanTask({
       miningId: 'test',
       userId: 'test-user',
-      inputStream: {
-        streamName: 'emails_stream-test',
-        consumerGroup: 'cleaners'
+      streams: {
+        role: 'clean' as const,
+        input: [
+          { streamName: 'emails_stream-test', consumerGroup: 'cleaners' }
+        ],
+        output: []
       }
     });
 
@@ -252,11 +261,13 @@ describe('ExtractTask', () => {
     const extract = new ExtractTask({
       miningId: 'test',
       userId: 'test-user',
-      inputStream: {
-        streamName: 'messages_stream-test',
-        consumerGroup: 'extractors'
-      },
-      outputStream: { streamName: 'emails_stream-test' }
+      streams: {
+        role: 'extract' as const,
+        input: [
+          { streamName: 'messages_stream-test', consumerGroup: 'extractors' }
+        ],
+        output: [{ streamName: 'emails_stream-test' }]
+      }
     });
 
     expect(extract.id).toBe('extract');
@@ -274,8 +285,11 @@ describe('ExtractTask', () => {
     const extract = new ExtractTask({
       miningId: 'test',
       userId: 'test-user',
-      inputStream: { streamName: 'in', consumerGroup: 'cg' },
-      outputStream: { streamName: 'out' }
+      streams: {
+        role: 'extract' as const,
+        input: [{ streamName: 'in', consumerGroup: 'cg' }],
+        output: [{ streamName: 'out' }]
+      }
     });
 
     expect(extract.createdContactCount).toBe(0);
@@ -291,8 +305,11 @@ describe('ExtractTask', () => {
     const extract = new ExtractTask({
       miningId: 'test',
       userId: 'test-user',
-      inputStream: { streamName: 'in', consumerGroup: 'cg' },
-      outputStream: { streamName: 'out' }
+      streams: {
+        role: 'extract' as const,
+        input: [{ streamName: 'in', consumerGroup: 'cg' }],
+        output: [{ streamName: 'out' }]
+      }
     });
 
     extract.onMessage({
@@ -316,7 +333,11 @@ describe('SignatureTask', () => {
     const sig = new SignatureTask({
       miningId: 'test',
       userId: 'test-user',
-      streamName: 'email-signature'
+      streams: {
+        role: 'signature' as const,
+        input: [{ streamName: 'email-signature' }],
+        output: []
+      }
     });
 
     expect(sig.type).toBe(TaskType.Enrich);
@@ -326,7 +347,11 @@ describe('SignatureTask', () => {
     const sig = new SignatureTask({
       miningId: 'test',
       userId: 'test-user',
-      streamName: 'email-signature'
+      streams: {
+        role: 'signature' as const,
+        input: [{ streamName: 'email-signature' }],
+        output: []
+      }
     });
 
     sig.onMessage({
@@ -352,7 +377,11 @@ describe('SignatureTask', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'email-signature'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'email-signature' }],
+          output: []
+        }
       });
       sig.upstreamDone = true;
       expect(sig.isComplete()).toBe(false);
@@ -362,7 +391,11 @@ describe('SignatureTask', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'email-signature'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'email-signature' }],
+          output: []
+        }
       });
       sig.upstreamDone = true;
       sig.onMessage({ miningId: 'test', progressType: 'signatures', count: 5 });
@@ -373,7 +406,11 @@ describe('SignatureTask', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'email-signature'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'email-signature' }],
+          output: []
+        }
       });
       sig.upstreamDone = true;
       sig.onMessage({
@@ -389,7 +426,11 @@ describe('SignatureTask', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'email-signature'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'email-signature' }],
+          output: []
+        }
       });
       sig.upstreamDone = true;
       sig.onMessage({
@@ -409,7 +450,7 @@ describe('SignatureTask', () => {
         category: TaskCategory.Mining,
         miningId: 'test',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
 
       expect(task.getProgressMap()).toEqual({});
@@ -452,8 +493,11 @@ describe('SignatureTask', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
 
       extract.progress = { total: 0, processed: 30 };
@@ -467,7 +511,11 @@ describe('SignatureTask', () => {
       const clean = new CleanTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' }
+        streams: {
+          role: 'clean' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: []
+        }
       });
 
       clean.progress = { total: 20, processed: 10 };
@@ -480,7 +528,11 @@ describe('SignatureTask', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'sig-stream'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'sig-stream' }],
+          output: []
+        }
       });
 
       sig.progress = { total: 10, processed: 5 };

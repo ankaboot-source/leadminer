@@ -60,8 +60,8 @@ function makeMockSSEFactory() {
     stop: jest.fn()
   };
   const mockRedisPublisher = {
-    publish: jest.fn().mockResolvedValue(1),
-    xgroup: jest.fn().mockResolvedValue('OK')
+    publish: jest.fn<() => Promise<number>>().mockResolvedValue(1),
+    xgroup: jest.fn<() => Promise<string>>().mockResolvedValue('OK')
   } as unknown as Redis;
   const factory = {
     create: jest.fn().mockReturnValue(mockSSE)
@@ -118,8 +118,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
       extract.progress = { total: 0, processed: 30 };
       extract.addCreatedContacts(12);
@@ -127,14 +130,22 @@ describe('Pipeline', () => {
       const clean = new CleanTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' }
+        streams: {
+          role: 'clean' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: []
+        }
       });
       clean.progress = { total: 20, processed: 10 };
 
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'sig-stream'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'sig-stream' }],
+          output: []
+        }
       });
       sig.progress = { total: 0, processed: 5 };
 
@@ -256,8 +267,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
 
       const pipeline = makePipeline([fetch, extract], factory);
@@ -277,8 +291,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
       extract.progress = { total: 50, processed: 50 };
       extract.addCreatedContacts(30);
@@ -287,7 +304,11 @@ describe('Pipeline', () => {
       const clean = new CleanTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'clean-in', consumerGroup: 'cg' }
+        streams: {
+          role: 'clean' as const,
+          input: [{ streamName: 'clean-in', consumerGroup: 'cg' }],
+          output: []
+        }
       });
 
       const pipeline = makePipeline([extract, clean], factory);
@@ -333,7 +354,11 @@ describe('Pipeline', () => {
       const sig = new SignatureTask({
         miningId: 'test',
         userId: 'test-user',
-        streamName: 'sig-stream'
+        streams: {
+          role: 'signature' as const,
+          input: [{ streamName: 'sig-stream' }],
+          output: []
+        }
       });
 
       const pipeline = makePipeline([fetch, sig], factory);
@@ -376,8 +401,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
 
       const pipeline = makePipeline([fetch, extract], factory);
@@ -397,8 +425,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
       extract.progress = { total: 0, processed: 0 };
       extract.status = TaskStatus.Done;
@@ -406,7 +437,11 @@ describe('Pipeline', () => {
       const clean = new CleanTask({
         miningId: 'test',
         userId: 'test-user',
-        inputStream: { streamName: 'clean-in', consumerGroup: 'cg' }
+        streams: {
+          role: 'clean' as const,
+          input: [{ streamName: 'clean-in', consumerGroup: 'cg' }],
+          output: []
+        }
       });
 
       const pipeline = makePipeline([extract, clean], factory);
@@ -467,8 +502,11 @@ describe('Pipeline', () => {
       const extract = new ExtractTask({
         miningId: 'test-mining-id',
         userId: 'test-user',
-        inputStream: { streamName: 'in', consumerGroup: 'cg' },
-        outputStream: { streamName: 'out' }
+        streams: {
+          role: 'extract' as const,
+          input: [{ streamName: 'in', consumerGroup: 'cg' }],
+          output: [{ streamName: 'out' }]
+        }
       });
       extract.progress = { total: 0, processed: 99 };
 
@@ -495,7 +533,7 @@ describe('Pipeline', () => {
         category: 'mining' as TaskCategory,
         miningId: 'test-mining-id',
         userId: 'test-user',
-        streams: {}
+        streams: { role: 'extract' as const, input: [], output: [] }
       });
 
       makePipeline([mockTask], factory);
@@ -708,12 +746,16 @@ describe('Pipeline', () => {
         id: 'extract-task',
         miningId: 'test',
         userId: 'test-user',
-        inputStream: {
-          streamName: 'messages_stream-test',
-          consumerGroup: 'test-consumer-group',
-          role: 'extract'
-        },
-        outputStream: { streamName: 'contacts_stream-test' }
+        streams: {
+          role: 'extract' as const,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
+        }
       });
 
       const pipeline = new Pipeline(
@@ -773,7 +815,7 @@ describe('Pipeline', () => {
         startFetch: jest
           .fn<() => Promise<{ data: { totalMessages: number } }>>()
           .mockRejectedValue(new Error('Task Failed to Start')),
-        stopFetch: jest.fn().mockResolvedValue()
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
       } as unknown as FetcherClient;
 
       const failingFetch = new FetchTask({
@@ -784,7 +826,7 @@ describe('Pipeline', () => {
         fetcherClient: failingFetcherClient
       });
 
-      const onCompleteMock = jest.fn().mockResolvedValue(undefined);
+      const onCompleteMock = jest.fn<() => Promise<void>>().mockResolvedValue();
 
       const pipeline = new Pipeline(
         {
@@ -844,12 +886,16 @@ describe('Pipeline', () => {
         id: 'extract-task',
         miningId: 'test',
         userId: 'test-user',
-        inputStream: {
-          streamName: 'messages_stream-test',
-          consumerGroup: 'test-consumer-group',
-          role: 'extract'
-        },
-        outputStream: { streamName: 'contacts_stream-test' }
+        streams: {
+          role: 'extract' as const,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
+        }
       });
 
       const pipeline = new Pipeline(
@@ -950,12 +996,16 @@ describe('Pipeline', () => {
         id: 'extract-task',
         miningId: 'test',
         userId: 'test-user',
-        inputStream: {
-          streamName: 'messages_stream-test',
-          consumerGroup: 'test-consumer-group',
-          role: 'extract'
-        },
-        outputStream: { streamName: 'contacts_stream-test' }
+        streams: {
+          role: 'extract' as const,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
+        }
       });
 
       const pipeline = new Pipeline(
