@@ -194,7 +194,10 @@
             >
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
-                  <span class="relative flex h-2 w-2" v-if="!isStrictlyPassive(source)">
+                  <span
+                    v-if="!isStrictlyPassive(source)"
+                    class="relative flex h-2 w-2"
+                  >
                     <span
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
                     ></span>
@@ -214,9 +217,8 @@
                 </div>
                 <div class="flex items-center gap-2 text-sm text-surface-600">
                   <span
-                    >{{ t('emails_scanned') }}:
-                    {{ $leadminer.scannedEmails }} </span
-                  >
+                    >{{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }}
+                  </span>
                   <span class="text-surface-400">|</span>
                   <span
                     >{{ t('emails_extracted') }}:
