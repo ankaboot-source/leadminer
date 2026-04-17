@@ -27,7 +27,7 @@
       disabled: isSendByEmailDisabled,
       onClick: () => openSendContactsDialog(),
     }"
-    pt:label:class="hidden md:block"
+    pt:pc-button:label:class="hidden md:block"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-left">
@@ -38,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue';
 import type { Contact } from '@/types/contact';
+import { defineAsyncComponent } from 'vue';
 
 const CampaignComposerDialog = defineAsyncComponent(
   () => import('@/components/campaigns/CampaignComposerDialog.vue'),
