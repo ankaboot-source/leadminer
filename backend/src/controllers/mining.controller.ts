@@ -317,7 +317,7 @@ export default function initializeMiningController(
         miningSource: { email },
         boxes: folders,
         since,
-        passive_mining
+        passive_mining: passiveMining
       }: {
         miningSource: {
           email: string;
@@ -376,7 +376,7 @@ export default function initializeMiningController(
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
             since,
-            passiveMining: passive_mining ?? false,
+            passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient
           },
           deps.pipelineDeps
@@ -744,7 +744,9 @@ export default function initializeMiningController(
           let task = null;
           try {
             task = miningEngine.getPipeline(miningId).getActiveTask();
-          } catch {}
+          } catch {
+            // intentionally ignore: task may not exist
+          }
 
           if (!task) continue;
 
