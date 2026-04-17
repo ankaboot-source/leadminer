@@ -1257,23 +1257,6 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     );
   }
 
-  logger.info("[PREVIEW DEBUG] Transport resolution", {
-    senderEmail,
-    transportKeys: Object.keys(transportBySender),
-    transportFound: senderEmail in transportBySender,
-    transportValue:
-      transportBySender[senderEmail] === null
-        ? "null"
-        : transportBySender[senderEmail]
-          ? "Transport object"
-          : "undefined",
-    optionsAvailable: options.map((o) => ({
-      email: o.email,
-      available: o.available,
-    })),
-    fallbackSenderEmail,
-  });
-
   if (!ensureAllowedSender(senderEmail, options)) {
     return c.json(
       {
@@ -1343,19 +1326,11 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   try {
     const from = `"${escapeHtml(senderName)}" <${senderEmail}>`;
     const finalHtml = plainTextOnly ? "" : bodyHtml + footerHtml;
-    const resolvedTransport = transportBySender[senderEmail] ?? undefined;
-    logger.info("[PREVIEW DEBUG] Sending email", {
-      from,
-      to: ownerEmail,
-      hasTransport: !!resolvedTransport,
-      transportHost: resolvedTransport?.host ?? "DEFAULT_SMTP",
-      transportAuthUser: resolvedTransport?.auth?.user ?? "DEFAULT_SMTP_USER",
-    });
     await sendEmail(ownerEmail, `[Preview] ${renderedSubject}`, finalHtml, {
       from,
       replyTo: ownerEmail,
       text,
-      transport: resolvedTransport,
+      transport: transportBySender[senderEmail] ?? undefined,
     });
     return c.json({
       msg: "Preview sent successfully",
