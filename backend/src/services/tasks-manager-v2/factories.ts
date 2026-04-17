@@ -50,7 +50,6 @@ export function createImapMining(
         folders: params.boxes,
         since: params.since
       },
-      passiveMining: params.passiveMining,
       passive_mining: params.passiveMining
     })
   );
