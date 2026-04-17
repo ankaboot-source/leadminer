@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="isMiningFinished"
-    class="flex flex-col items-center justify-center grow text-center"
+    class="flex flex-col items-center justify-center grow text-center py-2"
   >
-    <div class="text-2xl mb-6">{{ t('mining_complete') }} 🎉</div>
+    <div class="text-2xl mb-6 font-medium text-center">{{ t('mining_complete') }} 🎉</div>
   </div>
   <template v-else>
     <ProgressCard
@@ -76,8 +76,7 @@ const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
   () =>
     $leadminerStore.cleaningEnabled &&
-    !$leadminerStore.miningInterrupted &&
-    $leadminerStore.miningCompleted,
+    !$leadminerStore.miningInterrupted
 );
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
@@ -94,16 +93,14 @@ const isPostCleaningPhase = computed(
   () =>
     ($leadminerStore.miningType === MiningTypes.EMAIL ||
       $leadminerStore.miningType === MiningTypes.PST) &&
-    $leadminerStore.cleaningFinished &&
+    ($leadminerStore.cleaningFinished || !$leadminerStore.cleaningEnabled) &&
     !$leadminerStore.miningCompleted &&
     $leadminerStore.extractSignatures,
 );
 
 const isMiningFinished = computed(
   () =>
-    $leadminerStore.miningCompleted ||
-    (!$leadminerStore.cleaningEnabled && $leadminerStore.extractionFinished),
-);
+    $leadminerStore.miningCompleted);
 
 function cleaningDoneNotification() {
   $toast.add({
