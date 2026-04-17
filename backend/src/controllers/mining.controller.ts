@@ -691,24 +691,52 @@ export default function initializeMiningController(
           throw new Error('Unable to get active mining task');
         }
 
-        const extractTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Extract
-        );
-        const fetchTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Fetch
-        );
-        const cleanTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Clean
-        );
-        const signatureTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
+        const taskWithMiningId = (userActiveTasks as DBTask[]).find(
+          (t) => t.details?.miningId
         );
 
-        const miningId = extractTask?.details?.miningId;
+        const miningId = taskWithMiningId?.details?.miningId;
 
         if (!miningId) {
           throw new Error('Mining id not found');
         }
+
+        const currentSessionTasks = (userActiveTasks as DBTask[]).filter(
+          (t) => t.details?.miningId === miningId
+        );
+
+        const allTasksStopped = currentSessionTasks.every(
+          (t) => t.stopped_at !== null
+        );
+
+        if (allTasksStopped) {
+          try {
+            const pipeline = miningEngine.getPipeline(miningId);
+            if (pipeline) {
+              logger.info(
+                `Cleaning up stale in-memory task for miningId=${miningId}`
+              );
+              await miningEngine.terminate(miningId);
+            }
+          } catch {
+            logger.debug(`Pipeline already removed for miningId=${miningId}`);
+          }
+
+          return res.status(204).send();
+        }
+
+        const extractTask = currentSessionTasks.find(
+          (t) => t.type === TaskType.Extract
+        );
+        const fetchTask = currentSessionTasks.find(
+          (t) => t.type === TaskType.Fetch
+        );
+        const cleanTask = currentSessionTasks.find(
+          (t) => t.type === TaskType.Clean
+        );
+        const signatureTask = currentSessionTasks.find(
+          (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
+        );
 
         let task = null;
 
