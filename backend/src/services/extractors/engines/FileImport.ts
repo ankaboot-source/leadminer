@@ -75,8 +75,6 @@ export class CsvXlsxContactEngine {
       telephone
     } = contact;
 
-    console.log('Extracting person from contact:', contact);
-
     assert(Boolean(email), '<email> is required');
 
     return {
