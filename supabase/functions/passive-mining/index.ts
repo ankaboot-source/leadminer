@@ -101,6 +101,9 @@ async function getBoxes(miningSource: MiningSource) {
   );
   console.log(`Received response for boxes of ${miningSource.email}:`, res);
 
+  if (!res.ok) {
+    throw new Error(res.statusText);
+  }
   const { folders } = (await res.json()).data || {};
   return [...folders];
 }
@@ -126,8 +129,10 @@ async function startMiningEmail(miningSource: MiningSource) {
       body: JSON.stringify({
         miningSource: { email: miningSource.email },
         boxes: folders,
+        cleaningEnabled: true,
         extractSignatures: false,
         since,
+        passive_mining: true,
       }),
     },
   );

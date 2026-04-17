@@ -20,6 +20,7 @@ export interface TaskConfig {
   userId: string;
   streams?: TaskStreamConfig;
   config?: Record<string, unknown>;
+  passive_mining?: boolean;
 }
 
 export class Task extends EventEmitter {
@@ -62,6 +63,9 @@ export class Task extends EventEmitter {
     this.userId = params.userId;
     this.streams = params.streams;
     this.config = params.config ?? {};
+    if (params.passive_mining !== undefined) {
+      this.config.passive_mining = params.passive_mining;
+    }
     this.finishedEventName =
       (params.config?.finishedEventName as string) || `${this.id}-finished`;
   }

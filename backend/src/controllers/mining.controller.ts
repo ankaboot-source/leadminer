@@ -108,6 +108,14 @@ function parseOAuthState(state: string | undefined) {
   };
 }
 
+interface MiningTaskGroup {
+  task: unknown;
+  fetch: { status: string; started_at: string | undefined } | null;
+  extract: { status: string; started_at: string | undefined } | null;
+  clean: { status: string; started_at: string | undefined } | null;
+  signature: { status: string; started_at: string | undefined } | null;
+}
+
 async function publishPreviouslyUnverifiedEmailsToCleaning(
   contacts: Contacts,
   userId: string,
@@ -316,7 +324,8 @@ export default function initializeMiningController(
         cleaningEnabled,
         miningSource: { email },
         boxes: folders,
-        since
+        since,
+        passive_mining: passiveMining
       }: {
         miningSource: {
           email: string;
@@ -325,6 +334,7 @@ export default function initializeMiningController(
         extractSignatures: boolean;
         cleaningEnabled: boolean;
         since?: string;
+        passive_mining?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -374,6 +384,7 @@ export default function initializeMiningController(
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
             since,
+            passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient
           },
           deps.pipelineDeps
@@ -685,58 +696,98 @@ export default function initializeMiningController(
           .select('*')
           .eq('user_id', user.id)
           .order('started_at', { ascending: false })
-          .limit(4);
+          .limit(20);
 
         if (error || !userActiveTasks || userActiveTasks.length === 0) {
-          throw new Error('Unable to get active mining task');
+          return res.status(204).send({ active: [], passive: [] });
         }
 
-        const extractTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Extract
-        );
-        const fetchTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Fetch
-        );
-        const cleanTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Clean
-        );
-        const signatureTask = (userActiveTasks as DBTask[]).find(
-          (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
+        const tasksByMiningId = (userActiveTasks as DBTask[]).reduce(
+          (acc, task) => {
+            const mId = task.details?.miningId;
+            if (mId) {
+              if (!acc[mId]) acc[mId] = [];
+              acc[mId].push(task);
+            }
+            return acc;
+          },
+          {} as Record<string, DBTask[]>
         );
 
-        const miningId = extractTask?.details?.miningId;
+        const active: MiningTaskGroup[] = [];
+        const passive: MiningTaskGroup[] = [];
 
-        if (!miningId) {
-          throw new Error('Mining id not found');
-        }
-
-        let task = null;
-
-        try {
-          task = miningEngine.getPipeline(miningId).getActiveTask();
-        } catch {
-          logger.error(
-            `Task not found in miningEngine for miningId=${miningId}`
+        for (const [miningId, sessionTasks] of Object.entries(
+          tasksByMiningId
+        )) {
+          const allTasksStopped = sessionTasks.every(
+            (t) => t.stopped_at !== null
           );
+
+          if (allTasksStopped) {
+            try {
+              const pipeline = miningEngine.getPipeline(miningId);
+              if (pipeline) {
+                logger.info(
+                  `Cleaning up stale in-memory task for miningId=${miningId}`
+                );
+                // eslint-disable-next-line no-await-in-loop
+                await miningEngine.terminate(miningId);
+              }
+            } catch {
+              // Error thrown by getPipeline means task doesn't exists in memory
+            }
+            continue;
+          }
+
+          const extractTask = sessionTasks.find(
+            (t) => t.type === TaskType.Extract
+          );
+          const fetchTask = sessionTasks.find((t) => t.type === TaskType.Fetch);
+          const cleanTask = sessionTasks.find((t) => t.type === TaskType.Clean);
+          const signatureTask = sessionTasks.find(
+            (t) => t.type === TaskType.Enrich || t.type === TaskType.Signature
+          );
+
+          let task = null;
+          try {
+            task = miningEngine.getPipeline(miningId).getActiveTask();
+          } catch {
+            // intentionally ignore: task may not exist
+          }
+
+          if (!task) continue;
+
+          if (user.id !== task.userId) {
+            continue;
+          }
+
+          const mapState = (t: DBTask | null | undefined) =>
+            t ? { status: t.status, started_at: t.started_at } : null;
+
+          const group: MiningTaskGroup = {
+            task,
+            fetch: mapState(fetchTask),
+            extract: mapState(extractTask),
+            clean: mapState(cleanTask),
+            signature: mapState(signatureTask ?? null)
+          };
+
+          const isPassive = sessionTasks.some(
+            (t) => t.details?.passive_mining === true
+          );
+          if (isPassive) {
+            passive.push(group);
+          } else {
+            active.push(group);
+          }
         }
 
-        if (!task) {
-          throw new Error(`No active task found for miningId=${miningId}`);
+        if (active.length === 0 && passive.length === 0) {
+          return res.status(204).send({ active: [], passive: [] });
         }
 
-        if (user.id !== task.userId) {
-          return res
-            .status(401)
-            .json({ error: { message: 'User not authorized.' } });
-        }
-
-        return res.status(200).send({
-          task,
-          fetch: fetchTask,
-          extract: extractTask,
-          clean: cleanTask,
-          signature: signatureTask ?? null
-        });
+        return res.status(200).send({ active, passive });
       } catch (err) {
         res.status(204);
         return next(err);

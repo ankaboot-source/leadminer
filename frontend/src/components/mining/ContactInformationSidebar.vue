@@ -318,9 +318,7 @@ watch(contact, (newContact) => {
   };
 });
 
-const isExportDisabled = computed(
-  () => $leadminerStore.activeMiningTask || $leadminerStore.loadingStatusDns,
-);
+const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
 
 const skipDialog = computed(
   () =>

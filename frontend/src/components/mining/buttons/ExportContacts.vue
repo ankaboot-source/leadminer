@@ -90,10 +90,8 @@
       <SplitButton
         id="export-dropdown"
         v-tooltip.top="
-          $leadminerStore.activeMiningTask
-            ? t('mining.mining_in_progress')
-            : disableExport &&
-              t('select_at_least_one_contact', { action: t('export_csv') })
+          disableExport &&
+          t('select_at_least_one_contact', { action: t('export_csv') })
         "
         :label="t('export_csv')"
         icon="pi pi-file-export"
@@ -118,10 +116,8 @@
       <Button
         id="export-dropdown"
         v-tooltip.top="
-          $leadminerStore.activeMiningTask
-            ? t('mining.mining_in_progress')
-            : disableExport &&
-              t('select_at_least_one_contact', { action: t('export_csv') })
+          disableExport &&
+          t('select_at_least_one_contact', { action: t('export_csv') })
         "
         icon="pi pi-file-export"
         :disabled="disableExport"

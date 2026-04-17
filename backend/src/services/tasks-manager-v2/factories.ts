@@ -50,7 +50,7 @@ export function createImapMining(
         folders: params.boxes,
         since: params.since
       },
-      passiveMining: params.passiveMining
+      passive_mining: params.passiveMining
     })
   );
 
@@ -71,7 +71,8 @@ export function createImapMining(
             streamName: streams.emailsStream
           }
         ]
-      }
+      },
+      passive_mining: params.passiveMining
     })
   );
 
@@ -89,7 +90,8 @@ export function createImapMining(
             }
           ],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -103,7 +105,8 @@ export function createImapMining(
           role: TaskId.Signature,
           input: [{ streamName: streams.signatureStream }],
           output: []
-        }
+        },
+        passive_mining: params.passiveMining
       })
     );
   }
@@ -113,8 +116,7 @@ export function createImapMining(
       miningId,
       userId: params.userId,
       source: { type: 'email', source: params.email },
-      tasks,
-      passiveMining: params.passiveMining
+      tasks
     },
     deps
   );
@@ -259,6 +261,7 @@ export function createPstMining(
       extractSignatures: params.fetchEmailBody,
       signatureStream: streams.signatureStream,
       fetchParams: {
+        folders: ['/'],
         source: params.source
       }
     })

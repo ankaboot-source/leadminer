@@ -24,7 +24,7 @@ export interface FetchTaskConfig {
   extractSignatures?: boolean;
   signatureStream?: string;
   fetchParams?: Record<string, unknown>;
-  passiveMining?: boolean;
+  passive_mining?: boolean;
 }
 
 export class FetchTask extends Task {
@@ -42,9 +42,9 @@ export class FetchTask extends Task {
         extractSignatures: config.extractSignatures,
         signatureStream: config.signatureStream,
         fetchParams: config.fetchParams,
-        passiveMining: config.passiveMining,
         outputStream: config.outputStream
-      }
+      },
+      passive_mining: config.passive_mining
     });
     this.fetcherClient = config.fetcherClient;
     this.upstreamDone = true;

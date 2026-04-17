@@ -21,7 +21,6 @@ export interface PipelineConfig {
   source: MiningSource;
   tasks: Task[];
   onComplete?: () => Promise<void>;
-  passiveMining?: boolean;
 }
 
 export interface PipelineDeps {
@@ -38,8 +37,6 @@ export class Pipeline {
   readonly source: MiningSource;
 
   readonly tasks: Map<string, Task>;
-
-  readonly passiveMining: boolean;
 
   private progressHandlerSSE: RealtimeSSE;
 
@@ -59,7 +56,6 @@ export class Pipeline {
     this.userId = config.userId;
     this.source = config.source;
     this.onComplete = config.onComplete;
-    this.passiveMining = config.passiveMining ?? false;
     this.tasks = new Map(config.tasks.map((t) => [t.id, t]));
     this.progressHandlerSSE = deps.sseBroadcasterFactory.create();
     this.startedAt = performance.now();
