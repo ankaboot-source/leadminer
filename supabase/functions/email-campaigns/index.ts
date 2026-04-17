@@ -614,20 +614,23 @@ async function getUserMiningSources(
 async function guessCustomSmtpHost(email: string) {
   const detected = await new IMAPSettingsDetector.default().detect(email);
   const host = (detected?.host || "") as string;
+
+  let smtpHost: string;
   if (host.startsWith("imap.")) {
-    return {
-      host: host.replace(/^imap\./, "smtp."),
-      port: 587,
-      secure: false,
-    };
+    smtpHost = host.replace(/^imap\./, "mail.");
+  } else if (host.startsWith("mail.")) {
+    smtpHost = host;
+  } else {
+    const domain = email.split("@")[1];
+    smtpHost = `smtp.${domain}`;
   }
 
-  const domain = email.split("@")[1];
-  return {
-    host: `smtp.${domain}`,
-    port: 587,
-    secure: false,
-  };
+  // Map IMAP port to SMTP port: 993 → 465 (SSL), otherwise → 587 (TLS/STARTTLS)
+  const imapPort = detected?.port ?? 143;
+  const smtpPort = imapPort === 993 ? 465 : 587;
+  const smtpSecure = imapPort === 993;
+
+  return { host: smtpHost, port: smtpPort, secure: smtpSecure };
 }
 
 async function buildUserTransport(
