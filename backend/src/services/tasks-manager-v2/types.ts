@@ -1,0 +1,65 @@
+export { TaskType, TaskCategory, TaskStatus } from '../../db/types';
+
+export const TaskId = {
+  Fetch: 'fetch',
+  Extract: 'extract',
+  Clean: 'clean',
+  Signature: 'signature'
+} as const;
+
+export type TaskIdValue = (typeof TaskId)[keyof typeof TaskId];
+
+export type StreamRole = Exclude<TaskIdValue, 'fetch'>;
+
+export interface TaskProgress {
+  total: number;
+  processed: number;
+}
+
+export interface StreamDetails {
+  streamName: string;
+  consumerGroup?: string;
+}
+
+export interface TaskStreamConfig {
+  role: StreamRole;
+  input: StreamDetails[];
+  output: StreamDetails[];
+}
+
+export interface ProgressMessage {
+  miningId: string;
+  progressType: string;
+  count: number;
+  isCompleted?: boolean;
+  isCanceled?: boolean;
+}
+
+export interface MiningSource {
+  type: 'email' | 'file' | 'pst' | 'google';
+  source: string;
+}
+
+export interface StreamCommand {
+  miningId: string;
+  role: StreamRole;
+  command: 'REGISTER' | 'DELETE';
+  streams: {
+    input: StreamDetails[];
+    output: StreamDetails[];
+  };
+}
+
+export interface ProgressLink {
+  upstreamIds: string[];
+  totalFrom?: string;
+  skipTotal?: boolean;
+}
+
+export interface RedactedTask {
+  userId: string;
+  miningId: string;
+  miningSource: MiningSource;
+  progress: Record<string, number>;
+  processes: Record<string, string | undefined>;
+}

@@ -1,8 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
-import { TaskCategory, TaskStatus, TaskType } from '../types';
+import { TaskCategory, TaskStatus, TaskType, EnrichTask } from '../types';
 
-import { TaskEnrich } from '../../services/tasks-manager/types';
 import Engagements from './engagements';
 import SupabaseTasks from './tasks';
 
@@ -22,9 +21,9 @@ interface Contact {
 }
 
 interface TaskRedacted {
-  id: TaskEnrich['id'];
-  userId: TaskEnrich['userId'];
-  status: TaskEnrich['status'];
+  id: EnrichTask['id'];
+  userId: EnrichTask['userId'];
+  status: EnrichTask['status'];
   details: {
     total_to_enrich: number;
     total_enriched: number;
@@ -33,7 +32,7 @@ interface TaskRedacted {
 }
 
 export default class Enrichments {
-  private task: TaskEnrich | null = null;
+  private task: EnrichTask | null = null;
 
   constructor(
     private readonly tasks: SupabaseTasks,
@@ -42,7 +41,7 @@ export default class Enrichments {
     private readonly logger: Logger
   ) {}
 
-  private ensureTask(): TaskEnrich {
+  private ensureTask(): EnrichTask {
     if (!this.task) {
       throw new Error(
         'No task is currently set. Ensure a task is initialized before using this method.'
@@ -52,7 +51,7 @@ export default class Enrichments {
   }
 
   private mergeTaskDetailsResult(
-    result: TaskEnrich['details']['result']
+    result: EnrichTask['details']['result']
   ): void {
     const task = this.ensureTask();
     for (const newResult of result) {
@@ -99,7 +98,7 @@ export default class Enrichments {
   }
 
   public async createFromId(id: string) {
-    this.task = (await this.tasks.getById(id)) as TaskEnrich;
+    this.task = (await this.tasks.getById(id)) as EnrichTask;
     return this.task;
   }
 
@@ -119,7 +118,7 @@ export default class Enrichments {
         total_to_enrich: totalToEnrich,
         update_empty_fields_only: updateEmptyFieldsOnly
       }
-    })) as TaskEnrich;
+    })) as EnrichTask;
     return this.task;
   }
 
@@ -149,7 +148,7 @@ export default class Enrichments {
     if (error) throw error;
   }
 
-  public async enrich(result: TaskEnrich['details']['result']) {
+  public async enrich(result: EnrichTask['details']['result']) {
     try {
       const task = this.ensureTask();
 

@@ -4,19 +4,13 @@ import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
 import { EmailData, EmailSignatureHandler } from './handler';
 import { Contact } from '../../db/types';
-
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  signatureStream: string;
-  signatureConsumerGroup: string;
-}
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 export default class EmailSignatureConsumer {
   private isInterrupted: boolean;
 
   constructor(
-    private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
+    private readonly taskManagementSubscriber: RedisSubscriber<StreamCommand>,
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailData>,
     private readonly emailSignatureStream: string,
     private readonly batchSize: number,
@@ -29,18 +23,34 @@ export default class EmailSignatureConsumer {
   ) {
     this.isInterrupted = true;
 
-    this.taskManagementSubscriber.subscribe(
-      ({ miningId, command, signatureStream }) => {
-        this.isInterrupted = false;
-        this.logger.debug('Received PubSub signal.', {
-          metadata: {
-            miningId,
-            command,
-            signatureStream
-          }
-        });
+    this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
+      const { miningId, role, command, streams } = msg;
+
+      if (role !== 'signature') return;
+
+      const signatureStream = streams.input[0]?.streamName;
+
+      if (command === 'REGISTER' && signatureStream) {
+        this.logger.info(
+          `[EmailSignatureConsumer] Registered stream for miningId ${miningId}`,
+          { signatureStream }
+        );
+      } else if (command === 'DELETE' && signatureStream) {
+        this.logger.info(
+          `[EmailSignatureConsumer] Deleted stream for miningId ${miningId}`,
+          { signatureStream }
+        );
       }
-    );
+
+      this.logger.debug('[EmailSignatureConsumer] Received PubSub signal.', {
+        metadata: {
+          miningId,
+          role,
+          command,
+          signatureStream
+        }
+      });
+    });
   }
 
   /**

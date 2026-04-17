@@ -20,21 +20,19 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
-import TasksManager from './services/tasks-manager/TasksManager';
-import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
-import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
+import { MiningEngine } from './services/tasks-manager-v2/MiningEngine';
+import { MiningControllerDeps } from './controllers/mining.controller';
 import Billing from './utils/billing-plugin';
 import { miningSourceService } from './db/supabase/MiningSourceService';
 
 export default function initializeApp(
   authResolver: AuthResolver,
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST,
+  miningEngine: MiningEngine,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
-  logger: Logger
+  logger: Logger,
+  miningControllerDeps: MiningControllerDeps
 ) {
   const app = express();
 
@@ -63,24 +61,15 @@ export default function initializeApp(
 
   app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
-  app.use(
-    '/api/imap',
-    initializeStreamRouter(
-      tasksManager,
-      tasksManagerFile,
-      tasksManagerPST,
-      authResolver
-    )
-  );
+  app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
   app.use(
     '/api/imap',
     initializeMiningRoutes(
-      tasksManager,
-      tasksManagerFile,
-      tasksManagerPST,
+      miningEngine,
       miningSources,
       authResolver,
-      contacts
+      contacts,
+      miningControllerDeps
     )
   );
   app.use(
