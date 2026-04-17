@@ -64,6 +64,7 @@ export interface Person {
   alternateName?: string[];
   alternateEmail?: string[];
   worksFor?: string;
+  telephone?: string[];
   source: string;
 }
 

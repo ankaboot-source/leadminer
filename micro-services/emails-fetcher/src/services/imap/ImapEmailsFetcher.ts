@@ -141,7 +141,7 @@ export default class ImapEmailsFetcher {
   public isCanceled: boolean;
 
   public isCompleted: boolean;
-  
+
   private requestedCancel: boolean;
 
   private totalFetched: number;
