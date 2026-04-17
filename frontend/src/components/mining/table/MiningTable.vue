@@ -1373,7 +1373,7 @@ function scheduleIdleContactsPrefetch() {
   const runPrefetch = () => {
     idlePrefetchTimeoutId = null;
     idlePrefetchCallbackId = null;
-    void loadContactsData();
+    loadContactsData();
   };
 
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -1389,7 +1389,7 @@ function scheduleIdleContactsPrefetch() {
 onBeforeMount(() => {
   isLoading.value = true;
 });
-onNuxtReady(async () => {
+onNuxtReady(() => {
   $screenStore.init();
   $contactsStore.visibleColumns = [
     'contacts',
@@ -1449,7 +1449,7 @@ watch(
 
     clearIdlePrefetch();
     isLoading.value = true;
-    void loadContactsData();
+    loadContactsData();
   },
 );
 

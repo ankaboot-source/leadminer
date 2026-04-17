@@ -56,3 +56,11 @@ export interface TaskState {
   status: string;
   started_at: string;
 }
+
+export interface MiningTaskGroup {
+  task: MiningTask;
+  fetch: TaskState | null;
+  extract: TaskState | null;
+  clean: TaskState | null;
+  signature: TaskState | null;
+}

@@ -12,6 +12,7 @@ import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
   type MiningTask,
+  type MiningTaskGroup,
   type MiningType,
   type TaskState,
   MiningTypes,
@@ -33,7 +34,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const miningTask = ref<MiningTask | undefined>();
 
-  const passiveMinings = ref<any[]>([]);
+  const passiveMinings = ref<MiningTaskGroup[]>([]);
 
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
@@ -527,85 +528,93 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  const isTaskFinished = (status: string | null | undefined): boolean => {
+    return status === null || status === undefined
+      ? false
+      : ['done', 'canceled'].includes(status);
+  };
+
+  const updateMiningProgress = (
+    task: MiningTask,
+    fetch: TaskState | null,
+    extract: TaskState | null,
+    clean: TaskState | null,
+  ) => {
+    const { progress } = task;
+    totalMessages.value = progress.totalMessages;
+    scannedEmails.value = progress.fetched ?? 0;
+    extractedEmails.value = progress.extracted ?? 0;
+    createdContacts.value = progress.createdContacts ?? 0;
+    verifiedContacts.value = progress.verifiedContacts ?? 0;
+
+    fetchingFinished.value =
+      miningType.value === MiningTypes.EMAIL
+        ? fetch !== null && ['done', 'canceled'].includes(fetch.status)
+        : true;
+
+    extractionFinished.value = isTaskFinished(extract?.status ?? null);
+
+    cleaningFinished.value = isTaskFinished(clean?.status ?? null);
+  };
+
   async function getCurrentRunningMining() {
-    // 1) GET running tasks for the current user
+    const userId = getCurrentUserId();
+
+    if (!userId) return 1;
+
     try {
-      const userId = getCurrentUserId();
-
-      if (!userId) return 1;
-
       const response = await $api<{
-        active: Array<{
-          task: MiningTask;
-          fetch: TaskState;
-          extract: TaskState;
-          clean: TaskState;
-        }>;
-        passive: Array<{
-          task: MiningTask;
-          fetch: TaskState;
-          extract: TaskState;
-          clean: TaskState;
-        }>;
+        active: Array<MiningTaskGroup | undefined>;
+        passive: Array<MiningTaskGroup | undefined>;
       }>(`/imap/mine/${userId}/`);
 
       if (!response) return 1;
 
-      // Save passive minings
-      passiveMinings.value = response.passive || [];
+      passiveMinings.value = (response.passive || []).filter(
+        (g): g is MiningTaskGroup => g !== undefined,
+      );
 
-      // If no active tasks, return
       if (!response.active || response.active.length === 0) {
         return 1;
       }
 
-      // Get the most recent active task
       const firstActive = response.active[0];
-      const { task: redactedTask, fetch, clean, extract } = firstActive;
+      if (!firstActive) return 1;
 
-      if (!redactedTask || !redactedTask.miningSource.type) return 1;
+      const task = firstActive.task;
+      if (!task || !task.miningSource.type) return 1;
 
       const {
         miningSource: { type: mType },
-      } = redactedTask;
+      } = task;
 
-      if ((mType === MiningTypes.FILE && !extract) || !clean) return 1;
-      if ((mType === MiningTypes.EMAIL && !fetch) || !extract || !clean) {
-        return 1;
-      }
+      const fetch = firstActive.fetch;
+      const extract = firstActive.extract;
+      const clean = firstActive.clean;
 
-      miningTask.value = redactedTask;
+      const hasRequiredPhases =
+        mType === MiningTypes.FILE
+          ? !!extract && !!clean
+          : !!fetch && !!extract && !!clean;
+
+      if (!hasRequiredPhases) return 1;
+
+      miningTask.value = task;
       miningType.value = mType;
       activeMiningSource.value = miningSources.value.find(
-        ({ email }) => email === redactedTask.miningSource.source,
+        ({ email }) => email === task.miningSource.source,
       );
 
       miningStartedAt.value =
-        miningType.value === MiningTypes.EMAIL
+        miningType.value === MiningTypes.EMAIL && fetch
           ? performance.now() -
             (Date.now() - new Date(fetch.started_at).getTime())
           : performance.now() -
-            (Date.now() - new Date(extract.started_at).getTime());
+            (Date.now() - new Date(extract!.started_at).getTime());
 
-      const { progress } = redactedTask;
-      totalMessages.value = progress.totalMessages;
-      scannedEmails.value = progress.fetched ?? 0;
-      extractedEmails.value = progress.extracted ?? 0;
-      createdContacts.value = progress.createdContacts ?? 0;
-      verifiedContacts.value = progress.verifiedContacts ?? 0;
+      updateMiningProgress(task, fetch, extract, clean);
 
-      fetchingFinished.value =
-        miningType.value === MiningTypes.EMAIL
-          ? fetch && ['done', 'canceled'].includes(fetch.status)
-          : true;
-
-      extractionFinished.value =
-        extract && ['done', 'canceled'].includes(extract.status);
-
-      cleaningFinished.value =
-        clean && ['done', 'canceled'].includes(clean.status);
-
-      startProgressListener(miningType.value, miningTask.value.miningId);
+      startProgressListener(miningType.value, task.miningId);
 
       return extractionFinished.value ? 3 : 2;
     } catch (err) {

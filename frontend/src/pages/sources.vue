@@ -274,7 +274,7 @@
 import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
 const $leadminer = useLeadminerStore();
@@ -346,7 +346,8 @@ function isActiveMiningSource(source: MiningSource): boolean {
     $leadminer.miningTask;
 
   const isPassiveBackground = $leadminer.passiveMinings?.some(
-    (group: any) => group.task?.miningSource?.source === source.email,
+    (group: MiningTaskGroup) =>
+      group.task?.miningSource?.source === source.email,
   );
 
   return Boolean(isActiveForeground || isPassiveBackground);
@@ -354,7 +355,8 @@ function isActiveMiningSource(source: MiningSource): boolean {
 function isStrictlyPassive(source: MiningSource): boolean {
   return Boolean(
     $leadminer.passiveMinings?.some(
-      (group: any) => group.task?.miningSource?.source === source.email,
+      (group: MiningTaskGroup) =>
+        group.task?.miningSource?.source === source.email,
     ) &&
     !(
       $leadminer.activeMiningTask &&

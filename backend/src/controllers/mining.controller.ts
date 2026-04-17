@@ -108,6 +108,14 @@ function parseOAuthState(state: string | undefined) {
   };
 }
 
+interface MiningTaskGroup {
+  task: unknown;
+  fetch: { status: string; started_at: string | undefined } | null;
+  extract: { status: string; started_at: string | undefined } | null;
+  clean: { status: string; started_at: string | undefined } | null;
+  signature: { status: string; started_at: string | undefined } | null;
+}
+
 async function publishPreviouslyUnverifiedEmailsToCleaning(
   contacts: Contacts,
   userId: string,
@@ -706,8 +714,8 @@ export default function initializeMiningController(
           {} as Record<string, DBTask[]>
         );
 
-        const active: any[] = [];
-        const passive: any[] = [];
+        const active: MiningTaskGroup[] = [];
+        const passive: MiningTaskGroup[] = [];
 
         for (const [miningId, sessionTasks] of Object.entries(
           tasksByMiningId
@@ -757,7 +765,7 @@ export default function initializeMiningController(
           const mapState = (t: DBTask | null | undefined) =>
             t ? { status: t.status, started_at: t.started_at } : null;
 
-          const group = {
+          const group: MiningTaskGroup = {
             task,
             fetch: mapState(fetchTask),
             extract: mapState(extractTask),
