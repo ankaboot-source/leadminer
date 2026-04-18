@@ -352,10 +352,17 @@ const contactEditTags = ref<string[]>([]);
 const showRemoveConfirmationDialog = ref(false);
 const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
+  email: '',
+  name: null,
+  given_name: null,
+  family_name: null,
   alternate_name: '',
   telephone: '',
   same_as: '',
   location: '',
+  works_for: null,
+  job_title: null,
+  image: null,
   tags: null,
 });
 
@@ -629,7 +636,7 @@ async function removeContact() {
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');
-  } catch (error) {
+  } catch {
     showNotification('error', t('remove_contact_error'), '');
   } finally {
     isRemovingContact.value = false;
