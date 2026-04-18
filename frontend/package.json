@@ -35,7 +35,9 @@
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.21",
     "eslint-plugin-import": "^2.32.0",
+    "happy-dom": "^20.8.9",
     "js-cookie": "^3.0.5",
+    "jsdom": "^25.0.1",
     "nitropack": "^2.12.6",
     "nuxt": "^4.3.1",
     "nuxt-mdi": "^2.1.1",
@@ -66,6 +68,7 @@
     "quill": "^2.0.3",
     "quill-image-resize-module": "https://codeload.github.com/bitignite/quill-image-resize-module/tar.gz/dev",
     "read-excel-file": "^6.0.1",
-    "tus-js-client": "^4.3.1"
+    "tus-js-client": "^4.3.1",
+    "zod": "^3.25.76"
   }
 }

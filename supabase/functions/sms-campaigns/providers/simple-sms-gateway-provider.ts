@@ -29,6 +29,7 @@ export class SimpleSmsGatewayProvider implements SmsProvider {
           phone: params.to,
           message: params.body,
         }),
+        signal: AbortSignal.timeout(15000),
       });
 
       const data = await response.json();
@@ -45,9 +46,18 @@ export class SimpleSmsGatewayProvider implements SmsProvider {
         messageId: data.id || data.messageId,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
+        return {
+          success: false,
+          error:
+            "Gateway timeout - The SMS gateway is not responding. Keep the gateway app active on your phone during the sending process.",
+        };
+      }
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
       };
     }
   }

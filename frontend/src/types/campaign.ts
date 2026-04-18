@@ -19,7 +19,7 @@ export interface CampaignOverview {
   sender_name: string;
   sender_email?: string;
   sender_phone?: string;
-  provider?: 'twilio' | 'smsgate' | 'simple-sms-gateway';
+  provider?: 'twilio' | 'smsgate' | 'simple-sms-gateway' | 'fleet';
   subject?: string;
   status: CampaignStatus;
   total_recipients?: number;
@@ -50,5 +50,8 @@ export interface CampaignOverview {
   sender_daily_limit?: number;
   total_batches?: number;
   use_short_links?: boolean;
+  fleet_mode_enabled?: boolean;
+  selected_gateway_ids?: string[];
+  gateway_names?: string[];
   message_template?: string;
 }

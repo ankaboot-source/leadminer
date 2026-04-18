@@ -116,91 +116,6 @@
       <component :is="AcceptNewsLetter" type="checkbox" />
     </Panel>
 
-    <Panel :header="t('sms_gateway_settings')">
-      <div class="grid gap-3">
-        <p class="text-sm m-0 text-surface-600">
-          {{ t('sms_gateway_description') }}
-        </p>
-        <div class="grid gap-2">
-          <label class="block">{{ t('smsgate_base_url') }}</label>
-          <InputText
-            v-model="smsgateBaseUrlInput"
-            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
-            class="w-full md:w-30rem"
-          />
-        </div>
-        <div class="grid gap-2">
-          <label class="block">{{ t('smsgate_username') }}</label>
-          <InputText v-model="smsgateUsernameInput" class="w-full md:w-30rem" />
-        </div>
-        <div class="grid gap-2">
-          <label class="block">{{ t('smsgate_password') }}</label>
-          <Password
-            v-model="smsgatePasswordInput"
-            :feedback="false"
-            toggle-mask
-            class="w-full md:w-30rem"
-            :input-style="{ width: '100%' }"
-          />
-        </div>
-        <div class="flex items-center gap-2 text-sm">
-          <i
-            class="pi"
-            :class="
-              twilioAvailable
-                ? 'pi-check-circle text-green-500'
-                : 'pi-times-circle text-surface-500'
-            "
-          />
-          <span>{{
-            t('twilio_status', {
-              status: twilioAvailable ? t('available') : t('not_available'),
-            })
-          }}</span>
-        </div>
-        <a
-          href="https://sms-gate.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline text-sm"
-        >
-          {{ t('download_smsgate_apk') }}
-        </a>
-        <Button
-          class="w-full md:w-60 gap-4"
-          :label="t('save_sms_gateway')"
-          :loading="isSavingSmsGateway"
-          @click="saveSmsGatewaySettings"
-        />
-
-        <Divider />
-
-        <h3 class="m-0">{{ t('simple_sms_gateway_settings') }}</h3>
-        <div class="grid gap-2">
-          <label class="block">{{ t('simple_sms_gateway_base_url') }}</label>
-          <InputText
-            v-model="simpleSmsGatewayBaseUrlInput"
-            placeholder="http://192.168.1.100:8080/send-sms"
-            class="w-full md:w-30rem"
-          />
-        </div>
-        <a
-          :href="simpleSmsGatewayDownloadUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline text-sm"
-        >
-          {{ t('download_simple_sms_gateway_apk') }}
-        </a>
-        <Button
-          class="w-full md:w-80 gap-4"
-          :label="t('save_simple_sms_gateway')"
-          :loading="isSavingSimpleSmsGateway"
-          @click="saveSimpleSmsGatewaySettings"
-        />
-      </div>
-    </Panel>
-
     <!-- Warning modal Section -->
     <Dialog
       v-model:visible="showDeleteModal"
@@ -256,7 +171,7 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-const { $api, $saasEdgeFunctions } = useNuxtApp();
+const { $api } = useNuxtApp();
 const $profile = useSupabaseUserProfile();
 
 const {
@@ -268,21 +183,10 @@ if (!user || userError) throw new Error('Unable to fetch user data');
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
-const isSavingSmsGateway = ref(false);
-const isSavingSimpleSmsGateway = ref(false);
-const twilioAvailable = ref(false);
 
 const emailInput = ref($profile.value?.email);
 const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const smsgateBaseUrlInput = ref($profile.value?.smsgate_base_url || '');
-const smsgateUsernameInput = ref($profile.value?.smsgate_username || '');
-const smsgatePasswordInput = ref('');
-const simpleSmsGatewayBaseUrlInput = ref(
-  $profile.value?.simple_sms_gateway_base_url || '',
-);
-const simpleSmsGatewayDownloadUrl =
-  'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
 const isSocialLogin = ref(user?.app_metadata.provider !== 'email');
 
 const disableUpdateButton = computed(
@@ -428,111 +332,6 @@ async function deleteAccount() {
     throw err;
   }
 }
-
-async function fetchSmsProviderStatus() {
-  try {
-    const data = await $saasEdgeFunctions('sms-campaigns/providers/status', {
-      method: 'GET',
-    });
-    twilioAvailable.value = Boolean(data.twilioAvailable);
-
-    if (data.smsgateBaseUrl) {
-      smsgateBaseUrlInput.value = data.smsgateBaseUrl;
-    }
-    if (data.smsgateUsername) {
-      smsgateUsernameInput.value = data.smsgateUsername;
-    }
-    if (data.simpleSmsGatewayBaseUrl) {
-      simpleSmsGatewayBaseUrlInput.value = data.simpleSmsGatewayBaseUrl;
-    }
-  } catch {
-    twilioAvailable.value = false;
-  }
-}
-
-async function saveSmsGatewaySettings() {
-  try {
-    isSavingSmsGateway.value = true;
-
-    await $saasEdgeFunctions('sms-campaigns/providers/smsgate', {
-      method: 'POST',
-      body: JSON.stringify({
-        baseUrl: smsgateBaseUrlInput.value,
-        username: smsgateUsernameInput.value,
-        password: smsgatePasswordInput.value,
-      }),
-    });
-
-    smsgatePasswordInput.value = '';
-
-    const { error: profileUpdateError } = await useSupabaseClient<Profile>()
-      // @ts-expect-error: Issue with nuxt/supabase
-      .schema('private')
-      .from('profiles')
-      .update({
-        smsgate_base_url: smsgateBaseUrlInput.value,
-        smsgate_username: smsgateUsernameInput.value,
-      })
-      .eq('user_id', $profile.value?.user_id);
-
-    if (profileUpdateError) {
-      throw profileUpdateError;
-    }
-
-    $toast.add({
-      severity: 'success',
-      summary: t('sms_gateway_saved'),
-      detail: t('sms_gateway_saved_detail'),
-      life: 5000,
-    });
-  } catch (error) {
-    $toast.add({
-      severity: 'error',
-      summary: t('error'),
-      detail: (error as Error).message,
-      life: 4000,
-    });
-  } finally {
-    isSavingSmsGateway.value = false;
-  }
-}
-
-async function saveSimpleSmsGatewaySettings() {
-  try {
-    isSavingSimpleSmsGateway.value = true;
-
-    const { error: profileUpdateError } = await useSupabaseClient<Profile>()
-      // @ts-expect-error: Issue with nuxt/supabase
-      .schema('private')
-      .from('profiles')
-      .update({
-        simple_sms_gateway_base_url: simpleSmsGatewayBaseUrlInput.value,
-      })
-      .eq('user_id', $profile.value?.user_id);
-
-    if (profileUpdateError) {
-      throw profileUpdateError;
-    }
-
-    $toast.add({
-      severity: 'success',
-      summary: t('simple_sms_gateway_saved'),
-      detail: t('simple_sms_gateway_saved_detail'),
-      life: 5000,
-    });
-  } catch (error) {
-    $toast.add({
-      severity: 'error',
-      summary: t('error'),
-      detail: (error as Error).message,
-      life: 4000,
-    });
-  } finally {
-    isSavingSimpleSmsGateway.value = false;
-  }
-}
-
-await fetchSmsProviderStatus();
 </script>
 
 <i18n lang="json">
@@ -567,25 +366,7 @@ await fetchSmsProviderStatus();
       },
       "button": "Confirm Email Address"
     },
-    "sms_gateway_settings": "SMS Gateway Settings",
-    "sms_gateway_description": "SMSGate is your default SMS provider. Configure per-user credentials here. Twilio is also available if server environment variables are configured.",
-    "smsgate_base_url": "SMSGate API URL",
-    "smsgate_username": "SMSGate Username",
-    "smsgate_password": "SMSGate Password",
-    "save_sms_gateway": "Save SMS Gateway",
-    "sms_gateway_saved": "SMS gateway saved",
-    "sms_gateway_saved_detail": "Your SMSGate credentials were saved successfully.",
-    "sms_gateway_save_failed": "Unable to save SMS gateway settings",
-    "simple_sms_gateway_settings": "simple-sms-gateway Settings",
-    "simple_sms_gateway_base_url": "simple-sms-gateway API URL",
-    "save_simple_sms_gateway": "Save simple-sms-gateway",
-    "simple_sms_gateway_saved": "simple-sms-gateway saved",
-    "simple_sms_gateway_saved_detail": "Your simple-sms-gateway API URL was saved successfully.",
-    "twilio_status": "Twilio: {status}",
-    "available": "available",
-    "not_available": "not available",
-    "download_smsgate_apk": "Download and install the APK",
-    "download_simple_sms_gateway_apk": "Download simple-sms-gateway from Play Store"
+    "sms_gateways": "SMS Gateways"
   },
   "fr": {
     "profile_information": "Informations du profil",
@@ -617,25 +398,7 @@ await fetchSmsProviderStatus();
       },
       "button": "Confirmez votre adresse e-mail"
     },
-    "sms_gateway_settings": "Paramètres de passerelle SMS",
-    "sms_gateway_description": "SMSGate est votre fournisseur SMS par défaut. Configurez ici les identifiants par utilisateur. Twilio est un secours optionnel uniquement si l'environnement serveur l'active.",
-    "smsgate_base_url": "URL API SMSGate",
-    "smsgate_username": "Nom d'utilisateur SMSGate",
-    "smsgate_password": "Mot de passe SMSGate",
-    "save_sms_gateway": "Enregistrer la passerelle SMS",
-    "sms_gateway_saved": "Passerelle SMS enregistrée",
-    "sms_gateway_saved_detail": "Vos identifiants SMSGate ont été enregistrés avec succès.",
-    "sms_gateway_save_failed": "Impossible d'enregistrer les paramètres de passerelle SMS",
-    "simple_sms_gateway_settings": "Paramètres simple-sms-gateway",
-    "simple_sms_gateway_base_url": "URL API simple-sms-gateway",
-    "save_simple_sms_gateway": "Enregistrer simple-sms-gateway",
-    "simple_sms_gateway_saved": "simple-sms-gateway enregistré",
-    "simple_sms_gateway_saved_detail": "Votre URL API simple-sms-gateway a été enregistrée avec succès.",
-    "twilio_status": "Twilio : {status}",
-    "available": "disponible",
-    "not_available": "non disponible",
-    "download_smsgate_apk": "Télécharger et installer l'APK",
-    "download_simple_sms_gateway_apk": "Télécharger simple-sms-gateway depuis le Play Store"
+    "sms_gateways": "Passerelles SMS"
   }
 }
 </i18n>

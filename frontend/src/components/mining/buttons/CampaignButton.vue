@@ -106,13 +106,15 @@ function onSmsCampaignCreated(_campaignId: string) {
     "send_campaign": "Send campaign",
     "send_email_campaign": "Send email campaign",
     "send_sms_campaign": "Send SMS campaign",
-    "select_at_least_one_contact": "Select at least one contact to {action}"
+    "select_at_least_one_contact": "Select at least one contact to {action}",
+    "sms_fleet_management": "SMS Fleet Management"
   },
   "fr": {
     "send_campaign": "Envoyer une campagne",
     "send_email_campaign": "Envoyer une campagne email",
     "send_sms_campaign": "Envoyer une campagne SMS",
-    "select_at_least_one_contact": "Sélectionnez au moins un contact pour {action}"
+    "select_at_least_one_contact": "Sélectionnez au moins un contact pour {action}",
+    "sms_fleet_management": "Gestion de la flotte SMS"
   }
 }
 </i18n>

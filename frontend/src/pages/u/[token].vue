@@ -53,7 +53,7 @@ const privacyPolicyUrl = computed(() =>
   resolveDataPrivacyUrl(config.public.DATA_PRIVACY_URL),
 );
 
-const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/email-campaigns`;
+const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/campaigns-track`;
 const targetUrl = `${edgeFunctionUrl}/unsubscribe/${encodeURIComponent(token)}${sender ? `?sender=${encodeURIComponent(sender)}` : ''}`;
 
 async function goToUnsubscribe() {
