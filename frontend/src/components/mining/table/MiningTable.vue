@@ -133,13 +133,6 @@
           />
         </div>
 
-        <RemoveContactButton
-          :contacts-to-delete="contactsToTreat"
-          :contacts-to-delete-length="selectedContactsLength"
-          :is-remove-disabled="isExportDisabled || !selectedContactsLength"
-          :deselect-contacts="deselectContacts"
-        />
-
         <div class="mx-2 leading-none">
           <i v-if="isLoading" class="pi pi-spin pi-spinner" />
           <template v-else>

@@ -91,6 +91,7 @@ export default function initializeApp(
       '[UNCAUGHT EXCEPTION]:',
       util.inspect(error, { depth: null, colors: true })
     );
+    // eslint-disable-next-line no-console
     console.error(error);
 
     if (ENV.SENTRY_DSN_BACKEND) {

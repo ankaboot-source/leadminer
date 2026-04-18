@@ -282,6 +282,7 @@ function getColumns(rows: Row[]) {
         if (!emailFailedColumnIndexes[valid_index])
           emailFailedColumnIndexes[valid_index] = [row_index];
         else emailFailedColumnIndexes[valid_index].push(row_index);
+        // eslint-disable-next-line no-console
         console.debug(
           `Email column fails at col ${valid_index} row ${row_index}:`,
           row,
@@ -339,8 +340,11 @@ function createHeaders(rows: Row[]): {
     emailFailedColumnIndexes,
   } = getColumns(rows);
 
+  // eslint-disable-next-line no-console
   console.debug(`Email able columns detected at index ${emailColumnIndexes}.`);
+  // eslint-disable-next-line no-console
   console.debug(`URL able columns detected at index ${urlColumnIndexes}.`);
+  // eslint-disable-next-line no-console
   console.debug(`Empty columns detected at index ${emptyColumnIndexes}.`);
 
   const keys = Object.keys(rows[0]);
@@ -385,11 +389,14 @@ function parseCsvFile(file: File): Promise<Record<string, string>[]> {
       skipEmptyLines: true,
       header: true,
       complete: (results) => {
+        // eslint-disable-next-line no-console
         console.debug('Parsed CSV data:', results.data);
+        // eslint-disable-next-line no-console
         console.debug('Parsed CSV meta:', results.meta);
         resolve(results.data as Record<string, string>[]);
       },
       error: (error) => {
+        // eslint-disable-next-line no-console
         console.error('Error parsing CSV:', error.message);
         reject(new Error('No valid CSV content could be parsed.'));
       },
