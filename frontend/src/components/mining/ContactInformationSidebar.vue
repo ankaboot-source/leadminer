@@ -191,11 +191,31 @@
         <tr class="p-row-odd">
           <td class="md:font-medium">{{ t('consent') }}</td>
           <td>
-            <div v-tooltip.bottom="getConsentTooltip(contact)">
-              <Tag
-                class="font-normal"
-                :value="getConsentLabel(contact.consent_status)"
-                :severity="getConsentColor(contact.consent_status)"
+            <div v-if="!editingContact">
+              <div v-tooltip.bottom="getConsentTooltip(contact)">
+                <Tag
+                  class="font-normal"
+                  :value="getConsentLabel(contact.consent_status)"
+                  :severity="getConsentColor(contact.consent_status)"
+                />
+              </div>
+            </div>
+            <div v-else>
+              <Select
+                v-model="contactEdit.consent_status"
+                :options="[
+                  {
+                    label: t('contact.consent.legitimate_interest'),
+                    value: 'legitimate_interest',
+                  },
+                  { label: t('contact.consent.opt_out'), value: 'opt_out' },
+                  { label: t('contact.consent.opt_in'), value: 'opt_in' },
+                  { label: t('contact.unverified'), value: null },
+                ]"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('contact.unverified')"
+                class="w-full"
               />
             </div>
           </td>
@@ -593,6 +613,10 @@ async function saveContactInformations() {
         ? contactEditTags.value.length > 0
           ? contactEditTags.value
           : null
+        : undefined,
+    consent_status:
+      originalContactCopy.consent_status !== contactEdit.value.consent_status
+        ? contactEdit.value.consent_status || null
         : undefined,
   };
   const userId = getCurrentUserId();
