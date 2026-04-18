@@ -51,6 +51,16 @@
                 :aria-label="t('copy')"
                 @click="copyContact(contact.email, contact.name ?? undefined)"
               />
+              <Button
+                v-if="!editingContact"
+                rounded
+                text
+                icon="pi pi-trash"
+                size="large"
+                class="text-2xl flex-none text-red-500"
+                :aria-label="$t('common.remove')"
+                @click="showRemoveConfirmationDialog = true"
+              />
             </div>
           </div>
           <div
@@ -248,6 +258,15 @@
       </tbody>
     </table>
 
+    <div class="flex justify-center py-2">
+      <Button
+        :label="$t('common.edit')"
+        outlined
+        class="w-full md:w-auto"
+        @click="editContactInformations()"
+      />
+    </div>
+
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-center items-center">
         <template v-if="!editingContact">
@@ -259,20 +278,9 @@
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
           />
-          <Button
-            icon="pi pi-pen-to-square"
-            :label="$t('common.edit')"
-            @click="editContactInformations()"
-          />
           <ExportContacts
             :contacts-to-treat="[contact.email]"
             :disable-export="isExportDisabled"
-          />
-          <Button
-            icon="pi pi-trash"
-            :label="$t('common.remove')"
-            severity="danger"
-            @click="showRemoveConfirmationDialog = true"
           />
         </template>
         <template v-else>

@@ -30,104 +30,20 @@
         {{ t('sms_limit_note') }}
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium">
-          {{ t('provider') }}
-        </label>
-        <div class="flex items-center gap-2">
-          <SelectButton
-            v-model="form.provider"
-            :options="providerOptions"
-            option-label="label"
-            option-value="value"
-            :allow-empty="false"
-          />
-          <Button
-            v-if="
-              form.provider === 'smsgate' ||
-              form.provider === 'simple-sms-gateway'
-            "
-            text
-            size="small"
-            icon="pi pi-question-circle"
-            :label="t('setup_help')"
-            @click="openSetupDialog(form.provider)"
-          />
-        </div>
-        <small
-          v-if="form.provider === 'twilio' && !providerStatus.twilioAvailable"
-          class="text-orange-500"
-        >
-          {{ t('twilio_not_configured') }}
-        </small>
-      </div>
-
-      <div
-        v-if="form.provider === 'smsgate'"
-        class="grid grid-cols-1 md:grid-cols-2 gap-2"
-      >
-        <div class="flex flex-col gap-1 md:col-span-2">
-          <label class="text-sm font-medium">{{ t('smsgate_base_url') }}</label>
-          <InputText
-            v-model="form.smsgateBaseUrl"
-            placeholder="https://api.sms-gate.app/3rdparty/v1/messages"
-            @blur="markTouched('smsgateBaseUrl')"
-          />
-          <small v-if="showFieldError('smsgateBaseUrl')" class="text-red-500">
-            {{ validationErrors.smsgateBaseUrl }}
-          </small>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium"
-            >{{ t('smsgate_username') }} *</label
-          >
-          <InputText
-            v-model="form.smsgateUsername"
-            @blur="markTouched('smsgateUsername')"
-          />
-          <small v-if="showFieldError('smsgateUsername')" class="text-red-500">
-            {{ validationErrors.smsgateUsername }}
-          </small>
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium"
-            >{{ t('smsgate_password') }} *</label
-          >
-          <Password
-            v-model="form.smsgatePassword"
-            :feedback="false"
-            toggle-mask
-            input-class="w-full"
-            @blur="markTouched('smsgatePassword')"
-          />
-          <small v-if="showFieldError('smsgatePassword')" class="text-red-500">
-            {{ validationErrors.smsgatePassword }}
-          </small>
-        </div>
-      </div>
-
-      <div
-        v-if="form.provider === 'simple-sms-gateway'"
-        class="grid grid-cols-1 gap-2"
-      >
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">{{
-            t('simple_sms_gateway_base_url')
-          }}</label>
-          <InputText
-            v-model="form.simpleSmsGatewayBaseUrl"
-            placeholder="http://192.168.1.100:8080/send-sms"
-          />
-        </div>
-      </div>
+      <!-- Fleet Mode: Gateway Selector (always shown) -->
+      <FleetGatewaySelector
+        v-model="form.selectedGatewayIds"
+        :show-validation="touched.gateways"
+        @add-gateway="$emit('add-gateway')"
+      />
 
       <Message
-        v-if="!hasUsableProviderConfig"
+        v-if="form.selectedGatewayIds.length === 0"
         severity="warn"
         :closable="false"
         size="small"
       >
-        {{ providerConfigError }}
+        {{ t('select_at_least_one_gateway') }}
       </Message>
 
       <div class="flex flex-col gap-1">
@@ -183,7 +99,7 @@
             <InputNumber
               v-model="form.monthlyRecipientLimit"
               :min="1"
-              :max="250"
+              :max="200"
               show-buttons
             />
             <small v-if="exceedsMonthlyRecipientLimit" class="text-red-500">
@@ -231,7 +147,17 @@
     </div>
 
     <template #footer>
-      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end w-full">
+      <div
+        class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full"
+      >
+        <Button
+          class="w-full sm:w-auto"
+          :label="t('send_preview')"
+          :loading="isSendingPreview"
+          :disabled="isPreviewDisabled"
+          outlined
+          @click="openPreviewDialog"
+        />
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             outlined
@@ -251,69 +177,48 @@
     </template>
   </Dialog>
 
+  <!-- Preview Phone Number Dialog -->
   <Dialog
-    v-model:visible="showSetupDialog"
+    v-model:visible="isPreviewDialogVisible"
     modal
-    :header="t('sms_provider_setup')"
-    :style="{ width: '38rem', maxWidth: '95vw' }"
+    :header="t('preview_title')"
+    :style="{ width: '24rem', maxWidth: '95vw' }"
   >
-    <div class="flex flex-col gap-3 text-sm">
-      <template v-if="setupProvider === 'smsgate'">
-        <p class="m-0">{{ t('smsgate_setup_intro') }}</p>
-        <div
-          class="rounded-xl border border-surface-200 bg-gradient-to-b from-surface-50 to-white p-3"
+    <div class="flex flex-col gap-4">
+      <p class="text-sm text-surface-600">
+        {{ t('sms_preview_description') }}
+      </p>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium"
+          >{{ t('preview_phone_label') }} *</label
         >
-          <div class="font-semibold">{{ t('scan_to_install') }}</div>
-          <div class="mt-2 rounded-lg border border-surface-200 bg-white p-2">
-            <img
-              src="/images/qr-smsgate-apk.png"
-              :alt="t('scan_to_install')"
-              class="mx-auto w-full max-w-[180px]"
-            />
-          </div>
-        </div>
-        <ol class="pl-4 m-0 list-decimal">
-          <li class="mb-2">{{ t('smsgate_setup_step_1') }}</li>
-          <li class="mb-2">{{ t('smsgate_setup_step_2') }}</li>
-          <li>{{ t('smsgate_setup_step_3') }}</li>
-        </ol>
-        <a
-          :href="smsgateDownloadUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline"
-        >
-          {{ t('download_smsgate_apk') }}
-        </a>
-      </template>
-      <template v-else-if="setupProvider === 'simple-sms-gateway'">
-        <p class="m-0">{{ t('simple_sms_gateway_setup_intro') }}</p>
-        <div
-          class="rounded-xl border border-surface-200 bg-gradient-to-b from-surface-50 to-white p-3"
-        >
-          <div class="font-semibold">{{ t('scan_to_install') }}</div>
-          <div class="mt-2 rounded-lg border border-surface-200 bg-white p-2">
-            <img
-              src="/images/qr-playstore.png"
-              :alt="t('scan_to_install')"
-              class="mx-auto w-full max-w-[180px]"
-            />
-          </div>
-        </div>
-        <ol class="pl-4 m-0 list-decimal">
-          <li class="mb-2">{{ t('simple_sms_gateway_setup_step_1') }}</li>
-          <li>{{ t('simple_sms_gateway_setup_step_2') }}</li>
-        </ol>
-        <a
-          :href="simpleSmsGatewayDownloadUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline"
-        >
-          {{ t('download_simple_sms_gateway_apk') }}
-        </a>
-      </template>
+        <InputText
+          v-model="previewPhoneNumber"
+          :placeholder="t('preview_phone_placeholder')"
+          @blur="validatePhoneNumber"
+        />
+        <small v-if="previewPhoneError" class="text-red-500">
+          {{ previewPhoneError }}
+        </small>
+      </div>
     </div>
+    <template #footer>
+      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end w-full">
+        <Button
+          outlined
+          class="w-full sm:w-auto"
+          :label="globalT('common.cancel')"
+          @click="isPreviewDialogVisible = false"
+        />
+        <Button
+          class="w-full sm:w-auto"
+          :label="t('send_preview')"
+          :loading="isSendingPreview"
+          :disabled="!isPreviewFormValid"
+          @click="sendPreview"
+        />
+      </div>
+    </template>
   </Dialog>
 </template>
 
@@ -323,7 +228,9 @@ import { useI18n } from 'vue-i18n';
 import { useToast } from 'primevue/usetoast';
 import Menu from 'primevue/menu';
 import InputNumber from 'primevue/inputnumber';
+import InputText from 'primevue/inputtext';
 import type { Contact } from '~/types/contact';
+import FleetGatewaySelector from '~/components/sms-fleet/FleetGatewaySelector.vue';
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
@@ -340,6 +247,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   'update:visible': [value: boolean];
   'campaign-created': [campaignId: string];
+  'add-gateway': [];
 }>();
 
 const isVisible = computed({
@@ -349,101 +257,30 @@ const isVisible = computed({
 
 const attributesMenu = ref();
 const showAdvanced = ref(false);
-const showSetupDialog = ref(false);
-const setupProvider = ref<'smsgate' | 'simple-sms-gateway'>('smsgate');
 
-const smsgateDownloadUrl = 'https://sms-gate.app/';
-const simpleSmsGatewayDownloadUrl =
-  'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
 const UNSUBSCRIBE_PLACEHOLDER = '{{unsubscribeUrl}}';
-
-const openSetupDialog = (provider: 'smsgate' | 'simple-sms-gateway') => {
-  setupProvider.value = provider;
-  showSetupDialog.value = true;
-};
-
-const providerStatus = ref({
-  smsgateConfigured: false,
-  simpleSmsGatewayConfigured: false,
-  twilioAvailable: false,
-});
+const UNSUBSCRIBE_SAMPLE_URL = 'https://example.com/unsubscribe';
 
 const form = reactive({
-  smsgateBaseUrl: '',
-  smsgateUsername: '',
-  smsgatePassword: '',
-  simpleSmsGatewayBaseUrl: '',
-  provider: 'smsgate' as 'smsgate' | 'simple-sms-gateway' | 'twilio',
   messageTemplate: '',
   footerTextTemplate: t('default_footer_template', {
     placeholder: UNSUBSCRIBE_PLACEHOLDER,
   }),
   useShortLinks: true,
   monthlyRecipientLimit: 200,
+  selectedGatewayIds: [] as string[],
 });
 
-const asBooleanFlag = (value: unknown): boolean => {
-  if (value === true || value === 1) {
-    return true;
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    return normalized === 'true' || normalized === '1';
-  }
-  return false;
-};
-
-async function fetchProviderStatus() {
-  try {
-    const data = await $saasEdgeFunctions('sms-campaigns/providers/status', {
-      method: 'GET',
-    });
-    providerStatus.value = {
-      smsgateConfigured: asBooleanFlag(data.smsgateConfigured),
-      simpleSmsGatewayConfigured: asBooleanFlag(
-        data.simpleSmsGatewayConfigured,
-      ),
-      twilioAvailable: asBooleanFlag(data.twilioAvailable),
-    };
-
-    if (typeof data.smsgateBaseUrl === 'string' && data.smsgateBaseUrl.trim()) {
-      form.smsgateBaseUrl = data.smsgateBaseUrl;
-    }
-    if (data.smsgateUsername && !form.smsgateUsername) {
-      form.smsgateUsername = data.smsgateUsername;
-    }
-    if (
-      typeof data.simpleSmsGatewayBaseUrl === 'string' &&
-      data.simpleSmsGatewayBaseUrl.trim()
-    ) {
-      form.simpleSmsGatewayBaseUrl = data.simpleSmsGatewayBaseUrl;
-    }
-  } catch {
-    providerStatus.value = {
-      smsgateConfigured: false,
-      simpleSmsGatewayConfigured: false,
-      twilioAvailable: false,
-    };
-  }
-}
-
-type FormField =
-  | 'messageTemplate'
-  | 'smsgateBaseUrl'
-  | 'smsgateUsername'
-  | 'smsgatePassword';
+type FormField = 'messageTemplate' | 'gateways';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
-  smsgateBaseUrl: false,
-  smsgateUsername: false,
-  smsgatePassword: false,
+  gateways: false,
 });
 
 const charCount = ref(0);
 const encoding = ref('GSM-7');
 const smsParts = ref(1);
-const UNSUBSCRIBE_SAMPLE_URL = 'https://example.com/unsubscribe';
 
 const hasUnicodeChars = (text: string) =>
   Array.from(text).some((char) => (char.codePointAt(0) ?? 0) > 127);
@@ -526,18 +363,7 @@ const validationErrors = computed<Record<FormField, string>>(() => {
     messageTemplate: form.messageTemplate.trim().length
       ? ''
       : t('message_required'),
-    smsgateBaseUrl:
-      form.provider === 'smsgate' && form.smsgateBaseUrl.trim().length === 0
-        ? t('smsgate_base_url_required')
-        : '',
-    smsgateUsername:
-      form.provider === 'smsgate' && form.smsgateUsername.trim().length === 0
-        ? t('smsgate_username_required')
-        : '',
-    smsgatePassword:
-      form.provider === 'smsgate' && form.smsgatePassword.trim().length === 0
-        ? t('smsgate_password_required')
-        : '',
+    gateways: '',
   };
 });
 
@@ -548,67 +374,6 @@ const showFieldError = (field: FormField) => {
 const isFormValid = computed(() =>
   Object.values(validationErrors.value).every((value) => !value),
 );
-
-const hasProvidedSmsGateCredentials = computed(
-  () =>
-    form.smsgateBaseUrl.trim().length > 0 &&
-    form.smsgateUsername.trim().length > 0 &&
-    form.smsgatePassword.trim().length > 0,
-);
-
-const hasUsableSmsGateConfig = computed(
-  () =>
-    providerStatus.value.smsgateConfigured ||
-    hasProvidedSmsGateCredentials.value,
-);
-
-const hasUsableSimpleSmsGatewayConfig = computed(
-  () =>
-    providerStatus.value.simpleSmsGatewayConfigured ||
-    form.simpleSmsGatewayBaseUrl.trim().length > 0,
-);
-
-const hasUsableProviderConfig = computed(() => {
-  if (form.provider === 'twilio') {
-    return providerStatus.value.twilioAvailable;
-  }
-  if (form.provider === 'simple-sms-gateway') {
-    return hasUsableSimpleSmsGatewayConfig.value;
-  }
-  return hasUsableSmsGateConfig.value;
-});
-
-const providerConfigError = computed(() => {
-  if (form.provider === 'twilio' && !providerStatus.value.twilioAvailable) {
-    return t('twilio_not_configured');
-  }
-  if (
-    form.provider === 'simple-sms-gateway' &&
-    !hasUsableSimpleSmsGatewayConfig.value
-  ) {
-    return t('simple_sms_gateway_not_configured');
-  }
-  if (form.provider === 'smsgate' && !hasUsableSmsGateConfig.value) {
-    return t('smsgate_credentials_required');
-  }
-  return t('smsgate_not_configured');
-});
-
-const providerOptions = computed(() => {
-  type ProviderValue = 'smsgate' | 'simple-sms-gateway' | 'twilio';
-  type ProviderOption = { label: string; value: ProviderValue };
-  const options: ProviderOption[] = [
-    { label: 'SMSGate', value: 'smsgate' as const },
-    {
-      label: 'simple-sms-gateway',
-      value: 'simple-sms-gateway' as const,
-    },
-  ];
-  if (providerStatus.value.twilioAvailable) {
-    options.push({ label: 'Twilio', value: 'twilio' as const });
-  }
-  return options;
-});
 
 const selectedContactsLength = computed(() => {
   return props.selectedContacts.filter(
@@ -625,12 +390,120 @@ const dialogHeader = computed(() =>
 );
 
 const isSubmitting = ref(false);
+const isSendingPreview = ref(false);
+const isPreviewDialogVisible = ref(false);
+const previewPhoneNumber = ref('');
+const previewPhoneError = ref('');
+
+// Simple phone validation regex (E.164 format)
+const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
+
+const validatePhoneNumber = () => {
+  const phone = previewPhoneNumber.value.trim();
+  if (!phone) {
+    previewPhoneError.value = t('phone_required');
+    return false;
+  }
+  // Normalize if needed (add + if missing)
+  let normalized = phone;
+  if (!phone.startsWith('+')) {
+    normalized = '+' + phone.replace(/\D/g, '');
+  }
+  if (!PHONE_REGEX.test(normalized)) {
+    previewPhoneError.value = t('phone_invalid');
+    return false;
+  }
+  previewPhoneError.value = '';
+  return true;
+};
+
+const isPreviewFormValid = computed(() => {
+  const phone = previewPhoneNumber.value.trim();
+  if (!phone) return false;
+  let normalized = phone;
+  if (!phone.startsWith('+')) {
+    normalized = '+' + phone.replace(/\D/g, '');
+  }
+  return PHONE_REGEX.test(normalized) && !isSendingPreview.value;
+});
+
+const isPreviewDisabled = computed(
+  () =>
+    !isFormValid.value ||
+    form.selectedGatewayIds.length === 0 ||
+    isSubmitting.value ||
+    isSendingPreview.value,
+);
+
+const openPreviewDialog = () => {
+  if (!isFormValid.value) {
+    touched.messageTemplate = true;
+    return;
+  }
+  previewPhoneNumber.value = '';
+  previewPhoneError.value = '';
+  isPreviewDialogVisible.value = true;
+};
+
+const sendPreview = async () => {
+  if (!validatePhoneNumber()) return;
+
+  isSendingPreview.value = true;
+  try {
+    const payload: Record<string, unknown> = {
+      senderName: 'Campaign',
+      messageTemplate: form.messageTemplate,
+      useShortLinks: form.useShortLinks,
+      footerTextTemplate: form.footerTextTemplate,
+      testPhoneNumber: previewPhoneNumber.value,
+      selectedGatewayIds: form.selectedGatewayIds,
+    };
+
+    const data = await $saasEdgeFunctions('sms-campaigns/campaigns/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    $toast.add({
+      severity: 'success',
+      summary: t('preview_sent'),
+      detail: t('preview_sent_detail', {
+        sentToPhone: data.sentToPhone,
+        parts: data.parts,
+      }),
+      life: 5000,
+    });
+
+    isPreviewDialogVisible.value = false;
+  } catch (error) {
+    const backendError = (error as { data?: Record<string, unknown> })?.data;
+    const backendCode =
+      typeof backendError?.code === 'string' ? backendError.code : '';
+
+    const detailParts = [
+      (typeof backendError?.error === 'string' && backendError.error) ||
+        (error instanceof Error ? error.message : String(error)),
+    ];
+    if (backendCode) {
+      detailParts.push(`(code: ${backendCode})`);
+    }
+
+    $toast.add({
+      severity: 'error',
+      summary: t('preview_failed'),
+      detail: detailParts.join(' '),
+      life: 5000,
+    });
+  } finally {
+    isSendingPreview.value = false;
+  }
+};
 
 const isActionDisabled = computed(
   () =>
     selectedContactsLength.value === 0 ||
     exceedsMonthlyRecipientLimit.value ||
-    !hasUsableProviderConfig.value ||
+    form.selectedGatewayIds.length === 0 ||
     isSubmitting.value ||
     !isFormValid.value,
 );
@@ -682,30 +555,32 @@ const getSelectedRecipients = (): Array<{
 const submitCampaign = async () => {
   isSubmitting.value = true;
 
+  $toast.add({
+    severity: 'info',
+    summary: t('keep_app_active_title'),
+    detail: t('keep_app_active_detail'),
+    life: 8000,
+  });
+
   try {
     const recipients = getSelectedRecipients();
     const phones = recipients.map((recipient) => recipient.phone);
 
+    const payload: Record<string, unknown> = {
+      senderName: 'Campaign',
+      messageTemplate: form.messageTemplate,
+      useShortLinks: form.useShortLinks,
+      footerTextTemplate: form.footerTextTemplate,
+      selectedRecipients: recipients,
+      selectedPhones: phones,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      fleetMode: true,
+      selectedGatewayIds: form.selectedGatewayIds,
+    };
+
     const data = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
       method: 'POST',
-      body: JSON.stringify({
-        senderName: 'Campaign',
-        messageTemplate: form.messageTemplate,
-        useShortLinks: form.useShortLinks,
-        provider: form.provider,
-        footerTextTemplate: form.footerTextTemplate,
-        smsgateConfig: {
-          baseUrl: form.smsgateBaseUrl,
-          username: form.smsgateUsername,
-          password: form.smsgatePassword,
-        },
-        simpleSmsGatewayConfig: {
-          baseUrl: form.simpleSmsGatewayBaseUrl,
-        },
-        selectedRecipients: recipients,
-        selectedPhones: phones,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      }),
+      body: JSON.stringify(payload),
     });
 
     $toast.add({
@@ -722,15 +597,6 @@ const submitCampaign = async () => {
     const backendError = (error as { data?: Record<string, unknown> })?.data;
     const backendCode =
       typeof backendError?.code === 'string' ? backendError.code : '';
-
-    if (backendCode === 'SMSGATE_NOT_CONFIGURED') {
-      setupProvider.value = 'smsgate';
-      showSetupDialog.value = true;
-    }
-    if (backendCode === 'SIMPLE_SMS_GATEWAY_NOT_CONFIGURED') {
-      setupProvider.value = 'simple-sms-gateway';
-      showSetupDialog.value = true;
-    }
 
     const detailParts = [
       (typeof backendError?.error === 'string' && backendError.error) ||
@@ -755,14 +621,12 @@ const submitCampaign = async () => {
 };
 
 function resetForm() {
-  form.smsgateUsername = '';
-  form.smsgatePassword = '';
-  form.provider = 'smsgate';
   form.messageTemplate = '';
   form.footerTextTemplate = t('default_footer_template', {
     placeholder: UNSUBSCRIBE_PLACEHOLDER,
   });
   form.useShortLinks = true;
+  form.selectedGatewayIds = [];
   charCount.value = 0;
   smsParts.value = 1;
   Object.keys(touched).forEach((key) => {
@@ -772,7 +636,9 @@ function resetForm() {
 
 const onDialogShow = () => {
   updateCharCount();
-  fetchProviderStatus();
+  // Load fleet gateways
+  const $smsFleetStore = useSmsFleetStore();
+  $smsFleetStore.fetchGateways();
 };
 
 const onDialogHide = () => {
@@ -789,33 +655,8 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "send_sms_campaign": "Send SMS Campaign",
     "send_sms_campaign_with_count": "Send SMS campaign ({count} contacts)",
     "gdpr_notice": "You may send campaigns only when you have a valid legal basis (legitimate interest or consent). For legitimate interest, target contacts with prior exchanges for a similar purpose, provide clear information, and always include an unsubscribe link.",
-    "sms_limit_note": "To help protect your campaign deliverability, {dailyLimit} SMS are sent per day by default. To learn more about this limit, contact your SMS provider.",
-    "unlimited": "unlimited",
-    "provider": "Provider",
-    "provider_default_note": "SMSGate is the default provider for your account.",
-    "setup_help": "Setup help",
-    "sms_provider_setup": "SMS Provider Setup",
-    "smsgate_setup_intro": "SMSGate is an Android app that forwards SMS to your backend. Install it on a device.",
-    "scan_to_install": "Scan with your phone camera to install",
-    "smsgate_setup_step_1": "Install and configure SMS Gate on your Android device.",
-    "smsgate_setup_step_2": "Copy your API URL, username and password.",
-    "smsgate_setup_step_3": "Paste credentials here or in Account Settings.",
-    "download_smsgate_apk": "Download and install the APK",
-    "simple_sms_gateway_setup_intro": "simple-sms-gateway is an Android app that forwards SMS to your backend. Install it on a device.",
-    "simple_sms_gateway_setup_step_1": "Install and configure simple-sms-gateway on your Android device.",
-    "simple_sms_gateway_setup_step_2": "Copy your API URL and enter it below.",
-    "download_simple_sms_gateway_apk": "Download simple-sms-gateway from Play Store",
-    "twilio_not_configured": "Twilio is not configured. Please configure Twilio environment variables.",
-    "smsgate_base_url": "SMSGate API URL",
-    "smsgate_username": "SMSGate Username",
-    "smsgate_password": "SMSGate Password",
-    "smsgate_base_url_required": "SMSGate API URL is required",
-    "smsgate_username_required": "SMSGate username is required",
-    "smsgate_password_required": "SMSGate password is required",
-    "smsgate_credentials_required": "SMSGate username and password are required.",
-    "smsgate_not_configured": "SMSGate credentials are not configured yet.",
-    "simple_sms_gateway_base_url": "simple-sms-gateway API URL",
-    "simple_sms_gateway_not_configured": "simple-sms-gateway API URL is not configured yet.",
+    "sms_limit_note": "SMS is distributed across your gateways. Each gateway has a default limit of 200 SMS/day and 200 recipients/month.",
+    "sms_gateways": "SMS Gateways",
     "message": "Message",
     "message_placeholder": "Enter your SMS message here...",
     "message_required": "Message is required",
@@ -824,7 +665,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
-    "monthly_recipient_limit_help": "Maximum number of recipients per month (max 250)",
+    "monthly_recipient_limit_help": "Maximum number of recipients per month (max 200)",
     "monthly_recipient_limit_exceeded": "You selected {selected} recipients, but the limit is {limit}.",
     "footer_template": "Footer template",
     "footer_template_help": "Editable footer appended to each SMS.",
@@ -833,42 +674,29 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
     "send_campaign": "Send campaign",
-    "preview_failed": "Preview failed",
     "campaign_created": "Campaign Created",
     "campaign_created_detail": "{count} SMS will be sent",
-    "campaign_creation_failed": "Campaign creation failed"
+    "campaign_creation_failed": "Campaign creation failed",
+    "select_at_least_one_gateway": "Please select at least one gateway",
+    "send_preview": "Send me a preview",
+    "preview_title": "Send Preview SMS",
+    "preview_phone_label": "Phone Number",
+    "sms_preview_description": "Enter a phone number to receive a preview SMS with your message.",
+    "preview_phone_placeholder": "Enter phone number (e.g., +33612345678)",
+    "phone_required": "Phone number is required",
+    "phone_invalid": "Invalid phone number format. Use E.164 format (e.g., +33612345678)",
+    "preview_sent": "Preview SMS sent",
+    "preview_sent_detail": "Preview SMS sent to {sentToPhone} ({parts} SMS parts)",
+    "preview_failed": "Preview failed",
+    "keep_app_active_title": "Keep the app active",
+    "keep_app_active_detail": "Keep the gateway app in the foreground during SMS sending to avoid timeouts."
   },
   "fr": {
     "send_sms_campaign": "Envoyer une campagne SMS",
     "send_sms_campaign_with_count": "Envoyer une campagne SMS ({count} destinataires)",
     "gdpr_notice": "Vous pouvez envoyer une campagne si vous disposez d'une base légale valide (intérêt légitime ou consentement). En intérêt légitime, ciblez des contacts avec lesquels vous avez déjà échangé pour une finalité comparable, informez-les clairement et incluez toujours un lien de désinscription.",
-    "sms_limit_note": "Afin de garantir la déliverabilité de votre campagne SMS, par défaut 200 SMS sont envoyés par jour. Pour en savoir plus sur cette limite, contacter votre opérateur téléphonique.",
-    "unlimited": "illimitée",
-    "provider": "Fournisseur",
-    "provider_default_note": "SMSGate est le fournisseur par défaut de votre compte.",
-    "setup_help": "Aide à la configuration",
-    "sms_provider_setup": "Configuration du fournisseur SMS",
-    "smsgate_setup_intro": "SMSGate est une application Android qui transfère les SMS vers votre backend. Installez-la sur un appareil.",
-    "scan_to_install": "Scannez avec l'appareil photo de votre téléphone pour installer",
-    "smsgate_setup_step_1": "Installez et configurez SMS Gate sur votre appareil Android.",
-    "smsgate_setup_step_2": "Copiez l'URL API, le nom d'utilisateur et le mot de passe.",
-    "smsgate_setup_step_3": "Collez les identifiants ici ou dans les paramètres du compte.",
-    "download_smsgate_apk": "Télécharger et installer l'APK",
-    "simple_sms_gateway_setup_intro": "simple-sms-gateway est une application Android qui transfère les SMS vers votre backend. Installez-la sur un appareil.",
-    "simple_sms_gateway_setup_step_1": "Installez et configurez simple-sms-gateway sur votre appareil Android.",
-    "simple_sms_gateway_setup_step_2": "Copiez votre URL API et entrez-la ci-dessous.",
-    "download_simple_sms_gateway_apk": "Télécharger simple-sms-gateway depuis le Play Store",
-    "twilio_not_configured": "Twilio n'est pas configuré. Veuillez configurer les variables d'environnement Twilio.",
-    "smsgate_base_url": "URL API SMSGate",
-    "smsgate_username": "Nom d'utilisateur SMSGate",
-    "smsgate_password": "Mot de passe SMSGate",
-    "smsgate_base_url_required": "L'URL API SMSGate est requise",
-    "smsgate_username_required": "Le nom d'utilisateur SMSGate est requis",
-    "smsgate_password_required": "Le mot de passe SMSGate est requis",
-    "smsgate_credentials_required": "Le nom d'utilisateur et le mot de passe SMSGate sont requis.",
-    "smsgate_not_configured": "Les identifiants SMSGate ne sont pas encore configurés.",
-    "simple_sms_gateway_base_url": "URL API simple-sms-gateway",
-    "simple_sms_gateway_not_configured": "L'URL API simple-sms-gateway n'est pas encore configurée.",
+    "sms_limit_note": "Les SMS sont distribués sur vos passerelles. Chaque passerelle a une limite par défaut de 200 SMS/jour et 200 destinataires/mois.",
+    "sms_gateways": "Passerelles SMS",
     "message": "Message",
     "message_placeholder": "Entrez votre message SMS ici...",
     "message_required": "Le message est requis",
@@ -877,7 +705,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
-    "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 250)",
+    "monthly_recipient_limit_help": "Nombre maximum de destinataires par mois (max 200)",
     "monthly_recipient_limit_exceeded": "Vous avez sélectionné {selected} destinataires, mais la limite est de {limit}.",
     "footer_template": "Modèle de pied de message",
     "footer_template_help": "Pied de message modifiable ajouté à chaque SMS.",
@@ -886,10 +714,22 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",
     "send_campaign": "Envoyer la campagne",
-    "preview_failed": "Échec de l'aperçu",
     "campaign_created": "Campagne créée",
     "campaign_created_detail": "{count} SMS seront envoyés",
-    "campaign_creation_failed": "Échec de la création de la campagne"
+    "campaign_creation_failed": "Échec de la création de la campagne",
+    "select_at_least_one_gateway": "Veuillez sélectionner au moins une passerelle",
+    "send_preview": "M'envoyer un aperçu",
+    "preview_title": "Envoyer un SMS de test",
+    "preview_phone_label": "Numéro de téléphone",
+    "sms_preview_description": "Entrez un numéro de téléphone pour recevoir un SMS de test avec votre message.",
+    "preview_phone_placeholder": "Entrez le numéro de téléphone (ex: +33612345678)",
+    "phone_required": "Le numéro de téléphone est requis",
+    "phone_invalid": "Format de numéro invalide. Utilisez le format E.164 (ex: +33612345678)",
+    "preview_sent": "SMS de test envoyé",
+    "preview_sent_detail": "SMS de test envoyé à {sentToPhone} ({parts} parties SMS)",
+    "preview_failed": "Échec de l'aperçu",
+    "keep_app_active_title": "Gardez l'application active",
+    "keep_app_active_detail": "Gardez l'application de passerelle au premier plan pendant l'envoi des SMS pour éviter les timeouts."
   }
 }
 </i18n>

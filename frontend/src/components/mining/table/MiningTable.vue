@@ -1,5 +1,14 @@
 <template>
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
+  <CampaignComposerDialog
+    v-model:visible="sendCampaignDialogVisible"
+    :selected-contacts="implicitlySelectedContacts"
+  />
+  <SmsCampaignComposerDialog
+    v-model:visible="sendSmsCampaignDialogVisible"
+    :selected-contacts="implicitlySelectedContacts"
+    @campaign-created="onSmsCampaignCreated"
+  />
   <DataTable
     v-show="showTable"
     ref="TableRef"
@@ -81,10 +90,48 @@
             :disable-export="isExportDisabled"
           />
         </div>
-        <CampaignButton
-          :selected-contacts="implicitlySelectedContacts"
-          :is-export-disabled="isExportDisabled"
-        />
+        <div
+          v-tooltip.top="
+            isSendByEmailDisabled &&
+            isSendBySmsDisabled &&
+            t('select_at_least_one_contact', {
+              action: t('send_campaign').toLowerCase(),
+            })
+          "
+          class="flex gap-2"
+        >
+          <SplitButton
+            severity="contrast"
+            :label="t('send_campaign')"
+            :model="sendCampaignMenuItems"
+            :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
+            :button-props="{
+              disabled: isSendByEmailDisabled,
+              onClick: () => openSendContactsDialog(),
+            }"
+            pt:label:class="hidden md:block"
+          >
+            <template #icon>
+              <span class="p-button-icon p-button-icon-left">
+                <i class="pi pi-send" />
+              </span>
+            </template>
+          </SplitButton>
+        </div>
+
+        <div
+          v-tooltip.top="
+            (isExportDisabled || !selectedContactsLength) &&
+            t('select_at_least_one_contact', { action: t('remove') })
+          "
+        >
+          <RemoveContactButton
+            :contacts-to-delete="contactsToTreat"
+            :contacts-to-delete-length="selectedContactsLength"
+            :is-remove-disabled="isExportDisabled || !selectedContactsLength"
+            :deselect-contacts="deselectContacts"
+          />
+        </div>
 
         <RemoveContactButton
           :contacts-to-delete="contactsToTreat"
@@ -774,16 +821,9 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div v-if="data.location" class="flex items-center gap-1">
+        <div>
           <NormalizedLocation :normalized-location="data.location_normalized" />
-          <span class="truncate">{{ data.location }}</span>
-        </div>
-        <div
-          v-else
-          class="flex items-center gap-1 text-surface-400 dark:text-surface-500"
-        >
-          <NormalizedLocation />
-          <span class="truncate text-xs italic">-</span>
+          {{ data.location }}
         </div>
       </template>
     </Column>
@@ -940,14 +980,19 @@ const EnrichButton = defineAsyncComponent(
 const ExportContacts = defineAsyncComponent(
   () => import('../buttons/ExportContacts.vue'),
 );
-const CampaignButton = defineAsyncComponent(
-  () => import('../buttons/CampaignButton.vue'),
-);
+
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );
+const CampaignComposerDialog = defineAsyncComponent(
+  () => import('~/components/campaigns/CampaignComposerDialog.vue'),
+);
+const SmsCampaignComposerDialog = defineAsyncComponent(
+  () => import('~/components/campaigns/SmsCampaignComposerDialog.vue'),
+);
+
 const RemoveContactButton = defineAsyncComponent(
-  () => import('../buttons/RemoveContactButton.vue'),
+  () => import('~/components/mining/buttons/RemoveContactButton.vue'),
 );
 
 const { showTable, origin } = defineProps<{
@@ -1198,6 +1243,49 @@ const isExportDisabled = computed(
     !implicitlySelectedContactsLength.value,
 );
 
+const sendCampaignDialogVisible = ref(false);
+const sendSmsCampaignDialogVisible = ref(false);
+
+const isSendByEmailDisabled = computed(() => isExportDisabled.value);
+
+const isSendBySmsDisabled = computed(() => {
+  const hasPhones = implicitlySelectedContacts.value.some(
+    (c) => c.telephone && c.telephone.length > 0,
+  );
+  return !hasPhones || isExportDisabled.value;
+});
+
+const sendCampaignMenuItems = computed(() => [
+  {
+    label: t('send_email_campaign'),
+    icon: 'pi pi-envelope',
+    command: () => {
+      openSendContactsDialog();
+    },
+    disabled: isSendByEmailDisabled.value,
+  },
+  {
+    label: t('send_sms_campaign'),
+    icon: 'pi pi-comments',
+    command: () => {
+      openSendSmsContactsDialog();
+    },
+    disabled: isSendBySmsDisabled.value,
+  },
+]);
+
+function openSendContactsDialog() {
+  sendCampaignDialogVisible.value = true;
+}
+
+function openSendSmsContactsDialog() {
+  sendSmsCampaignDialogVisible.value = true;
+}
+
+function onSmsCampaignCreated(_campaignId: string) {
+  // skipcq: JS-0099 - Placeholder for future SMS campaign tracking
+}
+
 const isFullscreen = ref(false);
 
 const $screenStore = useScreenStore();
@@ -1406,6 +1494,26 @@ function scheduleIdleContactsPrefetch() {
 onBeforeMount(() => {
   isLoading.value = true;
 });
+onNuxtReady(() => {
+  $screenStore.init();
+  $contactsStore.visibleColumns = [
+    'contacts',
+    'name',
+    'same_as',
+    'telephone',
+    'image',
+    'location',
+    ...(origin === 'contacts' && $screenStore.width > 550
+      ? ['temperature']
+      : []),
+    ...($screenStore.width > 700 ? ['tags'] : []),
+    ...($screenStore.width > 800 ? ['status'] : []),
+  ];
+});
+
+onBeforeMount(() => {
+  isLoading.value = true;
+});
 onNuxtReady(async () => {
   $screenStore.init();
   $filtersStore.initializeTableFilters(origin);
@@ -1417,7 +1525,6 @@ onNuxtReady(async () => {
     isLoading.value = false;
     scheduleIdleContactsPrefetch();
   }
-
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (origin === 'mine' && locationsToNormalize.length > 0) {

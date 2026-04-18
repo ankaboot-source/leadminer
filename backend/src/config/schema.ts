@@ -43,6 +43,18 @@ const schema = z.object({
   SIGNATURE_OPENROUTER_API_KEY: z.string().min(1).optional(),
   SIGNATURE_LLM_CACHE_TTL_SECONDS: number().optional().default(86400),
 
+  /* LLM Configuration */
+  LLM_ENDPOINT: z
+    .string()
+    .url()
+    .optional()
+    .default('https://openrouter.ai/api/v1/chat/completions'),
+  LLM_API_KEY: z.string().min(1).optional(),
+  LLM_PROVIDER: z
+    .enum(['openrouter', 'thaura'])
+    .optional()
+    .default('openrouter'),
+
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
   SUPABASE_SECRET_PROJECT_TOKEN: z.string().min(1),
