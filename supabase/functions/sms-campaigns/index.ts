@@ -8,17 +8,16 @@ import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { generateShortToken } from "../_shared/short-token.ts";
 import {
-  createSmsProvider,
   isTwilioFallbackAvailable,
   type SimpleSmsGatewayCredentials,
   type SmsGateCredentials,
   TwilioProvider,
+  createSmsProvider,
 } from "./providers/mod.ts";
-import type { SendSmsResult } from "./providers/types.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
-import { shortenUrl } from "./utils/short-link.ts";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 import { estimateSmsSegments } from "./utils/sms-segments.ts";
+import { shortenUrl } from "./utils/short-link.ts";
 
 const logger = createLogger("sms-campaigns");
 
@@ -187,7 +186,7 @@ async function saveProfileFields(
   return error;
 }
 
-async function triggerSmsCampaignProcessorFromEdge() {
+async function triggerSmsCampaignProcessorFromEdge(campaignId?: string) {
   if (!Boolean(SUPABASE_URL) || !SUPABASE_SERVICE_ROLE_KEY) {
     logger.error("Missing required environment variables", {
       supabaseUrl: !!SUPABASE_URL,
@@ -196,15 +195,37 @@ async function triggerSmsCampaignProcessorFromEdge() {
     return;
   }
 
-  await fetch(`${SUPABASE_URL}/functions/v1/sms-campaigns/process`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-    },
-    body: JSON.stringify({}),
-  });
+  const body = campaignId ? { campaignId } : {};
+  logger.info("Triggering SMS campaign processor", { campaignId });
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/sms-campaigns-process/process`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      logger.error("SMS campaign processor trigger failed", {
+        status: response.status,
+        body: text,
+        campaignId,
+      });
+    }
+  } catch (error) {
+    logger.error("SMS campaign processor trigger fetch error", {
+      error: error instanceof Error ? error.message : String(error),
+      campaignId,
+    });
+  }
 }
 
 function toSmsGateCredentials(
@@ -310,53 +331,6 @@ app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
 
   return c.json({ success: true });
 });
-
-app.post(
-  "/providers/simple-sms-gateway",
-  authMiddleware,
-  async (c: Context) => {
-    const user = c.get("user");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-    const payload = (await c.req.json().catch(() => ({}))) as {
-      baseUrl?: string;
-    };
-
-    const supabaseAdmin = createSupabaseAdmin();
-    const existingConfig = await getUserSmsProviderConfig(
-      supabaseAdmin,
-      user.id,
-    );
-
-    const baseUrl =
-      payload.baseUrl?.trim() ||
-      existingConfig.simple_sms_gateway_base_url ||
-      "http://192.168.1.100:8080/send-sms";
-
-    if (!baseUrl) {
-      return c.json(
-        {
-          error: "Missing simple-sms-gateway endpoint",
-          code: "MISSING_SIMPLE_SMS_GATEWAY_ENDPOINT",
-        },
-        400,
-      );
-    }
-
-    const error = await saveProfileFields(supabaseAdmin, user.id, {
-      simple_sms_gateway_base_url: baseUrl,
-    });
-
-    if (error) {
-      return c.json(
-        { error: extractErrorMessage(error), code: "SAVE_CREDENTIALS_FAILED" },
-        500,
-      );
-    }
-
-    return c.json({ success: true });
-  },
-);
 
 app.get("/quota", authMiddleware, async (c: Context) => {
   const user = c.get("user");
@@ -568,7 +542,7 @@ async function recordClickLink(
   url: string,
 ): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const token = `s_${getUniqueShortToken(8)}`;
+    const token = getUniqueShortToken(8);
     const { error } = await supabaseAdmin
       .schema("private")
       .from("sms_campaign_link_clicks")
@@ -594,42 +568,6 @@ async function recordClickLink(
   throw new Error(
     "Unable to generate unique short token for SMS click tracker",
   );
-}
-
-async function injectTrackers(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  campaignId: string,
-  recipientId: string,
-  message: string,
-  useShortLinks: boolean,
-): Promise<string> {
-  const hrefRegex = /(https?:\/\/[^\s]+)/gi;
-  const matches = [...message.matchAll(hrefRegex)];
-  let updatedMessage = message;
-
-  for (const match of matches) {
-    const originalUrl = match[1];
-    if (!originalUrl) continue;
-
-    const token = await recordClickLink(
-      supabaseAdmin,
-      campaignId,
-      recipientId,
-      originalUrl,
-    );
-    let trackedUrl = buildSmsClickTrackingUrl(token);
-
-    if (useShortLinks) {
-      const shortUrl = await shortenUrl(trackedUrl);
-      if (shortUrl) {
-        trackedUrl = shortUrl;
-      }
-    }
-
-    updatedMessage = updatedMessage.replace(originalUrl, trackedUrl);
-  }
-
-  return updatedMessage;
 }
 
 function getUniqueShortToken(length = 8): string {
@@ -710,63 +648,6 @@ function distributeRecipientsToGateways(
   }
 
   return assignments;
-}
-
-function findAlternativeGateway(
-  recipientId: string,
-  failedGateways: Set<string>,
-  gateways: SmsFleetGateway[],
-  gatewayAssignments: Map<
-    string,
-    {
-      id: string;
-      name: string;
-      provider: string;
-      config: Record<string, string>;
-    }
-  >,
-  gatewayFailureCount: Map<string, number>,
-): {
-  id: string;
-  name: string;
-  provider: string;
-  config: Record<string, string>;
-} | null {
-  const currentGateway = gatewayAssignments.get(recipientId);
-
-  // Find gateway with lowest failure count and available capacity
-  const availableGateways = gateways.filter(
-    (g) =>
-      !failedGateways.has(g.id) &&
-      g.is_active &&
-      (g.daily_limit === 0 || g.sent_today < g.daily_limit) &&
-      g.id !== currentGateway?.id,
-  );
-
-  if (availableGateways.length === 0) {
-    return null;
-  }
-
-  // Sort by lowest failure count, then by lowest usage
-  availableGateways.sort((a, b) => {
-    const aFailures = gatewayFailureCount.get(a.id) || 0;
-    const bFailures = gatewayFailureCount.get(b.id) || 0;
-
-    if (aFailures !== bFailures) {
-      return aFailures - bFailures;
-    }
-
-    const aUsage = a.daily_limit > 0 ? a.sent_today / a.daily_limit : 0;
-    const bUsage = b.daily_limit > 0 ? b.sent_today / b.daily_limit : 0;
-    return aUsage - bUsage;
-  });
-
-  return {
-    id: availableGateways[0].id,
-    name: availableGateways[0].name,
-    provider: availableGateways[0].provider,
-    config: availableGateways[0].config,
-  };
 }
 
 app.post("/campaigns/create", authMiddleware, async (c: Context) => {
@@ -1015,9 +896,9 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
 
   const usedUnsubscribeTokens = new Set<string>();
   const getNextUnsubscribeToken = () => {
-    let token = `s_${getUniqueShortToken(10)}`;
+    let token = getUniqueShortToken(10);
     while (usedUnsubscribeTokens.has(token)) {
-      token = `s_${getUniqueShortToken(10)}`;
+      token = getUniqueShortToken(10);
     }
     usedUnsubscribeTokens.add(token);
     return token;
@@ -1109,7 +990,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     }
   }
 
-  triggerSmsCampaignProcessorFromEdge().catch((error) => {
+  triggerSmsCampaignProcessorFromEdge(campaign.id).catch((error) => {
     logger.error("Failed to trigger SMS campaign processor", {
       error: error instanceof Error ? error.message : String(error),
       campaignId: campaign.id,
@@ -1129,7 +1010,9 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
 
   const payload = (await c.req
     .json()
-    .catch(() => ({}))) as SmsCampaignCreatePayload;
+    .catch(() => ({}))) as SmsCampaignCreatePayload & {
+    testPhoneNumber?: string;
+  };
   const {
     senderName,
     messageTemplate,
@@ -1138,6 +1021,8 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     provider,
     smsgateConfig,
     simpleSmsGatewayConfig,
+    testPhoneNumber,
+    selectedGatewayIds,
   } = payload;
 
   const smsgateUsername = smsgateConfig?.username?.trim() || "";
@@ -1156,10 +1041,46 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     );
   }
 
+  // Validate test phone number if provided
+  const normalizedTestPhone = testPhoneNumber
+    ? normalizePhoneNumber(testPhoneNumber)
+    : null;
+  if (testPhoneNumber && !normalizedTestPhone) {
+    return c.json(
+      {
+        error: "Invalid phone number format",
+        code: "INVALID_PHONE_NUMBER",
+      },
+      400,
+    );
+  }
+
   const selectedProvider = provider || "smsgate";
   const supabaseAdmin = createSupabaseAdmin();
 
-  if (selectedProvider === "smsgate") {
+  // Handle Fleet Mode for preview
+  const isFleetMode = selectedGatewayIds && selectedGatewayIds.length > 0;
+  let fleetGateways: SmsFleetGateway[] = [];
+
+  if (isFleetMode) {
+    fleetGateways = await getUserFleetGateways(
+      supabaseAdmin,
+      user.id,
+      selectedGatewayIds,
+    );
+
+    if (fleetGateways.length === 0) {
+      return c.json(
+        {
+          error: "Selected gateways not found or inactive",
+          code: "GATEWAYS_NOT_FOUND",
+        },
+        400,
+      );
+    }
+  }
+
+  if (selectedProvider === "smsgate" && !isFleetMode) {
     const fields: Partial<SmsProviderProfileConfig> = {
       smsgate_base_url: smsgateBaseUrl,
     };
@@ -1187,7 +1108,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     }
   }
 
-  if (selectedProvider === "simple-sms-gateway") {
+  if (selectedProvider === "simple-sms-gateway" && !isFleetMode) {
     await saveProfileFields(supabaseAdmin, user.id, {
       simple_sms_gateway_base_url: simpleSmsGatewayBaseUrl,
     });
@@ -1208,7 +1129,11 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     }
   }
 
-  if (selectedProvider === "twilio" && !TwilioProvider.isConfigured()) {
+  if (
+    selectedProvider === "twilio" &&
+    !isFleetMode &&
+    !TwilioProvider.isConfigured()
+  ) {
     return c.json(
       {
         error:
@@ -1219,7 +1144,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     );
   }
 
-  const unsubscribeToken = `s_${getUniqueShortToken(10)}`;
+  const unsubscribeToken = getUniqueShortToken(10);
   const unsubscribeUrl = buildSmsUnsubscribeUrl(unsubscribeToken);
   const renderedFooter = renderSmsTemplate(
     footerTextTemplate || "Unsubscribe me: {{unsubscribeUrl}}",
@@ -1238,7 +1163,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
       const originalUrl = match[1];
       if (!originalUrl) continue;
 
-      const tempToken = `s_${getUniqueShortToken(10)}`;
+      const tempToken = getUniqueShortToken(10);
       const trackedUrl = buildSmsClickTrackingUrl(tempToken);
       const shortUrl = await shortenUrl(trackedUrl);
 
@@ -1249,6 +1174,121 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 
   const segmentEstimate = estimateSmsSegments(previewMessage, false);
+
+  // If a test phone number is provided, send the actual SMS
+  if (normalizedTestPhone) {
+    try {
+      let smsProvider;
+
+      if (isFleetMode && fleetGateways.length > 0) {
+        // Use the first available gateway for fleet mode
+        const gateway = fleetGateways[0];
+        if (gateway.provider === "smsgate") {
+          const config = gateway.config;
+          if (config.baseUrl && config.username && config.password) {
+            smsProvider = createSmsProvider("smsgate", {
+              smsgate: {
+                baseUrl: config.baseUrl,
+                username: config.username,
+                password: config.password,
+              },
+            });
+          }
+        } else if (gateway.provider === "simple-sms-gateway") {
+          const config = gateway.config;
+          if (config.simpleSmsGatewayBaseUrl) {
+            smsProvider = createSmsProvider("simple-sms-gateway", {
+              simpleSmsGateway: {
+                baseUrl: config.simpleSmsGatewayBaseUrl,
+              },
+            });
+          }
+        } else if (gateway.provider === "twilio") {
+          smsProvider = createSmsProvider("twilio");
+        }
+      } else if (selectedProvider === "twilio") {
+        smsProvider = createSmsProvider("twilio");
+      } else if (selectedProvider === "simple-sms-gateway") {
+        const profileConfig = await getUserSmsProviderConfig(
+          supabaseAdmin,
+          user.id,
+        );
+        const simpleSmsGatewayCredentials =
+          toSimpleSmsGatewayCredentials(profileConfig);
+        if (!simpleSmsGatewayCredentials) {
+          throw new Error("simple-sms-gateway credentials missing");
+        }
+        smsProvider = createSmsProvider("simple-sms-gateway", {
+          simpleSmsGateway: simpleSmsGatewayCredentials,
+        });
+      } else {
+        const profileConfig = await getUserSmsProviderConfig(
+          supabaseAdmin,
+          user.id,
+        );
+        const smsgateCredentials = toSmsGateCredentials(profileConfig);
+        if (!smsgateCredentials) {
+          throw new Error("SMSGate credentials missing");
+        }
+        smsProvider = createSmsProvider("smsgate", {
+          smsgate: smsgateCredentials,
+        });
+      }
+
+      if (!smsProvider) {
+        return c.json(
+          {
+            error: "Could not create SMS provider",
+            code: "PROVIDER_CREATION_FAILED",
+          },
+          500,
+        );
+      }
+
+      const result = await smsProvider.send({
+        to: normalizedTestPhone,
+        from: "",
+        body: previewMessage,
+      });
+
+      if (!result.success) {
+        return c.json(
+          {
+            error:
+              typeof result.error === "string"
+                ? result.error
+                : "Failed to send SMS",
+            code: "SMS_SEND_FAILED",
+          },
+          500,
+        );
+      }
+
+      return c.json({
+        preview: previewMessage,
+        charCount: segmentEstimate.charCount,
+        encoding: segmentEstimate.encoding,
+        parts: segmentEstimate.parts,
+        sentToPhone: normalizedTestPhone,
+        providerUsed: isFleetMode
+          ? fleetGateways[0]?.provider
+          : selectedProvider,
+      });
+    } catch (error) {
+      logger.error("Failed to send preview SMS", {
+        error: error instanceof Error ? error.message : String(error),
+        phone: normalizedTestPhone,
+      });
+      return c.json(
+        {
+          error: "Failed to send preview SMS",
+          code: "PREVIEW_SEND_FAILED",
+          detail: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
+  }
 
   return c.json({
     preview: previewMessage,
@@ -1387,9 +1427,10 @@ app.post("/campaigns/:id/restart", authMiddleware, async (c: Context) => {
     .eq("campaign_id", campaignId)
     .in("send_status", ["skipped", "pending"]);
 
-  triggerSmsCampaignProcessorFromEdge().catch((error: unknown) => {
+  triggerSmsCampaignProcessorFromEdge(campaignId).catch((error: unknown) => {
     logger.error("Failed to trigger SMS campaign processor after restart", {
       error,
+      campaignId,
     });
   });
 
@@ -1418,748 +1459,6 @@ app.delete("/campaigns/:id", authMiddleware, async (c: Context) => {
   }
 
   return c.json({ success: true });
-});
-
-app.get("/track/click/:token", async (c: Context) => {
-  const token = c.req.param("token");
-  const supabaseAdmin = createSupabaseAdmin();
-
-  const { data: click, error } = await supabaseAdmin
-    .schema("private")
-    .from("sms_campaign_link_clicks")
-    .select("*, campaign:sms_campaigns(id, user_id, click_count)")
-    .eq("token", token)
-    .single();
-
-  if (error || !click) {
-    return c.redirect("/", 302);
-  }
-
-  const campaignId = click.campaign?.id;
-  const currentClickCount = click.campaign?.click_count || 0;
-  if (campaignId) {
-    await supabaseAdmin
-      .schema("private")
-      .from("sms_campaigns")
-      .update({ click_count: currentClickCount + 1 })
-      .eq("id", campaignId);
-  }
-
-  const targetUrl = click.url;
-  if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
-    return c.redirect("/", 302);
-  }
-
-  return c.redirect(targetUrl, 302);
-});
-
-app.get("/unsubscribe/:token", async (c: Context) => {
-  const token = c.req.param("token");
-  const supabaseAdmin = createSupabaseAdmin();
-
-  const { data: recipient, error } = await supabaseAdmin
-    .schema("private")
-    .from("sms_campaign_recipients")
-    .select("id, campaign_id, phone, campaign:sms_campaigns(user_id)")
-    .eq("unsubscribe_short_token", token)
-    .single();
-
-  const campaignOwner = Array.isArray(recipient?.campaign)
-    ? recipient?.campaign[0]
-    : recipient?.campaign;
-
-  if (error || !recipient || !campaignOwner?.user_id || !recipient.phone) {
-    return c.html(
-      "<html><body><h1>Invalid unsubscribe link</h1></body></html>",
-    );
-  }
-
-  const userId = campaignOwner.user_id as string;
-  const phone = recipient.phone as string;
-
-  const { data: existing } = await supabaseAdmin
-    .schema("private")
-    .from("sms_campaign_unsubscribes")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("phone", phone)
-    .single();
-
-  if (!existing) {
-    await supabaseAdmin
-      .schema("private")
-      .from("sms_campaign_unsubscribes")
-      .insert({
-        user_id: userId,
-        phone,
-        campaign_id: recipient.campaign_id,
-      });
-  }
-
-  return c.html(
-    "<html><body><h1>You have been unsubscribed from SMS campaigns.</h1></body></html>",
-  );
-});
-
-app.post("/process", authMiddleware, async (c: Context) => {
-  const user = c.get("user") as { id: string } | undefined;
-  const authHeader = c.req.header("authorization") || "";
-  const isServiceRole = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
-  if (!user && !isServiceRole) return c.json({ error: "Unauthorized" }, 401);
-
-  const { campaignId } = (await c.req.json().catch(() => ({}))) as {
-    campaignId?: string;
-  };
-
-  logger.info("Processing SMS campaign", {
-    campaignId,
-    userId: user?.id,
-    viaServiceRole: isServiceRole,
-  });
-
-  const supabaseAdmin = createSupabaseAdmin();
-
-  let campaignQuery = supabaseAdmin
-    .schema("private")
-    .from("sms_campaigns")
-    .select("*");
-
-  if (campaignId) {
-    campaignQuery = campaignQuery.eq("id", campaignId);
-  } else {
-    campaignQuery = campaignQuery
-      .eq("status", "queued")
-      .order("created_at", {
-        ascending: true,
-      })
-      .limit(1);
-  }
-
-  const { data: campaignData, error: fetchError } = await campaignQuery;
-  const campaign = Array.isArray(campaignData) ? campaignData[0] : campaignData;
-
-  if (!campaignId && !campaign && !fetchError) {
-    return c.json({ success: true, processed: 0 });
-  }
-
-  if (fetchError || !campaign) {
-    return c.json({ error: "Campaign not found", code: "NOT_FOUND" }, 404);
-  }
-
-  if (!isServiceRole && user && campaign.user_id !== user.id) {
-    return c.json({ error: "Campaign not found", code: "NOT_FOUND" }, 404);
-  }
-
-  const resolvedCampaignId = campaign.id as string;
-
-  if (campaign.status !== "queued" && campaign.status !== "processing") {
-    return c.json(
-      { error: "Campaign already processed", code: "INVALID_STATUS" },
-      400,
-    );
-  }
-
-  // Recover stale "processing" campaigns (e.g. from a crashed edge function)
-  if (campaign.status === "processing") {
-    const startedAt = campaign.started_at
-      ? new Date(campaign.started_at)
-      : null;
-    const staleThresholdMs = 10 * 60 * 1000; // 10 minutes
-    if (!startedAt || Date.now() - startedAt.getTime() > staleThresholdMs) {
-      // Reset any recipients still in "pending" state (never attempted)
-      await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_recipients")
-        .update({ send_status: "pending", attempt_count: 0 })
-        .eq("campaign_id", resolvedCampaignId)
-        .eq("send_status", "pending");
-      // Fall through to re-process the campaign
-    } else {
-      return c.json(
-        {
-          error: "Campaign is already being processed",
-          code: "ALREADY_PROCESSING",
-        },
-        409,
-      );
-    }
-  }
-
-  await supabaseAdmin
-    .schema("private")
-    .from("sms_campaigns")
-    .update({ status: "processing", started_at: new Date().toISOString() })
-    .eq("id", resolvedCampaignId);
-
-  let sentCount = 0;
-  let failedCount = 0;
-  let processingError: string | undefined;
-
-  try {
-    const { data: recipients } = await supabaseAdmin
-      .schema("private")
-      .from("sms_campaign_recipients")
-      .select("*")
-      .eq("campaign_id", resolvedCampaignId)
-      .eq("send_status", "pending");
-
-    const isFleetMode = campaign.fleet_mode_enabled === true;
-    const selectedProvider = campaign.provider as
-      | "smsgate"
-      | "simple-sms-gateway"
-      | "twilio"
-      | "fleet";
-
-    // Load gateway assignments for fleet mode
-    let gatewayAssignments: Map<
-      string,
-      {
-        id: string;
-        name: string;
-        provider: string;
-        config: Record<string, string>;
-      }
-    > = new Map();
-
-    let fleetGateways: SmsFleetGateway[] = [];
-
-    if (isFleetMode) {
-      const { data: assignments } = await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_recipient_gateways")
-        .select("recipient_id, gateway_id, gateway_name, gateway_provider")
-        .eq("campaign_id", resolvedCampaignId);
-
-      if (assignments) {
-        // Fetch gateway configs
-        const gatewayIds = assignments
-          .map((a) => a.gateway_id)
-          .filter((id): id is string => id !== null);
-
-        const { data: gateways } = await supabaseAdmin
-          .schema("private")
-          .from("sms_fleet_gateways")
-          .select(
-            "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
-          )
-          .in("id", gatewayIds);
-
-        fleetGateways = (gateways || []) as SmsFleetGateway[];
-
-        const gatewayConfigs = new Map(
-          (gateways || []).map((g) => [g.id, g.config]),
-        );
-
-        for (const assignment of assignments) {
-          if (assignment.recipient_id && assignment.gateway_id) {
-            gatewayAssignments.set(assignment.recipient_id, {
-              id: assignment.gateway_id,
-              name: assignment.gateway_name || "Unknown",
-              provider: assignment.gateway_provider || "smsgate",
-              config: gatewayConfigs.get(assignment.gateway_id) || {},
-            });
-          }
-        }
-      }
-    }
-    let smsProvider;
-
-    if (selectedProvider === "fleet") {
-      // Fleet mode creates providers per-recipient in the loop below;
-      // no single provider needed here
-      smsProvider = undefined;
-    } else if (selectedProvider === "twilio") {
-      smsProvider = createSmsProvider("twilio");
-    } else if (selectedProvider === "simple-sms-gateway") {
-      const profileConfig = await getUserSmsProviderConfig(
-        supabaseAdmin,
-        campaign.user_id,
-      );
-      const simpleSmsGatewayCredentials =
-        toSimpleSmsGatewayCredentials(profileConfig);
-      if (!simpleSmsGatewayCredentials) {
-        throw new Error(
-          "simple-sms-gateway credentials missing for campaign owner",
-        );
-      }
-      smsProvider = createSmsProvider("simple-sms-gateway", {
-        simpleSmsGateway: simpleSmsGatewayCredentials,
-      });
-    } else {
-      const profileConfig = await getUserSmsProviderConfig(
-        supabaseAdmin,
-        campaign.user_id,
-      );
-      const smsgateCredentials = toSmsGateCredentials(profileConfig);
-      if (!smsgateCredentials) {
-        throw new Error("SMSGate credentials missing for campaign owner");
-      }
-      smsProvider = createSmsProvider("smsgate", {
-        smsgate: smsgateCredentials,
-      });
-    }
-
-    // Provider cache for fleet mode to avoid recreating providers
-    const providerCache = new Map<
-      string,
-      ReturnType<typeof createSmsProvider>
-    >();
-
-    // Track gateway failures for automatic failover
-    const gatewayFailureCount = new Map<string, number>();
-    const failedGateways = new Set<string>();
-    const MAX_CONSECUTIVE_FAILURES = 5;
-    const MAX_RETRIES = 2;
-
-    // Use Case 2 Fix: Check quota limits before processing
-    // Mark gateways as failed if they've exceeded their daily limit
-    if (isFleetMode && fleetGateways && fleetGateways.length > 0) {
-      for (const gateway of fleetGateways) {
-        if (
-          gateway.daily_limit > 0 &&
-          gateway.sent_today >= gateway.daily_limit
-        ) {
-          failedGateways.add(gateway.id);
-          logger.warn("Gateway quota exceeded, marking as unavailable", {
-            gatewayId: gateway.id,
-            gatewayName: gateway.name,
-            dailyLimit: gateway.daily_limit,
-            sentToday: gateway.sent_today,
-          });
-        }
-      }
-    }
-
-    for (const recipient of recipients || []) {
-      let currentAttempt = 0;
-      let sendSuccess = false;
-      let lastError: string | undefined;
-
-      while (currentAttempt < MAX_RETRIES && !sendSuccess) {
-        try {
-          // For fleet mode, get the assigned gateway and create provider
-          let currentProvider:
-            | ReturnType<typeof createSmsProvider>
-            | undefined = smsProvider;
-          let providerUsed = selectedProvider;
-
-          // Use Case 5 Fix: Track error types for differentiated handling
-          let isPermanentError = false;
-          let isRateLimitError = false;
-          let shouldSkipRetry = false;
-
-          if (isFleetMode) {
-            const gateway = gatewayAssignments.get(recipient.id);
-
-            // UseCase 3 Fix: Immediate reassignment if gateway already marked as failed
-            // Don't waste retries on known-failed gateways
-            if (gateway && failedGateways.has(gateway.id)) {
-              // Try to find alternative gateway
-              const alternativeGateway = findAlternativeGateway(
-                recipient.id,
-                failedGateways,
-                fleetGateways,
-                gatewayAssignments,
-                gatewayFailureCount,
-              );
-
-              if (alternativeGateway) {
-                // Update assignment
-                gatewayAssignments.set(recipient.id, alternativeGateway);
-
-                // Update database assignment
-                await supabaseAdmin
-                  .schema("private")
-                  .from("sms_campaign_recipient_gateways")
-                  .update({
-                    gateway_id: alternativeGateway.id,
-                    gateway_name: alternativeGateway.name,
-                    gateway_provider: alternativeGateway.provider,
-                  })
-                  .eq("campaign_id", resolvedCampaignId)
-                  .eq("recipient_id", recipient.id);
-
-                logger.info("Reassigned recipient to alternative gateway", {
-                  recipientId: recipient.id,
-                  oldGatewayId: gateway.id,
-                  newGatewayId: alternativeGateway.id,
-                  attempt: currentAttempt,
-                });
-
-                // Update current gateway for provider creation
-                providerUsed = alternativeGateway.provider as
-                  | "smsgate"
-                  | "simple-sms-gateway";
-                const cacheKey = alternativeGateway.id;
-
-                if (!providerCache.has(cacheKey)) {
-                  if (alternativeGateway.provider === "smsgate") {
-                    const config = alternativeGateway.config;
-                    if (config.baseUrl && config.username && config.password) {
-                      providerCache.set(
-                        cacheKey,
-                        createSmsProvider("smsgate", {
-                          smsgate: {
-                            baseUrl: config.baseUrl,
-                            username: config.username,
-                            password: config.password,
-                          },
-                        }),
-                      );
-                    }
-                  } else if (
-                    alternativeGateway.provider === "simple-sms-gateway"
-                  ) {
-                    const config = alternativeGateway.config;
-                    if (config.simpleSmsGatewayBaseUrl) {
-                      providerCache.set(
-                        cacheKey,
-                        createSmsProvider("simple-sms-gateway", {
-                          simpleSmsGateway: {
-                            baseUrl: config.simpleSmsGatewayBaseUrl,
-                          },
-                        }),
-                      );
-                    }
-                  }
-                }
-
-                currentProvider = providerCache.get(cacheKey);
-              }
-            } else if (gateway) {
-              providerUsed = gateway.provider as
-                | "smsgate"
-                | "simple-sms-gateway";
-
-              // Check cache for provider
-              const cacheKey = `${gateway.id}`;
-              if (!providerCache.has(cacheKey)) {
-                if (gateway.provider === "smsgate") {
-                  const config = gateway.config;
-                  if (config.baseUrl && config.username && config.password) {
-                    providerCache.set(
-                      cacheKey,
-                      createSmsProvider("smsgate", {
-                        smsgate: {
-                          baseUrl: config.baseUrl,
-                          username: config.username,
-                          password: config.password,
-                        },
-                      }),
-                    );
-                  }
-                } else if (gateway.provider === "simple-sms-gateway") {
-                  const config = gateway.config;
-                  if (config.simpleSmsGatewayBaseUrl) {
-                    providerCache.set(
-                      cacheKey,
-                      createSmsProvider("simple-sms-gateway", {
-                        simpleSmsGateway: {
-                          baseUrl: config.simpleSmsGatewayBaseUrl,
-                        },
-                      }),
-                    );
-                  }
-                }
-              }
-
-              currentProvider = providerCache.get(cacheKey);
-            }
-
-            if (!currentProvider) {
-              throw new Error(
-                `Failed to create provider for gateway ${
-                  gateway?.name || "unknown"
-                }`,
-              );
-            }
-          }
-
-          if (!currentProvider) {
-            throw new Error("SMS provider not available");
-          }
-
-          const templateContext = buildSmsTemplateContext(
-            recipient.personalization_data as Record<string, unknown> | null,
-          );
-          const renderedBody = renderSmsTemplate(
-            campaign.message_template,
-            templateContext,
-          );
-
-          let messageWithTrackers = await injectTrackers(
-            supabaseAdmin,
-            resolvedCampaignId,
-            recipient.id,
-            renderedBody,
-            campaign.use_short_links,
-          );
-
-          const unsubscribeToken =
-            recipient.unsubscribe_short_token || `s_${getUniqueShortToken(10)}`;
-          if (!recipient.unsubscribe_short_token) {
-            await supabaseAdmin
-              .schema("private")
-              .from("sms_campaign_recipients")
-              .update({ unsubscribe_short_token: unsubscribeToken })
-              .eq("id", recipient.id);
-          }
-          const unsubscribeUrl = buildSmsUnsubscribeUrl(unsubscribeToken);
-          const footerTemplate =
-            campaign.footer_text_template ||
-            "Unsubscribe me: {{unsubscribeUrl}}";
-          const renderedFooter = renderSmsTemplate(footerTemplate, {
-            ...templateContext,
-            unsubscribeUrl,
-          });
-          if (renderedFooter.trim().length > 0) {
-            messageWithTrackers += `\n\n${renderedFooter}`;
-          }
-
-          const result: SendSmsResult = await currentProvider.send({
-            to: recipient.phone,
-            from: "",
-            body: messageWithTrackers,
-          });
-
-          if (result.success) {
-            await supabaseAdmin
-              .schema("private")
-              .from("sms_campaign_recipients")
-              .update({
-                send_status: "sent",
-                provider_message_id: result.messageId,
-                provider_used: providerUsed,
-                sent_at: new Date().toISOString(),
-              })
-              .eq("id", recipient.id);
-            sentCount++;
-            sendSuccess = true;
-
-            // Increment gateway sent counters for fleet mode
-            if (isFleetMode) {
-              const gateway = gatewayAssignments.get(recipient.id);
-              if (gateway) {
-                // Use Case 8 Fix: Atomic increment with quota check
-                const success = await supabaseAdmin.rpc(
-                  "increment_gateway_sent_count_atomic",
-                  {
-                    p_gateway_id: gateway.id,
-                    p_count: 1,
-                  },
-                );
-
-                if (!success) {
-                  // Quota exceeded atomically - mark gateway as failed
-                  failedGateways.add(gateway.id);
-                  logger.error(
-                    "Gateway quota exceeded during atomic increment",
-                    {
-                      gatewayId: gateway.id,
-                      gatewayName: gateway.name,
-                      recipientId: recipient.id,
-                    },
-                  );
-
-                  // Find alternative gateway
-                  const alternativeGateway = findAlternativeGateway(
-                    recipient.id,
-                    failedGateways,
-                    fleetGateways,
-                    gatewayAssignments,
-                    gatewayFailureCount,
-                  );
-
-                  if (alternativeGateway) {
-                    // Reassign and retry with alternative gateway
-                    gatewayAssignments.set(recipient.id, alternativeGateway);
-
-                    await supabaseAdmin
-                      .schema("private")
-                      .from("sms_campaign_recipient_gateways")
-                      .update({
-                        gateway_id: alternativeGateway.id,
-                        gateway_name: alternativeGateway.name,
-                        gateway_provider: alternativeGateway.provider,
-                        reassigned_at: new Date().toISOString(),
-                        original_gateway_id: gateway.id,
-                      })
-                      .eq("campaign_id", resolvedCampaignId)
-                      .eq("recipient_id", recipient.id);
-
-                    logger.info(
-                      "Reassigned recipient to alternative gateway due to quota",
-                      {
-                        recipientId: recipient.id,
-                        oldGatewayId: gateway.id,
-                        newGatewayId: alternativeGateway.id,
-                      },
-                    );
-
-                    // Continue with alternative gateway in next iteration
-                    continue;
-                  }
-
-                  // No alternative available - mark recipient as failed
-                  logger.error(
-                    "No alternative gateway available after quota exceeded",
-                    {
-                      recipientId: recipient.id,
-                      failedGatewayId: gateway.id,
-                    },
-                  );
-
-                  await supabaseAdmin
-                    .schema("private")
-                    .from("sms_campaign_recipients")
-                    .update({
-                      send_status: "failed",
-                      provider_error:
-                        "Gateway quota exceeded, no alternative available",
-                      attempt_count: recipient.attempt_count + 1,
-                    })
-                    .eq("id", recipient.id);
-                  failedCount++;
-                  continue; // Skip to next recipient
-                }
-
-                // Reset failure count on success
-                gatewayFailureCount.set(gateway.id, 0);
-              }
-            }
-          } else {
-            // Use Case 5 Fix: Categorize errors for differentiated handling
-            const errorMessage =
-              typeof result.error === "string"
-                ? result.error
-                : JSON.stringify(result.error);
-
-            // Permanent errors - no retry, mark gateway failed immediately
-            isPermanentError =
-              errorMessage.includes("401") ||
-              errorMessage.includes("403") ||
-              errorMessage.includes("invalid_credentials") ||
-              errorMessage.includes("authentication failed") ||
-              errorMessage.includes("unauthorized");
-
-            // Rate limit errors - longer backoff
-            isRateLimitError =
-              errorMessage.includes("429") ||
-              errorMessage.includes("rate limit") ||
-              errorMessage.includes("too many requests");
-
-            // Track gateway failure
-            if (isFleetMode) {
-              const gateway = gatewayAssignments.get(recipient.id);
-              if (gateway) {
-                if (isPermanentError) {
-                  // Mark gateway as failed immediately, no retry
-                  failedGateways.add(gateway.id);
-                  logger.error("Permanent gateway error, marking as failed", {
-                    gatewayId: gateway.id,
-                    gatewayName: gateway.name,
-                    error: result.error,
-                    recipientId: recipient.id,
-                  });
-                  lastError = `Permanent error: ${result.error}`;
-                  shouldSkipRetry = true;
-                } else {
-                  const failures =
-                    (gatewayFailureCount.get(gateway.id) || 0) + 1;
-                  gatewayFailureCount.set(gateway.id, failures);
-
-                  if (
-                    failures >= MAX_CONSECUTIVE_FAILURES &&
-                    !failedGateways.has(gateway.id)
-                  ) {
-                    failedGateways.add(gateway.id);
-                    logger.warn("Gateway marked as failed", {
-                      gatewayId: gateway.id,
-                      gatewayName: gateway.name,
-                      consecutiveFailures: failures,
-                    });
-                  }
-                }
-              }
-            }
-
-            if (!shouldSkipRetry) {
-              lastError = result.error || "Unknown send error";
-              currentAttempt++;
-
-              // Exponential backoff before retry
-              // Use Case 5 Fix: Longer backoff for rate limit errors
-              const backoffDelay = isRateLimitError
-                ? 60000
-                : Math.pow(2, currentAttempt) * 1000;
-              if (currentAttempt < MAX_RETRIES) {
-                await new Promise((resolve) =>
-                  setTimeout(resolve, backoffDelay),
-                );
-              }
-            }
-          }
-        } catch (err) {
-          lastError = extractErrorMessage(err);
-          currentAttempt++;
-
-          // Exponential backoff before retry
-          if (currentAttempt < MAX_RETRIES) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, Math.pow(2, currentAttempt) * 1000),
-            );
-          }
-        }
-      }
-
-      // If all retries exhausted, mark as failed
-      if (!sendSuccess) {
-        await supabaseAdmin
-          .schema("private")
-          .from("sms_campaign_recipients")
-          .update({
-            send_status: "failed",
-            provider_error: lastError,
-            attempt_count: recipient.attempt_count + MAX_RETRIES,
-          })
-          .eq("id", recipient.id);
-        failedCount++;
-      }
-    }
-  } catch (err) {
-    processingError = extractErrorMessage(err);
-    logger.error("SMS campaign processing failed", {
-      campaignId: resolvedCampaignId,
-      error: processingError,
-    });
-  } finally {
-    const finalStatus = processingError ? "failed" : "completed";
-    await supabaseAdmin
-      .schema("private")
-      .from("sms_campaigns")
-      .update({
-        status: finalStatus,
-        sent_count: sentCount,
-        failed_count: failedCount,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", resolvedCampaignId);
-  }
-
-  if (processingError) {
-    return c.json(
-      {
-        error: "Campaign processing failed",
-        code: "PROCESSING_FAILED",
-        detail: processingError,
-        sentCount,
-        failedCount,
-      },
-      500,
-    );
-  }
-
-  return c.json({ success: true, sentCount, failedCount });
 });
 
 // Fleet Gateway Management Endpoints
@@ -2338,6 +1637,7 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
         // Simple connectivity test - try to reach the endpoint
         const response = await fetch(config.baseUrl, {
           method: "HEAD",
+          signal: AbortSignal.timeout(10000),
         }).catch(() => null);
         testResult = response
           ? { success: true, message: "Gateway is reachable" }
@@ -2350,6 +1650,7 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
       } else {
         const response = await fetch(config.simpleSmsGatewayBaseUrl, {
           method: "HEAD",
+          signal: AbortSignal.timeout(10000),
         }).catch(() => null);
         testResult = response
           ? { success: true, message: "Gateway is reachable" }

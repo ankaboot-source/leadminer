@@ -1,11 +1,13 @@
--- Add gateway_names to SMS campaign overview by joining selected_gateway_ids with sms_fleet_gateways
--- This allows the frontend to display which specific gateways were used instead of just "fleet"
+-- Add message_template to SMS campaign overview functions
+-- This allows the frontend to display the SMS content preview
 
+-- Update get_sms_campaigns_overview to include message_template
 CREATE OR REPLACE FUNCTION public.get_sms_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   sender_name TEXT,
   provider TEXT,
+  message_template TEXT,
   recipient_count BIGINT,
   sent_count BIGINT,
   failed_count BIGINT,
@@ -26,10 +28,11 @@ SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT 
+  SELECT
     sc.id,
     sc.sender_name,
     sc.provider,
+    sc.message_template,
     sc.recipient_count,
     sc.sent_count,
     sc.failed_count,
@@ -57,7 +60,7 @@ BEGIN
 END;
 $$;
 
--- Also update the unified overview to include gateway_names
+-- Update get_unified_campaigns_overview to include message_template
 CREATE OR REPLACE FUNCTION public.get_unified_campaigns_overview()
 RETURNS TABLE (
   id UUID,
@@ -66,6 +69,7 @@ RETURNS TABLE (
   sender_email TEXT,
   provider TEXT,
   subject TEXT,
+  message_template TEXT,
   status TEXT,
   total_recipients BIGINT,
   recipient_count BIGINT,
@@ -103,13 +107,14 @@ AS $$
 BEGIN
   RETURN QUERY
   -- Email campaigns
-  SELECT 
+  SELECT
     ec.id,
     'email'::TEXT AS channel,
     ec.sender_name,
     ec.sender_email,
     NULL::TEXT AS provider,
     ec.subject,
+    NULL::TEXT AS message_template,
     ec.status::TEXT,
     ec.total_recipients,
     ec.recipient_count,
@@ -141,17 +146,18 @@ BEGIN
     NULL::TEXT[] AS gateway_names
   FROM private.email_campaigns ec
   WHERE ec.user_id = auth.uid()
-  
+
   UNION ALL
-  
+
   -- SMS campaigns
-  SELECT 
+  SELECT
     sc.id,
     'sms'::TEXT AS channel,
     sc.sender_name,
     NULL::TEXT AS sender_email,
     sc.provider,
     NULL::TEXT AS subject,
+    sc.message_template,
     sc.status::TEXT,
     NULL::BIGINT AS total_recipients,
     sc.recipient_count,
@@ -168,15 +174,15 @@ BEGIN
     sc.click_count,
     sc.unsubscribe_count AS unsubscribed,
     sc.unsubscribe_count,
-    CASE 
-      WHEN sc.recipient_count > 0 
+    CASE
+      WHEN sc.recipient_count > 0
       THEN ROUND((sc.sent_count::NUMERIC / sc.recipient_count) * 100, 2)
       ELSE 0
     END AS delivery_rate,
     0::NUMERIC AS opening_rate,
     0::NUMERIC AS clicking_rate,
-    CASE 
-      WHEN sc.recipient_count > 0 
+    CASE
+      WHEN sc.recipient_count > 0
       THEN ROUND((sc.unsubscribe_count::NUMERIC / sc.recipient_count) * 100, 2)
       ELSE 0
     END AS unsubscribe_rate,
@@ -199,7 +205,7 @@ BEGIN
     ) AS gateway_names
   FROM private.sms_campaigns sc
   WHERE sc.user_id = auth.uid()
-  
+
   ORDER BY created_at DESC;
 END;
 $$;

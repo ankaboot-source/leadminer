@@ -174,10 +174,9 @@
       <p class="text-sm text-surface-500">{{ t('no_gateways') }}</p>
       <div class="flex justify-center gap-2 mt-2">
         <Button
-          text
-          size="small"
           icon="pi pi-plus"
           :label="t('add_gateway')"
+          outlined
           @click="showAddDialog = true"
         />
         <Button
@@ -249,10 +248,9 @@
       </div>
 
       <Button
-        text
-        size="small"
         icon="pi pi-plus"
         :label="t('add_gateway')"
+        outlined
         class="self-start"
         @click="showAddDialog = true"
       />

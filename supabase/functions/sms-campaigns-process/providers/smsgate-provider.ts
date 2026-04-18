@@ -56,18 +56,9 @@ export class SmsGateProvider implements SmsProvider {
         messageId: data.id || data.messageId,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
-        return {
-          success: false,
-          error:
-            "Gateway timeout - The SMS gateway is not responding. Keep the gateway app active on your phone during the sending process.",
-        };
-      }
       return {
         success: false,
-        error: errorMessage,
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }

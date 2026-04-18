@@ -220,6 +220,7 @@ onMounted(() => {
       <Button
         :label="t('add_gateway')"
         icon="pi pi-plus"
+        outlined
         @click="openAddDialog"
       />
     </div>
@@ -239,24 +240,17 @@ onMounted(() => {
       <div
         v-for="gateway in $smsFleetStore.gateways"
         :key="gateway.id"
-        class="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800"
+        class="flex items-center justify-between p-4 border border-surface-200 rounded-md"
       >
         <div class="flex items-center gap-3">
           <div class="flex flex-col">
-            <div class="flex items-center gap-2">
-              <span class="font-medium">{{ gateway.name }}</span>
-              <Tag
-                :value="gateway.is_active ? t('active') : t('inactive')"
-                :severity="gateway.is_active ? 'success' : 'secondary'"
-                size="small"
-              />
-            </div>
+            <span class="font-medium">{{ gateway.name }}</span>
             <span class="text-sm text-surface-500">
               {{ getProviderLabel(gateway.provider) }}
             </span>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <Button
             text
             size="small"
@@ -279,6 +273,10 @@ onMounted(() => {
             icon="pi pi-trash"
             :label="t('delete')"
             @click="confirmDelete(gateway)"
+          />
+          <Tag
+            :value="gateway.is_active ? t('active') : t('inactive')"
+            :severity="gateway.is_active ? 'success' : 'secondary'"
           />
         </div>
       </div>

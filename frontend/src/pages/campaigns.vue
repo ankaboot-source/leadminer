@@ -61,12 +61,25 @@
                     />
                     <span class="font-medium break-words">
                       <template v-if="campaign.channel === 'sms'">
-                        {{ campaign.sender_name }}
+                        {{
+                          truncateMessage(
+                            campaign.message_template || campaign.sender_name,
+                            80,
+                          )
+                        }}
                         <template v-if="campaign.gateway_names?.length">
-                          ({{ campaign.gateway_names.join(', ') }})
+                          par {{ campaign.sender_name }} &lt;{{
+                            campaign.gateway_names.join(', ')
+                          }}&gt;
                         </template>
-                        <template v-else-if="campaign.provider !== 'fleet'">
-                          ({{ campaign.provider }})
+                        <template
+                          v-else-if="
+                            campaign.provider && campaign.provider !== 'fleet'
+                          "
+                        >
+                          par {{ campaign.sender_name }} &lt;{{
+                            campaign.provider
+                          }}&gt;
                         </template>
                       </template>
                       <template v-else>
@@ -77,9 +90,33 @@
                       </template>
                     </span>
                   </div>
-                  <div class="text-sm text-surface-500 break-words">
+
+                  <!-- SMS Full Message Preview -->
+                  <div
+                    v-if="
+                      campaign.channel === 'sms' && campaign.message_template
+                    "
+                    class="flex items-start gap-2 mt-1"
+                  >
+                    <span
+                      class="text-surface-600 text-sm italic truncate flex-1"
+                    >
+                      "{{ truncateMessage(campaign.message_template) }}"
+                    </span>
+                    <Button
+                      icon="pi pi-eye"
+                      text
+                      size="small"
+                      class="p-0"
+                      :aria-label="t('view_message')"
+                      @click="openMessageDialog(campaign)"
+                    />
+                  </div>
+
+                  <div class="text-sm text-surface-500 break-words mt-1">
                     <template v-if="campaign.channel === 'sms'">
-                      {{ campaign.recipient_count || 0 }} destinataires ·
+                      {{ campaign.recipient_count || 0 }}
+                      {{ t('recipients') }} ·
                       {{ formatDate(campaign.created_at) }}
                     </template>
                     <template v-else>
@@ -94,7 +131,7 @@
                   <Button
                     v-if="canStopCampaign(campaign)"
                     size="small"
-                    outlined
+                    text
                     severity="warning"
                     icon="pi pi-stop"
                     :label="t('stop_campaign')"
@@ -104,7 +141,7 @@
                   <Button
                     v-if="canRestartCampaign(campaign)"
                     size="small"
-                    outlined
+                    text
                     severity="success"
                     icon="pi pi-refresh"
                     :label="t('restart_campaign')"
@@ -114,7 +151,7 @@
                   <Button
                     v-if="canDeleteCampaign(campaign)"
                     size="small"
-                    outlined
+                    text
                     severity="danger"
                     icon="pi pi-trash"
                     :label="t('delete_campaign')"
@@ -304,6 +341,35 @@
           </div>
         </template>
       </Dialog>
+
+      <!-- SMS Message View Dialog -->
+      <Dialog
+        v-model:visible="messageDialogVisible"
+        modal
+        :header="t('sms_content')"
+        :style="{ width: '32rem', maxWidth: '95vw' }"
+      >
+        <div
+          v-if="messageDialogCampaign?.message_template"
+          class="bg-surface-50 p-4 rounded-md"
+        >
+          <p class="whitespace-pre-wrap text-surface-800">
+            {{ messageDialogCampaign.message_template }}
+          </p>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-2 w-full">
+            <Button
+              icon="pi pi-copy"
+              :label="t('copy')"
+              text
+              @click="copyMessageContent"
+            />
+            <Button :label="t('close')" @click="closeMessageDialog" />
+          </div>
+        </template>
+      </Dialog>
     </div>
   </div>
 </template>
@@ -323,6 +389,48 @@ const actionDialogType = ref<CampaignActionType>('stop');
 const isDialogSubmitting = ref(false);
 const actionLoading = ref<Record<string, CampaignActionType | null>>({});
 
+// SMS Message Dialog
+const messageDialogVisible = ref(false);
+const messageDialogCampaign = ref<CampaignOverview | null>(null);
+
+function openMessageDialog(campaign: CampaignOverview) {
+  messageDialogCampaign.value = campaign;
+  messageDialogVisible.value = true;
+}
+
+function closeMessageDialog() {
+  messageDialogVisible.value = false;
+  messageDialogCampaign.value = null;
+}
+
+function truncateMessage(message: string, maxLength: number = 60): string {
+  if (message.length <= maxLength) return message;
+  return message.slice(0, maxLength).trim() + '...';
+}
+
+async function copyMessageContent() {
+  if (!messageDialogCampaign.value?.message_template) return;
+
+  try {
+    await navigator.clipboard.writeText(
+      messageDialogCampaign.value.message_template,
+    );
+    $toast.add({
+      severity: 'success',
+      summary: t('copied'),
+      detail: t('message_copied'),
+      life: 2000,
+    });
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: t('copy_failed'),
+      detail: t('copy_failed_detail'),
+      life: 3000,
+    });
+  }
+}
+
 function isActionLoading(campaignId: string, type: CampaignActionType) {
   return actionLoading.value[campaignId] === type;
 }
@@ -337,6 +445,9 @@ function statusSeverity(status: CampaignStatus) {
 
 function statusLabel(campaign: CampaignOverview) {
   if (campaign.status === 'processing') {
+    if (campaign.channel === 'sms' || !campaign.total_batches) {
+      return t('status_processing');
+    }
     const currentBatch = calculateCurrentBatch(campaign);
     return t('status_processing_with_batches', {
       current: currentBatch,
@@ -678,7 +789,16 @@ onBeforeUnmount(() => {
     "status_processing_with_batches": "Processing ({current}/{total})",
     "status_completed": "Completed",
     "status_failed": "Failed",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "gateways": "Gateways",
+    "view_message": "View message",
+    "sms_content": "SMS Content",
+    "copy": "Copy",
+    "copied": "Copied",
+    "message_copied": "Message copied to clipboard",
+    "copy_failed": "Copy failed",
+    "copy_failed_detail": "Could not copy message to clipboard",
+    "close": "Close"
   },
   "fr": {
     "sms_gateways": "Passerelles SMS",

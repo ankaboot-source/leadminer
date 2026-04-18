@@ -147,7 +147,17 @@
     </div>
 
     <template #footer>
-      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end w-full">
+      <div
+        class="flex flex-col-reverse sm:flex-row gap-2 justify-between w-full"
+      >
+        <Button
+          class="w-full sm:w-auto"
+          :label="t('send_preview')"
+          :loading="isSendingPreview"
+          :disabled="isPreviewDisabled"
+          outlined
+          @click="openPreviewDialog"
+        />
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             outlined
@@ -166,6 +176,50 @@
       </div>
     </template>
   </Dialog>
+
+  <!-- Preview Phone Number Dialog -->
+  <Dialog
+    v-model:visible="isPreviewDialogVisible"
+    modal
+    :header="t('preview_title')"
+    :style="{ width: '24rem', maxWidth: '95vw' }"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="text-sm text-surface-600">
+        {{ t('sms_preview_description') }}
+      </p>
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium"
+          >{{ t('preview_phone_label') }} *</label
+        >
+        <InputText
+          v-model="previewPhoneNumber"
+          :placeholder="t('preview_phone_placeholder')"
+          @blur="validatePhoneNumber"
+        />
+        <small v-if="previewPhoneError" class="text-red-500">
+          {{ previewPhoneError }}
+        </small>
+      </div>
+    </div>
+    <template #footer>
+      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end w-full">
+        <Button
+          outlined
+          class="w-full sm:w-auto"
+          :label="globalT('common.cancel')"
+          @click="isPreviewDialogVisible = false"
+        />
+        <Button
+          class="w-full sm:w-auto"
+          :label="t('send_preview')"
+          :loading="isSendingPreview"
+          :disabled="!isPreviewFormValid"
+          @click="sendPreview"
+        />
+      </div>
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -174,6 +228,7 @@ import { useI18n } from 'vue-i18n';
 import { useToast } from 'primevue/usetoast';
 import Menu from 'primevue/menu';
 import InputNumber from 'primevue/inputnumber';
+import InputText from 'primevue/inputtext';
 import type { Contact } from '~/types/contact';
 import FleetGatewaySelector from '~/components/sms-fleet/FleetGatewaySelector.vue';
 
@@ -335,6 +390,114 @@ const dialogHeader = computed(() =>
 );
 
 const isSubmitting = ref(false);
+const isSendingPreview = ref(false);
+const isPreviewDialogVisible = ref(false);
+const previewPhoneNumber = ref('');
+const previewPhoneError = ref('');
+
+// Simple phone validation regex (E.164 format)
+const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
+
+const validatePhoneNumber = () => {
+  const phone = previewPhoneNumber.value.trim();
+  if (!phone) {
+    previewPhoneError.value = t('phone_required');
+    return false;
+  }
+  // Normalize if needed (add + if missing)
+  let normalized = phone;
+  if (!phone.startsWith('+')) {
+    normalized = '+' + phone.replace(/\D/g, '');
+  }
+  if (!PHONE_REGEX.test(normalized)) {
+    previewPhoneError.value = t('phone_invalid');
+    return false;
+  }
+  previewPhoneError.value = '';
+  return true;
+};
+
+const isPreviewFormValid = computed(() => {
+  const phone = previewPhoneNumber.value.trim();
+  if (!phone) return false;
+  let normalized = phone;
+  if (!phone.startsWith('+')) {
+    normalized = '+' + phone.replace(/\D/g, '');
+  }
+  return PHONE_REGEX.test(normalized) && !isSendingPreview.value;
+});
+
+const isPreviewDisabled = computed(
+  () =>
+    !isFormValid.value ||
+    form.selectedGatewayIds.length === 0 ||
+    isSubmitting.value ||
+    isSendingPreview.value,
+);
+
+const openPreviewDialog = () => {
+  if (!isFormValid.value) {
+    touched.messageTemplate = true;
+    return;
+  }
+  previewPhoneNumber.value = '';
+  previewPhoneError.value = '';
+  isPreviewDialogVisible.value = true;
+};
+
+const sendPreview = async () => {
+  if (!validatePhoneNumber()) return;
+
+  isSendingPreview.value = true;
+  try {
+    const payload: Record<string, unknown> = {
+      senderName: 'Campaign',
+      messageTemplate: form.messageTemplate,
+      useShortLinks: form.useShortLinks,
+      footerTextTemplate: form.footerTextTemplate,
+      testPhoneNumber: previewPhoneNumber.value,
+      selectedGatewayIds: form.selectedGatewayIds,
+    };
+
+    const data = await $saasEdgeFunctions('sms-campaigns/campaigns/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    $toast.add({
+      severity: 'success',
+      summary: t('preview_sent'),
+      detail: t('preview_sent_detail', {
+        sentToPhone: data.sentToPhone,
+        parts: data.parts,
+      }),
+      life: 5000,
+    });
+
+    isPreviewDialogVisible.value = false;
+  } catch (error) {
+    const backendError = (error as { data?: Record<string, unknown> })?.data;
+    const backendCode =
+      typeof backendError?.code === 'string' ? backendError.code : '';
+
+    const detailParts = [
+      (typeof backendError?.error === 'string' && backendError.error) ||
+        (error instanceof Error ? error.message : String(error)),
+    ];
+    if (backendCode) {
+      detailParts.push(`(code: ${backendCode})`);
+    }
+
+    $toast.add({
+      severity: 'error',
+      summary: t('preview_failed'),
+      detail: detailParts.join(' '),
+      life: 5000,
+    });
+  } finally {
+    isSendingPreview.value = false;
+  }
+};
 
 const isActionDisabled = computed(
   () =>
@@ -391,6 +554,13 @@ const getSelectedRecipients = (): Array<{
 
 const submitCampaign = async () => {
   isSubmitting.value = true;
+
+  $toast.add({
+    severity: 'info',
+    summary: t('keep_app_active_title'),
+    detail: t('keep_app_active_detail'),
+    life: 8000,
+  });
 
   try {
     const recipients = getSelectedRecipients();
@@ -507,7 +677,19 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "campaign_created": "Campaign Created",
     "campaign_created_detail": "{count} SMS will be sent",
     "campaign_creation_failed": "Campaign creation failed",
-    "select_at_least_one_gateway": "Please select at least one gateway"
+    "select_at_least_one_gateway": "Please select at least one gateway",
+    "send_preview": "Send me a preview",
+    "preview_title": "Send Preview SMS",
+    "preview_phone_label": "Phone Number",
+    "sms_preview_description": "Enter a phone number to receive a preview SMS with your message.",
+    "preview_phone_placeholder": "Enter phone number (e.g., +33612345678)",
+    "phone_required": "Phone number is required",
+    "phone_invalid": "Invalid phone number format. Use E.164 format (e.g., +33612345678)",
+    "preview_sent": "Preview SMS sent",
+    "preview_sent_detail": "Preview SMS sent to {sentToPhone} ({parts} SMS parts)",
+    "preview_failed": "Preview failed",
+    "keep_app_active_title": "Keep the app active",
+    "keep_app_active_detail": "Keep the gateway app in the foreground during SMS sending to avoid timeouts."
   },
   "fr": {
     "send_sms_campaign": "Envoyer une campagne SMS",
@@ -535,7 +717,19 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "campaign_created": "Campagne créée",
     "campaign_created_detail": "{count} SMS seront envoyés",
     "campaign_creation_failed": "Échec de la création de la campagne",
-    "select_at_least_one_gateway": "Veuillez sélectionner au moins une passerelle"
+    "select_at_least_one_gateway": "Veuillez sélectionner au moins une passerelle",
+    "send_preview": "M'envoyer un aperçu",
+    "preview_title": "Envoyer un SMS de test",
+    "preview_phone_label": "Numéro de téléphone",
+    "sms_preview_description": "Entrez un numéro de téléphone pour recevoir un SMS de test avec votre message.",
+    "preview_phone_placeholder": "Entrez le numéro de téléphone (ex: +33612345678)",
+    "phone_required": "Le numéro de téléphone est requis",
+    "phone_invalid": "Format de numéro invalide. Utilisez le format E.164 (ex: +33612345678)",
+    "preview_sent": "SMS de test envoyé",
+    "preview_sent_detail": "SMS de test envoyé à {sentToPhone} ({parts} parties SMS)",
+    "preview_failed": "Échec de l'aperçu",
+    "keep_app_active_title": "Gardez l'application active",
+    "keep_app_active_detail": "Gardez l'application de passerelle au premier plan pendant l'envoi des SMS pour éviter les timeouts."
   }
 }
 </i18n>

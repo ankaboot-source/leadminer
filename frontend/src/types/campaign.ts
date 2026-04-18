@@ -50,8 +50,8 @@ export interface CampaignOverview {
   sender_daily_limit?: number;
   total_batches?: number;
   use_short_links?: boolean;
-  message_template?: string;
   fleet_mode_enabled?: boolean;
   selected_gateway_ids?: string[];
   gateway_names?: string[];
+  message_template?: string;
 }
