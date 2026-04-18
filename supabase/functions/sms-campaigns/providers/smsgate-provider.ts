@@ -13,11 +13,11 @@ export class SmsGateProvider implements SmsProvider {
   private password: string;
 
   constructor(credentials: SmsGateCredentials) {
-    const baseUrl = credentials.baseUrl?.trim() || "";
-    if (!baseUrl || !credentials.username || !credentials.password) {
+    if (!credentials.username || !credentials.password) {
       throw new Error("SMSGate credentials not configured");
     }
-    this.baseUrl = baseUrl;
+    this.baseUrl =
+      credentials.baseUrl || "https://api.sms-gate.app/3rdparty/v1/messages";
     this.username = credentials.username;
     this.password = credentials.password;
   }
@@ -39,6 +39,7 @@ export class SmsGateProvider implements SmsProvider {
           textMessage: { text: params.body },
           phoneNumbers: [params.to],
         }),
+        signal: AbortSignal.timeout(15000),
       });
 
       const data = await response.json();
@@ -55,9 +56,18 @@ export class SmsGateProvider implements SmsProvider {
         messageId: data.id || data.messageId,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
+        return {
+          success: false,
+          error:
+            "Gateway timeout - The SMS gateway is not responding. Keep the gateway app active on your phone during the sending process.",
+        };
+      }
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorMessage,
       };
     }
   }

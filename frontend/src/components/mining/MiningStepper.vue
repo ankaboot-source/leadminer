@@ -101,8 +101,7 @@ function clearOauthQueryParams() {
   $router.replace({ query: Object.keys(query).length ? query : undefined });
 }
 
-watch(
-  [
+[
     source,
     () => $leadminerStore.miningSources,
     () => $leadminerStore.isLoadingMiningSources,

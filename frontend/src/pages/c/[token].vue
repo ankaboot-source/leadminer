@@ -7,13 +7,10 @@ const $route = useRoute();
 const token = $route.params.token as string;
 const config = useRuntimeConfig();
 
-const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/email-campaigns`;
+const edgeFunctionUrl = `${config.public.SAAS_SUPABASE_PROJECT_URL}/functions/v1/campaigns-track`;
 
-await navigateTo(
-  `${edgeFunctionUrl}/track/click/${encodeURIComponent(token)}`,
-  {
-    external: true,
-    redirectCode: 302,
-  },
-);
+await navigateTo(`${edgeFunctionUrl}/click/${encodeURIComponent(token)}`, {
+  external: true,
+  redirectCode: 302,
+});
 </script>
