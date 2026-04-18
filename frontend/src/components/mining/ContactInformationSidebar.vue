@@ -59,12 +59,22 @@
           >
             <social-links-and-phones :social-links="contact.same_as" />
           </div>
-          <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
+          <div
+            v-if="!editingContact && contact.tags?.length"
+            class="flex pt-1 space-x-2"
+          >
             <Tag
               v-for="tag in contact.tags"
               :key="tag"
               :value="getTagLabel(tag)"
               :severity="getTagColor(tag)"
+            />
+          </div>
+          <div v-else-if="editingContact" class="pt-1">
+            <Chips
+              v-model="contactEditTags"
+              :placeholder="$t('contact.tags_placeholder')"
+              class="w-full"
             />
           </div>
         </div>
@@ -238,6 +248,12 @@
             :contacts-to-treat="[contact.email]"
             :disable-export="isExportDisabled"
           />
+          <Button
+            icon="pi pi-trash"
+            :label="$t('common.remove')"
+            severity="danger"
+            @click="showRemoveConfirmationDialog = true"
+          />
         </template>
         <template v-else>
           <Button
@@ -252,6 +268,34 @@
         </template>
       </div>
     </template>
+    <Dialog
+      v-model:visible="showRemoveConfirmationDialog"
+      modal
+      :header="t('remove_contact_title')"
+      :style="{ width: '25rem' }"
+    >
+      <span class="p-text-secondary block mb-5">
+        {{
+          t('remove_contact_detail', { name: contact.name || contact.email })
+        }}
+      </span>
+      <div class="flex flex-row-reverse justify-content-start gap-2">
+        <Button
+          id="remove-contact-confirm"
+          type="button"
+          :label="$t('common.remove')"
+          severity="danger"
+          :loading="isRemovingContact"
+          @click="removeContact"
+        />
+        <Button
+          type="button"
+          :label="$t('common.cancel')"
+          severity="secondary"
+          @click="showRemoveConfirmationDialog = false"
+        />
+      </div>
+    </Dialog>
   </Drawer>
 </template>
 <script setup lang="ts">
@@ -267,6 +311,7 @@ import {
   getTagColor,
   getTagLabel,
   isValidURL,
+  removeContactsFromDatabase,
 } from '@/utils/contacts';
 import type {
   RealtimeChannel,
@@ -303,22 +348,36 @@ const show = defineModel<boolean>('show');
 
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const editingContact = ref(false);
+const contactEditTags = ref<string[]>([]);
+const showRemoveConfirmationDialog = ref(false);
+const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
-  ...contact.value,
-  alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
-  telephone: contact.value?.telephone?.join('\n') ?? null,
-  same_as: contact.value?.same_as?.join('\n') ?? null,
-  location: contact.value?.location ?? null,
+  alternate_name: '',
+  telephone: '',
+  same_as: '',
+  location: '',
+  tags: null,
 });
 
 watch(contact, (newContact) => {
-  contactEdit.value = {
-    ...newContact,
-    alternate_name: newContact?.alternate_name?.join('\n') ?? null,
-    telephone: newContact?.telephone?.join('\n') ?? null,
-    same_as: newContact?.same_as?.join('\n') ?? null,
-    location: newContact?.location ?? null,
-  };
+  if (newContact) {
+    contactEdit.value = {
+      email: newContact.email,
+      name: newContact.name,
+      given_name: newContact.given_name,
+      family_name: newContact.family_name,
+      alternate_name: newContact.alternate_name?.join('\n') ?? null,
+      telephone: newContact.telephone?.join('\n') ?? null,
+      same_as: newContact.same_as?.join('\n') ?? null,
+      location: newContact.location ?? null,
+      works_for: newContact.works_for,
+      job_title: newContact.job_title,
+      image: newContact.image,
+      tags: newContact.tags ?? null,
+      consent_status: newContact.consent_status ?? null,
+    };
+    contactEditTags.value = newContact.tags ? [...newContact.tags] : [];
+  }
 });
 
 const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
@@ -521,6 +580,13 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
+    tags:
+      JSON.stringify(originalContactCopy.tags) !==
+      JSON.stringify(contactEditTags.value)
+        ? contactEditTags.value.length > 0
+          ? contactEditTags.value
+          : null
+        : undefined,
   };
   const userId = getCurrentUserId();
   if (!userId) return;
@@ -555,6 +621,20 @@ function getConsentTooltip(data: Contact) {
 
   return t('consent_tooltip_default', { date });
 }
+
+async function removeContact() {
+  isRemovingContact.value = true;
+  try {
+    await removeContactsFromDatabase([contact.value.email]);
+    showRemoveConfirmationDialog.value = false;
+    $contactInformationSidebar.$reset();
+    showNotification('success', t('contact_removed'), '');
+  } catch (error) {
+    showNotification('error', t('remove_contact_error'), '');
+  } finally {
+    isRemovingContact.value = false;
+  }
+}
 </script>
 <i18n lang="json">
 {
@@ -569,7 +649,12 @@ function getConsentTooltip(data: Contact) {
     "phone_invalid_detail": "Invalid phone number: {phoneNumber}",
     "consent": "Consent",
     "consent_tooltip_default": "Updated on {date}",
-    "consent_tooltip_opt_out": "Opted out on {date}"
+    "consent_tooltip_opt_out": "Opted out on {date}",
+    "tags_placeholder": "Enter tags separated by commas",
+    "remove_contact_title": "Remove Contact",
+    "remove_contact_detail": "Are you sure you want to remove {name}?",
+    "contact_removed": "Contact removed",
+    "remove_contact_error": "Failed to remove contact"
   },
   "fr": {
     "copy": "Copier",
@@ -582,7 +667,12 @@ function getConsentTooltip(data: Contact) {
     "phone_invalid_detail": "Numéro de téléphone invalide : {phoneNumber}",
     "consent": "Consentement",
     "consent_tooltip_default": "Mis à jour le {date}",
-    "consent_tooltip_opt_out": "Désinscrit le {date}"
+    "consent_tooltip_opt_out": "Désinscrit le {date}",
+    "tags_placeholder": "Entrez des étiquettes séparées par des virgules",
+    "remove_contact_title": "Supprimer le contact",
+    "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
+    "contact_removed": "Contact supprimé",
+    "remove_contact_error": "Échec de la suppression du contact"
   }
 }
 </i18n>
