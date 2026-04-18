@@ -619,12 +619,124 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     cleaningFinished.value = isTaskFinished(clean?.status ?? null);
   };
 
-  async function getCurrentRunningMining() {
-    const userId = getCurrentUserId();
+async function getCurrentRunningMining() {
+  const userId = getCurrentUserId();
 
-    if (!userId) return 1;
+  if (!userId) return 1;
 
-    try {
+  try {
+    const response = await $api<{
+      active: Array<MiningTaskGroup | undefined>;
+      passive: Array<MiningTaskGroup | undefined>;
+    }>(`/imap/mine/${userId}/`);
+
+    if (!response) return 1;
+
+    passiveMinings.value = (response.passive || []).filter(
+      (g): g is MiningTaskGroup => g !== undefined,
+    );
+
+    if (!response.active || response.active.length === 0) {
+      return 1;
+    }
+
+    const firstActive = response.active[0];
+    if (!firstActive) return 1;
+
+    const { task } = firstActive;
+    if (!task || !task.miningSource.type) return 1;
+
+    const {
+      miningSource: { type: mType },
+    } = task;
+
+    const { fetch } = firstActive;
+    const { extract } = firstActive;
+    const { clean } = firstActive;
+
+    const hasRequiredPhases =
+      mType === MiningTypes.FILE
+        ? Boolean(extract) && Boolean(clean)
+        : Boolean(fetch) && Boolean(extract) && Boolean(clean);
+
+    if (!hasRequiredPhases) return 1;
+
+    miningTask.value = task;
+    miningType.value = mType;
+    activeMiningSource.value = miningSources.value.find(
+      ({ email }) => email === task.miningSource.source,
+    );
+
+    const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
+    if (firstStepFetch) {
+      miningStartedAt.value =
+        performance.now() -
+        (Date.now() - new Date(fetch.started_at).getTime());
+    } else if (extract) {
+      miningStartedAt.value =
+        performance.now() -
+        (Date.now() - new Date(extract.started_at).getTime());
+    }
+
+    updateMiningProgress(task, fetch, extract, clean);
+
+    startProgressListener(miningType.value, task.miningId);
+
+    return extractionFinished.value ? 3 : 2;
+  } catch (err) {
+    console.error(err);
+    return 1;
+  }
+}
+
+    const firstActive = response.active[0];
+    if (!firstActive) return 1;
+
+    const { task } = firstActive;
+    if (!task || !task.miningSource.type) return 1;
+
+    const {
+      miningSource: { type: mType },
+    } = task;
+
+    const { fetch } = firstActive;
+    const { extract } = firstActive;
+    const { clean } = firstActive;
+
+    const hasRequiredPhases =
+      mType === MiningTypes.FILE
+        ? Boolean(extract) && Boolean(clean)
+        : Boolean(fetch) && Boolean(extract) && Boolean(clean);
+
+    if (!hasRequiredPhases) return 1;
+
+    miningTask.value = task;
+    miningType.value = mType;
+    activeMiningSource.value = miningSources.value.find(
+      ({ email }) => email === task.miningSource.source,
+    );
+
+    const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
+    if (firstStepFetch) {
+      miningStartedAt.value =
+        performance.now() -
+        (Date.now() - new Date(fetch.started_at).getTime());
+    } else if (extract) {
+      miningStartedAt.value =
+        performance.now() -
+        (Date.now() - new Date(extract.started_at).getTime());
+    }
+
+    updateMiningProgress(task, fetch, extract, clean);
+
+    startProgressListener(miningType.value, task.miningId);
+
+    return extractionFinished.value ? 3 : 2;
+  } catch (err) {
+    console.error(err);
+    return 1;
+  }
+}
       const response = await $api<{
         active: Array<MiningTaskGroup | undefined>;
         passive: Array<MiningTaskGroup | undefined>;
@@ -668,19 +780,20 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       );
 
       const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
-      if (firstStepFetch) {
-        miningStartedAt.value =
-          performance.now() -
-          (Date.now() - new Date(fetch.started_at).getTime());
-      } else if (extract) {
-        miningStartedAt.value =
-          performance.now() -
-          (Date.now() - new Date(extract.started_at).getTime());
-      }
 
-      updateMiningProgress(task, fetch, extract, clean);
+       if (firstStepFetch) {
+         miningStartedAt.value =
+           performance.now() -
+           (Date.now() - new Date(fetch.started_at).getTime());
+       } else if (extract) {
+         miningStartedAt.value =
+           performance.now() -
+           (Date.now() - new Date(extract.started_at).getTime());
+       }
 
-      startProgressListener(miningType.value, task.miningId);
+       updateMiningProgress(task, fetch, extract, clean);
+
+       startProgressListener(miningType.value, task.miningId);
 
       return extractionFinished.value ? 3 : 2;
     } catch (err) {

@@ -284,6 +284,7 @@ const contactFieldOptions: { value: keyof Contact; label: string }[] = [
   { value: 'job_title', label: t('contact.job_title') },
   { value: 'same_as', label: t('contact.same_as') },
   { value: 'image', label: t('contact.image') },
+  { value: 'telephone', label: t('contact.telephone') },
 ];
 
 const isConnectionValid = computed(() => {
@@ -447,11 +448,42 @@ async function loadPreview() {
     };
     totalRowCount.value = response.totalCount;
 
-    // Auto-map email column
+    // Enhanced auto-mapping for all contact fields
+    const FIELD_PATTERNS: Record<keyof ContactFormat, RegExp[]> = {
+      email: [/email/, /e-mail/],
+      telephone: [/phone/, /tel/, /mobile/, /cell/],
+      name: [/^name$/, /full.name/, /display.name/],
+      given_name: [/first.name/, /given.name/, /fname/],
+      family_name: [/last.name/, /surname/, /family.name/],
+      alternate_name: [/alias/, /nickname/, /alternate/],
+      location: [
+        /address/,
+        /location/,
+        /city/,
+        /state/,
+        /country/,
+        /zip/,
+        /postal/,
+      ],
+      works_for: [/company/, /organization/, /employer/, /works.for/],
+      job_title: [/title/, /position/, /role/, /job.title/],
+      same_as: [/website/, /url/, /profile/, /same.as/],
+      image: [/image/, /photo/, /picture/, /avatar/],
+    };
+
+    // Auto-map columns based on field detection patterns
     response.columns.forEach((col: string) => {
-      const lowerCol = col.toLowerCase();
-      if (lowerCol.includes('email')) {
-        columnMapping.value[col] = 'email';
+      // Skip if already mapped by user (preserve existing mappings)
+      if (columnMapping.value[col]) return;
+
+      const normalizedCol = col.toLowerCase().replace(/[_\s.-]/g, '.'); // Normalize separators
+
+      // Find best matching field
+      for (const [field, patterns] of Object.entries(FIELD_PATTERNS)) {
+        if (patterns.some((pattern) => pattern.test(normalizedCol))) {
+          columnMapping.value[col] = field as keyof ContactFormat;
+          break; // Use first match
+        }
       }
     });
   } catch (error: unknown) {
@@ -565,7 +597,8 @@ function extractErrorMessage(error: unknown, fallback: string): string {
       "works_for": "Company",
       "job_title": "Job Title",
       "same_as": "Website",
-      "image": "Image URL"
+      "image": "Image URL",
+      "telephone": "Telephone"
     }
   },
   "fr": {
@@ -614,7 +647,8 @@ function extractErrorMessage(error: unknown, fallback: string): string {
       "works_for": "Entreprise",
       "job_title": "Titre du poste",
       "same_as": "Site web",
-      "image": "URL de l'image"
+      "image": "URL de l'image",
+      "telephone": "Téléphone"
     }
   }
 }

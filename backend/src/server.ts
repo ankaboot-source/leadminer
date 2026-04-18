@@ -53,51 +53,24 @@ console.log(
     sseBroadcasterFactory: new SSEBroadcasterFactory()
   };
 
-const miningControllerDeps = {
-  pipelineDeps,
-  emailFetcherClient: new EmailFetcherClient(
-    logger,
-    ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
-    ENV.EMAIL_FETCHING_SERVICE_URL
-  ),
-  pstFetcherClient: new PSTFetcherClient(
-    logger,
-    ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
-    ENV.EMAIL_FETCHING_SERVICE_URL
-  ),
-  idGenerator: flickrBase58IdGenerator()
-};
-
-const app = initializeApp(
-  authResolver,
-  miningEngine,
-  miningSources,
-  contactsResolver,
-  userResolver,
-  logger,
-  miningControllerDeps
-);
-  const tasksManagerPostgreSQL = new TasksManagerPostgreSQL(
-    tasksResolver,
-    redis.getSubscriberClient(),
-    redis.getClient(),
-    new SSEBroadcasterFactory()
-  );
-
-  const app = initializeApp(
-    authResolver,
-    tasksManager,
-    tasksManagerFile,
-    tasksManagerPST,
-    tasksManagerPostgreSQL,
-=======
+  const miningControllerDeps = {
+    pipelineDeps,
+    emailFetcherClient: new EmailFetcherClient(
+      logger,
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
+      ENV.EMAIL_FETCHING_SERVICE_URL
+    ),
+    pstFetcherClient: new PSTFetcherClient(
+      logger,
+      ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
+      ENV.EMAIL_FETCHING_SERVICE_URL
+    ),
     idGenerator: flickrBase58IdGenerator()
   };
 
   const app = initializeApp(
     authResolver,
     miningEngine,
->>>>>>> main
     miningSources,
     contactsResolver,
     userResolver,

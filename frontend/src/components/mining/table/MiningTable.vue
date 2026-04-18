@@ -1399,7 +1399,7 @@ function scheduleIdleContactsPrefetch() {
 onBeforeMount(() => {
   isLoading.value = true;
 });
-onNuxtReady(() => {
+onNuxtReady(async () => {
   $screenStore.init();
   $filtersStore.initializeTableFilters(origin);
   $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);

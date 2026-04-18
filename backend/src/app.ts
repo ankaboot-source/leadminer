@@ -61,18 +61,17 @@ export default function initializeApp(
 
   app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
-<<<<<<< HEAD
-app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
-app.use(
-  '/api/imap',
-  initializeMiningRoutes(
-    miningEngine,
-    miningSources,
-    authResolver,
-    contacts,
-    miningControllerDeps
-  )
-);
+  app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
+  app.use(
+    '/api/imap',
+    initializeMiningRoutes(
+      miningEngine,
+      miningSources,
+      authResolver,
+      contacts,
+      miningControllerDeps
+    )
+  );
   app.use(
     '/api',
     initializeContactsRoutes(contacts, authResolver, miningSourceService)

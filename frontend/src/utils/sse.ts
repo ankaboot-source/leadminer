@@ -158,38 +158,15 @@ class SSE {
             }
           } else if (event === `fetched-${miningId}`) {
             onFetchedUpdate(parseInt(data));
-           } else if (event === `extracted-${miningId}`) {
-             onExtractedUpdate(parseInt(data));
-           } else if (event === `totalImported-${miningId}`) {
-             console.debug('[SSE] Updating totalImported:', parseInt(data));
-             onTotalImportedUpdate(parseInt(data));
-           } else if (
-             event === `fetch-finished-${miningId}` ||
-             event === 'fetching-finished'
-           ) {
-             onFetchingDone(parseInt(data));
-           } else if (
-             event === `extract-finished-${miningId}` ||
-             event === 'extracting-finished'
-           ) {
-             onExtractionDone(parseInt(data));
-           } else if (
-             event === `clean-finished-${miningId}` ||
-             event === 'cleaning-finished'
-           ) {
-             onCleaningDone(parseInt(data));
-           } else if (event === `signature-finished-${miningId}`) {
-             onSignatureExtractionDone();
-           } else if (event === `verifiedContacts-${miningId}`) {
-             console.debug('[SSE] Updating verifiedContacts:', parseInt(data));
-             onVerifiedContacts(parseInt(data));
-           } else if (event === `createdContacts-${miningId}`) {
-             console.debug('[SSE] Updating createdContacts:', parseInt(data));
-             onCreatedContacts(parseInt(data));
-           } else if (event === 'mining-completed') {
-             console.info('[SSE] Mining completed event received');
-             onMiningCompleted();
-           }
+          } else if (event === `extracted-${miningId}`) {
+            onExtractedUpdate(parseInt(data));
+          } else if (event === `totalImported-${miningId}`) {
+            console.debug('[SSE] Updating totalImported:', parseInt(data));
+            onTotalImportedUpdate(parseInt(data));
+          } else if (
+            event === `fetch-finished-${miningId}` ||
+            event === 'fetching-finished'
+          ) {
             onFetchingDone(parseInt(data));
           } else if (
             event === `extract-finished-${miningId}` ||
