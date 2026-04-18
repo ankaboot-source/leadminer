@@ -143,6 +143,7 @@ async function handleAuthErrorAndRetry(
   try {
     const { error: refreshError } = await $supabase.auth.refreshSession();
     if (refreshError) {
+      // eslint-disable-next-line no-console
       console.error('Token refresh failed:', refreshError);
     }
     await retryFn();
@@ -160,6 +161,7 @@ async function handleAuthErrorAndRetry(
       );
     } else {
       const detail = getMiningErrorDetail(error, sourceTypeVal);
+      // eslint-disable-next-line no-console
       console.error('Mining error:', error);
       $toast.add({
         severity: 'error',
@@ -300,9 +302,14 @@ onMounted(async () => {
 
   try {
     await $leadminerStore.fetchInbox();
-  } catch (error: any) {
-    if (error?.statusCode === 502 || error?.statusCode === 503) {
-      $stepper.prev();
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      const err = error as { statusCode?: number };
+      if (err.statusCode === 502 || err.statusCode === 503) {
+        $stepper.prev();
+      } else if (miningSource) {
+        $consentSidebar.show(miningSource.type, miningSource.email, '/mine');
+      }
     } else if (miningSource) {
       $consentSidebar.show(miningSource.type, miningSource.email, '/mine');
     }
