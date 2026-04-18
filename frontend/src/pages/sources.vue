@@ -46,6 +46,43 @@
       />
     </div>
 
+    <Dialog
+      v-model:visible="showEditSmtpDialog"
+      modal
+      :header="t('edit_smtp')"
+      :style="{ width: '30rem' }"
+    >
+      <div class="flex flex-col gap-3">
+        <div class="text-surface-600 text-sm">
+          {{ editingSource?.email }}
+        </div>
+        <div class="w-full flex flex-col gap-1">
+          <label for="smtp_host">{{ t('smtp_host') }}</label>
+          <InputText v-model="editSmtpHost" class="w-full" />
+        </div>
+        <div class="w-full flex flex-col gap-1">
+          <label for="smtp_port">{{ t('smtp_port') }}</label>
+          <InputNumber v-model="editSmtpPort" show-buttons class="w-full" />
+        </div>
+        <div class="flex flex-row items-center gap-2">
+          <Checkbox v-model="editSmtpSecure" :binary="true" />
+          <label>{{ t('smtp_secure') }}</label>
+        </div>
+        <div class="flex justify-end gap-2 mt-2">
+          <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="showEditSmtpDialog = false"
+          />
+          <Button
+            :label="$t('common.save')"
+            :loading="savingSmtp"
+            @click="saveSmtpSettings"
+          />
+        </div>
+      </div>
+    </Dialog>
+
     <div
       v-if="
         $leadminer.isLoadingMiningSources && !$leadminer.miningSources.length
@@ -147,6 +184,14 @@
                   v-else
                   :value="t(getSourceStatusBadge(source).labelKey)"
                   :severity="getSourceStatusBadge(source).severity"
+                />
+                <Button
+                  v-if="source.type === 'imap'"
+                  size="small"
+                  outlined
+                  icon="pi pi-pencil"
+                  :label="t('edit_smtp')"
+                  @click="openEditSmtpDialog(source)"
                 />
               </div>
             </div>
@@ -294,6 +339,13 @@ const showAddSourceDialog = ref(false);
 const imapSourceModel = ref<MiningSource>();
 const showAddSourceImapDialog = ref(false);
 
+const showEditSmtpDialog = ref(false);
+const editingSource = ref<MiningSource | null>(null);
+const editSmtpHost = ref('');
+const editSmtpPort = ref(587);
+const editSmtpSecure = ref(true);
+const savingSmtp = ref(false);
+
 async function addGoogleSource() {
   showAddSourceDialog.value = false;
   try {
@@ -408,6 +460,49 @@ async function confirmDelete() {
     });
   } finally {
     isDeleting.value = false;
+  }
+}
+
+function openEditSmtpDialog(source: MiningSource) {
+  editingSource.value = source;
+  editSmtpHost.value = source.smtpHost || '';
+  editSmtpPort.value = source.smtpPort || 587;
+  editSmtpSecure.value = source.smtpSecure ?? true;
+  showEditSmtpDialog.value = true;
+}
+
+async function saveSmtpSettings() {
+  if (!editingSource.value) return;
+  savingSmtp.value = true;
+  try {
+    await $api('/mine/sources/imap', {
+      method: 'PUT',
+      body: {
+        email: editingSource.value.email,
+        host: editSmtpHost.value,
+        port: editSmtpPort.value,
+        secure: editSmtpSecure.value,
+        password: '',
+      },
+    });
+    editingSource.value.smtpHost = editSmtpHost.value;
+    editingSource.value.smtpPort = editSmtpPort.value;
+    editingSource.value.smtpSecure = editSmtpSecure.value;
+    showEditSmtpDialog.value = false;
+    $toast.add({
+      severity: 'success',
+      summary: t('smtp_updated'),
+      life: 3000,
+    });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('smtp_update_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  } finally {
+    savingSmtp.value = false;
   }
 }
 
@@ -610,7 +705,13 @@ onMounted(async () => {
     "stop_mining_failed": "Unable to stop mining",
     "total_contacts": "Contacts (Total)",
     "last_mining": "Last mining",
-    "contacts": "contacts"
+    "contacts": "contacts",
+    "edit_smtp": "Edit SMTP",
+    "smtp_host": "SMTP Host",
+    "smtp_port": "SMTP Port",
+    "smtp_secure": "TLS/SSL",
+    "smtp_updated": "SMTP settings updated",
+    "smtp_update_failed": "Unable to update SMTP settings"
   },
   "fr": {
     "sources": "Sources",
@@ -666,7 +767,13 @@ onMounted(async () => {
     "stop_mining_failed": "Impossible de stopper le minage",
     "total_contacts": "Contacts (Total)",
     "last_mining": "Dernier minage",
-    "contacts": "contacts"
+    "contacts": "contacts",
+    "edit_smtp": "Modifier SMTP",
+    "smtp_host": "Hôte SMTP",
+    "smtp_port": "Port SMTP",
+    "smtp_secure": "TLS/SSL",
+    "smtp_updated": "Paramètres SMTP mis à jour",
+    "smtp_update_failed": "Impossible de mettre à jour les paramètres SMTP"
   }
 }
 </i18n>

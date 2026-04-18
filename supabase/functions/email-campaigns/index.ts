@@ -597,6 +597,7 @@ async function getUserMiningSources(
     sources: {
       email: string;
       type: string;
+      user_id?: string;
       credentials: Record<string, unknown>;
     }[];
     refreshed: string[];
@@ -633,9 +634,59 @@ async function guessCustomSmtpHost(email: string) {
   return { host: smtpHost, port: smtpPort, secure: smtpSecure };
 }
 
+async function saveDetectedSmtpSettings(
+  userId: string,
+  senderEmail: string,
+  smtpSettings: { host: string; port: number; secure: boolean },
+) {
+  try {
+    const supabaseAdmin = createSupabaseAdmin();
+    const { data: existing } = await supabaseAdmin
+      .schema("private")
+      .from("mining_sources")
+      .select("credentials, type")
+      .eq("user_id", userId)
+      .eq("email", senderEmail)
+      .single();
+
+    if (!existing || existing.type !== "imap") return;
+
+    const currentCreds = existing.credentials as Record<string, unknown>;
+    if (currentCreds.smtpHost && currentCreds.smtpPort) return;
+
+    const encryptionKey = Deno.env.get("LEADMINER_API_HASH_SECRET") || "";
+    const updatedCreds = {
+      ...currentCreds,
+      smtpHost: smtpSettings.host,
+      smtpPort: smtpSettings.port,
+      smtpSecure: smtpSettings.secure,
+    };
+
+    await supabaseAdmin.schema("private").rpc("upsert_mining_source", {
+      _user_id: userId,
+      _email: senderEmail,
+      _type: "imap",
+      _credentials: JSON.stringify(updatedCreds),
+      _encryption_key: encryptionKey,
+    });
+
+    logger.info("Saved detected SMTP settings", {
+      email: senderEmail,
+      smtpHost: smtpSettings.host,
+      smtpPort: smtpSettings.port,
+    });
+  } catch (error) {
+    logger.warn("Failed to save detected SMTP settings", {
+      email: senderEmail,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 async function buildUserTransport(
   senderEmail: string,
   credentials: Record<string, unknown>,
+  userId?: string,
 ): Promise<Transport> {
   if (isGoogleDomain(senderEmail)) {
     if (typeof credentials.password === "string") {
@@ -687,7 +738,28 @@ async function buildUserTransport(
     };
   }
 
+  if (credentials.smtpHost && credentials.smtpPort) {
+    return {
+      host: String(credentials.smtpHost),
+      port: Number(credentials.smtpPort),
+      secure: Boolean(credentials.smtpSecure),
+      auth: {
+        user: String(credentials.email || senderEmail),
+        pass: String(credentials.password || ""),
+      },
+    };
+  }
+
   const smtp = await guessCustomSmtpHost(senderEmail);
+
+  if (userId) {
+    saveDetectedSmtpSettings(userId, senderEmail, {
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.secure,
+    });
+  }
+
   return {
     host: smtp.host,
     port: smtp.port,
@@ -699,7 +771,11 @@ async function buildUserTransport(
   };
 }
 
-async function resolveSenderOptions(authorization: string, userEmail: string) {
+async function resolveSenderOptions(
+  authorization: string,
+  userEmail: string,
+  userId?: string,
+) {
   const fallbackSenderEmail = isFallbackSenderEnabled()
     ? requireFallbackSenderEmail()
     : "";
@@ -742,6 +818,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       const transport = await buildUserTransport(
         source.email,
         source.credentials,
+        userId,
       );
       await verifyTransport(transport);
       options.push({ email: source.email, available: true });
@@ -776,6 +853,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
             const retryTransport = await buildUserTransport(
               source.email,
               refreshedSource.credentials,
+              userId,
             );
             await verifyTransport(retryTransport);
             logger.info("Token refresh succeeded after OAuth failure", {
@@ -1185,6 +1263,7 @@ app.post("/campaigns/sender-options", authMiddleware, async (c: Context) => {
     const { options, fallbackSenderEmail } = await resolveSenderOptions(
       authorization,
       auth.user.email as string,
+      auth.user.id,
     );
     return c.json({
       options,
@@ -1243,7 +1322,11 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   let transportBySender: Record<string, Transport | null> = {};
 
   try {
-    const senderOptions = await resolveSenderOptions(authorization, ownerEmail);
+    const senderOptions = await resolveSenderOptions(
+      authorization,
+      ownerEmail,
+      auth.user.id,
+    );
     options = senderOptions.options;
     fallbackSenderEmail = senderOptions.fallbackSenderEmail;
     transportBySender = senderOptions.transportBySender;
@@ -1426,6 +1509,7 @@ app.post(
       const senderOptions = await resolveSenderOptions(
         authorization,
         ownerEmail,
+        checkData?.userId,
       );
       options = senderOptions.options;
       fallbackSenderEmail = senderOptions.fallbackSenderEmail;
@@ -1919,6 +2003,7 @@ app.post(
           senderTransport = await buildUserTransport(
             campaign.sender_email,
             sourceAsCredential.credentials as Record<string, unknown>,
+            campaign.user_id,
           );
         } catch {
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
@@ -2115,6 +2200,7 @@ app.post(
                 senderTransport = await buildUserTransport(
                   campaign.sender_email,
                   sourceForRetry.credentials,
+                  campaign.user_id,
                 );
 
                 // Retry sending the email

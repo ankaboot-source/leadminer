@@ -18,6 +18,9 @@ export interface MiningSource {
   totalContacts?: number;
   totalFromLastMining?: number;
   lastMiningDate?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
 }
 
 export interface MiningProgress {

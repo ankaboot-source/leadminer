@@ -36,6 +36,7 @@ export default function initializeMiningRoutes(
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
   router.post('/mine/sources/imap', authMiddleware, createImapMiningSource);
+  router.put('/mine/sources/imap', authMiddleware, createImapMiningSource);
 
   router.post(
     '/mine/sources/:provider',

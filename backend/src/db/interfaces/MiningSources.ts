@@ -4,6 +4,9 @@ export interface ImapMiningSourceCredentials {
   host: string;
   port: number;
   tls: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
 }
 
 export type OAuthMiningSourceProvider = 'azure' | 'google';
