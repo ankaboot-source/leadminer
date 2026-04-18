@@ -64,4 +64,5 @@ export interface ContactEdit {
   job_title: string | null;
   same_as: string | null;
   image: string | null;
+  consent_status: 'legitimate_interest' | 'opt_out' | 'opt_in' | null;
 }

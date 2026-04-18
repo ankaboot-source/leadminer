@@ -774,9 +774,16 @@
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div>
+        <div v-if="data.location" class="flex items-center gap-1">
           <NormalizedLocation :normalized-location="data.location_normalized" />
-          {{ data.location }}
+          <span class="truncate">{{ data.location }}</span>
+        </div>
+        <div
+          v-else
+          class="flex items-center gap-1 text-surface-400 dark:text-surface-500"
+        >
+          <NormalizedLocation />
+          <span class="truncate text-xs italic">-</span>
         </div>
       </template>
     </Column>

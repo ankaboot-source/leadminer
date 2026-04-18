@@ -118,7 +118,10 @@
           </td>
         </tr>
 
-        <tr class="p-row-odd">
+        <tr
+          v-if="contact.telephone && contact.telephone.length > 0"
+          class="p-row-odd"
+        >
           <td class="md:font-medium">
             {{ $t('contact.telephone') }}
           </td>
@@ -143,7 +146,7 @@
           </td>
         </tr>
 
-        <tr class="p-row-even">
+        <tr v-if="contact.location" class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
