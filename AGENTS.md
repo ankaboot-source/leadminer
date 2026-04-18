@@ -310,6 +310,8 @@ deepsource issues --severity critical --output json
 deepsource issues --severity major --output json
 ```
 
+**Important:** Prefer real code fixes over `skipcq` comments. Type assertions should use `as unknown as Type` instead of `as any`.
+
 ### Pre-commit Checks
 
 Before committing, run linting and formatting:

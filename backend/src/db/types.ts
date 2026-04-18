@@ -76,6 +76,7 @@ export interface Person {
   alternateName?: string[];
   alternateEmail?: string[];
   worksFor?: string;
+  telephone?: string[];
   source: string;
 }
 
@@ -187,6 +188,39 @@ export interface SupabaseTask {
   started_at?: string;
   stopped_at?: string;
   duration?: number;
+}
+
+export interface Task {
+  id?: string;
+  userId: string;
+  type: TaskType;
+  category: TaskCategory;
+  status: TaskStatus;
+  // skipcq: JS-0323 - details can contain any values
+  details: Record<string, any>;
+  duration?: number;
+  startedAt?: string;
+  stoppedAt?: string;
+}
+
+export interface EnrichTaskDetails {
+  total_enriched: number;
+  total_to_enrich: number;
+  update_empty_fields_only: boolean;
+  error?: string[];
+  result: {
+    token?: string;
+    engine: string;
+    data: Array<Partial<Contact>>;
+    raw_data: Array<unknown>;
+  }[];
+  passive_mining?: boolean;
+}
+
+export interface EnrichTask extends Task {
+  category: TaskCategory.Enriching;
+  type: TaskType.Enrich;
+  details: EnrichTaskDetails;
 }
 
 export type Organization = {

@@ -614,20 +614,23 @@ async function getUserMiningSources(
 async function guessCustomSmtpHost(email: string) {
   const detected = await new IMAPSettingsDetector.default().detect(email);
   const host = (detected?.host || "") as string;
+
+  let smtpHost: string;
   if (host.startsWith("imap.")) {
-    return {
-      host: host.replace(/^imap\./, "smtp."),
-      port: 587,
-      secure: false,
-    };
+    smtpHost = host.replace(/^imap\./, "mail.");
+  } else if (host.startsWith("mail.")) {
+    smtpHost = host;
+  } else {
+    const domain = email.split("@")[1];
+    smtpHost = `smtp.${domain}`;
   }
 
-  const domain = email.split("@")[1];
-  return {
-    host: `smtp.${domain}`,
-    port: 587,
-    secure: false,
-  };
+  // Map IMAP port to SMTP port: 993 → 465 (SSL), otherwise → 587 (TLS/STARTTLS)
+  const imapPort = detected?.port ?? 143;
+  const smtpPort = imapPort === 993 ? 465 : 587;
+  const smtpSecure = imapPort === 993;
+
+  return { host: smtpHost, port: smtpPort, secure: smtpSecure };
 }
 
 async function buildUserTransport(
@@ -742,7 +745,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
       );
       await verifyTransport(transport);
       options.push({ email: source.email, available: true });
-      transportBySender[source.email] = transport;
+      transportBySender[normalizeEmail(source.email)] = transport;
     } catch (error) {
       const errorMessage = getUserFriendlyError(error);
       const isOAuthError =
@@ -779,7 +782,7 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
               email: source.email,
             });
             options.push({ email: source.email, available: true });
-            transportBySender[source.email] = retryTransport;
+            transportBySender[normalizeEmail(source.email)] = retryTransport;
             continue;
           }
         } catch (refreshError) {
@@ -1822,7 +1825,8 @@ app.post(
           campaign.user_id,
         );
         const sourceAsCredential = sources.find(
-          (row: { email: string }) => row.email === campaign.sender_email,
+          (row: { email: string }) =>
+            normalizeEmail(row.email) === normalizeEmail(campaign.sender_email),
         );
 
         if (!sourceAsCredential) {

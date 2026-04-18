@@ -70,6 +70,7 @@ router.get('/api/v2/profile/resolve/email', (req: Request, res: Response) => {
       twitter_profile_url: maybe(faker.internet.url(), 0.7)
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`[EnrichLayer Mock] Error: ${(error as Error).message}`);
     return res.status(500).json({
       code: '500',

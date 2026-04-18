@@ -84,8 +84,8 @@ export default class PgContacts implements Contacts {
 
   private static readonly UPSERT_PERSON_SQL = `
     WITH upserted AS (
-      INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone")
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       ON CONFLICT (email, user_id, source) DO UPDATE
       SET
         name = EXCLUDED.name,
@@ -98,7 +98,8 @@ export default class PgContacts implements Contacts {
         job_title = EXCLUDED.job_title,
         identifiers = EXCLUDED.identifiers,
         works_for = EXCLUDED.works_for,
-        mining_id = EXCLUDED.mining_id
+        mining_id = EXCLUDED.mining_id,
+        telephone = EXCLUDED.telephone
       WHERE
         private.persons.name IS DISTINCT FROM EXCLUDED.name
         OR private.persons.url IS DISTINCT FROM EXCLUDED.url
@@ -111,6 +112,7 @@ export default class PgContacts implements Contacts {
         OR private.persons.identifiers IS DISTINCT FROM EXCLUDED.identifiers
         OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
         OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id
+        OR private.persons.telephone IS DISTINCT FROM EXCLUDED.telephone
       RETURNING persons.email
     )
     SELECT email FROM upserted
@@ -119,7 +121,7 @@ export default class PgContacts implements Contacts {
     WHERE NOT EXISTS (SELECT 1 FROM upserted);`;
 
   private static readonly UPSERT_PERSONS_BULK_SQL = `
-    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id")
+    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone")
     SELECT *
     FROM UNNEST(
       $1::text[],
@@ -135,7 +137,8 @@ export default class PgContacts implements Contacts {
       $11::uuid[],
       $12::text[],
       $13::uuid[],
-      $14::text[]
+      $14::text[],
+      $15::text[][]
     )
     ON CONFLICT (email, user_id, source) DO UPDATE
     SET
@@ -149,7 +152,8 @@ export default class PgContacts implements Contacts {
       job_title = EXCLUDED.job_title,
       identifiers = EXCLUDED.identifiers,
       works_for = EXCLUDED.works_for,
-      mining_id = EXCLUDED.mining_id
+      mining_id = EXCLUDED.mining_id,
+      telephone = EXCLUDED.telephone
     WHERE
       private.persons.name IS DISTINCT FROM EXCLUDED.name
       OR private.persons.url IS DISTINCT FROM EXCLUDED.url
@@ -338,7 +342,8 @@ export default class PgContacts implements Contacts {
         userId,
         person.source,
         organizationsDB.get(person.worksFor ?? ''),
-        miningId
+        miningId,
+        person.telephone
       ]);
 
       if (tags.length) {

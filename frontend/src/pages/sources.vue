@@ -78,7 +78,6 @@
     </div>
 
     <DataView
-      v-else
       :value="$leadminer.miningSources"
       data-key="email"
       :paginator="true"
@@ -195,7 +194,10 @@
             >
               <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
-                  <span class="relative flex h-2 w-2">
+                  <span
+                    v-if="!isStrictlyPassive(source)"
+                    class="relative flex h-2 w-2"
+                  >
                     <span
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
                     ></span>
@@ -206,12 +208,17 @@
                   <span class="text-sm font-medium text-primary">{{
                     t('mining_in_progress')
                   }}</span>
+                  <Tag
+                    v-if="isStrictlyPassive(source)"
+                    severity="info"
+                    :value="t('passive')"
+                    class="text-xs ml-1"
+                  />
                 </div>
                 <div class="flex items-center gap-2 text-sm text-surface-600">
                   <span
-                    >{{ t('emails_scanned') }}:
-                    {{ $leadminer.scannedEmails }}</span
-                  >
+                    >{{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }}
+                  </span>
                   <span class="text-surface-400">|</span>
                   <span
                     >{{ t('emails_extracted') }}:
@@ -223,6 +230,7 @@
                     {{ $leadminer.verifiedContacts }}</span
                   >
                   <Button
+                    v-if="!isStrictlyPassive(source)"
                     size="small"
                     severity="secondary"
                     :label="t('view_mining')"
@@ -266,7 +274,7 @@
 import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
 import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 
 const $leadminer = useLeadminerStore();
@@ -333,9 +341,27 @@ function getIcon(type: string) {
 }
 
 function isActiveMiningSource(source: MiningSource): boolean {
-  return Boolean(
+  const isActiveForeground =
     $leadminer.activeMiningSource?.email === source.email &&
-    $leadminer.miningTask,
+    $leadminer.miningTask;
+
+  const isPassiveBackground = $leadminer.passiveMinings?.some(
+    (group: MiningTaskGroup) =>
+      group.task?.miningSource?.source === source.email,
+  );
+
+  return Boolean(isActiveForeground || isPassiveBackground);
+}
+function isStrictlyPassive(source: MiningSource): boolean {
+  return Boolean(
+    $leadminer.passiveMinings?.some(
+      (group: MiningTaskGroup) =>
+        group.task?.miningSource?.source === source.email,
+    ) &&
+    !(
+      $leadminer.activeMiningTask &&
+      $leadminer.activeMiningSource?.email === source.email
+    ),
   );
 }
 
@@ -562,6 +588,7 @@ onMounted(async () => {
     "delete_source_failed": "Unable to delete source",
     "stop_mining": "Stop mining",
     "view_mining": "View mining",
+    "passive": "Passive",
     "mining_in_progress": "Mining in progress",
     "mining_status_running": "Mining in progress",
     "mining_status_done": "Mining completed",
@@ -617,6 +644,7 @@ onMounted(async () => {
     "delete_source_failed": "Impossible de supprimer la source",
     "stop_mining": "Arrêter le minage",
     "view_mining": "Voir le minage",
+    "passive": "Passif",
     "mining_in_progress": "Extraction en cours",
     "mining_status_running": "Extraction en cours",
     "mining_status_done": "Extraction terminée",

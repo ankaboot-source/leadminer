@@ -142,6 +142,8 @@ export default class ImapEmailsFetcher {
 
   public isCompleted: boolean;
 
+  private requestedCancel: boolean;
+
   private totalFetched: number;
 
   private isRefreshingOAuthToken = false;
@@ -194,6 +196,7 @@ export default class ImapEmailsFetcher {
     this.totalFetched = 0;
     this.isCanceled = false;
     this.isCompleted = false;
+    this.requestedCancel = false;
 
     // Error Tracking
     this.FETCHING_TOTAL_ERRORS = 0;
@@ -653,7 +656,11 @@ export default class ImapEmailsFetcher {
       await this.emailsQueue.onIdle();
 
       this.isCompleted = true;
-      await this.stop(this.isCanceled);
+
+      if (!this.requestedCancel) {
+        // This should be only triggered when fetch internally completes or cancels
+        await this.stop(this.isCanceled);
+      }
 
       logger.info(`[${this.miningId}] All email jobs completed`);
     } catch (err) {
@@ -693,7 +700,6 @@ export default class ImapEmailsFetcher {
         bodyParts
       });
 
-      await connection.mailboxClose();
       logger.info(
         `[${this.miningId}:${folder}:${connection?.id}]: Closed folder for range`
       );
@@ -703,6 +709,7 @@ export default class ImapEmailsFetcher {
         // Destroy the connection, since it’s using an expired OAuth token.
         await this.imapConnectionProvider.destroyConnection(connection);
       } else {
+        await connection.mailboxClose();
         await this.imapConnectionProvider.releaseConnection(connection);
       }
     } catch (error) {
@@ -824,6 +831,7 @@ export default class ImapEmailsFetcher {
    */
   async stop(cancel: boolean) {
     if (cancel) {
+      this.requestedCancel = true;
       this.isCanceled = true;
       logger.debug(`[${this.miningId}] Triggered cancel`);
     }

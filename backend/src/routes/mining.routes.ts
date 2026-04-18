@@ -1,23 +1,19 @@
 import { Router } from 'express';
-import initializePostgresqlController from '../controllers/postgresql.controller';
-import initializeMiningController from '../controllers/mining.controller';
+import initializeMiningController, {
+  MiningControllerDeps
+} from '../controllers/mining.controller';
 import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
-import TasksManager from '../services/tasks-manager/TasksManager';
-import TasksManagerFile from '../services/tasks-manager/TasksManagerFile';
-import TasksManagerPostgreSQL from '../services/tasks-manager/TasksManagerPostgreSQL';
-import TasksManagerPST from '../services/tasks-manager/TasksManagerPST';
+import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
 
 export default function initializeMiningRoutes(
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST,
-  tasksManagerPostgreSQL: TasksManagerPostgreSQL,
-  miningSource: MiningSources,
+  miningEngine: MiningEngine,
+  miningSources: MiningSources,
   authResolver: AuthResolver,
-  contactsDB: Contacts
+  contactsDB: Contacts,
+  miningControllerDeps: MiningControllerDeps
 ) {
   const router = Router();
 
@@ -31,42 +27,13 @@ export default function initializeMiningRoutes(
     createProviderMiningSourceCallback,
     createImapMiningSource
   } = initializeMiningController(
-    tasksManager,
-    tasksManagerFile,
-    tasksManagerPST,
-    miningSource,
-    contactsDB
+    miningSources,
+    contactsDB,
+    miningEngine,
+    miningControllerDeps
   );
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
-
-  // Initialize PostgreSQL controller
-  const postgresqlController = initializePostgresqlController(
-    miningSource,
-    tasksManagerPostgreSQL
-  );
-
-  // PostgreSQL routes
-  router.post(
-    '/mine/sources/postgresql/test',
-    authMiddleware,
-    postgresqlController.testConnection
-  );
-  router.post(
-    '/mine/postgresql/preview',
-    authMiddleware,
-    postgresqlController.previewQuery
-  );
-  router.post(
-    '/mine/postgresql/tables',
-    authMiddleware,
-    postgresqlController.listTables
-  );
-  router.post(
-    '/mine/postgresql/:userId',
-    authMiddleware,
-    postgresqlController.startMining
-  );
 
   router.post('/mine/sources/imap', authMiddleware, createImapMiningSource);
 

@@ -1,4 +1,4 @@
-import { Task } from '../../services/tasks-manager/types';
+import { Task } from '../types';
 
 export interface Tasks {
   create(task: Task): Promise<Task | undefined>;

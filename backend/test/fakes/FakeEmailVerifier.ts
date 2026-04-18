@@ -4,6 +4,8 @@ import {
 } from '../../src/services/email-status/EmailStatusVerifier';
 
 export default class FakeEmailStatusVerifier implements EmailStatusVerifier {
+  emailsQuota = 1000;
+
   constructor(
     private readonly emailsWithFakeStatus: Record<string, EmailStatusResult>
   ) {}
@@ -15,6 +17,11 @@ export default class FakeEmailStatusVerifier implements EmailStatusVerifier {
   }
 
   verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
-    return Promise.all(emails.map(this.verify));
+    return Promise.all(emails.map((e) => this.verify(e)));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+  isEligibleEmail(_email: string): boolean {
+    return true;
   }
 }

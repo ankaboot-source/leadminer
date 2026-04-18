@@ -8,17 +8,10 @@ import StreamProducer from '../../utils/streams/StreamProducer';
 import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
-
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  messagesStream: string;
-  messagesConsumerGroup: string;
-  emailsVerificationStream: string;
-}
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 interface StreamEntry {
-  emailsStreamProducer: StreamProducer<EmailVerificationData>;
+  emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
   queuedEmailsCache: QueuedEmailsCache;
 }
 
@@ -28,12 +21,12 @@ export default class MessagesConsumer {
   private readonly activeStreams = new Map<string, StreamEntry>();
 
   constructor(
-    private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
+    private readonly taskManagementSubscriber: RedisSubscriber<StreamCommand>,
     private readonly emailMessagesStreamsConsumer: MultipleStreamsConsumer<EmailMessageData>,
     private readonly batchSize: number,
     private readonly messageProcessor: (
       data: EmailMessageData,
-      emailsStreamProducer: StreamProducer<EmailVerificationData>,
+      emailsStreamProducer: StreamProducer<EmailVerificationData> | null,
       queuedEmailsCache: QueuedEmailsCache
     ) => void,
     private readonly redisClient: Redis,
@@ -41,50 +34,62 @@ export default class MessagesConsumer {
   ) {
     this.isInterrupted = true;
 
-    this.taskManagementSubscriber.subscribe(
-      async ({
-        miningId,
-        command,
-        messagesStream,
-        emailsVerificationStream
-      }) => {
-        if (messagesStream && emailMessagesStreamsConsumer) {
-          if (command === 'REGISTER') {
-            const queuedEmailsCache = new RedisQueuedEmailsCache(
-              redisClient,
-              miningId
-            );
+    this.taskManagementSubscriber.subscribe(async (msg: StreamCommand) => {
+      const { miningId, role, command, streams } = msg;
 
-            const emailsStreamProducer =
-              new RedisStreamProducer<EmailVerificationData>(
+      if (role !== 'extract') return;
+
+      const messagesStream = streams.input[0]?.streamName;
+      const emailsVerificationStream = streams.output[0]?.streamName;
+
+      if (messagesStream) {
+        if (command === 'REGISTER') {
+          const queuedEmailsCache = new RedisQueuedEmailsCache(
+            redisClient,
+            miningId
+          );
+
+          const emailsStreamProducer = emailsVerificationStream
+            ? new RedisStreamProducer<EmailVerificationData>(
                 redisClient,
                 emailsVerificationStream,
                 this.logger
-              );
+              )
+            : null;
 
-            this.activeStreams.set(messagesStream, {
-              emailsStreamProducer,
-              queuedEmailsCache
-            });
-          } else {
-            const streamEntry = this.activeStreams.get(messagesStream);
-            if (streamEntry) {
-              await streamEntry.queuedEmailsCache.destroy();
-              this.activeStreams.delete(messagesStream);
-            }
+          this.activeStreams.set(messagesStream, {
+            emailsStreamProducer,
+            queuedEmailsCache
+          });
+
+          this.logger.info(
+            `[MessagesConsumer] Registered streams for miningId ${miningId}`,
+            { messagesStream, emailsVerificationStream }
+          );
+        } else if (command === 'DELETE') {
+          const streamEntry = this.activeStreams.get(messagesStream);
+          if (streamEntry) {
+            await streamEntry.queuedEmailsCache.destroy();
+            this.activeStreams.delete(messagesStream);
           }
+
+          this.logger.info(
+            `[MessagesConsumer] Deleted streams for miningId ${miningId}`,
+            { messagesStream }
+          );
         }
-
-        this.logger.debug('Received PubSub signal.', {
-          metadata: {
-            miningId,
-            command,
-            messagesStream,
-            emailsVerificationStream
-          }
-        });
       }
-    );
+
+      this.logger.debug('[MessagesConsumer] Received PubSub signal.', {
+        metadata: {
+          miningId,
+          role,
+          command,
+          messagesStream,
+          emailsVerificationStream: emailsVerificationStream ?? 'not provided'
+        }
+      });
+    });
   }
 
   /**

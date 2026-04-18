@@ -6,13 +6,7 @@ import {
   EmailVerificationData,
   EmailVerificationHandler
 } from './emailVerificationHandlers';
-
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  emailsStream: string;
-  emailsConsumerGroup: string;
-}
+import { StreamCommand } from '../../services/tasks-manager-v2/types';
 
 export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
@@ -20,7 +14,7 @@ export default class EmailVerificationConsumer {
   private readonly activeStreams = new Set<string>();
 
   constructor(
-    private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
+    private readonly taskManagementSubscriber: RedisSubscriber<StreamCommand>,
     private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailVerificationData>,
     private readonly batchSize: number,
     private readonly streamsHandler: EmailVerificationHandler,
@@ -29,36 +23,47 @@ export default class EmailVerificationConsumer {
   ) {
     this.isInterrupted = true;
 
-    this.taskManagementSubscriber.subscribe(
-      ({ miningId, command, emailsStream }) => {
-        this.logger.info('Received PubSub signal', {
-          miningId,
-          command,
-          emailsStream,
-          hasEmailsStream: Boolean(emailsStream),
-          activeStreamsBefore: Array.from(this.activeStreams)
-        });
+    this.taskManagementSubscriber.subscribe((msg: StreamCommand) => {
+      const { miningId, role, command, streams } = msg;
 
-        if (emailsStream) {
-          if (command === 'REGISTER') {
-            this.activeStreams.add(emailsStream);
-            this.streamsHandler.registerStream(emailsStream);
-          } else {
-            this.activeStreams.delete(emailsStream);
-            this.streamsHandler.unregisterStream(emailsStream);
-          }
+      if (role !== 'clean') return;
+
+      const emailsStream = streams.input[0]?.streamName;
+      const consumerGroup = streams.input[0]?.consumerGroup;
+
+      if (emailsStream) {
+        if (command === 'REGISTER') {
+          this.activeStreams.add(emailsStream);
+          this.streamsHandler.registerStream(emailsStream);
+
+          this.logger.info(
+            `[EmailsVerificationConsumer] Registered stream for miningId ${miningId}`,
+            { emailsStream, consumerGroup }
+          );
+        } else {
+          this.activeStreams.delete(emailsStream);
+          this.streamsHandler.unregisterStream(emailsStream);
+
+          this.logger.info(
+            `[EmailsVerificationConsumer] Deleted stream for miningId ${miningId}`,
+            { emailsStream }
+          );
         }
+      }
 
-        this.logger.debug('PubSub signal processed', {
+      this.logger.debug(
+        '[EmailsVerificationConsumer] Received PubSub signal.',
+        {
           metadata: {
             miningId,
+            role,
             command,
             emailsStream,
             activeStreamsAfter: Array.from(this.activeStreams)
           }
-        });
-      }
-    );
+        }
+      );
+    });
   }
 
   /**

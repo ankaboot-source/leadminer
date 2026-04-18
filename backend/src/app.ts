@@ -20,23 +20,19 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
-import TasksManager from './services/tasks-manager/TasksManager';
-import TasksManagerFile from './services/tasks-manager/TasksManagerFile';
-import TasksManagerPostgreSQL from './services/tasks-manager/TasksManagerPostgreSQL';
-import TasksManagerPST from './services/tasks-manager/TasksManagerPST';
+import { MiningEngine } from './services/tasks-manager-v2/MiningEngine';
+import { MiningControllerDeps } from './controllers/mining.controller';
 import Billing from './utils/billing-plugin';
 import { miningSourceService } from './db/supabase/MiningSourceService';
 
 export default function initializeApp(
   authResolver: AuthResolver,
-  tasksManager: TasksManager,
-  tasksManagerFile: TasksManagerFile,
-  tasksManagerPST: TasksManagerPST,
-  tasksManagerPostgreSQL: TasksManagerPostgreSQL,
+  miningEngine: MiningEngine,
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
-  logger: Logger
+  logger: Logger,
+  miningControllerDeps: MiningControllerDeps
 ) {
   const app = express();
 
@@ -65,28 +61,18 @@ export default function initializeApp(
 
   app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
-  app.use(
-    '/api/imap',
-    initializeStreamRouter(
-      tasksManager,
-      tasksManagerFile,
-      tasksManagerPST,
-      tasksManagerPostgreSQL,
-      authResolver
-    )
-  );
-  app.use(
-    '/api/imap',
-    initializeMiningRoutes(
-      tasksManager,
-      tasksManagerFile,
-      tasksManagerPST,
-      tasksManagerPostgreSQL,
-      miningSources,
-      authResolver,
-      contacts
-    )
-  );
+<<<<<<< HEAD
+app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
+app.use(
+  '/api/imap',
+  initializeMiningRoutes(
+    miningEngine,
+    miningSources,
+    authResolver,
+    contacts,
+    miningControllerDeps
+  )
+);
   app.use(
     '/api',
     initializeContactsRoutes(contacts, authResolver, miningSourceService)
