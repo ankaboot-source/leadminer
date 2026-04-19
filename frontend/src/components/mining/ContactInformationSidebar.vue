@@ -239,6 +239,7 @@
             :label="t('remove')"
             icon="pi pi-trash"
             severity="danger"
+            outlined
             @click="showRemoveConfirmationDialog = true"
           />
           <EnrichButton
