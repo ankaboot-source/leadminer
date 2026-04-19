@@ -175,7 +175,8 @@
         "role": "Role"
       },
       "phone_copied": "Phone number copied",
-      "contact_phone_copied": "Phone number has been copied to your clipboard"
+      "contact_phone_copied": "Phone number has been copied to your clipboard",
+      "tags_placeholder": "Enter tags separated by commas"
     },
     "mining": {
       "toast_canceled_title": "Mining canceled",
@@ -351,7 +352,8 @@
         "role": "Role"
       },
       "phone_copied": "Numéro de téléphone copié",
-      "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers"
+      "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers",
+      "tags_placeholder": "Entrez des étiquettes séparées par des virgules"
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",

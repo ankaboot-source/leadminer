@@ -84,6 +84,7 @@
             <Chips
               v-model="contactEditTags"
               :placeholder="$t('contact.tags_placeholder')"
+              addOnKeypress
               class="w-full"
             />
           </div>
@@ -712,7 +713,6 @@ async function removeContact() {
     "consent": "Consent",
     "consent_tooltip_default": "Updated on {date}",
     "consent_tooltip_opt_out": "Opted out on {date}",
-    "tags_placeholder": "Enter tags separated by commas",
     "remove_contact_title": "Remove Contact",
     "remove_contact_detail": "Are you sure you want to remove {name}?",
     "contact_removed": "Contact removed",
@@ -730,7 +730,6 @@ async function removeContact() {
     "consent": "Consentement",
     "consent_tooltip_default": "Mis à jour le {date}",
     "consent_tooltip_opt_out": "Désinscrit le {date}",
-    "tags_placeholder": "Entrez des étiquettes séparées par des virgules",
     "remove_contact_title": "Supprimer le contact",
     "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
     "contact_removed": "Contact supprimé",
