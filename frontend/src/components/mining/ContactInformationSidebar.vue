@@ -241,7 +241,7 @@
             <Button
               severity="danger"
               text
-              :aria-label="$t('common.delete')"
+              :aria-label="t('remove')"
               @click="removeContact()"
             >
               <template #icon>
