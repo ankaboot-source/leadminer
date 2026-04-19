@@ -237,14 +237,15 @@
 
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-between items-center">
-        <template v-if="!editingContact">
-          <Button
-            :label="t('remove')"
-            icon="pi pi-trash"
-            severity="danger"
-            outlined
-            @click="removeContact()"
-          />
+        <Button
+          v-if="!editingContact"
+          :label="t('remove')"
+          icon="pi pi-trash"
+          severity="danger"
+          outlined
+          @click="removeContact()"
+        />
+        <div v-if="!editingContact" class="flex gap-2 ml-auto">
           <EnrichButton
             source="contact"
             :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -258,7 +259,7 @@
             icon="pi pi-pen-to-square"
             @click="editContactInformations()"
           />
-        </template>
+        </div>
         <template v-else>
           <Button
             :label="$t('common.cancel')"
@@ -278,18 +279,14 @@
 </template>
 <script setup lang="ts">
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
-import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
-import { removeContactsFromDatabase } from '@/utils/contacts';
-
 import {
   getConsentColor,
   getConsentLabel,
   getStatusColor,
   getStatusLabel,
-  getTagColor,
-  getTagLabel,
   isValidURL,
+  removeContactsFromDatabase,
 } from '@/utils/contacts';
 import type {
   RealtimeChannel,
@@ -453,7 +450,7 @@ const showRemoveContactModal = ref(false);
 const isRemovingContact = ref(false);
 
 async function confirmRemoveContact() {
-  const email = contact.value.email;
+  const { email } = contact.value;
   if (!email) return;
 
   isRemovingContact.value = true;
