@@ -268,32 +268,55 @@
     </div>
 
     <template #footer>
-      <div class="flex flex-wrap gap-2 justify-center items-center">
-        <template v-if="!editingContact">
-          <EnrichButton
-            source="contact"
-            :enrichment-realtime-callback="enrichmentRealtimeCallback"
-            :enrichment-request-response-callback="() => {}"
-            :contacts-to-enrich="[contact]"
-            :enrich-all-contacts="false"
-            :skip-dialog="skipDialog"
-          />
-          <ExportContacts
-            :contacts-to-treat="[contact.email]"
-            :disable-export="isExportDisabled"
-          />
-        </template>
-        <template v-else>
-          <Button
-            :label="$t('common.cancel')"
-            severity="secondary"
-            @click="cancelContactInformations()"
-          />
-          <Button
-            :label="$t('common.save')"
-            @click="saveContactInformations()"
-          />
-        </template>
+      <div class="flex flex-wrap gap-2 justify-between items-center">
+        <div class="flex gap-2">
+          <template v-if="!editingContact">
+            <Button
+              severity="danger"
+              text
+              :aria-label="$t('common.remove')"
+              @click="showRemoveConfirmationDialog = true"
+            >
+              <template #icon>
+                <i class="pi pi-trash" />
+              </template>
+            </Button>
+            <Button
+              severity="secondary"
+              text
+              :aria-label="$t('common.edit')"
+              @click="editContactInformations()"
+            >
+              <template #icon>
+                <i class="pi pi-pen-to-square" />
+              </template>
+            </Button>
+            <EnrichButton
+              source="contact"
+              :enrichment-realtime-callback="enrichmentRealtimeCallback"
+              :enrichment-request-response-callback="() => {}"
+              :contacts-to-enrich="[contact]"
+              :enrich-all-contacts="false"
+              :skip-dialog="skipDialog"
+            />
+          </template>
+          <template v-else>
+            <Button
+              :label="$t('common.cancel')"
+              severity="secondary"
+              @click="cancelContactInformations()"
+            />
+            <Button
+              :label="$t('common.save')"
+              @click="saveContactInformations()"
+            />
+          </template>
+        </div>
+        <ExportContacts
+          v-if="!editingContact"
+          :contacts-to-treat="[contact.email]"
+          :disable-export="isExportDisabled"
+        />
       </div>
     </template>
     <Dialog
