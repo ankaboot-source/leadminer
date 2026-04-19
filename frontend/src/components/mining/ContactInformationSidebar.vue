@@ -7,6 +7,32 @@
     pt:pc-close-button:root:class="self-end"
     @hide="() => onHide()"
   >
+    <Dialog
+      v-model:visible="showRemoveContactModal"
+      modal
+      :header="t('remove_contacts', 1)"
+      :style="{ width: '25rem' }"
+    >
+      <span class="p-text-secondary block mb-5">
+        {{ t('remove_contacts_confirmation', 1) }}
+      </span>
+      <div class="flex flex-row-reverse justify-content-start gap-2">
+        <Button
+          id="remove-contact-confirm"
+          type="button"
+          :label="t('remove')"
+          severity="danger"
+          :loading="isRemovingContact"
+          @click="confirmRemoveContact()"
+        />
+        <Button
+          type="button"
+          :label="$t('common.cancel')"
+          severity="secondary"
+          @click="showRemoveContactModal = false"
+        />
+      </div>
+    </Dialog>
     <template #header>
       <div class="flex items-center gap-2 w-full">
         <Image
@@ -111,10 +137,7 @@
           </td>
         </tr>
 
-        <tr
-          v-if="contact.telephone && contact.telephone.length > 0"
-          class="p-row-odd"
-        >
+        <tr class="p-row-odd">
           <td class="md:font-medium">
             {{ $t('contact.telephone') }}
           </td>
@@ -139,7 +162,7 @@
           </td>
         </tr>
 
-        <tr v-if="contact.location" class="p-row-even">
+        <tr class="p-row-even">
           <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
             <div v-if="!editingContact">
@@ -174,31 +197,11 @@
         <tr class="p-row-odd">
           <td class="md:font-medium">{{ t('consent') }}</td>
           <td>
-            <div v-if="!editingContact">
-              <div v-tooltip.bottom="getConsentTooltip(contact)">
-                <Tag
-                  class="font-normal"
-                  :value="getConsentLabel(contact.consent_status)"
-                  :severity="getConsentColor(contact.consent_status)"
-                />
-              </div>
-            </div>
-            <div v-else>
-              <Select
-                v-model="contactEdit.consent_status"
-                :options="[
-                  {
-                    label: t('contact.consent.legitimate_interest'),
-                    value: 'legitimate_interest',
-                  },
-                  { label: t('contact.consent.opt_out'), value: 'opt_out' },
-                  { label: t('contact.consent.opt_in'), value: 'opt_in' },
-                  { label: t('consent_not_set'), value: null },
-                ]"
-                option-label="label"
-                option-value="value"
-                :placeholder="t('consent_not_set')"
-                class="w-full"
+            <div v-tooltip.bottom="getConsentTooltip(contact)">
+              <Tag
+                class="font-normal"
+                :value="getConsentLabel(contact.consent_status)"
+                :severity="getConsentColor(contact.consent_status)"
               />
             </div>
           </td>
@@ -234,78 +237,57 @@
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-between items-center">
         <div class="flex gap-2">
-          <Button
-            v-if="!editingContact"
-            :label="t('remove')"
-            icon="pi pi-trash"
-            severity="danger"
-            outlined
-            @click="showRemoveConfirmationDialog = true"
-          />
-          <EnrichButton
-            v-if="!editingContact"
-            source="contact"
-            :enrichment-realtime-callback="enrichmentRealtimeCallback"
-            :enrichment-request-response-callback="() => {}"
-            :contacts-to-enrich="[contact]"
-            :enrich-all-contacts="false"
-            :skip-dialog="skipDialog"
-          />
+          <template v-if="!editingContact">
+            <Button
+              severity="danger"
+              text
+              :aria-label="$t('common.delete')"
+              @click="removeContact()"
+            >
+              <template #icon>
+                <i class="pi pi-trash" />
+              </template>
+            </Button>
+            <Button
+              severity="secondary"
+              text
+              :aria-label="$t('common.edit')"
+              @click="editContactInformations()"
+            >
+              <template #icon>
+                <i class="pi pi-pen-to-square" />
+              </template>
+            </Button>
+            <EnrichButton
+              source="contact"
+              :enrichment-realtime-callback="enrichmentRealtimeCallback"
+              :enrichment-request-response-callback="() => {}"
+              :contacts-to-enrich="[contact]"
+              :enrich-all-contacts="false"
+              :skip-dialog="skipDialog"
+            />
+          </template>
+          <template v-else>
+            <Button
+              :label="$t('common.cancel')"
+              severity="secondary"
+              @click="cancelContactInformations()"
+            />
+            <Button
+              :label="$t('common.save')"
+              @click="saveContactInformations()"
+            />
+          </template>
         </div>
-        <Button
-          v-if="!editingContact"
-          :label="$t('common.edit')"
-          icon="pi pi-pen-to-square"
-          outlined
-          @click="editContactInformations()"
-        />
-        <template v-else>
-          <Button
-            :label="$t('common.cancel')"
-            severity="secondary"
-            @click="cancelContactInformations()"
-          />
-          <Button
-            :label="$t('common.save')"
-            @click="saveContactInformations()"
-          />
-        </template>
       </div>
     </template>
-    <Dialog
-      v-model:visible="showRemoveConfirmationDialog"
-      modal
-      :header="t('remove_contact_title')"
-      :style="{ width: '25rem' }"
-    >
-      <span class="p-text-secondary block mb-5">
-        {{
-          t('remove_contact_detail', { name: contact.name || contact.email })
-        }}
-      </span>
-      <div class="flex flex-row-reverse justify-content-start gap-2">
-        <Button
-          id="remove-contact-confirm"
-          type="button"
-          :label="t('remove')"
-          severity="danger"
-          :loading="isRemovingContact"
-          @click="removeContact"
-        />
-        <Button
-          type="button"
-          :label="$t('common.cancel')"
-          severity="secondary"
-          @click="showRemoveConfirmationDialog = false"
-        />
-      </div>
-    </Dialog>
   </Drawer>
 </template>
 <script setup lang="ts">
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
+import { removeContactsFromDatabase } from '@/utils/contacts';
 
 import {
   getConsentColor,
@@ -315,7 +297,6 @@ import {
   getTagColor,
   getTagLabel,
   isValidURL,
-  removeContactsFromDatabase,
 } from '@/utils/contacts';
 import type {
   RealtimeChannel,
@@ -324,6 +305,7 @@ import type {
 import parsePhoneNumber from 'libphonenumber-js';
 import { HandledError } from '~/plugins/error-handler';
 import Normalizer from '~/utils/normalizer';
+import Dialog from 'primevue/dialog';
 
 const ExportContacts = defineAsyncComponent(
   () => import('./buttons/ExportContacts.vue'),
@@ -352,43 +334,22 @@ const show = defineModel<boolean>('show');
 
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const editingContact = ref(false);
-const contactEditTags = ref<string[]>([]);
-const showRemoveConfirmationDialog = ref(false);
-const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
-  email: '',
-  name: null,
-  given_name: null,
-  family_name: null,
-  alternate_name: '',
-  telephone: '',
-  same_as: '',
-  location: '',
-  works_for: null,
-  job_title: null,
-  image: null,
-  tags: null,
+  ...contact.value,
+  alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
+  telephone: contact.value?.telephone?.join('\n') ?? null,
+  same_as: contact.value?.same_as?.join('\n') ?? null,
+  location: contact.value?.location ?? null,
 });
 
 watch(contact, (newContact) => {
-  if (newContact) {
-    contactEdit.value = {
-      email: newContact.email,
-      name: newContact.name,
-      given_name: newContact.given_name,
-      family_name: newContact.family_name,
-      alternate_name: newContact.alternate_name?.join('\n') ?? null,
-      telephone: newContact.telephone?.join('\n') ?? null,
-      same_as: newContact.same_as?.join('\n') ?? null,
-      location: newContact.location ?? null,
-      works_for: newContact.works_for,
-      job_title: newContact.job_title,
-      image: newContact.image,
-      tags: newContact.tags ?? null,
-      consent_status: newContact.consent_status ?? null,
-    };
-    contactEditTags.value = newContact.tags ? [...newContact.tags] : [];
-  }
+  contactEdit.value = {
+    ...newContact,
+    alternate_name: newContact?.alternate_name?.join('\n') ?? null,
+    telephone: newContact?.telephone?.join('\n') ?? null,
+    same_as: newContact?.same_as?.join('\n') ?? null,
+    location: newContact?.location ?? null,
+  };
 });
 
 const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
@@ -491,6 +452,33 @@ function onHide() {
   $contactInformationSidebar.$reset();
 }
 
+function removeContact() {
+  showRemoveContactModal.value = true;
+}
+
+const showRemoveContactModal = ref(false);
+const isRemovingContact = ref(false);
+
+async function confirmRemoveContact() {
+  const email = contact.value.email;
+  if (!email) return;
+
+  isRemovingContact.value = true;
+  try {
+    await removeContactsFromDatabase([email]);
+    $toast.add({
+      severity: 'success',
+      summary: t('contacts_removed', 1),
+      detail: t('contacts_removed_success', 1),
+      life: 3000,
+    });
+    showRemoveContactModal.value = false;
+    $contactInformationSidebar.$reset();
+  } finally {
+    isRemovingContact.value = false;
+  }
+}
+
 function editContactInformations() {
   editingContact.value = true;
 }
@@ -591,10 +579,6 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
-    consent_status:
-      originalContactCopy.consent_status !== contactEdit.value.consent_status
-        ? contactEdit.value.consent_status || null
-        : undefined,
   };
   const userId = getCurrentUserId();
   if (!userId) return;
@@ -629,20 +613,6 @@ function getConsentTooltip(data: Contact) {
 
   return t('consent_tooltip_default', { date });
 }
-
-async function removeContact() {
-  isRemovingContact.value = true;
-  try {
-    await removeContactsFromDatabase([contact.value.email]);
-    showRemoveConfirmationDialog.value = false;
-    $contactInformationSidebar.$reset();
-    showNotification('success', t('contact_removed'), '');
-  } catch {
-    showNotification('error', t('remove_contact_error'), '');
-  } finally {
-    isRemovingContact.value = false;
-  }
-}
 </script>
 <i18n lang="json">
 {
@@ -658,11 +628,11 @@ async function removeContact() {
     "consent": "Consent",
     "consent_tooltip_default": "Updated on {date}",
     "consent_tooltip_opt_out": "Opted out on {date}",
-    "consent_not_set": "Not set",
-    "remove_contact_title": "Remove Contact",
-    "remove_contact_detail": "Are you sure you want to remove {name}?",
-    "contact_removed": "Contact removed",
-    "remove_contact_error": "Failed to remove contact"
+    "remove": "Remove",
+    "remove_contacts": "Remove contact|Remove {n} contacts",
+    "remove_contacts_confirmation": "Removing this contact is permanent. You will lose all data related to this contact.|Removing these {n} contacts is permanent. You will lose all data related to these contacts.",
+    "contacts_removed": "Contact removed|Contacts removed",
+    "contacts_removed_success": "Contact has been removed successfully.|{n} contacts have been removed successfully."
   },
   "fr": {
     "copy": "Copier",
@@ -676,11 +646,11 @@ async function removeContact() {
     "consent": "Consentement",
     "consent_tooltip_default": "Mis à jour le {date}",
     "consent_tooltip_opt_out": "Désinscrit le {date}",
-    "consent_not_set": "Non défini",
-    "remove_contact_title": "Supprimer le contact",
-    "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
-    "contact_removed": "Contact supprimé",
-    "remove_contact_error": "Échec de la suppression du contact"
+    "remove": "Supprimer",
+    "remove_contacts": "Supprimer le contact|Supprimer {n} contacts",
+    "remove_contacts_confirmation": "La suppression de ce contact est permanente. Vous perdrez toutes les données liées à ce contact.|La suppression de ces {n} contacts est permanente. Vous perdrez toutes les données liées à ces contacts.",
+    "contacts_removed": "Contact supprimé|Contacts supprimés",
+    "contacts_removed_success": "Le contact a été supprimé avec succès.|{n} contacts ont été supprimés avec succès."
   }
 }
 </i18n>
