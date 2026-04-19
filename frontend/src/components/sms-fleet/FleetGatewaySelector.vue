@@ -43,6 +43,7 @@
           v-if="selectedProvider"
           ref="providerFormRef"
           :provider="selectedProvider"
+          @valid="isFormValid = $event"
           @submit="handleFormSubmit"
         />
 
@@ -61,7 +62,7 @@
           :label="t('save_gateway')"
           icon="pi pi-check"
           :loading="isSubmitting"
-          :disabled="!gatewayName || !selectedProvider || !formConfig"
+          :disabled="!gatewayName || !selectedProvider || !isFormValid"
           @click="saveGateway"
         />
       </div>
@@ -302,6 +303,7 @@ const formConfig = ref<{
   provider: string;
   config: Record<string, unknown>;
 } | null>(null);
+const isFormValid = ref(false);
 
 interface Props {
   modelValue: string[];
@@ -350,7 +352,7 @@ function handleFormSubmit(config: {
 }
 
 async function saveGateway() {
-  if (!gatewayName.value || !selectedProvider.value || !formConfig.value) {
+  if (!gatewayName.value || !selectedProvider.value || !isFormValid.value) {
     return;
   }
 
@@ -379,6 +381,7 @@ function resetForm() {
   dailyLimit.value = 200;
   monthlyLimit.value = 200;
   formConfig.value = null;
+  isFormValid.value = false;
   providerFormRef.value?.resetForm();
 }
 
