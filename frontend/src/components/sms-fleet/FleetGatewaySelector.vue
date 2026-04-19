@@ -8,7 +8,7 @@
     >
       <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">{{ t('gateway_name') }}</label>
+          <label class="text-sm font-medium">{{ t('gateway_name') }} *</label>
           <InputText
             v-model="gatewayName"
             :placeholder="t('gateway_name_placeholder')"

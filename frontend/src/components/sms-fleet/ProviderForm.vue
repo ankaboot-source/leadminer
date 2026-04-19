@@ -140,7 +140,7 @@ defineExpose({ resetForm, handleSubmit });
       <template v-else-if="provider === 'simple-sms-gateway'">
         <div>
           <label for="simple-baseurl" class="block mb-2 font-medium">
-            {{ t('gateway_url') }} *
+            {{ t('gateway_url') }}
           </label>
           <InputText
             id="simple-baseurl"
