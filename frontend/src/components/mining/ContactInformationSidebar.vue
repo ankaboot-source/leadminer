@@ -239,25 +239,19 @@
         <div class="flex gap-2">
           <template v-if="!editingContact">
             <Button
+              :label="t('remove')"
+              icon="pi pi-trash"
               severity="danger"
-              text
-              :aria-label="t('remove')"
+              outlined
               @click="removeContact()"
-            >
-              <template #icon>
-                <i class="pi pi-trash" />
-              </template>
-            </Button>
+            />
             <Button
+              :label="$t('common.edit')"
+              icon="pi pi-pen-to-square"
               severity="secondary"
-              text
-              :aria-label="$t('common.edit')"
+              outlined
               @click="editContactInformations()"
-            >
-              <template #icon>
-                <i class="pi pi-pen-to-square" />
-              </template>
-            </Button>
+            />
             <EnrichButton
               source="contact"
               :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -275,6 +269,8 @@
             />
             <Button
               :label="$t('common.save')"
+              icon="pi pi-check"
+              class="ml-auto"
               @click="saveContactInformations()"
             />
           </template>
