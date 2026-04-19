@@ -236,45 +236,42 @@
 
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-between items-center">
-        <div class="flex gap-2">
-          <template v-if="!editingContact">
-            <Button
-              :label="t('remove')"
-              icon="pi pi-trash"
-              severity="danger"
-              outlined
-              @click="removeContact()"
-            />
-            <Button
-              :label="$t('common.edit')"
-              icon="pi pi-pen-to-square"
-              severity="secondary"
-              outlined
-              @click="editContactInformations()"
-            />
-            <EnrichButton
-              source="contact"
-              :enrichment-realtime-callback="enrichmentRealtimeCallback"
-              :enrichment-request-response-callback="() => {}"
-              :contacts-to-enrich="[contact]"
-              :enrich-all-contacts="false"
-              :skip-dialog="skipDialog"
-            />
-          </template>
-          <template v-else>
-            <Button
-              :label="$t('common.cancel')"
-              severity="secondary"
-              @click="cancelContactInformations()"
-            />
-            <Button
-              :label="$t('common.save')"
-              icon="pi pi-check"
-              class="ml-auto"
-              @click="saveContactInformations()"
-            />
-          </template>
-        </div>
+        <template v-if="!editingContact">
+          <Button
+            :label="t('remove')"
+            icon="pi pi-trash"
+            severity="danger"
+            outlined
+            @click="removeContact()"
+          />
+          <EnrichButton
+            source="contact"
+            :enrichment-realtime-callback="enrichmentRealtimeCallback"
+            :enrichment-request-response-callback="() => {}"
+            :contacts-to-enrich="[contact]"
+            :enrich-all-contacts="false"
+            :skip-dialog="skipDialog"
+          />
+          <Button
+            :label="$t('common.edit')"
+            icon="pi pi-pen-to-square"
+            severity="secondary"
+            @click="editContactInformations()"
+          />
+        </template>
+        <template v-else>
+          <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="cancelContactInformations()"
+          />
+          <Button
+            :label="$t('common.save')"
+            icon="pi pi-check"
+            class="ml-auto"
+            @click="saveContactInformations()"
+          />
+        </template>
       </div>
     </template>
   </Drawer>
