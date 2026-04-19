@@ -84,6 +84,7 @@
               v-if="!editingContact"
               :contacts-to-treat="[contact.email]"
               :disable-export="isExportDisabled"
+              outlined
             />
           </div>
         </div>
