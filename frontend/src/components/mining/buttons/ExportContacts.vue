@@ -98,6 +98,7 @@
         :model="exportItems"
         :disabled="disableExport"
         :spinner="true"
+        outlined
         :button-props="{
           id: 'export-csv',
           onClick: () => exportTable(ExportTypes.CSV),
