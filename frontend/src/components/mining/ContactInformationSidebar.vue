@@ -334,7 +334,7 @@
         <Button
           id="remove-contact-confirm"
           type="button"
-          :label="$t('common.remove')"
+          :label="t('remove')"
           severity="danger"
           :loading="isRemovingContact"
           @click="removeContact"
