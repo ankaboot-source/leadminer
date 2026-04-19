@@ -15,67 +15,49 @@
           image-class="size-16 md:size-20 rounded-full"
           class="flex-none"
         />
-        <div class="grow truncate">
-          <div class="grow truncate">
-            <div
-              v-if="contact.name && !editingContact"
-              class="font-medium text-xl md:text-2xl truncate"
-            >
-              {{ contact.name }}
-            </div>
-            <InputText
-              v-if="editingContact"
-              v-model="contactEdit.name"
-              :placeholder="$t('contact.name')"
-              size="large"
-              class="w-full"
-            />
-            <div class="flex gap-1">
-              <div class="max-lg:grow gap-2 flex items-center truncate">
-                <Badge
-                  v-tooltip.top="getStatusLabel(contact.status)"
-                  class="min-w-4 h-4 flex-none"
-                  :severity="getStatusColor(contact.status)"
-                />
-                <div class="truncate">
-                  {{ contact.email }}
-                </div>
+        <div class="grow">
+          <div class="flex justify-between items-start">
+            <div class="grow truncate">
+              <div
+                v-if="contact.name && !editingContact"
+                class="font-medium text-xl md:text-2xl truncate"
+              >
+                {{ contact.name }}
               </div>
-              <Button
-                v-if="!editingContact"
-                rounded
-                text
-                icon="pi pi-copy"
+              <InputText
+                v-if="editingContact"
+                v-model="contactEdit.name"
+                :placeholder="$t('contact.name')"
                 size="large"
-                class="text-2xl flex-none -ml-2"
-                :aria-label="t('copy')"
-                @click="copyContact(contact.email, contact.name ?? undefined)"
+                class="w-full"
               />
+              <div class="flex gap-1">
+                <div class="max-lg:grow gap-2 flex items-center truncate">
+                  <Badge
+                    v-tooltip.top="getStatusLabel(contact.status)"
+                    class="min-w-4 h-4 flex-none"
+                    :severity="getStatusColor(contact.status)"
+                  />
+                  <div class="truncate">
+                    {{ contact.email }}
+                  </div>
+                </div>
+                <Button
+                  v-if="!editingContact"
+                  rounded
+                  text
+                  icon="pi pi-copy"
+                  size="large"
+                  class="text-2xl flex-none -ml-2"
+                  :aria-label="t('copy')"
+                  @click="copyContact(contact.email, contact.name ?? undefined)"
+                />
+              </div>
             </div>
-          </div>
-          <div
-            v-if="contact.same_as?.length && !editingContact"
-            class="flex gap-2 grow"
-          >
-            <social-links-and-phones :social-links="contact.same_as" />
-          </div>
-          <div
-            v-if="!editingContact && contact.tags?.length"
-            class="flex pt-1 space-x-2"
-          >
-            <Tag
-              v-for="tag in contact.tags"
-              :key="tag"
-              :value="getTagLabel(tag)"
-              :severity="getTagColor(tag)"
-            />
-          </div>
-          <div v-else-if="editingContact" class="pt-1">
-            <Chips
-              v-model="contactEditTags"
-              :placeholder="$t('contact.tags_placeholder')"
-              addOnKeypress
-              class="w-full"
+            <ExportContacts
+              v-if="!editingContact"
+              :contacts-to-treat="[contact.email]"
+              :disable-export="isExportDisabled"
             />
           </div>
         </div>
@@ -249,21 +231,14 @@
       </tbody>
     </table>
 
-    <ExportContacts
-      v-if="!editingContact"
-      :contacts-to-treat="[contact.email]"
-      :disable-export="isExportDisabled"
-      class="ml-auto"
-    />
-
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-between items-center">
         <div class="flex gap-2">
           <Button
             v-if="!editingContact"
             :label="t('remove')"
+            icon="pi pi-trash"
             severity="danger"
-            outlined
             @click="showRemoveConfirmationDialog = true"
           />
           <EnrichButton
@@ -279,8 +254,8 @@
         <Button
           v-if="!editingContact"
           :label="$t('common.edit')"
+          icon="pi pi-pen-to-square"
           severity="secondary"
-          outlined
           @click="editContactInformations()"
         />
         <template v-else>
