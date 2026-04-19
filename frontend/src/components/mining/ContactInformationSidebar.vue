@@ -255,7 +255,6 @@
           <Button
             :label="$t('common.edit')"
             icon="pi pi-pen-to-square"
-            severity="success"
             @click="editContactInformations()"
           />
         </template>
