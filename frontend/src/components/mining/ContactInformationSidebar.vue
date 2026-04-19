@@ -255,7 +255,7 @@
           v-if="!editingContact"
           :label="$t('common.edit')"
           icon="pi pi-pen-to-square"
-          severity="secondary"
+          outlined
           @click="editContactInformations()"
         />
         <template v-else>
