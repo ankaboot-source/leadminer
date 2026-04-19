@@ -51,16 +51,6 @@
                 :aria-label="t('copy')"
                 @click="copyContact(contact.email, contact.name ?? undefined)"
               />
-              <Button
-                v-if="!editingContact"
-                rounded
-                text
-                icon="pi pi-trash"
-                size="large"
-                class="text-2xl flex-none text-red-500"
-                :aria-label="$t('common.remove')"
-                @click="showRemoveConfirmationDialog = true"
-              />
             </div>
           </div>
           <div
@@ -221,11 +211,11 @@
                   },
                   { label: t('contact.consent.opt_out'), value: 'opt_out' },
                   { label: t('contact.consent.opt_in'), value: 'opt_in' },
-                  { label: t('contact.unverified'), value: null },
+                  { label: t('consent_not_set'), value: null },
                 ]"
                 option-label="label"
                 option-value="value"
-                :placeholder="t('contact.unverified')"
+                :placeholder="t('consent_not_set')"
                 class="w-full"
               />
             </div>
@@ -259,65 +249,51 @@
       </tbody>
     </table>
 
-    <div class="flex justify-center py-2">
-      <Button
-        :label="$t('common.edit')"
-        outlined
-        class="w-full md:w-auto"
-        @click="editContactInformations()"
-      />
-    </div>
+    <ExportContacts
+      v-if="!editingContact"
+      :contacts-to-treat="[contact.email]"
+      :disable-export="isExportDisabled"
+      class="ml-auto"
+    />
 
     <template #footer>
       <div class="flex flex-wrap gap-2 justify-between items-center">
         <div class="flex gap-2">
-          <template v-if="!editingContact">
-            <Button
-              severity="danger"
-              text
-              :aria-label="$t('common.remove')"
-              @click="showRemoveConfirmationDialog = true"
-            >
-              <template #icon>
-                <i class="pi pi-trash" />
-              </template>
-            </Button>
-            <Button
-              severity="secondary"
-              text
-              :aria-label="$t('common.edit')"
-              @click="editContactInformations()"
-            >
-              <template #icon>
-                <i class="pi pi-pen-to-square" />
-              </template>
-            </Button>
-            <EnrichButton
-              source="contact"
-              :enrichment-realtime-callback="enrichmentRealtimeCallback"
-              :enrichment-request-response-callback="() => {}"
-              :contacts-to-enrich="[contact]"
-              :enrich-all-contacts="false"
-              :skip-dialog="skipDialog"
-            />
-          </template>
-          <template v-else>
-            <Button
-              :label="$t('common.cancel')"
-              severity="secondary"
-              @click="cancelContactInformations()"
-            />
-            <Button
-              :label="$t('common.save')"
-              @click="saveContactInformations()"
-            />
-          </template>
+          <Button
+            v-if="!editingContact"
+            :label="t('remove')"
+            severity="danger"
+            outlined
+            @click="showRemoveConfirmationDialog = true"
+          />
+          <EnrichButton
+            v-if="!editingContact"
+            source="contact"
+            :enrichment-realtime-callback="enrichmentRealtimeCallback"
+            :enrichment-request-response-callback="() => {}"
+            :contacts-to-enrich="[contact]"
+            :enrich-all-contacts="false"
+            :skip-dialog="skipDialog"
+          />
         </div>
-        <ExportContacts
+        <Button
           v-if="!editingContact"
-          :contacts-to-treat="[contact.email]"
-          :disable-export="isExportDisabled"
+          :label="$t('common.edit')"
+          severity="secondary"
+          outlined
+          @click="editContactInformations()"
         />
+        <template v-else>
+          <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="cancelContactInformations()"
+          />
+          <Button
+            :label="$t('common.save')"
+            @click="saveContactInformations()"
+          />
+        </template>
       </div>
     </template>
     <Dialog
@@ -639,13 +615,6 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
-    tags:
-      JSON.stringify(originalContactCopy.tags) !==
-      JSON.stringify(contactEditTags.value)
-        ? contactEditTags.value.length > 0
-          ? contactEditTags.value
-          : null
-        : undefined,
     consent_status:
       originalContactCopy.consent_status !== contactEdit.value.consent_status
         ? contactEdit.value.consent_status || null
@@ -713,6 +682,7 @@ async function removeContact() {
     "consent": "Consent",
     "consent_tooltip_default": "Updated on {date}",
     "consent_tooltip_opt_out": "Opted out on {date}",
+    "consent_not_set": "Not set",
     "remove_contact_title": "Remove Contact",
     "remove_contact_detail": "Are you sure you want to remove {name}?",
     "contact_removed": "Contact removed",
@@ -730,6 +700,7 @@ async function removeContact() {
     "consent": "Consentement",
     "consent_tooltip_default": "Mis à jour le {date}",
     "consent_tooltip_opt_out": "Désinscrit le {date}",
+    "consent_not_set": "Non défini",
     "remove_contact_title": "Supprimer le contact",
     "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
     "contact_removed": "Contact supprimé",
