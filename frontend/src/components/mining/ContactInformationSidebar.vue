@@ -154,12 +154,17 @@
                 @click="callPhoneNumber(phone)"
               />
             </div>
-            <Textarea
-              v-else
-              v-model="contactEdit.telephone"
-              rows="3"
-              class="w-full"
-            />
+            <div v-else>
+              <Textarea
+                v-model="contactEdit.telephone"
+                rows="3"
+                class="w-full"
+                :invalid="!isValidPhone"
+              />
+              <small v-if="!isValidPhone" class="text-red-500">{{
+                t('telephone_e164_hint')
+              }}</small>
+            </div>
           </td>
         </tr>
 
@@ -207,31 +212,51 @@
             </div>
           </td>
         </tr>
-
         <template v-if="editingContact">
           <tr class="p-row-odd">
-            <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
+            <td class="md:font-medium">{{ t('consent') }}</td>
             <td>
-              <Textarea
-                v-model="contactEdit.same_as"
+              <Select
+                v-model="contactEdit.consent_status"
+                :options="[
+                  { label: t('contact.consent.opt_in'), value: 'opt_in' },
+                  { label: t('contact.consent.opt_out'), value: 'opt_out' },
+                  {
+                    label: t('contact.consent.legitimate_interest'),
+                    value: 'legitimate_interest',
+                  },
+                  { label: t('consent_not_set'), value: null },
+                ]"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('consent_not_set')"
                 class="w-full"
-                rows="3"
-                :invalid="!isValidSameAs"
-              />
-            </td>
-          </tr>
-
-          <tr class="p-row-even">
-            <td class="md:font-medium">{{ $t('contact.image') }}</td>
-            <td>
-              <InputText
-                v-model="contactEdit.image"
-                class="w-full"
-                :invalid="!isValidAvatar"
               />
             </td>
           </tr>
         </template>
+        <tr v-if="editingContact" class="p-row-odd">
+          <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
+          <td>
+            <Textarea
+              v-model="contactEdit.same_as"
+              class="w-full"
+              rows="3"
+              :invalid="!isValidSameAs"
+            />
+          </td>
+        </tr>
+
+        <tr v-if="editingContact" class="p-row-even">
+          <td class="md:font-medium">{{ $t('contact.image') }}</td>
+          <td>
+            <InputText
+              v-model="contactEdit.image"
+              class="w-full"
+              :invalid="!isValidAvatar"
+            />
+          </td>
+        </tr>
       </tbody>
     </table>
 
@@ -372,6 +397,14 @@ const isValidAvatar = computed(() => {
   return isValidURL(contactEdit.value?.image as string);
 });
 
+const E164_REGEX = /^\+[1-9]\d{1,14}$/;
+const isValidPhone = computed(() => {
+  if (!contactEdit.value?.telephone) return true;
+  const phones = transformStringToArray(contactEdit.value.telephone);
+  if (!phones?.length) return true;
+  return phones.every((phone) => E164_REGEX.test(phone));
+});
+
 let personsSubscription: RealtimeChannel;
 
 // skipcq: JS-0321
@@ -504,6 +537,15 @@ async function saveContactInformations() {
     return;
   }
 
+  if (!isValidPhone.value) {
+    showNotification(
+      'error',
+      t('phone_invalid_summary'),
+      t('phone_invalid_detail', { phoneNumber: '' }),
+    );
+    return;
+  }
+
   const telephones = transformPhones();
 
   const originalContactCopy = contact.value;
@@ -569,6 +611,14 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
+    consent_status:
+      originalContactCopy.consent_status !== contactEdit.value.consent_status
+        ? contactEdit.value.consent_status || null
+        : undefined,
+    consent_updated_at:
+      originalContactCopy.consent_status !== contactEdit.value.consent_status
+        ? new Date().toISOString()
+        : undefined,
   };
   const userId = getCurrentUserId();
   if (!userId) return;
@@ -608,6 +658,7 @@ function getConsentTooltip(data: Contact) {
 {
   "en": {
     "copy": "Copy",
+    "telephone_e164_hint": "Invalid format. Use E164 (ex: +33612345678)",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
     "contact_saved": "Contact's informations saved",
@@ -626,6 +677,7 @@ function getConsentTooltip(data: Contact) {
   },
   "fr": {
     "copy": "Copier",
+    "telephone_e164_hint": "Format invalide. Utilisez E164 (ex: +33612345678)",
     "contact_copied": "Contact copié",
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
     "contact_saved": "Informations du contact enregistrées",
