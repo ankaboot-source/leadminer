@@ -138,6 +138,18 @@
           </td>
         </tr>
 
+        <tr v-if="editingContact" class="p-row-odd">
+          <td class="md:font-medium">{{ $t('contact.tags') }}</td>
+          <td>
+            <Chips
+              v-model="contactEditTags"
+              :placeholder="$t('contact.tags_placeholder')"
+              addOnKeypress
+              class="w-full"
+            />
+          </td>
+        </tr>
+
         <tr class="p-row-odd">
           <td class="md:font-medium">
             {{ $t('contact.telephone') }}
@@ -350,11 +362,30 @@ const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const editingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
-  ...contact.value,
-  alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
-  telephone: contact.value?.telephone?.join('\n') ?? null,
-  same_as: contact.value?.same_as?.join('\n') ?? null,
-  location: contact.value?.location ?? null,
+  email: '',
+  name: null,
+  given_name: null,
+  family_name: null,
+  alternate_name: null,
+  telephone: null,
+  location: null,
+  works_for: null,
+  job_title: null,
+  same_as: null,
+  image: null,
+  consent_status: null,
+});
+const contactEditTags = ref<string[]>([]);
+
+watch(contact, (newContact) => {
+  contactEdit.value = {
+    ...newContact,
+    alternate_name: newContact?.alternate_name?.join('\n') ?? null,
+    telephone: newContact?.telephone?.join('\n') ?? null,
+    same_as: newContact?.same_as?.join('\n') ?? null,
+    location: newContact?.location ?? null,
+  };
+  contactEditTags.value = newContact?.tags ?? [];
 });
 
 watch(contact, (newContact) => {
@@ -618,6 +649,13 @@ async function saveContactInformations() {
     consent_updated_at:
       originalContactCopy.consent_status !== contactEdit.value.consent_status
         ? new Date().toISOString()
+        : undefined,
+    tags:
+      JSON.stringify(originalContactCopy.tags) !==
+      JSON.stringify(contactEditTags.value)
+        ? contactEditTags.value.length > 0
+          ? contactEditTags.value
+          : null
         : undefined,
   };
   const userId = getCurrentUserId();
