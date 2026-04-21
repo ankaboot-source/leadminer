@@ -422,10 +422,15 @@ async function parseXlsxFile(file: File) {
 
 // Helper function to map row data with columns
 function mapRowData(data: Record<string, string>[], cols: Column[]): Row[] {
+  const originalHeaderToField = new Map<string, string>();
+  cols.forEach((col) => {
+    originalHeaderToField.set(col.original_header || col.field, col.field);
+  });
+
   return data.map((row: Row) => {
     const updatedRow: Row = {};
-    Object.keys(row).forEach((key, colIndex) => {
-      const field = cols[colIndex]?.field || key;
+    Object.keys(row).forEach((key) => {
+      const field = originalHeaderToField.get(key) || key;
       updatedRow[field] = row[key];
     });
     return updatedRow;
