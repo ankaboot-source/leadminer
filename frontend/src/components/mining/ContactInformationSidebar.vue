@@ -144,7 +144,7 @@
             <Chips
               v-model="contactEditTags"
               :placeholder="$t('contact.tags_placeholder')"
-              addOnKeypress
+              add-on-blur
               class="w-full"
             />
           </td>
@@ -212,7 +212,7 @@
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
           </td>
         </tr>
-        <tr class="p-row-odd">
+        <tr v-if="!editingContact" class="p-row-odd">
           <td class="md:font-medium">{{ t('consent') }}</td>
           <td>
             <div v-tooltip.bottom="getConsentTooltip(contact)">
@@ -697,6 +697,8 @@ function getConsentTooltip(data: Contact) {
   "en": {
     "copy": "Copy",
     "telephone_e164_hint": "Invalid format. Use E164 (ex: +33612345678)",
+    "contact.tags": "Tags",
+    "contact.tags_placeholder": "Add a tag and press Enter",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
     "contact_saved": "Contact's informations saved",
@@ -716,6 +718,8 @@ function getConsentTooltip(data: Contact) {
   "fr": {
     "copy": "Copier",
     "telephone_e164_hint": "Format invalide. Utilisez E164 (ex: +33612345678)",
+    "contact.tags": "Étiquettes",
+    "contact.tags_placeholder": "Ajoutez une étiquette et appuyez sur Entrée",
     "contact_copied": "Contact copié",
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
     "contact_saved": "Informations du contact enregistrées",

@@ -107,12 +107,39 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     throw new Error('Email is required for updating a contact');
   }
 
+  const { tags, ...rest } = contact;
+  const contactWithoutTags = rest;
+
   const { error } = await $supabaseClient
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('persons')
-    .update(contact)
+    .update(contactWithoutTags)
     .match({ user_id: userId, email: contact.email });
+
+  if (error) {
+    throw error;
+  }
+
+  if (tags !== undefined) {
+    await updateContactTags(userId, contact.email, tags);
+  }
+}
+
+export async function updateContactTags(
+  userId: string,
+  email: string,
+  tags: string[] | null,
+) {
+  const $supabaseClient = useSupabaseClient();
+
+  const { error } = await $supabaseClient
+    .schema('private')
+    .from('refined_persons')
+    .upsert(
+      { user_id: userId, email, tags: tags ?? [] },
+      { onConflict: 'user_id,email' },
+    );
 
   if (error) {
     throw error;
