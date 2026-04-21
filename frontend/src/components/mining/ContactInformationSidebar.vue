@@ -138,6 +138,19 @@
           </td>
         </tr>
 
+        <tr v-if="!editingContact && contact.tags?.length" class="p-row-odd">
+          <td class="md:font-medium">{{ $t('contact.tags') }}</td>
+          <td>
+            <div class="flex flex-wrap gap-1">
+              <Chip
+                v-for="tag in contact.tags"
+                :key="tag"
+                :label="tag"
+                class="cursor-default"
+              />
+            </div>
+          </td>
+        </tr>
         <tr v-if="editingContact" class="p-row-odd">
           <td class="md:font-medium">{{ $t('contact.tags') }}</td>
           <td>
@@ -697,6 +710,7 @@ function getConsentTooltip(data: Contact) {
   "en": {
     "copy": "Copy",
     "telephone_e164_hint": "Invalid format. Use E164 (ex: +33612345678)",
+    "consent_not_set": "Not set",
     "contact.tags": "Tags",
     "contact.tags_placeholder": "Add a tag and press Enter",
     "contact_copied": "Contact copied",
@@ -718,6 +732,7 @@ function getConsentTooltip(data: Contact) {
   "fr": {
     "copy": "Copier",
     "telephone_e164_hint": "Format invalide. Utilisez E164 (ex: +33612345678)",
+    "consent_not_set": "Non défini",
     "contact.tags": "Étiquettes",
     "contact.tags_placeholder": "Ajoutez une étiquette et appuyez sur Entrée",
     "contact_copied": "Contact copié",
