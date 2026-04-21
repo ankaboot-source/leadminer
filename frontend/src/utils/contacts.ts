@@ -135,7 +135,7 @@ export async function updateContactTags(
 
   const { error } = await $supabaseClient
     .schema('private')
-    .from('refined_persons')
+    .from('refinedpersons')
     .upsert(
       { user_id: userId, email, tags: tags ?? [] },
       { onConflict: 'user_id,email' },
