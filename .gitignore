@@ -25,3 +25,4 @@ docs/plans/
 .opencode/
 .agents/
 skills-lock.json
+supabase/snippets/*
