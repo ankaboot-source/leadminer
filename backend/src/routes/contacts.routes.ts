@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import initializeContactsController from '../controllers/contacts.controller';
+import initializeContactsVerificationController from '../controllers/contacts-verification.controller';
 import { Contacts } from '../db/interfaces/Contacts';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
@@ -17,10 +18,19 @@ export default function initializeContactsRoutes(
     miningSources
   );
 
+  const { verifyEmailStatus } =
+    initializeContactsVerificationController(contacts);
+
   router.post(
     '/contacts/export/:exportType',
     initializeAuthMiddleware(authResolver),
     exportContactsCSV
+  );
+
+  router.post(
+    '/contacts/verify',
+    initializeAuthMiddleware(authResolver),
+    verifyEmailStatus
   );
 
   return router;
