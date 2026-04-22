@@ -69,6 +69,13 @@
           >
             <social-links-and-phones :social-links="contact.same_as" />
           </div>
+          <div class="flex items-center gap-1 pt-1">
+            <span class="font-medium">{{ $t('contact.tags') }}</span>
+            <i
+              v-tooltip.top="$t('categorize_contacts')"
+              class="pi pi-info-circle text-surface-400 cursor-help text-sm"
+            />
+          </div>
           <div
             v-if="!editingContact && contact.tags?.length"
             class="flex pt-1 space-x-2"
@@ -81,11 +88,7 @@
             />
           </div>
           <div v-else-if="editingContact" class="pt-1">
-            <Chips
-              v-model="contactEditTags"
-              :placeholder="$t('contact.tags_placeholder')"
-              class="w-full"
-            />
+            <Chips v-model="contactEditTags" class="w-full" />
           </div>
         </div>
       </div>

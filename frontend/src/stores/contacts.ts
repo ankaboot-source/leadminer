@@ -253,9 +253,24 @@ export const useContactsStore = defineStore('contacts-store', () => {
     return [...new Set(locations)];
   }
 
+  function getAutoVisibleColumns(contacts: Contact[]): string[] {
+    const columns = new Set<string>(['contacts']);
+
+    for (const contact of contacts) {
+      if (contact.name) columns.add('name');
+      if (contact.telephone?.length) columns.add('telephone');
+      if (contact.location) columns.add('location');
+      if (contact.works_for) columns.add('works_for');
+      if (contact.job_title) columns.add('job_title');
+    }
+
+    return [...columns];
+  }
+
   function initializeVisibleColumns(
     defaultColumns: string[],
     origin: TableOrigin,
+    contacts?: Contact[],
   ) {
     const userId = getCurrentUserId();
     if (!userId || !import.meta.client) {
@@ -268,7 +283,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const storedColumns = localStorage.getItem(key);
 
     if (!storedColumns) {
-      visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
+      if (contacts && contacts.length > 0) {
+        visibleColumns.value = sanitizeVisibleColumns(getAutoVisibleColumns(contacts));
+      } else {
+        visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
+      }
       return;
     }
 

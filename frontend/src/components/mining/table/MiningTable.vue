@@ -352,17 +352,14 @@
 
             <!-- RIGHT -->
             <div
-              v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
-              "
+              v-if="showSocialLinksAndPhones(data)"
               class="flex md:hidden gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="true"
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="true"
                 :small="true"
               />
             </div>
@@ -370,17 +367,14 @@
 
           <div class="flex items-center gap-2 flex-shrink-0">
             <div
-              v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
-              "
+              v-if="showSocialLinksAndPhones(data)"
               class="hidden md:flex gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="true"
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="true"
                 :small="true"
               />
             </div>
@@ -1489,19 +1483,7 @@ onBeforeMount(() => {
 });
 onNuxtReady(() => {
   $screenStore.init();
-  $contactsStore.visibleColumns = [
-    'contacts',
-    'name',
-    'same_as',
-    'telephone',
-    'image',
-    'location',
-    ...(origin === 'contacts' && $screenStore.width > 550
-      ? ['temperature']
-      : []),
-    ...($screenStore.width > 700 ? ['tags'] : []),
-    ...($screenStore.width > 800 ? ['status'] : []),
-  ];
+  $contactsStore.visibleColumns = getDefaultVisibleColumns();
 });
 
 onBeforeMount(() => {
@@ -1510,7 +1492,6 @@ onBeforeMount(() => {
 onNuxtReady(async () => {
   $screenStore.init();
   $filtersStore.initializeTableFilters(origin);
-  $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);
 
   if (contactsLoadingStrategy.value === 'immediate') {
     await loadContactsData();
@@ -1518,6 +1499,13 @@ onNuxtReady(async () => {
     isLoading.value = false;
     scheduleIdleContactsPrefetch();
   }
+
+  $contactsStore.initializeVisibleColumns(
+    getDefaultVisibleColumns(),
+    origin,
+    $contactsStore.contactsList,
+  );
+
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (origin === 'mine' && locationsToNormalize.length > 0) {
