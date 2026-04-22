@@ -1,9 +1,18 @@
--- Pagination with proper sorting using ROW_NUMBER
+-- Pagination with proper sorting AND filtering using ROW_NUMBER
 
-DROP FUNCTION IF EXISTS private.get_contacts_page(uuid, integer, integer, text, text, text);
-CREATE FUNCTION private.get_contacts_page(
-  user_id uuid, p_limit integer DEFAULT 20, p_offset integer DEFAULT 0,
-  p_search text DEFAULT NULL, p_sort_field text DEFAULT NULL, p_sort_order text DEFAULT 'DESC'
+CREATE OR REPLACE FUNCTION private.get_contacts_page(
+  user_id uuid,
+  p_limit integer DEFAULT 20,
+  p_offset integer DEFAULT 0,
+  p_search text DEFAULT NULL,
+  p_sort_field text DEFAULT NULL,
+  p_sort_order text DEFAULT 'DESC',
+  p_status text[] DEFAULT NULL,
+  p_consent_status text[] DEFAULT NULL,
+  p_has_job_details boolean DEFAULT NULL,
+  p_has_location boolean DEFAULT NULL,
+  p_has_telephone boolean DEFAULT NULL,
+  p_has_valid_email boolean DEFAULT NULL
 )
 RETURNS TABLE(
   source text, email text, name text, status text, consent_status private.contact_consent_status,
@@ -29,23 +38,22 @@ BEGIN
         ref.tags AS tag,
         per.updated_at::timestamptz AS upd, per.created_at::timestamptz AS crt, per.mining_id AS mid,
         ROW_NUMBER() OVER (PARTITION BY per.email ORDER BY 
-          CASE WHEN p_sort_field = 'temperature' AND p_sort_order = 'ASC' THEN ref.temperature END ASC NULLS FIRST,
-          CASE WHEN p_sort_field = 'temperature' THEN ref.temperature END DESC
+          CASE WHEN p_sort_field = 'temperature' THEN COALESCE(ref.temperature, 0) END DESC
         ) AS email_rank,
         ROW_NUMBER() OVER (ORDER BY 
-          CASE WHEN p_sort_field = 'temperature' AND p_sort_order = 'ASC' THEN COALESCE(ref.temperature, 0) END ASC,
+          CASE WHEN p_sort_field = 'temperature' AND p_sort_order = 'ASC' THEN COALESCE(ref.temperature, -1) END ASC,
           CASE WHEN p_sort_field = 'temperature' THEN COALESCE(ref.temperature, 0) END DESC,
-          CASE WHEN p_sort_field = 'occurrence' AND p_sort_order = 'ASC' THEN COALESCE(ref.occurrence, 0) END ASC,
+          CASE WHEN p_sort_field = 'occurrence' AND p_sort_order = 'ASC' THEN COALESCE(ref.occurrence, -1) END ASC,
           CASE WHEN p_sort_field = 'occurrence' THEN COALESCE(ref.occurrence, 0) END DESC,
           CASE WHEN p_sort_field = 'recency' AND p_sort_order = 'ASC' THEN COALESCE(ref.recency, '1970-01-01'::timestamptz) END ASC,
           CASE WHEN p_sort_field = 'recency' THEN COALESCE(ref.recency, '1970-01-01'::timestamptz) END DESC,
-          CASE WHEN p_sort_field = 'conversations' AND p_sort_order = 'ASC' THEN COALESCE(ref.conversations, 0) END ASC,
+          CASE WHEN p_sort_field = 'conversations' AND p_sort_order = 'ASC' THEN COALESCE(ref.conversations, -1) END ASC,
           CASE WHEN p_sort_field = 'conversations' THEN COALESCE(ref.conversations, 0) END DESC,
-          CASE WHEN p_sort_field = 'replied_conversations' AND p_sort_order = 'ASC' THEN COALESCE(ref.replied_conversations, 0) END ASC,
+          CASE WHEN p_sort_field = 'replied_conversations' AND p_sort_order = 'ASC' THEN COALESCE(ref.replied_conversations, -1) END ASC,
           CASE WHEN p_sort_field = 'replied_conversations' THEN COALESCE(ref.replied_conversations, 0) END DESC,
-          CASE WHEN p_sort_field = 'sender' AND p_sort_order = 'ASC' THEN COALESCE(ref.sender, 0) END ASC,
+          CASE WHEN p_sort_field = 'sender' AND p_sort_order = 'ASC' THEN COALESCE(ref.sender, -1) END ASC,
           CASE WHEN p_sort_field = 'sender' THEN COALESCE(ref.sender, 0) END DESC,
-          CASE WHEN p_sort_field = 'recipient' AND p_sort_order = 'ASC' THEN COALESCE(ref.recipient, 0) END ASC,
+          CASE WHEN p_sort_field = 'recipient' AND p_sort_order = 'ASC' THEN COALESCE(ref.recipient, -1) END ASC,
           CASE WHEN p_sort_field = 'recipient' THEN COALESCE(ref.recipient, 0) END DESC,
           CASE WHEN p_sort_field = 'seniority' AND p_sort_order = 'ASC' THEN COALESCE(ref.seniority, '1970-01-01'::timestamptz) END ASC,
           CASE WHEN p_sort_field = 'seniority' THEN COALESCE(ref.seniority, '1970-01-01'::timestamptz) END DESC,
@@ -64,6 +72,24 @@ BEGIN
     LEFT JOIN private.organizations org ON org.id = per.works_for
     WHERE per.user_id = get_contacts_page.user_id
       AND (p_search IS NULL OR per.email ILIKE '%' || p_search || '%' OR per.name ILIKE '%' || p_search || '%')
+      AND (
+        p_status IS NULL OR 
+        per.status = ANY(p_status) OR 
+        (p_status && ARRAY['VALID', 'UNKNOWN'] AND (per.status IS NULL OR per.status = ''))
+      )
+      AND (p_consent_status IS NULL OR per.consent_status::text = ANY(p_consent_status))
+      AND (p_has_job_details IS NULL OR 
+           (p_has_job_details = TRUE AND (per.job_title IS NOT NULL AND per.job_title <> '' OR org.name IS NOT NULL)) OR
+           (p_has_job_details = FALSE AND (per.job_title IS NULL OR per.job_title = '') AND org.name IS NULL))
+      AND (p_has_location IS NULL OR 
+           (p_has_location = TRUE AND per.location IS NOT NULL) OR
+           (p_has_location = FALSE AND per.location IS NULL))
+      AND (p_has_telephone IS NULL OR
+           (p_has_telephone = TRUE AND per.telephone IS NOT NULL) OR
+           (p_has_telephone = FALSE AND per.telephone IS NULL))
+      AND (p_has_valid_email IS NULL OR
+           (p_has_valid_email = TRUE AND per.email IS NOT NULL) OR
+           (p_has_valid_email = FALSE AND per.email IS NULL))
   )
   SELECT src, eml, nam, sta, cstat, cchanged, img, loc, locnorm, altname, altemail, tel, sameas, gname, fname, job, work_for,
       rec, sen, occ, temp, snd, rcv, conv, repl, tag, upd, crt, mid
@@ -74,16 +100,45 @@ BEGIN
 END;
 $$;
 
-DROP FUNCTION IF EXISTS private.get_contacts_count(uuid, text);
-CREATE FUNCTION private.get_contacts_count(user_id uuid, p_search text DEFAULT NULL)
+CREATE OR REPLACE FUNCTION private.get_contacts_count(
+  user_id uuid,
+  p_search text DEFAULT NULL,
+  p_status text[] DEFAULT NULL,
+  p_consent_status text[] DEFAULT NULL,
+  p_has_job_details boolean DEFAULT NULL,
+  p_has_location boolean DEFAULT NULL,
+  p_has_telephone boolean DEFAULT NULL,
+  p_has_valid_email boolean DEFAULT NULL
+)
 RETURNS integer
 LANGUAGE plpgsql SET search_path = ''
 AS $$
 DECLARE cnt integer;
 BEGIN
-  SELECT COUNT(DISTINCT p.email)::integer INTO cnt FROM private.persons p
-  WHERE p.user_id = get_contacts_count.user_id
-    AND (p_search IS NULL OR p.email ILIKE '%' || p_search || '%' OR p.name ILIKE '%' || p_search || '%');
+  SELECT COUNT(DISTINCT per.email)::integer INTO cnt
+  FROM private.persons per
+  INNER JOIN private.refinedpersons ref ON ref.email = per.email AND ref.user_id = per.user_id
+  LEFT JOIN private.organizations org ON org.id = per.works_for
+  WHERE per.user_id = get_contacts_count.user_id
+    AND (p_search IS NULL OR per.email ILIKE '%' || p_search || '%' OR per.name ILIKE '%' || p_search || '%')
+    AND (
+      p_status IS NULL OR 
+      per.status = ANY(p_status) OR 
+      (p_status && ARRAY['VALID', 'UNKNOWN'] AND (per.status IS NULL OR per.status = ''))
+    )
+    AND (p_consent_status IS NULL OR per.consent_status::text = ANY(p_consent_status))
+    AND (p_has_job_details IS NULL OR 
+         (p_has_job_details = TRUE AND (per.job_title IS NOT NULL AND per.job_title <> '' OR org.name IS NOT NULL)) OR
+         (p_has_job_details = FALSE AND (per.job_title IS NULL OR per.job_title = '') AND org.name IS NULL))
+    AND (p_has_location IS NULL OR 
+         (p_has_location = TRUE AND per.location IS NOT NULL) OR
+         (p_has_location = FALSE AND per.location IS NULL))
+    AND (p_has_telephone IS NULL OR
+         (p_has_telephone = TRUE AND per.telephone IS NOT NULL) OR
+         (p_has_telephone = FALSE AND per.telephone IS NULL))
+    AND (p_has_valid_email IS NULL OR
+         (p_has_valid_email = TRUE AND per.email IS NOT NULL) OR
+         (p_has_valid_email = FALSE AND per.email IS NULL));
   RETURN COALESCE(cnt, 0);
 END;
 $$;

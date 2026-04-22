@@ -968,8 +968,7 @@ const isLoading = ref(true);
 
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => {
-  const hasFilters = filteredContactsLength.value !== pageContactsCount.value;
-  return hasFilters ? filteredContactsLength.value : pageContactsCount.value;
+  return totalContactsCount.value || $contactsStore.totalContactsCount || 0;
 });
 const visibleColumns = computed({
   get: () => $contactsStore.visibleColumns,
@@ -984,6 +983,14 @@ const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const firstRecord = ref(0);
 const isPageLoading = ref(false);
 const currentSearch = ref<string | null>(null);
+const currentFilters = ref({
+  status: null,
+  consent_status: null,
+  has_job_details: null,
+  has_location: null,
+  has_telephone: null,
+  has_valid_email: null,
+});
 const currentSortField = ref<string | null>(null);
 const currentSortOrder = ref<string>('DESC');
 const totalContactsCount = computed(() => {
@@ -1028,6 +1035,48 @@ const searchContactModel = computed({
     $filtersStore.searchContactModel = value;
   },
 });
+
+const _searchDebounced = useDebounceFn((value: string) => {
+  currentSearch.value = value || null;
+  firstRecord.value = 0;
+  isPageLoading.value = true;
+  loadContactsData().finally(() => {
+    isPageLoading.value = false;
+  });
+}, 300);
+
+watch(searchContactModel, (newVal) => {
+  _searchDebounced(newVal || '');
+});
+
+const _filtersDebounced = useDebounceFn(() => {
+  const statusValue = $filtersStore.filters.status.value;
+  const consentValue = $filtersStore.filters.consent_status.value;
+  const filters = {
+    status:
+      Array.isArray(statusValue) && statusValue.length > 0 ? statusValue : null,
+    consent_status:
+      Array.isArray(consentValue) && consentValue.length > 0
+        ? consentValue
+        : null,
+    has_job_details: $filtersStore.jobDetailsToggle,
+    has_location: $filtersStore.locationToggle,
+    has_telephone: $filtersStore.phoneToggle,
+    has_valid_email: null, // handled via status filter
+  };
+  console.log('Filter toggles:', filters);
+  currentFilters.value = filters;
+  firstRecord.value = 0;
+  isPageLoading.value = true;
+  loadContactsData().finally(() => {
+    isPageLoading.value = false;
+  });
+}, 300);
+
+watch(() => $filtersStore.jobDetailsToggle, _filtersDebounced);
+watch(() => $filtersStore.locationToggle, _filtersDebounced);
+watch(() => $filtersStore.phoneToggle, _filtersDebounced);
+watch(() => $filtersStore.validToggle, _filtersDebounced);
 
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value?.length);
@@ -1084,10 +1133,22 @@ const _applyFilteredContacts = useDebounceFn((rows: Contact[]) => {
 
 function onFilter($event: DataTableFilterEvent) {
   console.log('Filter event:', { filters: $event.filters });
-  // Extract search from global filter or individual column filters
-  const globalFilter = $event.filters?.global?.value || $event.filters?.global;
-  currentSearch.value = globalFilter || null;
-  // Reset to first page and reload with search
+  const statusValue = $event.filters?.status?.value;
+  const consentValue = $event.filters?.consent_status?.value;
+  currentFilters.value = {
+    status:
+      Array.isArray(statusValue) && statusValue.length > 0 ? statusValue : null,
+    consent_status:
+      Array.isArray(consentValue) && consentValue.length > 0
+        ? consentValue
+        : null,
+    has_job_details: $filtersStore.jobDetailsToggle,
+    has_location: $filtersStore.locationToggle,
+    has_telephone: $filtersStore.phoneToggle,
+    has_valid_email: null,
+  };
+
+  // Reset to first page and reload
   firstRecord.value = 0;
   isPageLoading.value = true;
   loadContactsData().finally(() => {
@@ -1444,9 +1505,11 @@ async function loadContactsData() {
     console.log('Loading with:', {
       limit: rowsPerPage.value,
       offset: firstRecord.value,
+      filters: currentFilters.value,
     });
     const totalCount = await $contactsStore.loadContactsCount(
       currentSearch.value,
+      currentFilters.value,
     );
     $contactsStore.setTotalContactsCount(totalCount);
     console.log('Total count set to:', totalCount);
@@ -1457,6 +1520,7 @@ async function loadContactsData() {
       currentSearch.value,
       currentSortField.value,
       currentSortOrder.value,
+      currentFilters.value,
     );
     $contactsStore.setContactsList(pageContacts);
     console.log('Loaded contacts:', pageContacts?.length, 'total:', totalCount);
@@ -1472,6 +1536,7 @@ async function loadContactsData() {
         currentSearch.value,
         currentSortField.value,
         currentSortOrder.value,
+        currentFilters.value,
       );
       $contactsStore.setContactsList(refinedPageContacts);
     }

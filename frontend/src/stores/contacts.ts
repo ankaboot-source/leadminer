@@ -96,15 +96,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
     search = null,
     sortField = null,
     sortOrder = 'DESC',
+    filters = {
+      status: null,
+      consent_status: null,
+      has_job_details: null,
+      has_location: null,
+      has_telephone: null,
+      has_valid_email: null,
+    },
     userId = getCurrentUserId(),
   ) {
-    console.log('loadContactsPage called:', {
-      limit,
-      offset,
-      search,
-      sortField,
-      sortOrder,
-    });
     if (!userId) return [];
 
     const { data, error } = await $supabase
@@ -117,19 +118,56 @@ export const useContactsStore = defineStore('contacts-store', () => {
         p_search: search,
         p_sort_field: sortField,
         p_sort_order: sortOrder,
+        p_status: filters?.status,
+        p_consent_status: filters?.consent_status,
+        p_has_job_details: filters?.has_job_details,
+        p_has_location: filters?.has_location,
+        p_has_telephone: filters?.has_telephone,
+        p_has_valid_email: filters?.has_valid_email,
       });
 
     if (error) throw error;
     return convertDates(data as Contact[]);
   }
 
-  async function loadContactsCount(search = null, userId = getCurrentUserId()) {
+  async function loadContactsCount(
+    search = null,
+    filters = {
+      status: null,
+      consent_status: null,
+      has_job_details: null,
+      has_location: null,
+      has_telephone: null,
+      has_valid_email: null,
+    },
+    userId = getCurrentUserId(),
+  ) {
     if (!userId) return 0;
+
+    console.log('loadContactsCount RPC params:', {
+      user_id: userId,
+      p_search: search,
+      p_status: filters?.status,
+      p_consent_status: filters?.consent_status,
+      p_has_job_details: filters?.has_job_details,
+      p_has_location: filters?.has_location,
+      p_has_telephone: filters?.has_telephone,
+      p_has_valid_email: filters?.has_valid_email,
+    });
 
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_count', { user_id: userId, p_search: search });
+      .rpc('get_contacts_count', {
+        user_id: userId,
+        p_search: search,
+        p_status: filters?.status,
+        p_consent_status: filters?.consent_status,
+        p_has_job_details: filters?.has_job_details,
+        p_has_location: filters?.has_location,
+        p_has_telephone: filters?.has_telephone,
+        p_has_valid_email: filters?.has_valid_email,
+      });
 
     if (error) throw error;
     return (data as number) ?? 0;
