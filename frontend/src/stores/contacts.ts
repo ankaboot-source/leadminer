@@ -144,17 +144,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
   ) {
     if (!userId) return 0;
 
-    console.log('loadContactsCount RPC params:', {
-      user_id: userId,
-      p_search: search,
-      p_status: filters?.status,
-      p_consent_status: filters?.consent_status,
-      p_has_job_details: filters?.has_job_details,
-      p_has_location: filters?.has_location,
-      p_has_telephone: filters?.has_telephone,
-      p_has_valid_email: filters?.has_valid_email,
-    });
-
     const { data, error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
