@@ -30,10 +30,20 @@ export interface PostgreSQLExtractionResult {
   }>;
 }
 
+export interface GoogleContactsExtractionResult {
+  type: 'google-contacts';
+  persons: Array<{
+    person: Person;
+    tags: Tag[];
+  }>;
+  organizations: Organization[];
+}
+
 export type ExtractionResult =
   | EmailExtractionResult
   | FileExtractionResult
-  | PostgreSQLExtractionResult;
+  | PostgreSQLExtractionResult
+  | GoogleContactsExtractionResult;
 
 export interface Message {
   channel: string;
