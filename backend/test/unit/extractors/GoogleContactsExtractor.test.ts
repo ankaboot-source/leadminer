@@ -1,4 +1,8 @@
-import { ContactFrontend } from '../../../src/db/types';
+import {
+  ContactFrontend,
+  GoogleContactsExtractionResult
+} from '../../../src/db/types';
+import { REACHABILITY } from '../../../src/utils/constants';
 import {
   GoogleContactsExtractor,
   GoogleContactsFormat
@@ -14,7 +18,16 @@ describe('GoogleContactsExtractor', () => {
             id: '1',
             user_id: 'user1',
             email: 'test@example.com',
-            name: 'Test User'
+            name: 'Test User',
+            given_name: 'Test',
+            family_name: 'User',
+            job_title: 'Engineer',
+            same_as: ['https://example.com/test'],
+            alternate_name: ['Tester'],
+            alternate_email: ['alternate@example.com'],
+            works_for: 'Example Corp',
+            telephone: ['123456789'],
+            image: 'http://example.com/image.png'
           } as ContactFrontend,
           tags: ['contact']
         }
@@ -23,9 +36,38 @@ describe('GoogleContactsExtractor', () => {
     const extractor = new GoogleContactsExtractor(data);
     const result = await extractor.getContacts();
 
-    expect((result as any).persons).toEqual(data.contacts);
-    expect((result as any).organizations).toEqual([]);
     expect(result.type).toBe('google-contacts');
+
+    if (result.type !== 'google-contacts') {
+      throw new Error('Wrong type');
+    }
+
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].person).toEqual({
+      email: 'test@example.com',
+      name: 'Test User',
+      givenName: 'Test',
+      familyName: 'User',
+      jobTitle: 'Engineer',
+      sameAs: ['https://example.com/test'],
+      alternateName: ['Tester'],
+      alternateEmail: ['alternate@example.com'],
+      worksFor: 'Example Corp',
+      telephone: ['123456789'],
+      image: 'http://example.com/image.png',
+      source: 'google-contacts:joe@gmail.com',
+      status: undefined,
+      location: undefined
+    });
+
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'contact',
+        reachable: REACHABILITY.UNSURE,
+        source: 'google-contacts:joe@gmail.com'
+      }
+    ]);
+    expect(result.organizations).toEqual([]);
   });
 
   it('handles empty state (no contacts)', async () => {
@@ -36,9 +78,14 @@ describe('GoogleContactsExtractor', () => {
     const extractor = new GoogleContactsExtractor(data);
     const result = await extractor.getContacts();
 
-    expect((result as any).persons).toEqual([]);
-    expect((result as any).organizations).toEqual([]);
     expect(result.type).toBe('google-contacts');
+
+    if (result.type !== 'google-contacts') {
+      throw new Error('Wrong type');
+    }
+
+    expect(result.persons).toEqual([]);
+    expect(result.organizations).toEqual([]);
   });
 
   it('handles multiple contacts correctly', async () => {
@@ -68,9 +115,24 @@ describe('GoogleContactsExtractor', () => {
     const extractor = new GoogleContactsExtractor(data);
     const result = await extractor.getContacts();
 
-    expect((result as any).persons).toEqual(data.contacts);
-    expect((result as any).persons).toHaveLength(2);
-    expect((result as any).organizations).toEqual([]);
     expect(result.type).toBe('google-contacts');
+
+    if (result.type !== 'google-contacts') {
+      throw new Error('Wrong type');
+    }
+
+    expect(result.persons).toHaveLength(2);
+    expect(result.persons[0].person.email).toBe('one@example.com');
+    expect(result.persons[0].person.name).toBe('User One');
+    expect(result.persons[0].tags).toHaveLength(1);
+    expect(result.persons[0].tags[0].name).toBe('contact');
+
+    expect(result.persons[1].person.email).toBe('two@example.com');
+    expect(result.persons[1].person.name).toBe('User Two');
+    expect(result.persons[1].tags).toHaveLength(2);
+    expect(result.persons[1].tags[0].name).toBe('contact');
+    expect(result.persons[1].tags[1].name).toBe('vip');
+
+    expect(result.organizations).toEqual([]);
   });
 });

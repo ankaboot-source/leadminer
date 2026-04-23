@@ -126,6 +126,7 @@ export interface Contact {
   given_name?: string;
   family_name?: string;
   alternate_name?: string[];
+  alternate_email?: string[];
   location?: string;
   works_for?: string;
   job_title?: string;
@@ -153,6 +154,7 @@ export interface ContactFrontend {
   given_name?: string;
   family_name?: string;
   alternate_name?: string[];
+  alternate_email?: string[];
   location?: string;
   works_for?: string;
   job_title?: string;
@@ -172,7 +174,8 @@ export enum TaskType {
   Extract = 'extract',
   Clean = 'clean',
   Enrich = 'enrich',
-  Signature = 'signature'
+  Signature = 'signature',
+  GoogleContactsFetch = 'googleContactsFetch'
 }
 
 export enum TaskCategory {
