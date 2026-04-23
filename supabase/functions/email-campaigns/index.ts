@@ -633,6 +633,24 @@ async function guessCustomSmtpHost(email: string) {
   return { host: smtpHost, port: smtpPort, secure: smtpSecure };
 }
 
+function deriveSmtpFromImap(
+  imapHost: string,
+  imapPort: number,
+  imapTls: boolean,
+): { host: string; port: number; secure: boolean } {
+  let smtpHost: string;
+  if (imapHost.startsWith("imap.")) {
+    smtpHost = imapHost.replace(/^imap./, "mail.");
+  } else if (imapHost.startsWith("mail.")) {
+    smtpHost = imapHost;
+  } else {
+    smtpHost = `smtp.${imapHost.split(".").slice(1).join(".")}`;
+  }
+  const smtpPort = imapPort === 993 ? 465 : 587;
+  const smtpSecure = imapPort === 993;
+  return { host: smtpHost, port: smtpPort, secure: smtpSecure };
+}
+
 async function buildUserTransport(
   senderEmail: string,
   credentials: Record<string, unknown>,
@@ -687,7 +705,19 @@ async function buildUserTransport(
     };
   }
 
-  const smtp = await guessCustomSmtpHost(senderEmail);
+  const smtp = credentials.smtpHost
+    ? {
+        host: String(credentials.smtpHost),
+        port: Number(credentials.smtpPort) || 587,
+        secure: Boolean(credentials.smtpSecure),
+      }
+    : credentials.host
+      ? deriveSmtpFromImap(
+          String(credentials.host),
+          Number(credentials.port) || 993,
+          Boolean(credentials.tls),
+        )
+      : await guessCustomSmtpHost(senderEmail);
   return {
     host: smtp.host,
     port: smtp.port,
