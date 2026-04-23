@@ -1,6 +1,7 @@
 import { Status } from '../../services/email-status/EmailStatusVerifier';
 import {
   Contact,
+  ContactFrontend,
   EmailStatus,
   ExportService,
   ExtractionResult,
@@ -29,4 +30,10 @@ export interface Contacts {
     exportService: ExportService,
     userId: string
   ): Promise<void>;
+  upsertGoogleContacts(
+    contacts: Array<{ person: ContactFrontend; tags: string[] }>,
+    userId: string,
+    source: string,
+    miningId: string
+  ): Promise<number>;
 }

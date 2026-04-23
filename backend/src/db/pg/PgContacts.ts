@@ -6,6 +6,7 @@ import { REACHABILITY } from '../../utils/constants';
 import { Contacts } from '../interfaces/Contacts';
 import {
   Contact,
+  ContactFrontend,
   EmailExtractionResult,
   EmailStatus,
   ExportService,
@@ -608,5 +609,70 @@ export default class PgContacts implements Contacts {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  async upsertGoogleContacts(
+    contacts: Array<{ person: ContactFrontend; tags: string[] }>,
+    userId: string,
+    source: string,
+    miningId: string
+  ): Promise<number> {
+    let upserted = 0;
+
+    const UPSERT_SQL = `
+      INSERT INTO private.persons
+        (name, email, image, location, same_as, given_name, family_name, job_title,
+         user_id, source, works_for, mining_id, telephone, alternate_name, alternate_email)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ON CONFLICT (email, user_id, source) DO UPDATE
+      SET
+        name = COALESCE(NULLIF(EXCLUDED.name, ''), private.persons.name),
+        image = COALESCE(NULLIF(EXCLUDED.image, ''), private.persons.image),
+        location = COALESCE(NULLIF(EXCLUDED.location, ''), private.persons.location),
+        same_as = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.same_as, '{}') || EXCLUDED.same_as)),
+        given_name = COALESCE(NULLIF(EXCLUDED.given_name, ''), private.persons.given_name),
+        family_name = COALESCE(NULLIF(EXCLUDED.family_name, ''), private.persons.family_name),
+        job_title = COALESCE(NULLIF(EXCLUDED.job_title, ''), private.persons.job_title),
+        works_for = COALESCE(NULLIF(EXCLUDED.works_for, ''), private.persons.works_for),
+        mining_id = EXCLUDED.mining_id,
+        telephone = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.telephone, '{}') || EXCLUDED.telephone)),
+        alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
+        alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
+      RETURNING email
+    `;
+
+    for (const { person } of contacts) {
+      try {
+        const result = await this.pool.query(UPSERT_SQL, [
+          person.name ?? null,
+          person.email,
+          person.image ?? null,
+          person.location ?? null,
+          person.same_as ?? null,
+          person.given_name ?? null,
+          person.family_name ?? null,
+          person.job_title ?? null,
+          userId,
+          source,
+          person.works_for ?? null,
+          miningId,
+          person.telephone ?? null,
+          person.alternate_name ?? null,
+          person.alternate_email ?? null
+        ]);
+
+        if (result.rowCount && result.rowCount > 0) {
+          upserted += 1;
+        }
+      } catch (error) {
+        this.logger.error('Failed to upsert Google contact', {
+          email: person.email,
+          source,
+          error
+        });
+      }
+    }
+
+    return upserted;
   }
 }
