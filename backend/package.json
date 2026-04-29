@@ -71,7 +71,8 @@
     "winston": "^3.17.0",
     "winston-loki": "6.1.3",
     "zod": "^3.25.76",
-    "zod-error": "^1.5.0"
+    "zod-error": "^1.5.0",
+    "express-rate-limit": "^8.3.2"
   },
   "overrides": {
     "stripe-cli": {

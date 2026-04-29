@@ -579,9 +579,16 @@
         </div>
       </template>
       <template #body="{ data }">
-        <span class="state-pill" :class="getStatusClass(data.status)">{{
-          getStatusLabel(data.status)
-        }}</span>
+        <span
+          class="state-pill cursor-pointer hover:opacity-75 transition-opacity"
+          :class="getStatusClass(data.status)"
+          @click.stop="refreshStatus(data.email, $event)"
+        >
+          <span v-if="refreshingEmails.has(data.email)" class="animate-spin">
+            <i class="pi pi-spin pi-spinner text-xs" />
+          </span>
+          <span v-else>{{ getStatusLabel(data.status) }}</span>
+        </span>
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
@@ -963,6 +970,7 @@ import {
   toStateClass,
 } from '~/utils/mining-table-performance';
 import Normalizer from '~/utils/normalizer';
+import { useContactVerification } from '~/composables/useContactVerification';
 
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
@@ -1008,9 +1016,36 @@ const emptyFunction = () => {};
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
+const $toast = useToast();
+const { verifyEmailStatus } = useContactVerification();
 
 const isLoading = ref(true);
 const loadingLabel = ref('');
+const refreshingEmails = ref(new Set<string>());
+
+async function refreshStatus(email: string, event: Event) {
+  event.stopPropagation();
+  if (refreshingEmails.value.has(email)) return;
+
+  refreshingEmails.value.add(email);
+  try {
+    const result = await verifyEmailStatus(email);
+    const contactsList = $contactsStore.contactsList;
+    const index = contactsList.findIndex((c) => c.email === email);
+    if (index !== -1) {
+      contactsList[index] = { ...contactsList[index], status: result.status };
+      $contactsStore.contactsList = [...contactsList];
+    }
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to refresh status',
+    });
+  } finally {
+    refreshingEmails.value.delete(email);
+  }
+}
 
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
