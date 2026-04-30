@@ -447,7 +447,8 @@ export default class PgContacts implements Contacts {
           userId,
           person.source,
           person.worksFor,
-          miningId
+          miningId,
+          person.telephone
         ]);
       }
 
