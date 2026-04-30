@@ -19,6 +19,20 @@ export interface FetchStopPayload {
   canceled: boolean;
 }
 
+export interface GoogleContactsSyncStartPayload {
+  userId: string;
+  miningId: string;
+  email: string;
+  contactStream: string;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface GoogleContactsSyncStopPayload {
+  miningId: string;
+  canceled: boolean;
+}
+
 class EmailFetcherClient implements FetcherClient {
   private client: AxiosInstance;
 
@@ -78,6 +92,69 @@ class EmailFetcherClient implements FetcherClient {
       return data;
     } catch (error) {
       this.logger.error('Stop fetching request failed', {
+        error,
+        opts
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Start Google Contacts sync job
+   */
+  async startGoogleContactsSync(opts: {
+    miningId: string;
+    userId: string;
+    userEmail: string;
+    accessToken: string;
+    refreshToken: string;
+    contactStream: string;
+  }): Promise<{ data: { totalContacts: number } }> {
+    try {
+      const payload: GoogleContactsSyncStartPayload = {
+        userId: opts.userId,
+        miningId: opts.miningId,
+        email: opts.userEmail,
+        contactStream: opts.contactStream,
+        accessToken: opts.accessToken,
+        refreshToken: opts.refreshToken
+      };
+      const { data } = await this.client.post(
+        'api/google-contacts/start',
+        payload
+      );
+      return data;
+    } catch (error) {
+      this.logger.error('Start Google contacts sync request failed', {
+        error,
+        opts
+      });
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
+        throw error;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Stop Google Contacts sync job
+   */
+  async stopGoogleContactsSync(opts: {
+    miningId: string;
+    canceled: boolean;
+  }): Promise<void> {
+    try {
+      const payload: GoogleContactsSyncStopPayload = {
+        miningId: opts.miningId,
+        canceled: opts.canceled
+      };
+      const { data } = await this.client.delete('api/google-contacts/stop', {
+        data: payload
+      });
+      return data;
+    } catch (error) {
+      this.logger.error('Stop Google contacts sync request failed', {
         error,
         opts
       });
