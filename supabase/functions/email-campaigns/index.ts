@@ -50,7 +50,7 @@ const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
 const PROCESSING_BATCH_SIZE = 100;
 const PROCESSING_DEADLINE_MS = 120_000;
-const STALE_PROCESSING_THRESHOLD_MS = 30 * 60 * 1000;
+const STALE_PROCESSING_THRESHOLD_MS = 5 * 60 * 1000;
 const MAX_CAMPAIGNS_PER_INVOCATION = 10;
 const AZURE_DOMAINS = [
   "outlook",
@@ -1849,7 +1849,7 @@ app.post(
       .select(
         "id, user_id, owner_email, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, footer_html_template, footer_text_template, sender_daily_limit, track_open, track_click, plain_text_only, only_valid_contacts",
       )
-      .in("status", ["queued", "processing"])
+      .eq("status", "queued")
       .order("created_at", { ascending: true })
       .limit(MAX_CAMPAIGNS_PER_INVOCATION);
 
@@ -1877,7 +1877,7 @@ app.post(
         .from("email_campaigns")
         .update({ status: "processing", started_at: new Date().toISOString() })
         .eq("id", campaign.id)
-        .in("status", ["queued", "processing"])
+        .eq("status", "queued")
         .select("id")
         .single();
 
