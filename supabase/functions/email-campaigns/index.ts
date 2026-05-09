@@ -2504,9 +2504,8 @@ async function sendOAuthFailureNotification(
       intro: 'Votre campagne "{campaignSubject}" n\'a pas pu être envoyée.',
       reason_label: "Raison :",
       steps_title: "Pour résoudre ce problème :",
-      step1:
-        "Rendez-vous dans les <strong>Sources</strong> de votre compte leadminer",
-      step2: "Recherchez l'adresse <strong>{senderEmail}</strong>",
+      step1: "Go to your leadminer <strong>Sources</strong>",
+      step2: "Find the address <strong>{senderEmail}</strong>",
       step3: "Cliquez sur « Reconnecter » pour restaurer l'accès",
       outro:
         "Une fois reconnecté, vous pourrez relancer votre campagne depuis la page des campagnes.",
@@ -2516,6 +2515,11 @@ async function sendOAuthFailureNotification(
         "Impossible de se connecter au serveur SMTP. Les identifiants semblent invalides.",
     },
   }[language];
+
+  const sourcesUrl = `${FRONTEND_HOST}/sources`;
+  const sourceUrl = `${FRONTEND_HOST}/sources?reconnect=${encodeURIComponent(senderEmail)}`;
+  const goToSourceText =
+    language === "fr" ? "Accéder à la source" : "Go to Source";
 
   const bodyContent = `
     <p>${i18n.intro.replace(
@@ -2527,11 +2531,14 @@ async function sendOAuthFailureNotification(
     }</p>
     <p><strong>${i18n.steps_title}</strong></p>
     <ol>
-      <li>${i18n.step1}</li>
-      <li>${i18n.step2.replace("{senderEmail}", escapeHtml(senderEmail))}</li>
+      <li>${language === "fr" ? "Rendez-vous dans les" : "Go to your leadminer"} <a href="${sourcesUrl}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${language === "fr" ? "<strong>Sources</strong> de votre compte leadminer" : "<strong>Sources</strong>"}</a></li>
+      <li>${language === "fr" ? "Recherchez l'adresse" : "Find the address"} <a href="mailto:${escapeHtml(senderEmail)}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${escapeHtml(senderEmail)}</a></li>
       <li>${i18n.step3}</li>
     </ol>
     <p>${i18n.outro}</p>
+    <p style="text-align: center; margin-top: 32px;">
+      <a href="${sourceUrl}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">${goToSourceText}</a>
+    </p>
   `;
 
   const html = fillTemplate(i18n.title, bodyContent, "", language);
