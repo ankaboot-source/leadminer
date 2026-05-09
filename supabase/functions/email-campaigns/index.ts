@@ -1796,27 +1796,26 @@ app.post(
   async (c: Context) => {
     const supabaseAdmin = createSupabaseAdmin();
     let fallbackSenderEmail = "";
-
-    // HOT PATCH: Skip fallback sender requirement - check later per campaign
-    // Original check removed to allow campaigns with valid mining sources to process
-    if (isFallbackSenderEnabled()) {
-      try {
-        fallbackSenderEmail = requireFallbackSenderEmail();
-      } catch (error) {
-        logger.warn(
-          "Fallback sender not configured, will use mining sources if available",
-          {
-            error: extractErrorMessage(error),
-          },
-        );
-        fallbackSenderEmail = "";
-      }
-    } else {
-      logger.info(
-        "Fallback sender disabled, will use mining sources per campaign",
+    if (!isFallbackSenderEnabled()) {
+      return c.json(
+        {
+          error: "Fallback sender is disabled",
+          code: "FALLBACK_SENDER_DISABLED",
+        },
+        500,
       );
     }
-
+    try {
+      fallbackSenderEmail = requireFallbackSenderEmail();
+    } catch (error) {
+      return c.json(
+        {
+          error: extractErrorMessage(error),
+          code: "SMTP_SENDER_NOT_CONFIGURED",
+        },
+        500,
+      );
+    }
     const dayStart = getTodayUtcStartString();
     const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
     logger.debug("Starting campaign processing", {
