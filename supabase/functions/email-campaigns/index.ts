@@ -48,7 +48,10 @@ const FALLBACK_SENDER_ENABLED = Boolean(
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
-const PROCESSING_BATCH_SIZE = 300;
+const PROCESSING_BATCH_SIZE = 100;
+const PROCESSING_DEADLINE_MS = 120_000;
+const STALE_PROCESSING_THRESHOLD_MS = 30 * 60 * 1000;
+const MAX_CAMPAIGNS_PER_INVOCATION = 10;
 const AZURE_DOMAINS = [
   "outlook",
   "hotmail",
@@ -1814,7 +1817,31 @@ app.post(
       );
     }
     const dayStart = getTodayUtcStartString();
-    logger.debug("Starting campaign processing", { dayStart });
+    const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
+    logger.debug("Starting campaign processing", {
+      dayStart,
+      deadlineMs: PROCESSING_DEADLINE_MS,
+    });
+
+    const staleThreshold = new Date(
+      Date.now() - STALE_PROCESSING_THRESHOLD_MS,
+    ).toISOString();
+    const { error: staleResetError } = await supabaseAdmin
+      .schema("private")
+      .from("email_campaigns")
+      .update({ status: "queued", started_at: null })
+      .eq("status", "processing")
+      .lt("started_at", staleThreshold);
+
+    if (staleResetError) {
+      logger.error("Failed to reset stale processing campaigns", {
+        error: staleResetError.message,
+      });
+    } else {
+      logger.info("Reset stale processing campaigns", {
+        staleThreshold,
+      });
+    }
 
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
@@ -1824,7 +1851,7 @@ app.post(
       )
       .in("status", ["queued", "processing"])
       .order("created_at", { ascending: true })
-      .limit(30);
+      .limit(MAX_CAMPAIGNS_PER_INVOCATION);
 
     logger.info("Campaign processing triggered", {
       campaignsFound: campaigns?.length ?? 0,
@@ -1837,7 +1864,29 @@ app.post(
     let processedRecipients = 0;
 
     for (const campaign of campaigns ?? []) {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "processing");
+      if (Date.now() > processingDeadline) {
+        logger.info("Processing deadline reached, stopping campaign loop", {
+          campaignId: campaign.id,
+          processedRecipients,
+        });
+        break;
+      }
+
+      const { data: claimed, error: claimError } = await supabaseAdmin
+        .schema("private")
+        .from("email_campaigns")
+        .update({ status: "processing", started_at: new Date().toISOString() })
+        .eq("id", campaign.id)
+        .in("status", ["queued", "processing"])
+        .select("id")
+        .single();
+
+      if (claimError || !claimed) {
+        logger.info("Campaign already being processed, skipping", {
+          campaignId: campaign.id,
+        });
+        continue;
+      }
 
       const enforcedLimit = Math.min(
         Math.max(
@@ -1983,6 +2032,14 @@ app.post(
       });
 
       for (const recipient of recipients) {
+        if (Date.now() > processingDeadline) {
+          logger.info("Processing deadline reached, stopping batch early", {
+            campaignId: campaign.id,
+            processedRecipients,
+          });
+          break;
+        }
+
         const { data: recipientState } = await supabaseAdmin
           .schema("private")
           .from("email_campaign_recipients")
@@ -2232,6 +2289,8 @@ app.post(
         await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
       }
     }
+
+    logger.info("Campaign processing completed", { processedRecipients });
 
     return c.json({ processedRecipients });
   },

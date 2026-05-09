@@ -223,7 +223,9 @@ export async function complianceMiddleware(c: Context, next: Next) {
     return c.json({ error: "Invalid JSON payload", code: "INVALID_JSON" }, 400);
   }
 
-  const selectedEmails = payload.selectedEmails || [];
+  const selectedEmails = Array.isArray(payload.selectedEmails)
+    ? payload.selectedEmails
+    : [];
 
   if (selectedEmails.length === 0) {
     return c.json({ error: "No contacts selected", code: "NO_CONTACTS" }, 400);
@@ -287,11 +289,16 @@ export async function complianceMiddleware(c: Context, next: Next) {
 
     return await next();
   } catch (error) {
-    logger.error("Campaign check failed", { error, userId: user.id });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Campaign check failed", {
+      error: errorMessage,
+      userId: user.id,
+    });
     return c.json(
       {
         error: "Failed to validate campaign constraints",
         code: "CHECK_FAILED",
+        details: errorMessage,
       },
       500,
     );
