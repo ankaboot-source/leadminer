@@ -175,7 +175,7 @@ export enum TaskType {
   Clean = 'clean',
   Enrich = 'enrich',
   Signature = 'signature',
-  GoogleContactsFetch = 'googleContactsFetch'
+  GoogleContactsFetch = 'google-contacts-fetch'
 }
 
 export enum TaskCategory {
