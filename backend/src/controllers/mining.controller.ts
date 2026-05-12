@@ -383,7 +383,8 @@ export default function initializeMiningController(
         ) {
           googleContactsCredentials = {
             accessToken: googleSource.credentials.accessToken,
-            refreshToken: googleSource.credentials.refreshToken
+            refreshToken: googleSource.credentials.refreshToken,
+            userEmail: sanitizedEmail
           };
         }
       }

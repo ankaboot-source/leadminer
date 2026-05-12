@@ -13,6 +13,7 @@ import ENV from '../../config';
 export interface GooglePeopleCredentials {
   accessToken: string;
   refreshToken?: string;
+  userEmail: string;
 }
 
 export interface CreateImapMiningParams {
@@ -67,6 +68,7 @@ export function createImapMining(
       new GoogleContactsFetchTask({
         miningId,
         userId: params.userId,
+        userEmail: params.googleContactsCredentials.userEmail,
         outputStream: streams.messagesStream,
         peopleConfig: params.googleContactsCredentials
       })

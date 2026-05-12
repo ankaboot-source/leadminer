@@ -4,25 +4,68 @@ import { TaskType, TaskCategory, TaskStatus, TaskId } from '../types';
 import type { ProgressMessage } from '../types';
 import { getPeopleService } from '../../OAuth2/googlePeopleClient';
 import SupabaseTasks from '../../../db/supabase/tasks';
+import type { ContactFrontend } from '../../../db/types';
 
 export interface GooglePeopleConfig {
   accessToken: string;
   refreshToken?: string;
+  userEmail?: string;
 }
 
 export interface GoogleContactsFetchTaskConfig {
   id?: string;
   miningId: string;
   userId: string;
+  userEmail: string;
   outputStream: string;
   peopleConfig: GooglePeopleConfig;
 }
 
+interface GooglePersonApiResponse {
+  resourceName?: string;
+  names?: Array<{
+    displayName?: string;
+    givenName?: string;
+    familyName?: string;
+  }>;
+  emailAddresses?: Array<{ value?: string }>;
+  phoneNumbers?: Array<{ value?: string }>;
+  organizations?: Array<{ name?: string; title?: string }>;
+  urls?: Array<{ value?: string }>;
+}
+
+function transformGooglePersonToContactFrontend(
+  person: GooglePersonApiResponse,
+  userId: string
+): ContactFrontend {
+  return {
+    id: person.resourceName || '',
+    user_id: userId,
+    email: person.emailAddresses?.[0]?.value || '',
+    name: person.names?.[0]?.displayName || '',
+    given_name: person.names?.[0]?.givenName || '',
+    family_name: person.names?.[0]?.familyName || '',
+    job_title: person.organizations?.[0]?.title || '',
+    works_for: person.organizations?.[0]?.name || '',
+    telephone: (person.phoneNumbers
+      ?.map((p) => p.value)
+      .filter((v): v is string => v != null) || []) as string[],
+    same_as: (person.urls
+      ?.map((u) => u.value)
+      .filter((v): v is string => v != null) || []) as string[]
+  };
+}
+
 export class GoogleContactsFetchTask extends Task {
   private peopleConfig: GooglePeopleConfig;
+
   private outputStream: string;
+
   private redisPublisher?: Redis;
+
   private canceled = false;
+
+  private userEmail: string;
 
   constructor(config: GoogleContactsFetchTaskConfig) {
     super({
@@ -38,6 +81,7 @@ export class GoogleContactsFetchTask extends Task {
     });
     this.peopleConfig = config.peopleConfig;
     this.outputStream = config.outputStream;
+    this.userEmail = config.userEmail;
     this.upstreamDone = true;
   }
 
@@ -58,6 +102,7 @@ export class GoogleContactsFetchTask extends Task {
       let totalContacts = 0;
 
       do {
+        // eslint-disable-next-line no-await-in-loop
         const response = await service.people.connections.list({
           resourceName: 'people/me',
           pageSize: 100,
@@ -71,37 +116,48 @@ export class GoogleContactsFetchTask extends Task {
           break;
         }
 
+        const transformedContacts: ContactFrontend[] = [];
+
         for (const person of connections) {
           if (this.canceled) {
             break;
           }
 
+          const contact = transformGooglePersonToContactFrontend(
+            person as unknown as GooglePersonApiResponse,
+            this.userId
+          );
+          transformedContacts.push(contact);
+          totalContacts += 1;
+        }
+
+        if (transformedContacts.length > 0 && this.redisPublisher) {
           const message = {
             type: 'google-contacts',
+            userIdentifier: this.userId,
+            userId: this.userId,
+            userEmail: this.userEmail,
+            miningId: this.miningId,
             data: {
-              resourceName: person.resourceName,
-              names: person.names,
-              emailAddresses: person.emailAddresses,
-              phoneNumbers: person.phoneNumbers,
-              organizations: person.organizations,
-              addresses: person.addresses,
-              urls: person.urls
+              source: `google-contacts:${this.userEmail}`,
+              contacts: transformedContacts.map((c) => ({
+                person: c,
+                tags: ['contact']
+              }))
             }
           };
 
-          if (this.redisPublisher) {
-            await this.redisPublisher.xadd(
-              this.outputStream,
-              '*',
-              'message',
-              JSON.stringify(message)
-            );
-          }
-
-          totalContacts++;
-          this.progress.processed = totalContacts;
-          this.emitProgress('googleContactsFetched', totalContacts);
+          // eslint-disable-next-line no-await-in-loop
+          await this.redisPublisher.xadd(
+            this.outputStream,
+            '*',
+            'message',
+            JSON.stringify(message)
+          );
         }
+
+        this.progress.processed = totalContacts;
+        this.emitProgress('googleContactsFetched', totalContacts);
 
         if (this.canceled) {
           break;
