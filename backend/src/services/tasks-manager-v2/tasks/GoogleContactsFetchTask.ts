@@ -157,7 +157,7 @@ export class GoogleContactsFetchTask extends Task {
         }
 
         this.progress.processed = totalContacts;
-        this.emitProgress('googleContactsFetched', totalContacts);
+        this.emitProgress('google-contacts-fetched', totalContacts);
 
         if (this.canceled) {
           break;
@@ -194,9 +194,9 @@ export class GoogleContactsFetchTask extends Task {
   }
 
   onMessage(msg: ProgressMessage): void {
-    if (msg.progressType === 'googleContactsFetched') {
+    if (msg.progressType === 'google-contacts-fetched') {
       this.progress.processed = msg.count;
-      this.emitProgress('googleContactsFetched', this.progress.processed);
+      this.emitProgress('google-contacts-fetched', this.progress.processed);
     }
   }
 
@@ -206,7 +206,7 @@ export class GoogleContactsFetchTask extends Task {
 
   getProgressMap(): Record<string, number> {
     return {
-      googleContactsFetched: this.progress.processed
+      'google-contacts-fetched': this.progress.processed
     };
   }
 }
