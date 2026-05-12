@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { AuthenticationFailure, ImapFlow as Connection } from 'imapflow';
 import ENV from './config';
-import EmailsFetcher, { PSTEmailFetcher } from './emailJobs';
+import EmailsFetcher, {
+  GoogleContactsManager,
+  PSTEmailFetcher
+} from './emailJobs';
+import GoogleContactsFetcher from './services/google_contacts/GoogleContactsFetcher';
 import EmailFetcherFactory from './factory/EmailFetcherFactory';
 import PSTFetcherFactory from './factory/PSTFetcherFactory';
 import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
@@ -57,6 +61,15 @@ interface FetchStartPayload {
   extractSignatures: boolean;
   contactStream: string;
   signatureStream: string;
+}
+
+interface GoogleContactsFetchStartPayload {
+  userId: string;
+  miningId: string;
+  email: string;
+  contactStream: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 type Credentials =
@@ -399,6 +412,115 @@ apiRoutes.delete(
 
     try {
       await PSTEmailFetcher.stop(miningId, canceled);
+      return res.status(200).json({ error: null });
+    } catch (err) {
+      res.status(500);
+      return next(err);
+    }
+  }
+);
+
+apiRoutes.post(
+  '/google-contacts/start',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const {
+      userId,
+      miningId,
+      email,
+      contactStream,
+      accessToken,
+      refreshToken
+    }: GoogleContactsFetchStartPayload = req.body;
+
+    const errors = [
+      validateType('userId', userId, 'string'),
+      validateType('miningId', miningId, 'string'),
+      validateType('email', email, 'string'),
+      validateType('contactStream', contactStream, 'string'),
+      validateType('accessToken', accessToken, 'string'),
+      validateType('refreshToken', refreshToken, 'string')
+    ].filter(Boolean);
+
+    if (errors.length) {
+      return res
+        .status(400)
+        .json({ message: `Invalid input: ${errors.join(', ')}` });
+    }
+
+    try {
+      const fetcher = new GoogleContactsFetcher({
+        miningId,
+        accessToken,
+        refreshToken,
+        streamName: contactStream,
+        userId,
+        userEmail: email
+      });
+
+      const totalContacts = await fetcher.getTotalContacts();
+      GoogleContactsManager.start(miningId, fetcher);
+
+      return res.status(201).send({
+        data: { miningId, totalContacts },
+        error: null
+      });
+    } catch (err) {
+      logger.error('Failed to start Google contacts fetching', err);
+
+      if (
+        err instanceof Error &&
+        (err.message.includes('insufficient permissions') ||
+          err.message.includes(
+            'Request had insufficient authentication scopes'
+          ) ||
+          err.message.includes('403'))
+      ) {
+        return res.status(403).json({
+          message:
+            'Google Contacts access denied. Please re-authenticate with Contacts permission.'
+        });
+      }
+
+      if (
+        err instanceof Error &&
+        (err.message.includes('invalid credentials') ||
+          err.message.includes('401'))
+      ) {
+        return res.status(401).json({
+          message: 'Invalid Google credentials. Please re-authenticate.'
+        });
+      }
+
+      res.status(500);
+      return next(err);
+    }
+  }
+);
+
+apiRoutes.delete(
+  '/google-contacts/stop',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { miningId, canceled }: { miningId: string; canceled: boolean } =
+      req.body;
+    const errors = [
+      validateType('miningId', miningId, 'string'),
+      validateType('canceled', canceled, 'boolean')
+    ].filter(Boolean);
+
+    if (errors.length) {
+      return res
+        .status(400)
+        .json({ message: `Invalid input: ${errors.join(', ')}` });
+    }
+
+    if (!GoogleContactsManager.exists(miningId)) {
+      return res.status(404).json({
+        message: `No current active Google contacts fetching found with id: ${miningId}`
+      });
+    }
+
+    try {
+      await GoogleContactsManager.stop(miningId, canceled);
       return res.status(200).json({ error: null });
     } catch (err) {
       res.status(500);
