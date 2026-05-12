@@ -1,7 +1,4 @@
-import {
-  ContactFrontend,
-  GoogleContactsExtractionResult
-} from '../../../src/db/types';
+import { ContactFrontend } from '../../../src/db/types';
 import { REACHABILITY } from '../../../src/utils/constants';
 import {
   GoogleContactsExtractor,
