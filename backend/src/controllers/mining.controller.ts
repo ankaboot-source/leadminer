@@ -325,7 +325,8 @@ export default function initializeMiningController(
         miningSource: { email },
         boxes: folders,
         since,
-        passive_mining: passiveMining
+        passive_mining: passiveMining,
+        googleContactsSync
       }: {
         miningSource: {
           email: string;
@@ -335,6 +336,7 @@ export default function initializeMiningController(
         cleaningEnabled: boolean;
         since?: string;
         passive_mining?: boolean;
+        googleContactsSync?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -369,6 +371,23 @@ export default function initializeMiningController(
         });
       }
 
+      let googleContactsCredentials;
+      if (googleContactsSync) {
+        const allSources = await miningSourceService.getSourcesForUser(user.id);
+        const googleSource = allSources.find(
+          (s) => s.type === 'google' && s.email === sanitizedEmail
+        );
+        if (
+          googleSource?.credentials &&
+          'accessToken' in googleSource.credentials
+        ) {
+          googleContactsCredentials = {
+            accessToken: googleSource.credentials.accessToken,
+            refreshToken: googleSource.credentials.refreshToken
+          };
+        }
+      }
+
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -385,7 +404,9 @@ export default function initializeMiningController(
             cleaningEnabled: effectiveCleaningEnabled,
             since,
             passiveMining: passiveMining ?? false,
-            fetcherClient: deps.emailFetcherClient
+            fetcherClient: deps.emailFetcherClient,
+            googleContactsSync,
+            googleContactsCredentials
           },
           deps.pipelineDeps
         );
