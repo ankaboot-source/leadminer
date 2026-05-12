@@ -5,6 +5,7 @@ import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
 import {
   MiningSources,
+  OAuthMiningSourceCredentials,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
@@ -325,7 +326,8 @@ export default function initializeMiningController(
         miningSource: { email },
         boxes: folders,
         since,
-        passive_mining: passiveMining
+        passive_mining: passiveMining,
+        googleContactsSync
       }: {
         miningSource: {
           email: string;
@@ -335,6 +337,7 @@ export default function initializeMiningController(
         cleaningEnabled: boolean;
         since?: string;
         passive_mining?: boolean;
+        googleContactsSync?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -363,6 +366,22 @@ export default function initializeMiningController(
       );
       const miningSourceCredentials = sources?.pop()?.credentials;
 
+      let googleContactsCredentials;
+      if (googleContactsSync && miningSourceService) {
+        const allSources = await miningSourceService.getSourcesForUser(user.id);
+        const googleSource = allSources.find(
+          (s) => s.type === 'google' && s.email === email
+        );
+        if (googleSource) {
+          const oauthCredentials = googleSource
+            .credentials as OAuthMiningSourceCredentials;
+          googleContactsCredentials = {
+            accessToken: oauthCredentials?.accessToken,
+            refreshToken: oauthCredentials?.refreshToken
+          };
+        }
+      }
+
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
         return res.status(401).json({
           message: "This mining source isn't registered for this user"
@@ -385,7 +404,9 @@ export default function initializeMiningController(
             cleaningEnabled: effectiveCleaningEnabled,
             since,
             passiveMining: passiveMining ?? false,
-            fetcherClient: deps.emailFetcherClient
+            fetcherClient: deps.emailFetcherClient,
+            googleContactsSync,
+            googleContactsCredentials
           },
           deps.pipelineDeps
         );

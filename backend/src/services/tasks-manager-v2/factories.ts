@@ -19,6 +19,11 @@ export interface CreateImapMiningParams {
   since?: string;
   cleaningEnabled: boolean;
   fetcherClient: FetcherClient;
+  googleContactsSync?: boolean;
+  googleContactsCredentials?: {
+    accessToken: string;
+    refreshToken?: string;
+  };
 }
 
 export function createImapMining(
