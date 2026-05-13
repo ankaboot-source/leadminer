@@ -7,51 +7,62 @@ import {
 import { REACHABILITY } from '../../../utils/constants';
 
 export interface GoogleContactsFormat {
-  source: string;
-  contacts: Array<{
-    person: ContactFrontend;
-    tags: string[];
-  }>;
+  resourceName?: string;
+  displayName?: string;
+  emailAddresses?: Array<{ value?: string }>;
+  phoneNumbers?: Array<{ value?: string }>;
+  organizations?: Array<{ name?: string; title?: string }>;
+  urls?: Array<{ value?: string }>;
 }
 
 export class GoogleContactsExtractor {
   constructor(private data: GoogleContactsFormat) {}
 
   async getContacts(): Promise<ExtractionResult> {
-    const persons = this.data.contacts.map((contactData) => {
-      const p = contactData.person;
-      const person: Person = {
-        email: p.email,
-        status: p.status,
-        name: p.name,
-        image: p.image,
-        location: p.location,
-        jobTitle: p.job_title,
-        sameAs: p.same_as,
-        givenName: p.given_name,
-        familyName: p.family_name,
-        alternateName: p.alternate_name,
-        alternateEmail: p.alternate_email,
-        worksFor: p.works_for,
-        telephone: p.telephone,
-        source: this.data.source
-      };
-
-      const tags: Tag[] = (contactData.tags || []).map((tag) => ({
-        name: tag,
-        reachable: REACHABILITY.UNSURE,
-        source: this.data.source
-      }));
-
+    if (!this.data.resourceName) {
       return {
-        person,
-        tags
+        type: 'google-contacts',
+        persons: [],
+        organizations: []
       };
-    });
+    }
+
+    const contactFrontend: ContactFrontend = {
+      id: this.data.resourceName || '',
+      user_id: '',
+      email: this.data.emailAddresses?.[0]?.value || '',
+      name: this.data.displayName || '',
+      telephone: (this.data.phoneNumbers
+        ?.map((p) => p.value)
+        .filter((v): v is string => v != null) || []) as string[],
+      same_as: (this.data.urls
+        ?.map((u) => u.value)
+        .filter((v): v is string => v != null) || []) as string[],
+      job_title: this.data.organizations?.[0]?.title || '',
+      works_for: this.data.organizations?.[0]?.name || ''
+    };
+
+    const person: Person = {
+      email: contactFrontend.email,
+      name: contactFrontend.name,
+      jobTitle: contactFrontend.job_title,
+      sameAs: contactFrontend.same_as,
+      telephone: contactFrontend.telephone,
+      worksFor: contactFrontend.works_for,
+      source: 'google-contacts'
+    };
+
+    const tags: Tag[] = [
+      {
+        name: 'contact',
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: 'google-contacts'
+      }
+    ];
 
     return {
       type: 'google-contacts',
-      persons,
+      persons: [{ person, tags }],
       organizations: []
     };
   }
