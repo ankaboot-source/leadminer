@@ -114,7 +114,6 @@ export class GoogleContactsFetchTask extends Task {
   onMessage(msg: ProgressMessage): void {
     if (msg.progressType === 'google-contacts-fetched') {
       this.progress.processed = msg.count;
-      this.emitProgress('google-contacts-fetched', this.progress.processed);
 
       if (msg.isCompleted || msg.isCanceled) {
         this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
