@@ -17,6 +17,8 @@ interface ContactToStream {
   type: 'google-contacts';
   data: GoogleContactData;
   isLast: boolean;
+  userId: string;
+  userEmail: string;
 }
 
 interface PersonContact {
@@ -35,7 +37,7 @@ async function publishFetchingProgress(
   const progress = {
     miningId,
     count: fetchedContactsCount,
-    progressType: 'googleContactsFetched',
+    progressType: 'google-contacts-fetched',
     isCompleted,
     isCanceled
   };
@@ -176,7 +178,9 @@ export default class GoogleContactsFetcher {
           miningId: this.miningId,
           type: 'google-contacts',
           data: contactData,
-          isLast: false
+          isLast: false,
+          userId: this.userId,
+          userEmail: this.userEmail
         });
 
         lastBatchPublished += 1;
@@ -201,7 +205,9 @@ export default class GoogleContactsFetcher {
       data: {
         resourceName: ''
       },
-      isLast: true
+      isLast: true,
+      userId: this.userId,
+      userEmail: this.userEmail
     });
 
     await publishFetchingProgress(
