@@ -2,14 +2,21 @@ import { Redis } from 'ioredis';
 import { Task } from './Task';
 import { TaskType, TaskCategory, TaskStatus, TaskId } from '../types';
 import type { ProgressMessage } from '../types';
-import { getPeopleService } from '../../OAuth2/googlePeopleClient';
 import SupabaseTasks from '../../../db/supabase/tasks';
-import type { ContactFrontend } from '../../../db/types';
 
-export interface GooglePeopleConfig {
-  accessToken: string;
-  refreshToken?: string;
-  userEmail?: string;
+export interface GoogleContactsFetcherClient {
+  startGoogleContactsSync(opts: {
+    miningId: string;
+    contactStream: string;
+    userId: string;
+    userEmail: string;
+    accessToken: string;
+    refreshToken: string;
+  }): Promise<{ data: { totalContacts: number } }>;
+  stopGoogleContactsSync(opts: {
+    miningId: string;
+    canceled: boolean;
+  }): Promise<void>;
 }
 
 export interface GoogleContactsFetchTaskConfig {
@@ -18,54 +25,23 @@ export interface GoogleContactsFetchTaskConfig {
   userId: string;
   userEmail: string;
   outputStream: string;
-  peopleConfig: GooglePeopleConfig;
-}
-
-interface GooglePersonApiResponse {
-  resourceName?: string;
-  names?: Array<{
-    displayName?: string;
-    givenName?: string;
-    familyName?: string;
-  }>;
-  emailAddresses?: Array<{ value?: string }>;
-  phoneNumbers?: Array<{ value?: string }>;
-  organizations?: Array<{ name?: string; title?: string }>;
-  urls?: Array<{ value?: string }>;
-}
-
-function transformGooglePersonToContactFrontend(
-  person: GooglePersonApiResponse,
-  userId: string
-): ContactFrontend {
-  return {
-    id: person.resourceName || '',
-    user_id: userId,
-    email: person.emailAddresses?.[0]?.value || '',
-    name: person.names?.[0]?.displayName || '',
-    given_name: person.names?.[0]?.givenName || '',
-    family_name: person.names?.[0]?.familyName || '',
-    job_title: person.organizations?.[0]?.title || '',
-    works_for: person.organizations?.[0]?.name || '',
-    telephone: (person.phoneNumbers
-      ?.map((p) => p.value)
-      .filter((v): v is string => v != null) || []) as string[],
-    same_as: (person.urls
-      ?.map((u) => u.value)
-      .filter((v): v is string => v != null) || []) as string[]
-  };
+  fetcherClient: GoogleContactsFetcherClient;
+  accessToken: string;
+  refreshToken?: string;
 }
 
 export class GoogleContactsFetchTask extends Task {
-  private peopleConfig: GooglePeopleConfig;
+  private fetcherClient: GoogleContactsFetcherClient;
 
   private outputStream: string;
-
-  private redisPublisher?: Redis;
 
   private canceled = false;
 
   private userEmail: string;
+
+  private accessToken: string;
+
+  private refreshToken?: string;
 
   constructor(config: GoogleContactsFetchTaskConfig) {
     super({
@@ -79,9 +55,11 @@ export class GoogleContactsFetchTask extends Task {
         outputStream: config.outputStream
       }
     });
-    this.peopleConfig = config.peopleConfig;
+    this.fetcherClient = config.fetcherClient;
     this.outputStream = config.outputStream;
     this.userEmail = config.userEmail;
+    this.accessToken = config.accessToken;
+    this.refreshToken = config.refreshToken;
     this.upstreamDone = true;
   }
 
@@ -90,83 +68,18 @@ export class GoogleContactsFetchTask extends Task {
     redisPublisher?: Redis
   ): Promise<void> {
     await super.start(tasksResolver);
-    this.redisPublisher = redisPublisher;
 
     try {
-      const service = await getPeopleService({
-        accessToken: this.peopleConfig.accessToken,
-        refreshToken: this.peopleConfig.refreshToken
+      const result = await this.fetcherClient.startGoogleContactsSync({
+        miningId: this.miningId,
+        contactStream: this.outputStream,
+        userId: this.userId,
+        userEmail: this.userEmail,
+        accessToken: this.accessToken,
+        refreshToken: this.refreshToken ?? ''
       });
 
-      let pageToken: string | undefined;
-      let totalContacts = 0;
-
-      do {
-        // eslint-disable-next-line no-await-in-loop
-        const response = await service.people.connections.list({
-          resourceName: 'people/me',
-          pageSize: 100,
-          personFields:
-            'names,emailAddresses,phoneNumbers,organizations,addresses,urls',
-          pageToken
-        });
-
-        const connections = response.data.connections || [];
-        if (connections.length === 0) {
-          break;
-        }
-
-        const transformedContacts: ContactFrontend[] = [];
-
-        for (const person of connections) {
-          if (this.canceled) {
-            break;
-          }
-
-          const contact = transformGooglePersonToContactFrontend(
-            person as unknown as GooglePersonApiResponse,
-            this.userId
-          );
-          transformedContacts.push(contact);
-          totalContacts += 1;
-        }
-
-        if (transformedContacts.length > 0 && this.redisPublisher) {
-          const message = {
-            type: 'google-contacts',
-            userIdentifier: this.userId,
-            userId: this.userId,
-            userEmail: this.userEmail,
-            miningId: this.miningId,
-            data: {
-              source: `google-contacts:${this.userEmail}`,
-              contacts: transformedContacts.map((c) => ({
-                person: c,
-                tags: ['contact']
-              }))
-            }
-          };
-
-          // eslint-disable-next-line no-await-in-loop
-          await this.redisPublisher.xadd(
-            this.outputStream,
-            '*',
-            'message',
-            JSON.stringify(message)
-          );
-        }
-
-        this.progress.processed = totalContacts;
-        this.emitProgress('google-contacts-fetched', totalContacts);
-
-        if (this.canceled) {
-          break;
-        }
-
-        pageToken = response.data.nextPageToken ?? undefined;
-      } while (pageToken);
-
-      this.progress.total = totalContacts;
+      this.progress.total = result.data.totalContacts;
     } catch (error) {
       this.status = TaskStatus.Canceled;
       this.stoppedAt = new Date().toUTCString();
@@ -191,12 +104,20 @@ export class GoogleContactsFetchTask extends Task {
   async stop(canceled = false, tasksResolver?: SupabaseTasks): Promise<void> {
     await super.stop(canceled, tasksResolver);
     this.canceled = true;
+    await this.fetcherClient.stopGoogleContactsSync({
+      miningId: this.miningId,
+      canceled
+    });
   }
 
   onMessage(msg: ProgressMessage): void {
     if (msg.progressType === 'google-contacts-fetched') {
       this.progress.processed = msg.count;
       this.emitProgress('google-contacts-fetched', this.progress.processed);
+
+      if (msg.isCompleted || msg.isCanceled) {
+        this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
+      }
     }
   }
 
