@@ -80,6 +80,7 @@ export class GoogleContactsFetchTask extends Task {
       });
 
       this.progress.total = result.data.totalContacts;
+      this.emitProgress('totalMessages', this.progress.total);
     } catch (error) {
       this.status = TaskStatus.Canceled;
       this.stoppedAt = new Date().toUTCString();
