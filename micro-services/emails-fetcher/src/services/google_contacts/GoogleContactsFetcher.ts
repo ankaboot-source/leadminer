@@ -8,6 +8,8 @@ const redisClient = redis.getClient();
 interface GoogleContactData {
   resourceName: string;
   displayName?: string;
+  givenName?: string;
+  familyName?: string;
   emailAddresses?: any[];
   phoneNumbers?: any[];
 }
@@ -24,6 +26,8 @@ interface ContactToStream {
 interface PersonContact {
   resourceName: string;
   displayName?: string;
+  givenName?: string;
+  familyName?: string;
   emailAddresses?: any[];
   phoneNumbers?: any[];
 }
@@ -135,6 +139,8 @@ export default class GoogleContactsFetcher {
         yield connections.map((person: people_v1.Schema$Person) => ({
           resourceName: person.resourceName || '',
           displayName: person.names?.[0]?.displayName || undefined,
+          givenName: person.names?.[0]?.givenName || undefined,
+          familyName: person.names?.[0]?.familyName || undefined,
           emailAddresses: person.emailAddresses,
           phoneNumbers: person.phoneNumbers
         }));
@@ -170,6 +176,8 @@ export default class GoogleContactsFetcher {
         const contactData: GoogleContactData = {
           resourceName: contact.resourceName,
           displayName: contact.displayName,
+          givenName: contact.givenName,
+          familyName: contact.familyName,
           emailAddresses: contact.emailAddresses,
           phoneNumbers: contact.phoneNumbers
         };

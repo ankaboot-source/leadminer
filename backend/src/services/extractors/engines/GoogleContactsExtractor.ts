@@ -9,6 +9,8 @@ import { REACHABILITY } from '../../../utils/constants';
 export interface GoogleContactsFormat {
   resourceName?: string;
   displayName?: string;
+  givenName?: string;
+  familyName?: string;
   emailAddresses?: Array<{ value?: string }>;
   phoneNumbers?: Array<{ value?: string }>;
   organizations?: Array<{ name?: string; title?: string }>;
@@ -16,7 +18,10 @@ export interface GoogleContactsFormat {
 }
 
 export class GoogleContactsExtractor {
-  constructor(private data: GoogleContactsFormat) {}
+  constructor(
+    private data: GoogleContactsFormat,
+    private userEmail: string
+  ) {}
 
   async getContacts(): Promise<ExtractionResult> {
     if (!this.data.resourceName) {
@@ -45,18 +50,20 @@ export class GoogleContactsExtractor {
     const person: Person = {
       email: contactFrontend.email,
       name: contactFrontend.name,
+      givenName: this.data.givenName,
+      familyName: this.data.familyName,
       jobTitle: contactFrontend.job_title,
       sameAs: contactFrontend.same_as,
       telephone: contactFrontend.telephone,
       worksFor: contactFrontend.works_for,
-      source: 'google-contacts'
+      source: `google-contacts:${this.userEmail}`
     };
 
     const tags: Tag[] = [
       {
         name: 'contact',
         reachable: REACHABILITY.DIRECT_PERSON,
-        source: 'google-contacts'
+        source: `google-contacts:${this.userEmail}`
       }
     ];
 

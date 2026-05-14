@@ -4,6 +4,7 @@ import { Task } from './tasks/Task';
 import { FetchTask } from './tasks/FetchTask';
 import type { FetcherClient } from './tasks/FetchTask';
 import { GoogleContactsFetchTask } from './tasks/GoogleContactsFetchTask';
+import type { GoogleContactsFetcherClient } from './tasks/GoogleContactsFetchTask';
 import { ExtractTask } from './tasks/ExtractTask';
 import { CleanTask } from './tasks/CleanTask';
 import { SignatureTask } from './tasks/SignatureTask';
@@ -70,7 +71,10 @@ export function createImapMining(
         userId: params.userId,
         userEmail: params.googleContactsCredentials.userEmail,
         outputStream: streams.messagesStream,
-        peopleConfig: params.googleContactsCredentials
+        fetcherClient:
+          params.fetcherClient as unknown as GoogleContactsFetcherClient,
+        accessToken: params.googleContactsCredentials.accessToken,
+        refreshToken: params.googleContactsCredentials.refreshToken
       })
     );
   }

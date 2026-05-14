@@ -456,6 +456,17 @@ export default function initializeMiningController(
 
         if (
           err instanceof Error &&
+          err.message.includes('Request failed with status code 403')
+        ) {
+          res
+            .status(403)
+            .send(
+              'Failed to start Google contacts: Access denied. Please re-authenticate with Contacts permission.'
+            );
+        }
+
+        if (
+          err instanceof Error &&
           err.message.includes('Request failed with status code 503')
         ) {
           res
