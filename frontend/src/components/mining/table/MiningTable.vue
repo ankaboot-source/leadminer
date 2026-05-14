@@ -1036,7 +1036,7 @@ async function refreshStatus(email: string, event: Event) {
   refreshingEmails.value.add(email);
   try {
     const { status } = await verifyEmailStatus(email);
-    const contactsList = $contactsStore.contactsList;
+    const { contactsList } = $contactsStore;
     const index = contactsList.findIndex((c) => c.email === email);
     if (index !== -1) {
       contactsList[index] = { ...contactsList[index], status };
