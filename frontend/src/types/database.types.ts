@@ -363,7 +363,7 @@ export type Database = {
           mining_id: string | null;
           name: string | null;
           same_as: string[] | null;
-          source: string;
+          source: string[];
           status: string | null;
           telephone: string[] | null;
           updated_at: string;
@@ -907,7 +907,7 @@ export type Database = {
           user_id: string;
         };
         Returns: {
-          source: string;
+          source: string[];
           email: string;
           name: string;
           status: string;
@@ -944,7 +944,7 @@ export type Database = {
           emails: string[];
         };
         Returns: {
-          source: string;
+          source: string[];
           email: string;
           name: string;
           status: string;

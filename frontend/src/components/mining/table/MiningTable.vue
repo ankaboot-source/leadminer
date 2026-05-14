@@ -352,17 +352,14 @@
 
             <!-- RIGHT -->
             <div
-              v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
-              "
+              v-if="showSocialLinksAndPhones(data)"
               class="flex md:hidden gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="true"
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="true"
                 :small="true"
               />
             </div>
@@ -370,17 +367,14 @@
 
           <div class="flex items-center gap-2 flex-shrink-0">
             <div
-              v-if="
-                showSocialLinksAndPhones(data) &&
-                (columnVisibility.same_as || columnVisibility.telephone)
-              "
+              v-if="showSocialLinksAndPhones(data)"
               class="hidden md:flex gap-2 flex-shrink-0"
             >
               <social-links-and-phones
                 :social-links="data.same_as"
-                :show-social-links="columnVisibility.same_as"
+                :show-social-links="true"
                 :phones="data.telephone"
-                :show-phones="columnVisibility.telephone"
+                :show-phones="true"
                 :small="true"
               />
             </div>
@@ -406,6 +400,18 @@
       <template #header>
         <div v-tooltip.top="t('source_definition')">
           {{ t('source') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        <div class="flex gap-1 flex-wrap">
+          <Tag
+            v-for="src in Array.isArray(data.source)
+              ? data.source
+              : [data.source]"
+            :key="src"
+            :value="src"
+            severity="secondary"
+          />
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -579,9 +585,16 @@
         </div>
       </template>
       <template #body="{ data }">
-        <span class="state-pill" :class="getStatusClass(data.status)">{{
-          getStatusLabel(data.status)
-        }}</span>
+        <span
+          class="state-pill cursor-pointer hover:opacity-75 transition-opacity"
+          :class="getStatusClass(data.status)"
+          @click.stop="refreshStatus(data.email, $event)"
+        >
+          <span v-if="refreshingEmails.has(data.email)" class="animate-spin">
+            <i class="pi pi-spin pi-spinner text-xs" />
+          </span>
+          <span v-else>{{ getStatusLabel(data.status) }}</span>
+        </span>
       </template>
       <template #filter="{ filterModel }">
         <MultiSelect
@@ -963,6 +976,7 @@ import {
   toStateClass,
 } from '~/utils/mining-table-performance';
 import Normalizer from '~/utils/normalizer';
+import { useContactVerification } from '~/composables/useContactVerification';
 
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
@@ -1008,9 +1022,36 @@ const emptyFunction = () => {};
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
+const $toast = useToast();
+const { verifyEmailStatus } = useContactVerification();
 
 const isLoading = ref(true);
 const loadingLabel = ref('');
+const refreshingEmails = ref(new Set<string>());
+
+async function refreshStatus(email: string, event: Event) {
+  event.stopPropagation();
+  if (refreshingEmails.value.has(email)) return;
+
+  refreshingEmails.value.add(email);
+  try {
+    const result = await verifyEmailStatus(email);
+    const contactsList = $contactsStore.contactsList;
+    const index = contactsList.findIndex((c) => c.email === email);
+    if (index !== -1) {
+      contactsList[index] = { ...contactsList[index], status: result.status };
+      $contactsStore.contactsList = [...contactsList];
+    }
+  } catch {
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to refresh status',
+    });
+  } finally {
+    refreshingEmails.value.delete(email);
+  }
+}
 
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
@@ -1022,7 +1063,7 @@ const visibleColumns = computed({
 });
 
 const DEFAULT_ROWS_PER_PAGE = 150;
-const rowsPerPageOptions = [20, 50, 150, 500, 1000];
+const rowsPerPageOptions = [20, 50, 150, 500, 100000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const globalFilterFields = [
   'email',
@@ -1489,19 +1530,7 @@ onBeforeMount(() => {
 });
 onNuxtReady(() => {
   $screenStore.init();
-  $contactsStore.visibleColumns = [
-    'contacts',
-    'name',
-    'same_as',
-    'telephone',
-    'image',
-    'location',
-    ...(origin === 'contacts' && $screenStore.width > 550
-      ? ['temperature']
-      : []),
-    ...($screenStore.width > 700 ? ['tags'] : []),
-    ...($screenStore.width > 800 ? ['status'] : []),
-  ];
+  $contactsStore.visibleColumns = getDefaultVisibleColumns();
 });
 
 onBeforeMount(() => {
@@ -1510,7 +1539,6 @@ onBeforeMount(() => {
 onNuxtReady(async () => {
   $screenStore.init();
   $filtersStore.initializeTableFilters(origin);
-  $contactsStore.initializeVisibleColumns(getDefaultVisibleColumns(), origin);
 
   if (contactsLoadingStrategy.value === 'immediate') {
     await loadContactsData();
@@ -1518,6 +1546,13 @@ onNuxtReady(async () => {
     isLoading.value = false;
     scheduleIdleContactsPrefetch();
   }
+
+  $contactsStore.initializeVisibleColumns(
+    getDefaultVisibleColumns(),
+    origin,
+    $contactsStore.contactsList,
+  );
+
   const locationsToNormalize = $contactsStore.getLocationsToNormalize();
 
   if (origin === 'mine' && locationsToNormalize.length > 0) {
