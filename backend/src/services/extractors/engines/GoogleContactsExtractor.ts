@@ -15,6 +15,7 @@ export interface GoogleContactsFormat {
   phoneNumbers?: Array<{ value?: string }>;
   organizations?: Array<{ name?: string; title?: string }>;
   urls?: Array<{ value?: string }>;
+  addresses?: Array<{ formattedValue?: string }>;
 }
 
 export class GoogleContactsExtractor {
@@ -43,6 +44,7 @@ export class GoogleContactsExtractor {
       same_as: (this.data.urls
         ?.map((u) => u.value)
         .filter((v): v is string => v != null) || []) as string[],
+      location: this.data.addresses?.[0]?.formattedValue || '',
       job_title: this.data.organizations?.[0]?.title || '',
       works_for: this.data.organizations?.[0]?.name || ''
     };
@@ -67,10 +69,11 @@ export class GoogleContactsExtractor {
       }
     ];
 
+    const orgName = this.data.organizations?.[0]?.name;
     return {
       type: 'google-contacts',
       persons: [{ person, tags }],
-      organizations: []
+      organizations: orgName ? [{ name: orgName }] : []
     };
   }
 }
