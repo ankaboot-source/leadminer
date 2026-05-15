@@ -392,7 +392,7 @@
     <!-- Source -->
     <Column
       v-if="columnVisibility.source"
-      field="source"
+      field="sources"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
@@ -405,9 +405,9 @@
       <template #body="{ data }">
         <div class="flex gap-1 flex-wrap">
           <Tag
-            v-for="src in Array.isArray(data.source)
-              ? data.source
-              : [data.source]"
+            v-for="src in Array.isArray(data.sources)
+              ? data.sources
+              : [data.sources]"
             :key="src"
             :value="src"
             severity="secondary"
