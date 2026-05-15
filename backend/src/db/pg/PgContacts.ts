@@ -644,6 +644,7 @@ export default class PgContacts implements Contacts {
 
     for (const { person } of contacts) {
       try {
+        // eslint-disable-next-line no-await-in-loop
         const result = await this.pool.query(UPSERT_SQL, [
           person.name ?? null,
           person.email,
