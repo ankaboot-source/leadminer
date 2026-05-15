@@ -107,7 +107,7 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     throw new Error('Email is required for updating a contact');
   }
 
-  const { tags, ...rest } = contact;
+  const { tags, sources, mining_ids, ...rest } = contact as any;
   const contactWithoutTags = rest;
 
   const { error } = await $supabaseClient
