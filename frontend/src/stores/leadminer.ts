@@ -371,6 +371,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           miningSource,
           extractSignatures: extractSignatures.value,
           cleaningEnabled: cleaningEnabled.value,
+          googleContactsSync: googleContactsSyncEnabled.value,
         },
       },
     );
