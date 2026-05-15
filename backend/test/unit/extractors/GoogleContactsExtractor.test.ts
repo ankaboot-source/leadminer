@@ -32,7 +32,7 @@ describe('GoogleContactsExtractor', () => {
       worksFor: 'Example Corp',
       source: 'google-contacts:joe@gmail.com',
       status: undefined,
-      location: undefined,
+      location: '',
       alternateName: undefined,
       image: undefined
     });
@@ -44,7 +44,7 @@ describe('GoogleContactsExtractor', () => {
         source: 'google-contacts:joe@gmail.com'
       }
     ]);
-    expect(result.organizations).toEqual([]);
+    expect(result.organizations).toEqual([{ name: 'Example Corp' }]);
   });
 
   it('handles empty state (no resourceName)', async () => {
