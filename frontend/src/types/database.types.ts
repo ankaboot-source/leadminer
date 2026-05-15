@@ -360,10 +360,10 @@ export type Database = {
           job_title: string | null;
           location: string | null;
           location_normalized: Json | null;
-          mining_id: string | null;
+          mining_ids: string[] | null;
           name: string | null;
           same_as: string[] | null;
-          source: string;
+          sources: string[];
           status: string | null;
           telephone: string[] | null;
           updated_at: string;
@@ -907,7 +907,7 @@ export type Database = {
           user_id: string;
         };
         Returns: {
-          source: string;
+          sources: string[];
           email: string;
           name: string;
           status: string;
@@ -935,7 +935,7 @@ export type Database = {
           tags: string[];
           updated_at: string;
           created_at: string;
-          mining_id: string;
+          mining_ids: string[];
         }[];
       };
       get_contacts_table_by_emails: {
@@ -944,7 +944,7 @@ export type Database = {
           emails: string[];
         };
         Returns: {
-          source: string;
+          sources: string[];
           email: string;
           name: string;
           status: string;
@@ -972,7 +972,7 @@ export type Database = {
           tags: string[];
           updated_at: string;
           created_at: string;
-          mining_id: string;
+          mining_ids: string[];
         }[];
       };
       get_distinct_or_exclude_from_array:
