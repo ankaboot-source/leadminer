@@ -999,11 +999,11 @@ export type Database = {
           };
       get_mining_stats: {
         Args: {
-          mining_id: string;
+          mining_ids: string[];
         };
         Returns: {
           user_id: string;
-          source: string;
+          sources: string[];
           total_contacts_mined: number;
           total_reachable: number;
           total_with_phone: number;
