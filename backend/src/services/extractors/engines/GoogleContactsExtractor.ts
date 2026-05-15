@@ -58,6 +58,7 @@ export class GoogleContactsExtractor {
       sameAs: contactFrontend.same_as,
       telephone: contactFrontend.telephone,
       worksFor: contactFrontend.works_for,
+      location: contactFrontend.location,
       source: `google-contacts:${this.userEmail}`
     };
 
