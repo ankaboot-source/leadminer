@@ -36,6 +36,7 @@
     "express": "^4.22.1",
     "express-sse": "^1.0.0",
     "generic-pool": "^3.9.0",
+    "googleapis": "^171.4.0",
     "iconv-lite": "^0.7.2",
     "imap": "^0.8.19",
     "imapflow": "^1.2.10",

@@ -12,6 +12,8 @@ interface GoogleContactData {
   familyName?: string;
   emailAddresses?: any[];
   phoneNumbers?: any[];
+  organizations?: any[];
+  addresses?: any[];
 }
 
 interface ContactToStream {
@@ -30,6 +32,8 @@ interface PersonContact {
   familyName?: string;
   emailAddresses?: any[];
   phoneNumbers?: any[];
+  organizations?: any[];
+  addresses?: any[];
 }
 
 async function publishFetchingProgress(
@@ -102,7 +106,8 @@ export default class GoogleContactsFetcher {
     const response = await peopleService.people.connections.list({
       resourceName: 'people/me',
       pageSize: 1,
-      personFields: 'metadata'
+      personFields:
+        'metadata,names,emailAddresses,phoneNumbers,organizations,addresses'
     });
 
     const hasData =
@@ -130,7 +135,8 @@ export default class GoogleContactsFetcher {
         resourceName: 'people/me',
         pageSize,
         pageToken: nextPageToken,
-        personFields: 'names,emailAddresses,phoneNumbers,metadata'
+        personFields:
+          'names,emailAddresses,phoneNumbers,organizations,addresses,metadata'
       });
 
       const connections = response.data.connections ?? [];
@@ -142,7 +148,9 @@ export default class GoogleContactsFetcher {
           givenName: person.names?.[0]?.givenName || undefined,
           familyName: person.names?.[0]?.familyName || undefined,
           emailAddresses: person.emailAddresses,
-          phoneNumbers: person.phoneNumbers
+          phoneNumbers: person.phoneNumbers,
+          organizations: person.organizations,
+          addresses: person.addresses
         }));
       }
 
@@ -179,7 +187,9 @@ export default class GoogleContactsFetcher {
           givenName: contact.givenName,
           familyName: contact.familyName,
           emailAddresses: contact.emailAddresses,
-          phoneNumbers: contact.phoneNumbers
+          phoneNumbers: contact.phoneNumbers,
+          organizations: contact.organizations,
+          addresses: contact.addresses
         };
 
         await publishToStream(this.streamName, {
