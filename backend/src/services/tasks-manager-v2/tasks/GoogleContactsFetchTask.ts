@@ -67,7 +67,7 @@ export class GoogleContactsFetchTask extends Task {
     tasksResolver: SupabaseTasks,
     redisPublisher?: Redis
   ): Promise<void> {
-    await super.start(tasksResolver);
+    await super.start(tasksResolver, redisPublisher);
 
     try {
       const result = await this.fetcherClient.startGoogleContactsSync({
