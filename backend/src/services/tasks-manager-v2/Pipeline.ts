@@ -90,8 +90,8 @@ export class Pipeline {
     const taskList = [...this.tasks.values()];
     try {
       await this.createConsumerGroups();
-      // eslint-disable-next-line no-await-in-loop
       for (const t of taskList) {
+        // eslint-disable-next-line no-await-in-loop
         await t.start(this.deps.tasksResolver, this.deps.redisPublisher);
       }
     } catch (err) {
