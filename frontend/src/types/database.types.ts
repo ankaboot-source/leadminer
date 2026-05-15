@@ -385,7 +385,7 @@ export type Database = {
           job_title?: string | null;
           location?: string | null;
           location_normalized?: Json | null;
-          mining_id?: string | null;
+          mining_ids?: string[] | null;
           name?: string | null;
           same_as?: string[] | null;
           source: string;
@@ -410,7 +410,7 @@ export type Database = {
           job_title?: string | null;
           location?: string | null;
           location_normalized?: Json | null;
-          mining_id?: string | null;
+          mining_ids?: string[] | null;
           name?: string | null;
           same_as?: string[] | null;
           source?: string;

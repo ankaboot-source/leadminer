@@ -49,8 +49,8 @@ export interface Contact {
   tags?: Tag[];
   updated_at?: Date;
   created_at?: Date;
-  sources: string[];
-  mining_ids: string[];
+  sources?: string[];
+  mining_ids?: string[];
 }
 
 export interface ContactEdit {
