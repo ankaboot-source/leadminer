@@ -294,3 +294,83 @@ AS $$
       AND cv.email = ANY(get_contacts_table_by_emails.emails)
     ORDER BY rp.temperature DESC, rp.occurrence DESC, rp.recency DESC;
 $$;
+
+-- 5. Recreate get_mining_source_overview using contacts_view
+CREATE OR REPLACE FUNCTION private.get_mining_source_overview(user_id uuid)
+RETURNS TABLE(
+    source_email text,
+    total_contacts bigint,
+    last_mining_date timestamptz,
+    total_from_last_mining bigint
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH
+    source_emails AS (
+        SELECT DISTINCT p.source
+        FROM private.persons p
+        WHERE p.user_id = get_mining_source_overview.user_id
+          AND p.source IS NOT NULL
+    ),
+    latest_mining_per_source AS (
+        SELECT
+            p.source,
+            p.mining_id,
+            MAX(p.created_at) AS mining_date
+        FROM private.persons p
+        WHERE p.user_id = get_mining_source_overview.user_id
+          AND p.source IS NOT NULL
+          AND p.mining_id IS NOT NULL
+        GROUP BY p.source, p.mining_id
+        ORDER BY p.source, mining_date DESC
+    ),
+    latest_mining AS (
+        SELECT DISTINCT ON (source)
+            source,
+            mining_id,
+            mining_date
+        FROM latest_mining_per_source
+        ORDER BY source, mining_date DESC
+    ),
+    visible_contacts AS (
+        SELECT
+            cv.email,
+            unnest(cv.sources) AS src,
+            cv.mining_ids
+        FROM private.contacts_view cv
+        WHERE cv.user_id = get_mining_source_overview.user_id
+    ),
+    total_per_source AS (
+        SELECT
+            vc.src AS source,
+            COUNT(DISTINCT vc.email)::bigint AS total_contacts
+        FROM visible_contacts vc
+        WHERE vc.src IS NOT NULL
+        GROUP BY vc.src
+    ),
+    last_mining_counts AS (
+        SELECT
+            lm.source,
+            COUNT(DISTINCT vc.email)::bigint AS total_from_last_mining
+        FROM latest_mining lm
+        JOIN visible_contacts vc
+            ON vc.src = lm.source
+            AND lm.mining_id = ANY(vc.mining_ids)
+        WHERE lm.mining_id IS NOT NULL
+        GROUP BY lm.source
+    )
+    SELECT
+        se.source::text,
+        COALESCE(tps.total_contacts, 0)::bigint,
+        lm.mining_date,
+        COALESCE(lmc.total_from_last_mining, 0)::bigint
+    FROM source_emails se
+    LEFT JOIN total_per_source tps ON tps.source = se.source
+    LEFT JOIN latest_mining lm ON lm.source = se.source
+    LEFT JOIN last_mining_counts lmc ON lmc.source = se.source;
+END;
+$$;

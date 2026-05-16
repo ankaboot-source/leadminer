@@ -14,7 +14,9 @@ import {
 } from '../../types';
 import GoogleContactsSession from './contacts-api';
 
-export default class GoogleContactsExport implements ExportStrategy<ContactFrontend> {
+export default class GoogleContactsExport
+  implements ExportStrategy<ContactFrontend>
+{
   readonly type = ExportType.GOOGLE_CONTACTS;
 
   readonly contentType = 'application/json';

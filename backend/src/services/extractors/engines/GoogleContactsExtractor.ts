@@ -24,6 +24,7 @@ export class GoogleContactsExtractor {
     private userEmail: string
   ) {}
 
+  // skipcq: JS-0116 - Must remain async to satisfy ExtractionResult interface
   async getContacts(): Promise<ExtractionResult> {
     if (!this.data.resourceName) {
       return {
@@ -49,6 +50,12 @@ export class GoogleContactsExtractor {
       works_for: this.data.organizations?.[0]?.name || ''
     };
 
+    const alternateEmail =
+      this.data.emailAddresses
+        ?.slice(1)
+        .map((e) => e.value)
+        .filter((v): v is string => v != null) || [];
+
     const person: Person = {
       email: contactFrontend.email,
       name: contactFrontend.name,
@@ -59,6 +66,7 @@ export class GoogleContactsExtractor {
       telephone: contactFrontend.telephone,
       worksFor: contactFrontend.works_for,
       location: contactFrontend.location,
+      alternateEmail: alternateEmail.length > 0 ? alternateEmail : undefined,
       source: `google-contacts:${this.userEmail}`
     };
 

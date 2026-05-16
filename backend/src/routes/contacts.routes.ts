@@ -15,7 +15,7 @@ export default function initializeContactsRoutes(
   const router = Router();
   const contactsRouteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 100
   });
 
   const { exportContactsCSV } = initializeContactsController(
