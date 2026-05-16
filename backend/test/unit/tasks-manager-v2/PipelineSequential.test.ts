@@ -46,6 +46,7 @@ jest.mock('../../../src/db/mail', () => ({
 
 class MockTask extends Task {
   public startFn: jest.Mock;
+
   public stopFn: jest.Mock;
 
   constructor(id: string, startFn: jest.Mock, stopFn: jest.Mock) {
