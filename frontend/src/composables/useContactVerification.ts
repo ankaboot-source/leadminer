@@ -12,7 +12,7 @@ export const useContactVerification = () => {
   const verifyEmailStatus = async (
     email: string,
   ): Promise<ContactVerificationResponse> => {
-    return await $api('/v1/contacts/verify', {
+    return await $api('/contacts/verify', {
       method: 'POST',
       body: { email },
     });

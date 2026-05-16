@@ -48,7 +48,10 @@ const FALLBACK_SENDER_ENABLED = Boolean(
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 const DEFAULT_SENDER_DAILY_LIMIT = 1000;
 const MAX_SENDER_DAILY_LIMIT = 2000;
-const PROCESSING_BATCH_SIZE = 300;
+const PROCESSING_BATCH_SIZE = 100;
+const PROCESSING_DEADLINE_MS = 120_000;
+const STALE_PROCESSING_THRESHOLD_MS = 5 * 60 * 1000;
+const MAX_CAMPAIGNS_PER_INVOCATION = 10;
 const AZURE_DOMAINS = [
   "outlook",
   "hotmail",
@@ -633,6 +636,24 @@ async function guessCustomSmtpHost(email: string) {
   return { host: smtpHost, port: smtpPort, secure: smtpSecure };
 }
 
+function deriveSmtpFromImap(
+  imapHost: string,
+  imapPort: number,
+  imapTls: boolean,
+): { host: string; port: number; secure: boolean } {
+  let smtpHost: string;
+  if (imapHost.startsWith("imap.")) {
+    smtpHost = imapHost.replace(/^imap./, "mail.");
+  } else if (imapHost.startsWith("mail.")) {
+    smtpHost = imapHost;
+  } else {
+    smtpHost = `smtp.${imapHost.split(".").slice(1).join(".")}`;
+  }
+  const smtpPort = imapPort === 993 ? 465 : 587;
+  const smtpSecure = imapPort === 993;
+  return { host: smtpHost, port: smtpPort, secure: smtpSecure };
+}
+
 async function buildUserTransport(
   senderEmail: string,
   credentials: Record<string, unknown>,
@@ -687,7 +708,19 @@ async function buildUserTransport(
     };
   }
 
-  const smtp = await guessCustomSmtpHost(senderEmail);
+  const smtp = credentials.smtpHost
+    ? {
+        host: String(credentials.smtpHost),
+        port: Number(credentials.smtpPort) || 587,
+        secure: Boolean(credentials.smtpSecure),
+      }
+    : credentials.host
+      ? deriveSmtpFromImap(
+          String(credentials.host),
+          Number(credentials.port) || 993,
+          Boolean(credentials.tls),
+        )
+      : await guessCustomSmtpHost(senderEmail);
   return {
     host: smtp.host,
     port: smtp.port,
@@ -1763,28 +1796,52 @@ app.post(
   async (c: Context) => {
     const supabaseAdmin = createSupabaseAdmin();
     let fallbackSenderEmail = "";
-    if (!isFallbackSenderEnabled()) {
-      return c.json(
-        {
-          error: "Fallback sender is disabled",
-          code: "FALLBACK_SENDER_DISABLED",
-        },
-        500,
+
+    // Allow processing without fallback sender if campaigns use mining sources (OAuth)
+    if (isFallbackSenderEnabled()) {
+      try {
+        fallbackSenderEmail = requireFallbackSenderEmail();
+      } catch (error) {
+        logger.warn(
+          "Fallback sender not configured, will use mining sources per campaign",
+          {
+            error: extractErrorMessage(error),
+          },
+        );
+        fallbackSenderEmail = "";
+      }
+    } else {
+      logger.info(
+        "Fallback sender disabled, will use mining sources per campaign",
       );
     }
-    try {
-      fallbackSenderEmail = requireFallbackSenderEmail();
-    } catch (error) {
-      return c.json(
-        {
-          error: extractErrorMessage(error),
-          code: "SMTP_SENDER_NOT_CONFIGURED",
-        },
-        500,
-      );
-    }
+
     const dayStart = getTodayUtcStartString();
-    logger.debug("Starting campaign processing", { dayStart });
+    const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
+    logger.debug("Starting campaign processing", {
+      dayStart,
+      deadlineMs: PROCESSING_DEADLINE_MS,
+    });
+
+    const staleThreshold = new Date(
+      Date.now() - STALE_PROCESSING_THRESHOLD_MS,
+    ).toISOString();
+    const { error: staleResetError } = await supabaseAdmin
+      .schema("private")
+      .from("email_campaigns")
+      .update({ status: "queued", started_at: null })
+      .eq("status", "processing")
+      .lt("started_at", staleThreshold);
+
+    if (staleResetError) {
+      logger.error("Failed to reset stale processing campaigns", {
+        error: staleResetError.message,
+      });
+    } else {
+      logger.info("Reset stale processing campaigns", {
+        staleThreshold,
+      });
+    }
 
     const { data: campaigns, error: campaignsError } = await supabaseAdmin
       .schema("private")
@@ -1792,9 +1849,9 @@ app.post(
       .select(
         "id, user_id, owner_email, sender_name, sender_email, reply_to, subject, body_html_template, body_text_template, footer_html_template, footer_text_template, sender_daily_limit, track_open, track_click, plain_text_only, only_valid_contacts",
       )
-      .in("status", ["queued", "processing"])
+      .eq("status", "queued")
       .order("created_at", { ascending: true })
-      .limit(30);
+      .limit(MAX_CAMPAIGNS_PER_INVOCATION);
 
     logger.info("Campaign processing triggered", {
       campaignsFound: campaigns?.length ?? 0,
@@ -1807,7 +1864,29 @@ app.post(
     let processedRecipients = 0;
 
     for (const campaign of campaigns ?? []) {
-      await setCampaignStatus(supabaseAdmin, campaign.id, "processing");
+      if (Date.now() > processingDeadline) {
+        logger.info("Processing deadline reached, stopping campaign loop", {
+          campaignId: campaign.id,
+          processedRecipients,
+        });
+        break;
+      }
+
+      const { data: claimed, error: claimError } = await supabaseAdmin
+        .schema("private")
+        .from("email_campaigns")
+        .update({ status: "processing", started_at: new Date().toISOString() })
+        .eq("id", campaign.id)
+        .eq("status", "queued")
+        .select("id")
+        .single();
+
+      if (claimError || !claimed) {
+        logger.info("Campaign already being processed, skipping", {
+          campaignId: campaign.id,
+        });
+        continue;
+      }
 
       const enforcedLimit = Math.min(
         Math.max(
@@ -1953,6 +2032,14 @@ app.post(
       });
 
       for (const recipient of recipients) {
+        if (Date.now() > processingDeadline) {
+          logger.info("Processing deadline reached, stopping batch early", {
+            campaignId: campaign.id,
+            processedRecipients,
+          });
+          break;
+        }
+
         const { data: recipientState } = await supabaseAdmin
           .schema("private")
           .from("email_campaign_recipients")
@@ -2203,6 +2290,8 @@ app.post(
       }
     }
 
+    logger.info("Campaign processing completed", { processedRecipients });
+
     return c.json({ processedRecipients });
   },
 );
@@ -2415,9 +2504,8 @@ async function sendOAuthFailureNotification(
       intro: 'Votre campagne "{campaignSubject}" n\'a pas pu être envoyée.',
       reason_label: "Raison :",
       steps_title: "Pour résoudre ce problème :",
-      step1:
-        "Rendez-vous dans les <strong>Sources</strong> de votre compte leadminer",
-      step2: "Recherchez l'adresse <strong>{senderEmail}</strong>",
+      step1: "Go to your leadminer <strong>Sources</strong>",
+      step2: "Find the address <strong>{senderEmail}</strong>",
       step3: "Cliquez sur « Reconnecter » pour restaurer l'accès",
       outro:
         "Une fois reconnecté, vous pourrez relancer votre campagne depuis la page des campagnes.",
@@ -2427,6 +2515,11 @@ async function sendOAuthFailureNotification(
         "Impossible de se connecter au serveur SMTP. Les identifiants semblent invalides.",
     },
   }[language];
+
+  const sourcesUrl = `${FRONTEND_HOST}/sources`;
+  const sourceUrl = `${FRONTEND_HOST}/sources?reconnect=${encodeURIComponent(senderEmail)}`;
+  const goToSourceText =
+    language === "fr" ? "Accéder à la source" : "Go to Source";
 
   const bodyContent = `
     <p>${i18n.intro.replace(
@@ -2438,11 +2531,14 @@ async function sendOAuthFailureNotification(
     }</p>
     <p><strong>${i18n.steps_title}</strong></p>
     <ol>
-      <li>${i18n.step1}</li>
-      <li>${i18n.step2.replace("{senderEmail}", escapeHtml(senderEmail))}</li>
+      <li>${language === "fr" ? "Rendez-vous dans les" : "Go to your leadminer"} <a href="${sourcesUrl}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${language === "fr" ? "<strong>Sources</strong> de votre compte leadminer" : "<strong>Sources</strong>"}</a></li>
+      <li>${language === "fr" ? "Recherchez l'adresse" : "Find the address"} <a href="mailto:${escapeHtml(senderEmail)}" style="color: #2563eb; text-decoration: none; font-weight: 600;">${escapeHtml(senderEmail)}</a></li>
       <li>${i18n.step3}</li>
     </ol>
     <p>${i18n.outro}</p>
+    <p style="text-align: center; margin-top: 32px;">
+      <a href="${sourceUrl}" target="_blank" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">${goToSourceText}</a>
+    </p>
   `;
 
   const html = fillTemplate(i18n.title, bodyContent, "", language);
