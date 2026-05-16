@@ -14,6 +14,7 @@ interface GoogleContactData {
   phoneNumbers?: any[];
   organizations?: any[];
   addresses?: any[];
+  urls?: any[];
 }
 
 interface ContactToStream {
@@ -34,6 +35,7 @@ interface PersonContact {
   phoneNumbers?: any[];
   organizations?: any[];
   addresses?: any[];
+  urls?: any[];
 }
 
 async function publishFetchingProgress(
@@ -107,7 +109,7 @@ export default class GoogleContactsFetcher {
       resourceName: 'people/me',
       pageSize: 1,
       personFields:
-        'metadata,names,emailAddresses,phoneNumbers,organizations,addresses'
+        'metadata,names,emailAddresses,phoneNumbers,organizations,addresses,urls'
     });
 
     const hasData =
@@ -136,7 +138,7 @@ export default class GoogleContactsFetcher {
         pageSize,
         pageToken: nextPageToken,
         personFields:
-          'names,emailAddresses,phoneNumbers,organizations,addresses,metadata'
+          'names,emailAddresses,phoneNumbers,organizations,addresses,urls,metadata'
       });
 
       const connections = response.data.connections ?? [];
@@ -150,7 +152,8 @@ export default class GoogleContactsFetcher {
           emailAddresses: person.emailAddresses,
           phoneNumbers: person.phoneNumbers,
           organizations: person.organizations,
-          addresses: person.addresses
+          addresses: person.addresses,
+          urls: person.urls
         }));
       }
 
@@ -189,7 +192,8 @@ export default class GoogleContactsFetcher {
           emailAddresses: contact.emailAddresses,
           phoneNumbers: contact.phoneNumbers,
           organizations: contact.organizations,
-          addresses: contact.addresses
+          addresses: contact.addresses,
+          urls: contact.urls
         };
 
         await publishToStream(this.streamName, {
