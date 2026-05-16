@@ -53,26 +53,30 @@ class MockTask extends Task {
       type: TaskType.Fetch,
       category: TaskCategory.Mining,
       miningId: 'test-mining-id',
-      userId: 'test-user-id',
+      userId: 'test-user-id'
     });
     this.startFn = startFn;
     this.stopFn = stopFn;
   }
 
+  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async start(...args: any[]) {
     await this.startFn(...args);
   }
 
+  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async stop(...args: any[]) {
     await this.stopFn(...args);
   }
 
+  // skipcq: JS-0105 - Mock method intentionally empty
   onMessage() {}
 
   isComplete(): boolean {
     return this.status !== TaskStatus.Running;
   }
 
+  // skipcq: JS-0105 - Mock method returns empty object
   getProgressMap(): Record<string, number> {
     return {};
   }
@@ -121,10 +125,10 @@ describe('PipelineSequential', () => {
     it('should run tasks sequentially', async () => {
       const { factory } = makeMockSSEFactory();
 
-      const start1 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-      const start2 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
-      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const start1 = jest.fn<() => Promise<void>>().mockResolvedValue();
+      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue();
+      const start2 = jest.fn<() => Promise<void>>().mockResolvedValue();
+      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue();
 
       const task1 = new MockTask('task-1', start1, stop1);
       const task2 = new MockTask('task-2', start2, stop2);

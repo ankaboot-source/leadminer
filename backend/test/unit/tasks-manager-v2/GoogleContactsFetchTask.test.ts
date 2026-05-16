@@ -44,9 +44,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -56,7 +54,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
 
     expect(task.id).toBe('google-contacts-fetch');
@@ -82,9 +80,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockResolvedValue({ data: { totalContacts: 42 } }),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -94,33 +90,32 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
 
-    const emitSpy = jest.spyOn(task as unknown as { emitProgress: (key: string, value: number) => void }, 'emitProgress');
+    const emitSpy = jest.spyOn(
+      task as unknown as { emitProgress: (key: string, value: number) => void },
+      'emitProgress'
+    );
 
     const mockTasksResolver = {
-      create: jest
-        .fn<(task: DbTask) => Promise<DbTask>>()
-        .mockResolvedValue({
-          id: 'task-id',
-          userId: 'test-user',
-          type: TaskType.GoogleContactsFetch,
-          category: TaskCategory.Mining,
-          status: TaskStatus.Running,
-          details: {},
-          startedAt: new Date().toISOString()
-        }),
-      update: jest
-        .fn<(task: DbTask) => Promise<DbTask>>()
-        .mockResolvedValue({
-          id: 'task-id',
-          userId: 'test-user',
-          type: TaskType.GoogleContactsFetch,
-          category: TaskCategory.Mining,
-          status: TaskStatus.Running,
-          details: {}
-        })
+      create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {},
+        startedAt: new Date().toISOString()
+      }),
+      update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {}
+      })
     };
 
     await task.start(mockTasksResolver as unknown as SupabaseTasks);
@@ -144,9 +139,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockRejectedValue(new Error('403 Forbidden')),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -156,31 +149,27 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
 
     const mockTasksResolver = {
-      create: jest
-        .fn<(task: DbTask) => Promise<DbTask>>()
-        .mockResolvedValue({
-          id: 'task-id',
-          userId: 'test-user',
-          type: TaskType.GoogleContactsFetch,
-          category: TaskCategory.Mining,
-          status: TaskStatus.Running,
-          details: {},
-          startedAt: new Date().toISOString()
-        }),
-      update: jest
-        .fn<(task: DbTask) => Promise<DbTask>>()
-        .mockResolvedValue({
-          id: 'task-id',
-          userId: 'test-user',
-          type: TaskType.GoogleContactsFetch,
-          category: TaskCategory.Mining,
-          status: TaskStatus.Running,
-          details: {}
-        })
+      create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {},
+        startedAt: new Date().toISOString()
+      }),
+      update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {}
+      })
     };
 
     await expect(
@@ -206,9 +195,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -218,7 +205,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
 
     task.onMessage({
@@ -257,9 +244,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -269,7 +254,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
 
     task.onMessage({
@@ -310,7 +295,7 @@ describe('GoogleContactsFetchTask', () => {
         userEmail: 'test@example.com',
         outputStream: 'contacts_stream-test',
         fetcherClient: mockFetcher,
-        accessToken: 'fake-access-token'
+        accessToken: 'test-access-credential'
       });
 
       expect(task.status).toBe(TaskStatus.Running);
@@ -339,9 +324,7 @@ describe('GoogleContactsFetchTask', () => {
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
-        .fn<
-          (opts: { miningId: string; canceled: boolean }) => Promise<void>
-        >()
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
         .mockResolvedValue()
     } as unknown as GoogleContactsFetcherClient;
 
@@ -351,7 +334,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'fake-access-token'
+      accessToken: 'test-access-credential'
     });
     task.startedAt = new Date().toUTCString();
 
