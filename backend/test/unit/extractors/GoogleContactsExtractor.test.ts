@@ -78,4 +78,60 @@ describe('GoogleContactsExtractor', () => {
     );
     expect(result.organizations).toEqual([]);
   });
+
+  it('populates alternateEmail from additional email addresses', async () => {
+    const data: GoogleContactsFormat = {
+      resourceName: 'people/789',
+      displayName: 'Multi Email',
+      emailAddresses: [
+        { value: 'primary@example.com' },
+        { value: 'secondary@example.com' },
+        { value: 'third@example.com' }
+      ]
+    };
+    const extractor = new GoogleContactsExtractor(data, 'joe@gmail.com');
+    const result = await extractor.getContacts();
+
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].person.email).toBe('primary@example.com');
+    expect(result.persons[0].person.alternateEmail).toEqual([
+      'secondary@example.com',
+      'third@example.com'
+    ]);
+  });
+
+  it('handles contact with no email addresses', async () => {
+    const data: GoogleContactsFormat = {
+      resourceName: 'people/101',
+      displayName: 'No Email'
+    };
+    const extractor = new GoogleContactsExtractor(data, 'joe@gmail.com');
+    const result = await extractor.getContacts();
+
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].person.email).toBe('');
+    expect(result.persons[0].person.alternateEmail).toBeUndefined();
+  });
+
+  it('handles contact with empty arrays for optional fields', async () => {
+    const data: GoogleContactsFormat = {
+      resourceName: 'people/202',
+      displayName: 'Empty Fields',
+      emailAddresses: [],
+      phoneNumbers: [],
+      organizations: [],
+      urls: [],
+      addresses: []
+    };
+    const extractor = new GoogleContactsExtractor(data, 'joe@gmail.com');
+    const result = await extractor.getContacts();
+
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].person.email).toBe('');
+    expect(result.persons[0].person.telephone).toEqual([]);
+    expect(result.persons[0].person.sameAs).toEqual([]);
+    expect(result.persons[0].person.location).toBe('');
+    expect(result.persons[0].person.alternateEmail).toBeUndefined();
+    expect(result.organizations).toEqual([]);
+  });
 });
