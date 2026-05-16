@@ -47,6 +47,7 @@ jest.mock('../../../src/db/mail', () => ({
 class MockTask extends Task {
   public startFn: jest.Mock;
   public stopFn: jest.Mock;
+
   constructor(id: string, startFn: jest.Mock, stopFn: jest.Mock) {
     super({
       id,
@@ -59,24 +60,22 @@ class MockTask extends Task {
     this.stopFn = stopFn;
   }
 
-  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async start(...args: any[]) {
     await this.startFn(...args);
   }
 
-  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async stop(...args: any[]) {
     await this.stopFn(...args);
   }
 
-  // skipcq: JS-0105 - Mock method intentionally empty
+  // eslint-disable-next-line class-methods-use-this
   onMessage() {}
 
   isComplete(): boolean {
     return this.status !== TaskStatus.Running;
   }
 
-  // skipcq: JS-0105 - Mock method returns empty object
+  // eslint-disable-next-line class-methods-use-this
   getProgressMap(): Record<string, number> {
     return {};
   }

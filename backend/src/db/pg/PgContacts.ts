@@ -301,11 +301,15 @@ export default class PgContacts implements Contacts {
   }
 
   async create(result: ExtractionResult, userId: string, miningId: string) {
-    const results = await (result.type === 'email'
-      ? this.createContactsFromEmail(result, userId, miningId)
-      : result.type === 'google-contacts'
-        ? this.createFromGoogleContacts(result, userId, miningId)
-        : this.createContactsFromFile(result, userId, miningId));
+    const results = await (() => {
+      if (result.type === 'email') {
+        return this.createContactsFromEmail(result, userId, miningId);
+      }
+      if (result.type === 'google-contacts') {
+        return this.createFromGoogleContacts(result, userId, miningId);
+      }
+      return this.createContactsFromFile(result, userId, miningId);
+    })();
     return results;
   }
 
