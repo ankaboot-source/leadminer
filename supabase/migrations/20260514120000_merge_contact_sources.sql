@@ -1,5 +1,3 @@
-BEGIN;
-
 -- 1. Drop old functions (recreated later)
 DROP FUNCTION IF EXISTS private.get_contacts_table(uuid);
 DROP FUNCTION IF EXISTS private.get_contacts_table_by_emails(uuid, text[]);
@@ -296,5 +294,3 @@ AS $$
       AND cv.email = ANY(get_contacts_table_by_emails.emails)
     ORDER BY rp.temperature DESC, rp.occurrence DESC, rp.recency DESC;
 $$;
-
-COMMIT;
