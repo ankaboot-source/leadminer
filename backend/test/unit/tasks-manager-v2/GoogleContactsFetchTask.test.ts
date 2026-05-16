@@ -54,7 +54,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
 
     expect(task.id).toBe('google-contacts-fetch');
@@ -90,7 +90,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
 
     const emitSpy = jest.spyOn(
@@ -149,7 +149,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
 
     const mockTasksResolver = {
@@ -205,7 +205,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
 
     task.onMessage({
@@ -254,7 +254,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
 
     task.onMessage({
@@ -295,7 +295,7 @@ describe('GoogleContactsFetchTask', () => {
         userEmail: 'test@example.com',
         outputStream: 'contacts_stream-test',
         fetcherClient: mockFetcher,
-        accessToken: 'test-access-credential'
+        accessToken: 'test-value'
       });
 
       expect(task.status).toBe(TaskStatus.Running);
@@ -334,7 +334,7 @@ describe('GoogleContactsFetchTask', () => {
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
       fetcherClient: mockFetcher,
-      accessToken: 'test-access-credential'
+      accessToken: 'test-value'
     });
     task.startedAt = new Date().toUTCString();
 

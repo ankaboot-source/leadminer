@@ -61,10 +61,12 @@ class MockTask extends Task {
     this.stopFn = stopFn;
   }
 
+  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async start(...args: any[]) {
     await this.startFn(...args);
   }
 
+  // skipcq: JS-0323 - Rest parameters need any[] for jest.Mock spread compatibility
   async stop(...args: any[]) {
     await this.stopFn(...args);
   }
@@ -148,9 +150,9 @@ describe('PipelineSequential', () => {
       const start1 = jest
         .fn<() => Promise<void>>()
         .mockRejectedValue(new Error('Task 1 failed'));
-      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue();
       const start2 = jest.fn<() => Promise<void>>();
-      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue();
 
       const task1 = new MockTask('task-1', start1, stop1);
       const task2 = new MockTask('task-2', start2, stop2);
@@ -168,9 +170,9 @@ describe('PipelineSequential', () => {
       const start1 = jest
         .fn<() => Promise<void>>()
         .mockRejectedValue(new Error('Task 1 failed'));
-      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const stop1 = jest.fn<() => Promise<void>>().mockResolvedValue();
       const start2 = jest.fn<() => Promise<void>>();
-      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      const stop2 = jest.fn<() => Promise<void>>().mockResolvedValue();
 
       const task1 = new MockTask('task-1', start1, stop1);
       const task2 = new MockTask('task-2', start2, stop2);
