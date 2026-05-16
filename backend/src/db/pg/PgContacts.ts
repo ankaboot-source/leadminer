@@ -433,52 +433,70 @@ export default class PgContacts implements Contacts {
     `;
 
     for (const { person, tags } of persons) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(MERGE_UPSERT_SQL, [
-        person.name ?? null,
-        person.email,
-        person.image ?? null,
-        person.location ?? null,
-        person.sameAs ?? null,
-        person.givenName ?? null,
-        person.familyName ?? null,
-        person.jobTitle ?? null,
-        userId,
-        person.source,
-        organizationsDB.get(person.worksFor ?? ''),
-        miningId,
-        person.telephone ?? null,
-        person.alternateName ?? null,
-        person.alternateEmail ?? null
-      ]);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(MERGE_UPSERT_SQL, [
+          person.name ?? null,
+          person.email,
+          person.image ?? null,
+          person.location ?? null,
+          person.sameAs ?? null,
+          person.givenName ?? null,
+          person.familyName ?? null,
+          person.jobTitle ?? null,
+          userId,
+          person.source,
+          organizationsDB.get(person.worksFor ?? ''),
+          miningId,
+          person.telephone ?? null,
+          person.alternateName ?? null,
+          person.alternateEmail ?? null
+        ]);
 
-      if (tags.length) {
+        if (tags.length) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.pool.query(
+            format(
+              PgContacts.INSERT_TAGS_SQL,
+              tags.map((tag) => [
+                tag.name,
+                tag.reachable,
+                tag.source,
+                userId,
+                person.email
+              ])
+            )
+          );
+        }
+
+        insertedContacts.add({ email: person.email, tags });
         // eslint-disable-next-line no-await-in-loop
         await this.pool.query(
-          format(
-            PgContacts.INSERT_TAGS_SQL,
-            tags.map((tag) => [
-              tag.name,
-              tag.reachable,
-              tag.source,
-              userId,
-              person.email
-            ])
-          )
+          `
+          INSERT INTO private.refinedpersons(user_id, email, tags)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (user_id, email)
+          DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
+          `,
+          [userId, person.email, tags.map((tag) => tag.name)]
+        );
+      } catch (error) {
+        this.logger.error(
+          '[PgContacts.createFromGoogleContacts] Failed to upsert Google contact',
+          {
+            email: person.email,
+            source: person.source,
+            worksFor: person.worksFor,
+            sameAs: person.sameAs,
+            telephone: person.telephone,
+            organizationName: organizationsDB.get(person.worksFor ?? ''),
+            userId,
+            miningId,
+            error: (error as Error).message,
+            stack: (error as Error).stack
+          }
         );
       }
-
-      insertedContacts.add({ email: person.email, tags });
-      // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(
-        `
-        INSERT INTO private.refinedpersons(user_id, email, tags)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id, email)
-        DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
-        `,
-        [userId, person.email, tags.map((tag) => tag.name)]
-      );
     }
 
     return Array.from(insertedContacts);
