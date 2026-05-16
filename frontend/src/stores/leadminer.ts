@@ -70,6 +70,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const cleaningFinished = ref(true);
   const signatureExtractionFinished = ref(false);
 
+  const googleContactsFetched = ref(false);
+  const googleContactsSyncEnabled = ref(true);
+
   const miningCompleted = ref(false);
 
   const activeMiningTask = computed(() => miningTask.value !== undefined);
@@ -124,6 +127,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     signatureExtractionFinished.value = false;
 
     miningCompleted.value = false;
+    googleContactsFetched.value = false;
+    googleContactsSyncEnabled.value = true;
 
     activeEnrichment.value = false;
 
@@ -352,6 +357,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           await fetchMiningSources();
         }, 100);
       },
+      onGoogleContactsFetched: () => {
+        googleContactsFetched.value = true;
+      },
     });
   }
 
@@ -371,6 +379,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           miningSource,
           extractSignatures: extractSignatures.value,
           cleaningEnabled: cleaningEnabled.value,
+          googleContactsSync: googleContactsSyncEnabled.value,
         },
       },
     );
@@ -729,6 +738,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     cleaningFinished,
     signatureExtractionFinished,
     miningCompleted,
+    googleContactsFetched,
+    googleContactsSyncEnabled,
     activeMiningTask,
     activeTask,
     passiveMiningDialog,

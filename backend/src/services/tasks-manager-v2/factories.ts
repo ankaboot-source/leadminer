@@ -3,11 +3,19 @@ import type { PipelineDeps } from './Pipeline';
 import { Task } from './tasks/Task';
 import { FetchTask } from './tasks/FetchTask';
 import type { FetcherClient } from './tasks/FetchTask';
+import { GoogleContactsFetchTask } from './tasks/GoogleContactsFetchTask';
+import type { GoogleContactsFetcherClient } from './tasks/GoogleContactsFetchTask';
 import { ExtractTask } from './tasks/ExtractTask';
 import { CleanTask } from './tasks/CleanTask';
 import { SignatureTask } from './tasks/SignatureTask';
 import { TaskId } from './types';
 import ENV from '../../config';
+
+export interface GooglePeopleCredentials {
+  accessToken: string;
+  refreshToken?: string;
+  userEmail: string;
+}
 
 export interface CreateImapMiningParams {
   miningId: string;
@@ -19,6 +27,8 @@ export interface CreateImapMiningParams {
   since?: string;
   cleaningEnabled: boolean;
   fetcherClient: FetcherClient;
+  googleContactsSync?: boolean;
+  googleContactsCredentials?: GooglePeopleCredentials;
 }
 
 export function createImapMining(
@@ -53,6 +63,21 @@ export function createImapMining(
       passive_mining: params.passiveMining
     })
   );
+
+  if (params.googleContactsSync && params.googleContactsCredentials) {
+    tasks.push(
+      new GoogleContactsFetchTask({
+        miningId,
+        userId: params.userId,
+        userEmail: params.googleContactsCredentials.userEmail,
+        outputStream: streams.messagesStream,
+        fetcherClient:
+          params.fetcherClient as unknown as GoogleContactsFetcherClient,
+        accessToken: params.googleContactsCredentials.accessToken,
+        refreshToken: params.googleContactsCredentials.refreshToken
+      })
+    );
+  }
 
   tasks.push(
     new ExtractTask({
@@ -121,7 +146,11 @@ export function createImapMining(
     deps
   );
 
-  pipeline.addProgressLink(TaskId.Extract, TaskId.Fetch);
+  const upstreams: string[] = [TaskId.Fetch];
+  if (params.googleContactsSync) {
+    upstreams.push(TaskId.GoogleContactsFetch);
+  }
+  pipeline.addProgressLink(TaskId.Extract, upstreams);
 
   if (params.cleaningEnabled) {
     pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {

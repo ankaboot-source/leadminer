@@ -4,12 +4,16 @@ export const TaskId = {
   Fetch: 'fetch',
   Extract: 'extract',
   Clean: 'clean',
-  Signature: 'signature'
+  Signature: 'signature',
+  GoogleContactsFetch: 'google-contacts-fetch'
 } as const;
 
 export type TaskIdValue = (typeof TaskId)[keyof typeof TaskId];
 
-export type StreamRole = Exclude<TaskIdValue, 'fetch'>;
+export type StreamRole = Exclude<
+  TaskIdValue,
+  'fetch' | 'google-contacts-fetch'
+>;
 
 export interface TaskProgress {
   total: number;

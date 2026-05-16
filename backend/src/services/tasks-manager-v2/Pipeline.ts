@@ -90,14 +90,13 @@ export class Pipeline {
     const taskList = [...this.tasks.values()];
     try {
       await this.createConsumerGroups();
-      await Promise.all(
-        taskList.map((t) =>
-          t.start(this.deps.tasksResolver, this.deps.redisPublisher)
-        )
-      );
+      for (const t of taskList) {
+        // eslint-disable-next-line no-await-in-loop
+        await t.start(this.deps.tasksResolver, this.deps.redisPublisher);
+      }
     } catch (err) {
       this.failed = true;
-      await this.cancel();
+      await this.cancel(); // clean up all tasks (including those already started)
       throw err;
     }
   }

@@ -325,7 +325,8 @@ export default function initializeMiningController(
         miningSource: { email },
         boxes: folders,
         since,
-        passive_mining: passiveMining
+        passive_mining: passiveMining,
+        googleContactsSync
       }: {
         miningSource: {
           email: string;
@@ -335,6 +336,7 @@ export default function initializeMiningController(
         cleaningEnabled: boolean;
         since?: string;
         passive_mining?: boolean;
+        googleContactsSync?: boolean;
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
@@ -369,6 +371,24 @@ export default function initializeMiningController(
         });
       }
 
+      let googleContactsCredentials;
+      if (googleContactsSync) {
+        const allSources = await miningSourceService.getSourcesForUser(user.id);
+        const googleSource = allSources.find(
+          (s) => s.type === 'google' && s.email === sanitizedEmail
+        );
+        if (
+          googleSource?.credentials &&
+          'accessToken' in googleSource.credentials
+        ) {
+          googleContactsCredentials = {
+            accessToken: googleSource.credentials.accessToken,
+            refreshToken: googleSource.credentials.refreshToken,
+            userEmail: sanitizedEmail
+          };
+        }
+      }
+
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -385,7 +405,9 @@ export default function initializeMiningController(
             cleaningEnabled: effectiveCleaningEnabled,
             since,
             passiveMining: passiveMining ?? false,
-            fetcherClient: deps.emailFetcherClient
+            fetcherClient: deps.emailFetcherClient,
+            googleContactsSync,
+            googleContactsCredentials
           },
           deps.pipelineDeps
         );
@@ -430,6 +452,17 @@ export default function initializeMiningController(
           res
             .status(401)
             .send('Failed to start fetching: Invalid credentials 401');
+        }
+
+        if (
+          err instanceof Error &&
+          err.message.includes('Request failed with status code 403')
+        ) {
+          res
+            .status(403)
+            .send(
+              'Failed to start Google contacts: Access denied. Please re-authenticate with Contacts permission.'
+            );
         }
 
         if (

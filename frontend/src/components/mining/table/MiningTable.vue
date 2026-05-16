@@ -392,7 +392,7 @@
     <!-- Source -->
     <Column
       v-if="columnVisibility.source"
-      field="source"
+      field="sources"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
@@ -400,6 +400,18 @@
       <template #header>
         <div v-tooltip.top="t('source_definition')">
           {{ t('source') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        <div class="flex gap-1 flex-wrap">
+          <Tag
+            v-for="src in Array.isArray(data.sources)
+              ? data.sources
+              : [data.sources]"
+            :key="src"
+            :value="src"
+            severity="secondary"
+          />
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -1023,11 +1035,11 @@ async function refreshStatus(email: string, event: Event) {
 
   refreshingEmails.value.add(email);
   try {
-    const result = await verifyEmailStatus(email);
-    const contactsList = $contactsStore.contactsList;
+    const { status } = await verifyEmailStatus(email);
+    const { contactsList } = $contactsStore;
     const index = contactsList.findIndex((c) => c.email === email);
     if (index !== -1) {
-      contactsList[index] = { ...contactsList[index], status: result.status };
+      contactsList[index] = { ...contactsList[index], status };
       $contactsStore.contactsList = [...contactsList];
     }
   } catch {
