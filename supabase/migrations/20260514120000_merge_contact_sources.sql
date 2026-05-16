@@ -374,3 +374,5 @@ BEGIN
     LEFT JOIN last_mining_counts lmc ON lmc.source = se.source;
 END;
 $$;
+
+GRANT SELECT ON private.contacts_view TO authenticated;
