@@ -164,6 +164,8 @@ async function handleAuthErrorAndRetry(
       error.response?.status === 403 &&
       error.response?._data?.type === 'google'
     ) {
+      // eslint-disable-next-line no-console
+      console.error('Google Contacts 403:', error.response?._data);
       $toast.add({
         severity: 'warn',
         summary: $t('common.start_mining'),
