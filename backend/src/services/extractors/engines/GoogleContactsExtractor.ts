@@ -30,6 +30,7 @@ export class GoogleContactsExtractor {
     private readonly domainStatusVerification: DomainStatusVerificationFunction
   ) {}
 
+  // skipcq: JS-0116 - Must remain async to satisfy ExtractionResult interface
   async getContacts(): Promise<ExtractionResult> {
     if (!this.data.resourceName) {
       return {
