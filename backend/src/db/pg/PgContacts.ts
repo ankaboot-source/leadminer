@@ -418,21 +418,23 @@ export default class PgContacts implements Contacts {
       try {
         // eslint-disable-next-line no-await-in-loop
         await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
-          person.name ?? null,
-          person.email,
-          person.image ?? null,
-          person.location ?? null,
-          person.sameAs ?? null,
-          person.givenName ?? null,
-          person.familyName ?? null,
-          person.jobTitle ?? null,
-          userId,
-          person.source,
-          organizationsDB.get(person.worksFor ?? ''),
-          miningId,
-          person.telephone ?? null,
-          person.alternateName ?? null,
-          person.alternateEmail ?? null
+          person.name ?? null, // $1  name
+          person.email, // $2  email
+          null, // $3  url - Google contacts don't have this
+          person.image ?? null, // $4  image
+          person.location ?? null, // $5  location
+          person.sameAs ?? null, // $6  same_as
+          person.givenName ?? null, // $7  given_name
+          person.familyName ?? null, // $8  family_name
+          person.jobTitle ?? null, // $9  job_title
+          null, // $10 identifiers - Google contacts don't have this
+          userId, // $11 user_id
+          person.source, // $12 source
+          organizationsDB.get(person.worksFor ?? ''), // $13 works_for
+          miningId, // $14 mining_id
+          person.telephone ?? null, // $15 telephone
+          person.alternateName ?? null, // $16 alternate_name
+          person.alternateEmail ?? null // $17 alternate_email
         ]);
 
         if (tags.length) {
