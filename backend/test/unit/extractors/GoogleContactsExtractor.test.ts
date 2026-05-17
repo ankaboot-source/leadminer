@@ -37,6 +37,12 @@ const domainStatusVerification = jest.fn(() => [
 ]) as unknown as DomainStatusVerificationFunction;
 
 describe('GoogleContactsExtractor', () => {
+  const DEFAULT_NEWSLETTER_TAG = {
+    name: 'newsletter',
+    reachable: REACHABILITY.NONE,
+    source: 'google_contacts#email_address'
+  };
+
   it('returns correctly mapped contact with given_name and family_name', async () => {
     const data: GoogleContactsFormat = {
       resourceName: 'people/123',
@@ -227,13 +233,7 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'newsletter',
-        reachable: REACHABILITY.NONE,
-        source: 'google_contacts#email_address'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([DEFAULT_NEWSLETTER_TAG]);
   });
 
   it('returns default newsletter tag when tagging engine returns empty results', async () => {
@@ -261,13 +261,7 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'newsletter',
-        reachable: REACHABILITY.NONE,
-        source: 'google_contacts#email_address'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([DEFAULT_NEWSLETTER_TAG]);
   });
 
   it('returns default newsletter tag when tagging engine throws', async () => {
@@ -297,12 +291,6 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'newsletter',
-        reachable: REACHABILITY.NONE,
-        source: 'google_contacts#email_address'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([DEFAULT_NEWSLETTER_TAG]);
   });
 });

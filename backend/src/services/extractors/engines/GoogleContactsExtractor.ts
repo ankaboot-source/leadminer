@@ -102,7 +102,7 @@ export class GoogleContactsExtractor {
       }
     }
 
-    // Default to newsletter tag when no tags were assigned
+    // Default to newsletter tag when tagging is unavailable or produces no results
     if (tags.length === 0) {
       tags = [
         {
