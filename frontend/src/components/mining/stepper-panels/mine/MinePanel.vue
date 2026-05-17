@@ -168,9 +168,7 @@ async function handleAuthErrorAndRetry(
         severity: 'warn',
         summary: $t('common.start_mining'),
         detail: {
-          message:
-            error.response._data.error ||
-            t('google_contacts_permission_needed'),
+          message: t('google_contacts_permission_needed'),
           button: {
             text: t('authorize_google_contacts'),
             action: () => {
