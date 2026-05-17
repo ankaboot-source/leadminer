@@ -112,11 +112,7 @@ export default class GoogleContactsFetcher {
         'metadata,names,emailAddresses,phoneNumbers,organizations,addresses,urls'
     });
 
-    const hasData =
-      response.data.connections && response.data.connections.length > 0;
-    const hasMore = response.data.nextPageToken;
-
-    return hasData || hasMore ? 1 : 0;
+    return response.data.totalPeople ?? response.data.connections?.length ?? 0;
   }
 
   async *streamPages(): AsyncGenerator<PersonContact[], void, unknown> {
