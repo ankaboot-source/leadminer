@@ -1063,7 +1063,7 @@ const visibleColumns = computed({
 });
 
 const DEFAULT_ROWS_PER_PAGE = 150;
-const rowsPerPageOptions = [20, 50, 150, 500, 100000];
+const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const globalFilterFields = [
   'email',
