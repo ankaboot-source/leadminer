@@ -79,7 +79,7 @@ describe('GoogleContactsExtractor', () => {
       {
         name: 'professional',
         reachable: REACHABILITY.DIRECT_PERSON,
-        source: 'google-contacts:joe@gmail.com'
+        source: 'google_contacts#email_address'
       }
     ]);
     expect(result.organizations).toEqual([{ name: 'Example Corp' }]);
@@ -124,7 +124,7 @@ describe('GoogleContactsExtractor', () => {
     expect(result.persons[0].tags).toHaveLength(1);
     expect(result.persons[0].tags[0].name).toBe('professional');
     expect(result.persons[0].tags[0].source).toBe(
-      'google-contacts:joe@gmail.com'
+      'google_contacts#email_address'
     );
     expect(result.organizations).toEqual([]);
   });
@@ -203,7 +203,7 @@ describe('GoogleContactsExtractor', () => {
     expect(result.organizations).toEqual([]);
   });
 
-  it('falls back to contact tag when domain verification fails', async () => {
+  it('returns empty tags when domain verification fails', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -227,16 +227,10 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: 'google-contacts:user@example.com'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([]);
   });
 
-  it('returns contact tag when tagging engine returns empty tags', async () => {
+  it('returns empty tags when tagging engine returns empty results', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -261,16 +255,10 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: 'google-contacts:user@example.com'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([]);
   });
 
-  it('falls back to contact tag when tagging engine throws', async () => {
+  it('returns empty tags when tagging engine throws', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -297,12 +285,6 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: 'google-contacts:user@example.com'
-      }
-    ]);
+    expect(result.persons[0].tags).toEqual([]);
   });
 });

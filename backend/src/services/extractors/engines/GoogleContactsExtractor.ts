@@ -7,7 +7,6 @@ import {
 } from '../../../db/types';
 import { TaggingEngine } from '../../tagging/types';
 import { DomainStatusVerificationFunction } from './EmailMessage';
-import { REACHABILITY } from '../../../utils/constants';
 
 export interface GoogleContactsFormat {
   resourceName?: string;
@@ -76,13 +75,7 @@ export class GoogleContactsExtractor {
     };
 
     // Tag using the tagging engine with just email address info (no headers)
-    let tags: Tag[] = [
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: `google-contacts:${this.userEmail}`
-      }
-    ];
+    let tags: Tag[] = [];
 
     const domain = contactFrontend.email.split('@')[1];
     if (domain) {
@@ -98,15 +91,13 @@ export class GoogleContactsExtractor {
           field: undefined
         });
 
-        if (engineTags.length > 0) {
-          tags = engineTags.map((tag) => ({
-            name: tag.name,
-            reachable: tag.reachable,
-            source: `google-contacts:${this.userEmail}`
-          }));
-        }
+        tags = engineTags.map((tag) => ({
+          name: tag.name,
+          reachable: tag.reachable,
+          source: 'google_contacts#email_address'
+        }));
       } catch {
-        // Fallback to default contact tag on domain verification or tagging errors
+        // Leave tags empty if domain verification or tagging fails
       }
     }
 
