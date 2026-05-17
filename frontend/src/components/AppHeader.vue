@@ -61,7 +61,7 @@
           icon="pi pi-sign-out"
           text
           class="sign-out-button"
-          @click="signOut"
+          @click="signOutUser"
         />
       </div>
       <div id="mobile-navbar" class="flex lg:hidden">
@@ -141,7 +141,10 @@
                   {{ $user?.email }}
                 </NuxtLink>
               </Button>
-              <Button class="w-full flex justify-center gap-2" @click="signOut">
+              <Button
+                class="w-full flex justify-center gap-2"
+                @click="signOutUser"
+              >
                 {{ $t('auth.sign_out') }}
                 <i class="pi pi-sign-out"></i>
               </Button>
@@ -197,5 +200,18 @@ function navigateHome() {
   } else {
     $router.push(homePath.value);
   }
+}
+
+async function signOutUser() {
+  const $userProfile = useSupabaseUserProfile();
+  await signOut({
+    supabase: useSupabaseClient(),
+    resetUser: () => {
+      $user.value = null;
+    },
+    resetProfile: () => {
+      $userProfile.value = null;
+    },
+  });
 }
 </script>

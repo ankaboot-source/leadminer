@@ -1,3 +1,4 @@
+import Redis from 'ioredis';
 import {
   ContactFrontend,
   ExtractionResult,
@@ -5,6 +6,8 @@ import {
   Tag
 } from '../../../db/types';
 import { REACHABILITY } from '../../../utils/constants';
+import { TaggingEngine } from '../../tagging/types';
+import { DomainStatusVerificationFunction } from './EmailMessage';
 
 export interface GoogleContactsFormat {
   resourceName?: string;
@@ -21,7 +24,10 @@ export interface GoogleContactsFormat {
 export class GoogleContactsExtractor {
   constructor(
     private data: GoogleContactsFormat,
-    private userEmail: string
+    private userEmail: string,
+    private readonly taggingEngine: TaggingEngine,
+    private readonly redisClient: Redis,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction
   ) {}
 
   // skipcq: JS-0116 - Must remain async to satisfy ExtractionResult interface
@@ -70,13 +76,43 @@ export class GoogleContactsExtractor {
       source: `google-contacts:${this.userEmail}`
     };
 
-    const tags: Tag[] = [
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: `google-contacts:${this.userEmail}`
+    // Tag using the tagging engine with just email address info (no headers)
+    let tags: Tag[] = [];
+
+    const domain = contactFrontend.email.split('@')[1];
+    if (domain) {
+      try {
+        const [, domainType] = await this.domainStatusVerification(
+          this.redisClient,
+          domain
+        );
+
+        const engineTags = this.taggingEngine.getTags({
+          header: {},
+          email: { address: contactFrontend.email, name: '', domainType },
+          field: undefined
+        });
+
+        tags = engineTags.map((tag) => ({
+          name: tag.name,
+          reachable: tag.reachable,
+          source: 'google_contacts#email_address'
+        }));
+      } catch {
+        // Leave tags empty if domain verification or tagging fails
       }
-    ];
+    }
+
+    // Default to newsletter tag when tagging is unavailable or produces no results
+    if (tags.length === 0) {
+      tags = [
+        {
+          name: 'newsletter',
+          reachable: REACHABILITY.NONE,
+          source: 'google_contacts#email_address'
+        }
+      ];
+    }
 
     const orgName = this.data.organizations?.[0]?.name;
     return {

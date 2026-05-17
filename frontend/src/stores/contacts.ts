@@ -284,7 +284,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (!storedColumns) {
       if (contacts && contacts.length > 0) {
-        visibleColumns.value = sanitizeVisibleColumns(getAutoVisibleColumns(contacts));
+        visibleColumns.value = sanitizeVisibleColumns(
+          getAutoVisibleColumns(contacts),
+        );
       } else {
         visibleColumns.value = sanitizeVisibleColumns(defaultColumns);
       }

@@ -10,10 +10,11 @@ interface GoogleContactData {
   displayName?: string;
   givenName?: string;
   familyName?: string;
-  emailAddresses?: any[];
-  phoneNumbers?: any[];
-  organizations?: any[];
-  addresses?: any[];
+  emailAddresses?: Array<{ value?: string }>;
+  phoneNumbers?: Array<{ value?: string }>;
+  organizations?: Array<{ name?: string; title?: string }>;
+  addresses?: Array<{ formattedValue?: string }>;
+  urls?: Array<{ value?: string }>;
 }
 
 interface ContactToStream {
@@ -30,10 +31,11 @@ interface PersonContact {
   displayName?: string;
   givenName?: string;
   familyName?: string;
-  emailAddresses?: any[];
-  phoneNumbers?: any[];
-  organizations?: any[];
-  addresses?: any[];
+  emailAddresses?: Array<{ value?: string }>;
+  phoneNumbers?: Array<{ value?: string }>;
+  organizations?: Array<{ name?: string; title?: string }>;
+  addresses?: Array<{ formattedValue?: string }>;
+  urls?: Array<{ value?: string }>;
 }
 
 async function publishFetchingProgress(
@@ -107,14 +109,10 @@ export default class GoogleContactsFetcher {
       resourceName: 'people/me',
       pageSize: 1,
       personFields:
-        'metadata,names,emailAddresses,phoneNumbers,organizations,addresses'
+        'metadata,names,emailAddresses,phoneNumbers,organizations,addresses,urls'
     });
 
-    const hasData =
-      response.data.connections && response.data.connections.length > 0;
-    const hasMore = response.data.nextPageToken;
-
-    return hasData || hasMore ? 1 : 0;
+    return response.data.totalPeople ?? response.data.connections?.length ?? 0;
   }
 
   async *streamPages(): AsyncGenerator<PersonContact[], void, unknown> {
@@ -136,7 +134,7 @@ export default class GoogleContactsFetcher {
         pageSize,
         pageToken: nextPageToken,
         personFields:
-          'names,emailAddresses,phoneNumbers,organizations,addresses,metadata'
+          'names,emailAddresses,phoneNumbers,organizations,addresses,urls,metadata'
       });
 
       const connections = response.data.connections ?? [];
@@ -150,7 +148,8 @@ export default class GoogleContactsFetcher {
           emailAddresses: person.emailAddresses,
           phoneNumbers: person.phoneNumbers,
           organizations: person.organizations,
-          addresses: person.addresses
+          addresses: person.addresses,
+          urls: person.urls
         }));
       }
 
@@ -189,7 +188,8 @@ export default class GoogleContactsFetcher {
           emailAddresses: contact.emailAddresses,
           phoneNumbers: contact.phoneNumbers,
           organizations: contact.organizations,
-          addresses: contact.addresses
+          addresses: contact.addresses,
+          urls: contact.urls
         };
 
         await publishToStream(this.streamName, {

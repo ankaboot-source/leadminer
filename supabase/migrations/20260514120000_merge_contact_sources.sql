@@ -3,7 +3,8 @@ DROP FUNCTION IF EXISTS private.get_contacts_table(uuid);
 DROP FUNCTION IF EXISTS private.get_contacts_table_by_emails(uuid, text[]);
 
 -- 2. Create the fixed contacts view
-CREATE OR REPLACE VIEW private.contacts_view WITH (security_invoker = true) AS
+Drop view if exists private.contacts_view;
+CREATE VIEW private.contacts_view WITH (security_invoker = true) AS
 WITH ordered_sources AS (
     -- Rank each person row per contact:
     --   primary = imap rows first (source with no colon), then most recently updated
@@ -104,7 +105,7 @@ merged AS (
         MIN(os.created_at)                                                                        AS created_at,
 
         -- mining_ids: scalar per source, safe to aggregate directly
-        array_agg(DISTINCT os.mining_id) FILTER (WHERE os.mining_id IS NOT NULL)                 AS mining_ids
+        (array_agg(os.mining_id ORDER BY os.rn) FILTER (WHERE os.mining_id IS NOT NULL))[1] AS mining_id
 
     FROM ordered_sources os
     JOIN  all_names    an ON an.email = os.email AND an.user_id = os.user_id
@@ -134,7 +135,7 @@ SELECT
     m.works_for,
     m.updated_at,
     m.created_at,
-    m.mining_ids
+    m.mining_id
 FROM merged m
 LEFT JOIN telephone_agg        t ON t.email = m.email AND t.user_id = m.user_id
 LEFT JOIN same_as_agg          s ON s.email = m.email AND s.user_id = m.user_id
@@ -172,7 +173,7 @@ RETURNS TABLE(
     tags                  text[],
     updated_at            timestamptz,
     created_at            timestamptz,
-    mining_ids            text[]
+    mining_id             text
 )
 LANGUAGE sql
 SECURITY INVOKER
@@ -207,7 +208,7 @@ AS $$
         rp.tags,
         cv.updated_at,
         cv.created_at,
-        cv.mining_ids
+        cv.mining_id
     FROM private.contacts_view cv
     INNER JOIN private.refinedpersons rp
         ON rp.email = cv.email AND rp.user_id = cv.user_id
@@ -249,7 +250,7 @@ RETURNS TABLE(
     tags                  text[],
     updated_at            timestamptz,
     created_at            timestamptz,
-    mining_ids            text[]
+    mining_id             text
 )
 LANGUAGE sql
 SECURITY INVOKER
@@ -284,7 +285,7 @@ AS $$
         rp.tags,
         cv.updated_at,
         cv.created_at,
-        cv.mining_ids
+        cv.mining_id
     FROM private.contacts_view cv
     INNER JOIN private.refinedpersons rp
         ON rp.email = cv.email AND rp.user_id = cv.user_id
@@ -340,7 +341,7 @@ BEGIN
         SELECT
             cv.email,
             unnest(cv.sources) AS src,
-            cv.mining_ids
+            cv.mining_id
         FROM private.contacts_view cv
         WHERE cv.user_id = get_mining_source_overview.user_id
     ),
@@ -359,7 +360,7 @@ BEGIN
         FROM latest_mining lm
         JOIN visible_contacts vc
             ON vc.src = lm.source
-            AND lm.mining_id = ANY(vc.mining_ids)
+            AND lm.mining_id = vc.mining_id
         WHERE lm.mining_id IS NOT NULL
         GROUP BY lm.source
     )
@@ -374,3 +375,5 @@ BEGIN
     LEFT JOIN last_mining_counts lmc ON lmc.source = se.source;
 END;
 $$;
+
+GRANT SELECT ON private.contacts_view TO authenticated;

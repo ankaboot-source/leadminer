@@ -121,7 +121,13 @@ export function createExtractor(
     return createPostgreSQLExtractor(enablers, data as PostgreSQLFormat);
   }
   if (type === 'google-contacts') {
-    return new GoogleContactsExtractor(data as GoogleContactsFormat, userEmail);
+    return new GoogleContactsExtractor(
+      data as GoogleContactsFormat,
+      userEmail,
+      enablers.taggingEngine,
+      enablers.redisClientForNormalMode,
+      enablers.domainStatusVerification
+    );
   }
 
   throw new Error(`Unsupported extractor type: ${type}`);

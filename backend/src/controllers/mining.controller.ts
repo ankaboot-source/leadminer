@@ -389,6 +389,18 @@ export default function initializeMiningController(
         }
       }
 
+      if (googleContactsSync && !googleContactsCredentials) {
+        logger.warn('Google Contacts sync requested but no credentials found', {
+          userId: user.id,
+          email: sanitizedEmail
+        });
+        return res.status(403).json({
+          error:
+            'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.',
+          type: 'google'
+        });
+      }
+
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -458,11 +470,15 @@ export default function initializeMiningController(
           err instanceof Error &&
           err.message.includes('Request failed with status code 403')
         ) {
-          res
-            .status(403)
-            .send(
-              'Failed to start Google contacts: Access denied. Please re-authenticate with Contacts permission.'
-            );
+          logger.warn('Google Contacts API returned 403', {
+            userId: user.id,
+            email: sanitizedEmail
+          });
+          return res.status(403).json({
+            error:
+              'Google Contacts: Access denied. Please re-authenticate with Contacts permission.',
+            type: 'google'
+          });
         }
 
         if (

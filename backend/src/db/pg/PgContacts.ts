@@ -86,8 +86,8 @@ export default class PgContacts implements Contacts {
 
   private static readonly UPSERT_PERSON_SQL = `
     WITH upserted AS (
-      INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone")
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone", "alternate_name", "alternate_email")
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
       ON CONFLICT (email, user_id, source) DO UPDATE
       SET
         name = EXCLUDED.name,
@@ -101,7 +101,9 @@ export default class PgContacts implements Contacts {
         identifiers = EXCLUDED.identifiers,
         works_for = EXCLUDED.works_for,
         mining_id = EXCLUDED.mining_id,
-        telephone = EXCLUDED.telephone
+        telephone = EXCLUDED.telephone,
+        alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
+        alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
       WHERE
         private.persons.name IS DISTINCT FROM EXCLUDED.name
         OR private.persons.url IS DISTINCT FROM EXCLUDED.url
@@ -115,6 +117,8 @@ export default class PgContacts implements Contacts {
         OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
         OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id
         OR private.persons.telephone IS DISTINCT FROM EXCLUDED.telephone
+        OR private.persons.alternate_name IS DISTINCT FROM EXCLUDED.alternate_name
+        OR private.persons.alternate_email IS DISTINCT FROM EXCLUDED.alternate_email
       RETURNING persons.email
     )
     SELECT email FROM upserted
@@ -354,7 +358,9 @@ export default class PgContacts implements Contacts {
         person.source,
         organizationsDB.get(person.worksFor ?? ''),
         miningId,
-        person.telephone
+        person.telephone,
+        null, // $16 alternate_name - not available for file imports
+        null // $17 alternate_email - not available for file imports
       ]);
 
       if (tags.length) {
@@ -410,75 +416,73 @@ export default class PgContacts implements Contacts {
       organizationsDB.set(name, id);
     }
 
-    const MERGE_UPSERT_SQL = `
-      INSERT INTO private.persons
-        (name, email, image, location, same_as, given_name, family_name, job_title,
-         user_id, source, works_for, mining_id, telephone, alternate_name, alternate_email)
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      ON CONFLICT (email, user_id, source) DO UPDATE
-      SET
-        name = COALESCE(NULLIF(EXCLUDED.name, ''), private.persons.name),
-        image = COALESCE(NULLIF(EXCLUDED.image, ''), private.persons.image),
-        location = COALESCE(NULLIF(EXCLUDED.location, ''), private.persons.location),
-        same_as = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.same_as, '{}') || EXCLUDED.same_as)),
-        given_name = COALESCE(NULLIF(EXCLUDED.given_name, ''), private.persons.given_name),
-        family_name = COALESCE(NULLIF(EXCLUDED.family_name, ''), private.persons.family_name),
-        job_title = COALESCE(NULLIF(EXCLUDED.job_title, ''), private.persons.job_title),
-        works_for = COALESCE(NULLIF(EXCLUDED.works_for, ''), private.persons.works_for),
-        mining_id = EXCLUDED.mining_id,
-        telephone = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.telephone, '{}') || EXCLUDED.telephone)),
-        alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
-        alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
-      RETURNING email
-    `;
-
     for (const { person, tags } of persons) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(MERGE_UPSERT_SQL, [
-        person.name ?? null,
-        person.email,
-        person.image ?? null,
-        person.location ?? null,
-        person.sameAs ?? null,
-        person.givenName ?? null,
-        person.familyName ?? null,
-        person.jobTitle ?? null,
-        userId,
-        person.source,
-        organizationsDB.get(person.worksFor ?? ''),
-        miningId,
-        person.telephone ?? null,
-        person.alternateName ?? null,
-        person.alternateEmail ?? null
-      ]);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+          person.name ?? null, // $1  name
+          person.email, // $2  email
+          null, // $3  url - Google contacts don't have this
+          person.image ?? null, // $4  image
+          person.location ?? null, // $5  location
+          person.sameAs ?? null, // $6  same_as
+          person.givenName ?? null, // $7  given_name
+          person.familyName ?? null, // $8  family_name
+          person.jobTitle ?? null, // $9  job_title
+          null, // $10 identifiers - Google contacts don't have this
+          userId, // $11 user_id
+          person.source, // $12 source
+          organizationsDB.get(person.worksFor ?? ''), // $13 works_for
+          miningId, // $14 mining_id
+          person.telephone ?? null, // $15 telephone
+          person.alternateName ?? null, // $16 alternate_name
+          person.alternateEmail ?? null // $17 alternate_email
+        ]);
 
-      if (tags.length) {
+        if (tags.length) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.pool.query(
+            format(
+              PgContacts.INSERT_TAGS_SQL,
+              tags.map((tag) => [
+                tag.name,
+                tag.reachable,
+                tag.source,
+                userId,
+                person.email
+              ])
+            )
+          );
+        }
+
+        insertedContacts.add({ email: person.email, tags });
         // eslint-disable-next-line no-await-in-loop
         await this.pool.query(
-          format(
-            PgContacts.INSERT_TAGS_SQL,
-            tags.map((tag) => [
-              tag.name,
-              tag.reachable,
-              tag.source,
-              userId,
-              person.email
-            ])
-          )
+          `
+          INSERT INTO private.refinedpersons(user_id, email, tags)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (user_id, email)
+          DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
+          `,
+          [userId, person.email, tags.map((tag) => tag.name)]
+        );
+      } catch (error) {
+        this.logger.error(
+          '[PgContacts.createFromGoogleContacts] Failed to upsert Google contact',
+          {
+            email: person.email,
+            source: person.source,
+            worksFor: person.worksFor,
+            sameAs: person.sameAs,
+            telephone: person.telephone,
+            organizationName: organizationsDB.get(person.worksFor ?? ''),
+            userId,
+            miningId,
+            error: (error as Error).message,
+            stack: (error as Error).stack
+          }
         );
       }
-
-      insertedContacts.add({ email: person.email, tags });
-      // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(
-        `
-        INSERT INTO private.refinedpersons(user_id, email, tags)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id, email)
-        DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
-        `,
-        [userId, person.email, tags.map((tag) => tag.name)]
-      );
     }
 
     return Array.from(insertedContacts);
@@ -549,7 +553,9 @@ export default class PgContacts implements Contacts {
           person.source,
           person.worksFor,
           miningId,
-          person.telephone
+          person.telephone,
+          null, // $16 alternate_name - not available for email contacts
+          null // $17 alternate_email - not available for email contacts
         ]);
       }
 
