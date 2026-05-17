@@ -389,6 +389,14 @@ export default function initializeMiningController(
         }
       }
 
+      if (googleContactsSync && !googleContactsCredentials) {
+        return res.status(403).json({
+          error:
+            'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.',
+          type: 'google'
+        });
+      }
+
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
