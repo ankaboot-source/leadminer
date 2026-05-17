@@ -202,4 +202,71 @@ describe('GoogleContactsExtractor', () => {
     expect(result.persons[0].person.alternateEmail).toBeUndefined();
     expect(result.organizations).toEqual([]);
   });
+
+  it('falls back to contact tag when domain verification fails', async () => {
+    const googleContactsData: GoogleContactsFormat = {
+      resourceName: 'people/123',
+      displayName: 'Test User',
+      emailAddresses: [{ value: 'test@example.com' }]
+    };
+    const mockTaggingEngine: TaggingEngine = {
+      tags: [],
+      getTags: jest.fn().mockReturnValue([])
+    };
+    const mockRedis = new RedisMock();
+    const mockDomainVerification = jest
+      .fn()
+      .mockRejectedValue(new Error('Redis error'));
+    const extractor = new GoogleContactsExtractor(
+      googleContactsData,
+      'user@example.com',
+      mockTaggingEngine,
+      mockRedis,
+      mockDomainVerification as unknown as DomainStatusVerificationFunction
+    );
+
+    const result = await extractor.getContacts();
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'contact',
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: 'google-contacts:user@example.com'
+      }
+    ]);
+  });
+
+  it('falls back to contact tag when tagging engine returns empty tags', async () => {
+    const googleContactsData: GoogleContactsFormat = {
+      resourceName: 'people/123',
+      displayName: 'Test User',
+      emailAddresses: [{ value: 'test@example.com' }]
+    };
+    const mockTaggingEngineEmpty: TaggingEngine = {
+      tags: [],
+      getTags: jest.fn().mockReturnValue([])
+    };
+    const mockRedis = new RedisMock();
+    const mockDomainVerification = jest.fn(() => [
+      true,
+      'custom'
+    ]) as unknown as DomainStatusVerificationFunction;
+    const extractor = new GoogleContactsExtractor(
+      googleContactsData,
+      'user@example.com',
+      mockTaggingEngineEmpty,
+      mockRedis,
+      mockDomainVerification
+    );
+
+    const result = await extractor.getContacts();
+    expect(result.persons).toHaveLength(1);
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'contact',
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: 'google-contacts:user@example.com'
+      }
+    ]);
+  });
 });

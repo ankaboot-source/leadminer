@@ -76,42 +76,38 @@ export class GoogleContactsExtractor {
     };
 
     // Tag using the tagging engine with just email address info (no headers)
+    let tags: Tag[] = [
+      {
+        name: 'contact',
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: `google-contacts:${this.userEmail}`
+      }
+    ];
+
     const domain = contactFrontend.email.split('@')[1];
-    let tags: Tag[];
     if (domain) {
-      const [, domainType] = await this.domainStatusVerification(
-        this.redisClient,
-        domain
-      );
+      try {
+        const [, domainType] = await this.domainStatusVerification(
+          this.redisClient,
+          domain
+        );
 
-      const engineTags = this.taggingEngine.getTags({
-        header: {},
-        email: { address: contactFrontend.email, name: '', domainType },
-        field: undefined
-      });
+        const engineTags = this.taggingEngine.getTags({
+          header: {},
+          email: { address: contactFrontend.email, name: '', domainType },
+          field: undefined
+        });
 
-      tags =
-        engineTags.length > 0
-          ? engineTags.map((tag) => ({
-              name: tag.name,
-              reachable: tag.reachable,
-              source: `google-contacts:${this.userEmail}`
-            }))
-          : [
-              {
-                name: 'contact',
-                reachable: REACHABILITY.DIRECT_PERSON,
-                source: `google-contacts:${this.userEmail}`
-              }
-            ];
-    } else {
-      tags = [
-        {
-          name: 'contact',
-          reachable: REACHABILITY.DIRECT_PERSON,
-          source: `google-contacts:${this.userEmail}`
+        if (engineTags.length > 0) {
+          tags = engineTags.map((tag) => ({
+            name: tag.name,
+            reachable: tag.reachable,
+            source: `google-contacts:${this.userEmail}`
+          }));
         }
-      ];
+      } catch {
+        // Fallback to default contact tag on domain verification or tagging errors
+      }
     }
 
     const orgName = this.data.organizations?.[0]?.name;
