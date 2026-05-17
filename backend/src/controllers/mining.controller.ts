@@ -390,6 +390,10 @@ export default function initializeMiningController(
       }
 
       if (googleContactsSync && !googleContactsCredentials) {
+        logger.warn('Google Contacts sync requested but no credentials found', {
+          userId: user.id,
+          email: sanitizedEmail
+        });
         return res.status(403).json({
           error:
             'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.',

@@ -164,9 +164,8 @@ async function handleAuthErrorAndRetry(
       error.response?.status === 403 &&
       error.response?._data?.type === 'google'
     ) {
-      const consentSidebar = $consentSidebar;
       $toast.add({
-        severity: 'error',
+        severity: 'warn',
         summary: $t('common.start_mining'),
         detail: {
           message:
@@ -175,7 +174,7 @@ async function handleAuthErrorAndRetry(
           button: {
             text: t('authorize_google_contacts'),
             action: () => {
-              consentSidebar.show('google', sourceEmail ?? '', '/mine');
+              $consentSidebar.show('google', sourceEmail ?? '', '/mine');
             },
           },
         },
