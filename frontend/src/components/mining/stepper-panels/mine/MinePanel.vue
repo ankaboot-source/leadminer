@@ -159,6 +159,29 @@ async function handleAuthErrorAndRetry(
         sourceEmail,
         '/mine',
       );
+    } else if (
+      error instanceof FetchError &&
+      error.response?.status === 403 &&
+      error.response?._data?.type === 'google'
+    ) {
+      const consentSidebar = $consentSidebar;
+      $toast.add({
+        severity: 'error',
+        summary: $t('common.start_mining'),
+        detail: {
+          message:
+            error.response._data.error ||
+            t('google_contacts_permission_needed'),
+          button: {
+            text: t('authorize_google_contacts'),
+            action: () => {
+              consentSidebar.show('google', sourceEmail ?? '', '/mine');
+            },
+          },
+        },
+        group: 'has-links',
+        life: 8000,
+      });
     } else {
       const detail = getMiningErrorDetail(error, sourceTypeVal);
       // eslint-disable-next-line no-console
@@ -488,7 +511,9 @@ async function haltMining() {
     "mining_canceled": "Your mining is successfully canceled.",
     "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled.",
     "is_mining": "Contact extraction in progress...",
-    "mining_interrupted": "Mining Interrupted"
+    "mining_interrupted": "Mining Interrupted",
+    "google_contacts_permission_needed": "Google Contacts requires your authorization.",
+    "authorize_google_contacts": "Authorize Google Contacts"
   },
   "fr": {
     "contacts_to_mine": "contact à extraire. | contacts à extraire.",
@@ -514,7 +539,9 @@ async function haltMining() {
     "mining_canceled": "Votre extraction a été annulée avec succès.",
     "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée.",
     "is_mining": "Extraction des contacts en cours...",
-    "mining_interrupted": "L'extraction a été interrompue"
+    "mining_interrupted": "L'extraction a été interrompue",
+    "google_contacts_permission_needed": "Google Contacts nécessite votre autorisation.",
+    "authorize_google_contacts": "Autoriser Google Contacts"
   }
 }
 </i18n>
