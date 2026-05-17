@@ -3,7 +3,8 @@ DROP FUNCTION IF EXISTS private.get_contacts_table(uuid);
 DROP FUNCTION IF EXISTS private.get_contacts_table_by_emails(uuid, text[]);
 
 -- 2. Create the fixed contacts view
-CREATE OR REPLACE VIEW private.contacts_view WITH (security_invoker = true) AS
+Drop view if exists private.contacts_view;
+CREATE VIEW private.contacts_view WITH (security_invoker = true) AS
 WITH ordered_sources AS (
     -- Rank each person row per contact:
     --   primary = imap rows first (source with no colon), then most recently updated
