@@ -358,7 +358,9 @@ export default class PgContacts implements Contacts {
         person.source,
         organizationsDB.get(person.worksFor ?? ''),
         miningId,
-        person.telephone
+        person.telephone,
+        null, // $16 alternate_name - not available for file imports
+        null // $17 alternate_email - not available for file imports
       ]);
 
       if (tags.length) {
