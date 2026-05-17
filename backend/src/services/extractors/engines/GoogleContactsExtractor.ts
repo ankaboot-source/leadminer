@@ -5,6 +5,7 @@ import {
   Person,
   Tag
 } from '../../../db/types';
+import { REACHABILITY } from '../../../utils/constants';
 import { TaggingEngine } from '../../tagging/types';
 import { DomainStatusVerificationFunction } from './EmailMessage';
 
@@ -99,6 +100,17 @@ export class GoogleContactsExtractor {
       } catch {
         // Leave tags empty if domain verification or tagging fails
       }
+    }
+
+    // Default to newsletter tag when no tags were assigned
+    if (tags.length === 0) {
+      tags = [
+        {
+          name: 'newsletter',
+          reachable: REACHABILITY.NONE,
+          source: 'google_contacts#email_address'
+        }
+      ];
     }
 
     const orgName = this.data.organizations?.[0]?.name;

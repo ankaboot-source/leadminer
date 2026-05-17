@@ -203,7 +203,7 @@ describe('GoogleContactsExtractor', () => {
     expect(result.organizations).toEqual([]);
   });
 
-  it('returns empty tags when domain verification fails', async () => {
+  it('returns default newsletter tag when domain verification fails', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -227,10 +227,16 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([]);
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'newsletter',
+        reachable: REACHABILITY.NONE,
+        source: 'google_contacts#email_address'
+      }
+    ]);
   });
 
-  it('returns empty tags when tagging engine returns empty results', async () => {
+  it('returns default newsletter tag when tagging engine returns empty results', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -255,10 +261,16 @@ describe('GoogleContactsExtractor', () => {
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([]);
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'newsletter',
+        reachable: REACHABILITY.NONE,
+        source: 'google_contacts#email_address'
+      }
+    ]);
   });
 
-  it('returns empty tags when tagging engine throws', async () => {
+  it('returns default newsletter tag when tagging engine throws', async () => {
     const googleContactsData: GoogleContactsFormat = {
       resourceName: 'people/123',
       displayName: 'Test User',
@@ -278,13 +290,19 @@ describe('GoogleContactsExtractor', () => {
     const extractor = new GoogleContactsExtractor(
       googleContactsData,
       'user@example.com',
-      mockTaggingEngineThrow as any,
+      mockTaggingEngineThrow as unknown as TaggingEngine,
       mockRedis,
       mockDomainVerification
     );
 
     const result = await extractor.getContacts();
     expect(result.persons).toHaveLength(1);
-    expect(result.persons[0].tags).toEqual([]);
+    expect(result.persons[0].tags).toEqual([
+      {
+        name: 'newsletter',
+        reachable: REACHABILITY.NONE,
+        source: 'google_contacts#email_address'
+      }
+    ]);
   });
 });
