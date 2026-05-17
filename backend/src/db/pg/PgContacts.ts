@@ -553,7 +553,9 @@ export default class PgContacts implements Contacts {
           person.source,
           person.worksFor,
           miningId,
-          person.telephone
+          person.telephone,
+          null, // $16 alternate_name - not available for email contacts
+          null // $17 alternate_email - not available for email contacts
         ]);
       }
 
