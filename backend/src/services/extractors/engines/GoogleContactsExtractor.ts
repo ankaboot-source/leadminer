@@ -1,9 +1,12 @@
+import Redis from 'ioredis';
 import {
   ContactFrontend,
   ExtractionResult,
   Person,
   Tag
 } from '../../../db/types';
+import { TaggingEngine } from '../../tagging/types';
+import { DomainStatusVerificationFunction } from './EmailMessage';
 import { REACHABILITY } from '../../../utils/constants';
 
 export interface GoogleContactsFormat {
@@ -21,10 +24,12 @@ export interface GoogleContactsFormat {
 export class GoogleContactsExtractor {
   constructor(
     private data: GoogleContactsFormat,
-    private userEmail: string
+    private userEmail: string,
+    private readonly taggingEngine: TaggingEngine,
+    private readonly redisClient: Redis,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction
   ) {}
 
-  // skipcq: JS-0116 - Must remain async to satisfy ExtractionResult interface
   async getContacts(): Promise<ExtractionResult> {
     if (!this.data.resourceName) {
       return {
@@ -70,13 +75,44 @@ export class GoogleContactsExtractor {
       source: `google-contacts:${this.userEmail}`
     };
 
-    const tags: Tag[] = [
-      {
-        name: 'contact',
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: `google-contacts:${this.userEmail}`
-      }
-    ];
+    // Tag using the tagging engine with just email address info (no headers)
+    const domain = contactFrontend.email.split('@')[1];
+    let tags: Tag[];
+    if (domain) {
+      const [, domainType] = await this.domainStatusVerification(
+        this.redisClient,
+        domain
+      );
+
+      const engineTags = this.taggingEngine.getTags({
+        header: {},
+        email: { address: contactFrontend.email, name: '', domainType },
+        field: undefined
+      });
+
+      tags =
+        engineTags.length > 0
+          ? engineTags.map((tag) => ({
+              name: tag.name,
+              reachable: tag.reachable,
+              source: `google-contacts:${this.userEmail}`
+            }))
+          : [
+              {
+                name: 'contact',
+                reachable: REACHABILITY.DIRECT_PERSON,
+                source: `google-contacts:${this.userEmail}`
+              }
+            ];
+    } else {
+      tags = [
+        {
+          name: 'contact',
+          reachable: REACHABILITY.DIRECT_PERSON,
+          source: `google-contacts:${this.userEmail}`
+        }
+      ];
+    }
 
     const orgName = this.data.organizations?.[0]?.name;
     return {
