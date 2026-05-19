@@ -11,7 +11,6 @@ import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCac
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import { SupabaseTask as DBTask, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
-import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
 import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
@@ -261,20 +260,6 @@ export default function initializeMiningController(
         secure: boolean;
       } = req.body;
 
-      const errors = [
-        validateType('email', email, 'string'),
-        validateType('host', host, 'string'),
-        validateType('password', password, 'string'),
-        validateType('port', port, 'number'),
-        validateType('secure', secure, 'boolean')
-      ].filter(Boolean);
-
-      if (errors.length) {
-        return res
-          .status(400)
-          .json({ message: `Invalid input: ${errors.join(', ')}` });
-      }
-
       const sanitizedHost = sanitizeImapInput(host);
       const sanitizedEmail = sanitizeImapInput(email);
       const sanitizedPassword = password;
@@ -340,19 +325,6 @@ export default function initializeMiningController(
       } = req.body;
 
       user.email = email; // used when user is not provided (edge function req)
-
-      const errors = [
-        validateType('email', email, 'string'),
-        validateType('boxes', folders, 'string[]'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType('cleaningEnabled', cleaningEnabled, 'boolean')
-      ].filter(Boolean);
-
-      if (errors.length) {
-        return res
-          .status(400)
-          .json({ message: `Invalid input: ${errors.join(', ')}` });
-      }
 
       const sanitizedEmail = sanitizeImapInput(email);
       const sanitizedFolders = folders.map((folder) =>
@@ -523,17 +495,6 @@ export default function initializeMiningController(
           return res.status(400).json({ message });
         }
 
-        const errors = [
-          validateType('name', name, 'string'),
-          validateType('cleaningEnabled', cleaningEnabled, 'boolean')
-        ].filter(Boolean);
-
-        if (errors.length) {
-          return res
-            .status(400)
-            .json({ message: `Invalid input: ${errors.join(', ')}` });
-        }
-
         const effectiveCleaningEnabled =
           cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -615,18 +576,6 @@ export default function initializeMiningController(
         extractSignatures: boolean;
         cleaningEnabled: boolean;
       } = req.body;
-
-      const errors = [
-        validateType('name', name, 'string'),
-        validateType('extractSignatures', extractSignatures, 'boolean'),
-        validateType('cleaningEnabled', cleaningEnabled, 'boolean')
-      ].filter(Boolean);
-
-      if (errors.length) {
-        return res
-          .status(400)
-          .json({ message: `Invalid input: ${errors.join(', ')}` });
-      }
 
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);

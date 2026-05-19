@@ -10,7 +10,6 @@ import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
-import validateType from '../utils/helpers/validation';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './imap.helpers';
 
@@ -33,14 +32,6 @@ export default function initializeImapController(
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
       const { email } = req.body;
-
-      const errors = [validateType('email', email, 'string')].filter(Boolean);
-
-      if (errors.length) {
-        return res
-          .status(400)
-          .json({ message: `Invalid input: ${errors.join(', ')}` });
-      }
 
       let imapConnection: Awaited<
         ReturnType<typeof ImapConnectionProvider.getSingleConnection>
