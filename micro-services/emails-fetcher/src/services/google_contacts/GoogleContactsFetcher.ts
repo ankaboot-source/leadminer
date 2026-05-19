@@ -10,11 +10,11 @@ interface GoogleContactData {
   displayName?: string;
   givenName?: string;
   familyName?: string;
-  emailAddresses?: Array<{ value?: string }>;
-  phoneNumbers?: Array<{ value?: string }>;
-  organizations?: Array<{ name?: string; title?: string }>;
-  addresses?: Array<{ formattedValue?: string }>;
-  urls?: Array<{ value?: string }>;
+  emailAddresses?: Array<{ value?: string | null }>;
+  phoneNumbers?: Array<{ value?: string | null }>;
+  organizations?: Array<{ name?: string | null; title?: string | null }>;
+  addresses?: Array<{ formattedValue?: string | null }>;
+  urls?: Array<{ value?: string | null }>;
 }
 
 interface ContactToStream {
@@ -31,11 +31,11 @@ interface PersonContact {
   displayName?: string;
   givenName?: string;
   familyName?: string;
-  emailAddresses?: Array<{ value?: string }>;
-  phoneNumbers?: Array<{ value?: string }>;
-  organizations?: Array<{ name?: string; title?: string }>;
-  addresses?: Array<{ formattedValue?: string }>;
-  urls?: Array<{ value?: string }>;
+  emailAddresses?: Array<{ value?: string | null }>;
+  phoneNumbers?: Array<{ value?: string | null }>;
+  organizations?: Array<{ name?: string | null; title?: string | null }>;
+  addresses?: Array<{ formattedValue?: string | null }>;
+  urls?: Array<{ value?: string | null }>;
 }
 
 async function publishFetchingProgress(
