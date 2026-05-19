@@ -360,7 +360,7 @@ export type Database = {
           job_title: string | null;
           location: string | null;
           location_normalized: Json | null;
-          mining_ids: string[] | null;
+          mining_id: string | null;
           name: string | null;
           same_as: string[] | null;
           source: string[];
@@ -385,7 +385,7 @@ export type Database = {
           job_title?: string | null;
           location?: string | null;
           location_normalized?: Json | null;
-          mining_ids?: string[] | null;
+          mining_id?: string | null;
           name?: string | null;
           same_as?: string[] | null;
           source: string;
@@ -410,7 +410,7 @@ export type Database = {
           job_title?: string | null;
           location?: string | null;
           location_normalized?: Json | null;
-          mining_ids?: string[] | null;
+          mining_id?: string | null;
           name?: string | null;
           same_as?: string[] | null;
           source?: string;
@@ -935,7 +935,7 @@ export type Database = {
           tags: string[];
           updated_at: string;
           created_at: string;
-          mining_ids: string[];
+          mining_id: string;
         }[];
       };
       get_contacts_table_by_emails: {
@@ -972,7 +972,7 @@ export type Database = {
           tags: string[];
           updated_at: string;
           created_at: string;
-          mining_ids: string[];
+          mining_id: string;
         }[];
       };
       get_distinct_or_exclude_from_array:
@@ -999,11 +999,11 @@ export type Database = {
           };
       get_mining_stats: {
         Args: {
-          mining_ids: string[];
+          mining_id: string;
         };
         Returns: {
           user_id: string;
-          sources: string[];
+          source: string;
           total_contacts_mined: number;
           total_reachable: number;
           total_with_phone: number;
