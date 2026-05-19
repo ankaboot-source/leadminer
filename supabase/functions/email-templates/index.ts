@@ -5,6 +5,10 @@ import {
   createSupabaseAdmin,
   createSupabaseClient,
 } from "../_shared/supabase.ts";
+import {
+  languageSchema,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,8 +35,14 @@ Deno.serve(async (req) => {
 
   if (req.method === "GET") {
     const url = new URL(req.url);
-    const language = url.searchParams.get("language");
-    const template = supabaseEmailsI18n.get(language as string) ?? null;
+    const language = url.searchParams.get("language") || "";
+    const langParsed = languageSchema.safeParse(language);
+
+    if (!langParsed.success) {
+      return validationErrorResponse(langParsed.error, corsHeaders);
+    }
+
+    const template = supabaseEmailsI18n.get(langParsed.data) ?? null;
     return new Response(JSON.stringify(template), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,11 +62,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { language } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const langParsed = languageSchema.safeParse(body.language);
 
-    if (!language || !supabaseEmailsI18n.has(language)) {
+    if (!langParsed.success) {
+      return validationErrorResponse(langParsed.error, corsHeaders);
+    }
+
+    const language = langParsed.data;
+
+    if (!supabaseEmailsI18n.has(language)) {
       return new Response(
-        JSON.stringify({ error: "Language is missing or not supported." }),
+        JSON.stringify({ error: "Language is not supported." }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

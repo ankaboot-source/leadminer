@@ -7,6 +7,8 @@ import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { generateShortToken } from "../_shared/short-token.ts";
+import { z } from "zod";
+import { validationErrorBody } from "../_shared/validation.ts";
 import {
   createSmsProvider,
   type SimpleSmsGatewayCredentials,
@@ -406,9 +408,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
   const isServiceRole = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
   if (!user && !isServiceRole) return c.json({ error: "Unauthorized" }, 401);
 
-  const { campaignId } = (await c.req.json().catch(() => ({}))) as {
-    campaignId?: string;
-  };
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = z.object({ campaignId: z.string().uuid("Invalid campaignId").optional() }).strict().safeParse(body);
+  if (!parsed.success) {
+    return c.json(validationErrorBody(parsed.error), 400);
+  }
+  const { campaignId } = parsed.data;
 
   logger.info("Processing SMS campaign", {
     campaignId,

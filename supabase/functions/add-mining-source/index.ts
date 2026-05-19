@@ -1,9 +1,14 @@
+import { z } from "zod";
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
 } from "../_shared/supabase.ts";
+import {
+  oauthCredentialsBody,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -45,14 +50,18 @@ Deno.serve(async (req: Request) => {
   const admin = createSupabaseAdmin();
   const client = createSupabaseClient(authorization);
 
-  const { provider, provider_token: providerToken, provider_refresh_token: providerRefreshToken } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const parsed = oauthCredentialsBody.safeParse(body);
 
-  if (!providerToken) {
-    return new Response(null, {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
   }
+
+  const {
+    provider,
+    provider_token: providerToken,
+    provider_refresh_token: providerRefreshToken,
+  } = parsed.data;
 
   const {
     data: { user },
