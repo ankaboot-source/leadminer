@@ -1,4 +1,6 @@
 import { Context, Hono } from "hono";
+import { z } from "zod";
+import { validationErrorBody } from "../_shared/validation.ts";
 import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
 import corsHeaders from "../_shared/cors.ts";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
@@ -90,6 +92,23 @@ type CampaignCreatePayload = {
   footerTextTemplate?: string;
   partialCampaign?: boolean;
 };
+
+const campaignCreateSchema = z.object({
+  selectedEmails: z.array(z.string()).optional(),
+  senderName: z.string().min(1),
+  senderEmail: z.string().min(1),
+  replyTo: z.string().min(1),
+  subject: z.string().min(1),
+  bodyHtmlTemplate: z.string().min(1),
+  bodyTextTemplate: z.string().min(1),
+  senderDailyLimit: z.number().int().positive().optional(),
+  trackOpen: z.boolean().optional(),
+  trackClick: z.boolean().optional(),
+  plainTextOnly: z.boolean().optional(),
+  onlyValidContacts: z.boolean().optional(),
+  footerTextTemplate: z.string().optional(),
+  partialCampaign: z.boolean().optional(),
+}).strict();
 
 type ContactSnapshot = {
   email: string;
@@ -1238,9 +1257,12 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
-  const payload = (await c.req
-    .json()
-    .catch(() => ({}))) as CampaignCreatePayload;
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = campaignCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(validationErrorBody(parsed.error), 400);
+  }
+  const payload = parsed.data;
   const senderName = String(payload.senderName || "").trim();
   const senderEmail = String(payload.senderEmail || "")
     .trim()
@@ -2423,10 +2445,12 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
   const auth = await getAuthenticatedUser(c);
   if ("error" in auth) return auth.error;
 
-  const { contactsCount } = await c.req.json().catch(() => ({}));
-  if (!Number.isInteger(contactsCount) || contactsCount < 1) {
-    return c.json({ error: "Invalid contactsCount" }, 400);
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = z.object({ contactsCount: z.number().int().positive() }).strict().safeParse(body);
+  if (!parsed.success) {
+    return c.json(validationErrorBody(parsed.error), 400);
   }
+  const { contactsCount } = parsed.data;
 
   const subject = "Email sending request";
   let fallbackSenderEmail = "";

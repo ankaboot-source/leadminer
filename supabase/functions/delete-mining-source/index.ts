@@ -1,9 +1,14 @@
+import { z } from "zod";
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
 } from "../_shared/supabase.ts";
+import {
+  emailSchema,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -45,14 +50,14 @@ Deno.serve(async (req: Request) => {
   const admin = createSupabaseAdmin();
   const client = createSupabaseClient(authorization);
 
-  const { email } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const parsed = z.object({ email: emailSchema }).safeParse(body);
 
-  if (!email) {
-    return new Response(JSON.stringify({ error: "Email is required" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
   }
+
+  const { email } = parsed.data;
 
   const {
     data: { user },

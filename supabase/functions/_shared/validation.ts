@@ -32,18 +32,22 @@ export const paginationQuery = z
   })
   .strict();
 
+export function validationErrorBody(error: z.ZodError) {
+  return {
+    error: "Validation failed",
+    details: error.errors.map((e) => ({
+      path: e.path.join("."),
+      message: e.message,
+    })),
+  };
+}
+
 export function validationErrorResponse(
   error: z.ZodError,
   corsHeaders: Record<string, string>,
 ): Response {
   return new Response(
-    JSON.stringify({
-      error: "Validation failed",
-      details: error.errors.map((e) => ({
-        path: e.path.join("."),
-        message: e.message,
-      })),
-    }),
+    JSON.stringify(validationErrorBody(error)),
     {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

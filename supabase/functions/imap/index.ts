@@ -1,6 +1,7 @@
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import { createSupabaseClient } from "../_shared/supabase.ts";
+import { emailSchema } from "../_shared/validation.ts";
 import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
 
 /**
@@ -57,12 +58,16 @@ async function validateAuthAndGetUser(authorization: string | null) {
  */
 function extractEmailFromRequest(req: Request) {
   const email = new URL(req.url).searchParams.get("email");
-  return email && typeof email === "string"
-    ? sanitizeImapInput(email)
-    : new Response(null, {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+  const parsed = emailSchema.safeParse(email);
+
+  if (!parsed.success) {
+    return new Response(null, {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+  }
+
+  return sanitizeImapInput(parsed.data);
 }
 
 /**
