@@ -5,7 +5,6 @@ import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
 import {
   MiningSources,
-  OAuthMiningSourceCredentials,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
@@ -366,6 +365,12 @@ export default function initializeMiningController(
       );
       const miningSourceCredentials = sources?.pop()?.credentials;
 
+      if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
+        return res.status(401).json({
+          message: "This mining source isn't registered for this user"
+        });
+      }
+
       let googleContactsCredentials;
       if (googleContactsSync) {
         const allSources = await miningSourceService.getSourcesForUser(user.id);
@@ -382,12 +387,6 @@ export default function initializeMiningController(
             userEmail: sanitizedEmail
           };
         }
-      }
-
-      if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
-        return res.status(401).json({
-          message: "This mining source isn't registered for this user"
-        });
       }
 
       if (googleContactsSync && !googleContactsCredentials) {
