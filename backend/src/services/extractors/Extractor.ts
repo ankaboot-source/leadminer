@@ -12,8 +12,16 @@ import {
   PostgreSQLContactEngine,
   PostgreSQLFormat
 } from './engines/PostgreSQLImport';
+import {
+  GoogleContactsExtractor,
+  GoogleContactsFormat
+} from './engines/GoogleContactsExtractor';
 
-export type ContactExtractorType = 'file' | 'email' | 'postgresql';
+export type ContactExtractorType =
+  | 'file'
+  | 'email'
+  | 'postgresql'
+  | 'google-contacts';
 
 export interface ExtractorEnablers {
   taggingEngine: TaggingEngine;
@@ -95,7 +103,7 @@ export function createExtractor(
   type: ContactExtractorType,
   userId: string,
   userEmail: string,
-  data: EmailFormat | FileFormat | PostgreSQLFormat,
+  data: EmailFormat | FileFormat | PostgreSQLFormat | GoogleContactsFormat,
   enablers: ExtractorEnablers
 ) {
   if (['file'].includes(type)) {
@@ -111,6 +119,15 @@ export function createExtractor(
   }
   if (type === 'postgresql') {
     return createPostgreSQLExtractor(enablers, data as PostgreSQLFormat);
+  }
+  if (type === 'google-contacts') {
+    return new GoogleContactsExtractor(
+      data as GoogleContactsFormat,
+      userEmail,
+      enablers.taggingEngine,
+      enablers.redisClientForNormalMode,
+      enablers.domainStatusVerification
+    );
   }
 
   throw new Error(`Unsupported extractor type: ${type}`);

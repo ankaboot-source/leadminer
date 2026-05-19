@@ -405,7 +405,9 @@
       <template #body="{ data }">
         <div class="flex gap-1 flex-wrap">
           <Tag
-            v-for="src in (Array.isArray(data.sources) ? data.sources : [data.sources])"
+            v-for="src in Array.isArray(data.sources)
+              ? data.sources
+              : [data.sources]"
             :key="src"
             :value="src"
             severity="secondary"
@@ -1033,11 +1035,11 @@ async function refreshStatus(email: string, event: Event) {
 
   refreshingEmails.value.add(email);
   try {
-    const result = await verifyEmailStatus(email);
-    const contactsList = $contactsStore.contactsList;
+    const { status } = await verifyEmailStatus(email);
+    const { contactsList } = $contactsStore;
     const index = contactsList.findIndex((c) => c.email === email);
     if (index !== -1) {
-      contactsList[index] = { ...contactsList[index], status: result.status };
+      contactsList[index] = { ...contactsList[index], status };
       $contactsStore.contactsList = [...contactsList];
     }
   } catch {
@@ -1061,7 +1063,7 @@ const visibleColumns = computed({
 });
 
 const DEFAULT_ROWS_PER_PAGE = 150;
-const rowsPerPageOptions = [20, 50, 150, 500, 100000];
+const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const globalFilterFields = [
   'email',

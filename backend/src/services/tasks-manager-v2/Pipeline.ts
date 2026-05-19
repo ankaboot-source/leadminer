@@ -96,7 +96,7 @@ export class Pipeline {
       }
     } catch (err) {
       this.failed = true;
-      await this.cancel();
+      await this.cancel(); // clean up all tasks (including those already started)
       throw err;
     }
   }

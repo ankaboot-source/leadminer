@@ -1,9 +1,11 @@
 import { GaxiosError } from 'gaxios';
-import { google, people_v1 } from 'googleapis';
 import ENV from '../../../../config';
 import { ContactFrontend } from '../../../../db/types';
 import logger from '../../../../utils/logger';
-import googleOAuth2Client from '../../../OAuth2/google';
+import {
+  getPeopleService,
+  warmupSearchIndex
+} from '../../../OAuth2/googlePeopleClient';
 import {
   ExportStrategy,
   ExportType,
@@ -19,61 +21,6 @@ export default class GoogleContactsExport
 
   readonly contentType = 'application/json';
 
-  private static async getPeopleService(
-    options: ExportOptions['googleContactsOptions']
-  ) {
-    const accessToken = options?.accessToken;
-    const refreshToken = options?.refreshToken;
-
-    if (!accessToken && !refreshToken) {
-      throw new Error('Invalid credentials.');
-    }
-
-    const oauth2Client = new google.auth.OAuth2(
-      ENV.GOOGLE_CLIENT_ID,
-      ENV.GOOGLE_SECRET
-    );
-
-    const token = googleOAuth2Client.createToken({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
-
-    if (token.expired(1000) && !refreshToken) {
-      throw new Error('Invalid credentials.');
-    }
-
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken
-    });
-
-    const peopleService = google.people({
-      version: 'v1',
-      auth: oauth2Client
-    });
-
-    // Update cache and validate credentials
-    await GoogleContactsExport.warmupSearchIndex(peopleService);
-
-    return peopleService;
-  }
-
-  private static async warmupSearchIndex(
-    service: people_v1.People
-  ): Promise<void> {
-    await service.people.searchContacts({
-      query: '',
-      readMask: 'names,emailAddresses'
-    });
-
-    await service.people.connections.list({
-      resourceName: 'people/me',
-      pageSize: 1,
-      personFields: 'metadata'
-    });
-  }
-
   async export(
     contacts: ContactFrontend[],
     options: ExportOptions
@@ -83,7 +30,11 @@ export default class GoogleContactsExport
 
     try {
       const opts = options.googleContactsOptions;
-      const service = await GoogleContactsExport.getPeopleService(opts);
+      const service = await getPeopleService({
+        accessToken: opts.accessToken,
+        refreshToken: opts.refreshToken
+      });
+      await warmupSearchIndex(service);
       const session = new GoogleContactsSession(
         service,
         ENV.APP_NAME,

@@ -65,3 +65,8 @@ export interface MiningTaskGroup {
   clean: TaskState | null;
   signature: TaskState | null;
 }
+
+export interface GoogleContactsProgress {
+  totalContacts: number;
+  synced: number;
+}

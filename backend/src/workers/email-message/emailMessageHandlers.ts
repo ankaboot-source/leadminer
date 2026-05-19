@@ -6,6 +6,7 @@ import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
 import { createExtractor } from '../../services/extractors/Extractor';
 import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
 import { FileFormat } from '../../services/extractors/engines/FileImport';
+import { GoogleContactsFormat } from '../../services/extractors/engines/GoogleContactsExtractor';
 import { PostgreSQLFormat } from '../../services/extractors/engines/PostgreSQLImport';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
@@ -21,12 +22,12 @@ export interface EmailMessageData {
   /**
    * The hash of the userId
    */
-  type: 'file' | 'email' | 'postgresql';
+  type: 'file' | 'email' | 'postgresql' | 'google-contacts';
   userIdentifier: string;
   userId: string;
   userEmail: string;
   miningId: string;
-  data: EmailFormat | FileFormat | PostgreSQLFormat;
+  data: EmailFormat | FileFormat | PostgreSQLFormat | GoogleContactsFormat;
 }
 
 /**

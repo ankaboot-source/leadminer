@@ -394,7 +394,7 @@ async function refreshStatusBadge() {
     const { verifyEmailStatus } = useContactVerification();
     const result = await verifyEmailStatus(contact.value.email);
     contact.value.status = result.status as unknown as Contact['status'];
-  } catch (error) {
+  } catch {
     $toast.add({
       severity: 'error',
       summary: 'Error',

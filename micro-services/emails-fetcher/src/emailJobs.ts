@@ -39,6 +39,7 @@ const EmailsFetcher = new EmailsFetchers();
 export default EmailsFetcher;
 
 import PSTEmailsFetcher from './services/pst/PSTEmailsFetcher';
+import GoogleContactsFetcher from './services/google_contacts/GoogleContactsFetcher';
 
 class PSTEmailsFetchers {
   private readonly ACTIVE_FETCHERS = new Map<string, PSTEmailsFetcher>();
@@ -78,3 +79,43 @@ class PSTEmailsFetchers {
 const PSTEmailFetcher = new PSTEmailsFetchers();
 
 export { PSTEmailFetcher };
+
+class GoogleContactsFetchers {
+  private readonly ACTIVE_FETCHERS = new Map<string, GoogleContactsFetcher>();
+
+  exists(miningId: string) {
+    const fetcher = this.ACTIVE_FETCHERS.get(miningId);
+    return fetcher !== undefined;
+  }
+
+  async start(miningId: string, fetcher: GoogleContactsFetcher) {
+    const existingFetcher = this.ACTIVE_FETCHERS.get(miningId);
+
+    if (existingFetcher) {
+      throw new Error(
+        'Cannot start another Google contacts fetching using same ID'
+      );
+    }
+
+    this.ACTIVE_FETCHERS.set(miningId, fetcher);
+
+    return fetcher.start();
+  }
+
+  async stop(miningId: string, canceled: boolean) {
+    const existingFetcher = this.ACTIVE_FETCHERS.get(miningId);
+
+    if (!existingFetcher) {
+      throw new Error('No active Google contacts fetcher found with this ID');
+    }
+
+    if (!existingFetcher.isCompleted && !existingFetcher.isCanceled) {
+      await existingFetcher.stop(canceled);
+    }
+
+    this.ACTIVE_FETCHERS.delete(miningId);
+  }
+}
+
+const GoogleContactsManager = new GoogleContactsFetchers();
+export { GoogleContactsManager };

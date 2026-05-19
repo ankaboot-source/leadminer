@@ -285,7 +285,7 @@ export function hasEmailVerificationConfigured(config: {
 }): boolean {
   const hasReacher = Boolean(
     config.REACHER_HOST &&
-    (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET)
+      (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET)
   );
   const hasMailerCheck = Boolean(config.MAILERCHECK_API_KEY);
   const hasZeroBounce = Boolean(config.ZEROBOUNCE_API_KEY);
