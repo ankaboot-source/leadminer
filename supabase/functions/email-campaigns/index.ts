@@ -108,7 +108,7 @@ const campaignCreateSchema = z.object({
   onlyValidContacts: z.boolean().optional(),
   footerTextTemplate: z.string().optional(),
   partialCampaign: z.boolean().optional(),
-}).strict();
+});
 
 type ContactSnapshot = {
   email: string;
