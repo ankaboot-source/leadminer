@@ -367,28 +367,6 @@ export default function initializeMiningController(
       const miningSourceCredentials = sources?.pop()?.credentials;
 
       let googleContactsCredentials;
-      if (googleContactsSync && miningSourceService) {
-        const allSources = await miningSourceService.getSourcesForUser(user.id);
-        const googleSource = allSources.find(
-          (s) => s.type === 'google' && s.email === email
-        );
-        if (googleSource) {
-          const oauthCredentials = googleSource
-            .credentials as OAuthMiningSourceCredentials;
-          googleContactsCredentials = {
-            accessToken: oauthCredentials?.accessToken,
-            refreshToken: oauthCredentials?.refreshToken
-          };
-        }
-      }
-
-      if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
-        return res.status(401).json({
-          message: "This mining source isn't registered for this user"
-        });
-      }
-
-      let googleContactsCredentials;
       if (googleContactsSync) {
         const allSources = await miningSourceService.getSourcesForUser(user.id);
         const googleSource = allSources.find(
@@ -404,6 +382,12 @@ export default function initializeMiningController(
             userEmail: sanitizedEmail
           };
         }
+      }
+
+      if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
+        return res.status(401).json({
+          message: "This mining source isn't registered for this user"
+        });
       }
 
       if (googleContactsSync && !googleContactsCredentials) {
