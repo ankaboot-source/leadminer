@@ -50,8 +50,7 @@ export interface Contact {
   sources?: string[];
   updated_at?: Date;
   created_at?: Date;
-  sources?: string[];
-  mining_ids?: string[];
+  mining_id?: string;
 }
 
 export interface ContactEdit {
