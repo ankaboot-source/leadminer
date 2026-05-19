@@ -5,6 +5,6 @@ import { stringField } from './index';
 export const streamProgressSchema = z.object({
   params: z.object({
     type: stringField,
-    id: stringField,
-  }),
+    id: stringField
+  })
 });
