@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.25/mod.ts";
 
 const gatewaySchema = z.object({
   provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
