@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { validationErrorBody } from "../_shared/validation.ts";
 import { Context, Hono } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import {
@@ -53,29 +55,55 @@ const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
-type SmsCampaignCreatePayload = {
-  selectedPhones?: string[];
-  selectedRecipients?: Array<{
-    phone: string;
-    personalization?: Record<string, unknown>;
-  }>;
-  senderName: string;
-  messageTemplate: string;
-  footerTextTemplate?: string;
-  useShortLinks?: boolean;
-  provider?: "smsgate" | "simple-sms-gateway" | "twilio";
-  smsgateConfig?: {
-    baseUrl?: string;
-    username?: string;
-    password?: string;
-  };
-  simpleSmsGatewayConfig?: {
-    baseUrl?: string;
-  };
-  timezone?: string;
-  fleetMode?: boolean;
-  selectedGatewayIds?: string[];
-};
+const smsCampaignCreateSchema = z.object({
+  selectedPhones: z.array(z.string()).optional(),
+  selectedRecipients: z.array(z.object({
+    phone: z.string(),
+    personalization: z.record(z.unknown()).optional(),
+  })).optional(),
+  senderName: z.string().min(1),
+  messageTemplate: z.string().min(1),
+  footerTextTemplate: z.string().optional(),
+  useShortLinks: z.boolean().optional(),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]).optional(),
+  smsgateConfig: z.object({
+    baseUrl: z.string().optional(),
+    username: z.string().optional(),
+    password: z.string().optional(),
+  }).optional(),
+  simpleSmsGatewayConfig: z.object({
+    baseUrl: z.string().optional(),
+  }).optional(),
+  timezone: z.string().optional(),
+  fleetMode: z.boolean().optional(),
+  selectedGatewayIds: z.array(z.string()).optional(),
+});
+
+const smsgateConfigSchema = z.object({
+  baseUrl: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+});
+
+const smsCampaignPreviewSchema = smsCampaignCreateSchema.extend({
+  testPhoneNumber: z.string().optional(),
+});
+
+const fleetGatewayCreateSchema = z.object({
+  name: z.string().min(1),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
+  config: z.record(z.string()).optional(),
+  daily_limit: z.number().optional(),
+  monthly_limit: z.number().optional(),
+});
+
+const fleetGatewayUpdateSchema = z.object({
+  name: z.string().optional(),
+  config: z.record(z.string()).optional(),
+  daily_limit: z.number().optional(),
+  monthly_limit: z.number().optional(),
+  is_active: z.boolean().optional(),
+});
 
 type SmsFleetGateway = {
   id: string;
@@ -288,11 +316,13 @@ app.post("/providers/smsgate", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  const payload = (await c.req.json().catch(() => ({}))) as {
-    baseUrl?: string;
-    username?: string;
-    password?: string;
-  };
+  const parseResult = smsgateConfigSchema.safeParse(
+    await c.req.json().catch(() => ({})),
+  );
+  if (!parseResult.success) {
+    return c.json(validationErrorBody(parseResult.error), 400);
+  }
+  const payload = parseResult.data;
 
   const supabaseAdmin = createSupabaseAdmin();
   const existingConfig = await getUserSmsProviderConfig(supabaseAdmin, user.id);
@@ -656,9 +686,13 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
 
   logger.info("Creating SMS campaign", { userId: user.id });
 
-  const payload = (await c.req
-    .json()
-    .catch(() => ({}))) as SmsCampaignCreatePayload;
+  const parseResult = smsCampaignCreateSchema.safeParse(
+    await c.req.json().catch(() => ({})),
+  );
+  if (!parseResult.success) {
+    return c.json(validationErrorBody(parseResult.error), 400);
+  }
+  const payload = parseResult.data;
   const {
     selectedPhones,
     selectedRecipients,
@@ -1008,11 +1042,13 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  const payload = (await c.req
-    .json()
-    .catch(() => ({}))) as SmsCampaignCreatePayload & {
-    testPhoneNumber?: string;
-  };
+  const parseResult = smsCampaignPreviewSchema.safeParse(
+    await c.req.json().catch(() => ({})),
+  );
+  if (!parseResult.success) {
+    return c.json(validationErrorBody(parseResult.error), 400);
+  }
+  const payload = parseResult.data;
   const {
     senderName,
     messageTemplate,
@@ -1489,20 +1525,13 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-  const payload = (await c.req.json().catch(() => ({}))) as {
-    name?: string;
-    provider?: "smsgate" | "simple-sms-gateway" | "twilio";
-    config?: Record<string, string>;
-    daily_limit?: number;
-    monthly_limit?: number;
-  };
-
-  if (!payload.name || !payload.provider) {
-    return c.json(
-      { error: "Missing required fields", code: "MISSING_REQUIRED_FIELDS" },
-      400,
-    );
+  const parseResult = fleetGatewayCreateSchema.safeParse(
+    await c.req.json().catch(() => ({})),
+  );
+  if (!parseResult.success) {
+    return c.json(validationErrorBody(parseResult.error), 400);
   }
+  const payload = parseResult.data;
 
   const supabaseAdmin = createSupabaseAdmin();
   const { data, error } = await supabaseAdmin
@@ -1535,13 +1564,13 @@ app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const gatewayId = c.req.param("id");
-  const payload = (await c.req.json().catch(() => ({}))) as {
-    name?: string;
-    config?: Record<string, string>;
-    daily_limit?: number;
-    monthly_limit?: number;
-    is_active?: boolean;
-  };
+  const parseResult = fleetGatewayUpdateSchema.safeParse(
+    await c.req.json().catch(() => ({})),
+  );
+  if (!parseResult.success) {
+    return c.json(validationErrorBody(parseResult.error), 400);
+  }
+  const payload = parseResult.data;
 
   const supabaseAdmin = createSupabaseAdmin();
 
