@@ -9,13 +9,11 @@ export const providerSchema = z
 export const nonEmptyString = z.string().min(1, "Required");
 export const isoDateString = z.string().datetime().optional();
 
-export const oauthCredentialsBody = z
-  .object({
-    provider: providerSchema,
-    provider_token: nonEmptyString,
-    provider_refresh_token: z.string().optional(),
-  })
-  .strict();
+export const oauthCredentialsBody = z.object({
+  provider: providerSchema,
+  provider_token: nonEmptyString,
+  provider_refresh_token: z.string().optional(),
+});
 
 export const languageSchema = z.string().min(2).max(10);
 
