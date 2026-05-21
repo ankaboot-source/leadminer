@@ -74,6 +74,14 @@ onMounted(async () => {
       "access_denied": {
         "title": "OAuth sign-in",
         "message": "Access denied. You canceled the authentication process."
+      },
+      "admin_policy_enforced": {
+        "title": "Google Workspace",
+        "message": "Your Google Workspace administrator has restricted access to this application. Please contact your admin or check the IMAP settings."
+      },
+      "google_workspace": {
+        "title": "Google Workspace Setup",
+        "message": "Connecting to Google Workspace requires specific IMAP or OAuth settings. Please refer to the official documentation for setup instructions."
       }
     }
   },
@@ -82,6 +90,14 @@ onMounted(async () => {
       "access_denied": {
         "title": "Connexion OAuth",
         "message": "Accès refusé. Vous avez annulé le processus d'authentification."
+      },
+      "admin_policy_enforced": {
+        "title": "Google Workspace",
+        "message": "Votre administrateur Google Workspace a restreint l'accès à cette application. Veuillez contacter votre administrateur ou vérifier les paramètres IMAP."
+      },
+      "google_workspace": {
+        "title": "Configuration Google Workspace",
+        "message": "La connexion à Google Workspace nécessite des paramètres IMAP ou OAuth spécifiques. Veuillez consulter la documentation officielle pour les instructions de configuration."
       }
     }
   }
