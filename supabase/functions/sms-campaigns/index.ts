@@ -55,30 +55,6 @@ const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
-type SmsCampaignCreatePayload = {
-  selectedPhones?: string[];
-  selectedRecipients?: Array<{
-    phone: string;
-    personalization?: Record<string, unknown>;
-  }>;
-  senderName: string;
-  messageTemplate: string;
-  footerTextTemplate?: string;
-  useShortLinks?: boolean;
-  provider?: "smsgate" | "simple-sms-gateway" | "twilio";
-  smsgateConfig?: {
-    baseUrl?: string;
-    username?: string;
-    password?: string;
-  };
-  simpleSmsGatewayConfig?: {
-    baseUrl?: string;
-  };
-  timezone?: string;
-  fleetMode?: boolean;
-  selectedGatewayIds?: string[];
-};
-
 const smsCampaignCreateSchema = z.object({
   selectedPhones: z.array(z.string()).optional(),
   selectedRecipients: z.array(z.object({

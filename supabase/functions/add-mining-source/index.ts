@@ -1,4 +1,3 @@
-import { z } from "zod";
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import {

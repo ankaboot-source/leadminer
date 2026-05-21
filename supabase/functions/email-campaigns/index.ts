@@ -76,23 +76,6 @@ type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 type ConsentStatus = "legitimate_interest" | "opt_out" | "opt_in";
 type BounceType = "hard" | "soft" | "technical";
 
-type CampaignCreatePayload = {
-  selectedEmails?: string[];
-  senderName: string;
-  senderEmail: string;
-  replyTo: string;
-  subject: string;
-  bodyHtmlTemplate: string;
-  bodyTextTemplate: string;
-  senderDailyLimit?: number;
-  trackOpen?: boolean;
-  trackClick?: boolean;
-  plainTextOnly?: boolean;
-  onlyValidContacts?: boolean;
-  footerTextTemplate?: string;
-  partialCampaign?: boolean;
-};
-
 const campaignCreateSchema = z.object({
   selectedEmails: z.array(z.string()).optional(),
   senderName: z.string().min(1),
