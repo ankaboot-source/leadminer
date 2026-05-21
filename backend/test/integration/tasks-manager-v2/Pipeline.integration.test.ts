@@ -21,7 +21,8 @@ jest.mock('../../../src/config', () => ({
   REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning',
   REDIS_SIGNATURE_STREAM_NAME: 'signature-test-stream',
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'fake-pubsub-channel',
-  IMAP_FETCH_BODY: true
+  IMAP_FETCH_BODY: true,
+  MAILERCHECK_API_KEY: 'fake-key'
 }));
 
 jest.mock('../../../src/utils/logger', () => ({

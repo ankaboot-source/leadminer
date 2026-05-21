@@ -10,6 +10,7 @@ import { CleanTask } from './tasks/CleanTask';
 import { SignatureTask } from './tasks/SignatureTask';
 import { TaskId } from './types';
 import ENV from '../../config';
+import { hasEmailVerificationConfigured } from '../email-status/EmailStatusVerifierFactory';
 
 export interface GooglePeopleCredentials {
   accessToken: string;
@@ -101,7 +102,7 @@ export function createImapMining(
     })
   );
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     tasks.push(
       new CleanTask({
         miningId,
@@ -152,7 +153,7 @@ export function createImapMining(
   }
   pipeline.addProgressLink(TaskId.Extract, upstreams);
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
@@ -211,7 +212,7 @@ export function createFileMining(
     })
   );
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     tasks.push(
       new CleanTask({
         miningId,
@@ -240,7 +241,7 @@ export function createFileMining(
     deps
   );
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
@@ -317,7 +318,7 @@ export function createPstMining(
     })
   );
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     tasks.push(
       new CleanTask({
         miningId,
@@ -362,7 +363,7 @@ export function createPstMining(
 
   pipeline.addProgressLink(TaskId.Extract, TaskId.Fetch);
 
-  if (params.cleaningEnabled) {
+  if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
       totalFrom: 'createdContacts'
     });
