@@ -1,5 +1,33 @@
+<template>
+  <Dialog
+    v-model:visible="showGoogleWorkspaceDialog"
+    modal
+    :draggable="false"
+    :header="googleWorkspaceDialogTitle"
+    :closable="true"
+    @hide="onGoogleWorkspaceDialogDismiss"
+  >
+    <p>{{ googleWorkspaceDialogMessage }}</p>
+    <div class="flex justify-end gap-2 pt-4">
+      <Button
+        :label="$t('common.close')"
+        severity="secondary"
+        @click="onGoogleWorkspaceDialogDismiss"
+      />
+      <Button
+        label="Learn more"
+        icon="pi pi-external-link"
+        iconPos="right"
+        @click="openGoogleWorkspaceDoc"
+      />
+    </div>
+  </Dialog>
+</template>
+
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
+import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
 
 const { t, te } = useI18n({
   useScope: 'local',
@@ -23,6 +51,56 @@ const authParams = computed(() => ({
   ...parseHashQuery($route.hash),
   ...$route.query,
 }));
+
+const GOOGLE_WORKSPACE_DOC_URL =
+  'https://support.google.com/a/answer/10547014?hl=en';
+
+const showGoogleWorkspaceDialog = ref(false);
+const pendingNavigateTo = ref<string | null>(null);
+const googleWorkspaceDialogTitle = ref('');
+const googleWorkspaceDialogMessage = ref('');
+
+function isGoogleWorkspaceError(params: {
+  error: string | null;
+  error_description: string | null;
+  provider: string | null;
+}): boolean {
+  if (params.provider !== 'google') return false;
+  if (params.error === 'admin_policy_enforced') return true;
+  if (params.error_description) {
+    const desc = params.error_description.toLowerCase();
+    if (
+      desc.includes('admin') ||
+      desc.includes('policy') ||
+      desc.includes('workspace')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function showGoogleWorkspaceError(
+  title: string,
+  message: string,
+  navigateTo: string | null,
+) {
+  googleWorkspaceDialogTitle.value = title;
+  googleWorkspaceDialogMessage.value = message;
+  pendingNavigateTo.value = navigateTo;
+  showGoogleWorkspaceDialog.value = true;
+}
+
+function openGoogleWorkspaceDoc() {
+  window.open(GOOGLE_WORKSPACE_DOC_URL, '_blank', 'noopener,noreferrer');
+  showGoogleWorkspaceDialog.value = false;
+  navigateTo(pendingNavigateTo.value ?? '/');
+}
+
+function onGoogleWorkspaceDialogDismiss() {
+  showGoogleWorkspaceDialog.value = false;
+  navigateTo(pendingNavigateTo.value ?? '/');
+}
 
 const showOAuthErrorNotification = () => {
   const { error, error_description: errorDescription } = authParams.value;
@@ -59,6 +137,17 @@ onMounted(async () => {
       undefined,
       navigateToPage ?? undefined,
     );
+  } else if (error && isGoogleWorkspaceError(authParams.value)) {
+    const messageKey = `error.${error}`;
+    const title = te(`${messageKey}.title`)
+      ? t(`${messageKey}.title`)
+      : t('error.google_workspace.title');
+    const message = te(`${messageKey}.message`)
+      ? t(`${messageKey}.message`)
+      : t('error.google_workspace.message');
+
+    showGoogleWorkspaceError(title, message, navigateToPage);
+    return; // Don't navigate yet — dialog controls navigation via @hide
   } else {
     showOAuthErrorNotification();
   }
