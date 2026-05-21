@@ -15,7 +15,7 @@
         @click="onGoogleWorkspaceDialogDismiss"
       />
       <Button
-        label="Learn more"
+        :label="t('learn_more')"
         icon="pi pi-external-link"
         iconPos="right"
         @click="openGoogleWorkspaceDoc"
@@ -172,7 +172,8 @@ onMounted(async () => {
         "title": "Google Workspace Setup",
         "message": "Connecting to Google Workspace requires specific IMAP or OAuth settings. Please refer to the official documentation for setup instructions."
       }
-    }
+    },
+    "learn_more": "Learn more"
   },
   "fr": {
     "error": {
@@ -188,7 +189,8 @@ onMounted(async () => {
         "title": "Configuration Google Workspace",
         "message": "La connexion à Google Workspace nécessite des paramètres IMAP ou OAuth spécifiques. Veuillez consulter la documentation officielle pour les instructions de configuration."
       }
-    }
+    },
+    "learn_more": "En savoir plus"
   }
 }
 </i18n>
