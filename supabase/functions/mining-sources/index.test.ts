@@ -1,5 +1,5 @@
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { createSchema, authorizeSchema } from "./schemas.ts";
+import { createSchema, authorizeSchema, callbackQuerySchema } from "./schemas.ts";
 
 Deno.test("createSchema rejects invalid provider", () => {
   const result = createSchema.safeParse({
@@ -109,5 +109,64 @@ Deno.test("createSchema rejects missing required fields", () => {
     result.success ||
       result.error.issues.some((i) => i.path.includes("provider")) &&
       result.error.issues.some((i) => i.path.includes("provider_token")),
+  );
+});
+
+Deno.test("callbackQuerySchema accepts valid google input", () => {
+  const result = callbackQuerySchema.safeParse({
+    provider: "google",
+    code: "auth-code-123",
+    state: "encoded-state-data",
+  });
+  assertEquals(result.success, true);
+});
+
+Deno.test("callbackQuerySchema accepts valid azure input", () => {
+  const result = callbackQuerySchema.safeParse({
+    provider: "azure",
+    code: "auth-code-456",
+    state: "encoded-state-data",
+  });
+  assertEquals(result.success, true);
+});
+
+Deno.test("callbackQuerySchema rejects invalid provider", () => {
+  const result = callbackQuerySchema.safeParse({
+    provider: "invalid",
+    code: "auth-code-123",
+    state: "encoded-state-data",
+  });
+  assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("provider")));
+});
+
+Deno.test("callbackQuerySchema rejects empty code", () => {
+  const result = callbackQuerySchema.safeParse({
+    provider: "google",
+    code: "",
+    state: "encoded-state-data",
+  });
+  assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("code")));
+});
+
+Deno.test("callbackQuerySchema rejects empty state", () => {
+  const result = callbackQuerySchema.safeParse({
+    provider: "google",
+    code: "auth-code-123",
+    state: "",
+  });
+  assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("state")));
+});
+
+Deno.test("callbackQuerySchema rejects missing required fields", () => {
+  const result = callbackQuerySchema.safeParse({});
+  assertEquals(result.success, false);
+  assert(
+    result.success ||
+      result.error.issues.some((i) => i.path.includes("provider")) &&
+      result.error.issues.some((i) => i.path.includes("code")) &&
+      result.error.issues.some((i) => i.path.includes("state")),
   );
 });
