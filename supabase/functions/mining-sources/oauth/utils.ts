@@ -137,12 +137,17 @@ export async function exchangeForToken(
     throw new Error("Missing email in id_token");
   }
 
+  const expiresAt = tokenResponse.expires_at;
+  const expiresAtNum = expiresAt instanceof Date
+    ? expiresAt.getTime()
+    : Number(expiresAt);
+
   return {
     email: payload.email,
     refreshToken: tokenResponse.refresh_token as string,
     accessToken: tokenResponse.access_token as string,
     idToken,
-    expiresAt: tokenResponse.expires_at as number,
+    expiresAt: expiresAtNum,
   };
 }
 

@@ -2,6 +2,7 @@ import { Context, Hono } from "hono";
 import { z } from "zod";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -20,10 +21,20 @@ const logger = createLogger("mining-sources");
 const functionName = "mining-sources";
 const app = new Hono().basePath(`/${functionName}`);
 
-const _SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") as string;
-const HASH_SECRET = Deno.env.get("LEADMINER_API_HASH_SECRET") as string;
+app.onError((err, c) => {
+  logger.error("Unhandled mining-sources error", {
+    path: c.req.path,
+    method: c.req.method,
+    error: err.message,
+    stack: err.stack,
+  });
+  return c.json({ error: "Unexpected server error" }, 500);
+});
+
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
+const FRONTEND_HOST = getRequiredEnv("FRONTEND_HOST").replace(/\/$/, "");
+const HASH_SECRET = getRequiredEnv("LEADMINER_API_HASH_SECRET");
 
 app.use("*", async (c, next) => {
   await next();
@@ -38,6 +49,9 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   const authHeader = c.req.header("authorization");
   if (!authHeader) {
     return c.json({ error: "Missing Authorization header" }, 401);
+  }
+  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+    return await next();
   }
   const supabase = createSupabaseClient(authHeader);
   const { data, error } = await supabase.auth.getUser();
@@ -70,11 +84,13 @@ app.post("/", authMiddleware, async (c: Context) => {
   const { provider, provider_token, provider_refresh_token } = parsed.data;
   const expiresAt = Date.now() + 7 * 60 * 60 * 1000;
 
-  const credentials = {
+  const credentials = JSON.stringify({
+    email: user.email,
     accessToken: provider_token,
     refreshToken: provider_refresh_token,
+    provider,
     expiresAt,
-  };
+  });
 
   const admin = createSupabaseAdmin();
   const { error: rpcError } = await admin
@@ -147,11 +163,13 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       callbackUrl,
     );
 
-    const credentials = {
+    const credentials = JSON.stringify({
+      email: token.email,
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
+      provider,
       expiresAt: token.expiresAt,
-    };
+    });
 
     const admin = createSupabaseAdmin();
     const { error: rpcError } = await admin
