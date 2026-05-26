@@ -37,7 +37,7 @@ async function addMiningSourceFromProviderToken(
   providerToken: string,
   providerRefreshToken: string,
 ): Promise<void> {
-  await useNuxtApp().$saasEdgeFunctions('add-mining-source', {
+  await useNuxtApp().$saasEdgeFunctions('mining-sources', {
     method: 'POST',
     body: {
       provider,

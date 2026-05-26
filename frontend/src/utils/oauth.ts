@@ -4,14 +4,12 @@ export async function addOAuthAccount(
   provider: OAuthMiningSource,
   redirect: string,
 ) {
-  const { $api } = useNuxtApp();
-  const { authorizationUri } = await $api<{ authorizationUri: string }>(
-    `/imap/mine/sources/${provider}`,
+  const { $saasEdgeFunctions } = useNuxtApp();
+  const { authorizationUri } = await $saasEdgeFunctions<{ authorizationUri: string }>(
+    'mining-sources/oauth/authorize',
     {
       method: 'POST',
-      body: {
-        redirect,
-      },
+      body: { provider, redirect },
     },
   );
 
