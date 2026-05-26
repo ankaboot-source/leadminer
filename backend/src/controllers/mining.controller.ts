@@ -1,12 +1,8 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import { decode } from 'jsonwebtoken';
 import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
-import {
-  MiningSources,
-  OAuthMiningSourceProvider
-} from '../db/interfaces/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import { SupabaseTask as DBTask, TaskType } from '../db/types';
@@ -21,12 +17,7 @@ import {
   getValidImapLogin,
   sanitizeImapInput
 } from './imap.helpers';
-import {
-  getAuthClient,
-  getTokenConfig,
-  getTokenWithScopeValidation,
-  validateFileContactsData
-} from './mining.helpers';
+import { validateFileContactsData } from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
 import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
@@ -46,65 +37,6 @@ export interface MiningControllerDeps {
   emailFetcherClient: FetcherClient;
   pstFetcherClient: FetcherClient;
   idGenerator: () => Promise<string> | string;
-}
-
-/**
- * Exchanges an OAuth authorization code for tokens and extracts user email
- *
- * @param code - The authorization code received from OAuth provider
- * @param provider - The OAuth provider name (e.g., 'google', 'microsoft')
- */
-async function exchangeForToken(
-  code: string,
-  provider: OAuthMiningSourceProvider
-) {
-  const tokenConfig = {
-    ...getTokenConfig(provider),
-    code
-  };
-  const { refreshToken, accessToken, idToken, expiresAt } =
-    await getTokenWithScopeValidation(tokenConfig, provider);
-  const { email } = decode(idToken) as { email: string };
-
-  return {
-    email,
-    accessToken,
-    refreshToken,
-    expiresAt
-  };
-}
-
-function getSafeRedirectPath(path: unknown) {
-  if (
-    typeof path !== 'string' ||
-    !path.startsWith('/') ||
-    path.startsWith('//')
-  ) {
-    return '/';
-  }
-
-  return path;
-}
-
-function parseOAuthState(state: string | undefined) {
-  if (!state) {
-    throw new Error('Missing OAuth state.');
-  }
-
-  const decoded = Buffer.from(state, 'base64').toString('utf-8');
-  const parsed = JSON.parse(decoded) as {
-    userId?: string;
-    afterCallbackRedirect?: string;
-  };
-
-  if (!parsed.userId) {
-    throw new Error('Invalid OAuth state payload.');
-  }
-
-  return {
-    userId: parsed.userId,
-    afterCallbackRedirect: getSafeRedirectPath(parsed.afterCallbackRedirect)
-  };
 }
 
 interface MiningTaskGroup {
@@ -189,57 +121,6 @@ export default function initializeMiningController(
   deps: MiningControllerDeps
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
-      const user = res.locals.user as User;
-      const provider = req.params.provider as OAuthMiningSourceProvider;
-      const { redirect } = req.body;
-      const afterCallbackRedirect = getSafeRedirectPath(redirect);
-
-      const stateObj = JSON.stringify({
-        userId: user.id,
-        afterCallbackRedirect
-      });
-
-      const authorizationUri = getAuthClient(provider).authorizeURL({
-        ...getTokenConfig(provider),
-        state: Buffer.from(stateObj).toString('base64')
-      });
-
-      return res.json({ authorizationUri });
-    },
-
-    async createProviderMiningSourceCallback(req: Request, res: Response) {
-      const { code, state } = req.query as { code: string; state: string };
-      const provider = req.params.provider as OAuthMiningSourceProvider;
-      let redirect = '/';
-      try {
-        const { userId, afterCallbackRedirect } = parseOAuthState(state);
-
-        redirect = afterCallbackRedirect;
-        const exchangedTokens = await exchangeForToken(code, provider);
-
-        await miningSources.upsert({
-          userId,
-          email: exchangedTokens.email,
-          credentials: {
-            ...exchangedTokens,
-            provider
-          },
-          type: provider
-        });
-        redirect = afterCallbackRedirect.startsWith('/mine')
-          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
-          : afterCallbackRedirect;
-        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
-      } catch (error) {
-        logger.error(error);
-        res.redirect(
-          301,
-          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
-        );
-      }
-    },
-
     async createImapMiningSource(
       req: Request,
       res: Response,
