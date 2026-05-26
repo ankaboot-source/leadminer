@@ -32,9 +32,11 @@ app.onError((err, c) => {
 });
 
 const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
 const FRONTEND_HOST = getRequiredEnv("FRONTEND_HOST").replace(/\/$/, "");
 const HASH_SECRET = getRequiredEnv("LEADMINER_API_HASH_SECRET");
+const OAUTH_CALLBACK_BASE_URL = getRequiredEnv(
+  "OAUTH_CALLBACK_BASE_URL",
+).replace(/\/+$/, "");
 
 app.use("*", async (c, next) => {
   await next();
@@ -112,7 +114,7 @@ app.post("/oauth/authorize", authMiddleware, async (c: Context) => {
   const afterCallbackRedirect = getSafeRedirectPath(redirect);
 
   const state = btoa(JSON.stringify({ userId: user.id, afterCallbackRedirect }));
-  const callbackUrl = `${SUPABASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
+  const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
   const client = getAuthClient(provider);
   const authorizationUri = client.authorizeURL({
@@ -144,7 +146,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
 
     const { userId, afterCallbackRedirect } = parseOAuthState(state);
 
-    const callbackUrl = `${SUPABASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
+    const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
     const token = await exchangeForToken(
       code,
