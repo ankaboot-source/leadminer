@@ -1,5 +1,4 @@
 import { Context, Hono } from "hono";
-import { z } from "zod";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getRequiredEnv } from "../_shared/env-helpers.ts";
@@ -8,6 +7,7 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
+import { createSchema, authorizeSchema } from "./schemas.ts";
 import {
   getAuthClient,
   getTokenConfig,
@@ -61,17 +61,6 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   c.set("user", data.user);
   return next();
 }
-
-const createSchema = z.object({
-  provider: z.enum(["google", "azure"]),
-  provider_token: z.string().min(1),
-  provider_refresh_token: z.string().optional().default(""),
-});
-
-const authorizeSchema = z.object({
-  provider: z.enum(["google", "azure"]),
-  redirect: z.string().min(1).startsWith("/").refine((v) => !v.startsWith("//")),
-});
 
 app.post("/", authMiddleware, async (c: Context) => {
   const body = await c.req.json().catch(() => ({}));

@@ -71,6 +71,13 @@ Deno.test("parseOAuthState throws for non-string userId", () => {
   );
 });
 
+Deno.test("parseOAuthState defaults afterCallbackRedirect to '/' when missing", () => {
+  const state = btoa(JSON.stringify({ userId: "user-123" }));
+  const result = parseOAuthState(state);
+  assertEquals(result.userId, "user-123");
+  assertEquals(result.afterCallbackRedirect, "/");
+});
+
 Deno.test("getTokenConfig returns google config with all fields", () => {
   const config = getTokenConfig("google", "https://example.com/callback");
   assertEquals(config.redirect_uri, "https://example.com/callback");
@@ -85,6 +92,13 @@ Deno.test("getTokenConfig returns azure config without access_type", () => {
   assertEquals(typeof config.scope, "string");
   assertEquals(config.prompt, "select_account");
   assertEquals(config.access_type, undefined);
+});
+
+Deno.test("getTokenConfig throws for invalid provider", () => {
+  assertThrows(
+    () => getTokenConfig("invalid" as any, "https://example.com/callback"),
+    Error,
+  );
 });
 
 Deno.test("getAuthClient returns client for google", () => {

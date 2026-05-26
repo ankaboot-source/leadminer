@@ -1,16 +1,5 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.25/mod.ts";
-
-const createSchema = z.object({
-  provider: z.enum(["google", "azure"]),
-  provider_token: z.string().min(1),
-  provider_refresh_token: z.string().optional().default(""),
-});
-
-const authorizeSchema = z.object({
-  provider: z.enum(["google", "azure"]),
-  redirect: z.string().min(1).startsWith("/").refine((v) => !v.startsWith("//")),
-});
+import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { createSchema, authorizeSchema } from "./schemas.ts";
 
 Deno.test("createSchema rejects invalid provider", () => {
   const result = createSchema.safeParse({
@@ -18,6 +7,7 @@ Deno.test("createSchema rejects invalid provider", () => {
     provider_token: "abc",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("provider")));
 });
 
 Deno.test("createSchema accepts valid input", () => {
@@ -37,6 +27,7 @@ Deno.test("createSchema rejects empty token", () => {
     provider_token: "",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("provider_token")));
 });
 
 Deno.test("createSchema accepts valid input with refresh token", () => {
@@ -73,6 +64,7 @@ Deno.test("authorizeSchema rejects invalid provider", () => {
     redirect: "/mine",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("provider")));
 });
 
 Deno.test("authorizeSchema rejects empty redirect", () => {
@@ -81,6 +73,7 @@ Deno.test("authorizeSchema rejects empty redirect", () => {
     redirect: "",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("redirect")));
 });
 
 Deno.test("authorizeSchema rejects redirect without leading slash", () => {
@@ -89,6 +82,7 @@ Deno.test("authorizeSchema rejects redirect without leading slash", () => {
     redirect: "mine/123",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("redirect")));
 });
 
 Deno.test("authorizeSchema rejects redirect starting with double slash", () => {
@@ -97,4 +91,23 @@ Deno.test("authorizeSchema rejects redirect starting with double slash", () => {
     redirect: "//evil.com",
   });
   assertEquals(result.success, false);
+  assert(result.success || result.error.issues.some((i) => i.path.includes("redirect")));
+});
+
+Deno.test("authorizeSchema rejects non-string redirect", () => {
+  const result = authorizeSchema.safeParse({
+    provider: "google",
+    redirect: null,
+  });
+  assertEquals(result.success, false);
+});
+
+Deno.test("createSchema rejects missing required fields", () => {
+  const result = createSchema.safeParse({});
+  assertEquals(result.success, false);
+  assert(
+    result.success ||
+      result.error.issues.some((i) => i.path.includes("provider")) &&
+      result.error.issues.some((i) => i.path.includes("provider_token")),
+  );
 });
