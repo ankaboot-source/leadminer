@@ -70,7 +70,7 @@ const createSchema = z.object({
 
 const authorizeSchema = z.object({
   provider: z.enum(["google", "azure"]),
-  redirect: z.string().min(1).startsWith("/"),
+  redirect: z.string().min(1).startsWith("/").refine((v) => !v.startsWith("//")),
 });
 
 app.post("/", authMiddleware, async (c: Context) => {
