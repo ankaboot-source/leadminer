@@ -10,3 +10,9 @@ export const authorizeSchema = z.object({
   provider: z.enum(["google", "azure"]),
   redirect: z.string().min(1).startsWith("/").refine((v) => !v.startsWith("//")),
 });
+
+export const callbackQuerySchema = z.object({
+  provider: z.enum(["google", "azure"]),
+  code: z.string().min(1),
+  state: z.string().min(1),
+});
