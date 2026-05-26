@@ -1,4 +1,3 @@
-import { Token } from "simple-oauth2";
 import googleOAuth2Client from "./google.ts";
 import azureOAuth2Client from "./azure.ts";
 
@@ -39,6 +38,7 @@ export const providerScopes = {
     ],
     requiredScopes: [
       "https://outlook.office.com/IMAP.AccessAsUser.All",
+      "openid",
     ],
   },
 };
@@ -57,8 +57,8 @@ export function getAuthClient(provider: OAuthMiningSourceProvider) {
 export function getTokenConfig(
   provider: OAuthMiningSourceProvider,
   callbackUrl: string,
-): Record<string, string> {
-  const config: Record<string, string> = {
+): { redirect_uri: string; scope: string; prompt?: string; access_type?: string } {
+  const config: { redirect_uri: string; scope: string; prompt?: string; access_type?: string } = {
     redirect_uri: callbackUrl,
     scope: providerScopes[provider].scopes.join(" "),
   };
@@ -74,7 +74,7 @@ export function getTokenConfig(
 }
 
 export function getSafeRedirectPath(path: string | undefined): string {
-  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+  if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//")) {
     return "/";
   }
   return path;
@@ -84,13 +84,18 @@ export function parseOAuthState(state: string) {
   if (!state) {
     throw new Error("Missing OAuth state");
   }
-  const decoded = JSON.parse(atob(state));
-  if (!decoded.userId) {
+  let decoded: Record<string, unknown>;
+  try {
+    decoded = JSON.parse(atob(state));
+  } catch {
+    throw new Error("Invalid OAuth state");
+  }
+  if (!decoded.userId || typeof decoded.userId !== "string") {
     throw new Error("Missing userId in OAuth state");
   }
   return {
     userId: decoded.userId,
-    afterCallbackRedirect: getSafeRedirectPath(decoded.afterCallbackRedirect),
+    afterCallbackRedirect: getSafeRedirectPath(decoded.afterCallbackRedirect as string | undefined),
   };
 }
 
@@ -101,10 +106,10 @@ export async function exchangeForToken(
 ): Promise<TokenType> {
   const client = getAuthClient(provider);
   const tokenConfig = getTokenConfig(provider, callbackUrl);
-  const tokenResponse = (await client.getToken({
+  const { token: tokenResponse } = await client.getToken({
     ...tokenConfig,
     code,
-  })) as Token;
+  });
 
   const approvedScopes = (tokenResponse.scope as string)?.split(" ") || [];
   const requiredScopes = providerScopes[provider].requiredScopes;
@@ -116,8 +121,21 @@ export async function exchangeForToken(
     throw new Error("Missing required scopes");
   }
 
-  const idToken = tokenResponse.id_token as string;
-  const payload = JSON.parse(atob(idToken.split(".")[1]));
+  const idToken = tokenResponse.id_token;
+  if (!idToken || typeof idToken !== "string") {
+    throw new Error("Missing id_token in token response");
+  }
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(atob(idToken.split(".")[1]));
+  } catch {
+    throw new Error("Invalid id_token");
+  }
+
+  if (!payload.email || typeof payload.email !== "string") {
+    throw new Error("Missing email in id_token");
+  }
 
   return {
     email: payload.email,

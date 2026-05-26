@@ -1,5 +1,5 @@
 {
   "imports": {
-    "simple-oauth2": "npm:simple-oauth2@latest"
+    "simple-oauth2": "npm:simple-oauth2@5.1.0"
   }
 }

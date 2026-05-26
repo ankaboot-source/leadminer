@@ -10,5 +10,6 @@ const config = generateOAuthConfig(
   "/common/oauth2/v2.0/token",
 );
 
-const azureOAuth2Client = new AuthorizationCode(config);
+type AuthParams = "prompt" | "state";
+const azureOAuth2Client = new AuthorizationCode<AuthParams>(config);
 export default azureOAuth2Client;
