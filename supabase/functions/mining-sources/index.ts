@@ -12,6 +12,7 @@ import {
   getAuthClient,
   getTokenConfig,
   exchangeForToken,
+  signOAuthState,
   parseOAuthState,
   getSafeRedirectPath,
   type OAuthMiningSourceProvider,
@@ -113,7 +114,10 @@ app.post("/oauth/authorize", authMiddleware, async (c: Context) => {
   const { provider, redirect } = parsed.data;
   const afterCallbackRedirect = getSafeRedirectPath(redirect);
 
-  const state = btoa(JSON.stringify({ userId: user.id, afterCallbackRedirect }));
+  const state = await signOAuthState(
+    { userId: user.id, afterCallbackRedirect },
+    HASH_SECRET,
+  );
   const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
   const client = getAuthClient(provider);
@@ -144,7 +148,10 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       );
     }
 
-    const { userId, afterCallbackRedirect } = parseOAuthState(state);
+    const { userId, afterCallbackRedirect } = await parseOAuthState(
+      state,
+      HASH_SECRET,
+    );
 
     const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
 

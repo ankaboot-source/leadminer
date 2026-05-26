@@ -1,5 +1,6 @@
 import {
   assertEquals,
+  assertRejects,
   assertThrows,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
@@ -9,8 +10,15 @@ Deno.env.set("AZURE_CLIENT_ID", "test-azure-client-id");
 Deno.env.set("AZURE_SECRET", "test-azure-secret");
 
 const utils = await import("./utils.ts");
-const { getSafeRedirectPath, parseOAuthState, getTokenConfig, getAuthClient } =
-  utils;
+const {
+  getSafeRedirectPath,
+  signOAuthState,
+  parseOAuthState,
+  getTokenConfig,
+  getAuthClient,
+} = utils;
+
+const TEST_SECRET = "test-hash-secret";
 
 Deno.test("getSafeRedirectPath returns the path for valid paths", () => {
   assertEquals(getSafeRedirectPath("/mine/123"), "/mine/123");
@@ -33,48 +41,79 @@ Deno.test("getSafeRedirectPath returns '/' for undefined", () => {
   assertEquals(getSafeRedirectPath(undefined), "/");
 });
 
-Deno.test("parseOAuthState decodes valid state", () => {
-  const state = btoa(
-    JSON.stringify({ userId: "user-123", afterCallbackRedirect: "/mine/456" }),
+Deno.test("signOAuthState produces a valid signed state", async () => {
+  const state = await signOAuthState(
+    { userId: "user-123", afterCallbackRedirect: "/mine/456" },
+    TEST_SECRET,
   );
-  const result = parseOAuthState(state);
+  const result = await parseOAuthState(state, TEST_SECRET);
   assertEquals(result.userId, "user-123");
   assertEquals(result.afterCallbackRedirect, "/mine/456");
 });
 
-Deno.test("parseOAuthState throws for empty string", () => {
-  assertThrows(() => parseOAuthState(""), Error, "Missing OAuth state");
-});
-
-Deno.test("parseOAuthState throws for invalid base64", () => {
-  assertThrows(
-    () => parseOAuthState("not-base64!!"),
+Deno.test("parseOAuthState rejects tampered state", async () => {
+  const state = await signOAuthState(
+    { userId: "user-123", afterCallbackRedirect: "/mine/456" },
+    TEST_SECRET,
+  );
+  await assertRejects(
+    () => parseOAuthState(state, "different-secret"),
     Error,
     "Invalid OAuth state",
   );
 });
 
-Deno.test("parseOAuthState throws for missing userId", () => {
-  const state = btoa(JSON.stringify({ afterCallbackRedirect: "/mine" }));
-  assertThrows(
-    () => parseOAuthState(state),
+Deno.test("parseOAuthState throws for unsigned legacy state", async () => {
+  const state = btoa(
+    JSON.stringify({ userId: "user-123", afterCallbackRedirect: "/mine/456" }),
+  );
+  await assertRejects(
+    () => parseOAuthState(state, TEST_SECRET),
     Error,
-    "Missing userId in OAuth state",
+    "Invalid OAuth state",
   );
 });
 
-Deno.test("parseOAuthState throws for non-string userId", () => {
-  const state = btoa(JSON.stringify({ userId: 123 }));
-  assertThrows(
-    () => parseOAuthState(state),
+Deno.test("parseOAuthState throws for empty string", async () => {
+  await assertRejects(
+    () => parseOAuthState("", TEST_SECRET),
     Error,
-    "Missing userId in OAuth state",
+    "Missing OAuth state",
   );
 });
 
-Deno.test("parseOAuthState defaults afterCallbackRedirect to '/' when missing", () => {
-  const state = btoa(JSON.stringify({ userId: "user-123" }));
-  const result = parseOAuthState(state);
+Deno.test("parseOAuthState throws for invalid base64", async () => {
+  await assertRejects(
+    () => parseOAuthState("not-base64!!", TEST_SECRET),
+    Error,
+    "Invalid OAuth state",
+  );
+});
+
+Deno.test("parseOAuthState throws for missing userId", async () => {
+  const state = await signOAuthState(
+    { userId: "user-123", afterCallbackRedirect: "/mine" },
+    TEST_SECRET,
+  );
+  const tampered = btoa(
+    JSON.stringify({
+      data: JSON.stringify({ afterCallbackRedirect: "/mine" }),
+      sig: JSON.parse(atob(state)).sig,
+    }),
+  );
+  await assertRejects(
+    () => parseOAuthState(tampered, TEST_SECRET),
+    Error,
+    "Invalid OAuth state",
+  );
+});
+
+Deno.test("parseOAuthState defaults afterCallbackRedirect to '/' when missing", async () => {
+  const state = await signOAuthState(
+    { userId: "user-123", afterCallbackRedirect: "/" },
+    TEST_SECRET,
+  );
+  const result = await parseOAuthState(state, TEST_SECRET);
   assertEquals(result.userId, "user-123");
   assertEquals(result.afterCallbackRedirect, "/");
 });

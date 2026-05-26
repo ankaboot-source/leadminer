@@ -80,22 +80,76 @@ export function getSafeRedirectPath(path: string | undefined): string {
   return path;
 }
 
-export function parseOAuthState(state: string) {
+export async function signOAuthState(
+  payload: { userId: string; afterCallbackRedirect: string },
+  secret: string,
+): Promise<string> {
+  const data = JSON.stringify(payload);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(data),
+  );
+  const sigBase64 = btoa(
+    String.fromCharCode(...new Uint8Array(signature)),
+  );
+  return btoa(JSON.stringify({ data, sig: sigBase64 }));
+}
+
+export async function parseOAuthState(
+  state: string,
+  secret: string,
+): Promise<{ userId: string; afterCallbackRedirect: string }> {
   if (!state) {
     throw new Error("Missing OAuth state");
   }
+
   let decoded: Record<string, unknown>;
   try {
     decoded = JSON.parse(atob(state));
   } catch {
     throw new Error("Invalid OAuth state");
   }
-  if (!decoded.userId || typeof decoded.userId !== "string") {
+
+  if (!decoded.data || !decoded.sig || typeof decoded.data !== "string" || typeof decoded.sig !== "string") {
+    throw new Error("Invalid OAuth state");
+  }
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+  const sigBytes = Uint8Array.from(atob(decoded.sig), (c) => c.charCodeAt(0));
+  const valid = await crypto.subtle.verify(
+    "HMAC",
+    key,
+    sigBytes,
+    new TextEncoder().encode(decoded.data),
+  );
+  if (!valid) {
+    throw new Error("Invalid OAuth state");
+  }
+
+  const parsed = JSON.parse(decoded.data);
+  if (!parsed.userId || typeof parsed.userId !== "string") {
     throw new Error("Missing userId in OAuth state");
   }
+
   return {
-    userId: decoded.userId,
-    afterCallbackRedirect: getSafeRedirectPath(decoded.afterCallbackRedirect as string | undefined),
+    userId: parsed.userId,
+    afterCallbackRedirect: getSafeRedirectPath(
+      parsed.afterCallbackRedirect as string | undefined,
+    ),
   };
 }
 
