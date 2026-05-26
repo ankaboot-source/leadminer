@@ -7,7 +7,7 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
-import { createSchema, authorizeSchema } from "./schemas.ts";
+import { createSchema, authorizeSchema, callbackQuerySchema } from "./schemas.ts";
 import {
   getAuthClient,
   getTokenConfig,
@@ -131,22 +131,19 @@ app.post("/oauth/authorize", authMiddleware, async (c: Context) => {
 
 app.get("/oauth/callback/:provider", async (c: Context) => {
   try {
-    const provider = c.req.param("provider");
-    if (provider !== "google" && provider !== "azure") {
+    const parsed = callbackQuerySchema.safeParse({
+      provider: c.req.param("provider"),
+      code: c.req.query("code"),
+      state: c.req.query("state"),
+    });
+    if (!parsed.success) {
       return c.redirect(
-        `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=&navigate_to=/`,
+        `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
         302,
       );
     }
 
-    const code = c.req.query("code");
-    const state = c.req.query("state");
-    if (!code || !state) {
-      return c.redirect(
-        `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=&navigate_to=/`,
-        302,
-      );
-    }
+    const { provider, code, state } = parsed.data;
 
     const { userId, afterCallbackRedirect } = await parseOAuthState(
       state,
