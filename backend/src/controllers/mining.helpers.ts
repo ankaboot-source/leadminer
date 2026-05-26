@@ -18,6 +18,7 @@ function isValidURL(url: string) {
  * Validates the contacts data with throwing an error if the data is invalid.
  * @param contacts The contacts data extracted from a file.
  */
+// eslint-disable-next-line import/prefer-default-export
 export function validateFileContactsData(
   contacts: Partial<ContactFormat[]>
 ): void {

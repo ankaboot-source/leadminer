@@ -29,6 +29,7 @@ Deno.test("getSafeRedirectPath returns '/' for non-path strings", () => {
 });
 
 Deno.test("getSafeRedirectPath returns '/' for undefined", () => {
+  // skipcq: JS-W1042 - explicitly testing undefined behavior
   assertEquals(getSafeRedirectPath(undefined), "/");
 });
 
@@ -91,11 +92,12 @@ Deno.test("getTokenConfig returns azure config without access_type", () => {
   assertEquals(config.redirect_uri, "https://example.com/callback");
   assertEquals(typeof config.scope, "string");
   assertEquals(config.prompt, "select_account");
-  assertEquals(config.access_type, undefined);
+  assertEquals(config.access_type, undefined); // skipcq: JS-W1042
 });
 
 Deno.test("getTokenConfig throws for invalid provider", () => {
   assertThrows(
+    // skipcq: JS-0323 - testing invalid provider input
     () => getTokenConfig("invalid" as any, "https://example.com/callback"),
     Error,
   );
@@ -111,6 +113,7 @@ Deno.test("getAuthClient returns client for azure", () => {
 
 Deno.test("getAuthClient throws for invalid provider", () => {
   assertThrows(
+    // skipcq: JS-0323 - testing invalid provider input
     () => getAuthClient("invalid" as any),
     Error,
     "Not a valid OAuth provider",
