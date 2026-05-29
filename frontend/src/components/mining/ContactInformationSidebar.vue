@@ -709,6 +709,9 @@ async function saveContactInformations() {
   const userId = getCurrentUserId();
   if (!userId) return;
   await updateContact(userId, contactToUpdate);
+  if (contactToUpdate.user_tags !== undefined) {
+    contact.value.user_tags = contactToUpdate.user_tags;
+  }
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }
