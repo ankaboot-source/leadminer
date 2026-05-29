@@ -1,0 +1,3257 @@
+{
+  "/home/badreddine/Projects/leadminer/generate_env.sh": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "b7560c03c46bb1a3b6bc47c1300ec230",
+    "semantic_hash": "b7560c03c46bb1a3b6bc47c1300ec230"
+  },
+  "/home/badreddine/Projects/leadminer/package.json": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "75e22a2a21991ee438d93913c2feceb7",
+    "semantic_hash": "75e22a2a21991ee438d93913c2feceb7"
+  },
+  "/home/badreddine/Projects/leadminer/register-azure-oauth-app.sh": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "7febe1e210079d9a1e47eaaffcf6c0d4",
+    "semantic_hash": "7febe1e210079d9a1e47eaaffcf6c0d4"
+  },
+  "/home/badreddine/Projects/leadminer/run.sh": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "8c21b90cf9cefa15a50e97434e6b26ed",
+    "semantic_hash": "8c21b90cf9cefa15a50e97434e6b26ed"
+  },
+  "/home/badreddine/Projects/leadminer/.husky/pre-commit": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "779b8af20d25cac6f47c8ad20ffb7d82",
+    "semantic_hash": "779b8af20d25cac6f47c8ad20ffb7d82"
+  },
+  "/home/badreddine/Projects/leadminer/.husky/pre-push": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "fa17018d3fceb9fc034b7cecc75f9b72",
+    "semantic_hash": "fa17018d3fceb9fc034b7cecc75f9b72"
+  },
+  "/home/badreddine/Projects/leadminer/backend/.eslintrc.json": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "7233e837da1cb3bf119c2a9ccb2c0dd0",
+    "semantic_hash": "7233e837da1cb3bf119c2a9ccb2c0dd0"
+  },
+  "/home/badreddine/Projects/leadminer/backend/jest.config.js": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "4a44196d4ea30ee8755a1c761dff59ce",
+    "semantic_hash": "4a44196d4ea30ee8755a1c761dff59ce"
+  },
+  "/home/badreddine/Projects/leadminer/backend/package.json": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "a4f478b36283c400da484576933b02c4",
+    "semantic_hash": "a4f478b36283c400da484576933b02c4"
+  },
+  "/home/badreddine/Projects/leadminer/backend/tsconfig.build.json": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "8628c4c6cca49836942fa28865f83bf4",
+    "semantic_hash": "8628c4c6cca49836942fa28865f83bf4"
+  },
+  "/home/badreddine/Projects/leadminer/backend/tsconfig.json": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "da51995daae256e89a4d87f10b711dbb",
+    "semantic_hash": "da51995daae256e89a4d87f10b711dbb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/app.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "8b7188282401f03dedc17ac2e7a808de",
+    "semantic_hash": "8b7188282401f03dedc17ac2e7a808de"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/emailSignatureWorker.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "85658d6094cdda0a98d85c292e86f67a",
+    "semantic_hash": "85658d6094cdda0a98d85c292e86f67a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/emailVerificationWorker.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "7bb8f5da574caa2f4cc0c002c75761ca",
+    "semantic_hash": "7bb8f5da574caa2f4cc0c002c75761ca"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/env.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "ae75a95a72ee073b6ccf8bc01f3a4229",
+    "semantic_hash": "ae75a95a72ee073b6ccf8bc01f3a4229"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/fetchProviders.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "8cb5d45924ddab2d05d79ba5a0257115",
+    "semantic_hash": "8cb5d45924ddab2d05d79ba5a0257115"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/messageWorker.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "895405d842a4f4fdfd02ef65455044d7",
+    "semantic_hash": "895405d842a4f4fdfd02ef65455044d7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/server.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "1c7a26245fac2d5d288f8c2170f7949e",
+    "semantic_hash": "1c7a26245fac2d5d288f8c2170f7949e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/@types/planer.d.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "2af11d17a640d5a10851c45c86bd5f8d",
+    "semantic_hash": "2af11d17a640d5a10851c45c86bd5f8d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/config/index.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "68205ecef171742dab1ad4a56bc53529",
+    "semantic_hash": "68205ecef171742dab1ad4a56bc53529"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/config/schema.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "4caef920aa4556f1877e754baed36204",
+    "semantic_hash": "4caef920aa4556f1877e754baed36204"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/auth.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "a7858a4dae4bc5aa0c971ea90012a90c",
+    "semantic_hash": "a7858a4dae4bc5aa0c971ea90012a90c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/contacts-verification.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "aded1592ed4ea896b3b3dc8bc231769a",
+    "semantic_hash": "aded1592ed4ea896b3b3dc8bc231769a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/contacts.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "71ce11125864fecf3c8aea920e27d04b",
+    "semantic_hash": "71ce11125864fecf3c8aea920e27d04b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/enrichment.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "e8ec78d95704431bda68ead78406f401",
+    "semantic_hash": "e8ec78d95704431bda68ead78406f401"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/enrichment.helpers.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "8c2e9d5ea6343a5ce06d9480b145fd44",
+    "semantic_hash": "8c2e9d5ea6343a5ce06d9480b145fd44"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/imap.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "e9d479747c38c11397db9a82d8a00b30",
+    "semantic_hash": "e9d479747c38c11397db9a82d8a00b30"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/imap.helpers.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "f0607c0f8e232d7ff107add7bb2189df",
+    "semantic_hash": "f0607c0f8e232d7ff107add7bb2189df"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/mining.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "5a3673363e58f0c8be70598f0dac97a5",
+    "semantic_hash": "5a3673363e58f0c8be70598f0dac97a5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/mining.helpers.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "bda25881fceebe119fead0a411403e23",
+    "semantic_hash": "bda25881fceebe119fead0a411403e23"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/controllers/stream.controller.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "8036a29820485a1c4d2e3d616c086daf",
+    "semantic_hash": "8036a29820485a1c4d2e3d616c086daf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/mail.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "f32ca4cd32a0ae25554f8f110bd9c419",
+    "semantic_hash": "f32ca4cd32a0ae25554f8f110bd9c419"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/types.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "ea9ec342e0fff211790c6a16448bba45",
+    "semantic_hash": "ea9ec342e0fff211790c6a16448bba45"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/interfaces/Contacts.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "96aa3dae9243954eac5c21922cf012bf",
+    "semantic_hash": "96aa3dae9243954eac5c21922cf012bf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/interfaces/MiningSources.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "d8cf3bfdbca4e19885352257206e1c6e",
+    "semantic_hash": "d8cf3bfdbca4e19885352257206e1c6e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/interfaces/Tasks.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "d0a87fb9bc25b372bbf9b580f6e24dc8",
+    "semantic_hash": "d0a87fb9bc25b372bbf9b580f6e24dc8"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/interfaces/Users.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "0f90f464e7e07d01e8484fcf304e15b3",
+    "semantic_hash": "0f90f464e7e07d01e8484fcf304e15b3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/pg/PgContacts.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "dfcc85cf7317d70133ea324d1316beaa",
+    "semantic_hash": "dfcc85cf7317d70133ea324d1316beaa"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/pg/PgMiningSources.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "222e9036fe7efbdedbf1bbece41358da",
+    "semantic_hash": "222e9036fe7efbdedbf1bbece41358da"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/pg/index.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "8366ec506e1ac3fbd5dac0bd11ada766",
+    "semantic_hash": "8366ec506e1ac3fbd5dac0bd11ada766"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/supabase/MiningSourceService.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "76cf14719e062d9c7f7c7dd69e472d07",
+    "semantic_hash": "76cf14719e062d9c7f7c7dd69e472d07"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/supabase/engagements.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "73b200bba55759f7fbb0d4a0866b26ad",
+    "semantic_hash": "73b200bba55759f7fbb0d4a0866b26ad"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/supabase/enrichments.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "2b6813c32f900007f2be033b72f8a34b",
+    "semantic_hash": "2b6813c32f900007f2be033b72f8a34b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/supabase/tasks.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "4bae1462af95917fede4dceeeda8d75b",
+    "semantic_hash": "4bae1462af95917fede4dceeeda8d75b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/db/supabase/users.ts": {
+    "mtime": 1780048655.6262841,
+    "ast_hash": "97c4794b378e33d3b0381e079c0a3fff",
+    "semantic_hash": "97c4794b378e33d3b0381e079c0a3fff"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/auth.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "ff8a7746a45187d61d2386f6b6358a5f",
+    "semantic_hash": "ff8a7746a45187d61d2386f6b6358a5f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/cors.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "97610d6522d43d6df002653f78f4b1a5",
+    "semantic_hash": "97610d6522d43d6df002653f78f4b1a5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/errorHandler.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "5574121906d041faa19b00f0fc3c6f36",
+    "semantic_hash": "5574121906d041faa19b00f0fc3c6f36"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/errorLogger.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "665815493792f18161305b388f738a0b",
+    "semantic_hash": "665815493792f18161305b388f738a0b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/notFound.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "f38d3ebf69db0cb265ac5778016ef7f2",
+    "semantic_hash": "f38d3ebf69db0cb265ac5778016ef7f2"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/sentry.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "c47dc0356966f96b161dcd817054ccf8",
+    "semantic_hash": "c47dc0356966f96b161dcd817054ccf8"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/middleware/validate.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "d0a3f40b1e00ff06850e1be35dc03928",
+    "semantic_hash": "d0a3f40b1e00ff06850e1be35dc03928"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/mocks/enrichment/config.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "e28259eb9b82a485623c5bdebbc76c06",
+    "semantic_hash": "e28259eb9b82a485623c5bdebbc76c06"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/mocks/enrichment/server.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "5681e632a0e45009bd7b9c3db375cd0b",
+    "semantic_hash": "5681e632a0e45009bd7b9c3db375cd0b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/mocks/enrichment/endpoints/enrichlayer.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "2807bd8fa5d0a7b8c3174af382a0fba0",
+    "semantic_hash": "2807bd8fa5d0a7b8c3174af382a0fba0"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/mocks/enrichment/endpoints/voilanorbert.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "2c56dfe930c44925eb44eb00ceeb0277",
+    "semantic_hash": "2c56dfe930c44925eb44eb00ceeb0277"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/auth.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "245971dca73fbab461a34b60ea1cf795",
+    "semantic_hash": "245971dca73fbab461a34b60ea1cf795"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/contacts.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "fcd240fa13220164b3c4268124d55c92",
+    "semantic_hash": "fcd240fa13220164b3c4268124d55c92"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/enrichment.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "e770f4bd9841b0a8e3c9ae1e1264ac71",
+    "semantic_hash": "e770f4bd9841b0a8e3c9ae1e1264ac71"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/imap.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "a2b74c613e647c851792b47f4720b8c1",
+    "semantic_hash": "a2b74c613e647c851792b47f4720b8c1"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/mining.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "0fd6c913dce759432f91b8b16f5c84c4",
+    "semantic_hash": "0fd6c913dce759432f91b8b16f5c84c4"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/routes/stream.routes.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "5e4a0a945bb5cbc84311a0bea5895ce0",
+    "semantic_hash": "5e4a0a945bb5cbc84311a0bea5895ce0"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/OAuth2/azure.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "79bd90d4de139a92f2e7a250af8058e7",
+    "semantic_hash": "79bd90d4de139a92f2e7a250af8058e7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/OAuth2/google.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "93ae25c7125ff89cd4f71fb01b492b0a",
+    "semantic_hash": "93ae25c7125ff89cd4f71fb01b492b0a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/OAuth2/googlePeopleClient.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "b422318ee1ab1d713361f0e1e34e5b52",
+    "semantic_hash": "b422318ee1ab1d713361f0e1e34e5b52"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/OAuth2/utils.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "2007c0017f1d7f749864a4364873f72e",
+    "semantic_hash": "2007c0017f1d7f749864a4364873f72e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/auth/AuthResolver.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "9a9f0e147a01fbc1049e8cf140ef7a3e",
+    "semantic_hash": "9a9f0e147a01fbc1049e8cf140ef7a3e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/auth/Provider.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "6c2bb653981e364ea2c56d69d33f5a7e",
+    "semantic_hash": "6c2bb653981e364ea2c56d69d33f5a7e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/auth/SupabaseAuthResolver.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "28dbf204d0953c41613827b557cbc41b",
+    "semantic_hash": "28dbf204d0953c41613827b557cbc41b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/auth/types.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "6528b9e8b590065b28ae0a40efdc800b",
+    "semantic_hash": "6528b9e8b590065b28ae0a40efdc800b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/CatchAllDomainsCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "71f0918633ec5b766bc3ed5da0922605",
+    "semantic_hash": "71f0918633ec5b766bc3ed5da0922605"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/EmailSignatureCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "dd9b48c5a5eaa2b3826f3cf55eba638f",
+    "semantic_hash": "dd9b48c5a5eaa2b3826f3cf55eba638f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/EmailStatusCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "d4ccfe2222d58205943a35c128772d0f",
+    "semantic_hash": "d4ccfe2222d58205943a35c128772d0f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/QueuedEmailsCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "e1c744e6d7d549f619adbaa83dc2e1f9",
+    "semantic_hash": "e1c744e6d7d549f619adbaa83dc2e1f9"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/redis/RedisCatchAllDomainsCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "47ee155201cb7690332fb7552bee6f2e",
+    "semantic_hash": "47ee155201cb7690332fb7552bee6f2e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/redis/RedisEmailSignatureCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "e103bffe584921e7bed92536b672d766",
+    "semantic_hash": "e103bffe584921e7bed92536b672d766"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/redis/RedisEmailStatusCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "699f306fd316c2f07067e973e86f44b3",
+    "semantic_hash": "699f306fd316c2f07067e973e86f44b3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/cache/redis/RedisQueuedEmailsCache.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "23d1fc144c9119d78a40c9bc2cb4ef3d",
+    "semantic_hash": "23d1fc144c9119d78a40c9bc2cb4ef3d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-fetching/index.ts": {
+    "mtime": 1780048655.6296177,
+    "ast_hash": "d31977c32df44bdd682ec5f22866a84a",
+    "semantic_hash": "d31977c32df44bdd682ec5f22866a84a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-fetching/pst.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "98c8a91eddf0d8710085880f0740afb2",
+    "semantic_hash": "98c8a91eddf0d8710085880f0740afb2"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/EmailStatusVerifier.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "9473222d4dc6d029702dc73642954542",
+    "semantic_hash": "9473222d4dc6d029702dc73642954542"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/EmailStatusVerifierFactory.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "61c7616a0d84b30697f146a6a3b81a28",
+    "semantic_hash": "61c7616a0d84b30697f146a6a3b81a28"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/constants.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "36aacf27511fa29277ad5b4a33ed750d",
+    "semantic_hash": "36aacf27511fa29277ad5b4a33ed750d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/types.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "e8826e46d09adecbd36590fc0d5bd64b",
+    "semantic_hash": "e8826e46d09adecbd36590fc0d5bd64b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/mailercheck/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "cf49f1eeaebae3b0321231d8f4c7698c",
+    "semantic_hash": "cf49f1eeaebae3b0321231d8f4c7698c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/mailercheck/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "e6768f6e0a5896ac3a24914ee8a6c749",
+    "semantic_hash": "e6768f6e0a5896ac3a24914ee8a6c749"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/mailercheck/mappers.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "f6473e01a90f0bc2446a63840ac2c4f2",
+    "semantic_hash": "f6473e01a90f0bc2446a63840ac2c4f2"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/reacher/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "ee224126167d66e19f5cf6ace3909f38",
+    "semantic_hash": "ee224126167d66e19f5cf6ace3909f38"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/reacher/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "e17395912fba51414406915b2398b894",
+    "semantic_hash": "e17395912fba51414406915b2398b894"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/reacher/mappers.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "fdf71cb855ffff9a71361281b6dd1b5e",
+    "semantic_hash": "fdf71cb855ffff9a71361281b6dd1b5e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/zerobounce/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "2398b91fe3d7b0dbab0c333ec000fd5c",
+    "semantic_hash": "2398b91fe3d7b0dbab0c333ec000fd5c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/zerobounce/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "d2bd686b27ff1a650dd894c5491e27e9",
+    "semantic_hash": "d2bd686b27ff1a650dd894c5491e27e9"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/email-status/zerobounce/mapper.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "10f3f801100c0b1c62b660f19dc8b90d",
+    "semantic_hash": "10f3f801100c0b1c62b660f19dc8b90d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/Engine.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "ab56ae114496ee8fe19eb5abc4df44e7",
+    "semantic_hash": "ab56ae114496ee8fe19eb5abc4df44e7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/Enricher.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "67baad1c7e4be8886338f3b5a87a4410",
+    "semantic_hash": "67baad1c7e4be8886338f3b5a87a4410"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "e5efff508f0f5933591366697c90ef2e",
+    "semantic_hash": "e5efff508f0f5933591366697c90ef2e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/enrich-layer/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "a2d2104636cb1ada1d0b272f2fcdc5f2",
+    "semantic_hash": "a2d2104636cb1ada1d0b272f2fcdc5f2"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/enrich-layer/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "2fea6c25901a74cd693f6ad58bc53e7a",
+    "semantic_hash": "2fea6c25901a74cd693f6ad58bc53e7a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/thedig/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "66b3629c6cb7daee4ddf372e30530bad",
+    "semantic_hash": "66b3629c6cb7daee4ddf372e30530bad"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/thedig/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "19a40beae63fd2f1670c37309ae4c95c",
+    "semantic_hash": "19a40beae63fd2f1670c37309ae4c95c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/voilanorbert/client.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "6fa40cce27bee30f4c2a63420f06ae88",
+    "semantic_hash": "6fa40cce27bee30f4c2a63420f06ae88"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/enrichment/voilanorbert/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "f5e974e4ccba267bd384985285ae7341",
+    "semantic_hash": "f5e974e4ccba267bd384985285ae7341"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "33e3629fd682bd6b893e44403a7bc078",
+    "semantic_hash": "33e3629fd682bd6b893e44403a7bc078"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/types.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "80786448988d23491774e662052cc2c9",
+    "semantic_hash": "80786448988d23491774e662052cc2c9"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/exports/csv.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "9b55b3cbb7654dcc4cccde2429c793eb",
+    "semantic_hash": "9b55b3cbb7654dcc4cccde2429c793eb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/exports/vcard.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "9fb18d7c2fef0478d62c0a9b87369eb8",
+    "semantic_hash": "9fb18d7c2fef0478d62c0a9b87369eb8"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/exports/google/contacts-api.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "41e96cd2def540fe6ce55a28f47b854d",
+    "semantic_hash": "41e96cd2def540fe6ce55a28f47b854d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/export/exports/google/index.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "fdf641958e7b07d2a1640ad56b316260",
+    "semantic_hash": "fdf641958e7b07d2a1640ad56b316260"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/Extractor.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "3dc9e74d648e44ccd6c83eee226c2fc6",
+    "semantic_hash": "3dc9e74d648e44ccd6c83eee226c2fc6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/helpers.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "d1224f7fccb1eadeedd6649d2a26be88",
+    "semantic_hash": "d1224f7fccb1eadeedd6649d2a26be88"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/types.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "297cd79b1c31b0c0396fee118592ee4b",
+    "semantic_hash": "297cd79b1c31b0c0396fee118592ee4b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/engines/EmailMessage.ts": {
+    "mtime": 1780048655.6329513,
+    "ast_hash": "6bff38dd70ef714445b57cdacde7345e",
+    "semantic_hash": "6bff38dd70ef714445b57cdacde7345e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/engines/FileImport.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "67a4df8809472e957b19db69e5492c31",
+    "semantic_hash": "67a4df8809472e957b19db69e5492c31"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/engines/GoogleContactsExtractor.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "e9d1f195a8a85aa6d71901942683fe4a",
+    "semantic_hash": "e9d1f195a8a85aa6d71901942683fe4a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/extractors/engines/PostgreSQLImport.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "c908bb301fe301ddecf96eb75459c7d6",
+    "semantic_hash": "c908bb301fe301ddecf96eb75459c7d6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/factory/SSEBroadcasterFactory.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "f2970037ab209cb3a0fa233286c0d2d5",
+    "semantic_hash": "f2970037ab209cb3a0fa233286c0d2d5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/imap/ImapBoxesFetcher.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "ef292a518aada7e22f774bf1f3633db2",
+    "semantic_hash": "ef292a518aada7e22f774bf1f3633db2"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/imap/ImapConnectionProvider.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "c956720edab6c96f843b1f2fd2f37dfa",
+    "semantic_hash": "c956720edab6c96f843b1f2fd2f37dfa"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/imap/types.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "98d64e7f3297471fbb354d21a6e9dd60",
+    "semantic_hash": "98d64e7f3297471fbb354d21a6e9dd60"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/postgresql/PostgresQueryService.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "90dc827b978b21e39e355087eb00d918",
+    "semantic_hash": "90dc827b978b21e39e355087eb00d918"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/rate-limiter/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "9ffc3e5e196c874d3e33ea25f0fb07d6",
+    "semantic_hash": "9ffc3e5e196c874d3e33ea25f0fb07d6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "1517f40fb9b4331dd5e3b3276947c31f",
+    "semantic_hash": "1517f40fb9b4331dd5e3b3276947c31f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/types.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "9d033a10ef18551459efe6c271b3dbe1",
+    "semantic_hash": "9d033a10ef18551459efe6c271b3dbe1"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/llm/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "0da0a4446e47d008cc23aab450649a47",
+    "semantic_hash": "0da0a4446e47d008cc23aab450649a47"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/llm/output-checkers.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "e3fc2f84efc05c7e0e9ae7d8674eb532",
+    "semantic_hash": "e3fc2f84efc05c7e0e9ae7d8674eb532"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/llm/signature-extractor-cache.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "0aa1be3474266afb9c9ff98fcf0296c0",
+    "semantic_hash": "0aa1be3474266afb9c9ff98fcf0296c0"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/llm/types.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "fd7d797bc858e7ca6fb2cb5ee3da13cb",
+    "semantic_hash": "fd7d797bc858e7ca6fb2cb5ee3da13cb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/signature/regex/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "cad485aea831ab67767c972a803d3340",
+    "semantic_hash": "cad485aea831ab67767c972a803d3340"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "424df6641f9caf277f303d348ec24beb",
+    "semantic_hash": "424df6641f9caf277f303d348ec24beb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/types.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "8e306f2a3ce4eabe6e48ebaba272fd1b",
+    "semantic_hash": "8e306f2a3ce4eabe6e48ebaba272fd1b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/conditions/HasHeaderField.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "9e6e247bf303d75ba555c77df44720e5",
+    "semantic_hash": "9e6e247bf303d75ba555c77df44720e5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/conditions/HasHeaderFieldStartsWith.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "3a1c7f211815cf862696155a3d088e33",
+    "semantic_hash": "3a1c7f211815cf862696155a3d088e33"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/conditions/HasHeaderFieldWithValues.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "21530c5fa19680e03f5f06968cdfe8ff",
+    "semantic_hash": "21530c5fa19680e03f5f06968cdfe8ff"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/conditions/HasNoHeaderField.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "f452e5589da5fddacc652b22d86047f7",
+    "semantic_hash": "f452e5589da5fddacc652b22d86047f7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/engines/EmailMessageEngine.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "eff3b4d38375ebfbc9a1530dc827f119",
+    "semantic_hash": "eff3b4d38375ebfbc9a1530dc827f119"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/tags/group.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "6980fcc36c323af17c5a7ed8bb4cbdb3",
+    "semantic_hash": "6980fcc36c323af17c5a7ed8bb4cbdb3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/tags/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "ad219a4ce6b886706b68def42af40a96",
+    "semantic_hash": "ad219a4ce6b886706b68def42af40a96"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/tags/linkedin.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "659ad5642fcbaa1a1af7f3c3b1b97f9b",
+    "semantic_hash": "659ad5642fcbaa1a1af7f3c3b1b97f9b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/tags/newsletter.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "27cc54d3d4d10417dfa98a98178e7ccb",
+    "semantic_hash": "27cc54d3d4d10417dfa98a98178e7ccb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tagging/tags/transactional.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "3da089cdab111f3406b129977c69cd60",
+    "semantic_hash": "3da089cdab111f3406b129977c69cd60"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/MiningEngine.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "a1851c545a871ef28dcdb000cd58409f",
+    "semantic_hash": "a1851c545a871ef28dcdb000cd58409f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/Pipeline.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "1a14b7dc937ad8788d52b92434971147",
+    "semantic_hash": "1a14b7dc937ad8788d52b92434971147"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/factories.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "cd4a0051e96cd4688b6e56902e071f2f",
+    "semantic_hash": "cd4a0051e96cd4688b6e56902e071f2f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/index.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "e6bcc864b606803a57f19c2d5081d96b",
+    "semantic_hash": "e6bcc864b606803a57f19c2d5081d96b"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/types.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "a4c6fbfe8b188c5012b2e0ef6c8fed88",
+    "semantic_hash": "a4c6fbfe8b188c5012b2e0ef6c8fed88"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/utils.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "5ea1deb43e0e1b4d61f5f20a259c274f",
+    "semantic_hash": "5ea1deb43e0e1b4d61f5f20a259c274f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/CleanTask.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "b7aad5070f7b80209be1f0261d8bd57a",
+    "semantic_hash": "b7aad5070f7b80209be1f0261d8bd57a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/ExtractTask.ts": {
+    "mtime": 1780048655.6362846,
+    "ast_hash": "c1ac65e6561b1fc9cdf40e1306d7aa81",
+    "semantic_hash": "c1ac65e6561b1fc9cdf40e1306d7aa81"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/FetchTask.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "1a2e333a52c6a1681808055f31d32029",
+    "semantic_hash": "1a2e333a52c6a1681808055f31d32029"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/GoogleContactsFetchTask.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "86e47adff1889ec5b02eb24de652bca9",
+    "semantic_hash": "86e47adff1889ec5b02eb24de652bca9"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/SignatureTask.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "ef3b2a8f1203164fb379dfd507c586c4",
+    "semantic_hash": "ef3b2a8f1203164fb379dfd507c586c4"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/Task.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "cbaff3833b2970f91edc75d74d60c606",
+    "semantic_hash": "cbaff3833b2970f91edc75d74d60c606"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/services/tasks-manager-v2/tasks/index.ts": {
+    "mtime": 1780048655.6396182,
+    "ast_hash": "018bd8122f038248b702413a3af2b87c",
+    "semantic_hash": "018bd8122f038248b702413a3af2b87c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/Disposable.json": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "123515d84a26115d00128a50ace973da",
+    "semantic_hash": "123515d84a26115d00128a50ace973da"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/FreeProviders.json": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "7eb8af9a35b8a7a30a2a7aa152f05a73",
+    "semantic_hash": "7eb8af9a35b8a7a30a2a7aa152f05a73"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/array.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "acb46d23b996582d000659ac712db561",
+    "semantic_hash": "acb46d23b996582d000659ac712db561"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/axios.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "17bdb1a49b2cb99e7d0a0ef6aa019a4c",
+    "semantic_hash": "17bdb1a49b2cb99e7d0a0ef6aa019a4c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/constants.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "8598e4f5a9d209cff2780f024b845819",
+    "semantic_hash": "8598e4f5a9d209cff2780f024b845819"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/errors.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "c848b1435e154b55fb15b2a348b1a4c5",
+    "semantic_hash": "c848b1435e154b55fb15b2a348b1a4c5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/idGenerator.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "00b35bc7fd4f64fa9a5a9d7cb0d7cbcf",
+    "semantic_hash": "00b35bc7fd4f64fa9a5a9d7cb0d7cbcf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/logger.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "af87c7049f208955d64d9c27ceba632c",
+    "semantic_hash": "af87c7049f208955d64d9c27ceba632c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/redis.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "1d5bba552a0d17c5944cbdd2fbd48164",
+    "semantic_hash": "1d5bba552a0d17c5944cbdd2fbd48164"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/supabase.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f79b436a36115f1121cec674afdae888",
+    "semantic_hash": "f79b436a36115f1121cec674afdae888"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/billing-plugin/index.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "861abd902f364c71286004230096a9e5",
+    "semantic_hash": "861abd902f364c71286004230096a9e5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/date.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "0619c2e2551794e90c73934eb8f3faac",
+    "semantic_hash": "0619c2e2551794e90c73934eb8f3faac"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/domainHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "40032d8c6a55cf664d62a4e2fb43df08",
+    "semantic_hash": "40032d8c6a55cf664d62a4e2fb43df08"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/emailHeaderHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "a528f344255657ffb2758fd5340dcff6",
+    "semantic_hash": "a528f344255657ffb2758fd5340dcff6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/emailParsers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "d51a39c6dd550584c582a81deee9b0bf",
+    "semantic_hash": "d51a39c6dd550584c582a81deee9b0bf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/hashHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "134bc2b89c6f23b5ea1727c585189538",
+    "semantic_hash": "134bc2b89c6f23b5ea1727c585189538"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/imapTreeHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "e131ab8cf595dff3a08de441d8d2ec49",
+    "semantic_hash": "e131ab8cf595dff3a08de441d8d2ec49"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/oauthHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "7e4fe1d8cd7c48d3f6e108df19bd5bdf",
+    "semantic_hash": "7e4fe1d8cd7c48d3f6e108df19bd5bdf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/postgresConnection.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "005fc1de6e81627074dd0650793a6ccf",
+    "semantic_hash": "005fc1de6e81627074dd0650793a6ccf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/sqlValidator.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "df1ee32d8c209df1a57ea6bc26836216",
+    "semantic_hash": "df1ee32d8c209df1a57ea6bc26836216"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/sseHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "0467b786fae549cbdc102c5bc8329213",
+    "semantic_hash": "0467b786fae549cbdc102c5bc8329213"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/taggingHelpers.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "a2a2b9ca60d258b6da0aeb7fd34297c7",
+    "semantic_hash": "a2a2b9ca60d258b6da0aeb7fd34297c7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/helpers/validation.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "94a9da27ae6054222db2c81fb66aa8fb",
+    "semantic_hash": "94a9da27ae6054222db2c81fb66aa8fb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/profiling/memory.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "e20aabca1ab1f627ee8ba65f9f524a76",
+    "semantic_hash": "e20aabca1ab1f627ee8ba65f9f524a76"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/profiling/timeout.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "6f9b80a65dd4f9b8d4b10b8bdcdd03a1",
+    "semantic_hash": "6f9b80a65dd4f9b8d4b10b8bdcdd03a1"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/pubsub/Publisher.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "2a68e77953aa3908a2e749be3e7b38b0",
+    "semantic_hash": "2a68e77953aa3908a2e749be3e7b38b0"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/pubsub/Subscriber.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "ebc94f55774eda1640d7944c430e0a0e",
+    "semantic_hash": "ebc94f55774eda1640d7944c430e0a0e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/pubsub/redis/RedisPublisher.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "601ca2a2a354a2533c2e264e863c458e",
+    "semantic_hash": "601ca2a2a354a2533c2e264e863c458e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/pubsub/redis/RedisSubscriber.ts": {
+    "mtime": 1780048655.6562855,
+    "ast_hash": "2eaeeb1d731bf99125349619c61aceb6",
+    "semantic_hash": "2eaeeb1d731bf99125349619c61aceb6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/streams/MultipleStreamsConsumer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "fe2752db60b6907e16ba642f2df3fe24",
+    "semantic_hash": "fe2752db60b6907e16ba642f2df3fe24"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/streams/StreamProducer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "40a889679defcbb83070560aab35c770",
+    "semantic_hash": "40a889679defcbb83070560aab35c770"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/streams/redis/RedisMultipleStreamsConsumer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f57571ef873a7282834f06a196723daf",
+    "semantic_hash": "f57571ef873a7282834f06a196723daf"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/utils/streams/redis/RedisStreamProducer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "e9621f8de48be4adb2a400270d41885f",
+    "semantic_hash": "e9621f8de48be4adb2a400270d41885f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/auth.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "9751a437e8ab5bd0e83b372a510db9cb",
+    "semantic_hash": "9751a437e8ab5bd0e83b372a510db9cb"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/contacts-verification.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f8936bb6dee154a88e263103d7001a46",
+    "semantic_hash": "f8936bb6dee154a88e263103d7001a46"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/contacts.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "dbe428ed553f69723afd21e229afa77a",
+    "semantic_hash": "dbe428ed553f69723afd21e229afa77a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/enrichment.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "e2319dccbffdfe9a6e98e8e2712eecad",
+    "semantic_hash": "e2319dccbffdfe9a6e98e8e2712eecad"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/imap.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "2586929b97fdaf70a6765ef446d25a32",
+    "semantic_hash": "2586929b97fdaf70a6765ef446d25a32"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/index.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "6266a5de70a74a59131101d078b9c528",
+    "semantic_hash": "6266a5de70a74a59131101d078b9c528"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/mining.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "5c767ad6166f3ff6a748a9bc62e54430",
+    "semantic_hash": "5c767ad6166f3ff6a748a9bc62e54430"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/validators/stream.schema.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "45651974148a9456c708347fda0cb934",
+    "semantic_hash": "45651974148a9456c708347fda0cb934"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/types.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "8e502fcf15ea1a75e3e8ae356024504f",
+    "semantic_hash": "8e502fcf15ea1a75e3e8ae356024504f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-message/MessagesConsumer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "1d0147b4fb230fbd6f6dff7b68a7270e",
+    "semantic_hash": "1d0147b4fb230fbd6f6dff7b68a7270e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-message/emailMessageHandlers.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f7ac8bbfbedd2ffce0d5f3ff3ab539d3",
+    "semantic_hash": "f7ac8bbfbedd2ffce0d5f3ff3ab539d3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-signature/consumer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "ca7ffa140e517f630f0ede3216606f1f",
+    "semantic_hash": "ca7ffa140e517f630f0ede3216606f1f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-signature/handler.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f2a097fb51e600e4949bfe9dc400d755",
+    "semantic_hash": "f2a097fb51e600e4949bfe9dc400d755"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-signature/utils.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "ffba0b9eb4f48bb47fd4c90d8682dca6",
+    "semantic_hash": "ffba0b9eb4f48bb47fd4c90d8682dca6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-verification/EmailsVerificationConsumer.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "ea5ae2cdf002f2aacc9cd1932971bab3",
+    "semantic_hash": "ea5ae2cdf002f2aacc9cd1932971bab3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/src/workers/email-verification/emailVerificationHandlers.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "aa67a9b2760f390ebd3aaf133cc69054",
+    "semantic_hash": "aa67a9b2760f390ebd3aaf133cc69054"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/testData.json": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "7745abf28c782719e484f02c853489ad",
+    "semantic_hash": "7745abf28c782719e484f02c853489ad"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/fakes/FakeEmailVerifier.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "6c4ffa19f73c68503ad4dce47b46f2f3",
+    "semantic_hash": "6c4ffa19f73c68503ad4dce47b46f2f3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/integration/tasks-manager-v2/Pipeline.integration.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "75f607cdd181573cf1d474fa4414583f",
+    "semantic_hash": "75f607cdd181573cf1d474fa4414583f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/csvHelpers.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "eeee098dfa8eeddb7fe3537e1402d913",
+    "semantic_hash": "eeee098dfa8eeddb7fe3537e1402d913"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/emailMessage.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "ddf81493b51ac9e226f0b31bc3d7f705",
+    "semantic_hash": "ddf81493b51ac9e226f0b31bc3d7f705"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/emailMessageHelpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "04401297ba02be8b66259fe5f029aa75",
+    "semantic_hash": "04401297ba02be8b66259fe5f029aa75"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/imapHelpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "0345f6fbfd95576fced21be1ca7e7a69",
+    "semantic_hash": "0345f6fbfd95576fced21be1ca7e7a69"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/imapTreeHelpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "58cfe91b795be78b910ca6ae42c1fd8a",
+    "semantic_hash": "58cfe91b795be78b910ca6ae42c1fd8a"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/oauthHelpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "2ead1b87f81fdfc71defa1854d14ada6",
+    "semantic_hash": "2ead1b87f81fdfc71defa1854d14ada6"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/postgres-query-service.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "12f21020b0ea064675aa54ebf92a903e",
+    "semantic_hash": "12f21020b0ea064675aa54ebf92a903e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/postgresConnection.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "a468efaf38252b9e141404fac08e9967",
+    "semantic_hash": "a468efaf38252b9e141404fac08e9967"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/provider.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "41cb9d6f03479d2ed13e32ccacf2aed8",
+    "semantic_hash": "41cb9d6f03479d2ed13e32ccacf2aed8"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/regexHelpers.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "ad26dbd24f0c3d07fc51f3912cfc2a57",
+    "semantic_hash": "ad26dbd24f0c3d07fc51f3912cfc2a57"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/sqlValidator.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "04ff7d0a0a2a45f8fb23890b42d8c904",
+    "semantic_hash": "04ff7d0a0a2a45f8fb23890b42d8c904"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tagging.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "4e06e1226bcd37424c4f6b2c46451d5d",
+    "semantic_hash": "4e06e1226bcd37424c4f6b2c46451d5d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/taggingHelpers.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "6dc26c2318ae951ca8ec4efc69611373",
+    "semantic_hash": "6dc26c2318ae951ca8ec4efc69611373"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/contact-export/googleContacts.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "f75598fb91b7bb6244e9e2f80ea8ef00",
+    "semantic_hash": "f75598fb91b7bb6244e9e2f80ea8ef00"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/database/enrichments.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "33785da03d06b56ecea018aca059e8ea",
+    "semantic_hash": "33785da03d06b56ecea018aca059e8ea"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/database/pg-contacts.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "b68f3a926a84a9b62191aa1b21bf67ee",
+    "semantic_hash": "b68f3a926a84a9b62191aa1b21bf67ee"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/database/pg-mining-sources.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "92bcb15d26dd23376a00704169e2cb2c",
+    "semantic_hash": "92bcb15d26dd23376a00704169e2cb2c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-fetching/EmailFetcherClient.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "75c8b2194689fc23762742b3b764bea5",
+    "semantic_hash": "75c8b2194689fc23762742b3b764bea5"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-fetching/PSTFetcherClient.test.ts": {
+    "mtime": 1780048655.659619,
+    "ast_hash": "6602cd65a35ac1613cf465f1fae32284",
+    "semantic_hash": "6602cd65a35ac1613cf465f1fae32284"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/benchmark-signature-llm.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "67f6577a73a15479c81c2db993833937",
+    "semantic_hash": "67f6577a73a15479c81c2db993833937"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/email-reply-parsing.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "c9d41a1c0b82b617e1c6b6fe6bb6d3df",
+    "semantic_hash": "c9d41a1c0b82b617e1c6b6fe6bb6d3df"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/signature-extractor-cache.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "e7983e9e4874573127607d757304744e",
+    "semantic_hash": "e7983e9e4874573127607d757304744e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/signature-llm.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "3710919cc89a6ad596a6849a8fe4ef80",
+    "semantic_hash": "3710919cc89a6ad596a6849a8fe4ef80"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/signature-regex.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "5d256b5f4bf484dbbf02428143f3e516",
+    "semantic_hash": "5d256b5f4bf484dbbf02428143f3e516"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-signature/signature.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "9d0b326c573d7ddeebda69df0f4cb10c",
+    "semantic_hash": "9d0b326c573d7ddeebda69df0f4cb10c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/EmailStatusVerifierFactory.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "749829b67b57eeecffbcdc01f661d1f9",
+    "semantic_hash": "749829b67b57eeecffbcdc01f661d1f9"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/mailercheck/client.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "e2ff3b8cef260c233bc4e11f691e1174",
+    "semantic_hash": "e2ff3b8cef260c233bc4e11f691e1174"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/mailercheck/verifier.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "ecb6c71d420e44131bc2789e9c53562e",
+    "semantic_hash": "ecb6c71d420e44131bc2789e9c53562e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/reacher/client.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "b216fb8b9b81202c007d920c92497131",
+    "semantic_hash": "b216fb8b9b81202c007d920c92497131"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/reacher/verifier.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "c70e5e6b6bd2781c99eec891737d8440",
+    "semantic_hash": "c70e5e6b6bd2781c99eec891737d8440"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/zerobounce/ZerobounceClient.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "71c0f275a5ceedf246674c977dfdec69",
+    "semantic_hash": "71c0f275a5ceedf246674c977dfdec69"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/zerobounce/ZerobounceEmailVerifier.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "bf0d3ccc4a2dd61019b646283eb5156c",
+    "semantic_hash": "bf0d3ccc4a2dd61019b646283eb5156c"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/email-status/zerobounce/sandbox.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "3b09d268b7f765f41f0c4e0fdddeb368",
+    "semantic_hash": "3b09d268b7f765f41f0c4e0fdddeb368"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/enricher.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "8fdbbc369ace3961c1a9dd6e19a03f8f",
+    "semantic_hash": "8fdbbc369ace3961c1a9dd6e19a03f8f"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/helpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "181525a74212cf043e5a38817a7be793",
+    "semantic_hash": "181525a74212cf043e5a38817a7be793"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/enrichLayer/client.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "91070a2373792e42f98bd4cf7de5300e",
+    "semantic_hash": "91070a2373792e42f98bd4cf7de5300e"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/enrichLayer/enricher.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "599b70d89020dcd298d441adfdd5e498",
+    "semantic_hash": "599b70d89020dcd298d441adfdd5e498"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/thedig/client.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "ff150d7768e2bc425fb36e4645706dda",
+    "semantic_hash": "ff150d7768e2bc425fb36e4645706dda"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/thedig/enricher.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "1e00506b6395ebae7f5a09af0ccc22f7",
+    "semantic_hash": "1e00506b6395ebae7f5a09af0ccc22f7"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/voilanorbert/client.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "4bdb415e33a2d16ed5bc1bc8e519eee3",
+    "semantic_hash": "4bdb415e33a2d16ed5bc1bc8e519eee3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/enrichment-service/voilanorbert/enricher.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "76f5a5ac951e6652cd7395e6fdefa081",
+    "semantic_hash": "76f5a5ac951e6652cd7395e6fdefa081"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/extractors/GoogleContactsExtractor.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "7b431f97ef7c229dbc7806de635b0707",
+    "semantic_hash": "7b431f97ef7c229dbc7806de635b0707"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/mining-source/helpers.test.ts": {
+    "mtime": 1780048655.6629527,
+    "ast_hash": "d7979becc133a8e1f7ca36894f8dbf9d",
+    "semantic_hash": "d7979becc133a8e1f7ca36894f8dbf9d"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tasks-manager-v2/GoogleContactsFetchTask.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "7cdf126b945523201bfeb8a987674391",
+    "semantic_hash": "7cdf126b945523201bfeb8a987674391"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tasks-manager-v2/MiningEngine.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "a3f41844b3a33a8eda8ea607f9e8c790",
+    "semantic_hash": "a3f41844b3a33a8eda8ea607f9e8c790"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tasks-manager-v2/MiningPipeline.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "2027502818fb43d29dda96bb881af339",
+    "semantic_hash": "2027502818fb43d29dda96bb881af339"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tasks-manager-v2/PipelineSequential.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "c9b853a5a2b5abf71ffd0fdb4f671640",
+    "semantic_hash": "c9b853a5a2b5abf71ffd0fdb4f671640"
+  },
+  "/home/badreddine/Projects/leadminer/backend/test/unit/tasks-manager-v2/Task.test.ts": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "0170f93f3c9b892c8354d8efabce1c0a",
+    "semantic_hash": "0170f93f3c9b892c8354d8efabce1c0a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/eslint.config.mjs": {
+    "mtime": 1780048655.6696196,
+    "ast_hash": "a6a34694f28f407ca74579f18c80f994",
+    "semantic_hash": "a6a34694f28f407ca74579f18c80f994"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/i18n.config.ts": {
+    "mtime": 1780048655.6696196,
+    "ast_hash": "494e5bfb494426a6bf695d49db0d90d9",
+    "semantic_hash": "494e5bfb494426a6bf695d49db0d90d9"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/nuxt.config.ts": {
+    "mtime": 1780048655.6696196,
+    "ast_hash": "06ef47a4d981a690e20fe8488baab656",
+    "semantic_hash": "06ef47a4d981a690e20fe8488baab656"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/package.json": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "c11ae52bde9644a7afefdcebd61ec46f",
+    "semantic_hash": "c11ae52bde9644a7afefdcebd61ec46f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tailwind.config.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "544ea7632a8909da1afce4bf0692edf0",
+    "semantic_hash": "544ea7632a8909da1afce4bf0692edf0"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tsconfig.json": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "1380e367e3587965ac1df061279b59e9",
+    "semantic_hash": "1380e367e3587965ac1df061279b59e9"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/app.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "0e5afd391ba9de71cda3a44e29a54180",
+    "semantic_hash": "0e5afd391ba9de71cda3a44e29a54180"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/error.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "8505095627fdfc00d7b838133ca641d5",
+    "semantic_hash": "8505095627fdfc00d7b838133ca641d5"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/AppHeader.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "a283e66954c5770c6c3f39fc22208cf4",
+    "semantic_hash": "a283e66954c5770c6c3f39fc22208cf4"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/AppLogo.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "2002011c4b8401c2b404af62244a74dd",
+    "semantic_hash": "2002011c4b8401c2b404af62244a74dd"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/GenericComplianceDialog.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "6206dc97c9c961bea4824b7ba3ed0fe8",
+    "semantic_hash": "6206dc97c9c961bea4824b7ba3ed0fe8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/campaigns-skeleton.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "56d343cb0d2a3172522202114c3fccd0",
+    "semantic_hash": "56d343cb0d2a3172522202114c3fccd0"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/auth/EmailAuth.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "f5d4fa792d00e422214d0e1fe03b9f62",
+    "semantic_hash": "f5d4fa792d00e422214d0e1fe03b9f62"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/auth/LegalInformation.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "d3969d5f847d74b40357052b8e44421f",
+    "semantic_hash": "d3969d5f847d74b40357052b8e44421f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/auth/OAuthButton.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "eb01ca5fdf84c78a7501b1fe5476193d",
+    "semantic_hash": "eb01ca5fdf84c78a7501b1fe5476193d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/auth/Separator.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "ace07a5f7bd2a8668a9f24a17140331c",
+    "semantic_hash": "ace07a5f7bd2a8668a9f24a17140331c"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/auth/SocialAuth.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "67c1f6bd1ab8bca864b423a611450936",
+    "semantic_hash": "67c1f6bd1ab8bca864b423a611450936"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/campaigns/CampaignComposerDialog.vue": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "756a761f2ed321855a9886a113bc34f7",
+    "semantic_hash": "756a761f2ed321855a9886a113bc34f7"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/campaigns/SmsCampaignComposerDialog.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "88ab6a09debbe4c31cf371592c367778",
+    "semantic_hash": "88ab6a09debbe4c31cf371592c367778"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/icons/NormalizedLocation.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "85726925f1ba8d688cf6f8258be6b0c3",
+    "semantic_hash": "85726925f1ba8d688cf6f8258be6b0c3"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/icons/PhosphorCoin.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "063636c4f9e5397f4b40bc6add2d862b",
+    "semantic_hash": "063636c4f9e5397f4b40bc6add2d862b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/icons/SocialLinksAndPhones.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "add03ed1ef633a4dc8de9f63361ad941",
+    "semantic_hash": "add03ed1ef633a4dc8de9f63361ad941"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/ContactInformationSidebar.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "1b897379044d5cb4727333ac7bb3307e",
+    "semantic_hash": "1b897379044d5cb4727333ac7bb3307e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/MiningConsentSidebar.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "ca8dd2e487b8723d563673c36962a4ca",
+    "semantic_hash": "ca8dd2e487b8723d563673c36962a4ca"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/MiningStepper.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "407147f88fb47e89e20ed8388ad5e47e",
+    "semantic_hash": "407147f88fb47e89e20ed8388ad5e47e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/PassiveMiningDialog.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "ec868adb43b45352e78c88182f94c750",
+    "semantic_hash": "ec868adb43b45352e78c88182f94c750"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/ProgressCard.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "36f4175f23e423d8521307c332e616eb",
+    "semantic_hash": "36f4175f23e423d8521307c332e616eb"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/buttons/CampaignButton.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "435bab13a9d1fe5fec0e5b3105cc57de",
+    "semantic_hash": "435bab13a9d1fe5fec0e5b3105cc57de"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/buttons/ExportContacts.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "0556ec5daa445cda3b8c8d958e05a149",
+    "semantic_hash": "0556ec5daa445cda3b8c8d958e05a149"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/buttons/RemoveContactButton.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "9a0401e2654d8a427595f358cb7d682e",
+    "semantic_hash": "9a0401e2654d8a427595f358cb7d682e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/enrich/EnrichButton.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "60a9b85b4fb0963816c453eb78c67099",
+    "semantic_hash": "60a9b85b4fb0963816c453eb78c67099"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/enrich/EnrichGdprSidebar.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "101016d2a921833e7a6e874c7d123724",
+    "semantic_hash": "101016d2a921833e7a6e874c7d123724"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/StepWithPopover.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "42bb816dabbb307fb9649277bc8515db",
+    "semantic_hash": "42bb816dabbb307fb9649277bc8515db"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/clean/CleanPanel.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "2f14659229f47afcd6d157bc9a143758",
+    "semantic_hash": "2f14659229f47afcd6d157bc9a143758"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/mine/EmailFoldersTree.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "227fc775bfde82da0219552a65d53a54",
+    "semantic_hash": "227fc775bfde82da0219552a65d53a54"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/mine/MinePanel.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "8c533f757250c92784bbc7bebe2def13",
+    "semantic_hash": "8c533f757250c92784bbc7bebe2def13"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/mine/MiningSettingsDialog.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "2ada88f5cec12e68fb28543ba3e81deb",
+    "semantic_hash": "2ada88f5cec12e68fb28543ba3e81deb"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/AddSourceImap.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "dcce024e5db730bb115caa0fcbfbc4b8",
+    "semantic_hash": "dcce024e5db730bb115caa0fcbfbc4b8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/AddSourceOauth.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "c598d337fb9cabc81d34fb016a99288e",
+    "semantic_hash": "c598d337fb9cabc81d34fb016a99288e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/ImportFileDialog.vue": {
+    "mtime": 1780048655.6829536,
+    "ast_hash": "9e2d8fd7ee9ecab5295f8633de2b9088",
+    "semantic_hash": "9e2d8fd7ee9ecab5295f8633de2b9088"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/ImportPostgreSQLDialog.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "b797f45ddf29b4ad2191fe9580a89ab1",
+    "semantic_hash": "b797f45ddf29b4ad2191fe9580a89ab1"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/ImportPstDialog.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "0ffa2278a16182a5b78af0e459087421",
+    "semantic_hash": "0ffa2278a16182a5b78af0e459087421"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/stepper-panels/source/SourcePanel.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "1f27be9d80e0269cc0e46b5082be804e",
+    "semantic_hash": "1f27be9d80e0269cc0e46b5082be804e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/table/MiningTable.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "177e7ec34918cb442764a14a172b0188",
+    "semantic_hash": "177e7ec34918cb442764a14a172b0188"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/mining/table/TableSkeleton.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "e268e60bb9943f8aaefcefb82a3fe474",
+    "semantic_hash": "e268e60bb9943f8aaefcefb82a3fe474"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/sms-fleet/FleetGatewaySelector.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "8277b28db25ea6b9b972fd1cc6bfa2d1",
+    "semantic_hash": "8277b28db25ea6b9b972fd1cc6bfa2d1"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/sms-fleet/ProviderForm.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "00870bd8d1da4dccd6310a6991635d0d",
+    "semantic_hash": "00870bd8d1da4dccd6310a6991635d0d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/components/sms-fleet/SmsFleetManagement.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "127a8b7594e276481b0f104ffc5e1a4b",
+    "semantic_hash": "127a8b7594e276481b0f104ffc5e1a4b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/composables/useContactVerification.ts": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "bbc32c9f6ee2e1dbd408e222eadc5b9d",
+    "semantic_hash": "bbc32c9f6ee2e1dbd408e222eadc5b9d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/composables/useMiningCompletionRedirect.ts": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "4c07d1aad2e17c25d6ec916db5721750",
+    "semantic_hash": "4c07d1aad2e17c25d6ec916db5721750"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/composables/useSupabaseUserProfile.ts": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "161599f07214415d00b0c62c902e199a",
+    "semantic_hash": "161599f07214415d00b0c62c902e199a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/i18n/messages.json": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "4262c4f8e63065aeecf3ea234bd2bb7e",
+    "semantic_hash": "4262c4f8e63065aeecf3ea234bd2bb7e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/i18n/messages_extras.json": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "0dfc5e29d021c2bb5b21e5bdcc4984fd",
+    "semantic_hash": "0dfc5e29d021c2bb5b21e5bdcc4984fd"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/layouts/default.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "ecb262a6b6bbbd514077b40a49f49b50",
+    "semantic_hash": "ecb262a6b6bbbd514077b40a49f49b50"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/middleware/routing.global.ts": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "8c0e11fee79f3b5d1efb7e6d0d5269be",
+    "semantic_hash": "8c0e11fee79f3b5d1efb7e6d0d5269be"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/callback.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "c0e4830555fdbd7607bcdca952fad901",
+    "semantic_hash": "c0e4830555fdbd7607bcdca952fad901"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/campaigns.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "ce34d5d4533c07c84701f075eb99d73f",
+    "semantic_hash": "ce34d5d4533c07c84701f075eb99d73f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/contacts.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "8e23a8fd8b38d5d966ca2c2eb98b6c2e",
+    "semantic_hash": "8e23a8fd8b38d5d966ca2c2eb98b6c2e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/index.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "06c5b69af269240cec59a1267b76008d",
+    "semantic_hash": "06c5b69af269240cec59a1267b76008d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/mine.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "fd9514a0f15f1e62a4f59e5225ea675d",
+    "semantic_hash": "fd9514a0f15f1e62a4f59e5225ea675d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/sources.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "c735f2e1872ce159e8fa6181580b4dad",
+    "semantic_hash": "c735f2e1872ce159e8fa6181580b4dad"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/account/settings.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "7e623e5a500c3041fcc50fe57849dcb8",
+    "semantic_hash": "7e623e5a500c3041fcc50fe57849dcb8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/auth/login.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "6fafa786fb66c169b669a7515283732a",
+    "semantic_hash": "6fafa786fb66c169b669a7515283732a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/auth/signup.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "f95df948932eb3679c4f0b013d361587",
+    "semantic_hash": "f95df948932eb3679c4f0b013d361587"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/auth/success.vue": {
+    "mtime": 1780048655.6862872,
+    "ast_hash": "d4ec9e1a99c123f50101f5b4fd4b092e",
+    "semantic_hash": "d4ec9e1a99c123f50101f5b4fd4b092e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/unsubscribe/failure.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "2f4e90353659cae373a0b05c9bfdf015",
+    "semantic_hash": "2f4e90353659cae373a0b05c9bfdf015"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/pages/unsubscribe/success.vue": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "684bf24b2e42ba3802d914ad426e2744",
+    "semantic_hash": "684bf24b2e42ba3802d914ad426e2744"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/plugins/api.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "60724245c836e0dad379e046b48e6db2",
+    "semantic_hash": "60724245c836e0dad379e046b48e6db2"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/plugins/error-handler.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "b5562e2f3365d3aee576516b167cdb65",
+    "semantic_hash": "b5562e2f3365d3aee576516b167cdb65"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/plugins/notification.client.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "58663abe5bdb569608fb1f025255600e",
+    "semantic_hash": "58663abe5bdb569608fb1f025255600e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/plugins/sb-optimize-cookie.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "9d295e6bb026ca72f2b455f004089dcc",
+    "semantic_hash": "9d295e6bb026ca72f2b455f004089dcc"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/plugins/sb-user-listeners.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "122756ee5ef3fa87fd28cfb0b72cbf83",
+    "semantic_hash": "122756ee5ef3fa87fd28cfb0b72cbf83"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/server/utils/email-campaign-proxy.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "81bab6f421b3e2cafccf350ed2bfc46d",
+    "semantic_hash": "81bab6f421b3e2cafccf350ed2bfc46d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/campaigns.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "f9d629b2ec8e41625e029e4aa421acc8",
+    "semantic_hash": "f9d629b2ec8e41625e029e4aa421acc8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/contacts.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "16a7bee6ca904b2bc95b0071a80a6216",
+    "semantic_hash": "16a7bee6ca904b2bc95b0071a80a6216"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/filters.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "c2be876add68a20a76740281334c1c6c",
+    "semantic_hash": "c2be876add68a20a76740281334c1c6c"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/leadminer.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "60fc232bc5c2891a52f62c65ec79a67a",
+    "semantic_hash": "60fc232bc5c2891a52f62c65ec79a67a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/notifications.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "77b9294d9aacd83fad696a5e088da2d8",
+    "semantic_hash": "77b9294d9aacd83fad696a5e088da2d8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/screen.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "2fd55b83d0964ee200bbd16460086495",
+    "semantic_hash": "2fd55b83d0964ee200bbd16460086495"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/sidebar.ts": {
+    "mtime": 1780048655.6896205,
+    "ast_hash": "0c79a08988e1e7e09589cf84dddafe43",
+    "semantic_hash": "0c79a08988e1e7e09589cf84dddafe43"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/sms-fleet.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "35fb6ba4f98ac9d8896c8fcfbb45178b",
+    "semantic_hash": "35fb6ba4f98ac9d8896c8fcfbb45178b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/stores/stepper.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "814b6109a7cf9733ea06fdef2633ec24",
+    "semantic_hash": "814b6109a7cf9733ea06fdef2633ec24"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/campaign-terminal-toast.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "64f65a65aec5d3c7c4b7b0ad030ef116",
+    "semantic_hash": "64f65a65aec5d3c7c4b7b0ad030ef116"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/campaigns-skeleton.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "432aab984d6f3dfe85f7952c744704f6",
+    "semantic_hash": "432aab984d6f3dfe85f7952c744704f6"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/contacts-store-import.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "1db0f34cb156f60e7ee4013d2dc4843b",
+    "semantic_hash": "1db0f34cb156f60e7ee4013d2dc4843b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/contacts-utils.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "949126176738167265e93cc381a6e167",
+    "semantic_hash": "949126176738167265e93cc381a6e167"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-campaign-regressions.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "8bcca2f0d91e8d3ba72f1bfccb345271",
+    "semantic_hash": "8bcca2f0d91e8d3ba72f1bfccb345271"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-oauth-redirect.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "b8f885756395713c9d44e3615b50b51b",
+    "semantic_hash": "b8f885756395713c9d44e3615b50b51b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-source-guards.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "d4252c868552b302bb675f296c522bd4",
+    "semantic_hash": "d4252c868552b302bb675f296c522bd4"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-table-performance.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "11a0bd4ca77d5b54f6ebdfd058cf5544",
+    "semantic_hash": "11a0bd4ca77d5b54f6ebdfd058cf5544"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-table-rows.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "6f8f73fb16c9bfb617eb87c3f56f35c5",
+    "semantic_hash": "6f8f73fb16c9bfb617eb87c3f56f35c5"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mining-toast.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "7e49e1f515649d5ca7a3c2d56846524e",
+    "semantic_hash": "7e49e1f515649d5ca7a3c2d56846524e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/mobile-ui-regressions.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "0a3326f75977e7d260e73e8a4d4344fa",
+    "semantic_hash": "0a3326f75977e7d260e73e8a4d4344fa"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/privacy-link.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "55e9171e33def7227358b54cf8249303",
+    "semantic_hash": "55e9171e33def7227358b54cf8249303"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/reconnect-fallback.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "8783719e6880351e7b88005ae317f92a",
+    "semantic_hash": "8783719e6880351e7b88005ae317f92a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/regex.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "45f337bcfcfeba5939222310c0dadb86",
+    "semantic_hash": "45f337bcfcfeba5939222310c0dadb86"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/sender-options.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "9325cd702fb39c215520baf58e6ff2db",
+    "semantic_hash": "9325cd702fb39c215520baf58e6ff2db"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/source-status-badge.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "55ecd4db8ad7ae86910e5929ccf0eb59",
+    "semantic_hash": "55ecd4db8ad7ae86910e5929ccf0eb59"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/sse-retry.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "72b2aba896c269d691d54074a5e525cd",
+    "semantic_hash": "72b2aba896c269d691d54074a5e525cd"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/tests/unit/table-preferences.test.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "d6cf68dafdd4d730f7f98082b56289d5",
+    "semantic_hash": "d6cf68dafdd4d730f7f98082b56289d5"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/auth.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "2524a2469683a1e5f5170db6d5b62c90",
+    "semantic_hash": "2524a2469683a1e5f5170db6d5b62c90"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/campaign.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "e91577879c5b56a6ca956081e251ab3b",
+    "semantic_hash": "e91577879c5b56a6ca956081e251ab3b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/contact.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "9bc19760b9d00e1193ba555d1ec28eca",
+    "semantic_hash": "9bc19760b9d00e1193ba555d1ec28eca"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/database.types.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "b56cf9251f30a4cde5735a087428ff56",
+    "semantic_hash": "b56cf9251f30a4cde5735a087428ff56"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/enrichment.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "26c13a11bf8d4525c29a205dce54f6c8",
+    "semantic_hash": "26c13a11bf8d4525c29a205dce54f6c8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/mining.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "218f5b43c6210f7c22131ec26a2ea3aa",
+    "semantic_hash": "218f5b43c6210f7c22131ec26a2ea3aa"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/organization.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "3abf65562cf8a228fb15e5ba4b39521a",
+    "semantic_hash": "3abf65562cf8a228fb15e5ba4b39521a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/profile.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "4bddbde601cf65a7734c65c4aa286de3",
+    "semantic_hash": "4bddbde601cf65a7734c65c4aa286de3"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/types/sms-fleet.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "b1b8c853653dfd4a4b111ae69159ae9f",
+    "semantic_hash": "b1b8c853653dfd4a4b111ae69159ae9f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/auth.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "980185eb0e48895bc6ebce8b76cd7c98",
+    "semantic_hash": "980185eb0e48895bc6ebce8b76cd7c98"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/boxes.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "57fad1163a8b89f1642ea3f74e6f004b",
+    "semantic_hash": "57fad1163a8b89f1642ea3f74e6f004b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/campaignTerminalToasts.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "333cb28ddd35e3a0acdbe8d3b6429f88",
+    "semantic_hash": "333cb28ddd35e3a0acdbe8d3b6429f88"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/constants.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "9be9bd12150083b7cb4e42ee2a4c1cfa",
+    "semantic_hash": "9be9bd12150083b7cb4e42ee2a4c1cfa"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/contacts.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "ccd09a5f5638bb119fceeadbcee1098f",
+    "semantic_hash": "ccd09a5f5638bb119fceeadbcee1098f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/credits.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "14637c4205b05543eb16fbe6d0f0e69e",
+    "semantic_hash": "14637c4205b05543eb16fbe6d0f0e69e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/csv.ts": {
+    "mtime": 1780048655.692954,
+    "ast_hash": "f2fc99828e0d1386e5077718718fa397",
+    "semantic_hash": "f2fc99828e0d1386e5077718718fa397"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/email-templates.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "a73af841d0fbb0478d70fa1fdc919275",
+    "semantic_hash": "a73af841d0fbb0478d70fa1fdc919275"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/email.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "a7e444795e891ea16824a8bd3aca9193",
+    "semantic_hash": "a7e444795e891ea16824a8bd3aca9193"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/extras.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "b07f5dca4539fd2be04c8552599af7e0",
+    "semantic_hash": "b07f5dca4539fd2be04c8552599af7e0"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/filters-defaults.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "e030852953c2ea435d3372d05f417ede",
+    "semantic_hash": "e030852953c2ea435d3372d05f417ede"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/images.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "49b6254a1a11b863ecd18202c7915b24",
+    "semantic_hash": "49b6254a1a11b863ecd18202c7915b24"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/mining-oauth-redirect.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "7f4b86cf9327edc9bb4d6247c82f23ae",
+    "semantic_hash": "7f4b86cf9327edc9bb4d6247c82f23ae"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/mining-source-guards.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "3178e3b3507a2f285298eb80b6079c6b",
+    "semantic_hash": "3178e3b3507a2f285298eb80b6079c6b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/mining-table-performance.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "43dda9c86857b22e439a280a03e9a022",
+    "semantic_hash": "43dda9c86857b22e439a280a03e9a022"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/mining-table.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "ae1b6f351bc9345be63841f820ad4bd2",
+    "semantic_hash": "ae1b6f351bc9345be63841f820ad4bd2"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/normalizer.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "a0e65101333f4c341defcb7f5f17608d",
+    "semantic_hash": "a0e65101333f4c341defcb7f5f17608d"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/oauth.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "d87cbcec79385021a0aa9635f1c19cbf",
+    "semantic_hash": "d87cbcec79385021a0aa9635f1c19cbf"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/privacy-link.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "f8d09ee33f8dab18e3337d9e235a9341",
+    "semantic_hash": "f8d09ee33f8dab18e3337d9e235a9341"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/reconnectFallback.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "34665daadc2f2befb50e3248022aef50",
+    "semantic_hash": "34665daadc2f2befb50e3248022aef50"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/routing.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "27db6b9d5d0aa1fd226b41c6eca2a8c8",
+    "semantic_hash": "27db6b9d5d0aa1fd226b41c6eca2a8c8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/senderOptions.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "ad2ea4e5d09049855dd38edccc08db17",
+    "semantic_hash": "ad2ea4e5d09049855dd38edccc08db17"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/sourceStatusBadge.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "9c05ae5b1e6374ca465e04814b5832cd",
+    "semantic_hash": "9c05ae5b1e6374ca465e04814b5832cd"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/sources.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "86656e8840d1c5a71c7ecca260d79ab1",
+    "semantic_hash": "86656e8840d1c5a71c7ecca260d79ab1"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/sse.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "344afa6ee1068bd27f15843474b27bfe",
+    "semantic_hash": "344afa6ee1068bd27f15843474b27bfe"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/table-preferences.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "2b72814854b59b9dec3983b30c73b9e0",
+    "semantic_hash": "2b72814854b59b9dec3983b30c73b9e0"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/time.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "d4b731ee04bc844a38ff1884e87f1cb1",
+    "semantic_hash": "d4b731ee04bc844a38ff1884e87f1cb1"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/toast.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "ba710ec6c0a132b6ee1b3ea30aaf02b7",
+    "semantic_hash": "ba710ec6c0a132b6ee1b3ea30aaf02b7"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/usePrimeVueToast.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "e3b7ec05ac0f7d4b47efbe7246170692",
+    "semantic_hash": "e3b7ec05ac0f7d4b47efbe7246170692"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/src/utils/useResetStore.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "9cfa0530afae05575610b7f0a7df3669",
+    "semantic_hash": "9cfa0530afae05575610b7f0a7df3669"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/components/campaigns/SmsCampaignComposerDialog.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "8bcb563644c005c47211998d3770c63b",
+    "semantic_hash": "8bcb563644c005c47211998d3770c63b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/components/sms-fleet/ProviderForm.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "aac90e0daefaa3da36fa0256e248241e",
+    "semantic_hash": "aac90e0daefaa3da36fa0256e248241e"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/components/sms-fleet/SmsFleetManagement.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "b9b629f6ac35646300014e05c2ae0123",
+    "semantic_hash": "b9b629f6ac35646300014e05c2ae0123"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/e2e/sms-fleet-gateway-management.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "eee073286a68f8173d26402f8321de32",
+    "semantic_hash": "eee073286a68f8173d26402f8321de32"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/pages/account/settings.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "76f40b12ddd6944cdd60c44a545a3c5a",
+    "semantic_hash": "76f40b12ddd6944cdd60c44a545a3c5a"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/tests/stores/smsFleet.test.ts": {
+    "mtime": 1780048655.6962876,
+    "ast_hash": "073b5c875e86e249b05c7bfc4641e2bd",
+    "semantic_hash": "073b5c875e86e249b05c7bfc4641e2bd"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/.eslintrc.json": {
+    "mtime": 1780048655.6996212,
+    "ast_hash": "7233e837da1cb3bf119c2a9ccb2c0dd0",
+    "semantic_hash": "7233e837da1cb3bf119c2a9ccb2c0dd0"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/jest.config.js": {
+    "mtime": 1780048655.6996212,
+    "ast_hash": "4a44196d4ea30ee8755a1c761dff59ce",
+    "semantic_hash": "4a44196d4ea30ee8755a1c761dff59ce"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/package.json": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "58a93f4d85a477305f44b7a0877cc4e3",
+    "semantic_hash": "58a93f4d85a477305f44b7a0877cc4e3"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/tsconfig.build.json": {
+    "mtime": 1780048655.706288,
+    "ast_hash": "8628c4c6cca49836942fa28865f83bf4",
+    "semantic_hash": "8628c4c6cca49836942fa28865f83bf4"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/tsconfig.json": {
+    "mtime": 1780048655.706288,
+    "ast_hash": "da51995daae256e89a4d87f10b711dbb",
+    "semantic_hash": "da51995daae256e89a4d87f10b711dbb"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/api.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "3328b6559537ab999326b4ca7c385db6",
+    "semantic_hash": "3328b6559537ab999326b4ca7c385db6"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/emailJobs.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "e4dde0482700ee4ae8ee32362c87c5dc",
+    "semantic_hash": "e4dde0482700ee4ae8ee32362c87c5dc"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/env.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "ae75a95a72ee073b6ccf8bc01f3a4229",
+    "semantic_hash": "ae75a95a72ee073b6ccf8bc01f3a4229"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/server.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "6100738ad8f4c932044c59c284a1be02",
+    "semantic_hash": "6100738ad8f4c932044c59c284a1be02"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/config/index.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "68205ecef171742dab1ad4a56bc53529",
+    "semantic_hash": "68205ecef171742dab1ad4a56bc53529"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/config/schema.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "18ab7f5871c09f11940b449cf276281b",
+    "semantic_hash": "18ab7f5871c09f11940b449cf276281b"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/db/interfaces/MiningSources.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "c1436dea2c748ba036d1b451a07b1354",
+    "semantic_hash": "c1436dea2c748ba036d1b451a07b1354"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/db/pg/PgMiningSources.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "9f1bf8e4635f76dbf565e9c3b5df40b3",
+    "semantic_hash": "9f1bf8e4635f76dbf565e9c3b5df40b3"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/db/pg/index.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "8366ec506e1ac3fbd5dac0bd11ada766",
+    "semantic_hash": "8366ec506e1ac3fbd5dac0bd11ada766"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/db/supabase/MiningSourceService.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "5df03b93403bad9d048536dabe69ed4c",
+    "semantic_hash": "5df03b93403bad9d048536dabe69ed4c"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/db/supabase/index.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "c0a5b4420b72b2dd5b44dbe926912c40",
+    "semantic_hash": "c0a5b4420b72b2dd5b44dbe926912c40"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/factory/EmailFetcherFactory.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "d4452f2fdc49e6e43a0807cb7b6f9877",
+    "semantic_hash": "d4452f2fdc49e6e43a0807cb7b6f9877"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/factory/PSTFetcherFactory.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "827bb0f1d9ca68d0cec93c76e6303ab8",
+    "semantic_hash": "827bb0f1d9ca68d0cec93c76e6303ab8"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/auth.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "1cb02c621eace8a2d4ae2e1a54081945",
+    "semantic_hash": "1cb02c621eace8a2d4ae2e1a54081945"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/cors.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "168d727272eeffff7aee471814d6b39e",
+    "semantic_hash": "168d727272eeffff7aee471814d6b39e"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/errorHandler.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "5574121906d041faa19b00f0fc3c6f36",
+    "semantic_hash": "5574121906d041faa19b00f0fc3c6f36"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/errorLogger.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "665815493792f18161305b388f738a0b",
+    "semantic_hash": "665815493792f18161305b388f738a0b"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/notFound.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "f38d3ebf69db0cb265ac5778016ef7f2",
+    "semantic_hash": "f38d3ebf69db0cb265ac5778016ef7f2"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/middleware/sentry.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "c47dc0356966f96b161dcd817054ccf8",
+    "semantic_hash": "c47dc0356966f96b161dcd817054ccf8"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/auth/Provider.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "7a750a625417e4a56ba61185e3630b81",
+    "semantic_hash": "7a750a625417e4a56ba61185e3630b81"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/google_contacts/GoogleContactsFetcher.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "ab364ffaa0617fa8a81175dfde23b988",
+    "semantic_hash": "ab364ffaa0617fa8a81175dfde23b988"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/google_contacts/googlePeopleClient.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "b2e3236068bb1ca160b1c6dff58e48d0",
+    "semantic_hash": "b2e3236068bb1ca160b1c6dff58e48d0"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/imap/ImapConnectionProvider.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "a364055431eb2bd192a19c11e5bc415d",
+    "semantic_hash": "a364055431eb2bd192a19c11e5bc415d"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/imap/ImapEmailsFetcher.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "0443a56daee33ebae956b59c70553132",
+    "semantic_hash": "0443a56daee33ebae956b59c70553132"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/imap/parsing.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "a7970780919229e4c3f4f02b52d1e1bf",
+    "semantic_hash": "a7970780919229e4c3f4f02b52d1e1bf"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/imap/types.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "d2337b8fceac60efe049dee45557125d",
+    "semantic_hash": "d2337b8fceac60efe049dee45557125d"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/services/pst/PSTEmailsFetcher.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "28b09fc75f73fd3ce643fdf453ed0a52",
+    "semantic_hash": "28b09fc75f73fd3ce643fdf453ed0a52"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/constants.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "8598e4f5a9d209cff2780f024b845819",
+    "semantic_hash": "8598e4f5a9d209cff2780f024b845819"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/errors.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "c848b1435e154b55fb15b2a348b1a4c5",
+    "semantic_hash": "c848b1435e154b55fb15b2a348b1a4c5"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/imap.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "eba2ea5ec4be8663dc085176c44f8708",
+    "semantic_hash": "eba2ea5ec4be8663dc085176c44f8708"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/logger.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "e13bd7eb49de786594206331ebd091cf",
+    "semantic_hash": "e13bd7eb49de786594206331ebd091cf"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/redis.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "d8e8b2c4d1379dae7a15205e16d26b87",
+    "semantic_hash": "d8e8b2c4d1379dae7a15205e16d26b87"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/supabase.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "f79b436a36115f1121cec674afdae888",
+    "semantic_hash": "f79b436a36115f1121cec674afdae888"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/validation.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "9666dc458df5d820ffc1085b8fe6c4f0",
+    "semantic_hash": "9666dc458df5d820ffc1085b8fe6c4f0"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/helpers/emailHeaderHelpers.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "a528f344255657ffb2758fd5340dcff6",
+    "semantic_hash": "a528f344255657ffb2758fd5340dcff6"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/src/utils/helpers/hashHelpers.ts": {
+    "mtime": 1780048655.7029545,
+    "ast_hash": "134bc2b89c6f23b5ea1727c585189538",
+    "semantic_hash": "134bc2b89c6f23b5ea1727c585189538"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/test/unit/imap/message-body-structure.test.ts": {
+    "mtime": 1780048655.706288,
+    "ast_hash": "7572d6b4edebdd4813cb0cf68927b4df",
+    "semantic_hash": "7572d6b4edebdd4813cb0cf68927b4df"
+  },
+  "/home/badreddine/Projects/leadminer/micro-services/emails-fetcher/test/unit/imap/message-text-plain-parsing.test.ts": {
+    "mtime": 1780048655.706288,
+    "ast_hash": "ad244022f86f24d749d44f2408af7a0d",
+    "semantic_hash": "ad244022f86f24d749d44f2408af7a0d"
+  },
+  "/home/badreddine/Projects/leadminer/scripts/prepush-ci-check.sh": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "e9931ef4bba084d137ca7b26b89532b7",
+    "semantic_hash": "e9931ef4bba084d137ca7b26b89532b7"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/fix_sms_schema_self_hosted.sql": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "c523ee646e8aa96047eb1727a8bd3647",
+    "semantic_hash": "c523ee646e8aa96047eb1727a8bd3647"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/cors.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "971704a52c1eab9111733268a93e7ead",
+    "semantic_hash": "971704a52c1eab9111733268a93e7ead"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/email.test.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "fac7e289fa61ac6ad3b45f0ff172a3ac",
+    "semantic_hash": "fac7e289fa61ac6ad3b45f0ff172a3ac"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/email.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "7860e25db14f9cd37b9c502cb82d8272",
+    "semantic_hash": "7860e25db14f9cd37b9c502cb82d8272"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/env-helpers.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "b1c8fb21a59a8e43841610e4d85628a0",
+    "semantic_hash": "b1c8fb21a59a8e43841610e4d85628a0"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/http.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "5bc0cee0751cdd0e445fd3f8ac94f8a2",
+    "semantic_hash": "5bc0cee0751cdd0e445fd3f8ac94f8a2"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/i18n.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "ed75d986dd0cb0f625358d66b4b577ad",
+    "semantic_hash": "ed75d986dd0cb0f625358d66b4b577ad"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/inline-images.test.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "a8109a28804a47ece58771475508aa2d",
+    "semantic_hash": "a8109a28804a47ece58771475508aa2d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/inline-images.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "b021d93ec6a71237c4f60427a833d90d",
+    "semantic_hash": "b021d93ec6a71237c4f60427a833d90d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/logger.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "bcde04b8afda1c937a3b7d847cbee273",
+    "semantic_hash": "bcde04b8afda1c937a3b7d847cbee273"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/middlewares.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "02e650b12b86ac887c66cdb191be19cd",
+    "semantic_hash": "02e650b12b86ac887c66cdb191be19cd"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/supabase.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "cb7661915370509d48bc8aeded05d8d6",
+    "semantic_hash": "cb7661915370509d48bc8aeded05d8d6"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/url.test.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "bf4b1275e7d7b4f7a45f8424baf849d6",
+    "semantic_hash": "bf4b1275e7d7b4f7a45f8424baf849d6"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/url.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "6de80bac0bf18c94b1e6dbb2fc816d15",
+    "semantic_hash": "6de80bac0bf18c94b1e6dbb2fc816d15"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/validation.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "0d219fd89d087c51b6bb3d0d84890b21",
+    "semantic_hash": "0d219fd89d087c51b6bb3d0d84890b21"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/mailing/email.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "83792adbd077e574541e85421262a989",
+    "semantic_hash": "83792adbd077e574541e85421262a989"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/mailing/messages.json": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "7aba3a85073db51a4e8f16e4d7b571fb",
+    "semantic_hash": "7aba3a85073db51a4e8f16e4d7b571fb"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/_shared/mailing/template.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "eaa5591eb4a3345a13e631d8d9abf9a2",
+    "semantic_hash": "eaa5591eb4a3345a13e631d8d9abf9a2"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/add-mining-source/deno.json": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "03b1596317f7cb83da49ae1840858656",
+    "semantic_hash": "03b1596317f7cb83da49ae1840858656"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/add-mining-source/index.ts": {
+    "mtime": 1780048655.7096217,
+    "ast_hash": "dde62697c65dd9f019afda8f85573edf",
+    "semantic_hash": "dde62697c65dd9f019afda8f85573edf"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/campaigns-track/deno.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "66044a90dc4b85079a563f4aa17fc215",
+    "semantic_hash": "66044a90dc4b85079a563f4aa17fc215"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/campaigns-track/index.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "91ba3f6a5cc0d764a017d7bdd15fa8b5",
+    "semantic_hash": "91ba3f6a5cc0d764a017d7bdd15fa8b5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/delete-mining-source/deno.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "03b1596317f7cb83da49ae1840858656",
+    "semantic_hash": "03b1596317f7cb83da49ae1840858656"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/delete-mining-source/index.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "5b2df52610aa96700fdb9115557f9adf",
+    "semantic_hash": "5b2df52610aa96700fdb9115557f9adf"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/deno.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "2ce339cea1186ed353acd6fbc1e6ad17",
+    "semantic_hash": "2ce339cea1186ed353acd6fbc1e6ad17"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/email.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "fc69b895caf66aa83a4abe65e65a9985",
+    "semantic_hash": "fc69b895caf66aa83a4abe65e65a9985"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/http.test.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "ef78da82378e0d6db0b048f6522911bc",
+    "semantic_hash": "ef78da82378e0d6db0b048f6522911bc"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/http.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "7a43819f73fc52055c09e39d544796ac",
+    "semantic_hash": "7a43819f73fc52055c09e39d544796ac"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/i18n.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "4d84cce9619200ccd579265a838fa087",
+    "semantic_hash": "4d84cce9619200ccd579265a838fa087"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/index.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "291c55e7ae8e35af8207a5a26cc16db8",
+    "semantic_hash": "291c55e7ae8e35af8207a5a26cc16db8"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/middlewares-mod.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "3a107b86fa56245cc67aa87e1c6bfb95",
+    "semantic_hash": "3a107b86fa56245cc67aa87e1c6bfb95"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/sender-options.test.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "fabe63b1ab28ffd278f79a516105ee2f",
+    "semantic_hash": "fabe63b1ab28ffd278f79a516105ee2f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/sender-options.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "76c2156ada8741fec5864539d72351b3",
+    "semantic_hash": "76c2156ada8741fec5864539d72351b3"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/i18n/en.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "dcf8c3e31ab5be617c80c46f2c31a87d",
+    "semantic_hash": "dcf8c3e31ab5be617c80c46f2c31a87d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/i18n/fr.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "9716b5549d7d115d1a1b28e12f5be030",
+    "semantic_hash": "9716b5549d7d115d1a1b28e12f5be030"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/tests/campaign-bill-middleware.test.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "e3bb752e6a5f62aaa10f351617e49891",
+    "semantic_hash": "e3bb752e6a5f62aaa10f351617e49891"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-campaigns/tests/campaign-check-middleware.test.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "f6a06a54f363db00d1529d3e249f8609",
+    "semantic_hash": "f6a06a54f363db00d1529d3e249f8609"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-templates/deno.json": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "03b1596317f7cb83da49ae1840858656",
+    "semantic_hash": "03b1596317f7cb83da49ae1840858656"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-templates/index.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "0ff324d1b372074375b8c238b94b4f35",
+    "semantic_hash": "0ff324d1b372074375b8c238b94b4f35"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/email-templates/templates.ts": {
+    "mtime": 1780048655.712955,
+    "ast_hash": "3d47411a310768190a53453bc8a77c12",
+    "semantic_hash": "3d47411a310768190a53453bc8a77c12"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/deno.json": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "fce8b0b0328b5c04ee8fc1b638273ca1",
+    "semantic_hash": "fce8b0b0328b5c04ee8fc1b638273ca1"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "9f07075cfa95746453710e8f9b5919b8",
+    "semantic_hash": "9f07075cfa95746453710e8f9b5919b8"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/oauth-handler/azure.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "3754e15ea8d77bbd44a502456ff1c3cc",
+    "semantic_hash": "3754e15ea8d77bbd44a502456ff1c3cc"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/oauth-handler/google.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "e8a65e8884bda10d91dadbb4f224515e",
+    "semantic_hash": "e8a65e8884bda10d91dadbb4f224515e"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/oauth-handler/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "a523b767807c4b8a3a433387af54fe6b",
+    "semantic_hash": "a523b767807c4b8a3a433387af54fe6b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/fetch-mining-source/oauth-handler/utils.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "2007c0017f1d7f749864a4364873f72e",
+    "semantic_hash": "2007c0017f1d7f749864a4364873f72e"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/imap/deno.json": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "03b1596317f7cb83da49ae1840858656",
+    "semantic_hash": "03b1596317f7cb83da49ae1840858656"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/imap/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "fac89d7e7c60cd8f22e6e95f9837341d",
+    "semantic_hash": "fac89d7e7c60cd8f22e6e95f9837341d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/deno.json": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "d0e6a5bec1ac5653040ab15be3c1750e",
+    "semantic_hash": "d0e6a5bec1ac5653040ab15be3c1750e"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "18d7cbaf3809ce35a844bc985fe6d041",
+    "semantic_hash": "18d7cbaf3809ce35a844bc985fe6d041"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/email-templates/base.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "977562b0bd6ce619e08f5e01315fbf9b",
+    "semantic_hash": "977562b0bd6ce619e08f5e01315fbf9b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/email-templates/mining-completed.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "123f4e9b36c1e97e5ff3886241f213d5",
+    "semantic_hash": "123f4e9b36c1e97e5ff3886241f213d5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/email-templates/weekly-report.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "cc770bca88fd8da2de1d702a7cabbb19",
+    "semantic_hash": "cc770bca88fd8da2de1d702a7cabbb19"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/i18n/messages.json": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "adcf6bc0aea532e43708244ea97710de",
+    "semantic_hash": "adcf6bc0aea532e43708244ea97710de"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/mining-complete/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "cff9ce7335f61badf8eb111d1e4ae648",
+    "semantic_hash": "cff9ce7335f61badf8eb111d1e4ae648"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/mining-complete/template.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "1bc630cc234b71249c62b60961d69622",
+    "semantic_hash": "1bc630cc234b71249c62b60961d69622"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/utils/db.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "7a07f3c13384506ef38f34b8e0482a84",
+    "semantic_hash": "7a07f3c13384506ef38f34b8e0482a84"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/mail/weekly-passive-report/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "701ca1dc79d3a0ced5dd1c62fd80cceb",
+    "semantic_hash": "701ca1dc79d3a0ced5dd1c62fd80cceb"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/passive-mining/boxes.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "df611b1cb9ad594a67489a18d0165d92",
+    "semantic_hash": "df611b1cb9ad594a67489a18d0165d92"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/passive-mining/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "8ce32a5950e2c7927352b36a4443ebba",
+    "semantic_hash": "8ce32a5950e2c7927352b36a4443ebba"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/deno.json": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "4837a6ef7f9a4d6232c2338e755fd876",
+    "semantic_hash": "4837a6ef7f9a4d6232c2338e755fd876"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/index.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "be947d54254dc32113bb92a79b914004",
+    "semantic_hash": "be947d54254dc32113bb92a79b914004"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/mod.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "47b23c1de6fdcf947034febe198afb82",
+    "semantic_hash": "47b23c1de6fdcf947034febe198afb82"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/simple-sms-gateway-provider.test.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "c49b8a043d6cb311903c3db2ad43d6ed",
+    "semantic_hash": "c49b8a043d6cb311903c3db2ad43d6ed"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/simple-sms-gateway-provider.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "8862796127ee1ae9b60ed573da7d94c8",
+    "semantic_hash": "8862796127ee1ae9b60ed573da7d94c8"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/smsgate-provider.test.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "0e11ea8427c074daba5ba7321225b44c",
+    "semantic_hash": "0e11ea8427c074daba5ba7321225b44c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/smsgate-provider.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "572997161f205a24fe723f9d8bfefa0f",
+    "semantic_hash": "572997161f205a24fe723f9d8bfefa0f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/twilio-provider.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "c42dc99a9d2955042f09cba6f97cdb1c",
+    "semantic_hash": "c42dc99a9d2955042f09cba6f97cdb1c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/providers/types.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "24d003eb31537a7ce719a298e80b8159",
+    "semantic_hash": "24d003eb31537a7ce719a298e80b8159"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/phone.test.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "3411faf6fdae328183c3201b6c1f1a0f",
+    "semantic_hash": "3411faf6fdae328183c3201b6c1f1a0f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/phone.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "b0f77141f1deee9017d20d73233a0fbd",
+    "semantic_hash": "b0f77141f1deee9017d20d73233a0fbd"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/quota.test.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "d6bf5530e25c4440870907ca0ac7592f",
+    "semantic_hash": "d6bf5530e25c4440870907ca0ac7592f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/quota.ts": {
+    "mtime": 1780048655.7162886,
+    "ast_hash": "a6d3f5ca1118b7d842a16f284a976fc3",
+    "semantic_hash": "a6d3f5ca1118b7d842a16f284a976fc3"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/short-link.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "11c021f8cdbdba8572355196081b0a32",
+    "semantic_hash": "11c021f8cdbdba8572355196081b0a32"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/sms-segments.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "aca80b1ec341cd18bdc8822a1ed1daf9",
+    "semantic_hash": "aca80b1ec341cd18bdc8822a1ed1daf9"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns-process/utils/sms-segments.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "df1d8760d3dcc06902ba70c35af4c02b",
+    "semantic_hash": "df1d8760d3dcc06902ba70c35af4c02b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/deno.json": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "4837a6ef7f9a4d6232c2338e755fd876",
+    "semantic_hash": "4837a6ef7f9a4d6232c2338e755fd876"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/index.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "7ddf838d75c7335d5794a92f4f172966",
+    "semantic_hash": "7ddf838d75c7335d5794a92f4f172966"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/mod.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "47b23c1de6fdcf947034febe198afb82",
+    "semantic_hash": "47b23c1de6fdcf947034febe198afb82"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/simple-sms-gateway-provider.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "c49b8a043d6cb311903c3db2ad43d6ed",
+    "semantic_hash": "c49b8a043d6cb311903c3db2ad43d6ed"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/simple-sms-gateway-provider.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "b6288d935c747299ec429baec056bf7f",
+    "semantic_hash": "b6288d935c747299ec429baec056bf7f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/smsgate-provider.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "0e11ea8427c074daba5ba7321225b44c",
+    "semantic_hash": "0e11ea8427c074daba5ba7321225b44c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/smsgate-provider.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "4634173adc6567f7369ecf84e995b930",
+    "semantic_hash": "4634173adc6567f7369ecf84e995b930"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/twilio-provider.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "d16dbaa07241c3aa46db7886544dbaec",
+    "semantic_hash": "d16dbaa07241c3aa46db7886544dbaec"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/providers/types.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "24d003eb31537a7ce719a298e80b8159",
+    "semantic_hash": "24d003eb31537a7ce719a298e80b8159"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/phone.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "3411faf6fdae328183c3201b6c1f1a0f",
+    "semantic_hash": "3411faf6fdae328183c3201b6c1f1a0f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/phone.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "b0f77141f1deee9017d20d73233a0fbd",
+    "semantic_hash": "b0f77141f1deee9017d20d73233a0fbd"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/quota.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "d6bf5530e25c4440870907ca0ac7592f",
+    "semantic_hash": "d6bf5530e25c4440870907ca0ac7592f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/quota.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "a6d3f5ca1118b7d842a16f284a976fc3",
+    "semantic_hash": "a6d3f5ca1118b7d842a16f284a976fc3"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/short-link.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "11c021f8cdbdba8572355196081b0a32",
+    "semantic_hash": "11c021f8cdbdba8572355196081b0a32"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/sms-segments.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "aca80b1ec341cd18bdc8822a1ed1daf9",
+    "semantic_hash": "aca80b1ec341cd18bdc8822a1ed1daf9"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-campaigns/utils/sms-segments.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "df1d8760d3dcc06902ba70c35af4c02b",
+    "semantic_hash": "df1d8760d3dcc06902ba70c35af4c02b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-fleet/deno.json": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "66044a90dc4b85079a563f4aa17fc215",
+    "semantic_hash": "66044a90dc4b85079a563f4aa17fc215"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-fleet/index.test.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "9a3ca04bbfdbead770aa2c16023d8b79",
+    "semantic_hash": "9a3ca04bbfdbead770aa2c16023d8b79"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/functions/sms-fleet/index.ts": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "68571d2ee51afa6360c24dac0a16ec30",
+    "semantic_hash": "68571d2ee51afa6360c24dac0a16ec30"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20221109155127_init.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "a0514ce69447a88af5443548b95975a4",
+    "semantic_hash": "a0514ce69447a88af5443548b95975a4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20221109155538_add_functions.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "a317259539c3e84237ebef085bf294f6",
+    "semantic_hash": "a317259539c3e84237ebef085bf294f6"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241008210613_legacy_remote_migration_placeholder.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "4047e91ad793c84d7c92fb7c1658f90d",
+    "semantic_hash": "4047e91ad793c84d7c92fb7c1658f90d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241024202442_enriched_most_recent_function.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "61d919b447588c640ddd303e3e4c55c5",
+    "semantic_hash": "61d919b447588c640ddd303e3e4c55c5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241122141012_add-email-status-table.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "d054caa7495a9dc21bb35ed58ea428aa",
+    "semantic_hash": "d054caa7495a9dc21bb35ed58ea428aa"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241129122110_update_get_grouped_tags_by_person.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "8ca8bf2f1fa3b1e2b2b39f9941caa9c0",
+    "semantic_hash": "8ca8bf2f1fa3b1e2b2b39f9941caa9c0"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241202215826_delete_expired_cache_routine.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "342ff64439d321c7ffe2086757942ce5",
+    "semantic_hash": "342ff64439d321c7ffe2086757942ce5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241205095428_migrate_to_private_schema.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "0c03d61cca2041dad4d00bbc3bb47f1d",
+    "semantic_hash": "0c03d61cca2041dad4d00bbc3bb47f1d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241206143825_legacy_remote_migration_placeholder.sql": {
+    "mtime": 1780048655.7196221,
+    "ast_hash": "4047e91ad793c84d7c92fb7c1658f90d",
+    "semantic_hash": "4047e91ad793c84d7c92fb7c1658f90d"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20241230224946_add_person_alternate_emails.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "6a95ffaa86ab4f04d7e71ec4baa6f187",
+    "semantic_hash": "6a95ffaa86ab4f04d7e71ec4baa6f187"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250116214647_add_delete_contacts_function.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "46e11ef292611446b4de253b93a291e9",
+    "semantic_hash": "46e11ef292611446b4de253b93a291e9"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250122141225_add_column_gdpr_details_in_profiles.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "c3b5c8e621cf7d7b3bf4afb6eb400f67",
+    "semantic_hash": "c3b5c8e621cf7d7b3bf4afb6eb400f67"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250122185859_optimize_refine_persons.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "ac8e3595f649a3c644287e92ecdb35b2",
+    "semantic_hash": "ac8e3595f649a3c644287e92ecdb35b2"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250220210947_email_newsletter.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "4596da5ebbb4a5f101cd0a40e36cd076",
+    "semantic_hash": "4596da5ebbb4a5f101cd0a40e36cd076"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250520002931_add_persons_phone_numbers.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "b1f6cf3ce38f8f75f4e49c3f2124d1c1",
+    "semantic_hash": "b1f6cf3ce38f8f75f4e49c3f2124d1c1"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250613131307_add_notifications_table.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "fbc3ec8840a2d446e5748c617162aaf4",
+    "semantic_hash": "fbc3ec8840a2d446e5748c617162aaf4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250814165055_fix_delete_policy.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "929b221d26f4552ddbe1f1d5f88d34cd",
+    "semantic_hash": "929b221d26f4552ddbe1f1d5f88d34cd"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250923185234_increase_statement_timeout_for_role_authenticated.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "6f9b704c86b371eb4f4b439f58066cce",
+    "semantic_hash": "6f9b704c86b371eb4f4b439f58066cce"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20250929141232_refinedpersons_use_timestampz_for_updated_and_created_at.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "80506518ee81ece86dc94ca8aaf386d4",
+    "semantic_hash": "80506518ee81ece86dc94ca8aaf386d4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251007133948_refinedpersons_add_coulmn_temperature_score.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "22e068f9fc3bbae008102b9e9a723129",
+    "semantic_hash": "22e068f9fc3bbae008102b9e9a723129"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251014055118_remove_prefered_name_email_from_alternate_names.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "10fbf680f620060dc0c4f65b666ba260",
+    "semantic_hash": "10fbf680f620060dc0c4f65b666ba260"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251016215841_add_mining_id.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "197fccdd6aa7334d4434a9a8675bd9e4",
+    "semantic_hash": "197fccdd6aa7334d4434a9a8675bd9e4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251023144832_update_function_contact_temperature.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "93d0aaaf9df7273cbf7b782a36d2bb3b",
+    "semantic_hash": "93d0aaaf9df7273cbf7b782a36d2bb3b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251024142256_update_function_get_mining_stats.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "8b9e4e9d3d941d8e49e1c16041f33d6b",
+    "semantic_hash": "8b9e4e9d3d941d8e49e1c16041f33d6b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251105175657_location_text.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "904a8ebdfa21929e06e4f6ac469f0e0e",
+    "semantic_hash": "904a8ebdfa21929e06e4f6ac469f0e0e"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251107123000_location_normalized.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "ec2a8e5bfc8fec39564b2d33101817d0",
+    "semantic_hash": "ec2a8e5bfc8fec39564b2d33101817d0"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251107141413_add-signature-table.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "f8d5bab73787a6e907715f3441cf2692",
+    "semantic_hash": "f8d5bab73787a6e907715f3441cf2692"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251119151502_refine_persons_fix_tags_filter.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "cb3e198335b81dfb4dd9f3c738c6f909",
+    "semantic_hash": "cb3e198335b81dfb4dd9f3c738c6f909"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251120123523_refine_persons_fix_tags_filter_1.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "e66737930c19b63021f4714ee5952ced",
+    "semantic_hash": "e66737930c19b63021f4714ee5952ced"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251120150626_fix_get_distinct_or_exclude_from_array.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "327e23a6b393d09f30212cac6282a600",
+    "semantic_hash": "327e23a6b393d09f30212cac6282a600"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251125143028_update_function_get_mining_stats.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "f3bfb8dec93c83bf998216c0119e9ef1",
+    "semantic_hash": "f3bfb8dec93c83bf998216c0119e9ef1"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251125143059_fix_get_distinct_or_exclude_from_array.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "3d77ad5a83173dd0e408b6aa0c43ce0f",
+    "semantic_hash": "3d77ad5a83173dd0e408b6aa0c43ce0f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251125160609_refine_persons_fix_tags_filter_2.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "5fbe3bdcec5bf96436c3f2d1cd2247f4",
+    "semantic_hash": "5fbe3bdcec5bf96436c3f2d1cd2247f4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251125193353_mining_stats_location_fix.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "2758f7dc79f5c468514d15ca0329d6a5",
+    "semantic_hash": "2758f7dc79f5c468514d15ca0329d6a5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251218184211_create_pst_bucket.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "1409b573f0731761a8d0751bb8bbf32f",
+    "semantic_hash": "1409b573f0731761a8d0751bb8bbf32f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20251222122848_fix_get_mining_stats.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "767aedc7cc180cc0d4f50cadb3d87744",
+    "semantic_hash": "767aedc7cc180cc0d4f50cadb3d87744"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260109124058_add_new_engagement_type_engagement_type_enum.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "74c6feb7dc2bf9515c50ee09cb080755",
+    "semantic_hash": "74c6feb7dc2bf9515c50ee09cb080755"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260122175231_fix_contact_tagging_refined_persons.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "455038b469c469169a8b5a5bb4c76c87",
+    "semantic_hash": "455038b469c469169a8b5a5bb4c76c87"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260130124036_passive_mining_in_mining_sources.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "beda7fb8596462d3ce0bc414a6b7561c",
+    "semantic_hash": "beda7fb8596462d3ce0bc414a6b7561c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260130124037_weekly_passive_report.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "c6338f44aef8d033d62e3dd1632f13c5",
+    "semantic_hash": "c6338f44aef8d033d62e3dd1632f13c5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260214130000_add_email_campaigns.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "21748ccb0e10ab6056c6088ecc916e2c",
+    "semantic_hash": "21748ccb0e10ab6056c6088ecc916e2c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260214190000_add_consent_status_and_unsubscribe.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "e820f1b3389cd03063f067f830ffd4c3",
+    "semantic_hash": "e820f1b3389cd03063f067f830ffd4c3"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260215003000_add_campaign_reporting_and_bounces.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "80a33924d3af7627884d256295b44a98",
+    "semantic_hash": "80a33924d3af7627884d256295b44a98"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260215113000_add_campaign_cancelled_status.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "4ff056c48c8d3a9ccf6ef83c4c35bcea",
+    "semantic_hash": "4ff056c48c8d3a9ccf6ef83c4c35bcea"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260226142941_passive_mining_cron_job.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "d9212877334cf2c29e01f20fe762d9cd",
+    "semantic_hash": "d9212877334cf2c29e01f20fe762d9cd"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260227121954_add_get_mining_source_overview.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "9b2e4a62621f4d56286f141926ce9d2e",
+    "semantic_hash": "9b2e4a62621f4d56286f141926ce9d2e"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260301100000_add_campaign_batch_columns.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "7450eba3c79ad378d1eb150912fc0fc4",
+    "semantic_hash": "7450eba3c79ad378d1eb150912fc0fc4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260301110000_add_recipient_temperature.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "2d59b6841fad085ac97be3d615a20036",
+    "semantic_hash": "2d59b6841fad085ac97be3d615a20036"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260302000000_fix_search_path_warnings.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "c138f173027a7f34849cdf22b278af9a",
+    "semantic_hash": "c138f173027a7f34849cdf22b278af9a"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260302000001_upgrade_supabase_vault.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "5488ebc772dde7e0ff61cbbd045b3249",
+    "semantic_hash": "5488ebc772dde7e0ff61cbbd045b3249"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260304160000_standardize_edge_function_invocation.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "19b14f4f84420a750fee5ceea58b00f2",
+    "semantic_hash": "19b14f4f84420a750fee5ceea58b00f2"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260305000000_fix_broken_search_path.sql": {
+    "mtime": 1780048655.7229555,
+    "ast_hash": "026ecf19239bec1aba5b18587b1cb18c",
+    "semantic_hash": "026ecf19239bec1aba5b18587b1cb18c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260305121000_optimize_contacts_queries_and_upserts.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "af2c72cc56513b1ca33adb09e5f39dd7",
+    "semantic_hash": "af2c72cc56513b1ca33adb09e5f39dd7"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260310100000_add_consent_changed_at.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "a0275cb3b62678271947ee85f34d8315",
+    "semantic_hash": "a0275cb3b62678271947ee85f34d8315"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260311000000_remove_sender_phone_and_simplify_simple_sms_gateway.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "362b6967d7ae0a1b95fde0af5e46a225",
+    "semantic_hash": "362b6967d7ae0a1b95fde0af5e46a225"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260313173000_move_consent_to_persons.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "f47a3df6056bb308d43902ebd1a2597a",
+    "semantic_hash": "f47a3df6056bb308d43902ebd1a2597a"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260313191500_fix_contacts_table_consent_source.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "c0f4cae1dc3c87673d6cc1e30a67e923",
+    "semantic_hash": "c0f4cae1dc3c87673d6cc1e30a67e923"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260313203000_fix_mining_source_overview_contacts_visible_counts.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "1d83857c8f9e9e28419c885418596050",
+    "semantic_hash": "1d83857c8f9e9e28419c885418596050"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260316162000_repair_persons_consent_drift.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "bbe7ce0b5d7ffe1296747062ee330b88",
+    "semantic_hash": "bbe7ce0b5d7ffe1296747062ee330b88"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000000_add_sms_campaigns.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "b7f948009981f9148c707e4cfe7bc3f4",
+    "semantic_hash": "b7f948009981f9148c707e4cfe7bc3f4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000001_add_sms_campaign_overview.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "e85b4acba4d449311f56183b39576e78",
+    "semantic_hash": "e85b4acba4d449311f56183b39576e78"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000003_add_unified_campaign_overview.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "df0f96e6dcf8ca7d1fb3130af1f19969",
+    "semantic_hash": "df0f96e6dcf8ca7d1fb3130af1f19969"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000004_add_sms_campaign_cron_job.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "7f83516493a941fa4ab8e5cfe24ca1c6",
+    "semantic_hash": "7f83516493a941fa4ab8e5cfe24ca1c6"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000006_add_sms_provider_profile_config.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "90a48f9922545da9130a890bbcd1c4e1",
+    "semantic_hash": "90a48f9922545da9130a890bbcd1c4e1"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000007_add_simple_sms_gateway_provider.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "89caf01f4f48e788dc39307166dbb048",
+    "semantic_hash": "89caf01f4f48e788dc39307166dbb048"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000008_fix_sms_campaign_overview_after_sender_phone_removal.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "ac0fe4fc17c43e55e05ff820f34bea3b",
+    "semantic_hash": "ac0fe4fc17c43e55e05ff820f34bea3b"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260317000009_add_sms_footer_and_personalization.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "723ce159040af5b83af606ed721a7159",
+    "semantic_hash": "723ce159040af5b83af606ed721a7159"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260327000000_add_sms_fleet_mode.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "2df9665e06b5ee49892494476aa6a4b4",
+    "semantic_hash": "2df9665e06b5ee49892494476aa6a4b4"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260327143000_use_vault_for_sms_campaign_service_role_key.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "c7fd38ad0ca4f5226643ff375ee2ed4f",
+    "semantic_hash": "c7fd38ad0ca4f5226643ff375ee2ed4f"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260328100000_remove_sender_phone_and_simplify_simple_sms_gateway.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "362b6967d7ae0a1b95fde0af5e46a225",
+    "semantic_hash": "362b6967d7ae0a1b95fde0af5e46a225"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120000_add_gateway_counter_functions.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "5704b2fb823fcf823f22d6ce3e0948e5",
+    "semantic_hash": "5704b2fb823fcf823f22d6ce3e0948e5"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120100_add_gateway_reset_crons.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "03e3ef7c2b8072e03310982e339b8124",
+    "semantic_hash": "03e3ef7c2b8072e03310982e339b8124"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120200_add_reassignment_tracking.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "1b6b1fbceb743128efe419bce7fa21fe",
+    "semantic_hash": "1b6b1fbceb743128efe419bce7fa21fe"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120300_fix_quota_race_condition.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "296b2aad4b1da684139532320d87a38c",
+    "semantic_hash": "296b2aad4b1da684139532320d87a38c"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120400_add_fleet_provider_to_sms_campaigns.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "4cf4abcb083aa3e5dd6ad064e4b66321",
+    "semantic_hash": "4cf4abcb083aa3e5dd6ad064e4b66321"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260407120500_add_gateway_names_to_campaign_overview.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "6280391e5be2be85da1a551244c546ea",
+    "semantic_hash": "6280391e5be2be85da1a551244c546ea"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260418010000_update_sms_cron_job_endpoint.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "d1eb2443055a7a57e3a703bb87ca9170",
+    "semantic_hash": "d1eb2443055a7a57e3a703bb87ca9170"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260418100000_add_message_template_to_campaign_overview.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "b14d6c179aabe650d6907e699d2222c6",
+    "semantic_hash": "b14d6c179aabe650d6907e699d2222c6"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260512160000_add_google_contacts_fetch_to_task_type_enum.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "868ebfd86cf47b9a2943c15a22c2e195",
+    "semantic_hash": "868ebfd86cf47b9a2943c15a22c2e195"
+  },
+  "/home/badreddine/Projects/leadminer/supabase/migrations/20260514120000_merge_contact_sources.sql": {
+    "mtime": 1780048655.726289,
+    "ast_hash": "fcf0f55e2c533404af2c05bc24498233",
+    "semantic_hash": "fcf0f55e2c533404af2c05bc24498233"
+  },
+  "/home/badreddine/Projects/leadminer/AGENTS.md": {
+    "mtime": 1780064714.8470984,
+    "ast_hash": "7a0cb33ba1ce1198972b390fabd56764",
+    "semantic_hash": "7a0cb33ba1ce1198972b390fabd56764"
+  },
+  "/home/badreddine/Projects/leadminer/CONTRIBUTING.md": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "71ea63c4e8e52d26506d762552cd408e",
+    "semantic_hash": "71ea63c4e8e52d26506d762552cd408e"
+  },
+  "/home/badreddine/Projects/leadminer/DUAL-LICENSE.md": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "612e4c13e951457a3f20c57c5e9b1cf7",
+    "semantic_hash": "612e4c13e951457a3f20c57c5e9b1cf7"
+  },
+  "/home/badreddine/Projects/leadminer/README.md": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "95d6573c3c599e25a7fa876132c9f094",
+    "semantic_hash": "95d6573c3c599e25a7fa876132c9f094"
+  },
+  "/home/badreddine/Projects/leadminer/docker-compose.dev.yml": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "692a82bdcfb7c2d1ee162aae25986079",
+    "semantic_hash": "692a82bdcfb7c2d1ee162aae25986079"
+  },
+  "/home/badreddine/Projects/leadminer/docker-compose.yml": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "afa401269043ca3fd64edb59a3339e34",
+    "semantic_hash": "afa401269043ca3fd64edb59a3339e34"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/auto-merge-snyk-pr.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "d3378f24004e4517f8ec0a4187e0c51f",
+    "semantic_hash": "d3378f24004e4517f8ec0a4187e0c51f"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/ci-pr.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "35f9b28c1ff6c6b407573e1da645cff0",
+    "semantic_hash": "35f9b28c1ff6c6b407573e1da645cff0"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/ci.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "4afca1486c96295fe275547fe1130dfb",
+    "semantic_hash": "4afca1486c96295fe275547fe1130dfb"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/codesee-arch-diagram.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "1e6842a75051978b0b37ad4156c4e2d4",
+    "semantic_hash": "1e6842a75051978b0b37ad4156c4e2d4"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/prod-trigger.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "89b9c878bde561daf0d2d29aa8fcb931",
+    "semantic_hash": "89b9c878bde561daf0d2d29aa8fcb931"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/push-supabase-functions.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "c4b256181866e88f8293c7251b6c941d",
+    "semantic_hash": "c4b256181866e88f8293c7251b6c941d"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/push-supabase-migrations.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "ad1399aaf33e8a57c65b978be646d0cc",
+    "semantic_hash": "ad1399aaf33e8a57c65b978be646d0cc"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/qa-trigger-backend-build.yml": {
+    "mtime": 1780048655.6196172,
+    "ast_hash": "af494867101a0e0b01ebfbba995b7eb9",
+    "semantic_hash": "af494867101a0e0b01ebfbba995b7eb9"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/qa-trigger-frontend-build.yml": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "11dc146371bbce1bae2dfd9ab3bb7132",
+    "semantic_hash": "11dc146371bbce1bae2dfd9ab3bb7132"
+  },
+  "/home/badreddine/Projects/leadminer/.github/workflows/qa-trigger-no-build.yml": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "aa13140f4e4da247102c3a5239eceaa3",
+    "semantic_hash": "aa13140f4e4da247102c3a5239eceaa3"
+  },
+  "/home/badreddine/Projects/leadminer/.qlty/configs/.hadolint.yaml": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "444d71886a55630eaea0c0cd5f789ce8",
+    "semantic_hash": "444d71886a55630eaea0c0cd5f789ce8"
+  },
+  "/home/badreddine/Projects/leadminer/.qlty/configs/.yamllint.yaml": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "7a57a1e270bd0b8381a0e474eda58fd3",
+    "semantic_hash": "7a57a1e270bd0b8381a0e474eda58fd3"
+  },
+  "/home/badreddine/Projects/leadminer/backend/README.md": {
+    "mtime": 1780048655.6229506,
+    "ast_hash": "55bda0f634b3396b170046cc479fa309",
+    "semantic_hash": "55bda0f634b3396b170046cc479fa309"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/README.md": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "9d8ee2820f962fb776dd8c921a1bd3c5",
+    "semantic_hash": "9d8ee2820f962fb776dd8c921a1bd3c5"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/DESIGN.md": {
+    "mtime": 1780064588.2997403,
+    "ast_hash": "b4aaf1ec7dab65bfb7bfcebaf944af46",
+    "semantic_hash": "b4aaf1ec7dab65bfb7bfcebaf944af46"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/docs/implementation-notes/2026-02-28-campaigns-skeleton-implementation-complete.md": {
+    "mtime": 1780048655.6662862,
+    "ast_hash": "285e956304b768d5362d48299eb61089",
+    "semantic_hash": "285e956304b768d5362d48299eb61089"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/coin.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "e01b45ba9607f0f5bd8797bb35f08287",
+    "semantic_hash": "e01b45ba9607f0f5bd8797bb35f08287"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/gdpr.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "efa7f295213d434456f633c81f76eca8",
+    "semantic_hash": "efa7f295213d434456f633c81f76eca8"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/google.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "6c8f8d7abd3cac522b4ce097a81afd85",
+    "semantic_hash": "6c8f8d7abd3cac522b4ce097a81afd85"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/microsoft.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "01d3f16b2bdab39a69d2e0f2019dd696",
+    "semantic_hash": "01d3f16b2bdab39a69d2e0f2019dd696"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/pickaxe-192-192.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "cb5c55cb938901b3886b9b30c3cdd322",
+    "semantic_hash": "cb5c55cb938901b3886b9b30c3cdd322"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/pickaxe-512-512.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "d93d45e85839865fb9f5023941d72d4b",
+    "semantic_hash": "d93d45e85839865fb9f5023941d72d4b"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/pickaxe.svg": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "6ed16a164f91fc0843c06088529e3a27",
+    "semantic_hash": "6ed16a164f91fc0843c06088529e3a27"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/icons/pst.svg": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "e9ff3d76a137e3efe9fd398b1ab71aef",
+    "semantic_hash": "e9ff3d76a137e3efe9fd398b1ab71aef"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/images/qr-playstore.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "7496a28f8a3e677cb377e871f521015c",
+    "semantic_hash": "7496a28f8a3e677cb377e871f521015c"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/images/qr-smsgate-apk.png": {
+    "mtime": 1780048655.6762867,
+    "ast_hash": "0c75dd5059905fac86bdcd84f479f1cb",
+    "semantic_hash": "0c75dd5059905fac86bdcd84f479f1cb"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/logo/LogoWithIcon.png": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "1136f5714855c22dfb5e0e41b343618f",
+    "semantic_hash": "1136f5714855c22dfb5e0e41b343618f"
+  },
+  "/home/badreddine/Projects/leadminer/frontend/public/logo/LogoWithoutIcon.png": {
+    "mtime": 1780048655.67962,
+    "ast_hash": "1b949b0ab999ca4468a3691ef3a40dbe",
+    "semantic_hash": "1b949b0ab999ca4468a3691ef3a40dbe"
+  }
+}
