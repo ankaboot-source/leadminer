@@ -8,7 +8,7 @@
     @hide="() => onHide()"
   >
     <template #header>
-      <div class="flex items-center gap-2 w-full">
+      <div class="flex items-start gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
           :src="getImageViaProxy(contact.image)"
@@ -56,16 +56,6 @@
                 :aria-label="t('copy')"
                 @click="copyContact(contact.email, contact.name ?? undefined)"
               />
-              <Button
-                v-if="!editingContact"
-                rounded
-                text
-                icon="pi pi-trash"
-                size="large"
-                class="text-2xl flex-none text-red-500"
-                :aria-label="$t('common.remove')"
-                @click="showRemoveConfirmationDialog = true"
-              />
             </div>
           </div>
           <div
@@ -82,20 +72,32 @@
             />
           </div>
           <div
-            v-if="!editingContact && contact.tags?.length"
-            class="flex pt-1 space-x-2"
+            v-if="!editingContact && allTags.length"
+            class="flex flex-wrap pt-1 gap-1"
           >
             <Tag
-              v-for="tag in contact.tags"
+              v-for="tag in allTags"
               :key="tag"
               :value="getTagLabel(tag)"
               :severity="getTagColor(tag)"
             />
           </div>
           <div v-else-if="editingContact" class="pt-1">
-            <Chips v-model="contactEditTags" class="w-full" />
+            <AutoComplete
+              v-model="contactEditTags"
+              :suggestions="filteredTagSuggestions"
+              multiple
+              fluid
+              :placeholder="t('tags_placeholder')"
+              @complete="searchTags"
+            />
           </div>
         </div>
+        <ExportContacts
+          v-if="!editingContact"
+          :contacts-to-treat="[contact.email]"
+          :disable-export="isExportDisabled"
+        />
       </div>
     </template>
 
@@ -228,11 +230,11 @@
                   },
                   { label: t('contact.consent.opt_out'), value: 'opt_out' },
                   { label: t('contact.consent.opt_in'), value: 'opt_in' },
-                  { label: t('contact.unverified'), value: null },
+                  { label: $t('contact.undefined_consent'), value: null },
                 ]"
                 option-label="label"
                 option-value="value"
-                :placeholder="t('contact.unverified')"
+                :placeholder="$t('contact.undefined_consent')"
                 class="w-full"
               />
             </div>
@@ -266,18 +268,17 @@
       </tbody>
     </table>
 
-    <div class="flex justify-center py-2">
-      <Button
-        :label="$t('common.edit')"
-        outlined
-        class="w-full md:w-auto"
-        @click="editContactInformations()"
-      />
-    </div>
-
     <template #footer>
-      <div class="flex flex-wrap gap-2 justify-center items-center">
+      <div class="flex flex-wrap gap-2 justify-between items-center w-full">
         <template v-if="!editingContact">
+          <Button
+            id="remove-contact"
+            icon="pi pi-trash"
+            :label="$screenStore.size.md ? $t('common.remove') : undefined"
+            severity="danger"
+            outlined
+            @click="showRemoveConfirmationDialog = true"
+          />
           <EnrichButton
             source="contact"
             :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -286,9 +287,11 @@
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
           />
-          <ExportContacts
-            :contacts-to-treat="[contact.email]"
-            :disable-export="isExportDisabled"
+          <Button
+            :label="$screenStore.size.md ? $t('common.edit') : undefined"
+            icon="pi pi-pencil"
+            outlined
+            @click="editContactInformations()"
           />
         </template>
         <template v-else>
@@ -348,6 +351,7 @@ import {
   getTagLabel,
   isValidURL,
   removeContactsFromDatabase,
+  tags as predefinedTags,
 } from '@/utils/contacts';
 import type {
   RealtimeChannel,
@@ -376,6 +380,7 @@ const $toast = useToast();
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
+const $screenStore = useScreenStore();
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -407,7 +412,21 @@ async function refreshStatusBadge() {
 
 const editingContact = ref(false);
 const contactEditTags = ref<string[]>([]);
+const filteredTagSuggestions = ref<string[]>([]);
 const showRemoveConfirmationDialog = ref(false);
+
+const allTags = computed(() => {
+  const autoTags = contact.value.tags ?? [];
+  const userTags = contact.value.user_tags ?? [];
+  return [...new Set([...autoTags, ...userTags])];
+});
+
+function searchTags(event: { query: string }) {
+  const query = event.query.toLowerCase();
+  filteredTagSuggestions.value = predefinedTags()
+    .map((tag) => tag.label)
+    .filter((label) => label.toLowerCase().includes(query));
+}
 const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   email: '',
@@ -441,7 +460,9 @@ watch(contact, (newContact) => {
       tags: newContact.tags ?? null,
       consent_status: newContact.consent_status ?? null,
     };
-    contactEditTags.value = newContact.tags ? [...newContact.tags] : [];
+    contactEditTags.value = newContact.user_tags
+      ? [...newContact.user_tags]
+      : [];
   }
 });
 
@@ -645,8 +666,8 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
-    tags:
-      JSON.stringify(originalContactCopy.tags) !==
+    user_tags:
+      JSON.stringify(originalContactCopy.user_tags ?? []) !==
       JSON.stringify(contactEditTags.value)
         ? contactEditTags.value.length > 0
           ? contactEditTags.value

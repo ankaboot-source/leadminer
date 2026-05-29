@@ -47,6 +47,7 @@ export interface Contact {
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
+  user_tags?: string[];
   sources?: string[];
   updated_at?: Date;
   created_at?: Date;

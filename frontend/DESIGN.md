@@ -4,18 +4,18 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Nuxt 3 (Vue 3, Composition API, `<script setup>`) |
-| UI Library | PrimeVue 4 (Aura preset) |
-| CSS | Tailwind CSS v4 + `tailwindcss-primeui` bridge |
-| Icons | nuxt-mdi (Material Design Icons) + PrimeIcons |
-| State | Pinia stores (auto-imported from `src/stores/`) |
-| i18n | `@nuxtjs/i18n` (en/fr, `no_prefix` strategy) |
-| Auth | Supabase (PKCE flow) |
-| Rich Text | Quill editor (snow theme) |
-| Analytics | PostHog |
-| PWA | `@vite-pwa/nuxt` |
+| Layer      | Technology                                        |
+| ---------- | ------------------------------------------------- |
+| Framework  | Nuxt 3 (Vue 3, Composition API, `<script setup>`) |
+| UI Library | PrimeVue 4 (Aura preset)                          |
+| CSS        | Tailwind CSS v4 + `tailwindcss-primeui` bridge    |
+| Icons      | nuxt-mdi (Material Design Icons) + PrimeIcons     |
+| State      | Pinia stores (auto-imported from `src/stores/`)   |
+| i18n       | `@nuxtjs/i18n` (en/fr, `no_prefix` strategy)      |
+| Auth       | Supabase (PKCE flow)                              |
+| Rich Text  | Quill editor (snow theme)                         |
+| Analytics  | PostHog                                           |
+| PWA        | `@vite-pwa/nuxt`                                  |
 
 **Dark mode is disabled** (`darkModeSelector: 'light'`). The application is light-only.
 
@@ -29,41 +29,41 @@ Colors come from the **PrimeVue Aura preset** and are accessed via Tailwind's `t
 
 #### Primary Palette
 
-| Token | Usage |
-|-------|-------|
+| Token                        | Usage                                                 |
+| ---------------------------- | ----------------------------------------------------- |
 | `primary-50` – `primary-950` | Brand actions, active nav indicators, primary buttons |
 
 #### Surface Palette (Neutrals)
 
-| Token | Usage |
-|-------|-------|
-| `surface-0` | Page/app background (white) |
-| `surface-50` | Card backgrounds, stat panels, subtle fills |
-| `surface-100` | Hover states, alternate row backgrounds |
-| `surface-200` | Borders (`border-surface-200`), dividers, skeleton loaders |
-| `surface-300` | Disabled borders, stronger dividers |
-| `surface-400` | Muted icons |
-| `surface-500` | Placeholder text, muted labels |
-| `surface-600` – `surface-900` | Body text, headings (darker = higher emphasis) |
+| Token                         | Usage                                                      |
+| ----------------------------- | ---------------------------------------------------------- |
+| `surface-0`                   | Page/app background (white)                                |
+| `surface-50`                  | Card backgrounds, stat panels, subtle fills                |
+| `surface-100`                 | Hover states, alternate row backgrounds                    |
+| `surface-200`                 | Borders (`border-surface-200`), dividers, skeleton loaders |
+| `surface-300`                 | Disabled borders, stronger dividers                        |
+| `surface-400`                 | Muted icons                                                |
+| `surface-500`                 | Placeholder text, muted labels                             |
+| `surface-600` – `surface-900` | Body text, headings (darker = higher emphasis)             |
 
 #### Semantic / Status Colors
 
 Used via `.state-pill` CSS classes for status badges:
 
-| Class | Text | Background | Usage |
-|-------|------|-----------|-------|
-| `.state-success` | `#166534` | `#dcfce7` | Completed, verified, valid |
-| `.state-warn` | `#92400e` | `#fef3c7` | Pending, needs attention |
-| `.state-danger` | `#991b1b` | `#fee2e2` | Errors, invalid, failed |
-| `.state-secondary` | `#334155` | `#e2e8f0` | Inactive, neutral status |
-| `.state-info` | `#0c4a6e` | `#e0f2fe` | Informational, in-progress |
+| Class              | Text      | Background | Usage                      |
+| ------------------ | --------- | ---------- | -------------------------- |
+| `.state-success`   | `#166534` | `#dcfce7`  | Completed, verified, valid |
+| `.state-warn`      | `#92400e` | `#fef3c7`  | Pending, needs attention   |
+| `.state-danger`    | `#991b1b` | `#fee2e2`  | Errors, invalid, failed    |
+| `.state-secondary` | `#334155` | `#e2e8f0`  | Inactive, neutral status   |
+| `.state-info`      | `#0c4a6e` | `#e0f2fe`  | Informational, in-progress |
 
 #### Accent Colors
 
-| Color | Value | Usage |
-|-------|-------|-------|
+| Color  | Value                       | Usage                                   |
+| ------ | --------------------------- | --------------------------------------- |
 | Indigo | `indigo-500` / `indigo-600` | Links (`.link` class), interactive text |
-| Red | `red-400` | Form validation error text |
+| Red    | `red-400`                   | Form validation error text              |
 
 #### Temperature Scale
 
@@ -78,36 +78,36 @@ HSL gradient: hsl(45, 75%, 85%) → hsl(0, 75%, 85%)
 
 No custom font families are defined. The app uses the system font stack via Tailwind defaults.
 
-| Pattern | Classes | Usage |
-|---------|---------|-------|
+| Pattern            | Classes                         | Usage                                 |
+| ------------------ | ------------------------------- | ------------------------------------- |
 | Auth page headings | `text-4xl font-bold font-serif` | Login, signup, forgot password titles |
-| Section headings | `text-xl font-semibold` | Page titles, card headers |
-| Body text | `text-sm` / `text-base` | Default content |
-| Labels | `text-sm font-medium` | Form field labels |
-| Helper/error text | `text-xs` | Validation messages, captions |
-| Validation errors | `text-red-400 text-left pl-4` | Below form inputs |
+| Section headings   | `text-xl font-semibold`         | Page titles, card headers             |
+| Body text          | `text-sm` / `text-base`         | Default content                       |
+| Labels             | `text-sm font-medium`           | Form field labels                     |
+| Helper/error text  | `text-xs`                       | Validation messages, captions         |
+| Validation errors  | `text-red-400 text-left pl-4`   | Below form inputs                     |
 
 ### Spacing
 
 Uses Tailwind default spacing scale (4px base). Common patterns:
 
-| Pattern | Usage |
-|---------|-------|
-| `p-2` / `p-3` / `p-4` | Card and container padding |
-| `gap-1` / `gap-2` | Inline element spacing |
-| `gap-3` / `gap-4` | Card grid gaps, section spacing |
-| `m-1` / `m-2` / `m-4` | Outer margins |
-| `px-4 pb-4` | Layout-level page padding (set on root layout) |
+| Pattern               | Usage                                          |
+| --------------------- | ---------------------------------------------- |
+| `p-2` / `p-3` / `p-4` | Card and container padding                     |
+| `gap-1` / `gap-2`     | Inline element spacing                         |
+| `gap-3` / `gap-4`     | Card grid gaps, section spacing                |
+| `m-1` / `m-2` / `m-4` | Outer margins                                  |
+| `px-4 pb-4`           | Layout-level page padding (set on root layout) |
 
 ### Breakpoints
 
-| Name | Width | Usage |
-|------|-------|-------|
-| `sm` | 640px | Small tablets |
-| `md` | 768px | Tablets — primary mobile/desktop split |
-| `lg` | 1024px | Desktop nav visible, drawer hidden |
-| `xl` | 1280px | Wide layouts |
-| `2xl` | 1536px | Extra-wide layouts |
+| Name  | Width  | Usage                                  |
+| ----- | ------ | -------------------------------------- |
+| `sm`  | 640px  | Small tablets                          |
+| `md`  | 768px  | Tablets — primary mobile/desktop split |
+| `lg`  | 1024px | Desktop nav visible, drawer hidden     |
+| `xl`  | 1280px | Wide layouts                           |
+| `2xl` | 1536px | Extra-wide layouts                     |
 
 Responsive strategy: **mobile-first with `hidden md:block` / `flex md:hidden` toggle patterns**. The `useScreenStore` Pinia store provides reactive `size.sm/md/lg/xl/2xl` booleans for JS-based breakpoint logic.
 
@@ -117,11 +117,11 @@ No custom shadows defined. Use PrimeVue's built-in elevation on Card, Dialog, an
 
 ### Border Radius
 
-| Pattern | Usage |
-|---------|-------|
-| `rounded-md` | Cards, containers, inputs (default) |
-| `rounded-lg` | Dialogs, modals |
-| `rounded-full` | Avatars, badges, pills |
+| Pattern        | Usage                               |
+| -------------- | ----------------------------------- |
+| `rounded-md`   | Cards, containers, inputs (default) |
+| `rounded-lg`   | Dialogs, modals                     |
+| `rounded-full` | Avatars, badges, pills              |
 
 ---
 
@@ -151,12 +151,12 @@ No custom shadows defined. Use PrimeVue's built-in elevation on Card, Dialog, an
 
 ### Page Patterns
 
-| Page Type | Pattern |
-|-----------|---------|
-| Auth pages | Centered `max-w-lg`, card-based, serif headings |
-| Dashboard/list pages | Full-width with DataTable/DataView |
-| Settings | Sectioned form within bordered cards |
-| Stepper flows | PrimeVue Stepper (3-step mining flow) |
+| Page Type            | Pattern                                         |
+| -------------------- | ----------------------------------------------- |
+| Auth pages           | Centered `max-w-lg`, card-based, serif headings |
+| Dashboard/list pages | Full-width with DataTable/DataView              |
+| Settings             | Sectioned form within bordered cards            |
+| Stepper flows        | PrimeVue Stepper (3-step mining flow)           |
 
 ---
 
@@ -166,26 +166,27 @@ No custom shadows defined. Use PrimeVue's built-in elevation on Card, Dialog, an
 
 The app uses PrimeVue 4 components extensively. Key ones:
 
-| Component | Usage |
-|-----------|-------|
-| `Button` | All interactive actions. Severity: `contrast`, `danger`, `warning`, `success`. Variants: `outlined`, `text`, default (filled) |
-| `DataTable` | Contact mining table (20+ columns, filters, selection, export) |
-| `DataView` | Campaign list (card-based layout) |
-| `Dialog` | Campaign composer, SMS composer, consent sidebars |
-| `Stepper` | Mining flow (Source → Mine → Clean) |
-| `Drawer` | Mobile navigation, contact info sidebar |
-| `Card` | Stat panels, campaign items, auth forms |
-| `InputText` / `InputGroup` | Form inputs |
-| `Select` / `MultiSelect` | Dropdowns |
-| `Toast` | Notifications (responsive width fix applied) |
-| `ProgressSpinner` | Loading states |
-| `Skeleton` | Placeholder loading (`animate-pulse` + `bg-surface-200`) |
-| `Tag` / `Badge` | Status indicators |
-| `FileUpload` | CSV import |
+| Component                  | Usage                                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                   | All interactive actions. Severity: `contrast`, `danger`, `warning`, `success`. Variants: `outlined`, `text`, default (filled) |
+| `DataTable`                | Contact mining table (20+ columns, filters, selection, export)                                                                |
+| `DataView`                 | Campaign list (card-based layout)                                                                                             |
+| `Dialog`                   | Campaign composer, SMS composer, consent sidebars                                                                             |
+| `Stepper`                  | Mining flow (Source → Mine → Clean)                                                                                           |
+| `Drawer`                   | Mobile navigation, contact info sidebar                                                                                       |
+| `Card`                     | Stat panels, campaign items, auth forms                                                                                       |
+| `InputText` / `InputGroup` | Form inputs                                                                                                                   |
+| `Select` / `MultiSelect`   | Dropdowns                                                                                                                     |
+| `Toast`                    | Notifications (responsive width fix applied)                                                                                  |
+| `ProgressSpinner`          | Loading states                                                                                                                |
+| `Skeleton`                 | Placeholder loading (`animate-pulse` + `bg-surface-200`)                                                                      |
+| `Tag` / `Badge`            | Status indicators                                                                                                             |
+| `FileUpload`               | CSV import                                                                                                                    |
 
 ### Custom Component Patterns
 
 #### Container Card
+
 ```html
 <div class="border border-surface-200 rounded-md p-4">
   <!-- content -->
@@ -193,6 +194,7 @@ The app uses PrimeVue 4 components extensively. Key ones:
 ```
 
 #### Status Badge (state-pill)
+
 ```html
 <span class="state-pill state-success">Verified</span>
 <span class="state-pill state-warn">Pending</span>
@@ -200,12 +202,14 @@ The app uses PrimeVue 4 components extensively. Key ones:
 ```
 
 #### Link
+
 ```html
 <a class="link" href="...">Link text</a>
 <!-- Renders: text-indigo-500, hover:text-indigo-600, transition-colors -->
 ```
 
 #### Loading Skeleton
+
 ```html
 <div class="animate-pulse bg-surface-200 rounded-md h-4 w-full" />
 ```
@@ -216,9 +220,9 @@ The app uses PrimeVue 4 components extensively. Key ones:
 
 Two icon systems are used:
 
-| System | Package | Usage |
-|--------|---------|-------|
-| **nuxt-mdi** | `nuxt-mdi` | Primary icon set. Used via `<MdiIcon name="..." />` |
+| System         | Package      | Usage                                                                  |
+| -------------- | ------------ | ---------------------------------------------------------------------- |
+| **nuxt-mdi**   | `nuxt-mdi`   | Primary icon set. Used via `<MdiIcon name="..." />`                    |
 | **PrimeIcons** | `primeicons` | PrimeVue component icons (built-in). Used via `icon="pi pi-..."` props |
 
 Brand icons (Google, Microsoft) are static PNGs in `public/icons/`.
@@ -243,17 +247,17 @@ Translation keys follow a nested structure: `common.*`, `auth.*`, `mining.*`, `c
 
 Pinia stores (auto-imported, no explicit import needed):
 
-| Store | Purpose |
-|-------|---------|
-| `leadminer` | Core app state, mining session |
-| `contacts` | Contact list and selection |
-| `campaigns` | Email/SMS campaign state |
-| `stepper` | Mining stepper state |
-| `filters` | Table filter state |
-| `sidebar` | Sidebar visibility |
-| `screen` | Responsive breakpoint state |
+| Store           | Purpose                                     |
+| --------------- | ------------------------------------------- |
+| `leadminer`     | Core app state, mining session              |
+| `contacts`      | Contact list and selection                  |
+| `campaigns`     | Email/SMS campaign state                    |
+| `stepper`       | Mining stepper state                        |
+| `filters`       | Table filter state                          |
+| `sidebar`       | Sidebar visibility                          |
+| `screen`        | Responsive breakpoint state                 |
 | `notifications` | Real-time notifications (Supabase realtime) |
-| `sms-fleet` | SMS provider/fleet management |
+| `sms-fleet`     | SMS provider/fleet management               |
 
 ---
 
