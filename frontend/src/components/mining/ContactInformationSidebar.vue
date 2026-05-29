@@ -96,6 +96,11 @@
               fluid
               :placeholder="t('tags_placeholder')"
               @complete="searchTags"
+              @blur="commitPendingTag"
+              @input="
+                (e: Event) =>
+                  (pendingTagInput = (e.target as HTMLInputElement).value)
+              "
             />
           </div>
         </div>
@@ -349,6 +354,7 @@
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
+import { useContactsStore } from '~/stores/contacts';
 
 import {
   getConsentColor,
@@ -389,6 +395,7 @@ const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $screenStore = useScreenStore();
+const $contactsStore = useContactsStore();
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -423,6 +430,7 @@ const contactEditTags = ref<string[]>([]);
 const filteredTagSuggestions = ref<string[]>([]);
 const showRemoveConfirmationDialog = ref(false);
 const tagAutoComplete = ref();
+const pendingTagInput = ref('');
 
 const allTags = computed(() => {
   const autoTags = contact.value.tags ?? [];
@@ -444,6 +452,15 @@ function searchTags(event: { query: string }) {
     ? matches
     : [event.query.trim(), ...matches];
 }
+
+function commitPendingTag() {
+  const tag = pendingTagInput.value.trim();
+  if (tag && !contactEditTags.value.includes(tag)) {
+    contactEditTags.value = [...contactEditTags.value, tag];
+  }
+  pendingTagInput.value = '';
+}
+
 const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   email: '',
@@ -615,18 +632,12 @@ async function saveContactInformations() {
   if (!isValidSameAs.value || !isValidAvatar.value) {
     showNotification(
       'error',
-      t('url_invalid_summary'),
-      t('url_invalid_detail'),
+      t('phone_invalid_summary'),
+      t('phone_invalid_detail', { phoneNumber: '' }),
     );
     return;
   }
-
-  const pendingTag = (
-    tagAutoComplete.value?.$el?.querySelector('input')?.value || ''
-  ).trim();
-  if (pendingTag && !contactEditTags.value.includes(pendingTag)) {
-    contactEditTags.value.push(pendingTag);
-  }
+  commitPendingTag();
 
   const telephones = transformPhones();
 
@@ -712,6 +723,7 @@ async function saveContactInformations() {
   if (contactToUpdate.user_tags !== undefined) {
     contact.value.user_tags = contactToUpdate.user_tags;
   }
+  await $contactsStore.updateContactsCache(contact.value, true);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }
