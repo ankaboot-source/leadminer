@@ -29,7 +29,8 @@
       "of": "of",
       "email_required": "Email is required",
       "password_required": "Password is required",
-      "close": "Close"
+      "close": "Close",
+      "remove": "Remove"
     },
     "auth": {
       "sign_in": "Sign in",
@@ -179,7 +180,8 @@
       "phone_copied": "Phone number copied",
       "contact_phone_copied": "Phone number has been copied to your clipboard",
       "tags_placeholder": "Enter tags separated by commas",
-      "undefined_consent": "Undefined"
+      "undefined_consent": "Undefined",
+      "categorize_contacts": "Categorize your contacts"
     },
     "mining": {
       "toast_canceled_title": "Mining canceled",
@@ -246,7 +248,8 @@
       "of": "sur",
       "email_required": "Email est obligatoire",
       "password_required": "Mot de passe est obligatoire",
-      "close": "Fermer"
+      "close": "Fermer",
+      "remove": "Supprimer"
     },
     "auth": {
       "sign_in": "Se connecter",
@@ -362,7 +365,8 @@
       "phone_copied": "Numéro de téléphone copié",
       "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers",
       "tags_placeholder": "Entrez des étiquettes séparées par des virgules",
-      "undefined_consent": "Non défini"
+      "undefined_consent": "Non défini",
+      "categorize_contacts": "Catégoriser vos contacts"
     },
     "mining": {
       "toast_canceled_title": "Extraction annulée",

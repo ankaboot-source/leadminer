@@ -30,8 +30,8 @@
               size="large"
               class="w-full"
             />
-            <div class="flex gap-1">
-              <div class="max-lg:grow gap-2 flex items-center truncate">
+            <div class="flex gap-1 items-center">
+              <div class="grow gap-2 flex items-center truncate min-w-0">
                 <Badge
                   v-tooltip.top="getStatusLabel(contact.status)"
                   class="min-w-4 h-4 flex-none cursor-pointer hover:opacity-75 transition-opacity"
@@ -42,7 +42,7 @@
                     <i class="pi pi-spin pi-spinner" />
                   </span>
                 </Badge>
-                <div class="truncate">
+                <div v-tooltip.top="contact.email" class="truncate">
                   {{ contact.email }}
                 </div>
               </div>
@@ -56,6 +56,11 @@
                 :aria-label="t('copy')"
                 @click="copyContact(contact.email, contact.name ?? undefined)"
               />
+              <ExportContacts
+                v-if="!editingContact"
+                :contacts-to-treat="[contact.email]"
+                :disable-export="isExportDisabled"
+              />
             </div>
           </div>
           <div
@@ -67,7 +72,7 @@
           <div class="flex items-center gap-1 pt-1">
             <span class="font-medium">{{ $t('contact.tags') }}</span>
             <i
-              v-tooltip.top="$t('categorize_contacts')"
+              v-tooltip.top="$t('contact.categorize_contacts')"
               class="pi pi-info-circle text-surface-400 cursor-help text-sm"
             />
           </div>
@@ -84,6 +89,7 @@
           </div>
           <div v-else-if="editingContact" class="pt-1">
             <AutoComplete
+              ref="tagAutoComplete"
               v-model="contactEditTags"
               :suggestions="filteredTagSuggestions"
               multiple
@@ -93,11 +99,6 @@
             />
           </div>
         </div>
-        <ExportContacts
-          v-if="!editingContact"
-          :contacts-to-treat="[contact.email]"
-          :disable-export="isExportDisabled"
-        />
       </div>
     </template>
 
@@ -215,8 +216,16 @@
               <div v-tooltip.bottom="getConsentTooltip(contact)">
                 <Tag
                   class="font-normal"
-                  :value="getConsentLabel(contact.consent_status)"
-                  :severity="getConsentColor(contact.consent_status)"
+                  :value="
+                    getConsentLabel(
+                      contact.consent_status ?? 'legitimate_interest',
+                    )
+                  "
+                  :severity="
+                    getConsentColor(
+                      contact.consent_status ?? 'legitimate_interest',
+                    )
+                  "
                 />
               </div>
             </div>
@@ -230,7 +239,6 @@
                   },
                   { label: t('contact.consent.opt_out'), value: 'opt_out' },
                   { label: t('contact.consent.opt_in'), value: 'opt_in' },
-                  { label: $t('contact.undefined_consent'), value: null },
                 ]"
                 option-label="label"
                 option-value="value"
@@ -414,6 +422,7 @@ const editingContact = ref(false);
 const contactEditTags = ref<string[]>([]);
 const filteredTagSuggestions = ref<string[]>([]);
 const showRemoveConfirmationDialog = ref(false);
+const tagAutoComplete = ref();
 
 const allTags = computed(() => {
   const autoTags = contact.value.tags ?? [];
@@ -422,10 +431,18 @@ const allTags = computed(() => {
 });
 
 function searchTags(event: { query: string }) {
-  const query = event.query.toLowerCase();
-  filteredTagSuggestions.value = predefinedTags()
+  const query = event.query.toLowerCase().trim();
+  if (!query) {
+    filteredTagSuggestions.value = [];
+    return;
+  }
+  const matches = predefinedTags()
     .map((tag) => tag.label)
     .filter((label) => label.toLowerCase().includes(query));
+  const exactMatch = matches.some((l) => l.toLowerCase() === query);
+  filteredTagSuggestions.value = exactMatch
+    ? matches
+    : [event.query.trim(), ...matches];
 }
 const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
@@ -458,7 +475,7 @@ watch(contact, (newContact) => {
       job_title: newContact.job_title,
       image: newContact.image,
       tags: newContact.tags ?? null,
-      consent_status: newContact.consent_status ?? null,
+      consent_status: newContact.consent_status ?? 'legitimate_interest',
     };
     contactEditTags.value = newContact.user_tags
       ? [...newContact.user_tags]
@@ -567,6 +584,9 @@ function onHide() {
 }
 
 function editContactInformations() {
+  contactEditTags.value = contact.value.user_tags
+    ? [...contact.value.user_tags]
+    : [];
   editingContact.value = true;
 }
 
@@ -601,17 +621,25 @@ async function saveContactInformations() {
     return;
   }
 
+  const pendingTag = (
+    tagAutoComplete.value?.$el?.querySelector('input')?.value || ''
+  ).trim();
+  if (pendingTag && !contactEditTags.value.includes(pendingTag)) {
+    contactEditTags.value.push(pendingTag);
+  }
+
   const telephones = transformPhones();
 
   const originalContactCopy = contact.value;
-  const editedContactCopy: Contact = {
+  const editedContactCopy = {
     ...contact.value,
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
     telephone: telephones,
     location: contactEdit.value.location,
-  };
+    consent_status: contactEdit.value.consent_status ?? undefined,
+  } as Contact;
 
   const newLocation =
     originalContactCopy.location !== editedContactCopy.location
@@ -671,11 +699,11 @@ async function saveContactInformations() {
       JSON.stringify(contactEditTags.value)
         ? contactEditTags.value.length > 0
           ? contactEditTags.value
-          : null
+          : []
         : undefined,
     consent_status:
       originalContactCopy.consent_status !== contactEdit.value.consent_status
-        ? contactEdit.value.consent_status || null
+        ? (contactEdit.value.consent_status ?? 'legitimate_interest')
         : undefined,
   };
   const userId = getCurrentUserId();
