@@ -155,10 +155,7 @@ async function handleSave() {
     if (smtpUser.value) updates.smtp_user = smtpUser.value;
     if (senderPassword.value) updates.smtp_password = senderPassword.value;
 
-    success = await $store.updateSender(
-      props.editingSender.id,
-      updates as any,
-    );
+    success = await $store.updateSender(props.editingSender.id, updates as any);
     if (success) {
       $toast.add({
         severity: 'success',
@@ -253,7 +250,12 @@ async function handleSave() {
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium">{{ t('smtp_port') }}</label>
-            <InputNumber v-model="smtpPort" :min="1" :max="65535" show-buttons />
+            <InputNumber
+              v-model="smtpPort"
+              :min="1"
+              :max="65535"
+              show-buttons
+            />
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium">{{ t('encryption') }}</label>
@@ -281,15 +283,17 @@ async function handleSave() {
         @click="showAdvanced = !showAdvanced"
       >
         {{
-          showAdvanced
-            ? t('configure_automatically')
-            : t('configure_manually')
+          showAdvanced ? t('configure_automatically') : t('configure_manually')
         }}
       </button>
     </div>
 
     <template #footer>
-      <Button outlined :label="globalT('common.cancel')" @click="visible = false" />
+      <Button
+        outlined
+        :label="globalT('common.cancel')"
+        @click="visible = false"
+      />
       <Button
         :label="isEditing ? t('save_changes') : t('connect')"
         :loading="isConnecting || $store.isLoading"

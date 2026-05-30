@@ -2,16 +2,27 @@
   <div class="flex flex-col gap-4">
     <Panel toggleable class="border border-surface-200 rounded-md p-4">
       <template #header>
-        <h1 class="text-xl font-semibold">{{ t('sms_gateways') }}</h1>
+        <div class="flex items-center gap-4 w-full">
+          <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
+          <SenderFilterTabs v-model="senderFilter" />
+        </div>
       </template>
-      <SmsFleetManagement />
+      <div v-show="senderFilter !== 'sms'">
+        <EmailSenderManagement />
+      </div>
+      <div v-show="senderFilter !== 'email'">
+        <SmsFleetManagement />
+      </div>
     </Panel>
 
     <div
       class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
     >
       <div class="flex items-center justify-between">
-        <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
+        <div class="flex items-center gap-4">
+          <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
+          <SenderFilterTabs v-model="campaignFilter" />
+        </div>
         <Button
           icon="pi pi-refresh"
           :label="t('refresh')"
@@ -30,7 +41,7 @@
 
       <DataView
         v-else
-        :value="$campaignsStore.campaigns"
+        :value="filteredCampaigns"
         data-key="id"
         :paginator="true"
         :rows="10"
@@ -377,8 +388,21 @@
 <script setup lang="ts">
 import type { CampaignOverview, CampaignStatus } from '@/types/campaign';
 import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
+import EmailSenderManagement from '~/components/senders/EmailSenderManagement.vue';
+import SenderFilterTabs from '~/components/senders/SenderFilterTabs.vue';
+import type { SenderFilter } from '~/components/senders/SenderFilterTabs.vue';
 
 const $campaignsStore = useCampaignsStore();
+const senderFilter = ref<SenderFilter>('all');
+const campaignFilter = ref<SenderFilter>('all');
+
+const filteredCampaigns = computed(() => {
+  if (campaignFilter.value === 'all') return $campaignsStore.campaigns;
+  if (campaignFilter.value === 'sms') {
+    return $campaignsStore.campaigns.filter((c) => c.channel === 'sms');
+  }
+  return $campaignsStore.campaigns.filter((c) => c.channel !== 'sms');
+});
 const { t } = useI18n({ useScope: 'local' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
@@ -742,6 +766,7 @@ onBeforeUnmount(() => {
 {
   "en": {
     "sms_gateways": "SMS Gateways",
+    "senders": "Senders",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -802,6 +827,7 @@ onBeforeUnmount(() => {
   },
   "fr": {
     "sms_gateways": "Passerelles SMS",
+    "senders": "Expéditeurs",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",
