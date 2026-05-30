@@ -5,6 +5,7 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import PgSmtpSenders from './db/pg/PgSmtpSenders';
 import SupabaseTasks from './db/supabase/tasks';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
@@ -35,6 +36,11 @@ console.log(
   await redis.initProviders();
 
   const miningSources = new PgMiningSources(
+    pool,
+    logger,
+    ENV.LEADMINER_API_HASH_SECRET
+  );
+  const smtpSenders = new PgSmtpSenders(
     pool,
     logger,
     ENV.LEADMINER_API_HASH_SECRET
@@ -75,7 +81,8 @@ console.log(
     contactsResolver,
     userResolver,
     logger,
-    miningControllerDeps
+    miningControllerDeps,
+    smtpSenders
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {

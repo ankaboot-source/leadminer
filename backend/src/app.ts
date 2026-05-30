@@ -7,6 +7,7 @@ import { Logger } from 'winston';
 import ENV from './config';
 import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
+import { SmtpSenders } from './db/interfaces/SmtpSenders';
 import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
@@ -18,6 +19,7 @@ import initializeContactsRoutes from './routes/contacts.routes';
 import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
+import initializeSmtpSendersRoutes from './routes/smtp-senders.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import { MiningEngine } from './services/tasks-manager-v2/MiningEngine';
@@ -32,7 +34,8 @@ export default function initializeApp(
   contacts: Contacts,
   userResolver: Users,
   logger: Logger,
-  miningControllerDeps: MiningControllerDeps
+  miningControllerDeps: MiningControllerDeps,
+  smtpSenders: SmtpSenders
 ) {
   const app = express();
 
@@ -77,6 +80,7 @@ export default function initializeApp(
     initializeContactsRoutes(contacts, authResolver, miningSourceService)
   );
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
+  app.use('/api', initializeSmtpSendersRoutes(smtpSenders, authResolver));
 
   if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.setupExpressErrorHandler(app);
