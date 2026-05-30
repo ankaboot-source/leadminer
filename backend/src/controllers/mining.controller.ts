@@ -38,6 +38,7 @@ import {
   createFileMining,
   createPstMining
 } from '../services/tasks-manager-v2/factories';
+import { SmtpSenders } from '../db/interfaces/SmtpSenders';
 import { PipelineDeps } from '../services/tasks-manager-v2/Pipeline';
 import { FetcherClient } from '../services/tasks-manager-v2/tasks/FetchTask';
 
@@ -46,6 +47,7 @@ export interface MiningControllerDeps {
   emailFetcherClient: FetcherClient;
   pstFetcherClient: FetcherClient;
   idGenerator: () => Promise<string> | string;
+  smtpSenders?: SmtpSenders;
 }
 
 /**
@@ -286,6 +288,28 @@ export default function initializeMiningController(
             password: sanitizedPassword
           }
         });
+
+        if (deps.smtpSenders) {
+          try {
+            await deps.smtpSenders.create({
+              userId: user.id,
+              name: sanitizedEmail,
+              email: sanitizedEmail,
+              smtpHost: sanitizedHost,
+              smtpPort: port === 993 ? 465 : 587,
+              smtpEncryption: secure ? 'ssl' : 'starttls',
+              smtpUser: sanitizedEmail,
+              smtpPassword: sanitizedPassword,
+              miningSourceEmail: sanitizedEmail
+            });
+          } catch (twinError) {
+            logger.warn('Failed to create SMTP twin for IMAP source', {
+              userId: user.id,
+              email: sanitizedEmail,
+              error: twinError instanceof Error ? twinError.message : twinError
+            });
+          }
+        }
 
         return res
           .status(201)

@@ -71,7 +71,8 @@ console.log(
       ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
       ENV.EMAIL_FETCHING_SERVICE_URL
     ),
-    idGenerator: flickrBase58IdGenerator()
+    idGenerator: flickrBase58IdGenerator(),
+    smtpSenders
   };
 
   const app = initializeApp(
