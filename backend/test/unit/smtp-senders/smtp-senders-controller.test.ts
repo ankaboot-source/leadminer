@@ -1,7 +1,15 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { Request, Response, NextFunction } from 'express';
 import initializeSmtpSendersController from '../../../src/controllers/smtp-senders.controller';
-import { SmtpSenders } from '../../../src/db/interfaces/SmtpSenders';
+import {
+  SmtpSender,
+  SmtpSenders
+} from '../../../src/db/interfaces/SmtpSenders';
+
+// Mock the Provider module
+jest.mock('../../../src/services/auth/Provider', () => ({
+  getProviderFromEmail: jest.fn()
+}));
 
 describe('SmtpSendersController', () => {
   const mockSmtpSenders: jest.Mocked<SmtpSenders> = {
@@ -10,7 +18,7 @@ describe('SmtpSendersController', () => {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-    deleteByMiningSourceEmail: jest.fn(),
+    deleteByMiningSourceId: jest.fn(),
     getPassword: jest.fn()
   };
 
@@ -32,8 +40,23 @@ describe('SmtpSendersController', () => {
 
   describe('listSenders', () => {
     it('returns senders for user', async () => {
-      const senders = [{ id: '1', email: 'a@b.com', userId: 'user-1' }];
-      mockSmtpSenders.getByUser.mockResolvedValue(senders as any);
+      const senders: SmtpSender[] = [
+        {
+          id: '1',
+          email: 'a@b.com',
+          userId: 'user-1',
+          name: 'Test',
+          smtpHost: 'smtp.b.com',
+          smtpPort: 587,
+          smtpEncryption: 'starttls',
+          smtpUser: 'a@b.com',
+          authType: 'password',
+          active: true,
+          createdAt: '2026-01-01',
+          updatedAt: '2026-01-01'
+        }
+      ];
+      mockSmtpSenders.getByUser.mockResolvedValue(senders);
 
       await controller.listSenders(mockReq, mockRes, mockNext);
 
@@ -56,8 +79,12 @@ describe('SmtpSendersController', () => {
       mockReq.body = senderData;
       mockSmtpSenders.create.mockResolvedValue({
         id: '1',
-        ...senderData
-      } as any);
+        ...senderData,
+        authType: 'password' as const,
+        active: true,
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01'
+      });
 
       await controller.createSender(mockReq, mockRes, mockNext);
 

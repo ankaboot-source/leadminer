@@ -23,7 +23,7 @@ function toSmtpSender(row: Record<string, unknown>): SmtpSender {
     authType: row.auth_type as SmtpAuthType,
     oauthProvider: row.oauth_provider as SmtpOAuthProvider | undefined,
     active: row.active as boolean,
-    miningSourceEmail: row.mining_source_email as string | undefined,
+    miningSourceId: row.mining_source_id as string | undefined,
     createdAt:
       typeof row.created_at === 'string'
         ? row.created_at
@@ -37,9 +37,9 @@ function toSmtpSender(row: Record<string, unknown>): SmtpSender {
 
 export default class PgSmtpSenders implements SmtpSenders {
   private static readonly SELECT_COLUMNS = `
-    id, user_id, name, email, smtp_host, smtp_port, smtp_encryption,
-    smtp_user, auth_type, oauth_provider, active, mining_source_email,
-    created_at, updated_at`;
+     id, user_id, name, email, smtp_host, smtp_port, smtp_encryption,
+     smtp_user, auth_type, oauth_provider, active, mining_source_id,
+     created_at, updated_at`;
 
   private static readonly GET_BY_USER_SQL = `
     SELECT ${PgSmtpSenders.SELECT_COLUMNS}
@@ -53,32 +53,33 @@ export default class PgSmtpSenders implements SmtpSenders {
     WHERE id = $1 AND user_id = $2;`;
 
   private static readonly CREATE_SQL = `
-    INSERT INTO private.smtp_senders
-      (user_id, name, email, smtp_host, smtp_port, smtp_encryption,
-       smtp_user, smtp_password, auth_type, oauth_provider, oauth_refresh_token, mining_source_email)
-    VALUES ($1, $2, $3, $4, $5, $6, $7,
-       pgp_sym_encrypt($8, $9), $10, $11,
-       pgp_sym_encrypt($12, $9), $13)
-    RETURNING ${PgSmtpSenders.SELECT_COLUMNS};`;
+     INSERT INTO private.smtp_senders
+       (user_id, name, email, smtp_host, smtp_port, smtp_encryption,
+        smtp_user, smtp_password, auth_type, oauth_provider, oauth_refresh_token, mining_source_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7,
+        pgp_sym_encrypt($8, $9), $10, $11,
+        pgp_sym_encrypt($12, $9), $13)
+     RETURNING ${PgSmtpSenders.SELECT_COLUMNS};`;
 
   private static readonly UPDATE_SQL = `
-    UPDATE private.smtp_senders SET
-      name = COALESCE($3, name),
-      smtp_host = COALESCE($4, smtp_host),
-      smtp_port = COALESCE($5, smtp_port),
-      smtp_encryption = COALESCE($6, smtp_encryption),
-      smtp_user = COALESCE($7, smtp_user),
-      smtp_password = COALESCE(pgp_sym_encrypt($8, $9), smtp_password),
-      active = COALESCE($10, active),
-      updated_at = now()
-    WHERE id = $1 AND user_id = $2
-    RETURNING ${PgSmtpSenders.SELECT_COLUMNS};`;
+     UPDATE private.smtp_senders SET
+       name = COALESCE($3, name),
+       smtp_host = COALESCE($4, smtp_host),
+       smtp_port = COALESCE($5, smtp_port),
+       smtp_encryption = COALESCE($6, smtp_encryption),
+       smtp_user = COALESCE($7, smtp_user),
+       smtp_password = COALESCE(pgp_sym_encrypt($8, $9), smtp_password),
+       active = COALESCE($10, active),
+       mining_source_id = COALESCE($11, mining_source_id),
+       updated_at = now()
+     WHERE id = $1 AND user_id = $2
+     RETURNING ${PgSmtpSenders.SELECT_COLUMNS};`;
 
   private static readonly DELETE_SQL = `
     DELETE FROM private.smtp_senders WHERE id = $1 AND user_id = $2;`;
 
   private static readonly DELETE_BY_MINING_SOURCE_SQL = `
-    DELETE FROM private.smtp_senders WHERE user_id = $1 AND mining_source_email = $2;`;
+     DELETE FROM private.smtp_senders WHERE user_id = $1 AND mining_source_id = $2;`;
 
   private static readonly GET_PASSWORD_SQL = `
     SELECT pgp_sym_decrypt(smtp_password, $1) as password
@@ -131,7 +132,7 @@ export default class PgSmtpSenders implements SmtpSenders {
         sender.authType ?? 'password',
         sender.oauthProvider ?? null,
         sender.oauthRefreshToken ?? null,
-        sender.miningSourceEmail ?? null
+        sender.miningSourceId ?? null
       ]);
       return toSmtpSender(rows[0]);
     } catch (error) {
@@ -182,20 +183,20 @@ export default class PgSmtpSenders implements SmtpSenders {
     }
   }
 
-  async deleteByMiningSourceEmail(
+  async deleteByMiningSourceId(
     userId: string,
-    miningSourceEmail: string
+    miningSourceId: string
   ): Promise<boolean> {
     try {
       const result = await this.client.query(
         PgSmtpSenders.DELETE_BY_MINING_SOURCE_SQL,
-        [userId, miningSourceEmail]
+        [userId, miningSourceId]
       );
       return (result.rowCount ?? 0) > 0;
     } catch (error) {
       this.logger.error('Failed deleting SMTP sender by mining source', {
         userId,
-        miningSourceEmail,
+        miningSourceId,
         error
       });
       throw error;

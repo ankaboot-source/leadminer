@@ -14,7 +14,7 @@ export interface SmtpSender {
   authType: SmtpAuthType;
   oauthProvider?: SmtpOAuthProvider;
   active: boolean;
-  miningSourceEmail?: string;
+  miningSourceId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,7 +31,7 @@ export interface SmtpSenderCreate {
   authType?: SmtpAuthType;
   oauthProvider?: SmtpOAuthProvider;
   oauthRefreshToken?: string;
-  miningSourceEmail?: string;
+  miningSourceId?: string;
 }
 
 export interface SmtpSenderUpdate {
@@ -54,9 +54,9 @@ export interface SmtpSenders {
     updates: SmtpSenderUpdate
   ): Promise<SmtpSender | null>;
   delete(id: string, userId: string): Promise<boolean>;
-  deleteByMiningSourceEmail(
+  deleteByMiningSourceId(
     userId: string,
-    miningSourceEmail: string
+    miningSourceId: string
   ): Promise<boolean>;
   getPassword(id: string, userId: string): Promise<string | null>;
 }

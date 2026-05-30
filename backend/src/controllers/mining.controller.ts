@@ -299,8 +299,7 @@ export default function initializeMiningController(
               smtpPort: port === 993 ? 465 : 587,
               smtpEncryption: secure ? 'ssl' : 'starttls',
               smtpUser: sanitizedEmail,
-              smtpPassword: sanitizedPassword,
-              miningSourceEmail: sanitizedEmail
+              smtpPassword: sanitizedPassword
             });
           } catch (twinError) {
             logger.warn('Failed to create SMTP twin for IMAP source', {

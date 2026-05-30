@@ -1,10 +1,10 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import PgSmtpSenders from '../../../src/db/pg/PgSmtpSenders';
-import { Pool } from 'pg';
+import { Pool, QueryResult } from 'pg';
 import { Logger } from 'winston';
+import PgSmtpSenders from '../../../src/db/pg/PgSmtpSenders';
 
 describe('PgSmtpSenders', () => {
-  const mockQuery = jest.fn();
+  const mockQuery = jest.fn<() => Promise<QueryResult>>();
   const mockPool = { query: mockQuery } as unknown as Pool;
   const mockLogger = {
     error: jest.fn(),
@@ -35,7 +35,7 @@ describe('PgSmtpSenders', () => {
           auth_type: 'password',
           oauth_provider: null,
           active: true,
-          mining_source_email: null,
+          mining_source_id: null,
           created_at: '2026-05-30T00:00:00Z',
           updated_at: '2026-05-30T00:00:00Z'
         }
@@ -68,7 +68,7 @@ describe('PgSmtpSenders', () => {
         auth_type: 'password',
         oauth_provider: null,
         active: true,
-        mining_source_email: null,
+        mining_source_id: null,
         created_at: '2026-05-30T00:00:00Z',
         updated_at: '2026-05-30T00:00:00Z'
       };

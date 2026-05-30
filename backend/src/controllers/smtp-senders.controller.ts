@@ -2,6 +2,7 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import { SmtpSenders } from '../db/interfaces/SmtpSenders';
+import { getProviderFromEmail } from '../services/auth/Provider';
 
 export default function initializeSmtpSendersController(
   smtpSenders: SmtpSenders
@@ -145,21 +146,25 @@ export default function initializeSmtpSendersController(
           }
         });
 
-        await transport.sendMail({
-          from: `"${sender.name}" <${sender.email}>`,
-          to: testTo,
-          subject: 'Leadminer SMTP Test',
-          text: 'This is a test email from Leadminer to verify your SMTP configuration.'
-        });
+        try {
+          await transport.sendMail({
+            from: `"${sender.name}" <${sender.email}>`,
+            to: testTo,
+            subject: 'Leadminer SMTP Test',
+            text: 'This is a test email from Leadminer to verify your SMTP configuration.'
+          });
 
-        return res.json({ success: true, message: 'Test email sent' });
+          return res.json({ success: true, message: 'Test email sent' });
+        } finally {
+          transport.close();
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Test failed';
         return res.status(400).json({ success: false, message });
       }
     },
 
-    async autodetect(req: Request, res: Response, next: NextFunction) {
+    autodetect(req: Request, res: Response, next: NextFunction) {
       try {
         const { email } = req.body;
         if (!email) {
@@ -167,34 +172,23 @@ export default function initializeSmtpSendersController(
           return next(new Error('Email is required'));
         }
 
+        const provider = getProviderFromEmail(email);
+        if (provider) {
+          return res.json({
+            smtpHost:
+              provider === 'google'
+                ? 'smtp.gmail.com'
+                : 'smtp-mail.outlook.com',
+            smtpPort: 587,
+            smtpEncryption: 'starttls',
+            authType: 'oauth',
+            oauthProvider: provider === 'google' ? 'google' : 'azure'
+          });
+        }
+
         const domain = email.split('@')[1]?.toLowerCase();
         if (!domain) {
           return res.json(null);
-        }
-
-        if (domain === 'gmail.com' || domain.endsWith('.googlemail.com')) {
-          return res.json({
-            smtpHost: 'smtp.gmail.com',
-            smtpPort: 587,
-            smtpEncryption: 'starttls',
-            authType: 'oauth',
-            oauthProvider: 'google'
-          });
-        }
-
-        if (
-          domain.endsWith('outlook.com') ||
-          domain.endsWith('hotmail.com') ||
-          domain.endsWith('live.com') ||
-          domain.endsWith('office365.com')
-        ) {
-          return res.json({
-            smtpHost: 'smtp-mail.outlook.com',
-            smtpPort: 587,
-            smtpEncryption: 'starttls',
-            authType: 'oauth',
-            oauthProvider: 'azure'
-          });
         }
 
         return res.json({

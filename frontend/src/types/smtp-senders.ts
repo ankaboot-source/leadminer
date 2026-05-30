@@ -13,7 +13,7 @@ export interface SmtpSender {
   auth_type: SmtpAuthType;
   oauth_provider?: SmtpOAuthProvider;
   active: boolean;
-  mining_source_email?: string;
+  mining_source_id?: string;
   created_at: string;
   updated_at: string;
 }

@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToast } from 'primevue/usetoast';
 import { useSmtpSendersStore } from '~/stores/smtp-senders';
-import type { SmtpEncryption } from '@/types/smtp-senders';
+import type {
+  SmtpEncryption,
+  SmtpSenderUpdatePayload,
+} from '@/types/smtp-senders';
 
 const props = defineProps<{
   editingSender?: {
@@ -18,7 +21,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  senderSaved: [];
+  'sender-saved': [];
 }>();
 
 const visible = defineModel<boolean>('visible', { default: false });
@@ -38,7 +41,7 @@ const smtpUser = ref('');
 const showAdvanced = ref(false);
 const isConnecting = ref(false);
 
-const isEditing = computed(() => !!props.editingSender);
+const isEditing = computed(() => Boolean(props.editingSender));
 
 const isFormValid = computed(() => {
   if (isEditing.value) {
@@ -146,7 +149,7 @@ async function handleSave() {
   let success = false;
 
   if (isEditing.value && props.editingSender) {
-    const updates: Record<string, unknown> = {
+    const updates: SmtpSenderUpdatePayload = {
       name: senderName.value,
     };
     if (smtpHost.value) updates.smtp_host = smtpHost.value;
@@ -155,7 +158,7 @@ async function handleSave() {
     if (smtpUser.value) updates.smtp_user = smtpUser.value;
     if (senderPassword.value) updates.smtp_password = senderPassword.value;
 
-    success = await $store.updateSender(props.editingSender.id, updates as any);
+    success = await $store.updateSender(props.editingSender.id, updates);
     if (success) {
       $toast.add({
         severity: 'success',
@@ -173,7 +176,7 @@ async function handleSave() {
       smtp_user: smtpUser.value || senderEmail.value,
       smtp_password: senderPassword.value,
     });
-    success = !!result;
+    success = Boolean(result);
     if (success) {
       $toast.add({
         severity: 'success',
@@ -185,7 +188,7 @@ async function handleSave() {
 
   if (success) {
     visible.value = false;
-    emit('senderSaved');
+    emit('sender-saved');
     resetForm();
   } else {
     $toast.add({
