@@ -1,5 +1,6 @@
+/* eslint-disable class-methods-use-this */
 import axios from 'axios';
-import logger from '../src/utils/logger';
+import logger from '../utils/logger';
 
 export interface OpenWASession {
   id: string;
@@ -27,6 +28,7 @@ export interface OpenWAWebhookPayload {
 
 export class OpenWAClient {
   private readonly apiUrl: string;
+
   private readonly apiKey: string;
 
   constructor(apiUrl: string, apiKey: string) {
