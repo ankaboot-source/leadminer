@@ -39,19 +39,6 @@ export function cleanUnwantedWords(name: string): string {
   return name;
 }
 
-export function cleanUnwantedWords(name: string): string {
-  const lowerName = name.toLowerCase();
-  const patterns = ['(via', 'via ', '(google)', '(drive)', '(google drive)'];
-
-  for (const pattern of patterns) {
-    const idx = lowerName.lastIndexOf(pattern);
-    if (idx !== -1) {
-      return name.substring(0, idx).trim();
-    }
-  }
-
-  return name;
-}
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 export const MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
