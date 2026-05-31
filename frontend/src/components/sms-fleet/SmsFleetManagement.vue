@@ -20,6 +20,7 @@ type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
+  hideAddButton?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -212,11 +213,13 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
 onMounted(() => {
   $smsFleetStore.fetchGateways();
 });
+
+defineExpose({ openAddDialog });
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-end">
+    <div v-if="!hideAddButton" class="flex items-center justify-end">
       <Button
         :label="t('add_gateway')"
         icon="pi pi-plus"

@@ -2,16 +2,34 @@
   <div class="flex flex-col gap-4">
     <Panel toggleable class="border border-surface-200 rounded-md p-4">
       <template #header>
-        <div class="flex items-center gap-4 w-full">
-          <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
-          <SenderFilterTabs v-model="senderFilter" />
+        <div class="flex items-center justify-between gap-4 w-full">
+          <div class="flex items-center gap-4">
+            <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
+            <SenderFilterTabs v-model="senderFilter" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Button
+              v-if="senderFilter !== 'sms'"
+              :label="t('add_email_sender')"
+              icon="pi pi-plus"
+              outlined
+              @click.stop="emailSenderManagementRef?.openAddDialog()"
+            />
+            <Button
+              v-if="senderFilter !== 'email'"
+              :label="t('add_sms_gateway')"
+              icon="pi pi-plus"
+              outlined
+              @click.stop="smsFleetManagementRef?.openAddDialog()"
+            />
+          </div>
         </div>
       </template>
       <div v-show="senderFilter !== 'sms'">
-        <EmailSenderManagement />
+        <EmailSenderManagement ref="emailSenderManagementRef" hide-add-button />
       </div>
       <div v-show="senderFilter !== 'email'">
-        <SmsFleetManagement />
+        <SmsFleetManagement ref="smsFleetManagementRef" hide-add-button />
       </div>
     </Panel>
 
@@ -395,6 +413,12 @@ import type { SenderFilter } from '~/components/senders/SenderFilterTabs.vue';
 const $campaignsStore = useCampaignsStore();
 const senderFilter = ref<SenderFilter>('all');
 const campaignFilter = ref<SenderFilter>('all');
+const emailSenderManagementRef = ref<InstanceType<
+  typeof EmailSenderManagement
+> | null>(null);
+const smsFleetManagementRef = ref<InstanceType<
+  typeof SmsFleetManagement
+> | null>(null);
 
 const filteredCampaigns = computed(() => {
   if (campaignFilter.value === 'all') return $campaignsStore.campaigns;
@@ -767,6 +791,8 @@ onBeforeUnmount(() => {
   "en": {
     "sms_gateways": "SMS Gateways",
     "senders": "Senders",
+    "add_email_sender": "Add Email Sender",
+    "add_sms_gateway": "Add SMS Gateway",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -828,6 +854,8 @@ onBeforeUnmount(() => {
   "fr": {
     "sms_gateways": "Passerelles SMS",
     "senders": "Expéditeurs",
+    "add_email_sender": "Ajouter un expéditeur email",
+    "add_sms_gateway": "Ajouter une passerelle SMS",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",

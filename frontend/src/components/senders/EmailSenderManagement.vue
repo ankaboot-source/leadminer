@@ -7,6 +7,10 @@ import { useSmtpSendersStore } from '~/stores/smtp-senders';
 import AddEmailSenderDialog from './AddEmailSenderDialog.vue';
 import type { SmtpSender } from '@/types/smtp-senders';
 
+defineProps<{
+  hideAddButton?: boolean;
+}>();
+
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
@@ -21,6 +25,8 @@ function openAddDialog() {
   editingSender.value = null;
   showAddDialog.value = true;
 }
+
+defineExpose({ openAddDialog });
 
 function openEditDialog(sender: SmtpSender) {
   editingSender.value = sender;
@@ -86,7 +92,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-end">
+    <div v-if="!hideAddButton" class="flex items-center justify-end">
       <Button
         :label="t('add_email_sender')"
         icon="pi pi-plus"
