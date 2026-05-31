@@ -42,19 +42,6 @@
       >
         <p>{{ t('no_senders_configured') }}</p>
       </div>
-      <div v-show="senderFilter !== 'email'">
-        <SmsFleetManagement
-          ref="$smsFleetRef"
-          :hide-empty-state="senderFilter === 'all'"
-        />
-      </div>
-
-      <div
-        v-if="senderFilter === 'all' && bothSendersEmpty"
-        class="text-center py-8 text-surface-500"
-      >
-        <p>{{ t('no_senders_configured') }}</p>
-      </div>
     </Panel>
 
     <div
@@ -445,14 +432,6 @@ const $emailSenderRef = ref<InstanceType<typeof EmailSenderManagement> | null>(
 const $smsFleetRef = ref<InstanceType<typeof SmsFleetManagement> | null>(null);
 const senderFilter = ref<SenderFilter>('all');
 const campaignFilter = ref<SenderFilter>('all');
-
-const bothSendersEmpty = computed(
-  () =>
-    !$smtpSendersStore.isLoading &&
-    !$smsFleetStore.isLoading &&
-    $smtpSendersStore.senders.length === 0 &&
-    $smsFleetStore.gateways.length === 0,
-);
 
 const bothSendersEmpty = computed(
   () =>
