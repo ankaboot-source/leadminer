@@ -220,7 +220,7 @@ export default function initializeMiningController(
         redirect = afterCallbackRedirect;
         const exchangedTokens = await exchangeForToken(code, provider);
 
-        await miningSources.upsert({
+        const miningSourceId = await miningSources.upsert({
           userId,
           email: exchangedTokens.email,
           credentials: {
@@ -229,6 +229,35 @@ export default function initializeMiningController(
           },
           type: provider
         });
+
+        if (deps.smtpSenders) {
+          try {
+            await deps.smtpSenders.create({
+              userId,
+              name: exchangedTokens.email,
+              email: exchangedTokens.email,
+              smtpHost:
+                provider === 'google'
+                  ? 'smtp.gmail.com'
+                  : 'smtp-mail.outlook.com',
+              smtpPort: 587,
+              smtpEncryption: 'starttls',
+              smtpUser: exchangedTokens.email,
+              smtpPassword: '',
+              authType: 'oauth',
+              oauthProvider: provider === 'google' ? 'google' : 'azure',
+              oauthRefreshToken: exchangedTokens.refreshToken,
+              miningSourceId
+            });
+          } catch (twinError) {
+            logger.warn('Failed to create SMTP twin for OAuth source', {
+              userId,
+              email: exchangedTokens.email,
+              error: twinError instanceof Error ? twinError.message : twinError
+            });
+          }
+        }
+
         redirect = afterCallbackRedirect.startsWith('/mine')
           ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
           : afterCallbackRedirect;
@@ -276,7 +305,7 @@ export default function initializeMiningController(
           secure
         );
 
-        await miningSources.upsert({
+        const miningSourceId = await miningSources.upsert({
           userId: user.id,
           email: sanitizedEmail,
           type: 'imap',
@@ -299,7 +328,8 @@ export default function initializeMiningController(
               smtpPort: port === 993 ? 465 : 587,
               smtpEncryption: secure ? 'ssl' : 'starttls',
               smtpUser: sanitizedEmail,
-              smtpPassword: sanitizedPassword
+              smtpPassword: sanitizedPassword,
+              miningSourceId
             });
           } catch (twinError) {
             logger.warn('Failed to create SMTP twin for IMAP source', {

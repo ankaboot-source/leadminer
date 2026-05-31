@@ -29,8 +29,8 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
       senders.value = response.senders;
     } catch (err) {
       error.value =
-        err instanceof Error ? err.message : 'Failed to fetch senders';
-      console.error('Error fetching SMTP senders:', err);
+        err instanceof Error ? err.message : 'Failed to delete sender';
+      return false;
     } finally {
       isLoading.value = false;
     }
@@ -57,7 +57,6 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to create sender';
-      console.error('Error creating SMTP sender:', err);
       return null;
     } finally {
       isLoading.value = false;
@@ -90,7 +89,6 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to update sender';
-      console.error('Error updating SMTP sender:', err);
       return false;
     } finally {
       isLoading.value = false;
@@ -115,8 +113,7 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
       return true;
     } catch (err) {
       error.value =
-        err instanceof Error ? err.message : 'Failed to delete sender';
-      console.error('Error deleting SMTP sender:', err);
+        err instanceof Error ? err.message : 'Failed to update sender';
       return false;
     } finally {
       isLoading.value = false;
@@ -148,7 +145,7 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
       );
       return result;
     } catch (err) {
-      console.error('Error autodetecting SMTP settings:', err);
+      error.value = err instanceof Error ? err.message : 'Failed to autodetect';
       return null;
     }
   }
