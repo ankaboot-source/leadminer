@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useSmtpSendersStore } from '~/stores/smtp-senders';
+import { useScreenStore } from '~/stores/screen';
 import AddEmailSenderDialog from './AddEmailSenderDialog.vue';
 import type { SmtpSender } from '@/types/smtp-senders';
 
@@ -21,6 +22,7 @@ const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
 const $toast = useToast();
 const $store = useSmtpSendersStore();
+const $screenStore = useScreenStore();
 
 const showAddDialog = ref(false);
 const editingSender = ref<SmtpSender | null>(null);
@@ -143,14 +145,14 @@ onMounted(async () => {
             text
             size="small"
             icon="pi pi-pencil"
-            :label="t('edit')"
+            :label="$screenStore.size.md ? t('edit') : undefined"
             @click="openEditDialog(sender)"
           />
           <Button
             text
             size="small"
             icon="pi pi-check-circle"
-            :label="t('test')"
+            :label="$screenStore.size.md ? t('test') : undefined"
             :loading="testingSenderId === sender.id"
             @click="testSender(sender)"
           />
@@ -159,7 +161,7 @@ onMounted(async () => {
             size="small"
             severity="danger"
             icon="pi pi-trash"
-            :label="t('delete')"
+            :label="$screenStore.size.md ? t('delete') : undefined"
             @click="confirmDelete(sender)"
           />
           <Tag

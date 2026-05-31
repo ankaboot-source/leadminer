@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useSmsFleetStore } from '~/stores/sms-fleet';
+import { useScreenStore } from '~/stores/screen';
 import ProviderForm from './ProviderForm.vue';
 import Dropdown from 'primevue/dropdown';
 import Button from 'primevue/button';
@@ -42,6 +43,7 @@ const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
 const $toast = useToast();
 const $smsFleetStore = useSmsFleetStore();
+const $screenStore = useScreenStore();
 
 const selectedProvider = ref<SupportedProvider | null>('simple-sms-gateway');
 const isFormValid = ref(false);
@@ -249,14 +251,14 @@ onMounted(() => {
             text
             size="small"
             icon="pi pi-pencil"
-            :label="t('edit')"
+            :label="$screenStore.size.md ? t('edit') : undefined"
             @click="openEditDialog(gateway)"
           />
           <Button
             text
             size="small"
             icon="pi pi-check-circle"
-            :label="t('test')"
+            :label="$screenStore.size.md ? t('test') : undefined"
             :loading="testingGatewayId === gateway.id"
             @click="testGateway(gateway.id)"
           />
@@ -265,7 +267,7 @@ onMounted(() => {
             size="small"
             severity="danger"
             icon="pi pi-trash"
-            :label="t('delete')"
+            :label="$screenStore.size.md ? t('delete') : undefined"
             @click="confirmDelete(gateway)"
           />
           <Tag

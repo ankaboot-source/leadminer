@@ -7,14 +7,14 @@
           <SenderFilterTabs v-model="senderFilter" />
           <div class="flex items-center gap-2 ml-auto">
             <Button
-              :label="t('add_email_sender')"
+              :label="$screenStore.size.md ? t('add_email_sender') : undefined"
               icon="pi pi-plus"
               size="small"
               outlined
               @click="$emailSenderRef?.openAddDialog()"
             />
             <Button
-              :label="t('add_sms_gateway')"
+              :label="$screenStore.size.md ? t('add_sms_gateway') : undefined"
               icon="pi pi-plus"
               size="small"
               outlined
@@ -54,7 +54,7 @@
         </div>
         <Button
           icon="pi pi-refresh"
-          :label="t('refresh')"
+          :label="$screenStore.size.md ? t('refresh') : undefined"
           :loading="$campaignsStore.isLoading"
           outlined
           @click="refresh"
@@ -174,7 +174,9 @@
                     text
                     severity="warning"
                     icon="pi pi-stop"
-                    :label="t('stop_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('stop_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'stop')"
                     @click="openStopDialog(campaign)"
                   />
@@ -184,7 +186,9 @@
                     text
                     severity="success"
                     icon="pi pi-refresh"
-                    :label="t('restart_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('restart_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'restart')"
                     @click="openRestartDialog(campaign)"
                   />
@@ -194,7 +198,9 @@
                     text
                     severity="danger"
                     icon="pi pi-trash"
-                    :label="t('delete_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('delete_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'delete')"
                     @click="openDeleteDialog(campaign)"
                   />
@@ -430,6 +436,7 @@ const $emailSenderRef = ref<InstanceType<typeof EmailSenderManagement> | null>(
   null,
 );
 const $smsFleetRef = ref<InstanceType<typeof SmsFleetManagement> | null>(null);
+const $screenStore = useScreenStore();
 const senderFilter = ref<SenderFilter>('all');
 const campaignFilter = ref<SenderFilter>('all');
 
