@@ -26,3 +26,41 @@ CREATE POLICY "Users can manage own smtp_senders"
   ON private.smtp_senders
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Backfill smtp_senders for existing OAuth mining sources (Google / Azure).
+-- The oauth_refresh_token is left NULL; the backend resolves the token from
+-- the linked mining_sources row (via mining_source_email) at send time.
+INSERT INTO private.smtp_senders (
+  user_id,
+  name,
+  email,
+  smtp_host,
+  smtp_port,
+  smtp_encryption,
+  smtp_user,
+  auth_type,
+  oauth_provider,
+  active,
+  mining_source_email
+)
+SELECT
+  ms.user_id,
+  CASE
+    WHEN ms.type = 'google' THEN 'Gmail (' || ms.email || ')'
+    WHEN ms.type = 'azure'  THEN 'Outlook (' || ms.email || ')'
+  END,
+  ms.email,
+  CASE
+    WHEN ms.type = 'google' THEN 'smtp.gmail.com'
+    WHEN ms.type = 'azure'  THEN 'smtp-mail.outlook.com'
+  END,
+  587,
+  'starttls',
+  ms.email,
+  'oauth',
+  ms.type,
+  TRUE,
+  ms.email
+FROM private.mining_sources ms
+WHERE ms.type IN ('google', 'azure')
+ON CONFLICT (user_id, email) DO NOTHING;
