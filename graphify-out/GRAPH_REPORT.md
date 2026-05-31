@@ -1,315 +1,322 @@
-# Graph Report - .  (2026-05-29)
+# Graph Report - leadminer (2026-05-29)
 
 ## Corpus Check
-- Large corpus: 651 files · ~382,028 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder.
+
+- 625 files · ~382,028 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3934 nodes · 5898 edges · 353 communities (265 shown, 88 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 38 edges (avg confidence: 0.79)
+
+- 4001 nodes · 5961 edges · 349 communities (262 shown, 87 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 32 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
+## Graph Freshness
+
+- Built from commit: `1bb995d4`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
+
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Email Campaigns Edge Functions|Email Campaigns Edge Functions]]
-- [[_COMMUNITY_SMS Campaigns Edge Functions|SMS Campaigns Edge Functions]]
-- [[_COMMUNITY_Clean Panel UI Components|Clean Panel UI Components]]
-- [[_COMMUNITY_i18n Contact Consent Messages|i18n Contact Consent Messages]]
-- [[_COMMUNITY_Project Docs and Design System|Project Docs and Design System]]
-- [[_COMMUNITY_i18n Auth Messages|i18n Auth Messages]]
-- [[_COMMUNITY_Backend Workers Redis Streams|Backend Workers Redis Streams]]
-- [[_COMMUNITY_i18n Campaign Messages|i18n Campaign Messages]]
-- [[_COMMUNITY_Backend Package Dependencies|Backend Package Dependencies]]
-- [[_COMMUNITY_Frontend Composables Stores Utils|Frontend Composables Stores Utils]]
-- [[_COMMUNITY_Frontend Dev Dependencies|Frontend Dev Dependencies]]
-- [[_COMMUNITY_Emails Fetcher Config Schema|Emails Fetcher Config Schema]]
-- [[_COMMUNITY_Google Contacts Export Tests|Google Contacts Export Tests]]
-- [[_COMMUNITY_Backend DB Enrichment Clients|Backend DB Enrichment Clients]]
-- [[_COMMUNITY_Backend Tasks Pipeline SSE|Backend Tasks Pipeline SSE]]
-- [[_COMMUNITY_IMAP Email Fetcher|IMAP Email Fetcher]]
-- [[_COMMUNITY_Backend Dev Dependencies|Backend Dev Dependencies]]
-- [[_COMMUNITY_Mining Sources Interfaces|Mining Sources Interfaces]]
-- [[_COMMUNITY_Reacher Email Verification|Reacher Email Verification]]
-- [[_COMMUNITY_Root Package Config|Root Package Config]]
-- [[_COMMUNITY_SMS Campaigns Process|SMS Campaigns Process]]
-- [[_COMMUNITY_Email Signature Extraction|Email Signature Extraction]]
-- [[_COMMUNITY_SMS Provider Gateway Process|SMS Provider Gateway Process]]
-- [[_COMMUNITY_SMS Provider Gateway Index|SMS Provider Gateway Index]]
-- [[_COMMUNITY_Frontend Filter Stores|Frontend Filter Stores]]
-- [[_COMMUNITY_i18n Common Messages|i18n Common Messages]]
-- [[_COMMUNITY_Email Status Cache Verifier|Email Status Cache Verifier]]
-- [[_COMMUNITY_Tasks Manager V2 Tasks|Tasks Manager V2 Tasks]]
-- [[_COMMUNITY_EnrichLayer API Client|EnrichLayer API Client]]
-- [[_COMMUNITY_DB Types Extractor Engines|DB Types Extractor Engines]]
-- [[_COMMUNITY_Export Contacts UI Buttons|Export Contacts UI Buttons]]
-- [[_COMMUNITY_Edge Function Auth Middleware|Edge Function Auth Middleware]]
-- [[_COMMUNITY_Email Verification Config|Email Verification Config]]
-- [[_COMMUNITY_Add Mining Source Edge Fn|Add Mining Source Edge Fn]]
-- [[_COMMUNITY_Backend Middleware Error Handling|Backend Middleware Error Handling]]
-- [[_COMMUNITY_SMS Fleet Gateway E2E Tests|SMS Fleet Gateway E2E Tests]]
-- [[_COMMUNITY_Emails Fetcher Dev Deps|Emails Fetcher Dev Deps]]
-- [[_COMMUNITY_Emails Fetcher Dependencies|Emails Fetcher Dependencies]]
-- [[_COMMUNITY_Email Fetcher Factory API|Email Fetcher Factory API]]
-- [[_COMMUNITY_Emails Fetcher Mining Sources|Emails Fetcher Mining Sources]]
-- [[_COMMUNITY_PostgreSQL Query SQL Validator|PostgreSQL Query SQL Validator]]
-- [[_COMMUNITY_Import File Dialog UI|Import File Dialog UI]]
-- [[_COMMUNITY_MailerCheck Client|MailerCheck Client]]
-- [[_COMMUNITY_Enrichment Engine Types|Enrichment Engine Types]]
-- [[_COMMUNITY_ZeroBounce Email Status|ZeroBounce Email Status]]
-- [[_COMMUNITY_IMAP Boxes Fetcher Types|IMAP Boxes Fetcher Types]]
-- [[_COMMUNITY_Email Message Extraction Types|Email Message Extraction Types]]
-- [[_COMMUNITY_Tasks Manager Factories Pipeline|Tasks Manager Factories Pipeline]]
-- [[_COMMUNITY_EnrichLayer Edge Function|EnrichLayer Edge Function]]
-- [[_COMMUNITY_Enrich Button UI|Enrich Button UI]]
-- [[_COMMUNITY_Signature Extraction Service|Signature Extraction Service]]
-- [[_COMMUNITY_Mailing Email Config|Mailing Email Config]]
-- [[_COMMUNITY_Logger Mining Source Fetch|Logger Mining Source Fetch]]
-- [[_COMMUNITY_Delete Mining Source Edge Fn|Delete Mining Source Edge Fn]]
-- [[_COMMUNITY_Backend Validators Schemas|Backend Validators Schemas]]
-- [[_COMMUNITY_MailerCheck TheDig Verifier Tests|MailerCheck TheDig Verifier Tests]]
-- [[_COMMUNITY_Mailing Message Templates|Mailing Message Templates]]
-- [[_COMMUNITY_Pipeline SSE Broadcasting|Pipeline SSE Broadcasting]]
-- [[_COMMUNITY_Email Message Tagging|Email Message Tagging]]
-- [[_COMMUNITY_Tagging Conditions|Tagging Conditions]]
-- [[_COMMUNITY_Tagging Service Tags|Tagging Service Tags]]
-- [[_COMMUNITY_Frontend Contact Utils|Frontend Contact Utils]]
-- [[_COMMUNITY_Backend Package Scripts|Backend Package Scripts]]
-- [[_COMMUNITY_Mining Controller Helpers|Mining Controller Helpers]]
-- [[_COMMUNITY_Stream Controller Mining Engine|Stream Controller Mining Engine]]
-- [[_COMMUNITY_Controller Initializers|Controller Initializers]]
-- [[_COMMUNITY_Email Campaigns i18n Middleware|Email Campaigns i18n Middleware]]
-- [[_COMMUNITY_Google Contacts Fetcher|Google Contacts Fetcher]]
-- [[_COMMUNITY_Email Campaign Sender Config|Email Campaign Sender Config]]
-- [[_COMMUNITY_Google Contacts Fetch Task|Google Contacts Fetch Task]]
-- [[_COMMUNITY_Regex Helpers Tests|Regex Helpers Tests]]
-- [[_COMMUNITY_Supabase Auth Resolver|Supabase Auth Resolver]]
-- [[_COMMUNITY_Enrichment Controller Billing|Enrichment Controller Billing]]
-- [[_COMMUNITY_Tagging Unit Tests|Tagging Unit Tests]]
-- [[_COMMUNITY_Reacher Client Tests|Reacher Client Tests]]
-- [[_COMMUNITY_Email Campaigns Transport Config|Email Campaigns Transport Config]]
-- [[_COMMUNITY_Pipeline Sequential Tests|Pipeline Sequential Tests]]
-- [[_COMMUNITY_Message Worker Catch All Cache|Message Worker Catch All Cache]]
-- [[_COMMUNITY_Signature LLM Types Tests|Signature LLM Types Tests]]
-- [[_COMMUNITY_Email Signature Cache|Email Signature Cache]]
-- [[_COMMUNITY_Campaign Tracking Edge Fn|Campaign Tracking Edge Fn]]
-- [[_COMMUNITY_PG Contacts DB Tests|PG Contacts DB Tests]]
-- [[_COMMUNITY_Extractor Email Message Handlers|Extractor Email Message Handlers]]
-- [[_COMMUNITY_Export Services CSV vCard|Export Services CSV vCard]]
-- [[_COMMUNITY_Signature Worker Domain Helpers|Signature Worker Domain Helpers]]
-- [[_COMMUNITY_Email Verification Handlers|Email Verification Handlers]]
-- [[_COMMUNITY_PST Email Fetcher|PST Email Fetcher]]
-- [[_COMMUNITY_Emails Fetcher Jobs|Emails Fetcher Jobs]]
-- [[_COMMUNITY_Passive Mining Boxes|Passive Mining Boxes]]
-- [[_COMMUNITY_Task Manager Task Tests|Task Manager Task Tests]]
-- [[_COMMUNITY_Supabase Engagements Enrichments|Supabase Engagements Enrichments]]
-- [[_COMMUNITY_Test Data Fixtures|Test Data Fixtures]]
-- [[_COMMUNITY_Auth Resolver App Middleware|Auth Resolver App Middleware]]
-- [[_COMMUNITY_Backend TypeScript Config|Backend TypeScript Config]]
-- [[_COMMUNITY_Enrichment Helpers Tests|Enrichment Helpers Tests]]
-- [[_COMMUNITY_Email Status Verifier Factory Tests|Email Status Verifier Factory Tests]]
-- [[_COMMUNITY_Emails Fetcher TypeScript Config|Emails Fetcher TypeScript Config]]
-- [[_COMMUNITY_IMAP Connection Provider|IMAP Connection Provider]]
-- [[_COMMUNITY_Frontend Callback Page|Frontend Callback Page]]
-- [[_COMMUNITY_i18n Mining Messages|i18n Mining Messages]]
-- [[_COMMUNITY_IMAP Message Parsing Tests|IMAP Message Parsing Tests]]
-- [[_COMMUNITY_Mining Progress Card UI|Mining Progress Card UI]]
-- [[_COMMUNITY_Backend Package Metadata|Backend Package Metadata]]
-- [[_COMMUNITY_Auth Controller Users DB|Auth Controller Users DB]]
-- [[_COMMUNITY_IMAP Connection Pool|IMAP Connection Pool]]
-- [[_COMMUNITY_Enricher Unit Tests|Enricher Unit Tests]]
-- [[_COMMUNITY_Table Preferences Filter Persistence|Table Preferences Filter Persistence]]
-- [[_COMMUNITY_Contact Frontend Types Google API|Contact Frontend Types Google API]]
-- [[_COMMUNITY_Signature LLM Benchmark|Signature LLM Benchmark]]
-- [[_COMMUNITY_Frontend i18n JSON Messages|Frontend i18n JSON Messages]]
-- [[_COMMUNITY_Enrich Task Types Supabase|Enrich Task Types Supabase]]
-- [[_COMMUNITY_Email Fetching Client Tests|Email Fetching Client Tests]]
-- [[_COMMUNITY_Auth Provider Service|Auth Provider Service]]
-- [[_COMMUNITY_Enrichment Mocks|Enrichment Mocks]]
-- [[_COMMUNITY_Email Message Unit Tests|Email Message Unit Tests]]
-- [[_COMMUNITY_Google Contacts Extractor Tests|Google Contacts Extractor Tests]]
-- [[_COMMUNITY_Signature LLM Service|Signature LLM Service]]
-- [[_COMMUNITY_i18n EN Consent Required|i18n EN Consent Required]]
-- [[_COMMUNITY_i18n FR Consent Required|i18n FR Consent Required]]
-- [[_COMMUNITY_SMS Quota Utils Tests Process|SMS Quota Utils Tests Process]]
-- [[_COMMUNITY_SMS Quota Utils Tests Index|SMS Quota Utils Tests Index]]
-- [[_COMMUNITY_Frontend Dependencies|Frontend Dependencies]]
-- [[_COMMUNITY_i18n Button Messages|i18n Button Messages]]
-- [[_COMMUNITY_i18n EN Header Notification|i18n EN Header Notification]]
-- [[_COMMUNITY_Frontend Error Handler Plugin|Frontend Error Handler Plugin]]
-- [[_COMMUNITY_Supabase Cookie Optimization|Supabase Cookie Optimization]]
-- [[_COMMUNITY_Fetch Mining Source Handler|Fetch Mining Source Handler]]
-- [[_COMMUNITY_Tasks DB Interfaces Supabase|Tasks DB Interfaces Supabase]]
-- [[_COMMUNITY_Backend ESLint Config|Backend ESLint Config]]
-- [[_COMMUNITY_Enrichment Engine Index|Enrichment Engine Index]]
-- [[_COMMUNITY_Emails Fetcher ESLint Config|Emails Fetcher ESLint Config]]
-- [[_COMMUNITY_Frontend Package Scripts|Frontend Package Scripts]]
-- [[_COMMUNITY_Campaign Composer Dialog|Campaign Composer Dialog]]
-- [[_COMMUNITY_Emails Fetcher Package Scripts|Emails Fetcher Package Scripts]]
-- [[_COMMUNITY_Emails Fetcher Package Metadata|Emails Fetcher Package Metadata]]
-- [[_COMMUNITY_Email Templates Base|Email Templates Base]]
-- [[_COMMUNITY_OAuth Handler Azure Google|OAuth Handler Azure Google]]
-- [[_COMMUNITY_SMS Fleet Index Tests|SMS Fleet Index Tests]]
-- [[_COMMUNITY_Auth Types|Auth Types]]
-- [[_COMMUNITY_Supabase User Profile Composable|Supabase User Profile Composable]]
-- [[_COMMUNITY_TheDig Enricher Tests|TheDig Enricher Tests]]
-- [[_COMMUNITY_PST Fetching Client|PST Fetching Client]]
-- [[_COMMUNITY_Backend Constants|Backend Constants]]
-- [[_COMMUNITY_Frontend Contacts Store Filters|Frontend Contacts Store Filters]]
-- [[_COMMUNITY_Frontend Normalizer Utils|Frontend Normalizer Utils]]
-- [[_COMMUNITY_Emails Fetcher Constants|Emails Fetcher Constants]]
-- [[_COMMUNITY_i18n Weekly Report|i18n Weekly Report]]
-- [[_COMMUNITY_OAuth2 Azure Google Services|OAuth2 Azure Google Services]]
-- [[_COMMUNITY_Redis Free Providers Utils|Redis Free Providers Utils]]
-- [[_COMMUNITY_Mining Campaign Regression Tests|Mining Campaign Regression Tests]]
-- [[_COMMUNITY_Mining Table Performance Utils|Mining Table Performance Utils]]
-- [[_COMMUNITY_Signature Regex Tests|Signature Regex Tests]]
-- [[_COMMUNITY_Email Status Verifier Factory|Email Status Verifier Factory]]
-- [[_COMMUNITY_Emails Fetcher Auth Provider|Emails Fetcher Auth Provider]]
-- [[_COMMUNITY_Frontend Nuxt Config Package|Frontend Nuxt Config Package]]
-- [[_COMMUNITY_Frontend Error Page Handler|Frontend Error Page Handler]]
-- [[_COMMUNITY_Frontend Contact Types|Frontend Contact Types]]
-- [[_COMMUNITY_i18n Stats Messages|i18n Stats Messages]]
-- [[_COMMUNITY_Mailing Template Fill Utils|Mailing Template Fill Utils]]
-- [[_COMMUNITY_SMS Segments Tests Index|SMS Segments Tests Index]]
-- [[_COMMUNITY_SMS Segments Tests Process|SMS Segments Tests Process]]
-- [[_COMMUNITY_Mobile UI Regression Tests|Mobile UI Regression Tests]]
-- [[_COMMUNITY_OAuth Redirect Mining Source|OAuth Redirect Mining Source]]
-- [[_COMMUNITY_Docker Compose Services|Docker Compose Services]]
-- [[_COMMUNITY_Email Campaigns Deno Imports|Email Campaigns Deno Imports]]
-- [[_COMMUNITY_Contact Info Sidebar UI|Contact Info Sidebar UI]]
-- [[_COMMUNITY_Mining Toast Tests|Mining Toast Tests]]
-- [[_COMMUNITY_SMS Fleet Frontend Types|SMS Fleet Frontend Types]]
-- [[_COMMUNITY_Toast Utils Helpers|Toast Utils Helpers]]
-- [[_COMMUNITY_SMS Fleet Management Tests|SMS Fleet Management Tests]]
-- [[_COMMUNITY_Google Contacts Export Service|Google Contacts Export Service]]
-- [[_COMMUNITY_Signature Extractor Cache|Signature Extractor Cache]]
-- [[_COMMUNITY_i18n Time Messages|i18n Time Messages]]
-- [[_COMMUNITY_i18n Unsubscribe Messages|i18n Unsubscribe Messages]]
-- [[_COMMUNITY_Mail Edge Function Imports|Mail Edge Function Imports]]
-- [[_COMMUNITY_Reacher Email Status Verifier|Reacher Email Status Verifier]]
-- [[_COMMUNITY_Emails Fetcher Validation Utils|Emails Fetcher Validation Utils]]
-- [[_COMMUNITY_Shared URL Env Reader|Shared URL Env Reader]]
-- [[_COMMUNITY_SMS Campaigns Deno Imports|SMS Campaigns Deno Imports]]
-- [[_COMMUNITY_SMS Campaigns Process Imports|SMS Campaigns Process Imports]]
-- [[_COMMUNITY_Fetch Task Progress Handler|Fetch Task Progress Handler]]
-- [[_COMMUNITY_Extractor Helpers and Types|Extractor Helpers and Types]]
-- [[_COMMUNITY_Mining Extras Toast Utils|Mining Extras Toast Utils]]
-- [[_COMMUNITY_OAuth Helpers Tests|OAuth Helpers Tests]]
-- [[_COMMUNITY_Backend TypeScript Build Config|Backend TypeScript Build Config]]
-- [[_COMMUNITY_Campaigns Track Edge Function|Campaigns Track Edge Function]]
-- [[_COMMUNITY_Emails Fetcher TypeScript Build|Emails Fetcher TypeScript Build]]
-- [[_COMMUNITY_PostgreSQL Connection Helpers|PostgreSQL Connection Helpers]]
-- [[_COMMUNITY_Redis Queued Emails Cache|Redis Queued Emails Cache]]
-- [[_COMMUNITY_Email Header Helpers Tests|Email Header Helpers Tests]]
-- [[_COMMUNITY_Filter Store Watchers|Filter Store Watchers]]
-- [[_COMMUNITY_Credits Dialog Utils|Credits Dialog Utils]]
-- [[_COMMUNITY_Sender Options Utils|Sender Options Utils]]
-- [[_COMMUNITY_Mining Sources Utils|Mining Sources Utils]]
-- [[_COMMUNITY_Contacts Controller Backend|Contacts Controller Backend]]
-- [[_COMMUNITY_i18n EN Buttons Consent|i18n EN Buttons Consent]]
-- [[_COMMUNITY_i18n FR Buttons Consent|i18n FR Buttons Consent]]
-- [[_COMMUNITY_Emails Fetcher Error Handler|Emails Fetcher Error Handler]]
-- [[_COMMUNITY_i18n Footer Messages|i18n Footer Messages]]
-- [[_COMMUNITY_Redis Publisher PubSub|Redis Publisher PubSub]]
-- [[_COMMUNITY_Email Campaign Transport Builder|Email Campaign Transport Builder]]
-- [[_COMMUNITY_SMS Fleet Deno Imports|SMS Fleet Deno Imports]]
-- [[_COMMUNITY_Extract Task Progress Handler|Extract Task Progress Handler]]
-- [[_COMMUNITY_Test Data Query Example API|Test Data Query Example API]]
-- [[_COMMUNITY_Test Data Query Example IMAP|Test Data Query Example IMAP]]
-- [[_COMMUNITY_Campaign Terminal Toast Tests|Campaign Terminal Toast Tests]]
-- [[_COMMUNITY_CI Pipeline Config|CI Pipeline Config]]
-- [[_COMMUNITY_Compliance Dialog Component|Compliance Dialog Component]]
-- [[_COMMUNITY_Email Signature Consumer Worker|Email Signature Consumer Worker]]
-- [[_COMMUNITY_Email Verification Consumer Worker|Email Verification Consumer Worker]]
-- [[_COMMUNITY_Campaigns Page Component|Campaigns Page Component]]
-- [[_COMMUNITY_Notification Client Store|Notification Client Store]]
-- [[_COMMUNITY_Frontend Campaign Types|Frontend Campaign Types]]
-- [[_COMMUNITY_Email Template Utils Frontend|Email Template Utils Frontend]]
-- [[_COMMUNITY_Source Status Badge Utils|Source Status Badge Utils]]
-- [[_COMMUNITY_i18n Upload Messages|i18n Upload Messages]]
-- [[_COMMUNITY_Email Campaign Template Rendering|Email Campaign Template Rendering]]
-- [[_COMMUNITY_Email Campaign Bounce Classification|Email Campaign Bounce Classification]]
-- [[_COMMUNITY_Email Campaign Click Tracking|Email Campaign Click Tracking]]
-- [[_COMMUNITY_Email Templates Edge Function|Email Templates Edge Function]]
-- [[_COMMUNITY_SMS Phone Utils Tests Index|SMS Phone Utils Tests Index]]
-- [[_COMMUNITY_SMS Phone Utils Tests Process|SMS Phone Utils Tests Process]]
-- [[_COMMUNITY_Campaigns Skeleton Tests|Campaigns Skeleton Tests]]
-- [[_COMMUNITY_Mining Table Row Utils|Mining Table Row Utils]]
-- [[_COMMUNITY_Reconnect Fallback Utils|Reconnect Fallback Utils]]
-- [[_COMMUNITY_Auth Login Page|Auth Login Page]]
-- [[_COMMUNITY_Fetch Email Providers Script|Fetch Email Providers Script]]
-- [[_COMMUNITY_Redis Subscriber PubSub|Redis Subscriber PubSub]]
-- [[_COMMUNITY_Fetch Mining Source Imports|Fetch Mining Source Imports]]
-- [[_COMMUNITY_SMS Campaign Composer Dialog|SMS Campaign Composer Dialog]]
-- [[_COMMUNITY_Frontend Global Routing Middleware|Frontend Global Routing Middleware]]
-- [[_COMMUNITY_Email Campaign Proxy Server Utils|Email Campaign Proxy Server Utils]]
-- [[_COMMUNITY_Sidebar Store Dialogs|Sidebar Store Dialogs]]
-- [[_COMMUNITY_Mining Table Rows Tests|Mining Table Rows Tests]]
-- [[_COMMUNITY_Table Preferences Tests|Table Preferences Tests]]
-- [[_COMMUNITY_Campaign Terminal Toasts Utils|Campaign Terminal Toasts Utils]]
-- [[_COMMUNITY_CSV Export Service|CSV Export Service]]
-- [[_COMMUNITY_Social Links and Phones Icons|Social Links and Phones Icons]]
-- [[_COMMUNITY_Backend Config Schema Validation|Backend Config Schema Validation]]
-- [[_COMMUNITY_Sources Page Component|Sources Page Component]]
-- [[_COMMUNITY_Add Mining Source Imports|Add Mining Source Imports]]
-- [[_COMMUNITY_Campaign Button Component|Campaign Button Component]]
-- [[_COMMUNITY_Remove Contact Button|Remove Contact Button]]
-- [[_COMMUNITY_Delete Mining Source Imports|Delete Mining Source Imports]]
-- [[_COMMUNITY_Deploy Workflows|Deploy Workflows]]
-- [[_COMMUNITY_Email Templates Imports|Email Templates Imports]]
-- [[_COMMUNITY_Email Folders Tree Component|Email Folders Tree Component]]
-- [[_COMMUNITY_Contact Verification Composable|Contact Verification Composable]]
-- [[_COMMUNITY_i18n Extras JSON Messages|i18n Extras JSON Messages]]
-- [[_COMMUNITY_Frontend Regex Safety Tests|Frontend Regex Safety Tests]]
-- [[_COMMUNITY_CSV Utils Frontend|CSV Utils Frontend]]
-- [[_COMMUNITY_Account Settings Tests|Account Settings Tests]]
-- [[_COMMUNITY_Frontend TypeScript Config|Frontend TypeScript Config]]
-- [[_COMMUNITY_IMAP Edge Function Imports|IMAP Edge Function Imports]]
-- [[_COMMUNITY_Backend CORS Middleware|Backend CORS Middleware]]
-- [[_COMMUNITY_Email Campaign Status Aggregation|Email Campaign Status Aggregation]]
-- [[_COMMUNITY_SMS Fleet Provider Form Tests|SMS Fleet Provider Form Tests]]
-- [[_COMMUNITY_Frontend Enrichment Types|Frontend Enrichment Types]]
-- [[_COMMUNITY_Contacts Utils Tests|Contacts Utils Tests]]
-- [[_COMMUNITY_OAuth Redirect Tests|OAuth Redirect Tests]]
-- [[_COMMUNITY_Mining Table Performance Tests|Mining Table Performance Tests]]
-- [[_COMMUNITY_Backend Worker Types|Backend Worker Types]]
-- [[_COMMUNITY_Email Status Types|Email Status Types]]
-- [[_COMMUNITY_Contacts Validator Schema|Contacts Validator Schema]]
-- [[_COMMUNITY_SMS Composer Dialog Tests|SMS Composer Dialog Tests]]
-- [[_COMMUNITY_Responsive Design Strategy|Responsive Design Strategy]]
-- [[_COMMUNITY_Import PostgreSQL Dialog|Import PostgreSQL Dialog]]
-- [[_COMMUNITY_Mining Table Component|Mining Table Component]]
-- [[_COMMUNITY_Campaigns Store|Campaigns Store]]
-- [[_COMMUNITY_SMS Fleet Store|SMS Fleet Store]]
-- [[_COMMUNITY_Sender Options Tests|Sender Options Tests]]
-- [[_COMMUNITY_Source Status Badge Tests|Source Status Badge Tests]]
-- [[_COMMUNITY_Frontend Auth Types|Frontend Auth Types]]
-- [[_COMMUNITY_SMS Fleet Store Tests|SMS Fleet Store Tests]]
-- [[_COMMUNITY_Generate Env Script|Generate Env Script]]
-- [[_COMMUNITY_Register Azure OAuth Script|Register Azure OAuth Script]]
-- [[_COMMUNITY_Run Script|Run Script]]
-- [[_COMMUNITY_Pre-push CI Check Script|Pre-push CI Check Script]]
-- [[_COMMUNITY_Logo Assets|Logo Assets]]
-- [[_COMMUNITY_QA Trigger Workflows|QA Trigger Workflows]]
-- [[_COMMUNITY_SMS Fleet Gateway Selector|SMS Fleet Gateway Selector]]
-- [[_COMMUNITY_Screen Store|Screen Store]]
-- [[_COMMUNITY_Frontend Organization Types|Frontend Organization Types]]
-- [[_COMMUNITY_Frontend Profile Types|Frontend Profile Types]]
-- [[_COMMUNITY_Auth Validator Schema|Auth Validator Schema]]
-- [[_COMMUNITY_Backend Regex Header Email Split|Backend Regex Header Email Split]]
-- [[_COMMUNITY_Backend Regex Header Constants|Backend Regex Header Constants]]
-- [[_COMMUNITY_Backend Regex Body Constants|Backend Regex Body Constants]]
-- [[_COMMUNITY_Backend Regex List ID Constants|Backend Regex List ID Constants]]
-- [[_COMMUNITY_Fetcher Regex Header Email Split|Fetcher Regex Header Email Split]]
-- [[_COMMUNITY_Fetcher Regex Header Constants|Fetcher Regex Header Constants]]
-- [[_COMMUNITY_Fetcher Regex Body Constants|Fetcher Regex Body Constants]]
-- [[_COMMUNITY_Fetcher Regex List ID Constants|Fetcher Regex List ID Constants]]
-- [[_COMMUNITY_Dark Mode Disabled Config|Dark Mode Disabled Config]]
-- [[_COMMUNITY_CodeSee Architecture Config|CodeSee Architecture Config]]
-- [[_COMMUNITY_Production Trigger Workflow|Production Trigger Workflow]]
-- [[_COMMUNITY_Hadolint Config|Hadolint Config]]
-- [[_COMMUNITY_YAML Lint Config|YAML Lint Config]]
-- [[_COMMUNITY_Play Store QR Code|Play Store QR Code]]
+
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 15|Community 15]]
+- [[_COMMUNITY_Community 16|Community 16]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
+- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
+- [[_COMMUNITY_Community 56|Community 56]]
+- [[_COMMUNITY_Community 57|Community 57]]
+- [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
+- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
+- [[_COMMUNITY_Community 64|Community 64]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
+- [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
+- [[_COMMUNITY_Community 71|Community 71]]
+- [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
+- [[_COMMUNITY_Community 74|Community 74]]
+- [[_COMMUNITY_Community 75|Community 75]]
+- [[_COMMUNITY_Community 76|Community 76]]
+- [[_COMMUNITY_Community 77|Community 77]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 79|Community 79]]
+- [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
+- [[_COMMUNITY_Community 82|Community 82]]
+- [[_COMMUNITY_Community 83|Community 83]]
+- [[_COMMUNITY_Community 84|Community 84]]
+- [[_COMMUNITY_Community 85|Community 85]]
+- [[_COMMUNITY_Community 86|Community 86]]
+- [[_COMMUNITY_Community 87|Community 87]]
+- [[_COMMUNITY_Community 88|Community 88]]
+- [[_COMMUNITY_Community 89|Community 89]]
+- [[_COMMUNITY_Community 90|Community 90]]
+- [[_COMMUNITY_Community 91|Community 91]]
+- [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 93|Community 93]]
+- [[_COMMUNITY_Community 94|Community 94]]
+- [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 96|Community 96]]
+- [[_COMMUNITY_Community 97|Community 97]]
+- [[_COMMUNITY_Community 98|Community 98]]
+- [[_COMMUNITY_Community 99|Community 99]]
+- [[_COMMUNITY_Community 100|Community 100]]
+- [[_COMMUNITY_Community 101|Community 101]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
+- [[_COMMUNITY_Community 104|Community 104]]
+- [[_COMMUNITY_Community 105|Community 105]]
+- [[_COMMUNITY_Community 106|Community 106]]
+- [[_COMMUNITY_Community 107|Community 107]]
+- [[_COMMUNITY_Community 108|Community 108]]
+- [[_COMMUNITY_Community 109|Community 109]]
+- [[_COMMUNITY_Community 110|Community 110]]
+- [[_COMMUNITY_Community 111|Community 111]]
+- [[_COMMUNITY_Community 112|Community 112]]
+- [[_COMMUNITY_Community 113|Community 113]]
+- [[_COMMUNITY_Community 114|Community 114]]
+- [[_COMMUNITY_Community 115|Community 115]]
+- [[_COMMUNITY_Community 116|Community 116]]
+- [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
+- [[_COMMUNITY_Community 119|Community 119]]
+- [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
+- [[_COMMUNITY_Community 122|Community 122]]
+- [[_COMMUNITY_Community 123|Community 123]]
+- [[_COMMUNITY_Community 124|Community 124]]
+- [[_COMMUNITY_Community 125|Community 125]]
+- [[_COMMUNITY_Community 126|Community 126]]
+- [[_COMMUNITY_Community 127|Community 127]]
+- [[_COMMUNITY_Community 128|Community 128]]
+- [[_COMMUNITY_Community 129|Community 129]]
+- [[_COMMUNITY_Community 130|Community 130]]
+- [[_COMMUNITY_Community 131|Community 131]]
+- [[_COMMUNITY_Community 132|Community 132]]
+- [[_COMMUNITY_Community 133|Community 133]]
+- [[_COMMUNITY_Community 134|Community 134]]
+- [[_COMMUNITY_Community 135|Community 135]]
+- [[_COMMUNITY_Community 136|Community 136]]
+- [[_COMMUNITY_Community 137|Community 137]]
+- [[_COMMUNITY_Community 138|Community 138]]
+- [[_COMMUNITY_Community 139|Community 139]]
+- [[_COMMUNITY_Community 140|Community 140]]
+- [[_COMMUNITY_Community 141|Community 141]]
+- [[_COMMUNITY_Community 142|Community 142]]
+- [[_COMMUNITY_Community 143|Community 143]]
+- [[_COMMUNITY_Community 144|Community 144]]
+- [[_COMMUNITY_Community 145|Community 145]]
+- [[_COMMUNITY_Community 146|Community 146]]
+- [[_COMMUNITY_Community 147|Community 147]]
+- [[_COMMUNITY_Community 148|Community 148]]
+- [[_COMMUNITY_Community 149|Community 149]]
+- [[_COMMUNITY_Community 150|Community 150]]
+- [[_COMMUNITY_Community 151|Community 151]]
+- [[_COMMUNITY_Community 152|Community 152]]
+- [[_COMMUNITY_Community 153|Community 153]]
+- [[_COMMUNITY_Community 154|Community 154]]
+- [[_COMMUNITY_Community 155|Community 155]]
+- [[_COMMUNITY_Community 156|Community 156]]
+- [[_COMMUNITY_Community 157|Community 157]]
+- [[_COMMUNITY_Community 158|Community 158]]
+- [[_COMMUNITY_Community 159|Community 159]]
+- [[_COMMUNITY_Community 160|Community 160]]
+- [[_COMMUNITY_Community 161|Community 161]]
+- [[_COMMUNITY_Community 162|Community 162]]
+- [[_COMMUNITY_Community 163|Community 163]]
+- [[_COMMUNITY_Community 164|Community 164]]
+- [[_COMMUNITY_Community 165|Community 165]]
+- [[_COMMUNITY_Community 166|Community 166]]
+- [[_COMMUNITY_Community 167|Community 167]]
+- [[_COMMUNITY_Community 168|Community 168]]
+- [[_COMMUNITY_Community 169|Community 169]]
+- [[_COMMUNITY_Community 170|Community 170]]
+- [[_COMMUNITY_Community 171|Community 171]]
+- [[_COMMUNITY_Community 172|Community 172]]
+- [[_COMMUNITY_Community 173|Community 173]]
+- [[_COMMUNITY_Community 174|Community 174]]
+- [[_COMMUNITY_Community 175|Community 175]]
+- [[_COMMUNITY_Community 176|Community 176]]
+- [[_COMMUNITY_Community 177|Community 177]]
+- [[_COMMUNITY_Community 178|Community 178]]
+- [[_COMMUNITY_Community 179|Community 179]]
+- [[_COMMUNITY_Community 180|Community 180]]
+- [[_COMMUNITY_Community 181|Community 181]]
+- [[_COMMUNITY_Community 182|Community 182]]
+- [[_COMMUNITY_Community 183|Community 183]]
+- [[_COMMUNITY_Community 184|Community 184]]
+- [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 186|Community 186]]
+- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
+- [[_COMMUNITY_Community 190|Community 190]]
+- [[_COMMUNITY_Community 191|Community 191]]
+- [[_COMMUNITY_Community 192|Community 192]]
+- [[_COMMUNITY_Community 193|Community 193]]
+- [[_COMMUNITY_Community 194|Community 194]]
+- [[_COMMUNITY_Community 195|Community 195]]
+- [[_COMMUNITY_Community 196|Community 196]]
+- [[_COMMUNITY_Community 197|Community 197]]
+- [[_COMMUNITY_Community 198|Community 198]]
+- [[_COMMUNITY_Community 199|Community 199]]
+- [[_COMMUNITY_Community 200|Community 200]]
+- [[_COMMUNITY_Community 201|Community 201]]
+- [[_COMMUNITY_Community 202|Community 202]]
+- [[_COMMUNITY_Community 203|Community 203]]
+- [[_COMMUNITY_Community 204|Community 204]]
+- [[_COMMUNITY_Community 205|Community 205]]
+- [[_COMMUNITY_Community 206|Community 206]]
+- [[_COMMUNITY_Community 207|Community 207]]
+- [[_COMMUNITY_Community 208|Community 208]]
+- [[_COMMUNITY_Community 209|Community 209]]
+- [[_COMMUNITY_Community 210|Community 210]]
+- [[_COMMUNITY_Community 211|Community 211]]
+- [[_COMMUNITY_Community 212|Community 212]]
+- [[_COMMUNITY_Community 213|Community 213]]
+- [[_COMMUNITY_Community 214|Community 214]]
+- [[_COMMUNITY_Community 215|Community 215]]
+- [[_COMMUNITY_Community 216|Community 216]]
+- [[_COMMUNITY_Community 217|Community 217]]
+- [[_COMMUNITY_Community 218|Community 218]]
+- [[_COMMUNITY_Community 219|Community 219]]
+- [[_COMMUNITY_Community 220|Community 220]]
+- [[_COMMUNITY_Community 221|Community 221]]
+- [[_COMMUNITY_Community 222|Community 222]]
+- [[_COMMUNITY_Community 223|Community 223]]
+- [[_COMMUNITY_Community 224|Community 224]]
+- [[_COMMUNITY_Community 225|Community 225]]
+- [[_COMMUNITY_Community 226|Community 226]]
+- [[_COMMUNITY_Community 228|Community 228]]
+- [[_COMMUNITY_Community 229|Community 229]]
+- [[_COMMUNITY_Community 230|Community 230]]
+- [[_COMMUNITY_Community 231|Community 231]]
+- [[_COMMUNITY_Community 232|Community 232]]
+- [[_COMMUNITY_Community 233|Community 233]]
+- [[_COMMUNITY_Community 234|Community 234]]
+- [[_COMMUNITY_Community 235|Community 235]]
+- [[_COMMUNITY_Community 236|Community 236]]
+- [[_COMMUNITY_Community 237|Community 237]]
+- [[_COMMUNITY_Community 239|Community 239]]
+- [[_COMMUNITY_Community 240|Community 240]]
+- [[_COMMUNITY_Community 241|Community 241]]
+- [[_COMMUNITY_Community 242|Community 242]]
+- [[_COMMUNITY_Community 243|Community 243]]
+- [[_COMMUNITY_Community 244|Community 244]]
+- [[_COMMUNITY_Community 245|Community 245]]
+- [[_COMMUNITY_Community 246|Community 246]]
+- [[_COMMUNITY_Community 247|Community 247]]
+- [[_COMMUNITY_Community 248|Community 248]]
+- [[_COMMUNITY_Community 249|Community 249]]
+- [[_COMMUNITY_Community 250|Community 250]]
+- [[_COMMUNITY_Community 253|Community 253]]
+- [[_COMMUNITY_Community 254|Community 254]]
+- [[_COMMUNITY_Community 255|Community 255]]
+- [[_COMMUNITY_Community 256|Community 256]]
+- [[_COMMUNITY_Community 258|Community 258]]
+- [[_COMMUNITY_Community 259|Community 259]]
+- [[_COMMUNITY_Community 260|Community 260]]
+- [[_COMMUNITY_Community 261|Community 261]]
+- [[_COMMUNITY_Community 262|Community 262]]
+- [[_COMMUNITY_Community 263|Community 263]]
+- [[_COMMUNITY_Community 265|Community 265]]
+- [[_COMMUNITY_Community 267|Community 267]]
+- [[_COMMUNITY_Community 269|Community 269]]
+- [[_COMMUNITY_Community 270|Community 270]]
+- [[_COMMUNITY_Community 273|Community 273]]
+- [[_COMMUNITY_Community 274|Community 274]]
+- [[_COMMUNITY_Community 276|Community 276]]
+- [[_COMMUNITY_Community 277|Community 277]]
+- [[_COMMUNITY_Community 278|Community 278]]
+- [[_COMMUNITY_Community 279|Community 279]]
+- [[_COMMUNITY_Community 280|Community 280]]
+- [[_COMMUNITY_Community 284|Community 284]]
+- [[_COMMUNITY_Community 285|Community 285]]
+- [[_COMMUNITY_Community 286|Community 286]]
+- [[_COMMUNITY_Community 287|Community 287]]
+- [[_COMMUNITY_Community 288|Community 288]]
+- [[_COMMUNITY_Community 289|Community 289]]
+- [[_COMMUNITY_Community 290|Community 290]]
+- [[_COMMUNITY_Community 291|Community 291]]
+- [[_COMMUNITY_Community 292|Community 292]]
+- [[_COMMUNITY_Community 296|Community 296]]
+- [[_COMMUNITY_Community 297|Community 297]]
+- [[_COMMUNITY_Community 300|Community 300]]
+- [[_COMMUNITY_Community 339|Community 339]]
+- [[_COMMUNITY_Community 340|Community 340]]
+- [[_COMMUNITY_Community 341|Community 341]]
+- [[_COMMUNITY_Community 342|Community 342]]
+- [[_COMMUNITY_Community 343|Community 343]]
+- [[_COMMUNITY_Community 344|Community 344]]
+- [[_COMMUNITY_Community 345|Community 345]]
+- [[_COMMUNITY_Community 346|Community 346]]
+- [[_COMMUNITY_Community 348|Community 348]]
+- [[_COMMUNITY_Community 349|Community 349]]
+- [[_COMMUNITY_Community 350|Community 350]]
+- [[_COMMUNITY_Community 351|Community 351]]
+- [[_COMMUNITY_Community 352|Community 352]]
 
 ## God Nodes (most connected - your core abstractions)
+
 1. `auth` - 44 edges
 2. `auth` - 44 edges
 3. `campaigns` - 42 edges
@@ -322,889 +329,1089 @@
 10. `Contact` - 28 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Coin/Credits Icon` --conceptually_related_to--> `Leadminer Platform`  [INFERRED]
+
+- `Coin/Credits Icon` --conceptually_related_to--> `Leadminer Platform` [INFERRED]
   frontend/public/icons/coin.png → README.md
-- `SMS Gate APK QR Code` --conceptually_related_to--> `Leadminer Platform`  [INFERRED]
+- `SMS Gate APK QR Code` --conceptually_related_to--> `Leadminer Platform` [INFERRED]
   frontend/public/images/qr-smsgate-apk.png → README.md
-- `initLogger()` --calls--> `createLogger()`  [INFERRED]
-  micro-services/emails-fetcher/src/utils/logger.ts → supabase/functions/_shared/logger.ts
-- `PST File Format Icon` --conceptually_related_to--> `Contact Extraction`  [INFERRED]
+- `initLogger()` --calls--> `createLogger()` [INFERRED]
+  micro-services/emails-fetcher/src/utils/logger.ts → supabase/functions/\_shared/logger.ts
+- `PST File Format Icon` --conceptually_related_to--> `Contact Extraction` [INFERRED]
   frontend/public/icons/pst.svg → README.md
-- `Supabase PKCE Auth` --semantically_similar_to--> `Supabase Local Setup`  [INFERRED] [semantically similar]
-  frontend/DESIGN.md → README.md
+- `GDPR Compliance Icon` --conceptually_related_to--> `AGPL v3 License` [INFERRED]
+  frontend/public/icons/gdpr.png → DUAL-LICENSE.md
 
 ## Hyperedges (group relationships)
+
 - **Email Verification Providers** — readme_reacher, readme_mailercheck, readme_zerobounce [EXTRACTED 0.95]
 - **Background Worker Services** — docker_contact_worker, docker_email_verification_worker, docker_signature_worker [EXTRACTED 0.95]
 - **CI/CD Pipeline** — ci_backend_checks, ci_frontend_checks, ci_deepsource_coverage, ci_pr_path_filter, snyk_auto_merge [EXTRACTED 0.90]
 - **OAuth Provider Icons** — google_oauth_icon, microsoft_oauth_icon [EXTRACTED 0.95]
 - **Pickaxe Brand Assets** — pickaxe_icon_192, pickaxe_icon_512, pickaxe_svg, logo_with_icon, logo_without_icon [EXTRACTED 0.95]
 
-## Communities (353 total, 88 thin omitted)
+## Communities (349 total, 87 thin omitted)
 
-### Community 0 - "Email Campaigns Edge Functions"
+### Community 0 - "Community 0"
+
 Cohesion: 0.03
 Nodes (62): app, authorization, AZURE_DOMAINS, bodyHtmlTemplate, bodyTextTemplate, BounceType, CAMPAIGN_COMPLIANCE_FOOTER, campaignCreateSchema (+54 more)
 
-### Community 1 - "SMS Campaigns Edge Functions"
+### Community 1 - "Community 1"
+
 Cohesion: 0.03
 Nodes (51): app, buildSmsTemplateContext(), campaignId, config, dailyCampaigns, dailySmsTotal, { dayStart, monthStart }, fields (+43 more)
 
-### Community 2 - "Clean Panel UI Components"
+### Community 2 - "Community 2"
+
 Cohesion: 0.04
 Nodes (35): contactsToVerify, isMiningFinished, isPostCleaningPhase, $leadminerStore, progressTooltip, { t }, taskStartedAt, $toast (+27 more)
 
-### Community 3 - "i18n Contact Consent Messages"
+### Community 3 - "Community 3"
+
 Cohesion: 0.07
 Nodes (46): legitimate_interest, opt_in, opt_out, alternate_email, alternate_emails_definition, alternate_name, alternate_names_definition, consent (+38 more)
 
-### Community 4 - "Project Docs and Design System"
-Cohesion: 0.05
-Nodes (45): Campaigns Skeleton Loading, TDD Approach for Skeleton, Coin/Credits Icon, Bug Reporting Process, Contributor License Agreement, Enhancement Suggestion Process, Design Color Tokens, Frontend File Structure (+37 more)
+### Community 4 - "Community 4"
 
-### Community 5 - "i18n Auth Messages"
+Cohesion: 0.09
+Nodes (24): Campaigns Skeleton Loading, TDD Approach for Skeleton, Coin/Credits Icon, Bug Reporting Process, Contributor License Agreement, Enhancement Suggestion Process, AGPL v3 License, Commercial License (+16 more)
+
+### Community 5 - "Community 5"
+
 Cohesion: 0.09
 Nodes (45): account_already, confirmation_email, confirmation_sent, continue_with, discover_gems, enter_associated_email, forgot_password, invalid_login (+37 more)
 
-### Community 6 - "Backend Workers Redis Streams"
-Cohesion: 0.07
-Nodes (21): QueuedEmailsCache, MessagesConsumer, StreamEntry, EmailVerificationData, Subscriber, RedisMultipleStreamsConsumer, StreamResult, RedisStreamProducer (+13 more)
+### Community 6 - "Community 6"
 
-### Community 7 - "i18n Campaign Messages"
+Cohesion: 0.14
+Nodes (7): QueuedEmailsCache, MessagesConsumer, StreamEntry, EmailVerificationData, RedisStreamProducer, StreamProducer, StreamCommand
+
+### Community 7 - "Community 7"
+
 Cohesion: 0.05
 Nodes (43): action_failed, campaign_delete_failed, campaign_deleted, campaign_deleted_detail, campaign_failed, campaign_failed_detail, campaign_sent, campaign_sent_detail (+35 more)
 
-### Community 8 - "Backend Package Dependencies"
+### Community 8 - "Community 8"
+
 Cohesion: 0.05
 Nodes (41): dependencies, axios, cookie-parser, cors, csv-stringify, dotenv, email-reply-parser, express (+33 more)
 
-### Community 9 - "Frontend Composables Stores Utils"
+### Community 9 - "Community 9"
+
 Cohesion: 0.06
 Nodes (25): useMiningCompletionRedirect(), useLeadminerStore, useMiningStepper, useStepperSourcePanel, FetcherStatus, GoogleContactsProgress, MiningProgress, MiningSource (+17 more)
 
-### Community 10 - "Frontend Dev Dependencies"
+### Community 10 - "Community 10"
+
 Cohesion: 0.05
 Nodes (40): devDependencies, autoprefixer, eslint-plugin-import, happy-dom, js-cookie, jsdom, @microsoft/fetch-event-source, nitropack (+32 more)
 
-### Community 11 - "Emails Fetcher Config Schema"
-Cohesion: 0.06
-Nodes (14): validationResult, schema, pool, corsMiddleware, corsOptions, app, initLogger(), redis (+6 more)
+### Community 11 - "Community 11"
 
-### Community 12 - "Google Contacts Export Tests"
+Cohesion: 0.09
+Nodes (8): validationResult, schema, pool, corsMiddleware, corsOptions, app, initLogger(), redis
+
+### Community 12 - "Community 12"
+
 Cohesion: 0.05
 Nodes (35): authError, BatchCreateFn, batchCreateMock, BatchUpdateFn, batchUpdateMock, calls, ConnectionsListFn, connectionsListMock (+27 more)
 
-### Community 13 - "Backend DB Enrichment Clients"
-Cohesion: 0.07
-Nodes (27): pool, IRateLimiter, RateLimiterOptions, Config, ThedigApi, logError(), Config, ResponseAsync (+19 more)
+### Community 13 - "Community 13"
 
-### Community 14 - "Backend Tasks Pipeline SSE"
+Cohesion: 0.09
+Nodes (21): logError(), ResponseAsync, ResponseWebhook, Result, config, emails, mockAxiosInstance, mockError (+13 more)
+
+### Community 14 - "Community 14"
+
 Cohesion: 0.06
 Nodes (28): mailMiningComplete(), refineContacts(), SSEBroadcasterFactory, RealtimeSSE, clean, extract, { factory }, { factory, mockRedisPublisher } (+20 more)
 
-### Community 15 - "IMAP Email Fetcher"
-Cohesion: 0.08
+### Community 15 - "Community 15"
+
+Cohesion: 0.09
 Nodes (16): EmailToStream, Fetch, ImapEmailsFetcher, PublishBody, publishFetchingProgress(), publishToStream(), redisClient, StreamEmailData (+8 more)
 
-### Community 16 - "Backend Dev Dependencies"
+### Community 16 - "Community 16"
+
 Cohesion: 0.06
 Nodes (35): devDependencies, axios-mock-adapter, eslint, eslint-config-airbnb-base, eslint-config-airbnb-typescript, eslint-config-prettier, eslint-plugin-import, ioredis-mock (+27 more)
 
-### Community 17 - "Mining Sources Interfaces"
-Cohesion: 0.07
-Nodes (20): ImapMiningSourceCredentials, MiningSource, MiningSources, MiningSourceType, OAuthMiningSourceCredentials, OAuthMiningSourceProvider, PgMiningSources, MiningSourceService (+12 more)
+### Community 17 - "Community 17"
 
-### Community 18 - "Reacher Email Verification"
-Cohesion: 0.07
-Nodes (27): BulkSubmitResponse, BulkVerificationResultsResponse, BulkVerificationStatusResponse, CheckError, EmailCheckOutput, extractWaitTime(), Misc, Mx (+19 more)
+Cohesion: 0.11
+Nodes (9): PgMiningSources, MiningSourceService, MiningSourcesResponse, pool, query, repo, ExtendedMiningSourceType, MiningSourceByUser (+1 more)
 
-### Community 19 - "Root Package Config"
+### Community 18 - "Community 18"
+
+Cohesion: 0.10
+Nodes (15): BulkSubmitResponse, BulkVerificationResultsResponse, BulkVerificationStatusResponse, CheckError, extractWaitTime(), Misc, Mx, ReacherClient (+7 more)
+
+### Community 19 - "Community 19"
+
 Cohesion: 0.06
 Nodes (34): author, description, devDependencies, husky, lint-staged, prettier, supabase, license (+26 more)
 
-### Community 20 - "SMS Campaigns Process"
+### Community 20 - "Community 20"
+
 Cohesion: 0.07
 Nodes (22): app, buildSmsClickTrackingUrl(), buildSmsTemplateContext(), campaignQuery, getUniqueShortToken(), injectTrackers(), logger, parsed (+14 more)
 
-### Community 21 - "Email Signature Extraction"
-Cohesion: 0.10
-Nodes (12): EmailData, EmailSignatureHandler, IGNORED_TAGS, isUsefulSignatureContent(), NotificationPayload, NotificationType, SignaturePayload, upsertSignaturesDB() (+4 more)
+### Community 22 - "Community 22"
 
-### Community 22 - "SMS Provider Gateway Process"
 Cohesion: 0.07
 Nodes (15): credentials, provider, SimpleSmsGatewayCredentials, SimpleSmsGatewayProvider, credentials, provider, SmsGateCredentials, SmsGateProvider (+7 more)
 
-### Community 23 - "SMS Provider Gateway Index"
-Cohesion: 0.07
-Nodes (15): credentials, provider, SimpleSmsGatewayCredentials, SimpleSmsGatewayProvider, credentials, provider, SmsGateCredentials, SmsGateProvider (+7 more)
+### Community 23 - "Community 23"
 
-### Community 24 - "Frontend Filter Stores"
+Cohesion: 0.09
+Nodes (11): credentials, provider, SimpleSmsGatewayCredentials, SimpleSmsGatewayProvider, credentials, provider, SmsGateCredentials, SmsGateProvider (+3 more)
+
+### Community 24 - "Community 24"
+
 Cohesion: 0.09
 Nodes (29): areToggledFilters, checkValidStatus(), clearFilter(), filters, hideUnsubscribedToggle, isDefaultFilters, jobDetailsToggle, locationToggle (+21 more)
 
-### Community 25 - "i18n Common Messages"
+### Community 25 - "Community 25"
+
 Cohesion: 0.12
 Nodes (31): account, and, back, by, campaigns, cancel, clean, close (+23 more)
 
-### Community 26 - "Email Status Cache Verifier"
-Cohesion: 0.09
-Nodes (7): EmailStatusCache, EmailStatusResult, FakeEmailStatusVerifier, MailerCheckEmailStatusVerifier, RedisEmailStatusCache, ZerobounceEmailStatusVerifier, zerobounceResultToEmailStatusResultMapper()
+### Community 26 - "Community 26"
 
-### Community 27 - "Tasks Manager V2 Tasks"
-Cohesion: 0.19
-Nodes (21): TaskCategory, TaskStatus, TaskType, Contact, CleanTaskConfig, ExtractTaskConfig, FetchTaskConfig, GoogleContactsFetcherClient (+13 more)
+Cohesion: 0.07
+Nodes (24): EmailStatusCache, Details, EmailStatusResult, EmailStatusVerifier, Status, FakeEmailStatusVerifier, mapper, EmailCheckOutput (+16 more)
 
-### Community 28 - "EnrichLayer API Client"
-Cohesion: 0.08
-Nodes (24): Config, EnrichLayerAPI, Experience, Profile, ProfileExtra, ReverseEmailLookupParams, ReverseEmailLookupResponse, config (+16 more)
+### Community 27 - "Community 27"
 
-### Community 29 - "DB Types Extractor Engines"
-Cohesion: 0.14
-Nodes (14): EnrichTaskDetails, ExtractionResult, Organization, Person, PersonWithPocAndTag, Tag, DomainStatusVerificationFunction, CsvXlsxContactEngine (+6 more)
+Cohesion: 0.17
+Nodes (18): TaskCategory, TaskStatus, TaskType, Contact, CleanTaskConfig, ExtractTaskConfig, FetchTaskConfig, GoogleContactsFetchTaskConfig (+10 more)
 
-### Community 30 - "Export Contacts UI Buttons"
+### Community 28 - "Community 28"
+
+Cohesion: 0.11
+Nodes (13): EnrichLayerAPI, Experience, Profile, ProfileExtra, ReverseEmailLookupResponse, EnrichLayer, enrichResultMock, error (+5 more)
+
+### Community 29 - "Community 29"
+
+Cohesion: 0.10
+Nodes (26): ExtractionResult, Organization, Person, Tag, EmailMessageData, emailMessageHandler(), redisClientForNormalMode, DomainStatusVerificationFunction (+18 more)
+
+### Community 30 - "Community 30"
+
 Cohesion: 0.08
 Nodes (24): acceptAndCloseDialog(), accountSelectionDialogVisible, activeExport, { $api }, closeAccountSelectionDialog(), $consentSidebar, dialogVisible, exportItems (+16 more)
 
-### Community 31 - "Edge Function Auth Middleware"
-Cohesion: 0.08
-Nodes (26): authMiddleware(), getAuthenticatedUser(), app, miningIdSchema, parsed, weekStartSchema, authorizeUser(), serviceRoleKey (+18 more)
+### Community 31 - "Community 31"
 
-### Community 32 - "Email Verification Config"
-Cohesion: 0.14
-Nodes (15): validationResult, EmailStatusVerifier, EmailVerifierType, Status, Config, MailerCheckConfig, ReacherConfig, Verifier (+7 more)
+Cohesion: 0.17
+Nodes (11): app, gateway, gatewaySchema, id, logger, SUPABASE_SERVICE_ROLE_KEY, supabaseAdmin, updateSchema (+3 more)
 
-### Community 33 - "Add Mining Source Edge Fn"
-Cohesion: 0.08
-Nodes (26): admin, authorization, client, expiresAt, parsed, supabaseAnonKey, supabaseServiceRoleKey, supabaseUrl (+18 more)
+### Community 32 - "Community 32"
 
-### Community 34 - "Backend Middleware Error Handling"
-Cohesion: 0.10
-Nodes (13): CurrentOAuthSource, ErrorResponse, ImapAuthError, generateErrorObjectFromImapError(), getValidImapLogin(), IMAP_ERROR_CODES, sanitizeImapInput(), validateImapCredentials() (+5 more)
+Cohesion: 0.04
+Nodes (45): Additional Notes, AGENTS.md - Leadminer Development Guide, Backend (Node.js/Express), Build, Lint, and Test Commands, Code Style Guidelines, code:block1 (leadminer/), code:typescript (// Use custom error classes from utils/errors), code:typescript (// Return proper HTTP errors) (+37 more)
 
-### Community 35 - "SMS Fleet Gateway E2E Tests"
+### Community 33 - "Community 33"
+
+Cohesion: 0.07
+Nodes (30): admin, authorization, client, expiresAt, parsed, supabaseAnonKey, supabaseServiceRoleKey, supabaseUrl (+22 more)
+
+### Community 34 - "Community 34"
+
+Cohesion: 0.23
+Nodes (10): generateErrorObjectFromImapError(), getValidImapLogin(), IMAP_ERROR_CODES, sanitizeImapInput(), validateImapCredentials(), axiosError, folderName, longInput (+2 more)
+
+### Community 35 - "Community 35"
+
 Cohesion: 0.07
 Nodes (26): addGatewayBtn, afterPass, afterUser, baseUrlInput, commonStubs, dialog, dialog2, emitted (+18 more)
 
-### Community 36 - "Emails Fetcher Dev Deps"
+### Community 36 - "Community 36"
+
 Cohesion: 0.07
 Nodes (28): devDependencies, axios-mock-adapter, eslint, eslint-config-airbnb-base, eslint-config-airbnb-typescript, eslint-config-prettier, eslint-plugin-import, ioredis-mock (+20 more)
 
-### Community 37 - "Emails Fetcher Dependencies"
+### Community 37 - "Community 37"
+
 Cohesion: 0.07
 Nodes (27): dependencies, axios, cors, dotenv, encoding-japanese, express, express-sse, generic-pool (+19 more)
 
-### Community 38 - "Email Fetcher Factory API"
-Cohesion: 0.08
-Nodes (18): EmailFetcherFactory, Options, Options, PSTFetcherFactory, apiRoutes, Credentials, emailFetcher, errors (+10 more)
+### Community 38 - "Community 38"
 
-### Community 39 - "Emails Fetcher Mining Sources"
+Cohesion: 0.08
+Nodes (18): EmailFetcherFactory, Options, ErrorResponse, ImapAuthError, apiRoutes, Credentials, emailFetcher, errors (+10 more)
+
+### Community 39 - "Community 39"
+
 Cohesion: 0.08
 Nodes (13): ImapMiningSourceCredentials, MiningSource, MiningSources, MiningSourceType, OAuthMiningSourceCredentials, OAuthMiningSourceProvider, PgMiningSources, MiningSourceService (+5 more)
 
-### Community 40 - "PostgreSQL Query SQL Validator"
+### Community 40 - "Community 40"
+
 Cohesion: 0.14
 Nodes (16): FORBIDDEN_KEYWORDS, validateSelectQuery(), clampPreviewLimit(), closeClientSafely(), getSafeSelectQuery(), PostgresQueryService, QueryExecutionResult, QueryPreviewResult (+8 more)
 
-### Community 41 - "Import File Dialog UI"
+### Community 41 - "Community 41"
+
 Cohesion: 0.09
 Nodes (23): [], available_option, cellValue, contentJsonLength, dialog, extractErrorMessage(), fileUpload, { [key: number]: number[] } (+15 more)
 
-### Community 42 - "MailerCheck Client"
-Cohesion: 0.08
-Nodes (16): Config, CreateListInput, Email, ListResponse, ListVerificationResult, MailerCheckClient, MailerCheckResult, Statistics (+8 more)
+### Community 42 - "Community 42"
 
-### Community 43 - "Enrichment Engine Types"
-Cohesion: 0.14
-Nodes (5): Contact, EmailStatus, Engine, Enricher, PgContacts
+Cohesion: 0.12
+Nodes (10): Config, CreateListInput, Email, ListResponse, ListVerificationResult, MailerCheckClient, MailerCheckResult, Statistics (+2 more)
 
-### Community 44 - "ZeroBounce Email Status"
+### Community 43 - "Community 43"
+
+Cohesion: 0.12
+Nodes (8): Contact, EmailExtractionResult, EmailStatus, FileExtractionResult, GoogleContactsExtractionResult, PostgreSQLExtractionResult, Enricher, PgContacts
+
+### Community 44 - "Community 44"
+
 Cohesion: 0.10
-Nodes (16): Details, Config, EmailObject, EmailSubStatus, EmailValidationResponse, ZerobounceClient, ZerobounceEmailValidationResult, ZerobounceStatusResult (+8 more)
+Nodes (14): Config, EmailObject, EmailSubStatus, EmailValidationResponse, ZerobounceClient, ZerobounceEmailValidationResult, ZerobounceStatusResult, sandbox (+6 more)
 
-### Community 45 - "IMAP Boxes Fetcher Types"
-Cohesion: 0.11
-Nodes (15): EmailMessage, FlatTree, ImapEmailsFetcherOptions, buildFinalTree(), createFlatTreeFromImap(), ImapBoxesFetcher, drafts, draftsNode (+7 more)
+### Community 45 - "Community 45"
 
-### Community 46 - "Email Message Extraction Types"
-Cohesion: 0.14
-Nodes (11): Message, PointOfContact, ContactLead, ContactTag, EmailMessage, EmailSendersRecipients, ExtractedContacts, IGNORED_MESSAGE_TAGS (+3 more)
+Cohesion: 0.18
+Nodes (9): drafts, draftsNode, flatTree, inbox, inboxNode, mockBoxes, spam, tree (+1 more)
 
-### Community 47 - "Tasks Manager Factories Pipeline"
-Cohesion: 0.16
-Nodes (17): hasEmailVerificationConfigured(), CleanTask, FetcherClient, createFileMining(), CreateFileMiningParams, createImapMining(), CreateImapMiningParams, createPstMining() (+9 more)
+### Community 46 - "Community 46"
 
-### Community 48 - "EnrichLayer Edge Function"
-Cohesion: 0.14
-Nodes (5): EnrichLayer, Person, EnrichPersonResponse, Thedig, Voilanorbert
+Cohesion: 0.13
+Nodes (12): Message, PointOfContact, ContactLead, ContactTag, EmailMessage, EmailSendersRecipients, ExtractedContacts, IGNORED_MESSAGE_TAGS (+4 more)
 
-### Community 49 - "Enrich Button UI"
+### Community 47 - "Community 47"
+
+Cohesion: 0.09
+Nodes (31): exchangeForToken(), getSafeRedirectPath(), MiningControllerDeps, MiningTaskGroup, parseOAuthState(), getAuthClient(), getTokenConfig(), getTokenWithScopeValidation() (+23 more)
+
+### Community 48 - "Community 48"
+
+Cohesion: 0.20
+Nodes (4): Person, EnrichPersonResponse, Thedig, Voilanorbert
+
+### Community 49 - "Community 49"
+
 Cohesion: 0.16
 Nodes (19): EnrichGdprSidebarRef, enrichmentBulkResponseHandler(), enrichmentNoCredits(), enrichmentSingleResponseHandler(), enrichPerson(), enrichPersonBulk(), handleEnrichmentProgressNotification(), hasAcceptedEnriching (+11 more)
 
-### Community 50 - "Signature Extraction Service"
-Cohesion: 0.20
-Nodes (10): cache, cachedPerson, person, engines, instance, signature, EngineConfig, Signature (+2 more)
+### Community 50 - "Community 50"
 
-### Community 51 - "Mailing Email Config"
+Cohesion: 0.27
+Nodes (9): cache, cachedPerson, person, engines, instance, signature, EngineConfig, ExtractSignature (+1 more)
+
+### Community 51 - "Community 51"
+
 Cohesion: 0.15
 Nodes (18): host, pass, port, sendEmail(), user, mailMiningComplete(), getMiningStats(), getUserEmail() (+10 more)
 
-### Community 52 - "Logger Mining Source Fetch"
+### Community 52 - "Community 52"
+
 Cohesion: 0.13
 Nodes (18): initLogger(), AuthError, handler, isServiceKey(), logger, RequestBody, RequestSchema, timingSafeCompare() (+10 more)
 
-### Community 53 - "Delete Mining Source Edge Fn"
-Cohesion: 0.11
-Nodes (15): admin, authorization, client, parsed, supabaseAnonKey, supabaseServiceRoleKey, supabaseUrl, response (+7 more)
+### Community 53 - "Community 53"
 
-### Community 54 - "Backend Validators Schemas"
+Cohesion: 0.11
+Nodes (20): admin, authorization, client, parsed, supabaseAnonKey, supabaseServiceRoleKey, supabaseUrl, authMiddleware() (+12 more)
+
+### Community 54 - "Community 54"
+
 Cohesion: 0.13
 Nodes (15): verifyEmailSchema, enrichPersonSchema, enrichWebhookSchema, getImapBoxesSchema, positiveNumber, stringArray, stringField, createImapMiningSourceSchema (+7 more)
 
-### Community 55 - "MailerCheck TheDig Verifier Tests"
-Cohesion: 0.10
-Nodes (14): emails, expectedResponse, LOGGER, RATE_LIMITER, TokenBucketRateLimiter, EnrichPersonRequest, error, mockAxiosInstance (+6 more)
+### Community 55 - "Community 55"
 
-### Community 56 - "Mailing Message Templates"
+Cohesion: 0.12
+Nodes (14): Config, IRateLimiter, Config, EnrichPersonRequest, error, mockAxiosInstance, personRequest, personResponse (+6 more)
+
+### Community 56 - "Community 56"
+
 Cohesion: 0.16
 Nodes (20): en, footer, oauth_failure, brand, line1, line2, fr, footer (+12 more)
 
-### Community 58 - "Email Message Tagging"
-Cohesion: 0.21
-Nodes (15): EmailAddress, Options, findEmailAddressType(), isChat(), isGroup(), isNewsletter(), isNoReply(), isRole() (+7 more)
+### Community 57 - "Community 57"
 
-### Community 59 - "Tagging Conditions"
+Cohesion: 0.10
+Nodes (9): MiningEngine, MiningEngineDeps, pipeline, messageHandler, mockActiveTask, mockCanceledTask, pipeline, Pipeline (+1 more)
+
+### Community 58 - "Community 58"
+
 Cohesion: 0.16
-Nodes (8): HasHeaderField, HasHeaderFieldStartsWith, HasHeaderWithValues, HasNoHeaderField, hasHeaderFieldStartsWith(), hasHeaderWithValue(), EmailMessageContent, TaggingCondition
+Nodes (19): EmailAddress, EmailMessageTagging, Options, findEmailAddressType(), hasHeaderFieldStartsWith(), isChat(), isGroup(), isNewsletter() (+11 more)
 
-### Community 60 - "Tagging Service Tags"
-Cohesion: 0.17
-Nodes (11): MessageField, EmailMessageTagging, EmailTaggingEngine, tags, HeaderTag, Tag, TagSource, groupEmailMessage (+3 more)
+### Community 59 - "Community 59"
 
-### Community 61 - "Frontend Contact Utils"
+Cohesion: 0.12
+Nodes (15): HasHeaderField, HasHeaderFieldStartsWith, HasHeaderWithValues, HasNoHeaderField, MessageField, hasHeaderWithValue(), EmailTaggingEngine, tags (+7 more)
+
+### Community 60 - "Community 60"
+
+Cohesion: 0.05
+Nodes (39): Accent Colors, Border Radius, Breakpoints, code:block1 (HSL gradient: hsl(45, 75%, 85%) → hsl(0, 75%, 85%)), code:block2 (┌──────────────────────────────────────────┐), code:html (<div class="border border-surface-200 rounded-md p-4">), code:html (<span class="state-pill state-success">Verified</span>), code:html (<a class="link" href="...">Link text</a>) (+31 more)
+
+### Community 61 - "Community 61"
+
 Cohesion: 0.15
 Nodes (15): Consent, consentStatuses(), createOrganization(), getConsentColor(), getConsentLabel(), getOrganization(), getOrganizationName(), getStatusColor() (+7 more)
 
-### Community 62 - "Backend Package Scripts"
+### Community 62 - "Community 62"
+
 Cohesion: 0.11
 Nodes (19): scripts, build, dev:api, dev:email-signature-worker, dev:email-worker, dev:inspect, dev:mock-external-services, dev:postgresql-worker (+11 more)
 
-### Community 63 - "Mining Controller Helpers"
-Cohesion: 0.17
-Nodes (13): exchangeForToken(), getSafeRedirectPath(), MiningTaskGroup, parseOAuthState(), getAuthClient(), getTokenConfig(), getTokenWithScopeValidation(), providerScopes (+5 more)
+### Community 63 - "Community 63"
 
-### Community 64 - "Stream Controller Mining Engine"
-Cohesion: 0.13
-Nodes (9): initializeStreamController(), initializeStreamRouter(), MiningEngine, MiningEngineDeps, pipeline, messageHandler, mockActiveTask, mockCanceledTask (+1 more)
+Cohesion: 0.16
+Nodes (9): IGNORED_TAGS, isUsefulSignatureContent(), NotificationPayload, NotificationType, SignaturePayload, CleanQuotedForwardedReplies(), FORWARDED_SEPARATOR_REGEX, REPLY_MARKER_REGEX (+1 more)
 
-### Community 65 - "Controller Initializers"
-Cohesion: 0.11
-Nodes (18): initializeContactsController(), initializeContactsVerificationController(), initializeEnrichmentController(), initializeImapController(), initializeMiningController(), initializeContactsRoutes(), initializeEnrichmentRoutes(), initializeImapRoutes() (+10 more)
+### Community 64 - "Community 64"
 
-### Community 66 - "Email Campaigns i18n Middleware"
+Cohesion: 0.14
+Nodes (6): Options, PSTFetcherFactory, EmailToStream, redisClient, StreamEmailData, StreamSignatureData
+
+### Community 65 - "Community 65"
+
+Cohesion: 0.18
+Nodes (10): initializeEnrichmentController(), initializeImapController(), initializeMiningController(), initializeStreamController(), initializeEnrichmentRoutes(), initializeImapRoutes(), initializeMiningRoutes(), initializeStreamRouter() (+2 more)
+
+### Community 66 - "Community 66"
+
 Cohesion: 0.17
 Nodes (16): initI18n(), resources, checkCompliance(), CheckResult, complianceMiddleware(), ContactSnapshot, createFinalResponseMiddleware(), createSuccessResponse() (+8 more)
 
-### Community 67 - "Google Contacts Fetcher"
+### Community 67 - "Community 67"
+
 Cohesion: 0.15
 Nodes (11): ContactToStream, GoogleContactData, GoogleContactsFetcher, PersonContact, publishFetchingProgress(), publishToStream(), redisClient, config (+3 more)
 
-### Community 68 - "Email Campaign Sender Config"
+### Community 68 - "Community 68"
+
 Cohesion: 0.15
 Nodes (15): ensureAllowedSender(), getUserMiningSources(), isFallbackSenderEnabled(), requireFallbackSenderEmail(), resolveSenderOptions(), withBearer(), getSenderCredentialIssue(), isTokenExpired() (+7 more)
 
-### Community 69 - "Google Contacts Fetch Task"
-Cohesion: 0.13
-Nodes (3): GoogleContactsFetchTask, TaskProgress, Task
+### Community 70 - "Community 70"
 
-### Community 70 - "Regex Helpers Tests"
-Cohesion: 0.11
-Nodes (17): endsWithResult, expectedEmail, expectedOutput, falsyInput, functionOutput, generalOutput, inputs, name (+9 more)
+Cohesion: 0.10
+Nodes (20): cleanName(), extractNameAndEmail(), RegexContact, endsWithResult, expectedEmail, expectedOutput, falsyInput, functionOutput (+12 more)
 
-### Community 71 - "Supabase Auth Resolver"
+### Community 71 - "Community 71"
+
+Cohesion: 0.18
+Nodes (10): app, authResolver, contactsResolver, miningControllerDeps, miningEngine, miningSources, pipelineDeps, tasksResolver (+2 more)
+
+### Community 72 - "Community 72"
+
 Cohesion: 0.12
-Nodes (11): SupabaseAuthResolver, app, authResolver, contactsResolver, miningControllerDeps, miningEngine, miningSources, pipelineDeps (+3 more)
+Nodes (26): enrichPerson(), enrichPersonBulk(), enrichWebhook(), isEmptyEnrichEngines(), preEnrichmentMiddleware(), createEnrichmentTask(), enrichFromCache(), EnrichmentCache (+18 more)
 
-### Community 72 - "Enrichment Controller Billing"
-Cohesion: 0.25
-Nodes (15): IBilling, enrichPerson(), enrichPersonBulk(), enrichWebhook(), isEmptyEnrichEngines(), preEnrichmentMiddleware(), createEnrichmentTask(), enrichFromCache() (+7 more)
+### Community 73 - "Community 73"
 
-### Community 73 - "Tagging Unit Tests"
 Cohesion: 0.11
 Nodes (15): email, emailsToTest, expectedOutputTags, expectedTag, expectedTags, header, noReplyTag, output (+7 more)
 
-### Community 74 - "Reacher Client Tests"
-Cohesion: 0.11
-Nodes (17): BASE_CONFIG, controller, controller1, controller2, mockLogger, RATE_LIMITER, requestBody, requestPromise (+9 more)
+### Community 74 - "Community 74"
 
-### Community 75 - "Email Campaigns Transport Config"
+Cohesion: 0.09
+Nodes (18): TokenBucketRateLimiter, BASE_CONFIG, controller, controller1, controller2, mockLogger, RATE_LIMITER, requestBody (+10 more)
+
+### Community 75 - "Community 75"
+
 Cohesion: 0.15
 Nodes (14): getDefaultTransport(), host, pass, port, sendEmail(), SendEmailOptions, user, verifyTransport() (+6 more)
 
-### Community 76 - "Pipeline Sequential Tests"
+### Community 76 - "Community 76"
+
 Cohesion: 0.11
 Nodes (9): { factory }, MockTask, pipeline, start1, start2, stop1, stop2, task1 (+1 more)
 
-### Community 77 - "Message Worker Catch All Cache"
-Cohesion: 0.12
-Nodes (11): CatchAllDomainsCache, RedisCatchAllDomainsCache, catchAllDomainsCache, contacts, emailStatusCache, messagesStreamsConsumer, { processStreamData }, redisClient (+3 more)
+### Community 77 - "Community 77"
 
-### Community 78 - "Signature LLM Types Tests"
-Cohesion: 0.15
-Nodes (7): instance, mockResponse, person, SignatureLLM, LLMModels, LLMModelsList, LLMModelType
+Cohesion: 0.05
+Nodes (36): validationResult, schema, pool, CurrentOAuthSource, redis, QuotaType, LOGGER, RATE_LIMITER (+28 more)
 
-### Community 79 - "Email Signature Cache"
+### Community 78 - "Community 78"
+
+Cohesion: 0.22
+Nodes (6): instance, mockResponse, person, LLMModels, LLMModelsList, LLMModelType
+
+### Community 79 - "Community 79"
+
 Cohesion: 0.17
 Nodes (5): EmailSignature, EmailSignatureCache, EmailSignatureWithMetadata, SignatureProgress, RedisEmailSignatureCache
 
-### Community 80 - "Campaign Tracking Edge Fn"
+### Community 80 - "Community 80"
+
 Cohesion: 0.12
 Nodes (14): app, logger, phone, pixel, supabaseAdmin, token, userId, defaultLogger (+6 more)
 
-### Community 81 - "PG Contacts DB Tests"
-Cohesion: 0.15
-Nodes (10): contacts, extractionResult, pool, query, upsertSql, EmailExtractionResult, ExportService, FileExtractionResult (+2 more)
+### Community 81 - "Community 81"
 
-### Community 82 - "Extractor Email Message Handlers"
-Cohesion: 0.24
-Nodes (13): EmailMessageData, emailMessageHandler(), redisClientForNormalMode, EmailFormat, FileFormat, GoogleContactsFormat, PostgreSQLFormat, ContactExtractorType (+5 more)
+Cohesion: 0.29
+Nodes (5): contacts, extractionResult, pool, query, upsertSql
 
-### Community 83 - "Export Services CSV vCard"
+### Community 82 - "Community 82"
+
+Cohesion: 0.17
+Nodes (11): ReverseEmailLookupParams, config, enrichLayer, mockAxiosInstance, mockLogger, params, RATE_LIMITER, rateLimitError (+3 more)
+
+### Community 83 - "Community 83"
+
 Cohesion: 0.28
 Nodes (7): ExportFactory, Factory, ExportResult, ExportStrategy, ExportType, VCardExport, rows
 
-### Community 84 - "Signature Worker Domain Helpers"
-Cohesion: 0.15
-Nodes (13): checkDomainStatus(), checkMXStatus(), rejectAfter(), emailSignatureCache, emailsStreamConsumer, { processStreamData, handler }, redisClient, signatureEngines (+5 more)
+### Community 84 - "Community 84"
 
-### Community 86 - "PST Email Fetcher"
+Cohesion: 0.18
+Nodes (10): emailSignatureCache, emailsStreamConsumer, { processStreamData, handler }, redisClient, signatureEngines, signatureExtractorCache, signatureLLM, signatureStreamsConsumer (+2 more)
+
+### Community 86 - "Community 86"
+
 Cohesion: 0.23
 Nodes (3): PSTEmailsFetcher, publishFetchingProgress(), publishToStream()
 
-### Community 87 - "Emails Fetcher Jobs"
+### Community 87 - "Community 87"
+
 Cohesion: 0.16
 Nodes (6): EmailsFetcher, EmailsFetchers, GoogleContactsFetchers, GoogleContactsManager, PSTEmailFetcher, PSTEmailsFetchers
 
-### Community 88 - "Passive Mining Boxes"
+### Community 88 - "Community 88"
+
 Cohesion: 0.17
 Nodes (13): BoxNode, EXCLUDED_ATTRIBS_FROM_SELECTION, EXCLUDED_FOLDERS_FROM_DEFAULT, getDefaultAndExcludedFolders(), getFolders(), app, getBoxes(), getLatestPassiveMiningDate() (+5 more)
 
-### Community 89 - "Task Manager Task Tests"
-Cohesion: 0.12
-Nodes (11): clean, details, extract, fetch, fetchTask, map, mockFetcher, mockTasksResolver (+3 more)
+### Community 89 - "Community 89"
 
-### Community 90 - "Supabase Engagements Enrichments"
+Cohesion: 0.09
+Nodes (12): FetchTask, clean, details, extract, fetch, fetchTask, map, mockFetcher (+4 more)
+
+### Community 90 - "Community 90"
+
 Cohesion: 0.12
 Nodes (10): contacts, enrichmentResults, enrichments, mockEngagements, mockTasks, rpcMock, task, updateContactsSpy (+2 more)
 
-### Community 91 - "Test Data Fixtures"
-Cohesion: 0.12
-Nodes (15): dataForFormat, emailBody, EmailNameTest, emailsHash, expectedEmailNameAddress, expectedForBodyExtraction, FormatForBody, imapTreeExample (+7 more)
+### Community 91 - "Community 91"
 
-### Community 92 - "Auth Resolver App Middleware"
-Cohesion: 0.29
-Nodes (3): AuthResolver, MiningControllerDeps, Contacts
+Cohesion: 0.07
+Nodes (27): dataForFormat, emailBody, EmailNameTest, emailsHash, expectedEmailNameAddress, expectedForBodyExtraction, FormatForBody, imapTreeExample (+19 more)
 
-### Community 93 - "Backend TypeScript Config"
+### Community 93 - "Community 93"
+
 Cohesion: 0.13
 Nodes (14): compilerOptions, allowJs, esModuleInterop, module, noImplicitAny, outDir, paths, resolveJsonModule (+6 more)
 
-### Community 94 - "Enrichment Helpers Tests"
-Cohesion: 0.13
-Nodes (12): EnrichmentCache, cached, contacts, enrichmentResults, enrichmentsDB, expectedParse, expectedResult, expectedRpcData (+4 more)
+### Community 95 - "Community 95"
 
-### Community 95 - "Email Status Verifier Factory Tests"
-Cohesion: 0.13
-Nodes (14): [[, assignedEmails]], emailAllocatedMailercheck, emailAllocatedReacher, emailAllocatedZerobounce, emails, googleEmails, hotmailEmails, LOGGER (+6 more)
+Cohesion: 0.08
+Nodes (22): EmailVerifierType, Config, MailerCheckConfig, ReacherConfig, [[, assignedEmails]], emailAllocatedMailercheck, emailAllocatedReacher, emailAllocatedZerobounce (+14 more)
 
-### Community 96 - "Emails Fetcher TypeScript Config"
+### Community 96 - "Community 96"
+
 Cohesion: 0.13
 Nodes (14): compilerOptions, allowJs, esModuleInterop, module, noImplicitAny, outDir, paths, resolveJsonModule (+6 more)
 
-### Community 98 - "Frontend Callback Page"
+### Community 98 - "Community 98"
+
 Cohesion: 0.13
 Nodes (9): authParams, desc, googleWorkspaceDialogMessage, googleWorkspaceDialogTitle, $route, showGoogleWorkspaceDialog, { t, te }, $toast (+1 more)
 
-### Community 99 - "i18n Mining Messages"
+### Community 99 - "Community 99"
+
 Cohesion: 0.25
 Nodes (15): mining, mining, cleaning_enabled_option, cleaning_enabled_sub, contacts_got_rights_detail, contacts_got_rights_title, extract_signatures_option, extract_signatures_sub (+7 more)
 
-### Community 100 - "IMAP Message Parsing Tests"
+### Community 100 - "Community 100"
+
 Cohesion: 0.13
 Nodes (14): anotherPlain, base64Content, buffer, emptyNode, euroPound, imageNode, jisBytes, node (+6 more)
 
-### Community 101 - "Mining Progress Card UI"
+### Community 101 - "Community 101"
+
 Cohesion: 0.15
 Nodes (13): estimatedRemainingTimeConverted, finishedTime, getElapsedSeconds(), getEstimatedRemainingTime(), getEstimationString(), $leadminerStore, popoverRef, progressEstimator (+5 more)
 
-### Community 102 - "Backend Package Metadata"
+### Community 102 - "Community 102"
+
 Cohesion: 0.14
 Nodes (13): author, description, engines, node, semver, keywords, license, name (+5 more)
 
-### Community 103 - "Auth Controller Users DB"
+### Community 103 - "Community 103"
+
 Cohesion: 0.23
 Nodes (5): initializeAuthController(), Profile, Users, initializeAuthRoutes(), SupabaseUsers
 
-### Community 105 - "Enricher Unit Tests"
+### Community 105 - "Community 105"
+
 Cohesion: 0.14
 Nodes (12): contact, contacts, emptyEnricher, engineResult, enricher, enricherResult, mockEngineAsync, mockEngineSync1 (+4 more)
 
-### Community 106 - "Table Preferences Filter Persistence"
+### Community 106 - "Community 106"
+
 Cohesion: 0.16
 Nodes (12): initializeTableFilters(), persistTableFilters(), ALLOWED_COLUMNS, buildTableStorageKey(), DATE_FILTER_FIELDS, FilterConstraint, FilterValue, ParsedFilters (+4 more)
 
-### Community 108 - "Signature LLM Benchmark"
+### Community 108 - "Community 108"
+
 Cohesion: 0.18
 Nodes (12): DATASET_STATS, FIELD_WEIGHTS, FieldName, FIELDS, getMockLogger(), MODELS, ModelStat, modelStats (+4 more)
 
-### Community 109 - "Frontend i18n JSON Messages"
+### Community 109 - "Community 109"
+
 Cohesion: 0.18
 Nodes (13): en, fr, message, title, footer, regards, email_template, error (+5 more)
 
-### Community 110 - "Enrich Task Types Supabase"
+### Community 110 - "Community 110"
+
 Cohesion: 0.27
 Nodes (3): EnrichTask, Enrichments, TaskRedacted
 
-### Community 111 - "Email Fetching Client Tests"
+### Community 111 - "Community 111"
+
 Cohesion: 0.14
 Nodes (7): axiosError, client, EmailFetcherClient, FetchStartPayload, FetchStopPayload, GoogleContactsSyncStartPayload, GoogleContactsSyncStopPayload
 
-### Community 112 - "Auth Provider Service"
+### Community 112 - "Community 112"
+
 Cohesion: 0.19
 Nodes (10): getProviderFromEmail(), AZURE_DOMAINS, getDomainFromEmail(), getOAuthImapConfigByEmail(), GOOGLE_DOMAINS, ImapConfig, Provider, PROVIDER_BY_DOMAIN (+2 more)
 
-### Community 113 - "Enrichment Mocks"
+### Community 113 - "Community 113"
+
 Cohesion: 0.19
 Nodes (8): fakeProfile, router, emails, router, token, coloredLog(), colors, app
 
-### Community 114 - "Email Message Unit Tests"
-Cohesion: 0.15
-Nodes (12): CORRECT_LIST_IDS, date, domainStatusVerification, expectedContacts, header, LIST_ID_FORMAT_RFC, message, mockAllCatchDomainsCache (+4 more)
+### Community 114 - "Community 114"
 
-### Community 115 - "Google Contacts Extractor Tests"
+Cohesion: 0.10
+Nodes (14): CatchAllDomainsCache, RedisCatchAllDomainsCache, CORRECT_LIST_IDS, date, domainStatusVerification, expectedContacts, header, LIST_ID_FORMAT_RFC (+6 more)
+
+### Community 115 - "Community 115"
+
 Cohesion: 0.15
 Nodes (12): data, DEFAULT_NEWSLETTER_TAG, domainStatusVerification, extractor, googleContactsData, mockDomainVerification, mockRedis, mockTaggingEngine (+4 more)
 
-### Community 116 - "Signature LLM Service"
+### Community 116 - "Community 116"
+
 Cohesion: 0.32
 Nodes (10): OpenRouterError, OpenRouterResponse, SignaturePrompt, normalize(), parseLocationString(), parseString(), parseStringArray(), removeFalsePositives() (+2 more)
 
-### Community 117 - "i18n EN Consent Required"
-Cohesion: 0.18
-Nodes (12): description, engagement_types, title, contact_one, contact_other, modal, consent_required, no_consented_contacts (+4 more)
+### Community 117 - "Community 117"
 
-### Community 118 - "i18n FR Consent Required"
-Cohesion: 0.18
-Nodes (12): description, engagement_types, title, contact_one, contact_other, modal, consent_required, no_consented_contacts (+4 more)
+Cohesion: 0.13
+Nodes (18): cancel, continue_partial_one, continue_partial_other, privacy_policy, buttons, description, engagement_types, title (+10 more)
 
-### Community 119 - "SMS Quota Utils Tests Process"
+### Community 118 - "Community 118"
+
+Cohesion: 0.13
+Nodes (18): cancel, continue_partial_one, continue_partial_other, privacy_policy, buttons, description, engagement_types, title (+10 more)
+
+### Community 119 - "Community 119"
+
 Cohesion: 0.18
 Nodes (10): bounds, paris, quota, tokyo, utc, values, getSmsQuota(), getSmsQuotaFromEnv() (+2 more)
 
-### Community 120 - "SMS Quota Utils Tests Index"
+### Community 120 - "Community 120"
+
 Cohesion: 0.18
 Nodes (10): bounds, paris, quota, tokyo, utc, values, getSmsQuota(), getSmsQuotaFromEnv() (+2 more)
 
-### Community 121 - "Frontend Dependencies"
+### Community 121 - "Community 121"
+
 Cohesion: 0.17
 Nodes (12): dependencies, libphonenumber-js, posthog-js, @primeuix/themes, quill, quill-image-resize-module, read-excel-file, @sentry/nuxt (+4 more)
 
-### Community 122 - "i18n Button Messages"
-Cohesion: 0.20
-Nodes (12): enrich, viewContacts, viewContactsCount, buttons, buttons, hasNewContactsSubtitle, headerTitle, noNewContactsBody (+4 more)
+### Community 122 - "Community 122"
 
-### Community 123 - "i18n EN Header Notification"
-Cohesion: 0.20
-Nodes (12): hasNewContactsSubtitle, headerTitle, noNewContactsBody, noNewContactsSubtitle, recapIntro, start_mining_toast, subject, start_mining_toast (+4 more)
+Cohesion: 0.07
+Nodes (48): enrich, viewContacts, viewContactsCount, buttons, footer, hasNewContactsSubtitle, headerTitle, noNewContactsBody (+40 more)
 
-### Community 124 - "Frontend Error Handler Plugin"
+### Community 123 - "Community 123"
+
+Cohesion: 0.25
+Nodes (7): app, miningIdSchema, parsed, weekStartSchema, authorizeUser(), serviceRoleKey, verifyServiceRole()
+
+### Community 124 - "Community 124"
+
 Cohesion: 0.23
 Nodes (10): ERROR_STATUS_MESSAGES, ErrorStatusMessages, EXPECTED_FAULTY_STATUS_CODES, HandledError, isExpectedFaultyCode(), isFetchError(), isUnauthorized(), networkErrorMessage() (+2 more)
 
-### Community 125 - "Supabase Cookie Optimization"
+### Community 125 - "Community 125"
+
 Cohesion: 0.26
 Nodes (11): Chunk, codepointToUTF8(), createChunks(), createSupabaseCookies(), deleteSupabaseCookies(), newSession, overwriteSupabaseCookies(), stringToBase64URL() (+3 more)
 
-### Community 126 - "Fetch Mining Source Handler"
+### Community 126 - "Community 126"
+
 Cohesion: 0.33
 Nodes (3): FetchMiningSourceHandler, MiningSource, createSupabaseAdmin()
 
-### Community 127 - "Tasks DB Interfaces Supabase"
-Cohesion: 0.35
-Nodes (4): SupabaseTask, Task, Tasks, SupabaseTasks
+### Community 127 - "Community 127"
 
-### Community 128 - "Backend ESLint Config"
+Cohesion: 0.18
+Nodes (11): EnrichTaskDetails, PersonWithPocAndTag, SupabaseTask, Task, Tasks, SupabaseTasks, GoogleContactsFetcherClient, emitSpy (+3 more)
+
+### Community 128 - "Community 128"
+
 Cohesion: 0.18
 Nodes (10): extends, parser, parserOptions, project, plugins, root, rules, no-continue (+2 more)
 
-### Community 129 - "Enrichment Engine Index"
-Cohesion: 0.44
-Nodes (5): EngineResponse, EngineResult, EnrichmentService, undefinedIfEmpty(), undefinedIfFalsy()
+### Community 129 - "Community 129"
 
-### Community 130 - "Emails Fetcher ESLint Config"
+Cohesion: 0.41
+Nodes (6): Engine, EngineResponse, EngineResult, EnrichmentService, undefinedIfEmpty(), undefinedIfFalsy()
+
+### Community 130 - "Community 130"
+
 Cohesion: 0.18
 Nodes (10): extends, parser, parserOptions, project, plugins, root, rules, no-continue (+2 more)
 
-### Community 131 - "Frontend Package Scripts"
+### Community 131 - "Community 131"
+
 Cohesion: 0.18
 Nodes (11): scripts, build, dev, generate, lint, lint:fix, postinstall, prettier (+3 more)
 
-### Community 132 - "Campaign Composer Dialog"
+### Community 132 - "Community 132"
+
 Cohesion: 0.18
 Nodes (7): allOptions, greeting, htmlText, input, reconnectContext, selected, unavailableEmails
 
-### Community 133 - "Emails Fetcher Package Scripts"
+### Community 133 - "Community 133"
+
 Cohesion: 0.18
 Nodes (11): scripts, build, dev, inspect, lint, lint:fix, prettier, prettier:fix (+3 more)
 
-### Community 134 - "Emails Fetcher Package Metadata"
+### Community 134 - "Community 134"
+
 Cohesion: 0.18
 Nodes (10): author, description, engines, bun, keywords, license, name, resolutions (+2 more)
 
-### Community 135 - "Email Templates Base"
-Cohesion: 0.33
+### Community 135 - "Community 135"
+
+Cohesion: 0.36
 Nodes (7): emailContainer(), EmailContainerArgs, FRONTEND_HOST, LOGO_URL, t(), miningCompletedEmail(), weeklyMiningReportEmail()
 
-### Community 136 - "OAuth Handler Azure Google"
+### Community 136 - "Community 136"
+
 Cohesion: 0.24
 Nodes (6): azureOAuth2Client, config, AuthParams, config, googleOAuth2Client, getRequiredEnv()
 
-### Community 137 - "SMS Fleet Index Tests"
+### Community 137 - "Community 137"
+
 Cohesion: 0.18
 Nodes (10): gateway, gateway1, gateway2, gateway3, gatewaySchema, gatewayWithExtraFields, invalidGateway, result (+2 more)
 
-### Community 138 - "Auth Types"
+### Community 138 - "Community 138"
+
 Cohesion: 0.20
 Nodes (9): AuthError, AuthResolver, AuthResponse, AuthUser, IMAPConfig, OAuthConfig, OAuthSigninOptions, ProviderConfig (+1 more)
 
-### Community 139 - "Supabase User Profile Composable"
+### Community 139 - "Community 139"
+
 Cohesion: 0.29
 Nodes (7): useSupabaseUserProfile(), addMiningSourceFromProviderToken(), createUserProfileRealtimeChannel(), handleFirstTimeSignIn(), setup(), updateFirstTimeSignIn(), updateUserEmailTemplatesI18n()
 
-### Community 140 - "TheDig Enricher Tests"
+### Community 140 - "Community 140"
+
 Cohesion: 0.20
 Nodes (9): enrichmentMappedMock, enrichmentResponseMock, enrichmentResultMock, error, mockResponse, person, persons, response (+1 more)
 
-### Community 141 - "PST Fetching Client"
+### Community 141 - "Community 141"
+
 Cohesion: 0.20
 Nodes (5): FetchStartPayload, FetchStopPayload, PSTFetcherClient, axiosError, client
 
-### Community 142 - "Backend Constants"
-Cohesion: 0.20
-Nodes (9): CHAT_EMAIL_ADDRESS_INCLUDES, EXCLUDED_IMAP_FOLDERS, GROUP_EMAIL_ADDRESS_INCLUDES, headerRegex, NEWSLETTER_EMAIL_ADDRESS_INCLUDES, NOREPLY_EMAIL_ADDRESS_INCLUDES, REACHABILITY, ROLE_EMAIL_ADDRESS_INCLUDES (+1 more)
+### Community 142 - "Community 142"
 
-### Community 143 - "Frontend Contacts Store Filters"
+Cohesion: 0.15
+Nodes (12): CHAT_EMAIL_ADDRESS_INCLUDES, EXCLUDED_IMAP_FOLDERS, GROUP_EMAIL_ADDRESS_INCLUDES, headerRegex, NEWSLETTER_EMAIL_ADDRESS_INCLUDES, NOREPLY_EMAIL_ADDRESS_INCLUDES, REACHABILITY, ROLE_EMAIL_ADDRESS_INCLUDES (+4 more)
+
+### Community 143 - "Community 143"
+
 Cohesion: 0.20
 Nodes (7): useContactsStore, onLocationToggle(), removeContactsFromDatabase(), CLEARED_TOGGLES, createConstraint(), DEFAULT_FILTERS, DEFAULT_TOGGLES
 
-### Community 144 - "Frontend Normalizer Utils"
+### Community 144 - "Community 144"
+
 Cohesion: 0.29
 Nodes (4): delay(), LocationNormalizer, Normalizer, updateNormalizedLocationInDB()
 
-### Community 145 - "Emails Fetcher Constants"
+### Community 145 - "Community 145"
+
 Cohesion: 0.20
 Nodes (9): CHAT_EMAIL_ADDRESS_INCLUDES, EXCLUDED_IMAP_FOLDERS, GROUP_EMAIL_ADDRESS_INCLUDES, headerRegex, NEWSLETTER_EMAIL_ADDRESS_INCLUDES, NOREPLY_EMAIL_ADDRESS_INCLUDES, REACHABILITY, ROLE_EMAIL_ADDRESS_INCLUDES (+1 more)
 
-### Community 146 - "i18n Weekly Report"
-Cohesion: 0.36
-Nodes (10): weeklyReport, weeklyReport, buttons, greeting, headerSubtitle, headerTitle, intro, signature (+2 more)
+### Community 146 - "Community 146"
 
-### Community 147 - "OAuth2 Azure Google Services"
 Cohesion: 0.22
+Nodes (4): TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, TwilioProvider
+
+### Community 147 - "Community 147"
+
+Cohesion: 0.17
 Nodes (5): azureOAuth2Client, config, AuthParams, config, googleOAuth2Client
 
-### Community 149 - "Mining Campaign Regression Tests"
+### Community 149 - "Community 149"
+
 Cohesion: 0.22
 Nodes (6): campaignComposer, emailCampaignsFunction, importFileDialog, previewBlock, previewEnd, previewStart
 
-### Community 150 - "Mining Table Performance Utils"
+### Community 150 - "Community 150"
+
 Cohesion: 0.22
 Nodes (5): ColorSeverity, COLUMN_KEYS, ColumnVisibility, PreparedTableRow, PrepareRowsResolvers
 
-### Community 151 - "Signature Regex Tests"
+### Community 151 - "Community 151"
+
 Cohesion: 0.28
 Nodes (3): re, twitterSamples, SignatureRE
 
-### Community 153 - "Emails Fetcher Auth Provider"
-Cohesion: 0.25
-Nodes (8): AZURE_DOMAINS, getDomainFromEmail(), getOAuthImapConfigByEmail(), GOOGLE_DOMAINS, ImapConfig, Provider, PROVIDER_BY_DOMAIN, PROVIDER_CONFIG
+### Community 153 - "Community 153"
 
-### Community 154 - "Frontend Nuxt Config Package"
+Cohesion: 0.20
+Nodes (9): AZURE_DOMAINS, getDomainFromEmail(), getOAuthImapConfigByEmail(), GOOGLE_DOMAINS, ImapConfig, Provider, PROVIDER_BY_DOMAIN, PROVIDER_CONFIG (+1 more)
+
+### Community 154 - "Community 154"
+
 Cohesion: 0.25
 Nodes (6): author, description, name, private, productName, version
 
-### Community 155 - "Frontend Error Page Handler"
+### Community 155 - "Community 155"
+
 Cohesion: 0.25
 Nodes (6): errorObject, isUTF8Error, router, { t }, $user, $userProfile
 
-### Community 156 - "Frontend Contact Types"
+### Community 156 - "Community 156"
+
 Cohesion: 0.25
 Nodes (7): ConsentStatus, Contact, ContactEdit, EmailStatus, EmailStatusScore, NormalizedLocation, Tag
 
-### Community 157 - "i18n Stats Messages"
-Cohesion: 0.54
-Nodes (8): stats, stats, totalMined, totalReachable, withCompany, withLocation, withPhone, stats
+### Community 157 - "Community 157"
 
-### Community 158 - "Mailing Template Fill Utils"
-Cohesion: 0.36
+Cohesion: 0.39
+Nodes (3): buildFinalTree(), createFlatTreeFromImap(), ImapBoxesFetcher
+
+### Community 158 - "Community 158"
+
+Cohesion: 0.31
 Nodes (6): fillTemplate(), FRONTEND_HOST, LOGO_URL, t(), buildEmail(), FRONTEND_HOST
 
-### Community 159 - "SMS Segments Tests Index"
+### Community 159 - "Community 159"
+
 Cohesion: 0.25
 Nodes (5): long, result, short, withFooter, withoutFooter
 
-### Community 160 - "SMS Segments Tests Process"
+### Community 160 - "Community 160"
+
 Cohesion: 0.25
 Nodes (5): long, result, short, withFooter, withoutFooter
 
-### Community 161 - "Mobile UI Regression Tests"
+### Community 161 - "Community 161"
+
 Cohesion: 0.25
 Nodes (6): appHeader, campaignsPage, exportContacts, miningTable, nuxtConfig, routingMiddleware
 
-### Community 162 - "OAuth Redirect Mining Source"
+### Community 162 - "Community 162"
+
 Cohesion: 0.32
 Nodes (6): findMiningSourceByEmail(), normalizeEmail(), PostOauthSourceSelectionInput, PostOauthSourceSelectionResult, resolvePostOauthSourceSelection(), StepperInitializationInput
 
-### Community 163 - "Docker Compose Services"
+### Community 163 - "Community 163"
+
 Cohesion: 0.43
 Nodes (7): Docker Contact Extraction Worker, Docker Email Fetcher Service, Docker Email Verification Worker, Docker Frontend Service, Docker Leadminer API, Docker Redis Service, Docker Signature Worker
 
-### Community 164 - "Email Campaigns Deno Imports"
+### Community 164 - "Community 164"
+
 Cohesion: 0.29
 Nodes (6): imports, @ankaboot.io/imap-autoconfig, hono, nodemailer, supabase, zod
 
-### Community 165 - "Contact Info Sidebar UI"
+### Community 165 - "Community 165"
+
 Cohesion: 0.29
 Nodes (4): editedContactCopy, parsedPhone, telephones, { verifyEmailStatus }
 
-### Community 166 - "Mining Toast Tests"
+### Community 166 - "Community 166"
+
 Cohesion: 0.29
 Nodes (5): payload, translations, weirdT, withAction, withLink
 
-### Community 167 - "SMS Fleet Frontend Types"
+### Community 167 - "Community 167"
+
 Cohesion: 0.29
 Nodes (6): CampaignRecipientGateway, SmsFleetGateway, SmsGatewayConfig, SmsGatewayCreatePayload, SmsGatewayProvider, SmsGatewayTestResult
 
-### Community 168 - "Toast Utils Helpers"
+### Community 168 - "Community 168"
+
 Cohesion: 0.48
 Nodes (6): asToastHasLinksGroupDetail(), getToastHasLinksDetailMessage(), hasToastHasLinksButtonAction(), hasToastHasLinksLink(), isToastHasLinksGroupDetail(), ToastHasLinksGroupDetail
 
-### Community 169 - "SMS Fleet Management Tests"
+### Community 169 - "Community 169"
+
 Cohesion: 0.29
 Nodes (6): app, mockCreateGateway, mockDeleteGateway, mockFetchGateways, mockGateways, mockTestGateway
 
-### Community 170 - "Google Contacts Export Service"
+### Community 170 - "Community 170"
+
 Cohesion: 0.43
 Nodes (4): ExportOptions, GoogleContactsExport, getPeopleService(), warmupSearchIndex()
 
-### Community 172 - "i18n Time Messages"
+### Community 172 - "Community 172"
+
 Cohesion: 0.48
 Nodes (7): time, time, day, hour, minute, month, second
 
-### Community 173 - "i18n Unsubscribe Messages"
+### Community 173 - "Community 173"
+
 Cohesion: 0.48
 Nodes (7): unsubscribe, unsubscribe, failure_header, failure_message, go_home, success_header, success_message
 
-### Community 174 - "Mail Edge Function Imports"
+### Community 174 - "Community 174"
+
 Cohesion: 0.29
 Nodes (6): imports, hono, nodemailer, p-queue, supabase, zod
 
-### Community 176 - "Emails Fetcher Validation Utils"
+### Community 175 - "Community 175"
+
+Cohesion: 0.32
+Nodes (3): response, corsHeaders, buildRedirectResponse()
+
+### Community 176 - "Community 176"
+
 Cohesion: 0.43
 Nodes (4): validateBoolean(), validateNumber(), validateStringArray(), validateType()
 
-### Community 177 - "Shared URL Env Reader"
+### Community 177 - "Community 177"
+
 Cohesion: 0.48
 Nodes (5): EnvReader, normalizeBaseUrl(), resolveCampaignBaseUrlFromEnv(), resolvePublicBaseUrl(), value
 
-### Community 178 - "SMS Campaigns Deno Imports"
+### Community 178 - "Community 178"
+
 Cohesion: 0.29
 Nodes (6): imports, hono, libphonenumber-js, supabase, zod, lock
 
-### Community 179 - "SMS Campaigns Process Imports"
+### Community 179 - "Community 179"
+
 Cohesion: 0.29
 Nodes (6): imports, hono, libphonenumber-js, supabase, zod, lock
 
-### Community 181 - "Extractor Helpers and Types"
-Cohesion: 0.38
-Nodes (4): cleanName(), extractNameAndEmail(), extractNameAndEmailFromBody(), RegexContact
+### Community 180 - "Community 180"
 
-### Community 182 - "Mining Extras Toast Utils"
+Cohesion: 0.25
+Nodes (7): CompositeTypes, Database, Enums, PublicSchema, Tables, TablesInsert, TablesUpdate
+
+### Community 182 - "Community 182"
+
 Cohesion: 0.38
 Nodes (5): createStartMiningToastPayload(), normalizeToastText(), startMiningNotification(), StartMiningToastInput, ToastLike
 
-### Community 183 - "OAuth Helpers Tests"
+### Community 183 - "Community 183"
+
 Cohesion: 0.47
 Nodes (4): buildEndpointURL(), buildRedirectUrl(), params, result
 
-### Community 184 - "Backend TypeScript Build Config"
+### Community 184 - "Community 184"
+
 Cohesion: 0.33
 Nodes (5): compilerOptions, outDir, sourceMap, extends, include
 
-### Community 185 - "Campaigns Track Edge Function"
+### Community 185 - "Community 185"
+
 Cohesion: 0.33
 Nodes (5): imports, hono, supabase, zod, lock
 
-### Community 186 - "Emails Fetcher TypeScript Build"
+### Community 186 - "Community 186"
+
 Cohesion: 0.33
 Nodes (5): compilerOptions, outDir, sourceMap, extends, include
 
-### Community 187 - "PostgreSQL Connection Helpers"
-Cohesion: 0.40
-Nodes (4): ConnectionTestResult, testPostgresConnection(), PostgreSQLMiningSourceCredentials, mockClient
+### Community 187 - "Community 187"
 
-### Community 190 - "Filter Store Watchers"
+Cohesion: 0.12
+Nodes (14): ImapMiningSourceCredentials, MiningSource, MiningSources, MiningSourceType, OAuthMiningSourceCredentials, OAuthMiningSourceProvider, ConnectionTestResult, testPostgresConnection() (+6 more)
+
+### Community 190 - "Community 190"
+
 Cohesion: 0.33
 Nodes (6): registerFiltersAndStartWatchers(), watchHideUnsubscribedToggle(), watchLocationToggle(), watchRecencyToggle(), watchRepliesToggle(), watchStatusToggle()
 
-### Community 191 - "Credits Dialog Utils"
+### Community 191 - "Community 191"
+
 Cohesion: 0.33
 Nodes (3): CreditsDialogCampaignRef, CreditsDialogEnrichRef, CreditsDialogExportRef
 
-### Community 195 - "i18n EN Buttons Consent"
-Cohesion: 0.40
-Nodes (6): cancel, continue_partial_one, continue_partial_other, privacy_policy, buttons, buttons
+### Community 194 - "Community 194"
 
-### Community 196 - "i18n FR Buttons Consent"
-Cohesion: 0.40
-Nodes (6): cancel, continue_partial_one, continue_partial_other, privacy_policy, buttons, buttons
+Cohesion: 0.17
+Nodes (7): IBilling, initializeContactsController(), registerAndDeductCredits(), respondWithConfirmedContacts(), initializeContactsVerificationController(), ExportService, initializeContactsRoutes()
 
-### Community 198 - "i18n Footer Messages"
-Cohesion: 0.60
-Nodes (6): footer, brand, line1, line2, footer, footer
+### Community 200 - "Community 200"
 
-### Community 200 - "Email Campaign Transport Builder"
 Cohesion: 0.40
 Nodes (6): buildUserTransport(), deriveSmtpFromImap(), getDomainFromEmail(), guessCustomSmtpHost(), isAzureDomain(), isGoogleDomain()
 
-### Community 201 - "SMS Fleet Deno Imports"
+### Community 201 - "Community 201"
+
 Cohesion: 0.33
 Nodes (5): imports, hono, supabase, zod, lock
 
-### Community 203 - "Test Data Query Example API"
-Cohesion: 0.33
-Nodes (6): queryExampleApi, access_token, email, id, refresh_token, token
+### Community 203 - "Community 203"
 
-### Community 204 - "Test Data Query Example IMAP"
-Cohesion: 0.33
-Nodes (6): queryExampleImap, email, host, id, password, port
+Cohesion: 0.50
+Nodes (3): EmailMessage, FlatTree, ImapEmailsFetcherOptions
 
-### Community 205 - "Campaign Terminal Toast Tests"
+### Community 204 - "Community 204"
+
+Cohesion: 0.67
+Nodes (3): Pickaxe App Icon 192px, Pickaxe App Icon 512px, Pickaxe SVG Logo
+
+### Community 205 - "Community 205"
+
 Cohesion: 0.33
 Nodes (4): firstSnapshot, nextSnapshot, previousStatuses, result
 
-### Community 206 - "CI Pipeline Config"
+### Community 206 - "Community 206"
+
 Cohesion: 0.50
 Nodes (5): CI Backend Checks, DeepSource Coverage Reporting, CI Frontend Checks, PR Path-Based CI Filtering, Snyk Auto-Merge Workflow
 
-### Community 207 - "Compliance Dialog Component"
+### Community 207 - "Community 207"
+
 Cohesion: 0.50
 Nodes (3): closeModal(), handleButtonClick(), isVisible
 
-### Community 211 - "Notification Client Store"
+### Community 208 - "Community 208"
+
+Cohesion: 0.17
+Nodes (6): EmailSignatureConsumer, EmailData, RedisMultipleStreamsConsumer, StreamResult, MultipleStreamsConsumer, StreamData
+
+### Community 209 - "Community 209"
+
+Cohesion: 0.18
+Nodes (3): EmailVerificationConsumer, Subscriber, RedisSubscriber
+
+### Community 211 - "Community 211"
+
 Cohesion: 0.40
 Nodes (3): setup(), Notification, useNotificationsStore
 
-### Community 212 - "Frontend Campaign Types"
+### Community 212 - "Community 212"
+
 Cohesion: 0.40
 Nodes (4): CampaignChannel, CampaignLinkClick, CampaignOverview, CampaignStatus
 
-### Community 214 - "Source Status Badge Utils"
+### Community 214 - "Community 214"
+
 Cohesion: 0.40
 Nodes (3): ResolveSourceStatusBadgeInput, SourceStatusBadge, SourceStatusLabelKey
 
-### Community 215 - "i18n Upload Messages"
+### Community 215 - "Community 215"
+
 Cohesion: 0.60
 Nodes (5): upload, upload, drag_and_drop, select_file_label, upload
 
-### Community 216 - "Email Campaign Template Rendering"
+### Community 216 - "Community 216"
+
 Cohesion: 0.40
 Nodes (5): buildRenderedContent(), ensureUnsubscribeHtml(), ensureUnsubscribeText(), renderTemplate(), toHtmlFromText()
 
-### Community 217 - "Email Campaign Bounce Classification"
+### Community 217 - "Community 217"
+
 Cohesion: 0.40
 Nodes (5): classifyBounceType(), extractErrorMessage(), getErrorText(), getSmtpResponseCode(), getUserFriendlyError()
 
-### Community 218 - "Email Campaign Click Tracking"
+### Community 218 - "Community 218"
+
 Cohesion: 0.40
 Nodes (5): buildClickTrackingUrl(), buildOpenTrackingUrl(), escapeRegExp(), injectTrackers(), recordClickLink()
 
-### Community 219 - "Email Templates Edge Function"
-Cohesion: 0.40
-Nodes (4): EmailTemplate, EmailTemplatesI18n, LanguageEmailTemplates, supabaseEmailsI18n
+### Community 220 - "Community 220"
 
-### Community 220 - "SMS Phone Utils Tests Index"
 Cohesion: 0.50
 Nodes (3): testCases, isValidPhoneNumber(), normalizePhoneNumber()
 
-### Community 221 - "SMS Phone Utils Tests Process"
+### Community 221 - "Community 221"
+
 Cohesion: 0.50
 Nodes (3): testCases, isValidPhoneNumber(), normalizePhoneNumber()
 
-### Community 222 - "Campaigns Skeleton Tests"
+### Community 222 - "Community 222"
+
 Cohesion: 0.40
 Nodes (4): actionsSkeletons, headerSkeletons, metricSkeletons, wrapper
 
-### Community 224 - "Reconnect Fallback Utils"
+### Community 224 - "Community 224"
+
 Cohesion: 0.40
 Nodes (3): AZURE_DOMAINS, GOOGLE_DOMAINS, ReconnectFallbackAction
 
-### Community 225 - "Auth Login Page"
+### Community 225 - "Community 225"
+
 Cohesion: 0.50
 Nodes (3): error, { t }, $toast
 
-### Community 228 - "Fetch Mining Source Imports"
+### Community 228 - "Community 228"
+
 Cohesion: 0.50
 Nodes (3): imports, simple-oauth2, zod
 
-### Community 230 - "Frontend Global Routing Middleware"
+### Community 230 - "Community 230"
+
 Cohesion: 0.50
 Nodes (3): $contactsStore, protectedPaths, $supabase
 
-### Community 231 - "Email Campaign Proxy Server Utils"
+### Community 231 - "Community 231"
+
 Cohesion: 0.83
 Nodes (3): buildEdgeFunctionUrl(), buildEmailCampaignEdgeUrl(), buildSmsCampaignEdgeUrl()
 
-### Community 232 - "Sidebar Store Dialogs"
+### Community 232 - "Community 232"
+
 Cohesion: 0.50
 Nodes (3): useImapDialog, useMiningConsentSidebar, useMiningContactInformationSidebar
 
-### Community 233 - "Mining Table Rows Tests"
+### Community 233 - "Community 233"
+
 Cohesion: 0.50
 Nodes (3): contacts, jobDetailsContacts, result
 
-### Community 234 - "Table Preferences Tests"
+### Community 234 - "Community 234"
+
 Cohesion: 0.50
 Nodes (3): parsed, raw, sanitized
 
-### Community 244 - "Deploy Workflows"
+### Community 244 - "Community 244"
+
 Cohesion: 1.00
 Nodes (3): leadminer.io Deployment Repo, Supabase Functions Deployment, Supabase Migrations Deployment
 
-### Community 258 - "Email Campaign Status Aggregation"
+### Community 258 - "Community 258"
+
 Cohesion: 0.67
 Nodes (3): countRecipientsByStatus(), finalizeCampaignStatusIfDone(), setCampaignStatus()
 
 ## Knowledge Gaps
-- **1780 isolated node(s):** `generate_env.sh script`, `name`, `version`, `description`, `private` (+1775 more)
+
+- **1825 isolated node(s):** `code:block1 (leadminer/)`, `code:bash (npm run install-deps        # Install all dependencies)`, `code:bash (cd backend)`, `code:bash (cd frontend)`, `code:bash (cd micro-services/emails-fetcher)` (+1820 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **88 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **87 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
+
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createLogger()` connect `Logger Mining Source Fetch` to `Email Campaigns Edge Functions`, `SMS Campaigns Edge Functions`, `Email Campaigns i18n Middleware`, `Email Campaign Sender Config`, `Emails Fetcher Config Schema`, `Campaign Tracking Edge Fn`, `SMS Campaigns Process`, `Edge Function Auth Middleware`?**
-  _High betweenness centrality (0.187) - this node is a cross-community bridge._
-- **Why does `initLogger()` connect `Logger Mining Source Fetch` to `Backend Middleware Error Handling`?**
-  _High betweenness centrality (0.163) - this node is a cross-community bridge._
-- **Why does `initLogger()` connect `Emails Fetcher Config Schema` to `Logger Mining Source Fetch`?**
-  _High betweenness centrality (0.080) - this node is a cross-community bridge._
-- **What connects `generate_env.sh script`, `name`, `version` to the rest of the system?**
-  _1780 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Email Campaigns Edge Functions` be split into smaller, more focused modules?**
+- **Why does `createLogger()` connect `Community 52` to `Community 0`, `Community 1`, `Community 66`, `Community 68`, `Community 11`, `Community 80`, `Community 20`, `Community 31`?**
+  _High betweenness centrality (0.155) - this node is a cross-community bridge._
+- **Why does `initLogger()` connect `Community 52` to `Community 77`?**
+  _High betweenness centrality (0.135) - this node is a cross-community bridge._
+- **Why does `initLogger()` connect `Community 11` to `Community 52`?**
+  _High betweenness centrality (0.071) - this node is a cross-community bridge._
+- **What connects `code:block1 (leadminer/)`, `code:bash (npm run install-deps        # Install all dependencies)`, `code:bash (cd backend)` to the rest of the system?**
+  _1825 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.0273972602739726 - nodes in this community are weakly interconnected._
-- **Should `SMS Campaigns Edge Functions` be split into smaller, more focused modules?**
+- **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.03273809523809524 - nodes in this community are weakly interconnected._
-- **Should `Clean Panel UI Components` be split into smaller, more focused modules?**
+- **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.04343971631205674 - nodes in this community are weakly interconnected._
