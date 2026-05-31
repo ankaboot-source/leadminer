@@ -25,7 +25,8 @@ import {
   getAuthClient,
   getTokenConfig,
   getTokenWithScopeValidation,
-  validateFileContactsData
+  validateFileContactsData,
+  refreshAccessToken
 } from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
@@ -399,17 +400,47 @@ export default function initializeMiningController(
       let googleContactsCredentials;
       if (googleContactsSync) {
         const allSources = await miningSourceService.getSourcesForUser(user.id);
-        const googleSource = allSources.find(
-          (s) => s.type === 'google' && s.email === sanitizedEmail
-        );
+        const googleSource =
+          allSources.find(
+            (s) => s.type === 'google' && s.email === sanitizedEmail
+          ) || allSources.find((s) => s.type === 'google');
         if (
           googleSource?.credentials &&
           'accessToken' in googleSource.credentials
         ) {
+          const oauthCreds = googleSource.credentials;
+          let { accessToken, refreshToken } = oauthCreds;
+
+          if (!refreshToken) {
+            logger.warn(
+              'Google source missing refreshToken, re-authenticating may be needed',
+              {
+                userId: user.id,
+                email: googleSource.email
+              }
+            );
+          }
+
+          const now = Date.now() / 1000;
+          if (oauthCreds.expiresAt && oauthCreds.expiresAt < now + 60) {
+            try {
+              const refreshed = await refreshAccessToken(oauthCreds);
+              if (refreshed.access_token) {
+                accessToken = refreshed.access_token;
+                refreshToken = refreshed.refresh_token ?? refreshToken;
+              }
+            } catch (err) {
+              logger.warn('Failed to refresh Google token before mining', {
+                userId: user.id,
+                error: err instanceof Error ? err.message : String(err)
+              });
+            }
+          }
+
           googleContactsCredentials = {
-            accessToken: googleSource.credentials.accessToken,
-            refreshToken: googleSource.credentials.refreshToken,
-            userEmail: sanitizedEmail
+            accessToken,
+            refreshToken: refreshToken ?? '',
+            userEmail: googleSource.email
           };
         }
       }
