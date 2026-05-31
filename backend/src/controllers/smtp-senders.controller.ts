@@ -223,41 +223,46 @@ export default function initializeSmtpSendersController(
         const existingSenders = await smtpSenders.getByUser(user.id);
         const existingEmails = new Set(existingSenders.map((s) => s.email));
 
-        let created = 0;
-        for (const source of sources) {
-          if (source.type !== 'google' && source.type !== 'azure') continue;
-          if (existingEmails.has(source.email)) continue;
-
-          const creds = source.credentials as OAuthMiningSourceCredentials;
-          if (!creds.refreshToken) continue;
-
-          try {
-            await smtpSenders.create({
+        const results = await Promise.allSettled(
+          sources
+            .filter(
+              (source) =>
+                (source.type === 'google' || source.type === 'azure') &&
+                !existingEmails.has(source.email) &&
+                (source.credentials as OAuthMiningSourceCredentials)
+                  .refreshToken
+            )
+            .map((source) =>
+              smtpSenders.create({
+                userId: user.id,
+                name: source.email,
+                email: source.email,
+                smtpHost:
+                  source.type === 'google'
+                    ? 'smtp.gmail.com'
+                    : 'smtp-mail.outlook.com',
+                smtpPort: 587,
+                smtpEncryption: 'starttls',
+                smtpUser: source.email,
+                smtpPassword: '',
+                authType: 'oauth',
+                oauthProvider: source.type,
+                oauthRefreshToken: (
+                  source.credentials as OAuthMiningSourceCredentials
+                ).refreshToken!
+              })
+            )
+        );
+        const created = results.filter((r) => r.status === 'fulfilled').length;
+        results.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            logger.warn('Failed to create SMTP sender from source', {
               userId: user.id,
-              name: source.email,
-              email: source.email,
-              smtpHost:
-                source.type === 'google'
-                  ? 'smtp.gmail.com'
-                  : 'smtp-mail.outlook.com',
-              smtpPort: 587,
-              smtpEncryption: 'starttls',
-              smtpUser: source.email,
-              smtpPassword: '',
-              authType: 'oauth',
-              oauthProvider: source.type,
-              oauthRefreshToken: creds.refreshToken
-            });
-            created++;
-          } catch (createError) {
-            console.warn('Failed to create SMTP sender from source', {
-              userId: user.id,
-              email: source.email,
-              error:
-                createError instanceof Error ? createError.message : createError
+              email: sources[i].email,
+              error: r.reason?.message ?? r.reason
             });
           }
-        }
+        });
 
         return res.json({ created });
       } catch (error) {
