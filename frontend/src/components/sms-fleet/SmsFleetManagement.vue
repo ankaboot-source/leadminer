@@ -20,6 +20,7 @@ type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
+  hideEmptyState?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -226,7 +227,7 @@ onMounted(() => {
       v-else-if="$smsFleetStore.gateways.length === 0"
       class="text-center py-8 text-surface-500"
     >
-      <p>{{ t('no_gateways_configured') }}</p>
+      <p v-if="!props.hideEmptyState">{{ t('no_gateways_configured') }}</p>
     </div>
 
     <div v-else class="flex flex-col gap-2">

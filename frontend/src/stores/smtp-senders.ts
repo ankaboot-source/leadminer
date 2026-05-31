@@ -167,23 +167,6 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
     }
   }
 
-  async function regenerateFromSources(): Promise<number> {
-    try {
-      const response = await $api<{ created: number }>(
-        '/smtp-senders/regenerate-from-sources',
-        { method: 'POST' },
-      );
-      if (response?.created) {
-        await fetchSenders();
-      }
-      return response?.created ?? 0;
-    } catch (err) {
-      error.value =
-        err instanceof Error ? err.message : 'Failed to regenerate senders';
-      return 0;
-    }
-  }
-
   const activeSenders = computed(() => senders.value.filter((s) => s.active));
 
   function $reset() {

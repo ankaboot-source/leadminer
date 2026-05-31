@@ -24,10 +24,36 @@
         </div>
       </template>
       <div v-show="senderFilter !== 'sms'">
-        <EmailSenderManagement ref="$emailSenderRef" />
+        <EmailSenderManagement
+          ref="$emailSenderRef"
+          :hide-empty-state="senderFilter === 'all'"
+        />
       </div>
       <div v-show="senderFilter !== 'email'">
-        <SmsFleetManagement ref="$smsFleetRef" />
+        <SmsFleetManagement
+          ref="$smsFleetRef"
+          :hide-empty-state="senderFilter === 'all'"
+        />
+      </div>
+
+      <div
+        v-if="senderFilter === 'all' && bothSendersEmpty"
+        class="text-center py-8 text-surface-500"
+      >
+        <p>{{ t('no_senders_configured') }}</p>
+      </div>
+      <div v-show="senderFilter !== 'email'">
+        <SmsFleetManagement
+          ref="$smsFleetRef"
+          :hide-empty-state="senderFilter === 'all'"
+        />
+      </div>
+
+      <div
+        v-if="senderFilter === 'all' && bothSendersEmpty"
+        class="text-center py-8 text-surface-500"
+      >
+        <p>{{ t('no_senders_configured') }}</p>
       </div>
     </Panel>
 
@@ -407,14 +433,34 @@ import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
 import EmailSenderManagement from '~/components/senders/EmailSenderManagement.vue';
 import SenderFilterTabs from '~/components/senders/SenderFilterTabs.vue';
 import type { SenderFilter } from '~/components/senders/SenderFilterTabs.vue';
+import { useSmtpSendersStore } from '~/stores/smtp-senders';
+import { useSmsFleetStore } from '~/stores/sms-fleet';
 
 const $campaignsStore = useCampaignsStore();
+const $smtpSendersStore = useSmtpSendersStore();
+const $smsFleetStore = useSmsFleetStore();
 const $emailSenderRef = ref<InstanceType<typeof EmailSenderManagement> | null>(
   null,
 );
 const $smsFleetRef = ref<InstanceType<typeof SmsFleetManagement> | null>(null);
 const senderFilter = ref<SenderFilter>('all');
 const campaignFilter = ref<SenderFilter>('all');
+
+const bothSendersEmpty = computed(
+  () =>
+    !$smtpSendersStore.isLoading &&
+    !$smsFleetStore.isLoading &&
+    $smtpSendersStore.senders.length === 0 &&
+    $smsFleetStore.gateways.length === 0,
+);
+
+const bothSendersEmpty = computed(
+  () =>
+    !$smtpSendersStore.isLoading &&
+    !$smsFleetStore.isLoading &&
+    $smtpSendersStore.senders.length === 0 &&
+    $smsFleetStore.gateways.length === 0,
+);
 
 const filteredCampaigns = computed(() => {
   if (campaignFilter.value === 'all') return $campaignsStore.campaigns;
@@ -787,6 +833,7 @@ onBeforeUnmount(() => {
   "en": {
     "sms_gateways": "SMS Gateways",
     "senders": "Senders",
+    "no_senders_configured": "No senders configured",
     "add_email_sender": "Add Email Sender",
     "add_sms_gateway": "Add SMS Gateway",
     "campaigns": "Campaigns",
@@ -850,6 +897,7 @@ onBeforeUnmount(() => {
   "fr": {
     "sms_gateways": "Passerelles SMS",
     "senders": "Expéditeurs",
+    "no_senders_configured": "Aucun expéditeur configuré",
     "add_email_sender": "Ajouter un expéditeur email",
     "add_sms_gateway": "Ajouter une passerelle SMS",
     "campaigns": "Campagnes",

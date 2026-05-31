@@ -7,6 +7,15 @@ import { useSmtpSendersStore } from '~/stores/smtp-senders';
 import AddEmailSenderDialog from './AddEmailSenderDialog.vue';
 import type { SmtpSender } from '@/types/smtp-senders';
 
+const props = withDefaults(
+  defineProps<{
+    hideEmptyState?: boolean;
+  }>(),
+  {
+    hideEmptyState: false,
+  },
+);
+
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
@@ -102,7 +111,8 @@ onMounted(async () => {
       v-else-if="$store.senders.length === 0"
       class="text-center py-8 text-surface-500"
     >
-      <p>{{ t('no_senders_configured') }}</p>
+      <p v-if="$store.error" class="text-red-500 mb-2">{{ $store.error }}</p>
+      <p v-if="!props.hideEmptyState">{{ t('no_senders_configured') }}</p>
     </div>
 
     <div v-else class="flex flex-col gap-2">

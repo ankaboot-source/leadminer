@@ -23,8 +23,35 @@ export const SIGNATURE_EXTRACTION_STREAM = 'signature-extraction-stream';
 export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
-export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
-  /\s(\(?(via\s?.{1,20}?)|\((Google|Drive)\s?.{0,20}\))$/i;
+export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS = null;
+
+export function cleanUnwantedWords(name: string): string {
+  const lowerName = name.toLowerCase();
+  const patterns = ['(via', 'via ', '(google)', '(drive)', '(google drive)'];
+
+  for (const pattern of patterns) {
+    const idx = lowerName.lastIndexOf(pattern);
+    if (idx !== -1) {
+      return name.substring(0, idx).trim();
+    }
+  }
+
+  return name;
+}
+
+export function cleanUnwantedWords(name: string): string {
+  const lowerName = name.toLowerCase();
+  const patterns = ['(via', 'via ', '(google)', '(drive)', '(google drive)'];
+
+  for (const pattern of patterns) {
+    const idx = lowerName.lastIndexOf(pattern);
+    if (idx !== -1) {
+      return name.substring(0, idx).trim();
+    }
+  }
+
+  return name;
+}
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 export const MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
