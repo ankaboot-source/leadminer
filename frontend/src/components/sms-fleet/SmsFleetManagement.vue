@@ -209,6 +209,8 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   return labels[provider] || provider;
 }
 
+defineExpose({ openAddDialog });
+
 onMounted(() => {
   $smsFleetStore.fetchGateways();
 });
@@ -216,15 +218,6 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-end">
-      <Button
-        :label="t('add_gateway')"
-        icon="pi pi-plus"
-        outlined
-        @click="openAddDialog"
-      />
-    </div>
-
     <div v-if="$smsFleetStore.isLoading" class="flex justify-center py-8">
       <ProgressSpinner />
     </div>

@@ -2,10 +2,15 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import { SmtpSenders } from '../db/interfaces/SmtpSenders';
+import {
+  MiningSources,
+  OAuthMiningSourceCredentials
+} from '../db/interfaces/MiningSources';
 import { getProviderFromEmail } from '../services/auth/Provider';
 
 export default function initializeSmtpSendersController(
-  smtpSenders: SmtpSenders
+  smtpSenders: SmtpSenders,
+  miningSources?: MiningSources
 ) {
   return {
     async listSenders(req: Request, res: Response, next: NextFunction) {
@@ -197,6 +202,64 @@ export default function initializeSmtpSendersController(
           smtpEncryption: 'starttls',
           authType: 'password'
         });
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    async regenerateFromSources(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      try {
+        if (!miningSources) {
+          res.status(500);
+          return next(new Error('Mining sources not available'));
+        }
+
+        const user = res.locals.user as User;
+        const sources = await miningSources.getByUser(user.id);
+        const existingSenders = await smtpSenders.getByUser(user.id);
+        const existingEmails = new Set(existingSenders.map((s) => s.email));
+
+        let created = 0;
+        for (const source of sources) {
+          if (source.type !== 'google' && source.type !== 'azure') continue;
+          if (existingEmails.has(source.email)) continue;
+
+          const creds = source.credentials as OAuthMiningSourceCredentials;
+          if (!creds.refreshToken) continue;
+
+          try {
+            await smtpSenders.create({
+              userId: user.id,
+              name: source.email,
+              email: source.email,
+              smtpHost:
+                source.type === 'google'
+                  ? 'smtp.gmail.com'
+                  : 'smtp-mail.outlook.com',
+              smtpPort: 587,
+              smtpEncryption: 'starttls',
+              smtpUser: source.email,
+              smtpPassword: '',
+              authType: 'oauth',
+              oauthProvider: source.type,
+              oauthRefreshToken: creds.refreshToken
+            });
+            created++;
+          } catch (createError) {
+            console.warn('Failed to create SMTP sender from source', {
+              userId: user.id,
+              email: source.email,
+              error:
+                createError instanceof Error ? createError.message : createError
+            });
+          }
+        }
+
+        return res.json({ created });
       } catch (error) {
         return next(error);
       }

@@ -79,22 +79,18 @@ function getAuthBadge(sender: SmtpSender): string {
   return 'Password';
 }
 
-onMounted(() => {
-  $store.fetchSenders();
+defineExpose({ openAddDialog });
+
+onMounted(async () => {
+  await $store.fetchSenders();
+  if ($store.senders.length === 0) {
+    await $store.regenerateFromSources();
+  }
 });
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-end">
-      <Button
-        :label="t('add_email_sender')"
-        icon="pi pi-plus"
-        outlined
-        @click="openAddDialog"
-      />
-    </div>
-
     <div
       v-if="$store.isLoading && $store.senders.length === 0"
       class="flex justify-center py-8"

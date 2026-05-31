@@ -5,13 +5,29 @@
         <div class="flex items-center gap-4 w-full">
           <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
           <SenderFilterTabs v-model="senderFilter" />
+          <div class="flex items-center gap-2 ml-auto">
+            <Button
+              :label="t('add_email_sender')"
+              icon="pi pi-plus"
+              size="small"
+              outlined
+              @click="$emailSenderRef?.openAddDialog()"
+            />
+            <Button
+              :label="t('add_sms_gateway')"
+              icon="pi pi-plus"
+              size="small"
+              outlined
+              @click="$smsFleetRef?.openAddDialog()"
+            />
+          </div>
         </div>
       </template>
       <div v-show="senderFilter !== 'sms'">
-        <EmailSenderManagement />
+        <EmailSenderManagement ref="$emailSenderRef" />
       </div>
       <div v-show="senderFilter !== 'email'">
-        <SmsFleetManagement />
+        <SmsFleetManagement ref="$smsFleetRef" />
       </div>
     </Panel>
 
@@ -393,6 +409,10 @@ import SenderFilterTabs from '~/components/senders/SenderFilterTabs.vue';
 import type { SenderFilter } from '~/components/senders/SenderFilterTabs.vue';
 
 const $campaignsStore = useCampaignsStore();
+const $emailSenderRef = ref<InstanceType<typeof EmailSenderManagement> | null>(
+  null,
+);
+const $smsFleetRef = ref<InstanceType<typeof SmsFleetManagement> | null>(null);
 const senderFilter = ref<SenderFilter>('all');
 const campaignFilter = ref<SenderFilter>('all');
 
@@ -767,6 +787,8 @@ onBeforeUnmount(() => {
   "en": {
     "sms_gateways": "SMS Gateways",
     "senders": "Senders",
+    "add_email_sender": "Add Email Sender",
+    "add_sms_gateway": "Add SMS Gateway",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -828,6 +850,8 @@ onBeforeUnmount(() => {
   "fr": {
     "sms_gateways": "Passerelles SMS",
     "senders": "Expéditeurs",
+    "add_email_sender": "Ajouter un expéditeur email",
+    "add_sms_gateway": "Ajouter une passerelle SMS",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",

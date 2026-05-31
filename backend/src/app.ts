@@ -80,7 +80,10 @@ export default function initializeApp(
     initializeContactsRoutes(contacts, authResolver, miningSourceService)
   );
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
-  app.use('/api', initializeSmtpSendersRoutes(smtpSenders, authResolver));
+  app.use(
+    '/api',
+    initializeSmtpSendersRoutes(smtpSenders, authResolver, miningSources)
+  );
 
   if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.setupExpressErrorHandler(app);
