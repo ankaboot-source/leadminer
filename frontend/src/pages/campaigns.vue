@@ -2,10 +2,12 @@
   <div class="flex flex-col gap-4">
     <Panel toggleable class="border border-surface-200 rounded-md p-4">
       <template #header>
-        <div class="flex items-center gap-4 w-full">
-          <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
-          <SenderFilterTabs v-model="senderFilter" />
-          <div class="flex items-center gap-2 ml-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+          <div class="flex items-center gap-4">
+            <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
+            <SenderFilterTabs v-model="senderFilter" />
+          </div>
+          <div class="flex items-center gap-2 sm:ml-auto">
             <Button
               :label="$screenStore.size.md ? t('add_email_sender') : undefined"
               icon="pi pi-plus"
@@ -47,7 +49,9 @@
     <div
       class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
     >
-      <div class="flex items-center justify-between">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      >
         <div class="flex items-center gap-4">
           <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
           <SenderFilterTabs v-model="campaignFilter" />
