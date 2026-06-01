@@ -221,7 +221,10 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="$smsFleetStore.isLoading" class="flex justify-center py-8">
+    <div
+      v-if="$smsFleetStore.isLoading && !props.hideEmptyState"
+      class="flex justify-center py-8"
+    >
       <ProgressSpinner />
     </div>
 

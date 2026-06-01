@@ -103,7 +103,9 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col gap-4">
     <div
-      v-if="$store.isLoading && $store.senders.length === 0"
+      v-if="
+        $store.isLoading && $store.senders.length === 0 && !props.hideEmptyState
+      "
       class="flex justify-center py-8"
     >
       <ProgressSpinner />
