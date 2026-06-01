@@ -3,3 +3,20 @@ services:
     image: redis:alpine
     ports:
       - 6379:6379
+
+  openwa:
+    image: ghcr.io/rmyndharis/openwa:latest
+    ports:
+      - 2785:2785
+      - 2886:2886
+    environment:
+      - API_MASTER_KEY=${OPENWA_API_KEY:-leadminer-dev-key}
+      - PORT=2785
+      - DASHBOARD_PORT=2886
+      - DASHBOARD_ENABLED=true
+    volumes:
+      - openwa-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  openwa-data:

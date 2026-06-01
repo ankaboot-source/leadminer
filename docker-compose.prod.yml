@@ -1,0 +1,31 @@
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+
+  openwa:
+    image: ghcr.io/rmyndharis/openwa:latest
+    ports:
+      - 2785:2785
+    environment:
+      - API_MASTER_KEY=${OPENWA_API_KEY:-leadminer-prod-key}
+      - PORT=2785
+    volumes:
+      - openwa-data:/app/data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openwa.entrypoints=p http://${TRAEFIK_HOST:-leadminer.example.com}/"
+      - "traefik.http.routers.openwa.rule=Host(`${TRAEFIK_HOST:-leadminer.example.com}`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.openwa.tls=true"
+      - "traefik.http.middlewares.openwa-auth.forwardAuth.stsSeconds=31536000"
+      - "traefik.http.middlewares.openwa-auth.forwardAuth.address=http://auth-service:8080"
+      - "traefik.http.middlewares.openwa-auth.forwardAuth.authResponseHeaders=X-Forwarded-User, X-Forwarded-Email"
+      - "traefik.http.middlewares.openwa-auth.forwardAuth.username=github"
+      - "traefik.http.middlewares.openwa-auth.forwardAuth.password=dummy"
+      - "traefik.http.routers.openwa-auth.entrypoints=p http://${TRAEFIK_HOST:-leadminer.example.com}"
+      - "traefik.http.routers.openwa-auth.rule=Host(`${TRAEFIK_HOST:-leadminer.example.com}`) && PathPrefix(`/auth`)"
+
+volumes:
+  openwa-data:
