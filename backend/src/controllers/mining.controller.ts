@@ -426,8 +426,9 @@ export default function initializeMiningController(
             try {
               const refreshed = await refreshAccessToken(oauthCreds);
               if (refreshed.access_token) {
-                accessToken = refreshed.access_token;
-                refreshToken = refreshed.refresh_token ?? refreshToken;
+                accessToken = refreshed.access_token as string;
+                refreshToken =
+                  (refreshed.refresh_token as string) ?? refreshToken;
               }
             } catch (err) {
               logger.warn('Failed to refresh Google token before mining', {

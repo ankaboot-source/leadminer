@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import nodemailer from 'nodemailer';
-import { SmtpSenders } from '../db/interfaces/SmtpSenders';
+import { SmtpOAuthProvider, SmtpSenders } from '../db/interfaces/SmtpSenders';
 import {
   MiningSources,
   OAuthMiningSourceCredentials
@@ -247,7 +247,7 @@ export default function initializeSmtpSendersController(
                 smtpUser: source.email,
                 smtpPassword: '',
                 authType: 'oauth',
-                oauthProvider: source.type,
+                oauthProvider: source.type as SmtpOAuthProvider,
                 oauthRefreshToken: (
                   source.credentials as OAuthMiningSourceCredentials
                 ).refreshToken!
