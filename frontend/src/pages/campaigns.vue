@@ -9,14 +9,21 @@
           </div>
           <div class="flex items-center gap-2 sm:ml-auto">
             <Button
-              :label="$screenStore.size.md ? t('add_email_sender') : undefined"
+              :label="t('add_email_sender')"
               icon="pi pi-plus"
               size="small"
               outlined
               @click="$emailSenderRef?.openAddDialog()"
             />
             <Button
-              :label="$screenStore.size.md ? t('add_sms_gateway') : undefined"
+              :label="t('add_sms_gateway')"
+              icon="pi pi-plus"
+              size="small"
+              outlined
+              @click="$smsFleetRef?.openAddDialog()"
+            />
+            <Button
+              :label="t('add_sms_gateway')"
               icon="pi pi-plus"
               size="small"
               outlined

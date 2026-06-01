@@ -7,6 +7,7 @@ import {
   OAuthMiningSourceCredentials
 } from '../db/interfaces/MiningSources';
 import { getProviderFromEmail } from '../services/auth/Provider';
+import logger from '../utils/logger';
 
 export default function initializeSmtpSendersController(
   smtpSenders: SmtpSenders,

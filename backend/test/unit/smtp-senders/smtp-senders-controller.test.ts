@@ -11,6 +11,17 @@ jest.mock('../../../src/services/auth/Provider', () => ({
   getProviderFromEmail: jest.fn()
 }));
 
+// Mock the logger module
+jest.mock('../../../src/utils/logger', () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  }
+}));
+
 describe('SmtpSendersController', () => {
   const mockSmtpSenders: jest.Mocked<SmtpSenders> = {
     getByUser: jest.fn(),
