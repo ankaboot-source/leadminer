@@ -17,7 +17,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'openwa';
 
 const props = defineProps<{
   autoAdd?: boolean;
@@ -61,6 +61,7 @@ const isActive = ref(true);
 const providerOptions = computed(() => [
   { label: 'SMSGate', value: 'smsgate' as const },
   { label: 'Simple SMS Gateway', value: 'simple-sms-gateway' as const },
+  { label: 'WhatsApp (OpenWA)', value: 'openwa' as const },
 ]);
 
 function handleFormValid(valid: boolean) {
@@ -129,6 +130,7 @@ function getDefaultName(provider: SupportedProvider): string {
   const names: Record<SupportedProvider, string> = {
     smsgate: 'SMSGate Gateway',
     'simple-sms-gateway': 'SMS Gateway',
+    openwa: 'WhatsApp Gateway',
   };
   return names[provider];
 }
@@ -208,6 +210,7 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
     twilio: 'Twilio',
+    openwa: 'WhatsApp (OpenWA)',
   };
   return labels[provider] || provider;
 }

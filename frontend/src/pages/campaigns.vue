@@ -16,15 +16,17 @@
               @click="$emailSenderRef?.openAddDialog()"
             />
             <Button
-              :label="t('add_sms_gateway')"
+              :label="$screenStore.size.md ? t('add_sms_gateway') : undefined"
               icon="pi pi-plus"
               size="small"
               outlined
               @click="$smsFleetRef?.openAddDialog()"
             />
             <Button
-              :label="t('add_sms_gateway')"
-              icon="pi pi-plus"
+              :label="
+                $screenStore.size.md ? t('add_whatsapp_session') : undefined
+              "
+              icon="pi pi-whatsapp"
               size="small"
               outlined
               @click="$smsFleetRef?.openAddDialog()"
@@ -32,7 +34,7 @@
           </div>
         </div>
       </template>
-      <div v-show="senderFilter !== 'sms'">
+      <div v-show="senderFilter !== 'sms' && senderFilter !== 'whatsapp'">
         <EmailSenderManagement
           ref="$emailSenderRef"
           :hide-empty-state="senderFilter === 'all'"
@@ -104,14 +106,29 @@
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
                     <Tag
-                      :value="campaign.channel === 'sms' ? 'SMS' : 'Email'"
+                      :value="
+                        campaign.channel === 'sms'
+                          ? 'SMS'
+                          : campaign.channel === 'whatsapp'
+                            ? 'WhatsApp'
+                            : 'Email'
+                      "
                       :severity="
-                        campaign.channel === 'sms' ? 'info' : 'primary'
+                        campaign.channel === 'sms'
+                          ? 'info'
+                          : campaign.channel === 'whatsapp'
+                            ? 'success'
+                            : 'primary'
                       "
                       class="text-xs"
                     />
                     <span class="font-medium break-words">
-                      <template v-if="campaign.channel === 'sms'">
+                      <template
+                        v-if="
+                          campaign.channel === 'sms' ||
+                          campaign.channel === 'whatsapp'
+                        "
+                      >
                         {{
                           truncateMessage(
                             campaign.message_template || campaign.sender_name,
@@ -142,10 +159,12 @@
                     </span>
                   </div>
 
-                  <!-- SMS Full Message Preview -->
+                  <!-- SMS / WhatsApp Full Message Preview -->
                   <div
                     v-if="
-                      campaign.channel === 'sms' && campaign.message_template
+                      (campaign.channel === 'sms' ||
+                        campaign.channel === 'whatsapp') &&
+                      campaign.message_template
                     "
                     class="flex items-start gap-2 mt-1"
                   >
@@ -165,7 +184,12 @@
                   </div>
 
                   <div class="text-sm text-surface-500 break-words mt-1">
-                    <template v-if="campaign.channel === 'sms'">
+                    <template
+                      v-if="
+                        campaign.channel === 'sms' ||
+                        campaign.channel === 'whatsapp'
+                      "
+                    >
                       {{ campaign.recipient_count || 0 }}
                       {{ t('recipients') }} ·
                       {{ formatDate(campaign.created_at) }}
@@ -252,6 +276,52 @@
                   </div>
                 </template>
 
+                <template v-else-if="campaign.channel === 'whatsapp'">
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('sent') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.sent_count || 0 }}/{{
+                        campaign.recipient_count || 0
+                      }}
+                    </div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('delivered') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.wa_delivered_count || 0 }}/{{
+                        campaign.recipient_count || 0
+                      }}
+                    </div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('read') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.wa_read_count || 0 }}/{{
+                        campaign.recipient_count || 0
+                      }}
+                    </div>
+                  </div>
+
+                  <div class="p-2 rounded bg-surface-50">
+                    <div class="text-surface-500 flex items-center gap-1">
+                      <span>{{ t('failed') }}</span>
+                    </div>
+                    <div class="font-semibold">
+                      {{ campaign.failed_count || 0 }}/{{
+                        campaign.recipient_count || 0
+                      }}
+                    </div>
+                  </div>
+                </template>
+
                 <template v-else>
                   <div class="p-2 rounded bg-surface-50">
                     <div class="text-surface-500 flex items-center gap-1">
@@ -311,7 +381,7 @@
 
               <div
                 v-if="
-                  campaign.channel !== 'sms' && campaign.link_clicks?.length
+                  campaign.channel === 'email' && campaign.link_clicks?.length
                 "
                 class="mt-4"
               >
@@ -399,11 +469,15 @@
         </template>
       </Dialog>
 
-      <!-- SMS Message View Dialog -->
+      <!-- SMS / WhatsApp Message View Dialog -->
       <Dialog
         v-model:visible="messageDialogVisible"
         modal
-        :header="t('sms_content')"
+        :header="
+          messageDialogCampaign?.channel === 'whatsapp'
+            ? t('whatsapp_content')
+            : t('sms_content')
+        "
         :style="{ width: '32rem', maxWidth: '95vw' }"
       >
         <div
@@ -464,7 +538,10 @@ const filteredCampaigns = computed(() => {
   if (campaignFilter.value === 'sms') {
     return $campaignsStore.campaigns.filter((c) => c.channel === 'sms');
   }
-  return $campaignsStore.campaigns.filter((c) => c.channel !== 'sms');
+  if (campaignFilter.value === 'whatsapp') {
+    return $campaignsStore.campaigns.filter((c) => c.channel === 'whatsapp');
+  }
+  return $campaignsStore.campaigns.filter((c) => c.channel === 'email');
 });
 const { t } = useI18n({ useScope: 'local' });
 const { $saasEdgeFunctions } = useNuxtApp();
@@ -532,7 +609,11 @@ function statusSeverity(status: CampaignStatus) {
 
 function statusLabel(campaign: CampaignOverview) {
   if (campaign.status === 'processing') {
-    if (campaign.channel === 'sms' || !campaign.total_batches) {
+    if (
+      campaign.channel === 'sms' ||
+      campaign.channel === 'whatsapp' ||
+      !campaign.total_batches
+    ) {
       return t('status_processing');
     }
     const currentBatch = calculateCurrentBatch(campaign);
@@ -700,7 +781,11 @@ async function confirmActionDialog() {
   actionLoading.value[campaign.id] = actionDialogType.value;
 
   const channelPrefix =
-    campaign.channel === 'sms' ? 'sms-campaigns' : 'email-campaigns';
+    campaign.channel === 'sms'
+      ? 'sms-campaigns'
+      : campaign.channel === 'whatsapp'
+        ? 'whatsapp-campaigns'
+        : 'email-campaigns';
 
   try {
     if (actionDialogType.value === 'stop') {
@@ -889,7 +974,11 @@ onBeforeUnmount(() => {
     "message_copied": "Message copied to clipboard",
     "copy_failed": "Copy failed",
     "copy_failed_detail": "Could not copy message to clipboard",
-    "close": "Close"
+    "close": "Close",
+    "sent": "Sent",
+    "read": "Read",
+    "failed": "Failed",
+    "whatsapp_content": "WhatsApp Content"
   },
   "fr": {
     "sms_gateways": "Passerelles SMS",
@@ -947,7 +1036,11 @@ onBeforeUnmount(() => {
     "status_cancelled": "Stoppée",
     "batches": "Lots",
     "batch_size_per_day": "{limit} emails/jour",
-    "batches_tooltip": "{total} lots de {limit} emails chacun ({recipients} destinataires au total)"
+    "batches_tooltip": "{total} lots de {limit} emails chacun ({recipients} destinataires au total)",
+    "sent": "Envoyés",
+    "read": "Lus",
+    "failed": "Échoués",
+    "whatsapp_content": "Contenu WhatsApp"
   }
 }
 </i18n>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-export type SenderFilter = 'all' | 'email' | 'sms';
+export type SenderFilter = 'all' | 'email' | 'sms' | 'whatsapp';
 
 const model = defineModel<SenderFilter>({ default: 'all' });
 const { t } = useI18n({ useScope: 'local' });
@@ -10,6 +10,7 @@ const tabs: { label: string; value: SenderFilter }[] = [
   { label: t('all'), value: 'all' },
   { label: t('email'), value: 'email' },
   { label: t('sms'), value: 'sms' },
+  { label: t('whatsapp'), value: 'whatsapp' },
 ];
 </script>
 
@@ -36,12 +37,14 @@ const tabs: { label: string; value: SenderFilter }[] = [
   "en": {
     "all": "All",
     "email": "Email",
-    "sms": "SMS"
+    "sms": "SMS",
+    "whatsapp": "WhatsApp"
   },
   "fr": {
     "all": "Tous",
     "email": "Email",
-    "sms": "SMS"
+    "sms": "SMS",
+    "whatsapp": "WhatsApp"
   }
 }
 </i18n>
@@ -51,12 +54,14 @@ const tabs: { label: string; value: SenderFilter }[] = [
   "en": {
     "all": "All",
     "email": "Email",
-    "sms": "SMS"
+    "sms": "SMS",
+    "whatsapp": "WhatsApp"
   },
   "fr": {
     "all": "Tous",
     "email": "Email",
-    "sms": "SMS"
+    "sms": "SMS",
+    "whatsapp": "WhatsApp"
   }
 }
 </i18n>

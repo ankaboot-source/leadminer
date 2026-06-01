@@ -11,7 +11,7 @@ export interface CampaignLinkClick {
   total_clicks: number;
 }
 
-export type CampaignChannel = 'email' | 'sms';
+export type CampaignChannel = 'email' | 'sms' | 'whatsapp';
 
 export interface CampaignOverview {
   id: string;
@@ -19,7 +19,7 @@ export interface CampaignOverview {
   sender_name: string;
   sender_email?: string;
   sender_phone?: string;
-  provider?: 'twilio' | 'smsgate' | 'simple-sms-gateway' | 'fleet';
+  provider?: 'twilio' | 'smsgate' | 'simple-sms-gateway' | 'fleet' | 'openwa';
   subject?: string;
   status: CampaignStatus;
   total_recipients?: number;
@@ -54,4 +54,6 @@ export interface CampaignOverview {
   selected_gateway_ids?: string[];
   gateway_names?: string[];
   message_template?: string;
+  wa_delivered_count?: number;
+  wa_read_count?: number;
 }
