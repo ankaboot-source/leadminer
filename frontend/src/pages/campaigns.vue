@@ -9,15 +9,23 @@
           </div>
           <div class="flex items-center gap-2 sm:ml-auto">
             <Button
-              :label="$screenStore.size.md ? t('add_email_sender') : undefined"
-              icon="pi pi-envelope"
+              :label="
+                $screenStore.size.md
+                  ? t('add_email_sender_long')
+                  : t('add_email_sender')
+              "
+              icon="pi pi-plus"
               size="small"
               outlined
               @click="$emailSenderRef?.openAddDialog()"
             />
             <Button
-              :label="$screenStore.size.md ? t('add_sms_gateway') : undefined"
-              icon="pi pi-mobile"
+              :label="
+                $screenStore.size.md
+                  ? t('add_sms_gateway_long')
+                  : t('add_sms_gateway')
+              "
+              icon="pi pi-plus"
               size="small"
               outlined
               @click="$smsFleetRef?.openAddDialog()"
@@ -825,7 +833,9 @@ onBeforeUnmount(() => {
     "senders": "Senders",
     "no_senders_configured": "No senders configured",
     "add_email_sender": "Email",
+    "add_email_sender_long": "Add email sender",
     "add_sms_gateway": "SMS",
+    "add_sms_gateway_long": "Add SMS gateway",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -889,7 +899,9 @@ onBeforeUnmount(() => {
     "senders": "Expéditeurs",
     "no_senders_configured": "Aucun expéditeur configuré",
     "add_email_sender": "Email",
+    "add_email_sender_long": "Ajouter un expéditeur email",
     "add_sms_gateway": "SMS",
+    "add_sms_gateway_long": "Ajouter une passerelle SMS",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",
