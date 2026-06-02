@@ -1,8 +1,13 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import nodemailer from 'nodemailer';
-import { SmtpOAuthProvider, SmtpSenders } from '../db/interfaces/SmtpSenders';
 import {
+  SmtpOAuthProvider,
+  SmtpSenderCreate,
+  SmtpSenders
+} from '../db/interfaces/SmtpSenders';
+import {
+  ImapMiningSourceCredentials,
   MiningSources,
   OAuthMiningSourceCredentials
 } from '../db/interfaces/MiningSources';
@@ -224,42 +229,88 @@ export default function initializeSmtpSendersController(
         const existingSenders = await smtpSenders.getByUser(user.id);
         const existingEmails = new Set(existingSenders.map((s) => s.email));
 
-        const results = await Promise.allSettled(
-          sources
-            .filter(
-              (source) =>
-                (source.type === 'google' || source.type === 'azure') &&
-                !existingEmails.has(source.email) &&
-                (source.credentials as OAuthMiningSourceCredentials)
-                  .refreshToken
-            )
-            .map((source) =>
-              smtpSenders.create({
+        logger.info('Regenerating SMTP senders from sources', {
+          userId: user.id,
+          totalSources: sources.length,
+          existingSenders: existingSenders.length,
+          sourceTypes: sources.map((s) => s.type)
+        });
+
+        const candidateSenders: SmtpSenderCreate[] = [];
+
+        for (const source of sources) {
+          if (existingEmails.has(source.email)) {
+            logger.debug('Source already has sender, skipping', {
+              email: source.email,
+              type: source.type
+            });
+            continue;
+          }
+
+          if (source.type === 'google' || source.type === 'azure') {
+            const oauthCreds =
+              source.credentials as OAuthMiningSourceCredentials;
+            if (!oauthCreds.refreshToken) {
+              logger.warn('OAuth source missing refresh token, skipping', {
                 userId: user.id,
-                name: source.email,
                 email: source.email,
-                smtpHost:
-                  source.type === 'google'
-                    ? 'smtp.gmail.com'
-                    : 'smtp-mail.outlook.com',
-                smtpPort: 587,
-                smtpEncryption: 'starttls',
-                smtpUser: source.email,
-                smtpPassword: '',
-                authType: 'oauth',
-                oauthProvider: source.type as SmtpOAuthProvider,
-                oauthRefreshToken: (
-                  source.credentials as OAuthMiningSourceCredentials
-                ).refreshToken!
-              })
-            )
+                type: source.type,
+                credentialsKeys: Object.keys(oauthCreds)
+              });
+              continue;
+            }
+            candidateSenders.push({
+              userId: user.id,
+              name: source.email,
+              email: source.email,
+              smtpHost:
+                source.type === 'google'
+                  ? 'smtp.gmail.com'
+                  : 'smtp-mail.outlook.com',
+              smtpPort: 587,
+              smtpEncryption: 'starttls',
+              smtpUser: source.email,
+              smtpPassword: '',
+              authType: 'oauth',
+              oauthProvider: source.type as SmtpOAuthProvider,
+              oauthRefreshToken: oauthCreds.refreshToken!
+            });
+          } else if (source.type === 'imap') {
+            const imapCreds = source.credentials as ImapMiningSourceCredentials;
+            const smtpSettings = guessSmtpSettings(source.email);
+            logger.debug('Processing IMAP source for sender', {
+              email: source.email,
+              smtpHost: smtpSettings.host,
+              imapHost: imapCreds.host
+            });
+            candidateSenders.push({
+              userId: user.id,
+              name: source.email,
+              email: source.email,
+              smtpHost: smtpSettings.host,
+              smtpPort: smtpSettings.port,
+              smtpEncryption: smtpSettings.encryption,
+              smtpUser: source.email,
+              smtpPassword: imapCreds.password,
+              authType: 'password'
+            });
+          } else {
+            logger.debug('Unsupported source type, skipping', {
+              email: source.email,
+              type: source.type
+            });
+          }
+        }
+
+        const results = await Promise.allSettled(
+          candidateSenders.map((sender) => smtpSenders.create(sender))
         );
         const created = results.filter((r) => r.status === 'fulfilled').length;
         results.forEach((r, i) => {
           if (r.status === 'rejected') {
             logger.warn('Failed to create SMTP sender from source', {
               userId: user.id,
-              email: sources[i].email,
+              email: candidateSenders[i].email,
               error: r.reason?.message ?? r.reason
             });
           }
@@ -271,4 +322,29 @@ export default function initializeSmtpSendersController(
       }
     }
   };
+}
+
+function guessSmtpSettings(email: string): {
+  host: string;
+  port: number;
+  encryption: 'starttls' | 'ssl' | 'none';
+} {
+  const provider = getProviderFromEmail(email);
+  if (provider === 'google') {
+    return { host: 'smtp.gmail.com', port: 587, encryption: 'starttls' };
+  }
+  if (provider === 'azure') {
+    return {
+      host: 'smtp-mail.outlook.com',
+      port: 587,
+      encryption: 'starttls'
+    };
+  }
+
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (domain) {
+    return { host: `smtp.${domain}`, port: 587, encryption: 'starttls' };
+  }
+
+  return { host: '', port: 587, encryption: 'starttls' };
 }
