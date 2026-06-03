@@ -187,6 +187,39 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       );
     }
 
+    const { data: sourceData, error: sourceError } = await admin
+      .schema("private")
+      .from("mining_sources")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("email", token.email)
+      .single();
+
+    if (sourceError) {
+      logger.warn("Failed to get mining source ID for SMTP twin", {
+        error: sourceError.message,
+        email: token.email,
+      });
+    } else {
+      const { error: smtpError } = await admin
+        .schema("private")
+        .rpc("create_smtp_sender_for_oauth", {
+          _user_id: userId,
+          _email: token.email,
+          _provider: provider,
+          _oauth_refresh_token: token.refreshToken,
+          _mining_source_id: sourceData.id,
+          _encryption_key: HASH_SECRET,
+        });
+
+      if (smtpError) {
+        logger.warn("Failed to create SMTP sender twin for OAuth source", {
+          error: smtpError.message,
+          email: token.email,
+        });
+      }
+    }
+
     let redirectUrl = afterCallbackRedirect;
     if (afterCallbackRedirect.startsWith("/mine")) {
       redirectUrl = `${afterCallbackRedirect}?source=${encodeURIComponent(token.email)}`;
