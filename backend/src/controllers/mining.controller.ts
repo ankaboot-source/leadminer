@@ -17,7 +17,13 @@ import {
   getValidImapLogin,
   sanitizeImapInput
 } from './imap.helpers';
-import { validateFileContactsData } from './mining.helpers';
+import {
+  getAuthClient,
+  getTokenConfig,
+  getTokenWithScopeValidation,
+  validateFileContactsData,
+  refreshAccessToken
+} from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
 import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
@@ -123,6 +129,85 @@ export default function initializeMiningController(
   deps: MiningControllerDeps
 ) {
   return {
+    createProviderMiningSource(req: Request, res: Response) {
+      const user = res.locals.user as User;
+      const provider = req.params.provider as OAuthMiningSourceProvider;
+      const { redirect } = req.body;
+      const afterCallbackRedirect = getSafeRedirectPath(redirect);
+
+      const stateObj = JSON.stringify({
+        userId: user.id,
+        afterCallbackRedirect
+      });
+
+      const authorizationUri = getAuthClient(provider).authorizeURL({
+        ...getTokenConfig(provider),
+        state: Buffer.from(stateObj).toString('base64')
+      });
+
+      return res.json({ authorizationUri });
+    },
+
+    async createProviderMiningSourceCallback(req: Request, res: Response) {
+      const { code, state } = req.query as { code: string; state: string };
+      const provider = req.params.provider as OAuthMiningSourceProvider;
+      let redirect = '/';
+      try {
+        const { userId, afterCallbackRedirect } = parseOAuthState(state);
+
+        redirect = afterCallbackRedirect;
+        const exchangedTokens = await exchangeForToken(code, provider);
+
+        const miningSourceId = await miningSources.upsert({
+          userId,
+          email: exchangedTokens.email,
+          credentials: {
+            ...exchangedTokens,
+            provider
+          },
+          type: provider
+        });
+
+        if (deps.smtpSenders) {
+          try {
+            await deps.smtpSenders.create({
+              userId,
+              name: exchangedTokens.email,
+              email: exchangedTokens.email,
+              smtpHost:
+                provider === 'google'
+                  ? 'smtp.gmail.com'
+                  : 'smtp-mail.outlook.com',
+              smtpPort: 587,
+              smtpEncryption: 'starttls',
+              smtpUser: exchangedTokens.email,
+              smtpPassword: '',
+              authType: 'oauth',
+              oauthProvider: provider === 'google' ? 'google' : 'azure',
+              oauthRefreshToken: exchangedTokens.refreshToken,
+              miningSourceId
+            });
+          } catch (twinError) {
+            logger.warn('Failed to create SMTP twin for OAuth source', {
+              userId,
+              email: exchangedTokens.email,
+              error: twinError instanceof Error ? twinError.message : twinError
+            });
+          }
+        }
+
+        redirect = afterCallbackRedirect.startsWith('/mine')
+          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
+          : afterCallbackRedirect;
+        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
+      } catch (error) {
+        logger.error(error);
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
+        );
+      }
+    },
 
     async createImapMiningSource(
       req: Request,
