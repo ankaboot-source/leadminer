@@ -260,7 +260,7 @@ export default function initializeMiningController(
           'accessToken' in googleSource.credentials
         ) {
           const oauthCreds = googleSource.credentials;
-          let { accessToken, refreshToken } = oauthCreds;
+          const { accessToken, refreshToken } = oauthCreds;
 
           if (!refreshToken) {
             logger.warn(
