@@ -1,0 +1,1 @@
+{"nodes": [{"id": "hadolint_config", "label": "Hadolint Docker Linting Config", "file_type": "document", "source_file": ".qlty/configs/.hadolint.yaml", "source_location": null}], "edges": [], "hyperedges": []}

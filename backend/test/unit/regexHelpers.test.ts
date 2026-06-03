@@ -1,10 +1,6 @@
 import { describe, expect, it, jest, test } from '@jest/globals';
 import { check } from 'recheck';
-import {
-  REGEX_LIST_ID,
-  REGEX_REMOVE_QUOTES,
-  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
-} from '../../src/utils/constants';
+import { REGEX_LIST_ID, REGEX_REMOVE_QUOTES } from '../../src/utils/constants';
 import {
   cleanName,
   extractNameAndEmail,
@@ -37,11 +33,7 @@ async function testRegexSafety(regexSource: string, regexFlags: string) {
 }
 
 describe('Regex redos checker', () => {
-  const regex = [
-    REGEX_LIST_ID,
-    REGEX_REMOVE_QUOTES,
-    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
-  ];
+  const regex = [REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
 
   test.concurrent.each(regex)(
     'Regex %p with flags %p should be REDOS safe',

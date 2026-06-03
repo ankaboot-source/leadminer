@@ -179,6 +179,8 @@ try {
 - **Supabase**: Use admin client (`createSupabaseAdmin`) for privileged operations
 - **PostgreSQL**: Use parameterized queries, never string concatenation for SQL
 - **Redis**: Use ioredis with connection pooling
+- **SECURITY DEFINER functions**: Always set `SET search_path = ''` to prevent search_path manipulation attacks (Supabase linter rule `function_search_path_mutable`)
+- **SECURITY DEFINER functions**: Always set `SET search_path = ''` to prevent search_path manipulation attacks (Supabase linter rule `function_search_path_mutable`)
 
 ### Logging
 
@@ -272,6 +274,117 @@ logger.error("Operation failed", { error: error.message });
 - Bun >= 1.1.0 required for emails-fetcher
 - Docker and Docker Compose required for local dev
 
+## CI/CD Deployment Architecture
+
+Leadminer uses a **multi-repo deployment model** with `leadminer` (source code) and `leadminer.io` (ops/infrastructure).
+
+### Repositories
+
+| Repo                                   | Purpose                                                           | Deploy Target     |
+| -------------------------------------- | ----------------------------------------------------------------- | ----------------- |
+| `ankaboot-source/leadminer`            | Source code (backend, frontend, micro-services)                   | QA & Prod servers |
+| `ankaboot-source/leadminer.io`         | Infrastructure (Docker Compose, Ansible, Terraform, CI workflows) | QA & Prod servers |
+| `ankaboot-source/leadminer-commercial` | Commercial/billing features (merged via integration script)       | QA & Prod servers |
+
+### Trigger Mechanism (Repository Dispatch)
+
+Pushing to `leadminer/main` does **NOT** deploy directly. Instead, workflows in `leadminer` send `repository_dispatch` events to `leadminer.io`, which then runs the actual deployment workflows.
+
+**Why?** The deployment workflows need access to secrets, server IPs, and infrastructure configs that live in `leadminer.io`.
+
+### Deployment Flow
+
+```
+Push to leadminer/main
+    │
+    ├── backend/** or micro-services/** changed
+    │   └── triggers: qa-trigger-backend-build.yml
+    │       └── sends: repository_dispatch(type=trigger-qa-backend-build)
+    │           └── leadminer.io: qa-backend-build-deploy.yml
+    │               ├── builds Docker images (backend + workers)
+    │               └── SSH deploys to QA server
+    │
+    ├── frontend/** changed
+    │   └── triggers: qa-trigger-frontend-build.yml
+    │       └── sends: repository_dispatch(type=trigger-qa-frontend-build)
+    │           └── leadminer.io: qa-frontend-build-deploy.yml
+    │               ├── builds frontend Docker image (pushed to Docker Hub)
+    │               └── SSH deploys to QA server
+    │
+    ├── supabase/functions/** changed
+    │   └── triggers: push-supabase-functions.yml
+    │       └── deploys Edge Functions directly to Supabase project
+    │
+    └── other changes (docs, tests, etc.)
+        └── triggers: qa-trigger-no-build.yml
+            └── sends: repository_dispatch(type=trigger-qa-no-build)
+                └── leadminer.io: qa-no-build-deploy.yml
+                    └── SSH deploys without building (pulls latest images)
+```
+
+### QA Deployment Details
+
+**Server**: DigitalOcean droplet (`LEADMINER_QA_IP`)
+**Path**: `/home/leadminer-qa/`
+**Docker Compose**: Lives in `leadminer.io/docker-compose.yml` (templated via `envsubst`)
+
+Deployment steps (both frontend and backend workflows):
+
+1. Clone/pull `leadminer.io` (config repo) to `~/leadminer.io`
+2. Clone/pull `leadminer` (app repo) to `~/leadminer_qa`
+3. Run `leadminer-integration.sh` to merge `leadminer-commercial` billing code
+4. Template `.env` and `docker-compose.yml` from `leadminer.io` configs
+5. **Backend deploy**: `docker compose build --no-cache` for all services, then `up -d`
+6. **Frontend deploy**: Pull `ankabootorg/leadminer-frontend:latest` from Docker Hub, then `up -d`
+7. Prune unused Docker images
+
+**Important**: The backend builds from source (`docker compose build`) while the frontend pulls a pre-built image from Docker Hub. This means:
+
+- Backend changes are built directly on the QA server
+- Frontend changes must go through the build-and-push workflow first
+
+### Supabase Deployment
+
+Supabase (self-hosted) has its own deployment pipeline:
+
+- **QA**: `supabase-deploy-qa.yml` — deploys to QA Supabase server via SSH + Ansible
+- **Prod**: `supabase-deploy-prod.yml` — deploys to Prod Supabase server
+- **Migrations**: `supabase-migrations-qa.yml` / `supabase-migrations-prod.yml`
+
+Supabase deployments are triggered by:
+
+- Push to `main` with changes in `supabase/functions/**` or `ansible/supabase-deployment/**`
+- Manual `workflow_dispatch`
+
+### Production Deployment
+
+**Trigger**: `repository_dispatch(type=trigger-prod)` or `workflow_dispatch`
+**Approval**: Requires manual approval via GitHub issue (approvers: baderdean, zieddhf)
+**Server**: DigitalOcean droplet (`LEADMINER_PROD_IP`)
+**Path**: `/home/leadminer/leadminer_prod`
+
+Prod workflow (`deploy-prod.yml`):
+
+1. Manual approval step
+2. Build frontend image (pushes to Docker Hub)
+3. SSH deploy to prod server (builds backend from source + pulls frontend image)
+
+### Why a 404 on QA?
+
+If you see a 404 for a newly added API endpoint (e.g., `/api/smtp-senders/regenerate-from-sources`):
+
+1. **Check if the backend was rebuilt** — The QA backend deploy (`qa-backend-build-deploy.yml`) must have run AND succeeded after the merge. If only the frontend was deployed, the backend still runs the old code.
+2. **Check workflow status** — Go to `leadminer.io` repo → Actions → check if `qa-backend-build-deploy` is green.
+3. **Check build output** — The workflow does `docker compose build --no-cache` which should pick up the latest `main` code. If the clone failed or cached an old commit, the new endpoints won't exist.
+4. **Force a re-deploy** — If the workflow failed or was skipped, trigger it manually via `workflow_dispatch` on `qa-backend-build-deploy.yml`.
+
+### Key Gotchas
+
+- **leadminer.io does NOT auto-deploy on leadminer/main push** — It waits for the `repository_dispatch` event.
+- **Frontend and backend deploys are separate workflows** — A frontend-only change won't rebuild the backend, and vice versa.
+- **The frontend image is shared between QA and Prod** — Both pull `ankabootorg/leadminer-frontend:latest`. This means a prod deploy could accidentally get a QA-tested frontend if the image was overwritten.
+- **leadminer-commercial is merged at deploy time** — The integration script copies billing code into the repo before building. If commercial has breaking changes, the build will fail.
+
 ## Planning Documents
 
 ### docs/plans Directory
@@ -325,3 +438,17 @@ cd backend && npm run lint:fix && npm run prettier:fix
 cd frontend && npm run lint:fix && npm run prettier:fix
 cd micro-services/emails-fetcher && npm run lint && npm run prettier:fix
 ```
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, invoke the `skill` tool with `skill: "graphify"` before doing anything else.
+
+Rules:
+
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

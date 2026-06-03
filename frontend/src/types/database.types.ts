@@ -640,6 +640,7 @@ export type Database = {
           temperature: number | null;
           updated_at: string;
           user_id: string;
+          user_tags: string[] | null;
         };
         Insert: {
           conversations?: number | null;
@@ -656,6 +657,7 @@ export type Database = {
           temperature?: number | null;
           updated_at?: string;
           user_id: string;
+          user_tags?: string[] | null;
         };
         Update: {
           conversations?: number | null;
@@ -672,6 +674,7 @@ export type Database = {
           temperature?: number | null;
           updated_at?: string;
           user_id?: string;
+          user_tags?: string[] | null;
         };
         Relationships: [];
       };

@@ -1,0 +1,735 @@
+{
+  "nodes": [
+    {
+      "id": "home_badreddine_projects_leadminer_agents_md",
+      "label": "AGENTS.md",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "leadminer_agents_agents_md_leadminer_development_guide",
+      "label": "AGENTS.md - Leadminer Development Guide",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "leadminer_agents_project_structure",
+      "label": "Project Structure",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L5"
+    },
+    {
+      "id": "leadminer_agents_codeblock_1",
+      "label": "code:block1 (leadminer/)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L7"
+    },
+    {
+      "id": "leadminer_agents_build_lint_and_test_commands",
+      "label": "Build, Lint, and Test Commands",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L18"
+    },
+    {
+      "id": "leadminer_agents_root_commands",
+      "label": "Root Commands",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L20"
+    },
+    {
+      "id": "leadminer_agents_codeblock_2",
+      "label": "code:bash (npm run install-deps        # Install all dependencies)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L22"
+    },
+    {
+      "id": "leadminer_agents_backend_node_js_express",
+      "label": "Backend (Node.js/Express)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L30"
+    },
+    {
+      "id": "leadminer_agents_codeblock_3",
+      "label": "code:bash (cd backend)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L32"
+    },
+    {
+      "id": "leadminer_agents_frontend_nuxt_js",
+      "label": "Frontend (Nuxt.js)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L54"
+    },
+    {
+      "id": "leadminer_agents_codeblock_4",
+      "label": "code:bash (cd frontend)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L56"
+    },
+    {
+      "id": "leadminer_agents_emails_fetcher_microservice_bun",
+      "label": "Emails Fetcher Microservice (Bun)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L69"
+    },
+    {
+      "id": "leadminer_agents_codeblock_5",
+      "label": "code:bash (cd micro-services/emails-fetcher)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L71"
+    },
+    {
+      "id": "leadminer_agents_supabase_edge_functions_deno",
+      "label": "Supabase Edge Functions (Deno)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L81"
+    },
+    {
+      "id": "leadminer_agents_codeblock_6",
+      "label": "code:bash (npm run dev:supabase-functions  # Serve functions locally)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L83"
+    },
+    {
+      "id": "leadminer_agents_code_style_guidelines",
+      "label": "Code Style Guidelines",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L88"
+    },
+    {
+      "id": "leadminer_agents_typescript_configuration",
+      "label": "TypeScript Configuration",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L90"
+    },
+    {
+      "id": "leadminer_agents_naming_conventions",
+      "label": "Naming Conventions",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L96"
+    },
+    {
+      "id": "leadminer_agents_imports",
+      "label": "Imports",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L104"
+    },
+    {
+      "id": "leadminer_agents_codeblock_7",
+      "label": "code:typescript (// Preferred - from package.json \"paths\" config)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L108"
+    },
+    {
+      "id": "leadminer_agents_codeblock_8",
+      "label": "code:typescript (// Vue/Nuxt patterns)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L121"
+    },
+    {
+      "id": "leadminer_agents_codeblock_9",
+      "label": "code:typescript (import { Context, Hono } from \"hono\";)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L129"
+    },
+    {
+      "id": "leadminer_agents_error_handling",
+      "label": "Error Handling",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L134"
+    },
+    {
+      "id": "leadminer_agents_codeblock_10",
+      "label": "code:typescript (// Use custom error classes from utils/errors)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L138"
+    },
+    {
+      "id": "leadminer_agents_codeblock_11",
+      "label": "code:typescript (// Return proper HTTP errors)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L158"
+    },
+    {
+      "id": "leadminer_agents_validation",
+      "label": "Validation",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L171"
+    },
+    {
+      "id": "leadminer_agents_database",
+      "label": "Database",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L177"
+    },
+    {
+      "id": "leadminer_agents_logging",
+      "label": "Logging",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L183"
+    },
+    {
+      "id": "leadminer_agents_edge_function_logging_deno",
+      "label": "Edge Function Logging (Deno)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L189"
+    },
+    {
+      "id": "leadminer_agents_codeblock_12",
+      "label": "code:typescript (import { createLogger } from \"../_shared/logger.ts\";)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L193"
+    },
+    {
+      "id": "leadminer_agents_codeblock_13",
+      "label": "code:json ({)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L220"
+    },
+    {
+      "id": "leadminer_agents_testing",
+      "label": "Testing",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L230"
+    },
+    {
+      "id": "leadminer_agents_git_conventions",
+      "label": "Git Conventions",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L237"
+    },
+    {
+      "id": "leadminer_agents_vue_frontend_patterns",
+      "label": "Vue/Frontend Patterns",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L249"
+    },
+    {
+      "id": "leadminer_agents_supabase_edge_functions",
+      "label": "Supabase Edge Functions",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L256"
+    },
+    {
+      "id": "leadminer_agents_environment_variables",
+      "label": "Environment Variables",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L263"
+    },
+    {
+      "id": "leadminer_agents_additional_notes",
+      "label": "Additional Notes",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L269"
+    },
+    {
+      "id": "leadminer_agents_planning_documents",
+      "label": "Planning Documents",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L275"
+    },
+    {
+      "id": "leadminer_agents_docs_plans_directory",
+      "label": "docs/plans Directory",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L277"
+    },
+    {
+      "id": "leadminer_agents_quality_assurance",
+      "label": "Quality Assurance",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L283"
+    },
+    {
+      "id": "leadminer_agents_deepsource_code_quality_checks",
+      "label": "DeepSource Code Quality Checks",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L285"
+    },
+    {
+      "id": "leadminer_agents_quick_reference_commands",
+      "label": "Quick Reference Commands",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L293"
+    },
+    {
+      "id": "leadminer_agents_codeblock_14",
+      "label": "code:bash (# Check installation)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L295"
+    },
+    {
+      "id": "leadminer_agents_pre_commit_checks",
+      "label": "Pre-commit Checks",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L315"
+    },
+    {
+      "id": "leadminer_agents_codeblock_15",
+      "label": "code:bash (# Backend/Frontend)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L319"
+    },
+    {
+      "id": "leadminer_agents_graphify",
+      "label": "graphify",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L329"
+    }
+  ],
+  "edges": [
+    {
+      "source": "home_badreddine_projects_leadminer_agents_md",
+      "target": "leadminer_agents_agents_md_leadminer_development_guide",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_project_structure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_project_structure",
+      "target": "leadminer_agents_codeblock_1",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_build_lint_and_test_commands",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_build_lint_and_test_commands",
+      "target": "leadminer_agents_root_commands",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_root_commands",
+      "target": "leadminer_agents_codeblock_2",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_build_lint_and_test_commands",
+      "target": "leadminer_agents_backend_node_js_express",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_backend_node_js_express",
+      "target": "leadminer_agents_codeblock_3",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_build_lint_and_test_commands",
+      "target": "leadminer_agents_frontend_nuxt_js",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_frontend_nuxt_js",
+      "target": "leadminer_agents_codeblock_4",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_build_lint_and_test_commands",
+      "target": "leadminer_agents_emails_fetcher_microservice_bun",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_emails_fetcher_microservice_bun",
+      "target": "leadminer_agents_codeblock_5",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_build_lint_and_test_commands",
+      "target": "leadminer_agents_supabase_edge_functions_deno",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_supabase_edge_functions_deno",
+      "target": "leadminer_agents_codeblock_6",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_code_style_guidelines",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_typescript_configuration",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_naming_conventions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_imports",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_imports",
+      "target": "leadminer_agents_codeblock_7",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_imports",
+      "target": "leadminer_agents_codeblock_8",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_imports",
+      "target": "leadminer_agents_codeblock_9",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_error_handling",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_error_handling",
+      "target": "leadminer_agents_codeblock_10",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_error_handling",
+      "target": "leadminer_agents_codeblock_11",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_validation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_database",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_logging",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_edge_function_logging_deno",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_edge_function_logging_deno",
+      "target": "leadminer_agents_codeblock_12",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L193",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_edge_function_logging_deno",
+      "target": "leadminer_agents_codeblock_13",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_testing",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_git_conventions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_vue_frontend_patterns",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L249",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_code_style_guidelines",
+      "target": "leadminer_agents_supabase_edge_functions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_environment_variables",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_additional_notes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_planning_documents",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_planning_documents",
+      "target": "leadminer_agents_docs_plans_directory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L277",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_quality_assurance",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_quality_assurance",
+      "target": "leadminer_agents_deepsource_code_quality_checks",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_deepsource_code_quality_checks",
+      "target": "leadminer_agents_quick_reference_commands",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L293",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_quick_reference_commands",
+      "target": "leadminer_agents_codeblock_14",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L295",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_quality_assurance",
+      "target": "leadminer_agents_pre_commit_checks",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L315",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_pre_commit_checks",
+      "target": "leadminer_agents_codeblock_15",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L319",
+      "weight": 1.0
+    },
+    {
+      "source": "leadminer_agents_agents_md_leadminer_development_guide",
+      "target": "leadminer_agents_graphify",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/AGENTS.md",
+      "source_location": "L329",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

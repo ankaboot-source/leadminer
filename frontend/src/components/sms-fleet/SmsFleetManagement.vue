@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useSmsFleetStore } from '~/stores/sms-fleet';
+import { useScreenStore } from '~/stores/screen';
 import ProviderForm from './ProviderForm.vue';
 import Dropdown from 'primevue/dropdown';
 import Button from 'primevue/button';
@@ -20,6 +21,7 @@ type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
+  hideEmptyState?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -41,6 +43,7 @@ const { t: globalT } = useI18n({ useScope: 'global' });
 const $confirm = useConfirm();
 const $toast = useToast();
 const $smsFleetStore = useSmsFleetStore();
+const $screenStore = useScreenStore();
 
 const selectedProvider = ref<SupportedProvider | null>('simple-sms-gateway');
 const isFormValid = ref(false);
@@ -209,6 +212,8 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   return labels[provider] || provider;
 }
 
+defineExpose({ openAddDialog });
+
 onMounted(() => {
   $smsFleetStore.fetchGateways();
 });
@@ -216,16 +221,10 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-end">
-      <Button
-        :label="t('add_gateway')"
-        icon="pi pi-plus"
-        outlined
-        @click="openAddDialog"
-      />
-    </div>
-
-    <div v-if="$smsFleetStore.isLoading" class="flex justify-center py-8">
+    <div
+      v-if="$smsFleetStore.isLoading && !props.hideEmptyState"
+      class="flex justify-center py-8"
+    >
       <ProgressSpinner />
     </div>
 
@@ -233,7 +232,7 @@ onMounted(() => {
       v-else-if="$smsFleetStore.gateways.length === 0"
       class="text-center py-8 text-surface-500"
     >
-      <p>{{ t('no_gateways_configured') }}</p>
+      <p v-if="!props.hideEmptyState">{{ t('no_gateways_configured') }}</p>
     </div>
 
     <div v-else class="flex flex-col gap-2">
@@ -255,14 +254,14 @@ onMounted(() => {
             text
             size="small"
             icon="pi pi-pencil"
-            :label="t('edit')"
+            :label="$screenStore.size.md ? t('edit') : undefined"
             @click="openEditDialog(gateway)"
           />
           <Button
             text
             size="small"
             icon="pi pi-check-circle"
-            :label="t('test')"
+            :label="$screenStore.size.md ? t('test') : undefined"
             :loading="testingGatewayId === gateway.id"
             @click="testGateway(gateway.id)"
           />
@@ -271,7 +270,7 @@ onMounted(() => {
             size="small"
             severity="danger"
             icon="pi pi-trash"
-            :label="t('delete')"
+            :label="$screenStore.size.md ? t('delete') : undefined"
             @click="confirmDelete(gateway)"
           />
           <Tag

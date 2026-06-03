@@ -66,12 +66,12 @@ export interface MiningSourceByUser {
 }
 
 export interface MiningSources {
-  upsert(source: MiningSource): Promise<void>;
+  upsert(source: MiningSource): Promise<string>;
   getByUser(
     userId: string
   ): Promise<(MiningSourceByUser & { passive_mining: boolean })[]>;
   /**
-   * 
+    * 
     getCredentialsBySourceEmail(
       userId: string,
       email: string
@@ -80,4 +80,5 @@ export interface MiningSources {
     >;
   */
   getSourcesForUser(userId: string, email?: string): Promise<MiningSource[]>;
+  delete(userId: string, email: string): Promise<boolean>;
 }

@@ -29,6 +29,7 @@ import {
   createFileMining,
   createPstMining
 } from '../services/tasks-manager-v2/factories';
+import { SmtpSenders } from '../db/interfaces/SmtpSenders';
 import { PipelineDeps } from '../services/tasks-manager-v2/Pipeline';
 import { FetcherClient } from '../services/tasks-manager-v2/tasks/FetchTask';
 
@@ -37,6 +38,7 @@ export interface MiningControllerDeps {
   emailFetcherClient: FetcherClient;
   pstFetcherClient: FetcherClient;
   idGenerator: () => Promise<string> | string;
+  smtpSenders?: SmtpSenders;
 }
 
 interface MiningTaskGroup {
@@ -121,6 +123,7 @@ export default function initializeMiningController(
   deps: MiningControllerDeps
 ) {
   return {
+
     async createImapMiningSource(
       req: Request,
       res: Response,
@@ -155,7 +158,7 @@ export default function initializeMiningController(
           secure
         );
 
-        await miningSources.upsert({
+        const miningSourceId = await miningSources.upsert({
           userId: user.id,
           email: sanitizedEmail,
           type: 'imap',
@@ -167,6 +170,28 @@ export default function initializeMiningController(
             password: sanitizedPassword
           }
         });
+
+        if (deps.smtpSenders) {
+          try {
+            await deps.smtpSenders.create({
+              userId: user.id,
+              name: sanitizedEmail,
+              email: sanitizedEmail,
+              smtpHost: sanitizedHost,
+              smtpPort: port === 993 ? 465 : 587,
+              smtpEncryption: secure ? 'ssl' : 'starttls',
+              smtpUser: sanitizedEmail,
+              smtpPassword: sanitizedPassword,
+              miningSourceId
+            });
+          } catch (twinError) {
+            logger.warn('Failed to create SMTP twin for IMAP source', {
+              userId: user.id,
+              email: sanitizedEmail,
+              error: twinError instanceof Error ? twinError.message : twinError
+            });
+          }
+        }
 
         return res
           .status(201)
@@ -227,17 +252,48 @@ export default function initializeMiningController(
       let googleContactsCredentials;
       if (googleContactsSync) {
         const allSources = await miningSourceService.getSourcesForUser(user.id);
-        const googleSource = allSources.find(
-          (s) => s.type === 'google' && s.email === sanitizedEmail
-        );
+        const googleSource =
+          allSources.find(
+            (s) => s.type === 'google' && s.email === sanitizedEmail
+          ) || allSources.find((s) => s.type === 'google');
         if (
           googleSource?.credentials &&
           'accessToken' in googleSource.credentials
         ) {
+          const oauthCreds = googleSource.credentials;
+          let { accessToken, refreshToken } = oauthCreds;
+
+          if (!refreshToken) {
+            logger.warn(
+              'Google source missing refreshToken, re-authenticating may be needed',
+              {
+                userId: user.id,
+                email: googleSource.email
+              }
+            );
+          }
+
+          const now = Date.now() / 1000;
+          if (oauthCreds.expiresAt && oauthCreds.expiresAt < now + 60) {
+            try {
+              const refreshed = await refreshAccessToken(oauthCreds);
+              if (refreshed.access_token) {
+                accessToken = refreshed.access_token as string;
+                refreshToken =
+                  (refreshed.refresh_token as string) ?? refreshToken;
+              }
+            } catch (err) {
+              logger.warn('Failed to refresh Google token before mining', {
+                userId: user.id,
+                error: err instanceof Error ? err.message : String(err)
+              });
+            }
+          }
+
           googleContactsCredentials = {
-            accessToken: googleSource.credentials.accessToken,
-            refreshToken: googleSource.credentials.refreshToken,
-            userEmail: sanitizedEmail
+            accessToken,
+            refreshToken: refreshToken ?? '',
+            userEmail: googleSource.email
           };
         }
       }
