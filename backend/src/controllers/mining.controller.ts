@@ -335,7 +335,10 @@ export default function initializeMiningController(
         const knownError = isMiningControllerError(err);
 
         if (knownError) {
-          if (err instanceof Error && err.message.includes('403')) {
+          if (
+            err instanceof Error &&
+            err.message.includes('Request failed with status code 403')
+          ) {
             logger.warn('Google Contacts API returned 403', {
               userId: user.id,
               email: sanitizedEmail
@@ -348,7 +351,7 @@ export default function initializeMiningController(
           if (knownError.isJson) {
             return res.status(knownError.status).json(knownError.body);
           }
-          res.status(knownError.status).send(knownError.body);
+          return res.status(knownError.status).send(knownError.body);
         }
 
         const newError = generateErrorObjectFromImapError(err);
