@@ -2,10 +2,10 @@ import { decode } from 'html-entities';
 import { decode as _decode } from 'quoted-printable';
 import {
   REGEX_BODY,
-  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS,
   REGEX_HEADER,
   REGEX_HEADER_EMAIL_SPLIT_PATTERN,
-  REGEX_REMOVE_QUOTES
+  REGEX_REMOVE_QUOTES,
+  cleanUnwantedWords
 } from '../../utils/constants';
 import { RegexContact } from './types';
 
@@ -15,14 +15,15 @@ import { RegexContact } from './types';
  * @returns The extracted name, or an empty string if no name is found.
  */
 export function cleanName(name: string) {
-  const cleanedName = decode(name)
-    .trim()
-    .replace(/\\"/g, '')
-    .replace(REGEX_REMOVE_QUOTES, '$2')
-    .replace(REGEX_REMOVE_QUOTES, '$2') // In case Some inputs have nested quotes like this "'word'"}
-    .replace(/[,;]+$/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
-    .replace(/^[,;]+/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
-    .replace(REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS, ''); // Remove the word "via" and text after it
+  const cleanedName = cleanUnwantedWords(
+    decode(name)
+      .trim()
+      .replace(/\\"/g, '')
+      .replace(REGEX_REMOVE_QUOTES, '$2')
+      .replace(REGEX_REMOVE_QUOTES, '$2') // In case Some inputs have nested quotes like this "'word'"}
+      .replace(/[,;]+$/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
+      .replace(/^[,;]+/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
+  );
 
   return cleanedName;
 }

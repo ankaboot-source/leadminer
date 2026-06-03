@@ -8,7 +8,7 @@
     @hide="() => onHide()"
   >
     <template #header>
-      <div class="flex items-center gap-2 w-full">
+      <div class="flex items-start gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
           :src="getImageViaProxy(contact.image)"
@@ -30,8 +30,8 @@
               size="large"
               class="w-full"
             />
-            <div class="flex gap-1">
-              <div class="max-lg:grow gap-2 flex items-center truncate">
+            <div class="flex gap-1 items-center">
+              <div class="grow gap-2 flex items-center truncate min-w-0">
                 <Badge
                   v-tooltip.top="getStatusLabel(contact.status)"
                   class="min-w-4 h-4 flex-none cursor-pointer hover:opacity-75 transition-opacity"
@@ -42,7 +42,7 @@
                     <i class="pi pi-spin pi-spinner" />
                   </span>
                 </Badge>
-                <div class="truncate">
+                <div v-tooltip.top="contact.email" class="truncate">
                   {{ contact.email }}
                 </div>
               </div>
@@ -56,15 +56,10 @@
                 :aria-label="t('copy')"
                 @click="copyContact(contact.email, contact.name ?? undefined)"
               />
-              <Button
+              <ExportContacts
                 v-if="!editingContact"
-                rounded
-                text
-                icon="pi pi-trash"
-                size="large"
-                class="text-2xl flex-none text-red-500"
-                :aria-label="$t('common.remove')"
-                @click="showRemoveConfirmationDialog = true"
+                :contacts-to-treat="[contact.email]"
+                :disable-export="isExportDisabled"
               />
             </div>
           </div>
@@ -77,23 +72,36 @@
           <div class="flex items-center gap-1 pt-1">
             <span class="font-medium">{{ $t('contact.tags') }}</span>
             <i
-              v-tooltip.top="$t('categorize_contacts')"
+              v-tooltip.top="$t('contact.categorize_contacts')"
               class="pi pi-info-circle text-surface-400 cursor-help text-sm"
             />
           </div>
           <div
-            v-if="!editingContact && contact.tags?.length"
-            class="flex pt-1 space-x-2"
+            v-if="!editingContact && allTags.length"
+            class="flex flex-wrap pt-1 gap-1"
           >
             <Tag
-              v-for="tag in contact.tags"
+              v-for="tag in allTags"
               :key="tag"
               :value="getTagLabel(tag)"
               :severity="getTagColor(tag)"
             />
           </div>
           <div v-else-if="editingContact" class="pt-1">
-            <Chips v-model="contactEditTags" class="w-full" />
+            <AutoComplete
+              ref="tagAutoComplete"
+              v-model="contactEditTags"
+              :suggestions="filteredTagSuggestions"
+              multiple
+              fluid
+              :placeholder="t('tags_placeholder')"
+              @complete="searchTags"
+              @blur="commitPendingTag"
+              @input="
+                (e: Event) =>
+                  (pendingTagInput = (e.target as HTMLInputElement).value)
+              "
+            />
           </div>
         </div>
       </div>
@@ -213,8 +221,16 @@
               <div v-tooltip.bottom="getConsentTooltip(contact)">
                 <Tag
                   class="font-normal"
-                  :value="getConsentLabel(contact.consent_status)"
-                  :severity="getConsentColor(contact.consent_status)"
+                  :value="
+                    getConsentLabel(
+                      contact.consent_status ?? 'legitimate_interest',
+                    )
+                  "
+                  :severity="
+                    getConsentColor(
+                      contact.consent_status ?? 'legitimate_interest',
+                    )
+                  "
                 />
               </div>
             </div>
@@ -228,11 +244,10 @@
                   },
                   { label: t('contact.consent.opt_out'), value: 'opt_out' },
                   { label: t('contact.consent.opt_in'), value: 'opt_in' },
-                  { label: t('contact.unverified'), value: null },
                 ]"
                 option-label="label"
                 option-value="value"
-                :placeholder="t('contact.unverified')"
+                :placeholder="$t('contact.undefined_consent')"
                 class="w-full"
               />
             </div>
@@ -266,18 +281,17 @@
       </tbody>
     </table>
 
-    <div class="flex justify-center py-2">
-      <Button
-        :label="$t('common.edit')"
-        outlined
-        class="w-full md:w-auto"
-        @click="editContactInformations()"
-      />
-    </div>
-
     <template #footer>
-      <div class="flex flex-wrap gap-2 justify-center items-center">
+      <div class="flex flex-wrap gap-2 justify-between items-center w-full">
         <template v-if="!editingContact">
+          <Button
+            id="remove-contact"
+            icon="pi pi-trash"
+            :label="$screenStore.size.md ? $t('common.remove') : undefined"
+            severity="danger"
+            outlined
+            @click="showRemoveConfirmationDialog = true"
+          />
           <EnrichButton
             source="contact"
             :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -286,9 +300,11 @@
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
           />
-          <ExportContacts
-            :contacts-to-treat="[contact.email]"
-            :disable-export="isExportDisabled"
+          <Button
+            :label="$screenStore.size.md ? $t('common.edit') : undefined"
+            icon="pi pi-pencil"
+            outlined
+            @click="editContactInformations()"
           />
         </template>
         <template v-else>
@@ -338,6 +354,7 @@
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
+import { useContactsStore } from '~/stores/contacts';
 
 import {
   getConsentColor,
@@ -348,6 +365,7 @@ import {
   getTagLabel,
   isValidURL,
   removeContactsFromDatabase,
+  tags as predefinedTags,
 } from '@/utils/contacts';
 import type {
   RealtimeChannel,
@@ -376,6 +394,8 @@ const $toast = useToast();
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
+const $screenStore = useScreenStore();
+const $contactsStore = useContactsStore();
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -407,7 +427,40 @@ async function refreshStatusBadge() {
 
 const editingContact = ref(false);
 const contactEditTags = ref<string[]>([]);
+const filteredTagSuggestions = ref<string[]>([]);
 const showRemoveConfirmationDialog = ref(false);
+const tagAutoComplete = ref();
+const pendingTagInput = ref('');
+
+const allTags = computed(() => {
+  const autoTags = contact.value.tags ?? [];
+  const userTags = contact.value.user_tags ?? [];
+  return [...new Set([...autoTags, ...userTags])];
+});
+
+function searchTags(event: { query: string }) {
+  const query = event.query.toLowerCase().trim();
+  if (!query) {
+    filteredTagSuggestions.value = [];
+    return;
+  }
+  const matches = predefinedTags()
+    .map((tag) => tag.label)
+    .filter((label) => label.toLowerCase().includes(query));
+  const exactMatch = matches.some((l) => l.toLowerCase() === query);
+  filteredTagSuggestions.value = exactMatch
+    ? matches
+    : [event.query.trim(), ...matches];
+}
+
+function commitPendingTag() {
+  const tag = pendingTagInput.value.trim();
+  if (tag && !contactEditTags.value.includes(tag)) {
+    contactEditTags.value = [...contactEditTags.value, tag];
+  }
+  pendingTagInput.value = '';
+}
+
 const isRemovingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   email: '',
@@ -439,9 +492,11 @@ watch(contact, (newContact) => {
       job_title: newContact.job_title,
       image: newContact.image,
       tags: newContact.tags ?? null,
-      consent_status: newContact.consent_status ?? null,
+      consent_status: newContact.consent_status ?? 'legitimate_interest',
     };
-    contactEditTags.value = newContact.tags ? [...newContact.tags] : [];
+    contactEditTags.value = newContact.user_tags
+      ? [...newContact.user_tags]
+      : [];
   }
 });
 
@@ -546,6 +601,9 @@ function onHide() {
 }
 
 function editContactInformations() {
+  contactEditTags.value = contact.value.user_tags
+    ? [...contact.value.user_tags]
+    : [];
   editingContact.value = true;
 }
 
@@ -574,23 +632,25 @@ async function saveContactInformations() {
   if (!isValidSameAs.value || !isValidAvatar.value) {
     showNotification(
       'error',
-      t('url_invalid_summary'),
-      t('url_invalid_detail'),
+      t('phone_invalid_summary'),
+      t('phone_invalid_detail', { phoneNumber: '' }),
     );
     return;
   }
+  commitPendingTag();
 
   const telephones = transformPhones();
 
   const originalContactCopy = contact.value;
-  const editedContactCopy: Contact = {
+  const editedContactCopy = {
     ...contact.value,
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
     alternate_name: transformStringToArray(contactEdit.value.alternate_name),
     telephone: telephones,
     location: contactEdit.value.location,
-  };
+    consent_status: contactEdit.value.consent_status ?? undefined,
+  } as Contact;
 
   const newLocation =
     originalContactCopy.location !== editedContactCopy.location
@@ -645,21 +705,25 @@ async function saveContactInformations() {
       originalContactCopy.image !== editedContactCopy.image
         ? editedContactCopy.image || null
         : undefined,
-    tags:
-      JSON.stringify(originalContactCopy.tags) !==
+    user_tags:
+      JSON.stringify(originalContactCopy.user_tags ?? []) !==
       JSON.stringify(contactEditTags.value)
         ? contactEditTags.value.length > 0
           ? contactEditTags.value
-          : null
+          : []
         : undefined,
     consent_status:
       originalContactCopy.consent_status !== contactEdit.value.consent_status
-        ? contactEdit.value.consent_status || null
+        ? (contactEdit.value.consent_status ?? 'legitimate_interest')
         : undefined,
   };
   const userId = getCurrentUserId();
   if (!userId) return;
   await updateContact(userId, contactToUpdate);
+  if (contactToUpdate.user_tags !== undefined) {
+    contact.value.user_tags = contactToUpdate.user_tags;
+  }
+  await $contactsStore.updateContactsCache(contact.value, true);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
 }

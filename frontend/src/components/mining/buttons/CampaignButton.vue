@@ -20,14 +20,13 @@
           })
     "
     severity="contrast"
-    :label="t('send_campaign')"
+    :label="$screenStore.size.md ? t('send_campaign') : undefined"
     :model="sendCampaignMenuItems"
     :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
     :button-props="{
       disabled: isSendByEmailDisabled,
       onClick: () => openSendContactsDialog(),
     }"
-    pt:pc-button:label:class="hidden md:block"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-left">
@@ -54,6 +53,7 @@ const props = defineProps<{
 }>();
 
 const $leadminerStore = useLeadminerStore();
+const $screenStore = useScreenStore();
 const { t } = useI18n();
 
 const sendCampaignDialogVisible = ref(false);

@@ -107,7 +107,7 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     throw new Error('Email is required for updating a contact');
   }
 
-  const { tags, sources, ...rest } = contact;
+  const { tags, user_tags, sources, ...rest } = contact;
   const contactWithoutTags = rest;
 
   const { error } = await $supabaseClient
@@ -121,8 +121,8 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     throw error;
   }
 
-  if (tags !== undefined) {
-    await updateContactTags(userId, contact.email, tags);
+  if (user_tags !== undefined) {
+    await updateContactTags(userId, contact.email, user_tags);
   }
 }
 
@@ -137,7 +137,7 @@ export async function updateContactTags(
     .schema('private')
     .from('refinedpersons')
     .upsert(
-      { user_id: userId, email, tags: tags ?? [] },
+      { user_id: userId, email, user_tags: tags ?? [] },
       { onConflict: 'user_id,email' },
     );
 
@@ -194,7 +194,7 @@ export function getStatusLabel(value: Status['value']): Status['label'] {
   const { t } = useNuxtApp().$i18n;
   return (
     statuses().find((status) => status.value === value)?.label ??
-    t('contact.unverified')
+    t('contact.undefined_consent')
   );
 }
 
@@ -242,11 +242,11 @@ export function getTagColor(tag: string) {
     case 'role':
       return 'secondary';
     default:
-      return undefined;
+      return 'secondary';
   }
 }
 export function getTagLabel(value: string) {
-  return tags().find((tag) => tag.value === value)?.label ?? 'unknown';
+  return tags().find((tag) => tag.value === value)?.label ?? value;
 }
 
 export function isValidURL(url: string) {

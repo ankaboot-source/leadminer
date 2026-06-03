@@ -1,0 +1,639 @@
+{
+  "nodes": [
+    {
+      "id": "home_badreddine_projects_leadminer_frontend_design_md",
+      "label": "DESIGN.md",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "frontend_design_leadminer_design_system",
+      "label": "Leadminer Design System",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L1"
+    },
+    {
+      "id": "frontend_design_tech_stack",
+      "label": "Tech Stack",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L5"
+    },
+    {
+      "id": "frontend_design_design_tokens",
+      "label": "Design Tokens",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L24"
+    },
+    {
+      "id": "frontend_design_colors",
+      "label": "Colors",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L26"
+    },
+    {
+      "id": "frontend_design_primary_palette",
+      "label": "Primary Palette",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L30"
+    },
+    {
+      "id": "frontend_design_surface_palette_neutrals",
+      "label": "Surface Palette (Neutrals)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L36"
+    },
+    {
+      "id": "frontend_design_semantic_status_colors",
+      "label": "Semantic / Status Colors",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L49"
+    },
+    {
+      "id": "frontend_design_accent_colors",
+      "label": "Accent Colors",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L61"
+    },
+    {
+      "id": "frontend_design_temperature_scale",
+      "label": "Temperature Scale",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L68"
+    },
+    {
+      "id": "frontend_design_codeblock_1",
+      "label": "code:block1 (HSL gradient: hsl(45, 75%, 85%) \u2192 hsl(0, 75%, 85%))",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L72"
+    },
+    {
+      "id": "frontend_design_typography",
+      "label": "Typography",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L77"
+    },
+    {
+      "id": "frontend_design_spacing",
+      "label": "Spacing",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L90"
+    },
+    {
+      "id": "frontend_design_breakpoints",
+      "label": "Breakpoints",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L102"
+    },
+    {
+      "id": "frontend_design_elevation",
+      "label": "Elevation",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L114"
+    },
+    {
+      "id": "frontend_design_border_radius",
+      "label": "Border Radius",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L118"
+    },
+    {
+      "id": "frontend_design_layout",
+      "label": "Layout",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L128"
+    },
+    {
+      "id": "frontend_design_root_layout",
+      "label": "Root Layout",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L130"
+    },
+    {
+      "id": "frontend_design_codeblock_2",
+      "label": "code:block2 (\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L132"
+    },
+    {
+      "id": "frontend_design_navigation",
+      "label": "Navigation",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L146"
+    },
+    {
+      "id": "frontend_design_page_patterns",
+      "label": "Page Patterns",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L152"
+    },
+    {
+      "id": "frontend_design_components",
+      "label": "Components",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L163"
+    },
+    {
+      "id": "frontend_design_primevue_components_in_use",
+      "label": "PrimeVue Components in Use",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L165"
+    },
+    {
+      "id": "frontend_design_custom_component_patterns",
+      "label": "Custom Component Patterns",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L186"
+    },
+    {
+      "id": "frontend_design_container_card",
+      "label": "Container Card",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L188"
+    },
+    {
+      "id": "frontend_design_codeblock_3",
+      "label": "code:html (<div class=\"border border-surface-200 rounded-md p-4\">)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L189"
+    },
+    {
+      "id": "frontend_design_status_badge_state_pill",
+      "label": "Status Badge (state-pill)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L195"
+    },
+    {
+      "id": "frontend_design_codeblock_4",
+      "label": "code:html (<span class=\"state-pill state-success\">Verified</span>)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L196"
+    },
+    {
+      "id": "frontend_design_link",
+      "label": "Link",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L202"
+    },
+    {
+      "id": "frontend_design_codeblock_5",
+      "label": "code:html (<a class=\"link\" href=\"...\">Link text</a>)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L203"
+    },
+    {
+      "id": "frontend_design_loading_skeleton",
+      "label": "Loading Skeleton",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L208"
+    },
+    {
+      "id": "frontend_design_codeblock_6",
+      "label": "code:html (<div class=\"animate-pulse bg-surface-200 rounded-md h-4 w-fu)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L209"
+    },
+    {
+      "id": "frontend_design_icons",
+      "label": "Icons",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L215"
+    },
+    {
+      "id": "frontend_design_internationalization",
+      "label": "Internationalization",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L230"
+    },
+    {
+      "id": "frontend_design_state_management",
+      "label": "State Management",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L242"
+    },
+    {
+      "id": "frontend_design_file_structure",
+      "label": "File Structure",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L260"
+    },
+    {
+      "id": "frontend_design_codeblock_7",
+      "label": "code:block7 (frontend/src/)",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L262"
+    },
+    {
+      "id": "frontend_design_conventions",
+      "label": "Conventions",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L297"
+    },
+    {
+      "id": "frontend_design_do",
+      "label": "DO",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L299"
+    },
+    {
+      "id": "frontend_design_don_t",
+      "label": "DON'T",
+      "file_type": "document",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L312"
+    }
+  ],
+  "edges": [
+    {
+      "source": "home_badreddine_projects_leadminer_frontend_design_md",
+      "target": "frontend_design_leadminer_design_system",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_tech_stack",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_design_tokens",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_colors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_colors",
+      "target": "frontend_design_primary_palette",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_colors",
+      "target": "frontend_design_surface_palette_neutrals",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_colors",
+      "target": "frontend_design_semantic_status_colors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_colors",
+      "target": "frontend_design_accent_colors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_colors",
+      "target": "frontend_design_temperature_scale",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_temperature_scale",
+      "target": "frontend_design_codeblock_1",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_typography",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_spacing",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_breakpoints",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_elevation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_design_tokens",
+      "target": "frontend_design_border_radius",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_layout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L128",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_layout",
+      "target": "frontend_design_root_layout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_root_layout",
+      "target": "frontend_design_codeblock_2",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_layout",
+      "target": "frontend_design_navigation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_layout",
+      "target": "frontend_design_page_patterns",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_components",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_components",
+      "target": "frontend_design_primevue_components_in_use",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L165",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_components",
+      "target": "frontend_design_custom_component_patterns",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_custom_component_patterns",
+      "target": "frontend_design_container_card",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_container_card",
+      "target": "frontend_design_codeblock_3",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_custom_component_patterns",
+      "target": "frontend_design_status_badge_state_pill",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_status_badge_state_pill",
+      "target": "frontend_design_codeblock_4",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_custom_component_patterns",
+      "target": "frontend_design_link",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L202",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_link",
+      "target": "frontend_design_codeblock_5",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_custom_component_patterns",
+      "target": "frontend_design_loading_skeleton",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_loading_skeleton",
+      "target": "frontend_design_codeblock_6",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_icons",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_internationalization",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_state_management",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_file_structure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L260",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_file_structure",
+      "target": "frontend_design_codeblock_7",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L262",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_leadminer_design_system",
+      "target": "frontend_design_conventions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L297",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_conventions",
+      "target": "frontend_design_do",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_design_conventions",
+      "target": "frontend_design_don_t",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/home/badreddine/Projects/leadminer/frontend/DESIGN.md",
+      "source_location": "L312",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

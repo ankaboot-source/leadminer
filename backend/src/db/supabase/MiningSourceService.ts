@@ -74,9 +74,14 @@ export class MiningSourceService implements MiningSources {
     });
   }
 
-  upsert(source: MiningSource): Promise<void> {
-    this.logger.warn('Method getSourcesForUser not implemented');
+  upsert(source: MiningSource): Promise<string> {
+    this.logger.warn('Method upsert not implemented');
     throw new Error(`Method not implemented, ${source.email}:${source.type}`);
+  }
+
+  delete(userId: string, email: string): Promise<boolean> {
+    this.logger.warn('Method delete not implemented');
+    throw new Error(`Method not implemented, ${userId}, ${email}`);
   }
 
   getByUser(

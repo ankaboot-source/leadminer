@@ -63,11 +63,13 @@ describe('PgMiningSources', () => {
   });
 
   it('upserts postgres source when credentials are valid', async () => {
-    const query = jest.fn<Pool['query']>().mockResolvedValue({} as never);
+    const query = jest
+      .fn<Pool['query']>()
+      .mockResolvedValue({ rows: [{ id: 'mining-source-id' }] } as never);
     const pool = { query } as unknown as Pool;
     const repo = new PgMiningSources(pool, createMockLogger(), 'hash-key');
 
-    await repo.upsert({
+    const miningSourceId = await repo.upsert({
       userId: 'user-1',
       email: 'external-db',
       type: 'postgresql',
@@ -96,5 +98,6 @@ describe('PgMiningSources', () => {
       }),
       'hash-key'
     ]);
+    expect(miningSourceId).toBe('mining-source-id');
   });
 });

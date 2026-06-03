@@ -5,6 +5,7 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import PgSmtpSenders from './db/pg/PgSmtpSenders';
 import SupabaseTasks from './db/supabase/tasks';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
@@ -39,6 +40,11 @@ console.log(
     logger,
     ENV.LEADMINER_API_HASH_SECRET
   );
+  const smtpSenders = new PgSmtpSenders(
+    pool,
+    logger,
+    ENV.LEADMINER_API_HASH_SECRET
+  );
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
@@ -65,7 +71,8 @@ console.log(
       ENV.EMAIL_FETCHING_SERVICE_API_TOKEN,
       ENV.EMAIL_FETCHING_SERVICE_URL
     ),
-    idGenerator: flickrBase58IdGenerator()
+    idGenerator: flickrBase58IdGenerator(),
+    smtpSenders
   };
 
   const app = initializeApp(
@@ -75,7 +82,8 @@ console.log(
     contactsResolver,
     userResolver,
     logger,
-    miningControllerDeps
+    miningControllerDeps,
+    smtpSenders
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {

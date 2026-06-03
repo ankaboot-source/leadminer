@@ -1,0 +1,170 @@
+# Caddyfile for OpenWA Dashboard with double auth (OAuth GitHub + JWT)
+# Jinja2 template for production
+
+{{
+	$GITGATE_SERVER := env("GITGATE_SERVER") || "0.0.0.0"
+	$GITGATE_PORT := env("GITGATE_PORT") || "8080"
+	$JWT_SECRET := env("JWT_SECRET") || "your-jwt-secret-here"
+	$GITHUB_CLIENT_ID := env("GITHUB_CLIENT_ID") || "your-github-client-id"
+	$GITHUB_CLIENT_SECRET := env("GITHUB_CLIENT_SECRET") || "your-github-client-secret"
+	$GITHUB_REDIRECT_URI := env("GITHUB_REDIRECT_URI") || "https://leadminer.example.com/auth/callback"
+	$DASHBOARD_BASE_URL := env("DASHBOARD_BASE_URL") || "https://leadminer.example.com/dashboard"
+}}
+
+# OAuth GitHub Authentication
+{{
+	$auth_scheme := "https"
+	$auth_base := $GITGATE_SERVER + ":" + $GITGATE_PORT
+}}
+
+{{
+	$api_scheme := "https"
+	$api_base := "api.leadminer.example.com"
+}}
+
+{{
+	$dashboard_base := $DASHBOARD_BASE_URL
+}}
+
+{{
+	$jwt_secret_key := $JWT_SECRET
+}}
+
+# Route for OpenWA Dashboard
+{{
+	$dashboard_port := "2785"
+}}
+
+{{
+	$dashboard_internal := "openwa:2886"
+}}
+
+{{
+	$auth_internal := "auth-service:8080"
+}}
+
+# Handle the OpenWA Dashboard with double auth
+{{
+	$dashboard_route := "/dashboard/*"
+}}
+
+{{
+	$auth_route := "/auth/*"
+}}
+
+{{
+	$auth_callback := "/auth/callback"
+}}
+
+{{
+	$login_route := "/login"
+}}
+
+{{
+	$logout_route := "/logout"
+}}
+
+{{
+	$token_route := "/token"
+}}
+
+{{
+	$verify_route := "/verify"
+}}
+
+{{
+	$health_route := "/health"
+}}
+
+{{
+	$api_route := "/api/*"
+}}
+
+{{
+	$api_internal := "api:3000"
+}}
+
+# The OpenWA Dashboard
+{{
+	reverse_proxy $dashboard_internal {
+		header_up Host {host}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}
+
+# Reverse proxy to OpenWA Dashboard with authentication
+{{
+	route $dashboard_route {
+		# First layer: OAuth GitHub authentication
+		forward_auth $auth_internal {
+			uri /auth/verify
+			header_up Host {host}
+			
+			# Pass GitHub OAuth credentials
+			header_up X-GitHub-Client-Id {$GITHUB_CLIENT_ID}
+			header_up X-GitHub-Client-Secret {$GITHUB_CLIENT_SECRET}
+			header_up X-GitHub-Redirect-Uri {$GITHUB_REDIRECT_URI}
+		}
+		
+		# Second layer: JWT validation
+		forward_auth $auth_internal {
+			uri /auth/token/verify
+			header_up Host {host}
+			header_up X-JWT-Secret {$jwt_secret_key}
+		}
+		
+		# Reverse proxy to OpenWA Dashboard
+		reverse_proxy $dashboard_internal {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+}
+
+# API routes (JWT only)
+{{
+	route $api_route {
+		# JWT validation
+		forward_auth $auth_internal {
+			uri /auth/token/verify
+			header_up Host {host}
+			header_up X-JWT-Secret {$jwt_secret_key}
+		}
+		
+		# Reverse proxy to API
+		reverse_proxy $api_internal {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+}
+
+# Authentication routes
+{{
+	route $auth_route {
+		reverse_proxy $auth_internal {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+		}
+	}
+}}
+
+# Health check
+{{
+	route $health_route {
+		respond "OK" 200
+	}
+}}
+
+# Default route
+{{
+	route {
+		respond "Not Found" 404
+	}
+}}

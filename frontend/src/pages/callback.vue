@@ -17,7 +17,7 @@
       <Button
         :label="t('learn_more')"
         icon="pi pi-external-link"
-        iconPos="right"
+        icon-pos="right"
         @click="openGoogleWorkspaceDoc"
       />
     </div>

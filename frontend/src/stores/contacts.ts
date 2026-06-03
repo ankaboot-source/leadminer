@@ -136,11 +136,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (keepPosition) {
       contactsCacheMap.set(updatedContact.email, updatedContact);
+    } else {
+      // Remove and reinsert to change position in the Map
+      contactsCacheMap.delete(email);
+      contactsCacheMap.set(email, updatedContact);
     }
-
-    // Remove and reinsert to change position in the Map
-    contactsCacheMap.delete(email);
-    contactsCacheMap.set(email, updatedContact);
   }
 
   function removeOldContact(email: string) {
@@ -366,5 +366,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     removeOldContacts,
     hasPersons,
     getLocationsToNormalize,
+    updateContactsCache,
   };
 });

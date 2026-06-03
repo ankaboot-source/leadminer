@@ -2,19 +2,71 @@
   <div class="flex flex-col gap-4">
     <Panel toggleable class="border border-surface-200 rounded-md p-4">
       <template #header>
-        <h1 class="text-xl font-semibold">{{ t('sms_gateways') }}</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+          <div class="flex items-center gap-4">
+            <h1 class="text-xl font-semibold">{{ t('senders') }}</h1>
+            <SenderFilterTabs v-model="senderFilter" />
+          </div>
+          <div class="flex items-center gap-2 sm:ml-auto">
+            <Button
+              :label="
+                $screenStore.size.md
+                  ? t('add_email_sender_long')
+                  : t('add_email_sender')
+              "
+              icon="pi pi-plus"
+              size="small"
+              outlined
+              @click="$emailSenderRef?.openAddDialog()"
+            />
+            <Button
+              :label="
+                $screenStore.size.md
+                  ? t('add_sms_gateway_long')
+                  : t('add_sms_gateway')
+              "
+              icon="pi pi-plus"
+              size="small"
+              outlined
+              @click="$smsFleetRef?.openAddDialog()"
+            />
+          </div>
+        </div>
       </template>
-      <SmsFleetManagement />
+      <div v-show="senderFilter !== 'sms'">
+        <EmailSenderManagement
+          ref="$emailSenderRef"
+          :hide-empty-state="senderFilter === 'all'"
+        />
+      </div>
+      <div v-show="senderFilter !== 'email'">
+        <SmsFleetManagement
+          ref="$smsFleetRef"
+          :hide-empty-state="senderFilter === 'all'"
+        />
+      </div>
+
+      <div
+        v-if="senderFilter === 'all' && bothSendersEmpty"
+        class="text-center py-8 text-surface-500"
+      >
+        <p>{{ t('no_senders_configured') }}</p>
+      </div>
     </Panel>
 
     <div
       class="flex flex-col grow border border-surface-200 rounded-md p-4 gap-4"
     >
-      <div class="flex items-center justify-between">
-        <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      >
+        <div class="flex items-center gap-4">
+          <h1 class="text-xl font-semibold">{{ t('campaigns') }}</h1>
+          <SenderFilterTabs v-model="campaignFilter" />
+        </div>
         <Button
           icon="pi pi-refresh"
-          :label="t('refresh')"
+          :label="$screenStore.size.md ? t('refresh') : undefined"
           :loading="$campaignsStore.isLoading"
           outlined
           @click="refresh"
@@ -30,7 +82,7 @@
 
       <DataView
         v-else
-        :value="$campaignsStore.campaigns"
+        :value="filteredCampaigns"
         data-key="id"
         :paginator="true"
         :rows="10"
@@ -134,7 +186,9 @@
                     text
                     severity="warning"
                     icon="pi pi-stop"
-                    :label="t('stop_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('stop_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'stop')"
                     @click="openStopDialog(campaign)"
                   />
@@ -144,7 +198,9 @@
                     text
                     severity="success"
                     icon="pi pi-refresh"
-                    :label="t('restart_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('restart_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'restart')"
                     @click="openRestartDialog(campaign)"
                   />
@@ -154,7 +210,9 @@
                     text
                     severity="danger"
                     icon="pi pi-trash"
-                    :label="t('delete_campaign')"
+                    :label="
+                      $screenStore.size.md ? t('delete_campaign') : undefined
+                    "
                     :loading="isActionLoading(campaign.id, 'delete')"
                     @click="openDeleteDialog(campaign)"
                   />
@@ -377,8 +435,38 @@
 <script setup lang="ts">
 import type { CampaignOverview, CampaignStatus } from '@/types/campaign';
 import SmsFleetManagement from '~/components/sms-fleet/SmsFleetManagement.vue';
+import EmailSenderManagement from '~/components/senders/EmailSenderManagement.vue';
+import SenderFilterTabs from '~/components/senders/SenderFilterTabs.vue';
+import type { SenderFilter } from '~/components/senders/SenderFilterTabs.vue';
+import { useSmtpSendersStore } from '~/stores/smtp-senders';
+import { useSmsFleetStore } from '~/stores/sms-fleet';
 
 const $campaignsStore = useCampaignsStore();
+const $smtpSendersStore = useSmtpSendersStore();
+const $smsFleetStore = useSmsFleetStore();
+const $emailSenderRef = ref<InstanceType<typeof EmailSenderManagement> | null>(
+  null,
+);
+const $smsFleetRef = ref<InstanceType<typeof SmsFleetManagement> | null>(null);
+const $screenStore = useScreenStore();
+const senderFilter = ref<SenderFilter>('all');
+const campaignFilter = ref<SenderFilter>('all');
+
+const bothSendersEmpty = computed(
+  () =>
+    !$smtpSendersStore.isLoading &&
+    !$smsFleetStore.isLoading &&
+    $smtpSendersStore.senders.length === 0 &&
+    $smsFleetStore.gateways.length === 0,
+);
+
+const filteredCampaigns = computed(() => {
+  if (campaignFilter.value === 'all') return $campaignsStore.campaigns;
+  if (campaignFilter.value === 'sms') {
+    return $campaignsStore.campaigns.filter((c) => c.channel === 'sms');
+  }
+  return $campaignsStore.campaigns.filter((c) => c.channel !== 'sms');
+});
 const { t } = useI18n({ useScope: 'local' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
@@ -742,6 +830,12 @@ onBeforeUnmount(() => {
 {
   "en": {
     "sms_gateways": "SMS Gateways",
+    "senders": "Senders",
+    "no_senders_configured": "No senders configured",
+    "add_email_sender": "Email",
+    "add_email_sender_long": "Add email sender",
+    "add_sms_gateway": "SMS",
+    "add_sms_gateway_long": "Add SMS gateway",
     "campaigns": "Campaigns",
     "refresh": "Refresh",
     "no_campaigns": "No campaigns yet",
@@ -802,6 +896,12 @@ onBeforeUnmount(() => {
   },
   "fr": {
     "sms_gateways": "Passerelles SMS",
+    "senders": "Expéditeurs",
+    "no_senders_configured": "Aucun expéditeur configuré",
+    "add_email_sender": "Email",
+    "add_email_sender_long": "Ajouter un expéditeur email",
+    "add_sms_gateway": "SMS",
+    "add_sms_gateway_long": "Ajouter une passerelle SMS",
     "campaigns": "Campagnes",
     "refresh": "Rafraîchir",
     "no_campaigns": "Aucune campagne",

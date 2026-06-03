@@ -102,14 +102,13 @@
         >
           <SplitButton
             severity="contrast"
-            :label="t('send_campaign')"
+            :label="$screenStore.size.md ? t('send_campaign') : undefined"
             :model="sendCampaignMenuItems"
             :disabled="isSendByEmailDisabled && isSendBySmsDisabled"
             :button-props="{
               disabled: isSendByEmailDisabled,
               onClick: () => openSendContactsDialog(),
             }"
-            pt:label:class="hidden md:block"
           >
             <template #icon>
               <span class="p-button-icon p-button-icon-left">

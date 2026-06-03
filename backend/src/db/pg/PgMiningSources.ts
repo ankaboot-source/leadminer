@@ -54,12 +54,18 @@ export default class PgMiningSources implements MiningSources {
     INSERT INTO private.mining_sources ("user_id","email","type","credentials")
     VALUES($1,$2,$3,pgp_sym_encrypt($4, $5))
     ON CONFLICT (email, user_id)
-    DO UPDATE SET credentials=excluded.credentials,type=excluded.type;`;
+    DO UPDATE SET credentials=excluded.credentials,type=excluded.type
+    RETURNING id;`;
 
   private static readonly GET_BY_USER_SQL = `
     SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials, passive_mining
     FROM private.mining_sources
     WHERE user_id = $2;`;
+
+  private static readonly DELETE_SQL = `
+    DELETE FROM private.mining_sources
+    WHERE user_id = $1 AND email = $2
+    RETURNING true;`;
   /**
     * 
 
@@ -81,12 +87,31 @@ export default class PgMiningSources implements MiningSources {
     throw new Error(`Method not implemented, ${userId}, ${email}`);
   }
 
+  async delete(userId: string, email: string): Promise<boolean> {
+    try {
+      const { rows } = await this.client.query(PgMiningSources.DELETE_SQL, [
+        userId,
+        email
+      ]);
+      return rows.length > 0;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error('Failed deleting mining source', {
+          userId,
+          email,
+          error: error.message
+        });
+      }
+      throw error;
+    }
+  }
+
   async upsert({
     userId,
     credentials,
     email,
     type
-  }: MiningSource): Promise<void> {
+  }: MiningSource): Promise<string> {
     try {
       if (
         type === 'postgresql' &&
@@ -95,13 +120,14 @@ export default class PgMiningSources implements MiningSources {
         throw new Error('Invalid PostgreSQL source credentials');
       }
 
-      await this.client.query(PgMiningSources.UPSERT_SQL, [
+      const { rows } = await this.client.query(PgMiningSources.UPSERT_SQL, [
         userId,
         email,
         type,
         JSON.stringify(credentials),
         this.encryptionKey
       ]);
+      return rows[0].id;
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error('Failed upserting credentials', {
