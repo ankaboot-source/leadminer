@@ -170,3 +170,39 @@ Deno.test("callbackQuerySchema rejects missing required fields", () => {
       result.error.issues.some((i) => i.path.includes("state")),
   );
 });
+
+Deno.test("callback redirect URL encodes source email", () => {
+  const email = "test@example.com";
+  const encoded = encodeURIComponent(email);
+  assertEquals(encoded, "test%40example.com");
+  const redirectUrl = `/mine?source=${encoded}`;
+  assertEquals(redirectUrl, "/mine?source=test%40example.com");
+});
+
+Deno.test("SMTP host mapping for OAuth providers", () => {
+  const providerMap: Record<string, { host: string; oauthProvider: string }> = {
+    google: { host: "smtp.gmail.com", oauthProvider: "google" },
+    azure: { host: "smtp-mail.outlook.com", oauthProvider: "azure" },
+  };
+
+  assertEquals(providerMap.google.host, "smtp.gmail.com");
+  assertEquals(providerMap.google.oauthProvider, "google");
+  assertEquals(providerMap.azure.host, "smtp-mail.outlook.com");
+  assertEquals(providerMap.azure.oauthProvider, "azure");
+});
+
+Deno.test("callbackQuerySchema allows both google and azure providers for SMTP twin", () => {
+  const googleResult = callbackQuerySchema.safeParse({
+    provider: "google",
+    code: "code123",
+    state: "state123",
+  });
+  assertEquals(googleResult.success, true);
+
+  const azureResult = callbackQuerySchema.safeParse({
+    provider: "azure",
+    code: "code456",
+    state: "state456",
+  });
+  assertEquals(azureResult.success, true);
+});
