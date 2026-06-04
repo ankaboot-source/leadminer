@@ -24,8 +24,6 @@ export interface GoogleContactsSyncStartPayload {
   miningId: string;
   email: string;
   contactStream: string;
-  accessToken: string;
-  refreshToken: string;
 }
 
 export interface GoogleContactsSyncStopPayload {
@@ -106,8 +104,6 @@ class EmailFetcherClient implements FetcherClient {
     miningId: string;
     userId: string;
     userEmail: string;
-    accessToken: string;
-    refreshToken: string;
     contactStream: string;
   }): Promise<{ data: { totalContacts: number } }> {
     try {
@@ -115,9 +111,7 @@ class EmailFetcherClient implements FetcherClient {
         userId: opts.userId,
         miningId: opts.miningId,
         email: opts.userEmail,
-        contactStream: opts.contactStream,
-        accessToken: opts.accessToken,
-        refreshToken: opts.refreshToken
+        contactStream: opts.contactStream
       };
       const { data } = await this.client.post(
         'api/google-contacts/start',

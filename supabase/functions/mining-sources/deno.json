@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "hono": "https://esm.sh/hono@4.7.4",
+    "zod": "https://deno.land/x/zod@v3.25/mod.ts",
+    "simple-oauth2": "npm:simple-oauth2@5.1.0"
+  }
+}

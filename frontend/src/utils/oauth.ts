@@ -4,16 +4,13 @@ export async function addOAuthAccount(
   provider: OAuthMiningSource,
   redirect: string,
 ) {
-  const { $api } = useNuxtApp();
-  const { authorizationUri } = await $api<{ authorizationUri: string }>(
-    `/imap/mine/sources/${provider}`,
-    {
-      method: 'POST',
-      body: {
-        redirect,
-      },
-    },
-  );
+  const { $saasEdgeFunctions } = useNuxtApp();
+  const { authorizationUri } = await $saasEdgeFunctions<{
+    authorizationUri: string;
+  }>('mining-sources/oauth/authorize', {
+    method: 'POST',
+    body: { provider, redirect },
+  });
 
   if (authorizationUri) {
     window.location.href = authorizationUri;

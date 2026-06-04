@@ -1,12 +1,8 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import { decode } from 'jsonwebtoken';
 import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
-import {
-  MiningSources,
-  OAuthMiningSourceProvider
-} from '../db/interfaces/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import { SupabaseTask as DBTask, TaskType } from '../db/types';
@@ -21,13 +17,7 @@ import {
   getValidImapLogin,
   sanitizeImapInput
 } from './imap.helpers';
-import {
-  getAuthClient,
-  getTokenConfig,
-  getTokenWithScopeValidation,
-  validateFileContactsData,
-  refreshAccessToken
-} from './mining.helpers';
+import { validateFileContactsData } from './mining.helpers';
 import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
 import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
@@ -49,65 +39,6 @@ export interface MiningControllerDeps {
   pstFetcherClient: FetcherClient;
   idGenerator: () => Promise<string> | string;
   smtpSenders?: SmtpSenders;
-}
-
-/**
- * Exchanges an OAuth authorization code for tokens and extracts user email
- *
- * @param code - The authorization code received from OAuth provider
- * @param provider - The OAuth provider name (e.g., 'google', 'microsoft')
- */
-async function exchangeForToken(
-  code: string,
-  provider: OAuthMiningSourceProvider
-) {
-  const tokenConfig = {
-    ...getTokenConfig(provider),
-    code
-  };
-  const { refreshToken, accessToken, idToken, expiresAt } =
-    await getTokenWithScopeValidation(tokenConfig, provider);
-  const { email } = decode(idToken) as { email: string };
-
-  return {
-    email,
-    accessToken,
-    refreshToken,
-    expiresAt
-  };
-}
-
-function getSafeRedirectPath(path: unknown) {
-  if (
-    typeof path !== 'string' ||
-    !path.startsWith('/') ||
-    path.startsWith('//')
-  ) {
-    return '/';
-  }
-
-  return path;
-}
-
-function parseOAuthState(state: string | undefined) {
-  if (!state) {
-    throw new Error('Missing OAuth state.');
-  }
-
-  const decoded = Buffer.from(state, 'base64').toString('utf-8');
-  const parsed = JSON.parse(decoded) as {
-    userId?: string;
-    afterCallbackRedirect?: string;
-  };
-
-  if (!parsed.userId) {
-    throw new Error('Invalid OAuth state payload.');
-  }
-
-  return {
-    userId: parsed.userId,
-    afterCallbackRedirect: getSafeRedirectPath(parsed.afterCallbackRedirect)
-  };
 }
 
 interface MiningTaskGroup {
@@ -185,6 +116,42 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
   }
 }
 
+function isMiningControllerError(
+  err: unknown
+): { status: number; body: unknown; isJson: boolean } | null {
+  if (!(err instanceof Error)) return null;
+
+  if ('textCode' in err && err.textCode === 'CANNOT') {
+    return { status: 409, body: undefined, isJson: false };
+  }
+  if (err.message.includes('Request failed with status code 401')) {
+    return {
+      status: 401,
+      body: 'Failed to start fetching: Invalid credentials 401',
+      isJson: false
+    };
+  }
+  if (err.message.includes('Request failed with status code 403')) {
+    return {
+      status: 403,
+      body: {
+        error:
+          'Google Contacts: Access denied. Please re-authenticate with Contacts permission.',
+        type: 'google'
+      },
+      isJson: true
+    };
+  }
+  if (err.message.includes('Request failed with status code 503')) {
+    return {
+      status: 503,
+      body: 'Failed to start fetching: Connection not available, please try again later 503',
+      isJson: false
+    };
+  }
+  return null;
+}
+
 export default function initializeMiningController(
   miningSources: MiningSources,
   contactsDB: Contacts,
@@ -192,86 +159,6 @@ export default function initializeMiningController(
   deps: MiningControllerDeps
 ) {
   return {
-    createProviderMiningSource(req: Request, res: Response) {
-      const user = res.locals.user as User;
-      const provider = req.params.provider as OAuthMiningSourceProvider;
-      const { redirect } = req.body;
-      const afterCallbackRedirect = getSafeRedirectPath(redirect);
-
-      const stateObj = JSON.stringify({
-        userId: user.id,
-        afterCallbackRedirect
-      });
-
-      const authorizationUri = getAuthClient(provider).authorizeURL({
-        ...getTokenConfig(provider),
-        state: Buffer.from(stateObj).toString('base64')
-      });
-
-      return res.json({ authorizationUri });
-    },
-
-    async createProviderMiningSourceCallback(req: Request, res: Response) {
-      const { code, state } = req.query as { code: string; state: string };
-      const provider = req.params.provider as OAuthMiningSourceProvider;
-      let redirect = '/';
-      try {
-        const { userId, afterCallbackRedirect } = parseOAuthState(state);
-
-        redirect = afterCallbackRedirect;
-        const exchangedTokens = await exchangeForToken(code, provider);
-
-        const miningSourceId = await miningSources.upsert({
-          userId,
-          email: exchangedTokens.email,
-          credentials: {
-            ...exchangedTokens,
-            provider
-          },
-          type: provider
-        });
-
-        if (deps.smtpSenders) {
-          try {
-            await deps.smtpSenders.create({
-              userId,
-              name: exchangedTokens.email,
-              email: exchangedTokens.email,
-              smtpHost:
-                provider === 'google'
-                  ? 'smtp.gmail.com'
-                  : 'smtp-mail.outlook.com',
-              smtpPort: 587,
-              smtpEncryption: 'starttls',
-              smtpUser: exchangedTokens.email,
-              smtpPassword: '',
-              authType: 'oauth',
-              oauthProvider: provider === 'google' ? 'google' : 'azure',
-              oauthRefreshToken: exchangedTokens.refreshToken,
-              miningSourceId
-            });
-          } catch (twinError) {
-            logger.warn('Failed to create SMTP twin for OAuth source', {
-              userId,
-              email: exchangedTokens.email,
-              error: twinError instanceof Error ? twinError.message : twinError
-            });
-          }
-        }
-
-        redirect = afterCallbackRedirect.startsWith('/mine')
-          ? `${afterCallbackRedirect}?source=${exchangedTokens.email}`
-          : afterCallbackRedirect;
-        res.redirect(301, `${ENV.FRONTEND_HOST}${redirect}`);
-      } catch (error) {
-        logger.error(error);
-        res.redirect(
-          301,
-          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=${redirect}`
-        );
-      }
-    },
-
     async createImapMiningSource(
       req: Request,
       res: Response,
@@ -397,67 +284,6 @@ export default function initializeMiningController(
         });
       }
 
-      let googleContactsCredentials;
-      if (googleContactsSync) {
-        const allSources = await miningSourceService.getSourcesForUser(user.id);
-        const googleSource =
-          allSources.find(
-            (s) => s.type === 'google' && s.email === sanitizedEmail
-          ) || allSources.find((s) => s.type === 'google');
-        if (
-          googleSource?.credentials &&
-          'accessToken' in googleSource.credentials
-        ) {
-          const oauthCreds = googleSource.credentials;
-          let { accessToken, refreshToken } = oauthCreds;
-
-          if (!refreshToken) {
-            logger.warn(
-              'Google source missing refreshToken, re-authenticating may be needed',
-              {
-                userId: user.id,
-                email: googleSource.email
-              }
-            );
-          }
-
-          const now = Date.now() / 1000;
-          if (oauthCreds.expiresAt && oauthCreds.expiresAt < now + 60) {
-            try {
-              const refreshed = await refreshAccessToken(oauthCreds);
-              if (refreshed.access_token) {
-                accessToken = refreshed.access_token as string;
-                refreshToken =
-                  (refreshed.refresh_token as string) ?? refreshToken;
-              }
-            } catch (err) {
-              logger.warn('Failed to refresh Google token before mining', {
-                userId: user.id,
-                error: err instanceof Error ? err.message : String(err)
-              });
-            }
-          }
-
-          googleContactsCredentials = {
-            accessToken,
-            refreshToken: refreshToken ?? '',
-            userEmail: googleSource.email
-          };
-        }
-      }
-
-      if (googleContactsSync && !googleContactsCredentials) {
-        logger.warn('Google Contacts sync requested but no credentials found', {
-          userId: user.id,
-          email: sanitizedEmail
-        });
-        return res.status(403).json({
-          error:
-            'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.',
-          type: 'google'
-        });
-      }
-
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -475,8 +301,7 @@ export default function initializeMiningController(
             since,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,
-            googleContactsSync,
-            googleContactsCredentials
+            googleContactsSync
           },
           deps.pipelineDeps
         );
@@ -506,51 +331,29 @@ export default function initializeMiningController(
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
-        if (
-          err instanceof Error &&
-          'textCode' in err &&
-          err.textCode === 'CANNOT'
-        ) {
-          return res.sendStatus(409);
-        }
+        const knownError = isMiningControllerError(err);
 
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 401')
-        ) {
-          res
-            .status(401)
-            .send('Failed to start fetching: Invalid credentials 401');
-        }
+        if (knownError) {
+          if (
+            err instanceof Error &&
+            err.message.includes('Request failed with status code 403')
+          ) {
+            logger.warn('Google Contacts API returned 403', {
+              userId: user.id,
+              email: sanitizedEmail
+            });
+          }
 
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 403')
-        ) {
-          logger.warn('Google Contacts API returned 403', {
-            userId: user.id,
-            email: sanitizedEmail
-          });
-          return res.status(403).json({
-            error:
-              'Google Contacts: Access denied. Please re-authenticate with Contacts permission.',
-            type: 'google'
-          });
-        }
-
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 503')
-        ) {
-          res
-            .status(503)
-            .send(
-              'Failed to start fetching: Connection not available, please try again later 503'
-            );
+          if (knownError.status === 409) {
+            return res.sendStatus(409);
+          }
+          if (knownError.isJson) {
+            return res.status(knownError.status).json(knownError.body);
+          }
+          return res.status(knownError.status).send(knownError.body);
         }
 
         const newError = generateErrorObjectFromImapError(err);
-
         res.status(500);
         return next(new Error(newError.message));
       }

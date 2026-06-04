@@ -11,25 +11,6 @@ export const createImapMiningSourceSchema = z.object({
   })
 });
 
-export const createProviderMiningSourceSchema = z.object({
-  params: z.object({
-    provider: stringField
-  }),
-  body: z.object({
-    redirect: z.string().optional()
-  })
-});
-
-export const oAuthCallbackSchema = z.object({
-  params: z.object({
-    provider: stringField
-  }),
-  query: z.object({
-    code: stringField,
-    state: stringField
-  })
-});
-
 export const startMiningSchema = z.object({
   params: z.object({
     userId: stringField
