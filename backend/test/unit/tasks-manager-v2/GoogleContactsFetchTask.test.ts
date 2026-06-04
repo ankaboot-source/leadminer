@@ -38,7 +38,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
@@ -71,7 +71,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 42 } }),
       stopGoogleContactsSync: jest
@@ -127,7 +127,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockRejectedValue(new Error('403 Forbidden')),
       stopGoogleContactsSync: jest
@@ -180,7 +180,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
@@ -226,7 +226,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
@@ -303,7 +303,7 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-    }) => Promise<{ data: { totalContacts: number } }>
+          }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
       stopGoogleContactsSync: jest
