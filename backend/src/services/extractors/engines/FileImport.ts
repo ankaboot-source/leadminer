@@ -117,7 +117,7 @@ export class CsvXlsxContactEngine {
         const person = this.extractPerson(details);
 
         const { email } = person;
-        const [identifier, domain] = email.split('@');
+        const [identifier, domain] = email!.split('@');
 
         const [domainIsValid, domainType] = await this.domainStatusVerification(
           this.redisClientForNormalMode,

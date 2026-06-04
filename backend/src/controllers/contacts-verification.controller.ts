@@ -50,9 +50,12 @@ export default function initializeContactsVerificationController(
           details: result.details
         });
 
-        await contacts.updateManyPersonsStatus(user.id, [
-          { email, status: result.status as Status }
-        ]);
+        const personId = await contacts.getPersonIdByEmail(email, user.id);
+        if (personId) {
+          await contacts.updateManyPersonsStatus(user.id, [
+            { id: personId, status: result.status as Status }
+          ]);
+        }
 
         return res.json({
           email,

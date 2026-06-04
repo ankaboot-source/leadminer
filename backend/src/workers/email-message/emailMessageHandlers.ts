@@ -79,24 +79,30 @@ async function emailMessageHandler(
     try {
       emails = (await contacts.create(extractedContacts, userId, miningId))
         .filter(
-          // filter out unreachable emails
           (contact) =>
+            // skip contacts without email (phone-only)
+            Boolean(contact.email) &&
+            // filter out unreachable emails
             !contact.tags.some(
               (tag) =>
                 tag.name === 'newsletter' ||
                 [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(tag.reachable)
             )
         )
-        .map((contact) => contact.email);
+        .map((contact) => contact.email as string);
     } catch (e) {
       if ((e as PostgrestError).code === '23505') {
         // 23505: duplicate key error
         emails = (
           await contacts.getContacts(
             userId,
-            extractedContacts.persons.map((contact) => contact.person.email)
+            extractedContacts.persons
+              .map((contact) => contact.person.email)
+              .filter((email): email is string => Boolean(email))
           )
-        ).map((contact) => contact.email);
+        )
+          .map((contact) => contact.email)
+          .filter((email): email is string => Boolean(email));
       } else {
         throw e;
       }

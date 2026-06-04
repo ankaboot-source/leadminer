@@ -81,7 +81,9 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
 
     const toPublish = (
       await queuedEmailsCache.addMany(
-        unverifiedContacts.map(({ email }) => email)
+        unverifiedContacts
+          .map(({ email }) => email)
+          .filter((email): email is string => Boolean(email))
       )
     ).addedElements.map((e) => ({
       email: e,

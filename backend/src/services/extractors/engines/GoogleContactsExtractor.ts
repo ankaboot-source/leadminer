@@ -79,7 +79,7 @@ export class GoogleContactsExtractor {
     // Tag using the tagging engine with just email address info (no headers)
     let tags: Tag[] = [];
 
-    const domain = contactFrontend.email.split('@')[1];
+    const domain = contactFrontend.email?.split('@')[1];
     if (domain) {
       try {
         const [, domainType] = await this.domainStatusVerification(

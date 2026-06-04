@@ -15,14 +15,25 @@ function createMockLogger(): Logger {
 
 describe('PgContacts create from email', () => {
   it('batches person upserts and marks only new-or-unverified contacts', async () => {
+    const KNOWN_ID = '11111111-1111-1111-1111-111111111111';
+    const PENDING_ID = '22222222-2222-2222-2222-222222222222';
+
     const query = jest
       .fn<Pool['query']>()
       .mockResolvedValueOnce({ rowCount: 1, rows: [] } as never)
       .mockResolvedValueOnce({
+        rowCount: 1,
+        rows: [{ id: KNOWN_ID, email: 'known@example.com' }]
+      } as never)
+      .mockResolvedValueOnce({
+        rowCount: 1,
+        rows: [{ id: PENDING_ID, email: 'pending@example.com' }]
+      } as never)
+      .mockResolvedValueOnce({
         rowCount: 2,
         rows: [
-          { email: 'known@example.com', status: 'valid' },
-          { email: 'pending@example.com', status: null }
+          { id: KNOWN_ID, status: 'valid' },
+          { id: PENDING_ID, status: null }
         ]
       } as never)
       .mockResolvedValue({ rowCount: 1, rows: [] } as never);
@@ -108,7 +119,7 @@ describe('PgContacts create from email', () => {
 
     expect(query).toHaveBeenCalledTimes(6);
 
-    const upsertSql = String(query.mock.calls[2][0]);
+    const upsertSql = String(query.mock.calls[1][0]);
     expect(upsertSql).toContain('INSERT INTO private.persons');
     expect(upsertSql).toContain('IS DISTINCT FROM');
   });

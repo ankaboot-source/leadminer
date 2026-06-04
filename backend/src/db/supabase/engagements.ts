@@ -11,7 +11,7 @@ export default class Engagements {
 
   async register(
     enriched: {
-      email: string;
+      person_id: string;
       user_id: string;
       engagement_type: EngagementType;
       service: string;

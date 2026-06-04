@@ -224,7 +224,9 @@ export default class GoogleContactsSession {
     for (const contact of contacts) {
       const potentialMatches = new Map<string, people_v1.Schema$Person>();
 
-      const emailMatches = emailMap.get(contact.email.toLowerCase()) || [];
+      const emailMatches = contact.email
+        ? emailMap.get(contact.email.toLowerCase()) || []
+        : [];
       emailMatches.forEach((p) => {
         if (p.resourceName) potentialMatches.set(p.resourceName, p);
       });
@@ -246,10 +248,16 @@ export default class GoogleContactsSession {
           incoming: contact
         });
       } else {
-        create.set(contact.email, contact);
+        // Use identifier (email or phone) as the dedup key in `create`.
+        // Phone-only contacts have no email, so the map key is the
+        // primary phone number.
+        const key = contact.email ?? contact.telephone?.[0] ?? contact.id;
+        if (key) {
+          create.set(key, contact);
+        }
         if (potentialMatches.size > 1) {
           logger.warn(
-            `Ambiguous match for ${contact.email}: Found ${potentialMatches.size} contacts. Creating new record to avoid corruption.`
+            `Ambiguous match for ${contact.email ?? contact.telephone?.[0]}: Found ${potentialMatches.size} contacts. Creating new record to avoid corruption.`
           );
         }
       }

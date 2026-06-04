@@ -8,7 +8,7 @@ import SupabaseTasks from './tasks';
 interface Contact {
   id: string;
   userId: string;
-  email: string;
+  email?: string;
   name?: string;
   givenName?: string;
   familyName?: string;
@@ -124,19 +124,23 @@ export default class Enrichments {
 
   public async updateContacts(contacts: Partial<Contact>[]) {
     const task = this.ensureTask();
-    const contactsDB = contacts.map((contact) => ({
-      image: contact.image,
-      email: contact.email,
-      name: contact.name,
-      job_title: contact.jobTitle,
-      given_name: contact.givenName,
-      family_name: contact.familyName,
-      works_for: contact.organization,
-      same_as: contact.sameAs?.join(','),
-      location: contact.location,
-      alternate_name: contact.alternateName?.join(','),
-      user_id: task.userId
-    }));
+    const contactsDB = contacts
+      .filter((contact): contact is Contact & { id: string; email: string } =>
+        Boolean(contact.id && contact.email)
+      )
+      .map((contact) => ({
+        image: contact.image,
+        email: contact.email,
+        name: contact.name,
+        job_title: contact.jobTitle,
+        given_name: contact.givenName,
+        family_name: contact.familyName,
+        works_for: contact.organization,
+        same_as: contact.sameAs?.join(','),
+        location: contact.location,
+        alternate_name: contact.alternateName?.join(','),
+        user_id: task.userId
+      }));
     const { error } = await this.client
       .schema('private')
       .rpc('enrich_contacts', {
@@ -162,16 +166,19 @@ export default class Enrichments {
       await this.tasks.update(task);
 
       if (enriched.length) {
-        await this.updateContacts(enriched.map(({ data }) => data).flat());
+        const flatData = enriched.map(({ data }) => data).flat();
+        await this.updateContacts(flatData);
         await this.engagements.register(
-          enriched.flatMap(({ data, engine }) =>
-            data.map((contact) => ({
-              email: contact.email as string,
+          flatData
+            .filter((contact) => Boolean(contact.id))
+            .map((contact) => ({
+              person_id: contact.id as string,
               user_id: task.userId,
               engagement_type: 'ENRICH',
-              service: engine
+              service: enriched.find(({ data }) =>
+                data.includes(contact)
+              )?.engine as string
             }))
-          )
         );
       }
     } catch (err) {
