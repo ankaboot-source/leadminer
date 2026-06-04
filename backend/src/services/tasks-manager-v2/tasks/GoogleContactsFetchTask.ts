@@ -10,8 +10,6 @@ export interface GoogleContactsFetcherClient {
     contactStream: string;
     userId: string;
     userEmail: string;
-    accessToken: string;
-    refreshToken: string;
   }): Promise<{ data: { totalContacts: number } }>;
   stopGoogleContactsSync(opts: {
     miningId: string;
@@ -26,8 +24,6 @@ export interface GoogleContactsFetchTaskConfig {
   userEmail: string;
   outputStream: string;
   fetcherClient: GoogleContactsFetcherClient;
-  accessToken: string;
-  refreshToken?: string;
 }
 
 export class GoogleContactsFetchTask extends Task {
@@ -38,10 +34,6 @@ export class GoogleContactsFetchTask extends Task {
   private canceled = false;
 
   private userEmail: string;
-
-  private accessToken: string;
-
-  private refreshToken?: string;
 
   constructor(config: GoogleContactsFetchTaskConfig) {
     super({
@@ -58,8 +50,6 @@ export class GoogleContactsFetchTask extends Task {
     this.fetcherClient = config.fetcherClient;
     this.outputStream = config.outputStream;
     this.userEmail = config.userEmail;
-    this.accessToken = config.accessToken;
-    this.refreshToken = config.refreshToken;
     this.upstreamDone = true;
   }
 
@@ -74,9 +64,7 @@ export class GoogleContactsFetchTask extends Task {
         miningId: this.miningId,
         contactStream: this.outputStream,
         userId: this.userId,
-        userEmail: this.userEmail,
-        accessToken: this.accessToken,
-        refreshToken: this.refreshToken ?? ''
+        userEmail: this.userEmail
       });
 
       this.progress.total = result.data.totalContacts;

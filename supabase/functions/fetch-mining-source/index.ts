@@ -206,7 +206,7 @@ class FetchMiningSourceHandler {
     const refreshedEmails: string[] = [];
 
     const forceRefreshSet = forceRefreshEmail
-      ? new Set(forceRefreshEmail.toLowerCase())
+      ? new Set([forceRefreshEmail.toLowerCase()])
       : null;
 
     for (const source of sources) {
