@@ -103,8 +103,8 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
       ).id || null;
   }
 
-  if (!contact.email) {
-    throw new Error('Email is required for updating a contact');
+  if (!contact.id) {
+    throw new Error('Contact id is required for updating a contact');
   }
 
   const { tags, user_tags, sources, ...rest } = contact;
@@ -115,20 +115,20 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     .schema('private')
     .from('persons')
     .update(contactWithoutTags)
-    .match({ user_id: userId, email: contact.email });
+    .match({ user_id: userId, id: contact.id });
 
   if (error) {
     throw error;
   }
 
   if (user_tags !== undefined) {
-    await updateContactTags(userId, contact.email, user_tags);
+    await updateContactTags(userId, contact.id, user_tags);
   }
 }
 
 export async function updateContactTags(
   userId: string,
-  email: string,
+  personId: string,
   tags: string[] | null,
 ) {
   const $supabaseClient = useSupabaseClient();
@@ -137,8 +137,8 @@ export async function updateContactTags(
     .schema('private')
     .from('refinedpersons')
     .upsert(
-      { user_id: userId, email, user_tags: tags ?? [] },
-      { onConflict: 'user_id,email' },
+      { user_id: userId, person_id: personId, user_tags: tags ?? [] },
+      { onConflict: 'user_id,person_id' },
     );
 
   if (error) {

@@ -600,17 +600,18 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
--- 9. delete_contacts: resolve email[] -> person_ids, then delete POC + persons
+-- 9. delete_contacts: accept either person_ids or emails for partial deletes
 -- ---------------------------------------------------------------------------
--- Original signature: (user_id uuid, emails text[], deleteallcontacts boolean)
--- Behavior change: phone-only contacts are unaffected when partial-deleting
--- by email. They are deleted only when deleteallcontacts = true.
+-- New signature: (user_id uuid, ids uuid[], deleteallcontacts boolean)
+-- Behavior: ids[] is used to identify the persons to delete. The previous
+-- email-based signature is dropped; callers should pass person UUIDs. For
+-- bulk delete, pass deleteallcontacts = true and an empty ids array.
 
 DROP FUNCTION IF EXISTS private.delete_contacts(uuid, text[], boolean);
 
 CREATE FUNCTION private.delete_contacts(
     user_id uuid,
-    emails text[],
+    ids uuid[],
     deleteallcontacts boolean
 ) RETURNS void
     LANGUAGE plpgsql
@@ -630,29 +631,27 @@ BEGIN
     DELETE FROM private.tags           t  WHERE t.user_id = owner_id;
     DELETE FROM private.engagement     e  WHERE e.user_id = owner_id;
   ELSE
-    -- Resolve email[] -> person_ids (email-bearing persons only).
-    -- Note: the function parameter is named user_id, so all table column
-    -- references must be table-qualified (with an alias) to avoid
-    -- ambiguity with the PL/pgSQL parameter.
+    -- ids[] already contains person_ids; we just need to filter to the
+    -- user's own persons (defense in depth).
     SELECT array_agg(id) INTO v_person_ids
     FROM private.persons p
     WHERE p.user_id = owner_id
-      AND p.email = ANY(emails);
+      AND p.id = ANY(ids);
 
     -- Cascade-delete by person_id (covers POC, tags, refinedpersons, engagement)
     IF v_person_ids IS NOT NULL THEN
-      DELETE FROM private.messages
-      WHERE message_id IN (
+      DELETE FROM private.messages m
+      WHERE m.message_id IN (
           SELECT message_id
-          FROM private.persons pp
-          WHERE pp.user_id = owner_id AND pp.email = ANY(emails)
+          FROM private.pointsofcontact poc
+          WHERE poc.user_id = owner_id AND poc.person_id = ANY(v_person_ids)
       );
 
       DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id AND poc.person_id = ANY(v_person_ids);
       DELETE FROM private.tags           t   WHERE t.user_id = owner_id AND t.person_id = ANY(v_person_ids);
       DELETE FROM private.refinedpersons rp  WHERE rp.user_id = owner_id AND rp.person_id = ANY(v_person_ids);
       DELETE FROM private.engagement     e   WHERE e.user_id = owner_id AND e.person_id = ANY(v_person_ids);
-      DELETE FROM private.persons        p   WHERE p.user_id = owner_id AND p.email = ANY(emails);
+      DELETE FROM private.persons        p   WHERE p.user_id = owner_id AND p.id = ANY(v_person_ids);
     END IF;
   END IF;
 END;

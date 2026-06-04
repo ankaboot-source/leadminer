@@ -20,7 +20,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const contactsCacheMap = new Map<string, Contact>();
   const contactsList = ref<Contact[] | undefined>();
 
-  const selectedEmails = ref<string[] | undefined>();
+  const selectedIds = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
   const visibleColumns = ref(['contacts']);
 
@@ -97,7 +97,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const contacts = await loadContacts();
     contacts
       .toReversed()
-      .forEach((contact) => contactsCacheMap.set(contact.email, contact));
+      .forEach((contact) => contactsCacheMap.set(contact.id, contact));
     updateContactList.value = true;
     syncContactsList();
   }
@@ -120,8 +120,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     newContact: Contact,
     keepPosition = false,
   ) {
-    const { email } = newContact;
-    const existingContact = contactsCacheMap.get(email);
+    const { id } = newContact;
+    const existingContact = contactsCacheMap.get(id);
     const updatedContact = existingContact
       ? { ...existingContact, ...newContact }
       : newContact;
@@ -135,32 +135,32 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
 
     if (keepPosition) {
-      contactsCacheMap.set(updatedContact.email, updatedContact);
+      contactsCacheMap.set(updatedContact.id, updatedContact);
     } else {
       // Remove and reinsert to change position in the Map
-      contactsCacheMap.delete(email);
-      contactsCacheMap.set(email, updatedContact);
+      contactsCacheMap.delete(id);
+      contactsCacheMap.set(id, updatedContact);
     }
   }
 
-  function removeOldContact(email: string) {
-    contactsCacheMap.delete(email);
+  function removeOldContact(id: string) {
+    contactsCacheMap.delete(id);
     contactsList.value = contactsList.value?.filter(
-      (contact) => contact.email !== email,
+      (contact) => contact.id !== id,
     );
   }
 
-  function removeOldContacts(emails?: string[]) {
-    if (!emails) {
+  function removeOldContacts(ids?: string[]) {
+    if (!ids) {
       contactsCacheMap.clear();
       contactsList.value = [];
       return;
     }
-    emails.forEach((email) => {
-      contactsCacheMap.delete(email);
+    ids.forEach((id) => {
+      contactsCacheMap.delete(id);
     });
     contactsList.value = contactsList.value?.filter(
-      (contact) => !emails.includes(contact.email),
+      (contact) => !ids.includes(contact.id),
     );
   }
 
@@ -188,8 +188,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
         filter: `user_id=eq.${userId}`,
       },
       (payload: RealtimePostgresChangesPayload<Contact>) => {
-        if (payload.eventType === 'DELETE' && payload.old.email) {
-          removeOldContact(payload.old.email);
+        if (payload.eventType === 'DELETE' && payload.old.id) {
+          removeOldContact(payload.old.id);
         } else if (payload.new as Contact) {
           setTimeout(async () => {
             await updateContactsCache(payload.new as Contact);
@@ -228,7 +228,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('persons')
-      .select('email', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .limit(1);
 
@@ -343,13 +343,13 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contactsCacheMap.clear();
     updateContactList.value = false;
     contactsList.value = undefined;
-    selectedEmails.value = undefined;
+    selectedIds.value = undefined;
     selectedContactsCount.value = 0;
   }
 
   return {
     contactsList,
-    selectedEmails,
+    selectedIds,
     selectedContactsCount,
     contactCount,
     visibleColumns,

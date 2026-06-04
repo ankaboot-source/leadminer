@@ -47,7 +47,7 @@
                 </div>
               </div>
               <Button
-                v-if="!editingContact"
+                v-if="!editingContact && contact.email"
                 rounded
                 text
                 icon="pi pi-copy"
@@ -58,7 +58,7 @@
               />
               <ExportContacts
                 v-if="!editingContact"
-                :contacts-to-treat="[contact.email]"
+                :contacts-to-treat="[contact.id]"
                 :disable-export="isExportDisabled"
               />
             </div>
@@ -407,7 +407,7 @@ const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const refreshingStatus = ref(false);
 
 async function refreshStatusBadge() {
-  if (refreshingStatus.value) return;
+  if (refreshingStatus.value || !contact.value.email) return;
 
   refreshingStatus.value = true;
   try {
@@ -548,7 +548,7 @@ function showNotification(
   });
 }
 
-function startRealtimePersons(userId: string, email: string) {
+function startRealtimePersons(userId: string, personId: string) {
   if (personsSubscription) {
     personsSubscription.unsubscribe();
   }
@@ -565,7 +565,7 @@ function startRealtimePersons(userId: string, email: string) {
       async (payload: RealtimePostgresChangesPayload<Contact>) => {
         const updatedContact = payload.new as Contact;
 
-        if (updatedContact.email !== email) {
+        if (updatedContact.id !== personId) {
           return;
         }
         if (updatedContact.works_for) {
@@ -587,7 +587,7 @@ watch(show, async (value) => {
   const userId = getCurrentUserId();
 
   if (value && userId) {
-    startRealtimePersons(userId, contact.value.email);
+    startRealtimePersons(userId, contact.value.id);
     return;
   }
   if (personsSubscription) {
@@ -758,7 +758,7 @@ function getConsentTooltip(data: Contact) {
 async function removeContact() {
   isRemovingContact.value = true;
   try {
-    await removeContactsFromDatabase([contact.value.email]);
+    await removeContactsFromDatabase([contact.value.id]);
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');

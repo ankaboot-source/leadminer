@@ -21,7 +21,7 @@ export interface NormalizedLocation {
 export interface Contact {
   id: string;
   user_id: string;
-  email: string;
+  email?: string | null;
   name: string | null;
   given_name: string | null;
   family_name: string | null;
@@ -43,7 +43,6 @@ export interface Contact {
   consent_changed_at?: Date;
   occurrence?: number;
   temperature: number | null;
-  personid?: string;
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
@@ -54,8 +53,14 @@ export interface Contact {
   mining_id?: string;
 }
 
+export function getContactIdentifier(contact: Contact): string {
+  if (contact.email) return contact.email;
+  if (contact.telephone?.length) return contact.telephone[0]!;
+  return '';
+}
+
 export interface ContactEdit {
-  email: string;
+  email?: string | null;
   name: string | null;
   given_name: string | null;
   family_name: string | null;
