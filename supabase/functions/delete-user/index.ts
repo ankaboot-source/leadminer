@@ -1,7 +1,6 @@
 import { Context, Hono } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { getRequiredEnv } from "../_shared/env-helpers.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -34,7 +33,8 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
     return c.json({ error: "Missing Authorization header" }, 401);
   }
   const supabase = createSupabaseClient(authHeader);
-  const { data, error } = await supabase.auth.getUser();
+  const jwt = authHeader.replace(/^Bearer\s+/i, "");
+  const { data, error } = await supabase.auth.getUser(jwt);
   if (error || !data?.user) {
     return c.json({ error: "Unauthorized" }, 401);
   }
