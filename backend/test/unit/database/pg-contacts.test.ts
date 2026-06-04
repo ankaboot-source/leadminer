@@ -223,4 +223,33 @@ describe('PgContacts phone-only contacts', () => {
       expect.objectContaining({ id: PHONE_ID, email: null })
     );
   });
+
+  it('updateManyPersonsStatus updates phone-only contacts by id (no email required)', async () => {
+    const PHONE_ID = '33333333-3333-3333-3333-333333333333';
+    const EMAIL_ID = '44444444-4444-4444-4444-444444444444';
+
+    const query = jest
+      .fn<Pool['query']>()
+      .mockResolvedValue({ rowCount: 2, rows: [] } as never);
+
+    const pool = { query } as unknown as Pool;
+    const contacts = new PgContacts(pool, createMockLogger());
+
+    const result = await contacts.updateManyPersonsStatus('user-1', [
+      { id: PHONE_ID, status: 'VALID' as never },
+      { id: EMAIL_ID, status: 'INVALID' as never }
+    ]);
+
+    expect(result).toBe(true);
+    expect(query).toHaveBeenCalledTimes(1);
+
+    const sql = String(query.mock.calls[0][0]);
+
+    expect(sql).toContain('UPDATE private.persons');
+    expect(sql).toContain('persons.id = update.id');
+    expect(sql).toContain('persons.user_id =');
+    expect(sql).toContain(PHONE_ID);
+    expect(sql).toContain(EMAIL_ID);
+    expect(sql).not.toMatch(/persons\.email\s*=\s*update\.email/);
+  });
 });
