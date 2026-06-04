@@ -39,7 +39,7 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
     return c.json({ error: "Unauthorized" }, 401);
   }
   c.set("user", data.user);
-  await next();
+  return await next();
 }
 
 app.delete("/", authMiddleware, async (c: Context) => {
