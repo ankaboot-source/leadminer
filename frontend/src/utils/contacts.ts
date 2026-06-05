@@ -36,7 +36,6 @@ export async function getOrganization(
 ) {
   const $supabaseClient = useSupabaseClient();
   const { data: existingOrg, error } = await $supabaseClient
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('organizations')
     .select(selectFields.join(','))
@@ -78,7 +77,6 @@ export async function createOrganization(
 ) {
   const $supabaseClient = useSupabaseClient();
   const { data: newOrg, error } = await $supabaseClient
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('organizations')
     .insert({ name: organizationName })
@@ -107,13 +105,22 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
     throw new Error('Contact id is required for updating a contact');
   }
 
-  const { tags, user_tags, sources, ...rest } = contact;
+  const {
+    tags,
+    user_tags,
+    sources,
+    id: _id,
+    user_id: _userId,
+    created_at: _createdAt,
+    updated_at: _updatedAt,
+    ...rest
+  } = contact;
   const contactWithoutTags = rest;
 
   const { error } = await $supabaseClient
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('persons')
+    // @ts-expect-error: Contact type is a superset of persons table columns
     .update(contactWithoutTags)
     .match({ user_id: userId, id: contact.id });
 
@@ -255,7 +262,7 @@ export function isValidURL(url: string) {
 }
 
 export async function removeContactsFromDatabase(
-  emails?: string[],
+  ids?: string[],
 ): Promise<void> {
   const $user = useSupabaseUser();
   const userId =
@@ -264,16 +271,15 @@ export async function removeContactsFromDatabase(
 
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('delete_contacts', {
-      user_id: userId,
-      emails: emails ?? null,
-      deleteallcontacts: emails === undefined,
+      p_user_id: userId,
+      p_ids: ids ?? [],
+      p_delete_all: ids === undefined,
     });
   if (error) throw error;
 
-  useContactsStore().removeOldContacts(emails);
+  useContactsStore().removeOldContacts(ids);
 }
 
 export function callPhoneNumber(phone: string) {

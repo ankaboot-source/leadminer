@@ -175,9 +175,8 @@ export default class Enrichments {
               person_id: contact.id as string,
               user_id: task.userId,
               engagement_type: 'ENRICH',
-              service: enriched.find(({ data }) =>
-                data.includes(contact)
-              )?.engine as string
+              service: enriched.find(({ data }) => data.includes(contact))
+                ?.engine as string
             }))
         );
       }

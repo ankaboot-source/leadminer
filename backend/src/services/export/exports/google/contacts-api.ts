@@ -433,11 +433,14 @@ export default class GoogleContactsSession {
       }
     }
 
+    const hasEmail = !isEmpty(contact.email);
     const emailAddresses =
       !updateEmptyOnly || existingEmails.length === 0
         ? [
-            ...existingEmails.filter((e) => e.value !== contact.email),
-            { value: contact.email }
+            ...existingEmails.filter(
+              (e) => hasEmail && e.value !== contact.email
+            ),
+            ...(hasEmail ? [{ value: contact.email as string }] : [])
           ]
         : existingEmails;
 

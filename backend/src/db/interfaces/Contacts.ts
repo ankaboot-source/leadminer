@@ -17,10 +17,7 @@ export interface Contacts {
   refine(userId: string): Promise<boolean>;
   SelectRecentEmailStatus(email: string): Promise<EmailStatus | null>;
   upsertEmailStatus(status: EmailStatus): Promise<boolean>;
-  getPersonIdByEmail(
-    email: string,
-    userId: string
-  ): Promise<string | null>;
+  getPersonIdByEmail(email: string, userId: string): Promise<string | null>;
   updateManyPersonsStatus(
     userId: string,
     statusUpdates: { status: Status; id: string }[]

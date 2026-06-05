@@ -602,56 +602,59 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 9. delete_contacts: accept either person_ids or emails for partial deletes
 -- ---------------------------------------------------------------------------
--- New signature: (user_id uuid, ids uuid[], deleteallcontacts boolean)
--- Behavior: ids[] is used to identify the persons to delete. The previous
+-- New signature: (p_user_id uuid, p_ids uuid[], p_delete_all boolean)
+-- Behavior: p_ids[] is used to identify the persons to delete. The previous
 -- email-based signature is dropped; callers should pass person UUIDs. For
--- bulk delete, pass deleteallcontacts = true and an empty ids array.
+-- bulk delete, pass p_delete_all = true and an empty p_ids array.
+--
+-- Renamed parameters to p_* prefix to avoid shadowing column references and
+-- to be consistent with other private.* functions in this migration.
 
 DROP FUNCTION IF EXISTS private.delete_contacts(uuid, text[], boolean);
 
 CREATE FUNCTION private.delete_contacts(
-    user_id uuid,
-    ids uuid[],
-    deleteallcontacts boolean
+    p_user_id uuid,
+    p_ids uuid[],
+    p_delete_all boolean
 ) RETURNS void
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
 DECLARE
-  owner_id uuid;
   v_person_ids uuid[];
 BEGIN
-  owner_id = delete_contacts.user_id;
-
-  IF deleteallcontacts THEN
-    DELETE FROM private.messages       m  WHERE m.user_id = owner_id;
-    DELETE FROM private.persons        p  WHERE p.user_id = owner_id;
-    DELETE FROM private.refinedpersons rp WHERE rp.user_id = owner_id;
-    DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id;
-    DELETE FROM private.tags           t  WHERE t.user_id = owner_id;
-    DELETE FROM private.engagement     e  WHERE e.user_id = owner_id;
+  IF p_delete_all THEN
+    DELETE FROM private.messages       m  WHERE m.user_id = p_user_id;
+    DELETE FROM private.persons        p  WHERE p.user_id = p_user_id;
+    DELETE FROM private.refinedpersons rp WHERE rp.user_id = p_user_id;
+    DELETE FROM private.pointsofcontact poc WHERE poc.user_id = p_user_id;
+    DELETE FROM private.tags           t  WHERE t.user_id = p_user_id;
+    DELETE FROM private.engagement     e  WHERE e.user_id = p_user_id;
   ELSE
-    -- ids[] already contains person_ids; we just need to filter to the
-    -- user's own persons (defense in depth).
+    -- p_ids[] may contain any UUIDs; filter to the user's own persons
+    -- (defense in depth: never trust caller's claim of ownership).
     SELECT array_agg(id) INTO v_person_ids
     FROM private.persons p
-    WHERE p.user_id = owner_id
-      AND p.id = ANY(ids);
+    WHERE p.user_id = p_user_id
+      AND p.id = ANY(p_ids);
 
     -- Cascade-delete by person_id (covers POC, tags, refinedpersons, engagement)
     IF v_person_ids IS NOT NULL THEN
+      -- Filter on m.user_id to prevent cross-user message leaks if a
+      -- message_id is shared between users.
       DELETE FROM private.messages m
-      WHERE m.message_id IN (
-          SELECT message_id
-          FROM private.pointsofcontact poc
-          WHERE poc.user_id = owner_id AND poc.person_id = ANY(v_person_ids)
-      );
+      WHERE m.user_id = p_user_id
+        AND m.message_id IN (
+            SELECT message_id
+            FROM private.pointsofcontact poc
+            WHERE poc.user_id = p_user_id AND poc.person_id = ANY(v_person_ids)
+        );
 
-      DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id AND poc.person_id = ANY(v_person_ids);
-      DELETE FROM private.tags           t   WHERE t.user_id = owner_id AND t.person_id = ANY(v_person_ids);
-      DELETE FROM private.refinedpersons rp  WHERE rp.user_id = owner_id AND rp.person_id = ANY(v_person_ids);
-      DELETE FROM private.engagement     e   WHERE e.user_id = owner_id AND e.person_id = ANY(v_person_ids);
-      DELETE FROM private.persons        p   WHERE p.user_id = owner_id AND p.id = ANY(v_person_ids);
+      DELETE FROM private.pointsofcontact poc WHERE poc.user_id = p_user_id AND poc.person_id = ANY(v_person_ids);
+      DELETE FROM private.tags           t   WHERE t.user_id = p_user_id AND t.person_id = ANY(v_person_ids);
+      DELETE FROM private.refinedpersons rp  WHERE rp.user_id = p_user_id AND rp.person_id = ANY(v_person_ids);
+      DELETE FROM private.engagement     e   WHERE e.user_id = p_user_id AND e.person_id = ANY(v_person_ids);
+      DELETE FROM private.persons        p   WHERE p.user_id = p_user_id AND p.id = ANY(v_person_ids);
     END IF;
   END IF;
 END;

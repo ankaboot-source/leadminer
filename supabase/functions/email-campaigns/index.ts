@@ -936,11 +936,30 @@ async function getContactsByEmails(
 ) {
   if (!emails.length) return [] as ContactSnapshot[];
 
+  // Email is no longer unique on persons; resolve emails -> person ids first.
+  const normalizedEmails = Array.from(
+    new Set(emails.map((e) => e.toLowerCase().trim()).filter(Boolean)),
+  );
+
+  const { data: personRows, error: personErr } = await supabaseAdmin
+    .schema("private")
+    .from("persons")
+    .select("id, email")
+    .eq("user_id", userId)
+    .in("email", normalizedEmails);
+
+  if (personErr) {
+    throw new Error(`Unable to fetch contacts for campaign: ${personErr.message}`);
+  }
+
+  const ids = (personRows ?? []).map((r) => r.id as string);
+  if (!ids.length) return [] as ContactSnapshot[];
+
   const { data, error } = await supabaseAdmin
     .schema("private")
-    .rpc("get_contacts_table_by_emails", {
-      user_id: userId,
-      emails,
+    .rpc("get_contacts_table_by_ids", {
+      p_user_id: userId,
+      p_ids: ids,
     });
 
   if (error) {
