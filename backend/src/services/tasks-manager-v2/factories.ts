@@ -12,12 +12,6 @@ import { TaskId } from './types';
 import ENV from '../../config';
 import { hasEmailVerificationConfigured } from '../email-status/EmailStatusVerifierFactory';
 
-export interface GooglePeopleCredentials {
-  accessToken: string;
-  refreshToken?: string;
-  userEmail: string;
-}
-
 export interface CreateImapMiningParams {
   miningId: string;
   userId: string;
@@ -29,7 +23,6 @@ export interface CreateImapMiningParams {
   cleaningEnabled: boolean;
   fetcherClient: FetcherClient;
   googleContactsSync?: boolean;
-  googleContactsCredentials?: GooglePeopleCredentials;
 }
 
 export function createImapMining(
@@ -65,17 +58,15 @@ export function createImapMining(
     })
   );
 
-  if (params.googleContactsSync && params.googleContactsCredentials) {
+  if (params.googleContactsSync) {
     tasks.push(
       new GoogleContactsFetchTask({
         miningId,
         userId: params.userId,
-        userEmail: params.googleContactsCredentials.userEmail,
+        userEmail: params.email,
         outputStream: streams.messagesStream,
         fetcherClient:
-          params.fetcherClient as unknown as GoogleContactsFetcherClient,
-        accessToken: params.googleContactsCredentials.accessToken,
-        refreshToken: params.googleContactsCredentials.refreshToken
+          params.fetcherClient as unknown as GoogleContactsFetcherClient
       })
     );
   }

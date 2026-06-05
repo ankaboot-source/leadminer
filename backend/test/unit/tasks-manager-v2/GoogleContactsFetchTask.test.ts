@@ -38,8 +38,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
@@ -53,8 +51,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
 
     expect(task.id).toBe('google-contacts-fetch');
@@ -74,8 +71,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 42 } }),
@@ -89,8 +84,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
 
     const emitSpy = jest.spyOn(
@@ -133,8 +127,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockRejectedValue(new Error('403 Forbidden')),
@@ -148,8 +140,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
 
     const mockTasksResolver = {
@@ -189,8 +180,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
@@ -204,8 +193,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
 
     task.onMessage({
@@ -238,8 +226,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
@@ -253,8 +239,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
 
     task.onMessage({
@@ -318,8 +303,6 @@ describe('GoogleContactsFetchTask', () => {
             contactStream: string;
             userId: string;
             userEmail: string;
-            accessToken: string;
-            refreshToken: string;
           }) => Promise<{ data: { totalContacts: number } }>
         >()
         .mockResolvedValue({ data: { totalContacts: 0 } }),
@@ -333,8 +316,7 @@ describe('GoogleContactsFetchTask', () => {
       userId: 'test-user',
       userEmail: 'test@example.com',
       outputStream: 'contacts_stream-test',
-      fetcherClient: mockFetcher,
-      accessToken: 'test-value'
+      fetcherClient: mockFetcher
     });
     task.startedAt = new Date().toUTCString();
 

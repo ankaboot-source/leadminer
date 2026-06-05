@@ -118,6 +118,42 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
   }
 }
 
+function isMiningControllerError(
+  err: unknown
+): { status: number; body: unknown; isJson: boolean } | null {
+  if (!(err instanceof Error)) return null;
+
+  if ('textCode' in err && err.textCode === 'CANNOT') {
+    return { status: 409, body: undefined, isJson: false };
+  }
+  if (err.message.includes('Request failed with status code 401')) {
+    return {
+      status: 401,
+      body: 'Failed to start fetching: Invalid credentials 401',
+      isJson: false
+    };
+  }
+  if (err.message.includes('Request failed with status code 403')) {
+    return {
+      status: 403,
+      body: {
+        error:
+          'Google Contacts: Access denied. Please re-authenticate with Contacts permission.',
+        type: 'google'
+      },
+      isJson: true
+    };
+  }
+  if (err.message.includes('Request failed with status code 503')) {
+    return {
+      status: 503,
+      body: 'Failed to start fetching: Connection not available, please try again later 503',
+      isJson: false
+    };
+  }
+  return null;
+}
+
 export default function initializeMiningController(
   miningSources: MiningSources,
   contactsDB: Contacts,
@@ -250,50 +286,6 @@ export default function initializeMiningController(
         });
       }
 
-      let googleContactsCredentials;
-      if (googleContactsSync) {
-        const allSources = await miningSourceService.getSourcesForUser(user.id);
-        const googleSource =
-          allSources.find(
-            (s) => s.type === 'google' && s.email === sanitizedEmail
-          ) || allSources.find((s) => s.type === 'google');
-        if (
-          googleSource?.credentials &&
-          'accessToken' in googleSource.credentials
-        ) {
-          const oauthCreds = googleSource.credentials;
-          const { accessToken, refreshToken } = oauthCreds;
-
-          if (!refreshToken) {
-            logger.warn(
-              'Google source missing refreshToken, re-authenticating may be needed',
-              {
-                userId: user.id,
-                email: googleSource.email
-              }
-            );
-          }
-
-          googleContactsCredentials = {
-            accessToken,
-            refreshToken: refreshToken ?? '',
-            userEmail: googleSource.email
-          };
-        }
-      }
-
-      if (googleContactsSync && !googleContactsCredentials) {
-        logger.warn('Google Contacts sync requested but no credentials found', {
-          userId: user.id,
-          email: sanitizedEmail
-        });
-        return res.status(403).json({
-          error:
-            'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.',
-          type: 'google'
-        });
-      }
-
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
 
@@ -311,8 +303,7 @@ export default function initializeMiningController(
             since,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,
-            googleContactsSync,
-            googleContactsCredentials
+            googleContactsSync
           },
           deps.pipelineDeps
         );
@@ -342,51 +333,29 @@ export default function initializeMiningController(
 
         return res.status(201).send({ error: null, data: miningTask });
       } catch (err) {
-        if (
-          err instanceof Error &&
-          'textCode' in err &&
-          err.textCode === 'CANNOT'
-        ) {
-          return res.sendStatus(409);
-        }
+        const knownError = isMiningControllerError(err);
 
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 401')
-        ) {
-          res
-            .status(401)
-            .send('Failed to start fetching: Invalid credentials 401');
-        }
+        if (knownError) {
+          if (
+            err instanceof Error &&
+            err.message.includes('Request failed with status code 403')
+          ) {
+            logger.warn('Google Contacts API returned 403', {
+              userId: user.id,
+              email: sanitizedEmail
+            });
+          }
 
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 403')
-        ) {
-          logger.warn('Google Contacts API returned 403', {
-            userId: user.id,
-            email: sanitizedEmail
-          });
-          return res.status(403).json({
-            error:
-              'Google Contacts: Access denied. Please re-authenticate with Contacts permission.',
-            type: 'google'
-          });
-        }
-
-        if (
-          err instanceof Error &&
-          err.message.includes('Request failed with status code 503')
-        ) {
-          res
-            .status(503)
-            .send(
-              'Failed to start fetching: Connection not available, please try again later 503'
-            );
+          if (knownError.status === 409) {
+            return res.sendStatus(409);
+          }
+          if (knownError.isJson) {
+            return res.status(knownError.status).json(knownError.body);
+          }
+          return res.status(knownError.status).send(knownError.body);
         }
 
         const newError = generateErrorObjectFromImapError(err);
-
         res.status(500);
         return next(new Error(newError.message));
       }

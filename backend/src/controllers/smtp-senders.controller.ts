@@ -14,6 +14,31 @@ import {
 import { getProviderFromEmail } from '../services/auth/Provider';
 import logger from '../utils/logger';
 
+function guessSmtpSettings(email: string): {
+  host: string;
+  port: number;
+  encryption: 'starttls' | 'ssl' | 'none';
+} {
+  const provider = getProviderFromEmail(email);
+  if (provider === 'google') {
+    return { host: 'smtp.gmail.com', port: 587, encryption: 'starttls' };
+  }
+  if (provider === 'azure') {
+    return {
+      host: 'smtp-mail.outlook.com',
+      port: 587,
+      encryption: 'starttls'
+    };
+  }
+
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (domain) {
+    return { host: `smtp.${domain}`, port: 587, encryption: 'starttls' };
+  }
+
+  return { host: '', port: 587, encryption: 'starttls' };
+}
+
 export default function initializeSmtpSendersController(
   smtpSenders: SmtpSenders,
   miningSources?: MiningSources
@@ -322,29 +347,4 @@ export default function initializeSmtpSendersController(
       }
     }
   };
-}
-
-function guessSmtpSettings(email: string): {
-  host: string;
-  port: number;
-  encryption: 'starttls' | 'ssl' | 'none';
-} {
-  const provider = getProviderFromEmail(email);
-  if (provider === 'google') {
-    return { host: 'smtp.gmail.com', port: 587, encryption: 'starttls' };
-  }
-  if (provider === 'azure') {
-    return {
-      host: 'smtp-mail.outlook.com',
-      port: 587,
-      encryption: 'starttls'
-    };
-  }
-
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (domain) {
-    return { host: `smtp.${domain}`, port: 587, encryption: 'starttls' };
-  }
-
-  return { host: '', port: 587, encryption: 'starttls' };
 }

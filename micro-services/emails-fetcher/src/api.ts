@@ -12,7 +12,12 @@ import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
 import logger from './utils/logger';
 import validateType from './utils/validation';
-import { miningSourceService } from './db/supabase';
+import supabaseClient from './utils/supabase';
+import {
+  miningSourceService,
+  type MiningSourcesResponse
+} from './db/supabase';
+import type { OAuthMiningSourceCredentials } from './db/interfaces/MiningSources';
 
 const apiRoutes = Router();
 
@@ -68,8 +73,6 @@ interface GoogleContactsFetchStartPayload {
   miningId: string;
   email: string;
   contactStream: string;
-  accessToken: string;
-  refreshToken: string;
 }
 
 type Credentials =
@@ -427,18 +430,14 @@ apiRoutes.post(
       userId,
       miningId,
       email,
-      contactStream,
-      accessToken,
-      refreshToken
+      contactStream
     }: GoogleContactsFetchStartPayload = req.body;
 
     const errors = [
       validateType('userId', userId, 'string'),
       validateType('miningId', miningId, 'string'),
       validateType('email', email, 'string'),
-      validateType('contactStream', contactStream, 'string'),
-      validateType('accessToken', accessToken, 'string'),
-      validateType('refreshToken', refreshToken, 'string')
+      validateType('contactStream', contactStream, 'string')
     ].filter(Boolean);
 
     if (errors.length) {
@@ -448,10 +447,51 @@ apiRoutes.post(
     }
 
     try {
+      const { data: credentialsData, error: fetchError } =
+        await supabaseClient.functions.invoke('fetch-mining-source', {
+          method: 'POST',
+          body: {
+            user_id: userId,
+            email,
+            refresh_email: email
+          }
+        });
+
+      if (fetchError || !credentialsData?.sources?.length) {
+        logger.error('Failed to fetch Google Contacts credentials', {
+          userId,
+          email,
+          error: fetchError
+        });
+        return res.status(403).json({
+          message:
+            'Google Contacts: OAuth credentials not found. Please re-authenticate with Contacts permission.'
+        });
+      }
+
+      const googleSource = (
+        credentialsData as MiningSourcesResponse
+      ).sources.find((s) => s.type === 'google');
+
+      if (
+        !googleSource?.credentials ||
+        !('accessToken' in googleSource.credentials)
+      ) {
+        logger.warn('Google source missing accessToken', { userId, email });
+        return res.status(403).json({
+          message:
+            'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.'
+        });
+      }
+
+      const oauthCreds =
+        googleSource.credentials as OAuthMiningSourceCredentials;
+      const { accessToken, refreshToken } = oauthCreds;
+
       const fetcher = new GoogleContactsFetcher({
         miningId,
         accessToken,
-        refreshToken,
+        refreshToken: refreshToken ?? '',
         streamName: contactStream,
         userId,
         userEmail: email
