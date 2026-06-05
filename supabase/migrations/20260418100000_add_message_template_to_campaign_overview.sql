@@ -1,8 +1,11 @@
 -- Add message_template to SMS campaign overview functions
 -- This allows the frontend to display the SMS content preview
 
+DROP FUNCTION IF EXISTS public.get_sms_campaigns_overview();
+DROP FUNCTION IF EXISTS public.get_unified_campaigns_overview();
+
 -- Update get_sms_campaigns_overview to include message_template
-CREATE OR REPLACE FUNCTION public.get_sms_campaigns_overview()
+CREATE FUNCTION public.get_sms_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   sender_name TEXT,
@@ -61,7 +64,7 @@ END;
 $$;
 
 -- Update get_unified_campaigns_overview to include message_template
-CREATE OR REPLACE FUNCTION public.get_unified_campaigns_overview()
+CREATE FUNCTION public.get_unified_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   channel TEXT,
