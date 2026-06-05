@@ -106,9 +106,9 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
   }
 
   const {
-    tags,
     user_tags,
-    sources,
+    tags: _tags,
+    sources: _sources,
     id: _id,
     user_id: _userId,
     created_at: _createdAt,
