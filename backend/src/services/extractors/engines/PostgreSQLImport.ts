@@ -4,6 +4,7 @@ import { Organization, Person, Tag } from '../../../db/types';
 import { PostgreSQLMiningSourceCredentials } from '../../../db/interfaces/MiningSources';
 import { PostgresQueryService } from '../../postgresql/PostgresQueryService';
 import { TaggingEngine } from '../../tagging/types';
+import { REACHABILITY } from '../../../utils/constants';
 import { DomainStatusVerificationFunction } from './EmailMessage';
 import {
   undefinedIfEmpty,
@@ -40,8 +41,10 @@ function mapRowToContact(
     }
   }
 
-  if (!contact.email || typeof contact.email !== 'string') {
-    throw new Error('Email field is required but not found in mapped data');
+  if (contact.email && typeof contact.email !== 'string') {
+    throw new Error(
+      'Email field is mapped but is not a string in the row data'
+    );
   }
 
   return contact as { email: string; [key: string]: unknown };
@@ -152,7 +155,21 @@ export class PostgreSQLContactEngine {
           validContacts.map(async (contact) => {
             const person = this.extractPerson(contact);
             const { email } = person;
-            if (!email) return;
+
+            if (!email) {
+              persons.push({
+                person,
+                tags: [
+                  {
+                    name: 'personal',
+                    reachable: REACHABILITY.DIRECT_PERSON,
+                    source: 'refined#phone_only'
+                  }
+                ]
+              });
+              return;
+            }
+
             const [identifier, domain] = email.split('@');
 
             const [domainIsValid, domainType] =

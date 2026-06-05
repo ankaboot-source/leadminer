@@ -4,6 +4,7 @@ import { PostgreSQLContactEngine } from '../../../src/services/extractors/engine
 import { DomainStatusVerificationFunction } from '../../../src/services/extractors/engines/EmailMessage';
 import { TaggingEngine } from '../../../src/services/tagging/types';
 import { PostgresQueryService } from '../../../src/services/postgresql/PostgresQueryService';
+import { REACHABILITY } from '../../../src/utils/constants';
 
 jest.mock('../../../src/services/postgresql/PostgresQueryService', () => ({
   PostgresQueryService: jest.fn().mockImplementation(() => ({
@@ -28,7 +29,7 @@ describe('PostgreSQLImport', () => {
       (PostgresQueryService as unknown as jest.Mock).mockClear();
     });
 
-    it('should skip contacts with no email (phone-only)', async () => {
+    it('should process phone-only contacts (no email) and assign a personal tag', async () => {
       const domainStatusVerification = jest
         .fn()
         .mockResolvedValue([
@@ -67,15 +68,28 @@ describe('PostgreSQLImport', () => {
           'extractPerson'
         )
         .mockReturnValue({
+          name: 'Phone Only',
           email: null,
+          telephone: '+1234567890',
           source: 'test-source'
         });
 
       allSettledSpy = jest.spyOn(Promise, 'allSettled');
 
       const result = await engine.getContacts();
-      expect(result.persons).toEqual([]);
+      expect(result.persons).toHaveLength(1);
+      expect(result.persons[0].person.name).toBe('Phone Only');
+      expect(result.persons[0].person.email).toBeNull();
+      expect(result.persons[0].person.telephone).toBe('+1234567890');
+      expect(result.persons[0].tags).toEqual([
+        {
+          name: 'personal',
+          reachable: REACHABILITY.DIRECT_PERSON,
+          source: 'refined#phone_only'
+        }
+      ]);
       expect(domainStatusVerification).not.toHaveBeenCalled();
+      expect(taggingEngine.getTags).not.toHaveBeenCalled();
 
       const settledResults = (await allSettledSpy.mock.results[0]
         .value) as PromiseSettledResult<unknown>[];

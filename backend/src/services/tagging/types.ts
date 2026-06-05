@@ -15,7 +15,8 @@ export interface TaggingCondition {
 export type TagSource =
   | 'refined'
   | 'refined#message_header'
-  | 'refined#email_address';
+  | 'refined#email_address'
+  | 'refined#phone_only';
 
 export interface BasicTag {
   name: string;
