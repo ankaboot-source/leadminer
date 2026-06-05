@@ -8,6 +8,9 @@
 -- becomes safe, and (2) updates the RPC to explicitly delete from
 -- smtp_senders and all other user-owned tables added since the RPC
 -- was last updated on 2025-01-16.
+--
+-- Side effect: deleting a mining source now cascades to its linked
+-- smtp_senders (previously a foreign key violation).
 
 ALTER TABLE private.smtp_senders
   DROP CONSTRAINT smtp_senders_mining_source_id_fkey;
