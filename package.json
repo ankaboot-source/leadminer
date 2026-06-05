@@ -23,6 +23,7 @@
     "prettier:fix": "npm run prettier:fix --prefix ./backend && npm run prettier:fix --prefix ./frontend && npm run prettier:fix --prefix ./micro-services/emails-fetcher",
     "prepare": "husky",
     "precommit:check": "lint-staged",
+    "precommit:check:plans": "bash ./scripts/check-forbidden-paths.sh",
     "prepush:check": "bash ./scripts/prepush-ci-check.sh"
   },
   "author": "ankaboot",
