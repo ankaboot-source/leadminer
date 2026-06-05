@@ -397,6 +397,7 @@ export default class GoogleContactsSession {
     return { emailMap, phoneMap };
   }
 
+  // skipcq: JS-R1005 - Pre-existing on main; refactor tracked in #2831. Function maps 7+ schema field types (names, emails, phones, orgs, urls, addresses, memberships) in one pass and the per-field "is duplicate" checks against existing fields inherently inflate cyclomatic complexity. Splitting into helpers would be a behavioral change and out of scope for PR #2830.
   private mapToPerson(
     contact: ContactFrontend,
     existing?: people_v1.Schema$Person,
