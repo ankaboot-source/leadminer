@@ -1,3 +1,5 @@
 #!/usr/bin/env sh
+set -e
 
+bash ./scripts/check-forbidden-paths.sh
 npm run precommit:check
