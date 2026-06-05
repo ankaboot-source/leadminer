@@ -241,6 +241,7 @@ logger.error("Operation failed", { error: error.message });
 - Branch naming: `feat/`, `fix/`, `docs/` prefixes
 - Commit messages: imperative mood, lowercase first letter
 - Run `npm run precommit:check` before committing (husky + lint-staged)
+- PR descriptions: keep them clear and short. Lead with one-line summary, list key changes as bullets, mention how it was tested. Skip verbose background sections unless the context is non-obvious.
 - **IMPORTANT - Ask User Before Git Operations:**
   - Ask before creating worktrees (using-git-worktrees skill)
   - Ask before committing changes

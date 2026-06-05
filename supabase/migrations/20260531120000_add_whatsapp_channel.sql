@@ -44,7 +44,9 @@ CREATE INDEX IF NOT EXISTS idx_sms_campaign_recipients_provider_msg_id
   WHERE provider_message_id IS NOT NULL;
 
 -- 8. Update get_sms_campaigns_overview to include channel + whatsapp metrics
-CREATE OR REPLACE FUNCTION public.get_sms_campaigns_overview()
+DROP FUNCTION IF EXISTS public.get_sms_campaigns_overview();
+DROP FUNCTION IF EXISTS public.get_unified_campaigns_overview();
+CREATE FUNCTION public.get_sms_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   sender_name TEXT,
@@ -109,7 +111,7 @@ END;
 $$;
 
 -- 9. Update get_unified_campaigns_overview to use sms_campaigns.channel + whatsapp metrics
-CREATE OR REPLACE FUNCTION public.get_unified_campaigns_overview()
+CREATE FUNCTION public.get_unified_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   channel TEXT,
