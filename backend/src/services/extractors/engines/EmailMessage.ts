@@ -314,6 +314,8 @@ export default class EmailMessage {
             source: this.userEmail
           };
 
+          if (!person.email) return;
+
           const pointOfContact: PointOfContact = {
             name: validContact.name,
             plusAddress: validContact.email.plusAddress,
@@ -349,8 +351,8 @@ export default class EmailMessage {
               differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
             ) {
-              await this.emailStatusCache.set(person.email!, {
-                email: person.email!,
+              await this.emailStatusCache.set(person.email, {
+                email: person.email,
                 status: Status.VALID,
                 details: { source: 'email-message-class', isRecentFrom: true }
               });
@@ -360,9 +362,9 @@ export default class EmailMessage {
               validContact.email.domain
             );
             if (catchAllDomainCache) {
-              await this.emailStatusCache.set(person.email!, {
+              await this.emailStatusCache.set(person.email, {
                 status: Status.UNKNOWN,
-                email: person.email!,
+                email: person.email,
                 details: { isCatchAll: true }
               });
             }
