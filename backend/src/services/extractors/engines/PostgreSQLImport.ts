@@ -152,7 +152,8 @@ export class PostgreSQLContactEngine {
           validContacts.map(async (contact) => {
             const person = this.extractPerson(contact);
             const { email } = person;
-            const [identifier, domain] = email!.split('@');
+            if (!email) return;
+            const [identifier, domain] = email.split('@');
 
             const [domainIsValid, domainType] =
               await this.domainStatusVerification(
