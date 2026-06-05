@@ -55,7 +55,7 @@ export interface Contact {
 
 export function getContactIdentifier(contact: Contact): string {
   if (contact.email) return contact.email;
-  if (contact.telephone?.length) return contact.telephone[0]!;
+  if (contact.telephone?.length) return contact.telephone[0] ?? '';
   return '';
 }
 
