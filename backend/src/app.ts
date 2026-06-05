@@ -8,7 +8,7 @@ import ENV from './config';
 import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
 import { SmtpSenders } from './db/interfaces/SmtpSenders';
-import { Users } from './db/interfaces/Users';
+
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
@@ -32,7 +32,7 @@ export default function initializeApp(
   miningEngine: MiningEngine,
   miningSources: MiningSources,
   contacts: Contacts,
-  userResolver: Users,
+
   logger: Logger,
   miningControllerDeps: MiningControllerDeps,
   smtpSenders: SmtpSenders
@@ -62,7 +62,7 @@ export default function initializeApp(
     res.json({ message: 'Welcome to leadminer application.' })
   );
 
-  app.use('/api/auth', initializeAuthRoutes(authResolver, userResolver));
+  app.use('/api/auth', initializeAuthRoutes());
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
   app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
   app.use(

@@ -7,7 +7,7 @@ import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
 import PgSmtpSenders from './db/pg/PgSmtpSenders';
 import SupabaseTasks from './db/supabase/tasks';
-import SupabaseUsers from './db/supabase/users';
+
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 import EmailFetcherClient from './services/email-fetching';
 import PSTFetcherClient from './services/email-fetching/pst';
@@ -47,7 +47,7 @@ console.log(
   );
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
-  const userResolver = new SupabaseUsers(supabaseClient, logger);
+
   const tasksResolver = new SupabaseTasks(supabaseClient, logger);
   const miningEngine = new MiningEngine({
     redisSubscriber: redis.getSubscriberClient()
@@ -80,7 +80,6 @@ console.log(
     miningEngine,
     miningSources,
     contactsResolver,
-    userResolver,
     logger,
     miningControllerDeps,
     smtpSenders
