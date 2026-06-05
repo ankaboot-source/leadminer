@@ -40,7 +40,7 @@ DO $$ BEGIN CREATE INDEX idx_whatsapp_sessions_status ON private.whatsapp_sessio
 DO $$ BEGIN CREATE INDEX idx_whatsapp_sessions_active ON private.whatsapp_sessions(is_active); EXCEPTION WHEN insufficient_privilege OR duplicate_table THEN NULL; END $$;
 
 -- Enable RLS
-ALTER TABLE private.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN EXECUTE 'ALTER TABLE private.whatsapp_sessions ENABLE ROW LEVEL SECURITY'; EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
 
 -- RLS Policies for whatsapp_sessions
 DO $$ BEGIN EXECUTE 'DROP POLICY IF EXISTS "Users can view own whatsapp sessions" ON private.whatsapp_sessions'; EXECUTE 'CREATE POLICY "Users can view own whatsapp sessions" ON private.whatsapp_sessions FOR SELECT USING (auth.uid() = user_id)'; EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL; END $$;
