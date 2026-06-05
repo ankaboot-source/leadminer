@@ -16,11 +16,19 @@ END $$;
 
 -- private.increment_gateway_sent_count(UUID, INTEGER)
 -- Created in 20260407120000 without search_path
-ALTER FUNCTION private.increment_gateway_sent_count(UUID, INTEGER) SET search_path = '';
+DO $$
+BEGIN
+  ALTER FUNCTION private.increment_gateway_sent_count(UUID, INTEGER) SET search_path = '';
+EXCEPTION WHEN undefined_function THEN NULL;
+END $$;
 
 -- private.batch_increment_gateway_counts(UUID[], INTEGER[])
 -- Created in 20260407120000 without search_path
-ALTER FUNCTION private.batch_increment_gateway_counts(UUID[], INTEGER[]) SET search_path = '';
+DO $$
+BEGIN
+  ALTER FUNCTION private.batch_increment_gateway_counts(UUID[], INTEGER[]) SET search_path = '';
+EXCEPTION WHEN undefined_function THEN NULL;
+END $$;
 
 -- public.get_sms_campaigns_overview()
 -- Latest version in 20260418100000 uses SET search_path = public (should be '')

@@ -1,4 +1,4 @@
-CREATE FUNCTION private.create_smtp_sender_for_oauth(
+CREATE OR REPLACE FUNCTION private.create_smtp_sender_for_oauth(
   _user_id UUID,
   _email TEXT,
   _provider TEXT,

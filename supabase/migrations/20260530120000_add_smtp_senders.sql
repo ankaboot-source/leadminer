@@ -18,10 +18,11 @@ CREATE TABLE IF NOT EXISTS private.smtp_senders (
    UNIQUE(user_id, email)
  );
 
-CREATE INDEX idx_smtp_senders_user_id ON private.smtp_senders(user_id);
+CREATE INDEX IF NOT EXISTS idx_smtp_senders_user_id ON private.smtp_senders(user_id);
 
 ALTER TABLE private.smtp_senders ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can manage own smtp_senders" ON private.smtp_senders;
 CREATE POLICY "Users can manage own smtp_senders"
   ON private.smtp_senders
   USING (auth.uid() = user_id)
