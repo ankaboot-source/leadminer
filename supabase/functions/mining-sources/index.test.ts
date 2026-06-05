@@ -1,5 +1,55 @@
-import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
 import { createSchema, authorizeSchema, callbackQuerySchema } from "./schemas.ts";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
+  "http://127.0.0.1:54321";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+  "SUPABASE_SERVICE_ROLE_KEY",
+) ?? "";
+
+function getAdmin() {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY env var is required to run this test",
+    );
+  }
+  // Disable auto-refresh: this is a service-role admin client used only for
+  // a one-off schema introspection query, no session to keep alive. Without
+  // this, supabase-auth-js starts a setInterval that leaks past the test.
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+Deno.test(
+  "private.mining_sources has an id column (regression for 'column mining_sources.id does not exist')",
+  async () => {
+    const admin = getAdmin();
+
+    // This is the exact query the edge function runs at
+    // supabase/functions/mining-sources/index.ts:177 to look up the source
+    // id before calling create_smtp_sender_for_oauth. If `id` is missing,
+    // the query errors and the SMTP twin is silently skipped.
+    const { error } = await admin
+      .schema("private")
+      .from("mining_sources")
+      .select("id")
+      .limit(1);
+
+    assert(
+      error === null,
+      `Expected no error selecting 'id' from private.mining_sources, got: ${
+        error?.message ?? "null"
+      }. ` +
+        "The edge function relies on this column to look up the source id " +
+        "before creating the SMTP twin sender after OAuth callback.",
+    );
+  },
+);
 
 Deno.test("createSchema rejects invalid provider", () => {
   const result = createSchema.safeParse({
