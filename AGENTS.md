@@ -389,7 +389,7 @@ If you see a 404 for a newly added API endpoint (e.g., `/api/smtp-senders/regene
 - **The frontend image is shared between QA and Prod** — Both pull `ankabootorg/leadminer-frontend:latest`. This means a prod deploy could accidentally get a QA-tested frontend if the image was overwritten.
 - **leadminer-commercial is merged at deploy time** — The integration script copies billing code into the repo before building. If commercial has breaking changes, the build will fail.
 
-### Planning Documents
+## Planning Documents
 
 Local planning documents (opencode + superpowers workflow) must NEVER be
 committed or pushed to remote. The following paths are blocked by both
