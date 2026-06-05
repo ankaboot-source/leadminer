@@ -209,7 +209,7 @@ export default class PgContacts implements Contacts {
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO private.tags("name","reachable","source","user_id","person_id")
     VALUES %L
-    ON CONFLICT DO NOTHING;`;
+    ON CONFLICT (person_id, name, user_id) DO NOTHING;`;
 
   constructor(
     private readonly pool: Pool,
@@ -299,10 +299,7 @@ export default class PgContacts implements Contacts {
     statusUpdates: { status: Status; id: string }[]
   ): Promise<boolean> {
     try {
-      const updates = statusUpdates.map((update) => [
-        update.id,
-        update.status
-      ]);
+      const updates = statusUpdates.map((update) => [update.id, update.status]);
 
       await this.pool.query(
         format(PgContacts.UPDATE_PERSON_STATUS_BULK, updates, userId)
@@ -353,7 +350,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
-    const insertedContacts = new Set<{ id?: string; email?: string; tags: Tag[] }>();
+    const insertedContacts = new Set<{
+      id?: string;
+      email?: string;
+      tags: Tag[];
+    }>();
 
     const { organizations, persons } = result;
 
@@ -434,7 +435,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
-    const insertedContacts = new Set<{ id?: string; email?: string; tags: Tag[] }>();
+    const insertedContacts = new Set<{
+      id?: string;
+      email?: string;
+      tags: Tag[];
+    }>();
 
     const { organizations, persons } = result;
 
@@ -533,7 +538,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     try {
-      const insertedContacts = new Set<{ id?: string; email?: string; tags: Tag[] }>();
+      const insertedContacts = new Set<{
+        id?: string;
+        email?: string;
+        tags: Tag[];
+      }>();
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
@@ -721,10 +730,10 @@ export default class PgContacts implements Contacts {
   ): Promise<Contact[]> {
     try {
       const { rows } = ids
-        ? await this.pool.query(PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_IDS, [
-            userId,
-            ids
-          ])
+        ? await this.pool.query(
+            PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_IDS,
+            [userId, ids]
+          )
         : await this.pool.query(PgContacts.SELECT_NON_EXPORTED_CONTACTS, [
             userId
           ]);

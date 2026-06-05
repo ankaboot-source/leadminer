@@ -44,7 +44,10 @@
                     <i class="pi pi-spin pi-spinner" />
                   </span>
                 </Badge>
-                <div v-tooltip.top="getContactIdentifier(contact)" class="truncate">
+                <div
+                  v-tooltip.top="getContactIdentifier(contact)"
+                  class="truncate"
+                >
                   {{ getContactIdentifier(contact) }}
                 </div>
               </div>
@@ -330,7 +333,9 @@
     >
       <span class="p-text-secondary block mb-5">
         {{
-          t('remove_contact_detail', { name: contact.name || contact.email })
+          t('remove_contact_detail', {
+            name: contact.name || getContactIdentifier(contact) || contact.id,
+          })
         }}
       </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">

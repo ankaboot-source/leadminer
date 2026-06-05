@@ -1068,7 +1068,9 @@ const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const globalFilterFields = [
   'email',
+  'identifier',
   'name',
+  'telephone',
   'location',
   'works_for',
   'job_title',

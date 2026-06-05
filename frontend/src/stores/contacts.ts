@@ -80,9 +80,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!userId) return [];
 
     const { data, error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_contacts_table', { user_id: userId });
+      .rpc('get_contacts_table', { p_user_id: userId });
 
     if (error) throw error;
     return data as Contact[];
@@ -110,9 +109,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!userId) return;
 
     const { error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { userid: userId });
+      .rpc('refine_persons', { p_user_id: userId });
     if (error) throw error;
   }
 
@@ -225,7 +223,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!userId) return false;
 
     const { count, error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('persons')
       .select('id', { count: 'exact', head: true })

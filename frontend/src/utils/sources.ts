@@ -62,9 +62,8 @@ export async function getMiningSources(): Promise<MiningSource[]> {
 
   if (userId) {
     const overviewResponse = await supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('get_mining_source_overview', { user_id: userId });
+      .rpc('get_mining_source_overview', { p_user_id: userId });
 
     overviewData = (overviewResponse.data as MiningSourceOverview[]) ?? null;
     overviewError = overviewResponse.error;
