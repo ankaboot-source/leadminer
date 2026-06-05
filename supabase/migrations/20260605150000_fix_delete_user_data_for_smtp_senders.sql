@@ -27,16 +27,22 @@ DECLARE
 BEGIN
   owner_id = delete_user_data.user_id;
 
+  -- All user_id references below are qualified with the table alias
+  -- (e.g. "s.user_id") on purpose. The function parameter is named
+  -- "user_id", and in plpgsql an unqualified identifier resolves to
+  -- variables/parameters before columns, so writing the bare column
+  -- name would compare the parameter to itself and either error or
+  -- delete the wrong rows. Do not "clean up" the aliases.
   -- Tables referencing other user-owned tables; delete dependents first.
-  DELETE FROM private.smtp_senders WHERE user_id = owner_id;
+  DELETE FROM private.smtp_senders s WHERE s.user_id = owner_id;
   DELETE FROM private.email_campaign_links l
     USING private.email_campaign_recipients r
     WHERE l.recipient_id = r.id AND r.user_id = owner_id;
   DELETE FROM private.email_campaign_events e
     USING private.email_campaign_recipients r
     WHERE e.recipient_id = r.id AND r.user_id = owner_id;
-  DELETE FROM private.email_campaign_recipients WHERE user_id = owner_id;
-  DELETE FROM private.email_campaigns WHERE user_id = owner_id;
+  DELETE FROM private.email_campaign_recipients r WHERE r.user_id = owner_id;
+  DELETE FROM private.email_campaigns ec WHERE ec.user_id = owner_id;
   -- sms_campaign_recipients has no user_id column; join via sms_campaigns
   -- (which has ON DELETE CASCADE down to recipients, link_clicks, and
   -- recipient_gateways). sms_campaign_unsubscribes does NOT cascade
@@ -45,16 +51,16 @@ BEGIN
   DELETE FROM private.sms_campaign_link_clicks c
     USING private.sms_campaigns camp
     WHERE c.campaign_id = camp.id AND camp.user_id = owner_id;
-  DELETE FROM private.sms_campaign_unsubscribes WHERE user_id = owner_id;
+  DELETE FROM private.sms_campaign_unsubscribes u WHERE u.user_id = owner_id;
   DELETE FROM private.sms_campaign_recipient_gateways g
     USING private.sms_campaigns camp
     WHERE g.campaign_id = camp.id AND camp.user_id = owner_id;
   DELETE FROM private.sms_campaign_recipients sr
     USING private.sms_campaigns camp
     WHERE sr.campaign_id = camp.id AND camp.user_id = owner_id;
-  DELETE FROM private.sms_campaigns WHERE user_id = owner_id;
-  DELETE FROM private.sms_fleet_gateways WHERE user_id = owner_id;
-  DELETE FROM private.whatsapp_sessions WHERE user_id = owner_id;
+  DELETE FROM private.sms_campaigns sc WHERE sc.user_id = owner_id;
+  DELETE FROM private.sms_fleet_gateways f WHERE f.user_id = owner_id;
+  DELETE FROM private.whatsapp_sessions w WHERE w.user_id = owner_id;
 
   -- Original RPC body (unchanged)
   DELETE FROM private.messages msg WHERE msg.user_id = owner_id;
