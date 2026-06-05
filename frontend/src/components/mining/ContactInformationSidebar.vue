@@ -35,6 +35,8 @@
                 <Badge
                   v-tooltip.top="getStatusLabel(contact.status)"
                   class="min-w-4 h-4 flex-none cursor-pointer hover:opacity-75 transition-opacity"
+                  :class="{ 'cursor-default': !hasEmail }"
+                  :style="!hasEmail ? 'cursor: default' : ''"
                   :severity="getStatusColor(contact.status)"
                   @click.stop="refreshStatusBadge()"
                 >
@@ -42,8 +44,8 @@
                     <i class="pi pi-spin pi-spinner" />
                   </span>
                 </Badge>
-                <div v-tooltip.top="contact.email" class="truncate">
-                  {{ contact.email }}
+                <div v-tooltip.top="getContactIdentifier(contact)" class="truncate">
+                  {{ getContactIdentifier(contact) }}
                 </div>
               </div>
               <Button
@@ -354,6 +356,7 @@
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
+import { getContactIdentifier } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
 
 import {
@@ -404,6 +407,7 @@ function getCurrentUserId() {
 const show = defineModel<boolean>('show');
 
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
+const hasEmail = computed(() => Boolean(contact.value?.email));
 const refreshingStatus = ref(false);
 
 async function refreshStatusBadge() {
