@@ -388,7 +388,7 @@ describe('Email Message', () => {
     it('should skip emailStatusCache writes when person.email is absent (defensive guard)', async () => {
       const setSpy = jest
         .spyOn(mockEmailStatusCache, 'set')
-        .mockResolvedValue(undefined);
+        .mockResolvedValue();
       try {
         const header = {
           'message-id': ['test'],

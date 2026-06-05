@@ -33,11 +33,11 @@ describe('FileImport', () => {
 
       const fileImport = new CsvXlsxContactEngine(
         taggingEngine,
-        {} as any,
+        {} as never,
         domainStatusVerification,
         {
           fileName: 'contacts.csv',
-          contacts: [phoneOnlyContact as any]
+          contacts: [phoneOnlyContact as unknown as never]
         }
       );
 
