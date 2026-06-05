@@ -15,7 +15,10 @@ describe('FileImport', () => {
     it('should skip contacts with no email (phone-only)', async () => {
       const domainStatusVerification = jest
         .fn()
-        .mockResolvedValue([true, 'corporate']) as unknown as DomainStatusVerificationFunction;
+        .mockResolvedValue([
+          true,
+          'corporate'
+        ]) as unknown as DomainStatusVerificationFunction;
 
       const taggingEngine = {
         tags: [],
@@ -44,7 +47,8 @@ describe('FileImport', () => {
       expect(result.persons).toEqual([]);
       expect(domainStatusVerification).not.toHaveBeenCalled();
 
-      const settledResults = (await allSettledSpy.mock.results[0].value) as PromiseSettledResult<unknown>[];
+      const settledResults = (await allSettledSpy.mock.results[0]
+        .value) as PromiseSettledResult<unknown>[];
       expect(settledResults).toHaveLength(1);
       expect(settledResults[0].status).toBe('fulfilled');
     });

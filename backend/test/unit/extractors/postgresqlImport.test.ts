@@ -31,7 +31,10 @@ describe('PostgreSQLImport', () => {
     it('should skip contacts with no email (phone-only)', async () => {
       const domainStatusVerification = jest
         .fn()
-        .mockResolvedValue([true, 'corporate']) as unknown as DomainStatusVerificationFunction;
+        .mockResolvedValue([
+          true,
+          'corporate'
+        ]) as unknown as DomainStatusVerificationFunction;
 
       const taggingEngine = {
         tags: [],
@@ -58,10 +61,15 @@ describe('PostgreSQLImport', () => {
         }
       );
 
-      jest.spyOn(engine as never as { extractPerson: () => unknown }, 'extractPerson').mockReturnValue({
-        email: null,
-        source: 'test-source'
-      });
+      jest
+        .spyOn(
+          engine as never as { extractPerson: () => unknown },
+          'extractPerson'
+        )
+        .mockReturnValue({
+          email: null,
+          source: 'test-source'
+        });
 
       allSettledSpy = jest.spyOn(Promise, 'allSettled');
 
