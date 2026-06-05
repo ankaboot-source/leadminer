@@ -18,12 +18,20 @@ CREATE TABLE IF NOT EXISTS private.smtp_senders (
    UNIQUE(user_id, email)
  );
 
-CREATE INDEX IF NOT EXISTS idx_smtp_senders_user_id ON private.smtp_senders(user_id);
+-- CREATE INDEX / CREATE POLICY on an existing table require ownership.
+-- On QA the table may have been pre-applied by a role that doesn't match
+-- the migration runner, so these no-op cleanly when we lack privilege.
+DO $$
+BEGIN
+  CREATE INDEX idx_smtp_senders_user_id ON private.smtp_senders(user_id);
+EXCEPTION WHEN insufficient_privilege OR duplicate_table THEN NULL;
+END $$;
 
 ALTER TABLE private.smtp_senders ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can manage own smtp_senders" ON private.smtp_senders;
-CREATE POLICY "Users can manage own smtp_senders"
-  ON private.smtp_senders
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  EXECUTE 'DROP POLICY IF EXISTS "Users can manage own smtp_senders" ON private.smtp_senders';
+  EXECUTE 'CREATE POLICY "Users can manage own smtp_senders" ON private.smtp_senders USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;

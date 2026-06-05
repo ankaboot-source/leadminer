@@ -32,33 +32,21 @@ CREATE TABLE IF NOT EXISTS private.whatsapp_sessions (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_whatsapp_sessions_user_id ON private.whatsapp_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_whatsapp_sessions_status ON private.whatsapp_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_whatsapp_sessions_active ON private.whatsapp_sessions(is_active);
+-- CREATE INDEX / CREATE POLICY on an existing table require ownership.
+-- On QA the table may have been pre-applied by a role that doesn't match
+-- the migration runner, so these no-op cleanly when we lack privilege.
+DO $$ BEGIN CREATE INDEX idx_whatsapp_sessions_user_id ON private.whatsapp_sessions(user_id); EXCEPTION WHEN insufficient_privilege OR duplicate_table THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX idx_whatsapp_sessions_status ON private.whatsapp_sessions(status); EXCEPTION WHEN insufficient_privilege OR duplicate_table THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX idx_whatsapp_sessions_active ON private.whatsapp_sessions(is_active); EXCEPTION WHEN insufficient_privilege OR duplicate_table THEN NULL; END $$;
 
 -- Enable RLS
 ALTER TABLE private.whatsapp_sessions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for whatsapp_sessions
-DROP POLICY IF EXISTS "Users can view own whatsapp sessions" ON private.whatsapp_sessions;
-CREATE POLICY "Users can view own whatsapp sessions"
-  ON private.whatsapp_sessions FOR SELECT
-  USING (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can insert own whatsapp sessions" ON private.whatsapp_sessions;
-CREATE POLICY "Users can insert own whatsapp sessions"
-  ON private.whatsapp_sessions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own whatsapp sessions" ON private.whatsapp_sessions;
-CREATE POLICY "Users can update own whatsapp sessions"
-  ON private.whatsapp_sessions FOR UPDATE
-  USING (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can delete own whatsapp sessions" ON private.whatsapp_sessions;
-CREATE POLICY "Users can delete own whatsapp sessions"
-  ON private.whatsapp_sessions FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN EXECUTE 'DROP POLICY IF EXISTS "Users can view own whatsapp sessions" ON private.whatsapp_sessions'; EXECUTE 'CREATE POLICY "Users can view own whatsapp sessions" ON private.whatsapp_sessions FOR SELECT USING (auth.uid() = user_id)'; EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL; END $$;
+DO $$ BEGIN EXECUTE 'DROP POLICY IF EXISTS "Users can insert own whatsapp sessions" ON private.whatsapp_sessions'; EXECUTE 'CREATE POLICY "Users can insert own whatsapp sessions" ON private.whatsapp_sessions FOR INSERT WITH CHECK (auth.uid() = user_id)'; EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL; END $$;
+DO $$ BEGIN EXECUTE 'DROP POLICY IF EXISTS "Users can update own whatsapp sessions" ON private.whatsapp_sessions'; EXECUTE 'CREATE POLICY "Users can update own whatsapp sessions" ON private.whatsapp_sessions FOR UPDATE USING (auth.uid() = user_id)'; EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL; END $$;
+DO $$ BEGIN EXECUTE 'DROP POLICY IF EXISTS "Users can delete own whatsapp sessions" ON private.whatsapp_sessions'; EXECUTE 'CREATE POLICY "Users can delete own whatsapp sessions" ON private.whatsapp_sessions FOR DELETE USING (auth.uid() = user_id)'; EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL; END $$;
 
 -- Trigger to automatically update updated_at
 CREATE OR REPLACE FUNCTION private.update_whatsapp_session_updated_at()
