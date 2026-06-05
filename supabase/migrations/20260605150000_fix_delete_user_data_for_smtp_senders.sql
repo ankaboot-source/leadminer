@@ -37,16 +37,21 @@ BEGIN
     WHERE e.recipient_id = r.id AND r.user_id = owner_id;
   DELETE FROM private.email_campaign_recipients WHERE user_id = owner_id;
   DELETE FROM private.email_campaigns WHERE user_id = owner_id;
+  -- sms_campaign_recipients has no user_id column; join via sms_campaigns
+  -- (which has ON DELETE CASCADE down to recipients, link_clicks, and
+  -- recipient_gateways). sms_campaign_unsubscribes does NOT cascade
+  -- through campaign_id (FK is ON DELETE SET NULL), so it must be
+  -- deleted explicitly by user_id.
   DELETE FROM private.sms_campaign_link_clicks c
-    USING private.sms_campaign_recipients r
-    WHERE c.recipient_id = r.id AND r.user_id = owner_id;
-  DELETE FROM private.sms_campaign_unsubscribes u
-    USING private.sms_campaign_recipients r
-    WHERE u.recipient_id = r.id AND r.user_id = owner_id;
+    USING private.sms_campaigns camp
+    WHERE c.campaign_id = camp.id AND camp.user_id = owner_id;
+  DELETE FROM private.sms_campaign_unsubscribes WHERE user_id = owner_id;
   DELETE FROM private.sms_campaign_recipient_gateways g
-    USING private.sms_campaign_recipients r
-    WHERE g.recipient_id = r.id AND r.user_id = owner_id;
-  DELETE FROM private.sms_campaign_recipients WHERE user_id = owner_id;
+    USING private.sms_campaigns camp
+    WHERE g.campaign_id = camp.id AND camp.user_id = owner_id;
+  DELETE FROM private.sms_campaign_recipients sr
+    USING private.sms_campaigns camp
+    WHERE sr.campaign_id = camp.id AND camp.user_id = owner_id;
   DELETE FROM private.sms_campaigns WHERE user_id = owner_id;
   DELETE FROM private.sms_fleet_gateways WHERE user_id = owner_id;
   DELETE FROM private.whatsapp_sessions WHERE user_id = owner_id;
