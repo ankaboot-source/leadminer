@@ -68,6 +68,38 @@ ALTER TABLE private.persons
 -- partitioned parent propagates to all child partitions automatically.
 ALTER TABLE private.tags ADD COLUMN IF NOT EXISTS person_id UUID;
 
+-- Delete orphan rows: for any (user_id, person_email) in tags that has
+-- no matching person, delete the tag. The original schema had no FK
+-- from tags.person_email to persons.email, so deleted persons left
+-- orphan tags. The backfill UPDATE below can only match existing
+-- persons, so orphan tags would leave NULL person_id and trip the
+-- RAISE EXCEPTION guard. We delete them here, respecting user intent
+-- (they deleted the contact, so the tag goes too). The count is
+-- logged via RAISE NOTICE for ops visibility.
+DO $$
+DECLARE
+  orphan_count int;
+BEGIN
+  SELECT COUNT(*) INTO orphan_count
+  FROM private.tags t
+  WHERE t.person_email IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM private.persons p
+      WHERE p.email = t.person_email
+        AND p.user_id = t.user_id
+    );
+  IF orphan_count > 0 THEN
+    RAISE NOTICE 'Migration: deleting % orphan tag row(s) (person_email not in persons)', orphan_count;
+    DELETE FROM private.tags t
+    WHERE t.person_email IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM private.persons p
+        WHERE p.email = t.person_email
+          AND p.user_id = t.user_id
+      );
+  END IF;
+END $$;
+
 -- Backfill person_id from persons on the parent
 UPDATE private.tags t
 SET person_id = p.id
@@ -114,6 +146,31 @@ ALTER TABLE private.tags DROP COLUMN person_email;
 -- partitioned parent propagates to all child partitions automatically.
 ALTER TABLE private.pointsofcontact ADD COLUMN IF NOT EXISTS person_id UUID;
 
+-- Delete orphan pointsofcontact rows (see tags section for rationale).
+DO $$
+DECLARE
+  orphan_count int;
+BEGIN
+  SELECT COUNT(*) INTO orphan_count
+  FROM private.pointsofcontact poc
+  WHERE poc.person_email IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM private.persons p
+      WHERE p.email = poc.person_email
+        AND p.user_id = poc.user_id
+    );
+  IF orphan_count > 0 THEN
+    RAISE NOTICE 'Migration: deleting % orphan pointsofcontact row(s) (person_email not in persons)', orphan_count;
+    DELETE FROM private.pointsofcontact poc
+    WHERE poc.person_email IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM private.persons p
+        WHERE p.email = poc.person_email
+          AND p.user_id = poc.user_id
+      );
+  END IF;
+END $$;
+
 UPDATE private.pointsofcontact poc
 SET person_id = p.id
 FROM private.persons p
@@ -152,6 +209,32 @@ ALTER TABLE private.refinedpersons
 
 ALTER TABLE private.refinedpersons ADD COLUMN IF NOT EXISTS person_id UUID;
 
+-- Delete orphan refinedpersons rows. Note: column is 'email', not
+-- 'person_email'. Same rationale as the tags section.
+DO $$
+DECLARE
+  orphan_count int;
+BEGIN
+  SELECT COUNT(*) INTO orphan_count
+  FROM private.refinedpersons r
+  WHERE r.email IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM private.persons p
+      WHERE p.email = r.email
+        AND p.user_id = r.user_id
+    );
+  IF orphan_count > 0 THEN
+    RAISE NOTICE 'Migration: deleting % orphan refinedpersons row(s) (email not in persons)', orphan_count;
+    DELETE FROM private.refinedpersons r
+    WHERE r.email IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM private.persons p
+        WHERE p.email = r.email
+          AND p.user_id = r.user_id
+      );
+  END IF;
+END $$;
+
 UPDATE private.refinedpersons r
 SET person_id = p.id
 FROM private.persons p
@@ -184,6 +267,32 @@ ALTER TABLE private.refinedpersons DROP COLUMN email;
 -- (exports, enrichments) so the natural key is person_id.
 
 ALTER TABLE private.engagement ADD COLUMN IF NOT EXISTS person_id UUID;
+
+-- Delete orphan engagement rows. Note: column is 'email', not
+-- 'person_email'. Same rationale as the tags section.
+DO $$
+DECLARE
+  orphan_count int;
+BEGIN
+  SELECT COUNT(*) INTO orphan_count
+  FROM private.engagement e
+  WHERE e.email IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM private.persons p
+      WHERE p.email = e.email
+        AND p.user_id = e.user_id
+    );
+  IF orphan_count > 0 THEN
+    RAISE NOTICE 'Migration: deleting % orphan engagement row(s) (email not in persons)', orphan_count;
+    DELETE FROM private.engagement e
+    WHERE e.email IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM private.persons p
+        WHERE p.email = e.email
+          AND p.user_id = e.user_id
+      );
+  END IF;
+END $$;
 
 UPDATE private.engagement e
 SET person_id = p.id
