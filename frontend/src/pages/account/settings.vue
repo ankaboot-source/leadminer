@@ -171,7 +171,7 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-const { $api } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
 const $profile = useSupabaseUserProfile();
 
 const {
@@ -316,7 +316,7 @@ async function updateUserDetailsButton() {
 async function deleteAccount() {
   isLoading.value = true;
   try {
-    await $api('/auth/users', {
+    await $saasEdgeFunctions('delete-user', {
       method: 'DELETE',
     });
     signOutManually({

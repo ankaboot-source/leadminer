@@ -1,7 +1,10 @@
 -- Add gateway_names to SMS campaign overview by joining selected_gateway_ids with sms_fleet_gateways
 -- This allows the frontend to display which specific gateways were used instead of just "fleet"
 
-CREATE OR REPLACE FUNCTION public.get_sms_campaigns_overview()
+DROP FUNCTION IF EXISTS public.get_sms_campaigns_overview();
+DROP FUNCTION IF EXISTS public.get_unified_campaigns_overview();
+
+CREATE FUNCTION public.get_sms_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   sender_name TEXT,
@@ -58,7 +61,7 @@ END;
 $$;
 
 -- Also update the unified overview to include gateway_names
-CREATE OR REPLACE FUNCTION public.get_unified_campaigns_overview()
+CREATE FUNCTION public.get_unified_campaigns_overview()
 RETURNS TABLE (
   id UUID,
   channel TEXT,

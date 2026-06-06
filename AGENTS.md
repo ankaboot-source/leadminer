@@ -241,12 +241,17 @@ logger.error("Operation failed", { error: error.message });
 - Branch naming: `feat/`, `fix/`, `docs/` prefixes
 - Commit messages: imperative mood, lowercase first letter
 - Run `npm run precommit:check` before committing (husky + lint-staged)
+- PR descriptions: keep them clear and short. Lead with one-line summary, list key changes as bullets, mention how it was tested. Skip verbose background sections unless the context is non-obvious.
 - **IMPORTANT - Ask User Before Git Operations:**
   - Ask before creating worktrees (using-git-worktrees skill)
   - Ask before committing changes
   - Ask before pushing to remote
   - Ask before creating pull requests
   - Never automatically commit or push without user approval
+- **PRs that close an issue must include `Resolves #<issue-number>`** (or
+  `Closes #<issue-number>`, `Fixes #<issue-number>`) in the PR body. This
+  auto-closes the issue when the PR is merged. PRs that don't close a
+  specific issue (e.g. maintenance, refactors) do not need the line.
 
 ### Vue/Frontend Patterns
 
@@ -387,11 +392,21 @@ If you see a 404 for a newly added API endpoint (e.g., `/api/smtp-senders/regene
 
 ## Planning Documents
 
-### docs/plans Directory
+Local planning documents (opencode + superpowers workflow) must NEVER be
+committed or pushed to remote. The following paths are blocked by both
+`.gitignore` and the husky `pre-commit` guard (`scripts/check-forbidden-paths.sh`):
 
-Local planning documents for development reference. **Do NOT commit or push to remote.**
+- `docs/plans/`
+- `.opencode/` (entire directory)
+- `.agents/` (entire directory)
+- `skills-lock.json`
 
-When creating: `docs/plans/YYYY-MM-DD-<feature-name>.md`. Delete when feature is complete.
+If the pre-commit hook rejects your commit, run `git restore --staged <path>`
+to unstage the forbidden file and retry. The hook never silently passes —
+it either succeeds or exits non-zero with a clear message.
+
+When creating: `docs/plans/YYYY-MM-DD-<feature-name>.md` (kept local,
+gitignored). Delete when the feature is complete.
 
 ## Quality Assurance
 
