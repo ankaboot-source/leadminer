@@ -72,7 +72,8 @@ export interface EmailStatus {
 }
 
 export interface Person {
-  email: string;
+  id?: string;
+  email?: string;
   status?: Status;
   url?: string;
   name?: string;
@@ -110,7 +111,8 @@ export interface Tag {
 export interface Contact {
   id: string;
   user_id: string;
-  email: string;
+  email?: string;
+  identifier?: string;
   engagement?: number;
   name?: string;
   sender?: string;
@@ -119,7 +121,6 @@ export interface Contact {
   replied_conversations?: number;
   status?: Status;
   occurrence?: number;
-  personid?: string;
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
@@ -138,7 +139,8 @@ export interface Contact {
 export interface ContactFrontend {
   id: string;
   user_id: string;
-  email: string;
+  email?: string;
+  identifier?: string;
   engagement?: number;
   name?: string;
   sender?: string;
@@ -147,7 +149,6 @@ export interface ContactFrontend {
   replied_conversations?: number;
   status?: Status;
   occurrence?: number;
-  personid?: string;
   recency?: Date;
   seniority?: Date;
   tags?: string[];

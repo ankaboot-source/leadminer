@@ -55,11 +55,11 @@ async function validateRequest(
   }
 
   const {
-    emails,
+    ids,
     exportAllContacts
-  }: { emails?: string[]; exportAllContacts: boolean } = req.body;
+  }: { ids?: string[]; exportAllContacts: boolean } = req.body;
 
-  if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
+  if (!exportAllContacts && (!Array.isArray(ids) || !ids.length)) {
     return {
       userId: user.id,
       exportType,
@@ -73,7 +73,7 @@ async function validateRequest(
     };
   }
 
-  const contactsToExport = exportAllContacts ? undefined : emails;
+  const contactsToExport = exportAllContacts ? undefined : ids;
 
   return {
     userId: user.id,
@@ -156,7 +156,7 @@ async function registerAndDeductCredits(
 ) {
   if (availableContacts.length) {
     await contacts.registerExportedContacts(
-      availableContacts.map(({ email }) => email),
+      availableContacts.map(({ id }) => id),
       exportType as unknown as ExportService,
       userId
     );
@@ -219,7 +219,7 @@ export default function initializeContactsController(
       } = await validateRequest(req, res, miningSources);
       if (contactsToExport === null) {
         return res.status(400).json({
-          message: 'Parameter "emails" must be a non-empty list of emails'
+          message: 'Parameter "ids" must be a non-empty list of person ids'
         });
       }
 

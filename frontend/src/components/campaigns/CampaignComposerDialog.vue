@@ -413,7 +413,9 @@ const QUILL_IMAGE_RESIZE_REGISTERED_KEY =
 
 const replyTo = computed(() => $user.value?.email ?? '');
 const selectedEmails = computed(() =>
-  props.selectedContacts.map((item) => item.email),
+  props.selectedContacts
+    .map((item) => item.email)
+    .filter((email): email is string => Boolean(email)),
 );
 const dialogHeader = computed(() =>
   t('send_email_campaign_with_count', { count: selectedEmails.value.length }),

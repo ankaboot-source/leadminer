@@ -13,20 +13,21 @@ export interface Contacts {
     contact: ExtractionResult,
     userId: string,
     miningId: string
-  ): Promise<{ email: string; tags: Tag[] }[]>;
+  ): Promise<{ id?: string; email?: string; tags: Tag[] }[]>;
   refine(userId: string): Promise<boolean>;
   SelectRecentEmailStatus(email: string): Promise<EmailStatus | null>;
   upsertEmailStatus(status: EmailStatus): Promise<boolean>;
+  getPersonIdByEmail(email: string, userId: string): Promise<string | null>;
   updateManyPersonsStatus(
     userId: string,
-    emailStatus: { status: Status; email: string }[]
+    statusUpdates: { status: Status; id: string }[]
   ): Promise<boolean>;
-  getContacts(userId: string, emails?: string[]): Promise<Contact[]>;
-  getUnverifiedContacts(userId: string, emails: string[]): Promise<Contact[]>;
-  getExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
-  getNonExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
+  getContacts(userId: string, ids?: string[]): Promise<Contact[]>;
+  getUnverifiedContacts(userId: string, ids: string[]): Promise<Contact[]>;
+  getExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
+  getNonExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
   registerExportedContacts(
-    contactIds: string[],
+    personIds: string[],
     exportService: ExportService,
     userId: string
   ): Promise<void>;

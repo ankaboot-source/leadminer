@@ -98,6 +98,7 @@ describe('Enrichments Class', () => {
       await enrichments.create('user-id', 10, true);
       const contacts = [
         {
+          id: 'person-id-1',
           image: 'https://example.com/image.jpg',
           email: 'johndoe@example.com',
           name: 'John Doe',
@@ -168,7 +169,9 @@ describe('Enrichments Class', () => {
       const enrichmentResults = [
         {
           engine: 'test',
-          data: [{ email: 'test@example.com', name: 'hello' }],
+          data: [
+            { id: 'person-id-1', email: 'test@example.com', name: 'hello' }
+          ],
           raw_data: []
         }
       ];
@@ -213,13 +216,14 @@ describe('Enrichments Class', () => {
       });
       expect(updateContactsSpy).toHaveBeenCalledWith([
         {
+          id: 'person-id-1',
           email: 'test@example.com',
           name: 'hello'
         }
       ]);
       expect(mockEngagements.register).toHaveBeenCalledWith([
         {
-          email: 'test@example.com',
+          person_id: 'person-id-1',
           engagement_type: 'ENRICH',
           service: 'test',
           user_id: 'user-id'

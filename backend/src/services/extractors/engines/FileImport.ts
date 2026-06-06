@@ -1,7 +1,7 @@
-import assert from 'assert';
 import Redis from 'ioredis';
 import { Organization, Person, Tag } from '../../../db/types';
 import { TaggingEngine } from '../../tagging/types';
+import { REACHABILITY } from '../../../utils/constants';
 import { DomainStatusVerificationFunction } from './EmailMessage';
 import {
   undefinedIfEmpty,
@@ -75,8 +75,6 @@ export class CsvXlsxContactEngine {
       telephone
     } = contact;
 
-    assert(Boolean(email), '<email> is required');
-
     return {
       email,
       source: this.contacts.fileName,
@@ -117,6 +115,21 @@ export class CsvXlsxContactEngine {
         const person = this.extractPerson(details);
 
         const { email } = person;
+
+        if (!email) {
+          persons.push({
+            person,
+            tags: [
+              {
+                name: 'personal',
+                reachable: REACHABILITY.DIRECT_PERSON,
+                source: 'refined#phone_only'
+              }
+            ]
+          });
+          return;
+        }
+
         const [identifier, domain] = email.split('@');
 
         const [domainIsValid, domainType] = await this.domainStatusVerification(

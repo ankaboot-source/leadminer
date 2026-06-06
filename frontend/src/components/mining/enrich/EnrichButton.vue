@@ -342,7 +342,9 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
 
   const creditsDialogOpened = useCreditsDialog(
     CreditsDialogEnrichRef,
-    contactsToEnrich.value?.map(({ email }) => email as string),
+    contactsToEnrich.value
+      ?.map(({ email }) => email)
+      .filter((email): email is string => Boolean(email)),
   );
   if (creditsDialogOpened) return;
 

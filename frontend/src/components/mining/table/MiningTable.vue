@@ -29,7 +29,7 @@
     striped-rows
     :select-all="selectAll"
     :value="tableRows"
-    data-key="email"
+    data-key="id"
     paginator
     filter-display="menu"
     :global-filter-fields="globalFilterFields"
@@ -80,7 +80,7 @@
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="implicitlySelectedContacts"
-            :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
+            :enrich-all-contacts="$contactsStore.selectedIds === undefined"
           />
         </div>
 
@@ -345,7 +345,7 @@
                 }"
                 @click="openContactInformation(data)"
               >
-                {{ data.email }}
+                {{ getContactIdentifier(data) }}
               </div>
             </div>
 
@@ -587,9 +587,10 @@
         <span
           class="state-pill cursor-pointer hover:opacity-75 transition-opacity"
           :class="getStatusClass(data.status)"
-          @click.stop="refreshStatus(data.email, $event)"
+          :style="!data.email ? 'cursor: default' : ''"
+          @click.stop="data.email && refreshStatus(data.email, $event)"
         >
-          <span v-if="refreshingEmails.has(data.email)" class="animate-spin">
+          <span v-if="refreshingEmails.has(data.id)" class="animate-spin">
             <i class="pi pi-spin pi-spinner text-xs" />
           </span>
           <span v-else>{{ getStatusLabel(data.status) }}</span>
@@ -952,6 +953,7 @@ import type {
 // import { CampaignButton } from '@/utils/extras';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
+import { getContactIdentifier } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
 import { useContactsStore } from '~/stores/contacts';
 import {
@@ -1066,7 +1068,9 @@ const rowsPerPageOptions = [20, 50, 150, 500, 1000];
 const rowsPerPage = ref(DEFAULT_ROWS_PER_PAGE);
 const globalFilterFields = [
   'email',
+  'identifier',
   'name',
+  'telephone',
   'location',
   'works_for',
   'job_title',
@@ -1244,11 +1248,11 @@ const implicitSelectAll = computed(
 const contactsToTreat = computed<string[] | undefined>(() =>
   implicitSelectAll.value
     ? undefined
-    : implicitlySelectedContacts.value.map((item: Contact) => item.email),
+    : implicitlySelectedContacts.value.map((item: Contact) => item.id),
 );
 
-const updateSelectedEmails = useDebounceFn((emails: string[] | undefined) => {
-  $contactsStore.selectedEmails = emails;
+const updateSelectedIds = useDebounceFn((ids: string[] | undefined) => {
+  $contactsStore.selectedIds = ids;
 }, 120);
 
 const updateSelectedContactsCount = useDebounceFn((count: number) => {
@@ -1258,7 +1262,7 @@ const updateSelectedContactsCount = useDebounceFn((count: number) => {
 watch(
   contactsToTreat,
   (value) => {
-    updateSelectedEmails(value);
+    updateSelectedIds(value);
   },
   { immediate: true },
 );
@@ -1279,7 +1283,11 @@ const isExportDisabled = computed(
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
 
-const isSendByEmailDisabled = computed(() => isExportDisabled.value);
+const isSendByEmailDisabled = computed(() => {
+  if (isExportDisabled.value) return true;
+  // Phone-only contacts cannot receive email campaigns.
+  return !implicitlySelectedContacts.value.some((c) => c.email);
+});
 
 const isSendBySmsDisabled = computed(() => {
   const hasPhones = implicitlySelectedContacts.value.some(

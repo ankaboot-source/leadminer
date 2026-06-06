@@ -322,7 +322,7 @@ async function exportTable(
       body: {
         exportType: type,
         partialExport,
-        emails: contactsToTreat.value,
+        ids: contactsToTreat.value,
         exportAllContacts: contactsToTreat.value === undefined,
         updateEmptyFieldsOnly: emptyFieldsOnly,
         targetEmail:

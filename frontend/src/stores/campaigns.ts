@@ -18,12 +18,10 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
 
     const { data: emailData, error: emailError } = await $supabase
       .schema('private')
-      // @ts-expect-error rpc typing from private schema function
       .rpc('get_campaigns_overview');
 
     const { data: smsData, error: smsError } = await $supabase
       .schema('private')
-      // @ts-expect-error rpc typing from private schema function
       .rpc('get_sms_campaigns_overview');
 
     if (emailError || smsError) {

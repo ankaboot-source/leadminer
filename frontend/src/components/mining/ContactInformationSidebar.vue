@@ -35,6 +35,8 @@
                 <Badge
                   v-tooltip.top="getStatusLabel(contact.status)"
                   class="min-w-4 h-4 flex-none cursor-pointer hover:opacity-75 transition-opacity"
+                  :class="{ 'cursor-default': !hasEmail }"
+                  :style="!hasEmail ? 'cursor: default' : ''"
                   :severity="getStatusColor(contact.status)"
                   @click.stop="refreshStatusBadge()"
                 >
@@ -42,12 +44,15 @@
                     <i class="pi pi-spin pi-spinner" />
                   </span>
                 </Badge>
-                <div v-tooltip.top="contact.email" class="truncate">
-                  {{ contact.email }}
+                <div
+                  v-tooltip.top="getContactIdentifier(contact)"
+                  class="truncate"
+                >
+                  {{ getContactIdentifier(contact) }}
                 </div>
               </div>
               <Button
-                v-if="!editingContact"
+                v-if="!editingContact && contact.email"
                 rounded
                 text
                 icon="pi pi-copy"
@@ -58,7 +63,7 @@
               />
               <ExportContacts
                 v-if="!editingContact"
-                :contacts-to-treat="[contact.email]"
+                :contacts-to-treat="[contact.id]"
                 :disable-export="isExportDisabled"
               />
             </div>
@@ -328,7 +333,9 @@
     >
       <span class="p-text-secondary block mb-5">
         {{
-          t('remove_contact_detail', { name: contact.name || contact.email })
+          t('remove_contact_detail', {
+            name: contact.name || getContactIdentifier(contact) || contact.id,
+          })
         }}
       </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
@@ -354,6 +361,7 @@
 import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
+import { getContactIdentifier } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
 
 import {
@@ -404,10 +412,11 @@ function getCurrentUserId() {
 const show = defineModel<boolean>('show');
 
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
+const hasEmail = computed(() => Boolean(contact.value?.email));
 const refreshingStatus = ref(false);
 
 async function refreshStatusBadge() {
-  if (refreshingStatus.value) return;
+  if (refreshingStatus.value || !contact.value.email) return;
 
   refreshingStatus.value = true;
   try {
@@ -548,7 +557,7 @@ function showNotification(
   });
 }
 
-function startRealtimePersons(userId: string, email: string) {
+function startRealtimePersons(userId: string, personId: string) {
   if (personsSubscription) {
     personsSubscription.unsubscribe();
   }
@@ -565,7 +574,7 @@ function startRealtimePersons(userId: string, email: string) {
       async (payload: RealtimePostgresChangesPayload<Contact>) => {
         const updatedContact = payload.new as Contact;
 
-        if (updatedContact.email !== email) {
+        if (updatedContact.id !== personId) {
           return;
         }
         if (updatedContact.works_for) {
@@ -587,7 +596,7 @@ watch(show, async (value) => {
   const userId = getCurrentUserId();
 
   if (value && userId) {
-    startRealtimePersons(userId, contact.value.email);
+    startRealtimePersons(userId, contact.value.id);
     return;
   }
   if (personsSubscription) {
@@ -758,7 +767,7 @@ function getConsentTooltip(data: Contact) {
 async function removeContact() {
   isRemovingContact.value = true;
   try {
-    await removeContactsFromDatabase([contact.value.email]);
+    await removeContactsFromDatabase([contact.value.id]);
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');

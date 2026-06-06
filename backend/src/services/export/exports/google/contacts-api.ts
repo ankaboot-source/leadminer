@@ -224,7 +224,9 @@ export default class GoogleContactsSession {
     for (const contact of contacts) {
       const potentialMatches = new Map<string, people_v1.Schema$Person>();
 
-      const emailMatches = emailMap.get(contact.email.toLowerCase()) || [];
+      const emailMatches = contact.email
+        ? emailMap.get(contact.email.toLowerCase()) || []
+        : [];
       emailMatches.forEach((p) => {
         if (p.resourceName) potentialMatches.set(p.resourceName, p);
       });
@@ -246,10 +248,16 @@ export default class GoogleContactsSession {
           incoming: contact
         });
       } else {
-        create.set(contact.email, contact);
+        // Use identifier (email or phone) as the dedup key in `create`.
+        // Phone-only contacts have no email, so the map key is the
+        // primary phone number.
+        const key = contact.email ?? contact.telephone?.[0] ?? contact.id;
+        if (key) {
+          create.set(key, contact);
+        }
         if (potentialMatches.size > 1) {
           logger.warn(
-            `Ambiguous match for ${contact.email}: Found ${potentialMatches.size} contacts. Creating new record to avoid corruption.`
+            `Ambiguous match for ${contact.email ?? contact.telephone?.[0]}: Found ${potentialMatches.size} contacts. Creating new record to avoid corruption.`
           );
         }
       }
@@ -389,6 +397,7 @@ export default class GoogleContactsSession {
     return { emailMap, phoneMap };
   }
 
+  // skipcq: JS-R1005 - Pre-existing on main; refactor tracked in #2831. Function maps 7+ schema field types (names, emails, phones, orgs, urls, addresses, memberships) in one pass and the per-field "is duplicate" checks against existing fields inherently inflate cyclomatic complexity. Splitting into helpers would be a behavioral change and out of scope for PR #2830.
   private mapToPerson(
     contact: ContactFrontend,
     existing?: people_v1.Schema$Person,
@@ -425,11 +434,14 @@ export default class GoogleContactsSession {
       }
     }
 
+    const hasEmail = !isEmpty(contact.email);
     const emailAddresses =
       !updateEmptyOnly || existingEmails.length === 0
         ? [
-            ...existingEmails.filter((e) => e.value !== contact.email),
-            { value: contact.email }
+            ...existingEmails.filter(
+              (e) => hasEmail && e.value !== contact.email
+            ),
+            ...(hasEmail ? [{ value: contact.email as string }] : [])
           ]
         : existingEmails;
 

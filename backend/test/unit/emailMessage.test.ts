@@ -384,5 +384,34 @@ describe('Email Message', () => {
       const contacts = await message.getContacts();
       expect(contacts.persons).toEqual(expectedContacts);
     });
+
+    it('should skip emailStatusCache writes when person.email is absent (defensive guard)', async () => {
+      const setSpy = jest
+        .spyOn(mockEmailStatusCache, 'set')
+        .mockResolvedValue();
+      try {
+        const header = {
+          'message-id': ['test'],
+          from: ['Leadminer <leadminer@leadminer.io>']
+        };
+        const message = new EmailMessage(
+          taggingEngine,
+          redis,
+          mockEmailStatusCache,
+          mockAllCatchDomainsCache,
+          domainStatusVerification,
+          'miningSource@leadminer.io',
+          '',
+          header,
+          'body',
+          ''
+        );
+        const contacts = await message.getContacts();
+        expect(contacts.persons).toHaveLength(1);
+        expect(setSpy).not.toHaveBeenCalled();
+      } finally {
+        setSpy.mockRestore();
+      }
+    });
   });
 });

@@ -314,6 +314,8 @@ export default class EmailMessage {
             source: this.userEmail
           };
 
+          if (!person.email) return;
+
           const pointOfContact: PointOfContact = {
             name: validContact.name,
             plusAddress: validContact.email.plusAddress,

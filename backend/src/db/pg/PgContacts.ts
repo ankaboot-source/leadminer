@@ -25,60 +25,60 @@ export default class PgContacts implements Contacts {
     'SELECT * FROM private.get_contacts_table($1)';
 
   private static readonly SELECT_EXPORTED_CONTACTS = `
-    SELECT contacts.* 
+    SELECT contacts.*
     FROM private.get_contacts_table($1) contacts
       JOIN private.engagement e
-        ON e.email = contacts.email
+        ON e.person_id = contacts.id
         AND e.user_id = $1
         AND e.engagement_type = 'EXPORT'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
-    SELECT contacts.* 
+    SELECT contacts.*
     FROM private.get_contacts_table($1) contacts
       LEFT JOIN private.engagement e
-        ON e.email = contacts.email
+        ON e.person_id = contacts.id
         AND e.user_id = $1
         AND e.engagement_type = 'EXPORT'
-    WHERE e.email IS NULL;
+    WHERE e.person_id IS NULL;
     `;
 
-  private static readonly SELECT_CONTACTS_BY_EMAILS =
-    'SELECT * FROM private.get_contacts_table_by_emails($1,$2)';
+  private static readonly SELECT_CONTACTS_BY_IDS =
+    'SELECT * FROM private.get_contacts_table_by_ids($1,$2)';
 
-  private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
-    'SELECT * FROM private.get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
+  private static readonly SELECT_CONTACTS_BY_IDS_UNVERIFIED =
+    'SELECT * FROM private.get_contacts_table_by_ids($1,$2) WHERE status IS NULL';
 
   private static readonly SELECT_CONTACTS_UNVERIFIED =
     'SELECT * FROM private.get_contacts_table($1) WHERE status IS NULL';
 
-  private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
-    SELECT contacts.* 
-    FROM private.get_contacts_table_by_emails($1,$2) contacts
+  private static readonly SELECT_EXPORTED_CONTACTS_BY_IDS = `
+    SELECT contacts.*
+    FROM private.get_contacts_table_by_ids($1,$2) contacts
       JOIN private.engagement e
-        ON e.email = contacts.email
+        ON e.person_id = contacts.id
         AND e.user_id = $1
         AND e.engagement_type = 'EXPORT'
     `;
 
-  private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS = `
-    SELECT contacts.* 
-    FROM private.get_contacts_table_by_emails($1,$2) contacts
+  private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_IDS = `
+    SELECT contacts.*
+    FROM private.get_contacts_table_by_ids($1,$2) contacts
       LEFT JOIN private.engagement e
-        ON e.email = contacts.email
+        ON e.person_id = contacts.id
         AND e.user_id = $1
         AND e.engagement_type = 'EXPORT'
-    WHERE e.email IS NULL;
+    WHERE e.person_id IS NULL;
     `;
 
   private static readonly UPDATE_PERSON_STATUS_BULK = `
-    UPDATE private.persons 
+    UPDATE private.persons
     SET status = update.status
-    FROM (VALUES %L) AS update(email, status) 
-    WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
+    FROM (VALUES %L) AS update(id, status)
+    WHERE persons.id = update.id AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO private.engagement (user_id, email, engagement_type, service) VALUES %L ON  CONFLICT (email, user_id, engagement_type, service) DO NOTHING;';
+    'INSERT INTO private.engagement (user_id, person_id, engagement_type, service) VALUES %L ON  CONFLICT (person_id, user_id, engagement_type, service) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -88,7 +88,7 @@ export default class PgContacts implements Contacts {
     WITH upserted AS (
       INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone", "alternate_name", "alternate_email")
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
-      ON CONFLICT (email, user_id, source) DO UPDATE
+      ON CONFLICT (user_id, source, email) WHERE email IS NOT NULL DO UPDATE
       SET
         name = EXCLUDED.name,
         url = EXCLUDED.url,
@@ -119,12 +119,16 @@ export default class PgContacts implements Contacts {
         OR private.persons.telephone IS DISTINCT FROM EXCLUDED.telephone
         OR private.persons.alternate_name IS DISTINCT FROM EXCLUDED.alternate_name
         OR private.persons.alternate_email IS DISTINCT FROM EXCLUDED.alternate_email
-      RETURNING persons.email
+      RETURNING persons.id, persons.email
     )
-    SELECT email FROM upserted
+    SELECT id, email FROM upserted
     UNION ALL
-    SELECT $2
-    WHERE NOT EXISTS (SELECT 1 FROM upserted);`;
+    SELECT id, $2 FROM private.persons
+    WHERE email IS NOT NULL
+      AND email = $2
+      AND user_id = $11
+      AND source = $12
+    LIMIT 1;`;
 
   private static readonly UPSERT_PERSONS_BULK_SQL = `
     INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone")
@@ -146,7 +150,7 @@ export default class PgContacts implements Contacts {
       $14::text[],
       $15::text[][]
     )
-    ON CONFLICT (email, user_id, source) DO UPDATE
+    ON CONFLICT (user_id, source, email) WHERE email IS NOT NULL DO UPDATE
     SET
       name = EXCLUDED.name,
       url = EXCLUDED.url,
@@ -173,14 +177,14 @@ export default class PgContacts implements Contacts {
       OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
       OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id;`;
 
-  private static readonly SELECT_PERSONS_STATUS_BY_EMAILS = `
-    SELECT email, status
+  private static readonly SELECT_PERSONS_STATUS_BY_IDS = `
+    SELECT id, status
     FROM private.persons
-    WHERE user_id = $1 AND email = ANY($2);
+    WHERE user_id = $1 AND id = ANY($2);
   `;
 
   private static readonly INSERT_POC_BULK_SQL = `
-    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","plus_address", "user_id")
+    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_id","plus_address", "user_id")
     VALUES %L;`;
 
   private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
@@ -203,9 +207,9 @@ export default class PgContacts implements Contacts {
         verified_on = EXCLUDED.verified_on;`;
 
   private static readonly INSERT_TAGS_SQL = `
-    INSERT INTO private.tags("name","reachable","source","user_id","person_email")
+    INSERT INTO private.tags("name","reachable","source","user_id","person_id")
     VALUES %L
-    ON CONFLICT(person_email, name, user_id) DO NOTHING;`;
+    ON CONFLICT (person_id, name, user_id) DO NOTHING;`;
 
   constructor(
     private readonly pool: Pool,
@@ -260,17 +264,24 @@ export default class PgContacts implements Contacts {
       }
 
       if (details?.isRole) {
-        await this.pool.query(
-          format(PgContacts.INSERT_TAGS_SQL, [
-            [
-              'role',
-              REACHABILITY.MANY_OR_INDIRECT_PERSON,
-              'email-verification',
-              userId,
-              email
-            ]
-          ])
+        const { rows: personRows } = await this.pool.query(
+          'SELECT id FROM private.persons WHERE user_id = $1 AND email = $2 LIMIT 1',
+          [userId, email]
         );
+        const personId = personRows[0]?.id as string | undefined;
+        if (personId) {
+          await this.pool.query(
+            format(PgContacts.INSERT_TAGS_SQL, [
+              [
+                'role',
+                REACHABILITY.MANY_OR_INDIRECT_PERSON,
+                'email-verification',
+                userId,
+                personId
+              ]
+            ])
+          );
+        }
       }
       return true;
     } catch (error) {
@@ -285,13 +296,10 @@ export default class PgContacts implements Contacts {
 
   async updateManyPersonsStatus(
     userId: string,
-    emailsToUpdate: { status: Status; email: string }[]
+    statusUpdates: { status: Status; id: string }[]
   ): Promise<boolean> {
     try {
-      const updates = emailsToUpdate.map((update) => [
-        update.email,
-        update.status
-      ]);
+      const updates = statusUpdates.map((update) => [update.id, update.status]);
 
       await this.pool.query(
         format(PgContacts.UPDATE_PERSON_STATUS_BULK, updates, userId)
@@ -301,6 +309,22 @@ export default class PgContacts implements Contacts {
     } catch (error) {
       this.logger.error('updateManyPersonsStatus', error);
       return false;
+    }
+  }
+
+  async getPersonIdByEmail(
+    email: string,
+    userId: string
+  ): Promise<string | null> {
+    try {
+      const { rows } = await this.pool.query<{ id: string }>(
+        'SELECT id FROM private.persons WHERE user_id = $1 AND email = $2 LIMIT 1',
+        [userId, email]
+      );
+      return rows[0]?.id ?? null;
+    } catch (error) {
+      this.logger.error('getPersonIdByEmail', error);
+      return null;
     }
   }
 
@@ -326,7 +350,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
-    const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
+    const insertedContacts = new Set<{
+      id?: string;
+      email?: string;
+      tags: Tag[];
+    }>();
 
     const { organizations, persons } = result;
 
@@ -343,7 +371,7 @@ export default class PgContacts implements Contacts {
 
     for (const { person, tags } of persons) {
       // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+      const upsertResult = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
         person.name,
         person.email,
         person.url,
@@ -362,6 +390,7 @@ export default class PgContacts implements Contacts {
         null, // $16 alternate_name - not available for file imports
         null // $17 alternate_email - not available for file imports
       ]);
+      const personId = upsertResult.rows[0]?.id as string | undefined;
 
       if (tags.length) {
         // eslint-disable-next-line no-await-in-loop
@@ -373,23 +402,28 @@ export default class PgContacts implements Contacts {
               tag.reachable,
               tag.source,
               userId,
-              person.email
+              personId ?? null
             ])
           )
         );
       }
 
       insertedContacts.add({ email: person.email, tags });
-      // eslint-disable-next-line no-await-in-loop
-      await this.pool.query(
-        `
-        INSERT INTO private.refinedpersons(user_id, email, tags)
+
+      // refinedpersons: skip when there's no email OR no personId
+      // (phone-only contacts have no engagement data)
+      if (person.email && personId) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(
+          `
+        INSERT INTO private.refinedpersons(person_id, user_id, tags)
         VALUES ($1, $2, $3)
-        ON CONFLICT (user_id, email) 
+        ON CONFLICT (person_id, user_id)
         DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
         `,
-        [userId, person.email, tags.map((tag) => tag.name)]
-      );
+          [personId, userId, tags.map((tag) => tag.name)]
+        );
+      }
     }
 
     return Array.from(insertedContacts);
@@ -401,7 +435,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     const organizationsDB = new Map<string, string>();
-    const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
+    const insertedContacts = new Set<{
+      id?: string;
+      email?: string;
+      tags: Tag[];
+    }>();
 
     const { organizations, persons } = result;
 
@@ -419,25 +457,29 @@ export default class PgContacts implements Contacts {
     for (const { person, tags } of persons) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
-          person.name ?? null, // $1  name
-          person.email, // $2  email
-          null, // $3  url - Google contacts don't have this
-          person.image ?? null, // $4  image
-          person.location ?? null, // $5  location
-          person.sameAs ?? null, // $6  same_as
-          person.givenName ?? null, // $7  given_name
-          person.familyName ?? null, // $8  family_name
-          person.jobTitle ?? null, // $9  job_title
-          null, // $10 identifiers - Google contacts don't have this
-          userId, // $11 user_id
-          person.source, // $12 source
-          organizationsDB.get(person.worksFor ?? ''), // $13 works_for
-          miningId, // $14 mining_id
-          person.telephone ?? null, // $15 telephone
-          person.alternateName ?? null, // $16 alternate_name
-          person.alternateEmail ?? null // $17 alternate_email
-        ]);
+        const upsertResult = await this.pool.query(
+          PgContacts.UPSERT_PERSON_SQL,
+          [
+            person.name ?? null, // $1  name
+            person.email, // $2  email
+            null, // $3  url - Google contacts don't have this
+            person.image ?? null, // $4  image
+            person.location ?? null, // $5  location
+            person.sameAs ?? null, // $6  same_as
+            person.givenName ?? null, // $7  given_name
+            person.familyName ?? null, // $8  family_name
+            person.jobTitle ?? null, // $9  job_title
+            null, // $10 identifiers - Google contacts don't have this
+            userId, // $11 user_id
+            person.source, // $12 source
+            organizationsDB.get(person.worksFor ?? ''), // $13 works_for
+            miningId, // $14 mining_id
+            person.telephone ?? null, // $15 telephone
+            person.alternateName ?? null, // $16 alternate_name
+            person.alternateEmail ?? null // $17 alternate_email
+          ]
+        );
+        const personId = upsertResult.rows[0]?.id as string | undefined;
 
         if (tags.length) {
           // eslint-disable-next-line no-await-in-loop
@@ -449,23 +491,25 @@ export default class PgContacts implements Contacts {
                 tag.reachable,
                 tag.source,
                 userId,
-                person.email
+                personId ?? null
               ])
             )
           );
         }
 
         insertedContacts.add({ email: person.email, tags });
-        // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(
-          `
-          INSERT INTO private.refinedpersons(user_id, email, tags)
+        if (person.email && personId) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.pool.query(
+            `
+          INSERT INTO private.refinedpersons(person_id, user_id, tags)
           VALUES ($1, $2, $3)
-          ON CONFLICT (user_id, email)
+          ON CONFLICT (person_id, user_id)
           DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
           `,
-          [userId, person.email, tags.map((tag) => tag.name)]
-        );
+            [personId, userId, tags.map((tag) => tag.name)]
+          );
+        }
       } catch (error) {
         this.logger.error(
           '[PgContacts.createFromGoogleContacts] Failed to upsert Google contact',
@@ -494,7 +538,11 @@ export default class PgContacts implements Contacts {
     miningId: string
   ) {
     try {
-      const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
+      const insertedContacts = new Set<{
+        id?: string;
+        email?: string;
+        tags: Tag[];
+      }>();
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
@@ -510,35 +558,10 @@ export default class PgContacts implements Contacts {
         return [];
       }
 
-      const emails = persons.map(({ person }) => person.email);
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_PERSONS_STATUS_BY_EMAILS,
-        [userId, emails]
-      );
-
-      const statusByEmail = new Map<string, string | null>();
-      rows.forEach((row) => statusByEmail.set(row.email, row.status));
-
-      // await this.pool.query(PgContacts.UPSERT_PERSONS_BULK_SQL, [
-      //   persons.map(({ person }) => person.name ?? null),
-      //   persons.map(({ person }) => person.email),
-      //   persons.map(({ person }) => person.url ?? null),
-      //   persons.map(({ person }) => person.image ?? null),
-      //   persons.map(({ person }) => person.location ?? null),
-      //   persons.flatMap(({ person }) => person.sameAs?.length ? person.sameAs : null),
-      //   persons.map(({ person }) => person.givenName ?? null),
-      //   persons.map(({ person }) => person.familyName ?? null),
-      //   persons.map(({ person }) => person.jobTitle ?? null),
-      //   persons.flatMap(({ person }) => person.identifiers?.length ? person.identifiers : null),
-      //   persons.map(() => userId),
-      //   persons.map(({ person }) => person.source),
-      //   persons.map(({ person }) => person.worksFor ?? null),
-      //   persons.map(() => miningId)
-      // ]);
-
+      const personIds: (string | undefined)[] = [];
       for (const { person } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+        const result = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
           person.name,
           person.email,
           person.url,
@@ -557,11 +580,28 @@ export default class PgContacts implements Contacts {
           null, // $16 alternate_name - not available for email contacts
           null // $17 alternate_email - not available for email contacts
         ]);
+        personIds.push(result.rows[0]?.id as string | undefined);
       }
 
-      const tagValues = persons.flatMap(({ person, tags }) => {
-        if (statusByEmail.get(person.email) !== undefined) {
-          const status = statusByEmail.get(person.email);
+      const knownIds = personIds.filter((id): id is string => Boolean(id));
+      let statusById = new Map<string, string | null>();
+      if (knownIds.length) {
+        const { rows } = await this.pool.query(
+          PgContacts.SELECT_PERSONS_STATUS_BY_IDS,
+          [userId, knownIds]
+        );
+        statusById = new Map(
+          rows.map((row: { id: string; status: string | null }) => [
+            row.id,
+            row.status
+          ])
+        );
+      }
+
+      const tagValues = persons.flatMap(({ person, tags }, idx) => {
+        const personId = personIds[idx];
+        if (personId && statusById.has(personId)) {
+          const status = statusById.get(personId);
           if (status === null) {
             insertedContacts.add({ email: person.email, tags });
           }
@@ -574,11 +614,11 @@ export default class PgContacts implements Contacts {
           tag.reachable,
           tag.source,
           userId,
-          person.email
+          personId ?? null
         ]);
       });
 
-      const pocValues = persons.map(({ pointOfContact, person }) => [
+      const pocValues = persons.map(({ pointOfContact }, idx) => [
         message.messageId,
         pointOfContact.name,
         pointOfContact.from,
@@ -587,7 +627,7 @@ export default class PgContacts implements Contacts {
         pointOfContact.cc,
         pointOfContact.bcc,
         pointOfContact.body,
-        person.email,
+        personIds[idx],
         pointOfContact.plusAddress,
         userId
       ]);
@@ -633,12 +673,12 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContacts(userId: string, emails?: string[]): Promise<Contact[]> {
+  async getContacts(userId: string, ids?: string[]): Promise<Contact[]> {
     try {
-      const { rows } = emails
-        ? await this.pool.query(PgContacts.SELECT_CONTACTS_BY_EMAILS, [
+      const { rows } = ids
+        ? await this.pool.query(PgContacts.SELECT_CONTACTS_BY_IDS, [
             userId,
-            emails
+            ids
           ])
         : await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [userId]);
       return rows;
@@ -650,14 +690,14 @@ export default class PgContacts implements Contacts {
 
   async getUnverifiedContacts(
     userId: string,
-    emails: string[]
+    ids: string[]
   ): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
-        emails.length
-          ? PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED
+        ids.length
+          ? PgContacts.SELECT_CONTACTS_BY_IDS_UNVERIFIED
           : PgContacts.SELECT_CONTACTS_UNVERIFIED,
-        emails.length ? [userId, emails] : [userId]
+        ids.length ? [userId, ids] : [userId]
       );
       return rows;
     } catch (error) {
@@ -668,13 +708,13 @@ export default class PgContacts implements Contacts {
 
   async getExportedContacts(
     userId: string,
-    emails?: string[]
+    ids?: string[]
   ): Promise<Contact[]> {
     try {
-      const { rows } = emails
-        ? await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS_BY_EMAILS, [
+      const { rows } = ids
+        ? await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS_BY_IDS, [
             userId,
-            emails
+            ids
           ])
         : await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS, [userId]);
       return rows;
@@ -686,13 +726,13 @@ export default class PgContacts implements Contacts {
 
   async getNonExportedContacts(
     userId: string,
-    emails?: string[]
+    ids?: string[]
   ): Promise<Contact[]> {
     try {
-      const { rows } = emails
+      const { rows } = ids
         ? await this.pool.query(
-            PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS,
-            [userId, emails]
+            PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_IDS,
+            [userId, ids]
           )
         : await this.pool.query(PgContacts.SELECT_NON_EXPORTED_CONTACTS, [
             userId
@@ -706,12 +746,12 @@ export default class PgContacts implements Contacts {
   }
 
   async registerExportedContacts(
-    contactIds: string[],
+    personIds: string[],
     service: ExportService,
     userId: string
   ): Promise<void> {
     try {
-      const values = contactIds.map((id) => [userId, id, 'EXPORT', service]);
+      const values = personIds.map((id) => [userId, id, 'EXPORT', service]);
       await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
     } catch (error) {
       this.logger.error(error);
@@ -732,7 +772,7 @@ export default class PgContacts implements Contacts {
         (name, email, image, location, same_as, given_name, family_name, job_title,
          user_id, source, works_for, mining_id, telephone, alternate_name, alternate_email)
       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      ON CONFLICT (email, user_id, source) DO UPDATE
+      ON CONFLICT (user_id, source, email) WHERE email IS NOT NULL DO UPDATE
       SET
         name = COALESCE(NULLIF(EXCLUDED.name, ''), private.persons.name),
         image = COALESCE(NULLIF(EXCLUDED.image, ''), private.persons.image),
@@ -746,7 +786,7 @@ export default class PgContacts implements Contacts {
         telephone = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.telephone, '{}') || EXCLUDED.telephone)),
         alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
         alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
-      RETURNING email
+      RETURNING id, email
     `;
 
     for (const { person } of contacts) {

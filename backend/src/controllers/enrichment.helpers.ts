@@ -147,8 +147,8 @@ export async function enrichFromCache(
   const cached = await getCached(contacts, EnrichmentService);
   const enrichedEmails = new Set(
     cached
-      .flatMap(({ data }) => data || [])
-      .filter((contact): contact is Contact => Boolean(contact?.email))
+      .flatMap(({ data }) => (data as Partial<Contact>[]) || [])
+      .filter((contact): contact is Partial<Contact> => Boolean(contact?.email))
       .map(({ email }) => email)
   );
 
