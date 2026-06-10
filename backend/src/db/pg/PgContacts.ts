@@ -82,7 +82,8 @@ export default class PgContacts implements Contacts {
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (message_id, user_id) DO NOTHING;`;
 
   private static readonly UPSERT_PERSON_SQL = `
     WITH upserted AS (

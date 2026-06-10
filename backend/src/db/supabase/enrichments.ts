@@ -122,12 +122,12 @@ export default class Enrichments {
     return this.task;
   }
 
-  public async updateContacts(contacts: Partial<Contact>[]) {
+  public async updateContacts(
+    contacts: Partial<Contact>[]
+  ): Promise<{ person_id: string; email: string }[]> {
     const task = this.ensureTask();
     const contactsDB = contacts
-      .filter((contact): contact is Contact & { id: string; email: string } =>
-        Boolean(contact.id && contact.email)
-      )
+      .filter((contact): contact is { email: string } => Boolean(contact.email))
       .map((contact) => ({
         image: contact.image,
         email: contact.email,
@@ -141,7 +141,7 @@ export default class Enrichments {
         alternate_name: contact.alternateName?.join(','),
         user_id: task.userId
       }));
-    const { error } = await this.client
+    const { data, error } = await this.client
       .schema('private')
       .rpc('enrich_contacts', {
         p_contacts_data: contactsDB,
@@ -150,6 +150,11 @@ export default class Enrichments {
       });
 
     if (error) throw error;
+
+    return (data as { id: string; email: string }[]).map((row) => ({
+      person_id: row.id,
+      email: row.email
+    }));
   }
 
   public async enrich(result: EnrichTask['details']['result']) {
@@ -167,18 +172,40 @@ export default class Enrichments {
 
       if (enriched.length) {
         const flatData = enriched.map(({ data }) => data).flat();
-        await this.updateContacts(flatData);
-        await this.engagements.register(
-          flatData
-            .filter((contact) => Boolean(contact.id))
-            .map((contact) => ({
-              person_id: contact.id as string,
+        const updatedPersons = await this.updateContacts(flatData);
+
+        if (updatedPersons.length) {
+          const personIdByEmail = new Map(
+            updatedPersons.map((p) => [p.email, p.person_id])
+          );
+
+          const registrations: {
+            person_id: string;
+            user_id: string;
+            engagement_type: string;
+            service: string;
+          }[] = [];
+
+          for (const contact of flatData) {
+            if (!contact.email) continue;
+            const person_id = personIdByEmail.get(contact.email);
+            if (!person_id) continue;
+            const engine = enriched.find(({ data }) =>
+              data.includes(contact)
+            )?.engine;
+            if (!engine) continue;
+            registrations.push({
+              person_id,
               user_id: task.userId,
               engagement_type: 'ENRICH',
-              service: enriched.find(({ data }) => data.includes(contact))
-                ?.engine as string
-            }))
-        );
+              service: engine
+            });
+          }
+
+          if (registrations.length) {
+            await this.engagements.register(registrations);
+          }
+        }
       }
     } catch (err) {
       const msg = (err as Error).message || 'Unexpected error';

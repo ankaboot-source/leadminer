@@ -1,4 +1,3 @@
-import { PostgrestError } from '@supabase/supabase-js';
 import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
@@ -75,38 +74,24 @@ async function emailMessageHandler(
           : 0
     });
 
-    let emails: string[] = [];
-    try {
-      emails = (await contacts.create(extractedContacts, userId, miningId))
-        .filter(
-          (contact) =>
-            // skip contacts without email (phone-only)
-            Boolean(contact.email) &&
-            // filter out unreachable emails
-            !contact.tags.some(
-              (tag) =>
-                tag.name === 'newsletter' ||
-                [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(tag.reachable)
-            )
-        )
-        .map((contact) => contact.email as string);
-    } catch (e) {
-      if ((e as PostgrestError).code === '23505') {
-        // 23505: duplicate key error
-        emails = (
-          await contacts.getContacts(
-            userId,
-            extractedContacts.persons
-              .map((contact) => contact.person.email)
-              .filter((email): email is string => Boolean(email))
+    const insertedContacts = await contacts.create(
+      extractedContacts,
+      userId,
+      miningId
+    );
+    const emails = insertedContacts
+      .filter(
+        (contact) =>
+          // skip contacts without email (phone-only)
+          Boolean(contact.email) &&
+          // filter out unreachable emails
+          !contact.tags.some(
+            (tag) =>
+              tag.name === 'newsletter' ||
+              [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(tag.reachable)
           )
-        )
-          .map((contact) => contact.email)
-          .filter((email): email is string => Boolean(email));
-      } else {
-        throw e;
-      }
-    }
+      )
+      .map((contact) => contact.email as string);
     if (emails.length > 0) {
       const input = (await queuedEmailsCache.addMany(emails)).addedElements.map(
         (e) => ({

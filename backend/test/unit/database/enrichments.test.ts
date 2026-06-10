@@ -18,16 +18,22 @@ jest.mock('../../../src/utils/logger');
 
 jest.mock('@supabase/supabase-js');
 
-jest.mock('../../../src/utils/supabase', () => ({
-  from: jest.fn().mockReturnThis(),
-  schema: jest.fn().mockReturnThis(),
-  select: jest.fn(),
-  insert: jest.fn(),
-  upsert: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-  rpc: jest.fn()
-}));
+function mockSupabaseClient() {
+  return {
+    from: jest.fn().mockReturnThis(),
+    schema: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn(),
+    upsert: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    rpc: jest.fn(),
+    in: jest.fn().mockReturnThis(),
+    eq: jest.fn()
+  };
+}
+
+jest.mock('../../../src/utils/supabase', () => mockSupabaseClient());
 
 function mockEngagementsDB() {
   return {
@@ -56,6 +62,11 @@ describe('Enrichments Class', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Restore chainable behavior that clearAllMocks resets
+    (mockClient.from as jest.Mock).mockReturnThis();
+    (mockClient.schema as jest.Mock).mockReturnThis();
+    (mockClient.select as jest.Mock).mockReturnThis();
+    (mockClient.in as jest.Mock).mockReturnThis();
   });
 
   describe('createFromId', () => {
@@ -115,11 +126,14 @@ describe('Enrichments Class', () => {
         }
       ];
 
-      const rpcMock = jest.fn().mockReturnValue({ error: null });
+      const rpcMock = jest
+        .fn()
+        .mockReturnValue({ error: null, data: [{ id: 'person-id-1', email: 'johndoe@example.com' }] });
       (mockClient.schema as jest.Mock).mockReturnValue({ rpc: rpcMock });
 
-      await enrichments.updateContacts(contacts);
+      const result = await enrichments.updateContacts(contacts);
 
+      expect(result).toEqual([{ person_id: 'person-id-1', email: 'johndoe@example.com' }]);
       expect(rpcMock).toHaveBeenCalledWith('enrich_contacts', {
         p_contacts_data: [
           {
@@ -169,9 +183,7 @@ describe('Enrichments Class', () => {
       const enrichmentResults = [
         {
           engine: 'test',
-          data: [
-            { id: 'person-id-1', email: 'test@example.com', name: 'hello' }
-          ],
+          data: [{ email: 'test@example.com', name: 'hello' }],
           raw_data: []
         }
       ];
@@ -197,7 +209,7 @@ describe('Enrichments Class', () => {
 
       const updateContactsSpy = jest
         .spyOn(enrichments, 'updateContacts')
-        .mockResolvedValue();
+        .mockResolvedValue([{ person_id: 'person-id-1', email: 'test@example.com' }]);
 
       await enrichments.enrich(enrichmentResults);
 
@@ -216,7 +228,6 @@ describe('Enrichments Class', () => {
       });
       expect(updateContactsSpy).toHaveBeenCalledWith([
         {
-          id: 'person-id-1',
           email: 'test@example.com',
           name: 'hello'
         }

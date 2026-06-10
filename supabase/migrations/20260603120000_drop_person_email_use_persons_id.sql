@@ -939,7 +939,7 @@ DROP FUNCTION IF EXISTS private.enrich_contacts(jsonb[], boolean);
 CREATE OR REPLACE FUNCTION private.enrich_contacts(
     p_contacts_data jsonb[],
     p_update_empty_fields_only boolean DEFAULT true
-) RETURNS void
+) RETURNS TABLE(id uuid, email text)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -1028,6 +1028,7 @@ BEGIN
     END IF;
 
     IF p_update_empty_fields_only THEN
+      RETURN QUERY
       UPDATE private.persons pp
       SET
         name = COALESCE(pp.name, new_name::TEXT),
@@ -1045,8 +1046,10 @@ BEGIN
         telephone = COALESCE(pp.telephone, (merged_telephone)::TEXT[])
       WHERE
         email = (contact_record->>'email')::TEXT AND
-        user_id = (contact_record->>'user_id')::UUID;
+        user_id = (contact_record->>'user_id')::UUID
+      RETURNING pp.id, pp.email;
     ELSE
+      RETURN QUERY
       UPDATE private.persons pp
       SET
         name = COALESCE(new_name::TEXT, pp.name),
@@ -1064,7 +1067,8 @@ BEGIN
         telephone = COALESCE((merged_telephone)::TEXT[], pp.telephone)
       WHERE
         email = (contact_record->>'email')::TEXT AND
-        user_id = (contact_record->>'user_id')::UUID;
+        user_id = (contact_record->>'user_id')::UUID
+      RETURNING pp.id, pp.email;
     END IF;
   END LOOP;
 END;
