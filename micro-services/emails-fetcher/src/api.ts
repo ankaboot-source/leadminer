@@ -13,10 +13,7 @@ import { generateErrorObjectFromImapError } from './utils/imap';
 import logger from './utils/logger';
 import validateType from './utils/validation';
 import supabaseClient from './utils/supabase';
-import {
-  miningSourceService,
-  type MiningSourcesResponse
-} from './db/supabase';
+import { miningSourceService, type MiningSourcesResponse } from './db/supabase';
 import type { OAuthMiningSourceCredentials } from './db/interfaces/MiningSources';
 
 const apiRoutes = Router();

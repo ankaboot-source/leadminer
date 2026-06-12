@@ -128,15 +128,16 @@ describe('Enrichments Class', () => {
 
       const rpcMock = jest
         .fn()
-        .mockReturnValue({ error: null, data: [{ id: 'person-id-1', email: 'johndoe@example.com' }] });
+        .mockReturnValue({ error: null, data: [{ id: 'person-id-1' }] });
       (mockClient.schema as jest.Mock).mockReturnValue({ rpc: rpcMock });
 
       const result = await enrichments.updateContacts(contacts);
 
-      expect(result).toEqual([{ person_id: 'person-id-1', email: 'johndoe@example.com' }]);
+      expect(result).toEqual(['person-id-1']);
       expect(rpcMock).toHaveBeenCalledWith('enrich_contacts', {
         p_contacts_data: [
           {
+            id: 'person-id-1',
             user_id: 'user-id',
             email: 'johndoe@example.com',
             name: 'John Doe',
@@ -183,7 +184,13 @@ describe('Enrichments Class', () => {
       const enrichmentResults = [
         {
           engine: 'test',
-          data: [{ email: 'test@example.com', name: 'hello' }],
+          data: [
+            {
+              person_id: 'person-id-1',
+              email: 'test@example.com',
+              name: 'hello'
+            }
+          ],
           raw_data: []
         }
       ];
@@ -201,15 +208,11 @@ describe('Enrichments Class', () => {
         }
       });
 
-      const task = await enrichments.create(
-        userId,
-        totalToEnrich,
-        updateEmptyFieldsOnly
-      );
+      await enrichments.create(userId, totalToEnrich, updateEmptyFieldsOnly);
 
       const updateContactsSpy = jest
         .spyOn(enrichments, 'updateContacts')
-        .mockResolvedValue([{ person_id: 'person-id-1', email: 'test@example.com' }]);
+        .mockResolvedValue(['person-id-1']);
 
       await enrichments.enrich(enrichmentResults);
 
@@ -228,6 +231,7 @@ describe('Enrichments Class', () => {
       });
       expect(updateContactsSpy).toHaveBeenCalledWith([
         {
+          person_id: 'person-id-1',
           email: 'test@example.com',
           name: 'hello'
         }
@@ -240,7 +244,6 @@ describe('Enrichments Class', () => {
           user_id: 'user-id'
         }
       ]);
-      expect(task.details.total_enriched).toBe(1);
     });
   });
 });

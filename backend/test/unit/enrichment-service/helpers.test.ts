@@ -306,10 +306,10 @@ describe('enrichPersonSync', () => {
     jest.clearAllMocks();
   });
 
-  it('should enrich all contacts', async () => {
+  it('should enrich all contacts and attach person_id', async () => {
     const contacts = [
-      { email: 'test1@example.com' },
-      { email: 'test2@example.com' }
+      { id: 'person-1', email: 'test1@example.com' },
+      { id: 'person-2', email: 'test2@example.com' }
     ];
 
     const enrichmentResults = [
@@ -325,17 +325,25 @@ describe('enrichPersonSync', () => {
       }
     );
 
-    const result = await enrichPersonSync(enrichmentsDB, contacts);
+    await enrichPersonSync(enrichmentsDB, contacts);
 
     expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
     expect(enrichmentsDB.enrich).toHaveBeenCalledTimes(2);
-    expect(result).toEqual([]);
+    // Verify person_id was attached
+    expect(enrichmentResults[0].data[0]).toHaveProperty(
+      'person_id',
+      'person-1'
+    );
+    expect(enrichmentResults[1].data[0]).toHaveProperty(
+      'person_id',
+      'person-2'
+    );
   });
 
   it('should return not enriched contacts', async () => {
     const contacts = [
-      { email: 'test1@example.com' },
-      { email: 'test2@example.com' }
+      { id: 'person-1', email: 'test1@example.com' },
+      { id: 'person-2', email: 'test2@example.com' }
     ];
 
     const enrichmentResults = [{ data: [{ email: 'test1@example.com' }] }];
@@ -352,13 +360,13 @@ describe('enrichPersonSync', () => {
 
     expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
     expect(enrichmentsDB.enrich).toHaveBeenCalledTimes(1);
-    expect(result).toEqual([{ email: 'test2@example.com' }]);
+    expect(result).toEqual([{ id: 'person-2', email: 'test2@example.com' }]);
   });
 
   it('should handle no enrichments gracefully', async () => {
     const contacts = [
-      { email: 'test1@example.com' },
-      { email: 'test2@example.com' }
+      { id: 'person-1', email: 'test1@example.com' },
+      { id: 'person-2', email: 'test2@example.com' }
     ];
 
     (EnrichmentService.enrich as jest.Mock).mockImplementation(
@@ -383,7 +391,7 @@ describe('enrichPersonAsync', () => {
   });
 
   it('should enrich contacts asynchronously', async () => {
-    const contacts = [{ email: 'test1@example.com' }];
+    const contacts = [{ id: 'person-1', email: 'test1@example.com' }];
 
     const task = { id: '1' };
     const webhook = `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/${task.id}`;
@@ -399,6 +407,10 @@ describe('enrichPersonAsync', () => {
       contacts,
       webhook
     );
+    // Verify contacts_map was attached
+    expect((resultData as any).contacts_map).toEqual([
+      { email: 'test1@example.com', person_id: 'person-1' }
+    ]);
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith([resultData]);
   });
 

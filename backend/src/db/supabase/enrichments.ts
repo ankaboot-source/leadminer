@@ -2,10 +2,11 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 import { TaskCategory, TaskStatus, TaskType, EnrichTask } from '../types';
 
-import Engagements from './engagements';
+import Engagements, { EngagementType } from './engagements';
 import SupabaseTasks from './tasks';
 
 interface Contact {
+  person_id?: string;
   id: string;
   userId: string;
   email?: string;
@@ -122,13 +123,11 @@ export default class Enrichments {
     return this.task;
   }
 
-  public async updateContacts(
-    contacts: Partial<Contact>[]
-  ): Promise<{ person_id: string; email: string }[]> {
+  public async updateContacts(contacts: Partial<Contact>[]): Promise<string[]> {
     const task = this.ensureTask();
     const contactsDB = contacts
-      .filter((contact): contact is { email: string } => Boolean(contact.email))
       .map((contact) => ({
+        id: (contact as any).person_id ?? contact.id,
         image: contact.image,
         email: contact.email,
         name: contact.name,
@@ -139,8 +138,10 @@ export default class Enrichments {
         same_as: contact.sameAs?.join(','),
         location: contact.location,
         alternate_name: contact.alternateName?.join(','),
+        telephone: (contact as any).telephone?.join(','),
         user_id: task.userId
-      }));
+      }))
+      .filter((c) => Boolean(c.id));
     const { data, error } = await this.client
       .schema('private')
       .rpc('enrich_contacts', {
@@ -151,10 +152,8 @@ export default class Enrichments {
 
     if (error) throw error;
 
-    return (data as { id: string; email: string }[]).map((row) => ({
-      person_id: row.id,
-      email: row.email
-    }));
+    const rows = data as { id: string }[];
+    return rows.map((row) => row.id);
   }
 
   public async enrich(result: EnrichTask['details']['result']) {
@@ -172,24 +171,21 @@ export default class Enrichments {
 
       if (enriched.length) {
         const flatData = enriched.map(({ data }) => data).flat();
-        const updatedPersons = await this.updateContacts(flatData);
+        const updatedPersonIds = await this.updateContacts(flatData);
 
-        if (updatedPersons.length) {
-          const personIdByEmail = new Map(
-            updatedPersons.map((p) => [p.email, p.person_id])
-          );
-
+        if (updatedPersonIds.length) {
+          const confirmed = new Set(updatedPersonIds);
           const registrations: {
             person_id: string;
             user_id: string;
-            engagement_type: string;
+            engagement_type: EngagementType;
             service: string;
           }[] = [];
 
           for (const contact of flatData) {
-            if (!contact.email) continue;
-            const person_id = personIdByEmail.get(contact.email);
-            if (!person_id) continue;
+            const person_id: string | undefined =
+              (contact as any).person_id ?? contact.id;
+            if (!person_id || !confirmed.has(person_id)) continue;
             const engine = enriched.find(({ data }) =>
               data.includes(contact)
             )?.engine;

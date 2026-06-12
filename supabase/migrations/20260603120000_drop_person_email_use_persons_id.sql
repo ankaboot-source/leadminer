@@ -931,7 +931,7 @@ $$;
 
 
 -- ---------------------------------------------------------------------------
--- 11. enrich_contacts: skip records without email (phone-only)
+-- 11. enrich_contacts: match by person id (not email), phone-only supported
 -- ---------------------------------------------------------------------------
 
 DROP FUNCTION IF EXISTS private.enrich_contacts(jsonb[], boolean);
@@ -939,7 +939,7 @@ DROP FUNCTION IF EXISTS private.enrich_contacts(jsonb[], boolean);
 CREATE OR REPLACE FUNCTION private.enrich_contacts(
     p_contacts_data jsonb[],
     p_update_empty_fields_only boolean DEFAULT true
-) RETURNS TABLE(id uuid, email text)
+) RETURNS TABLE(id uuid)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -957,24 +957,22 @@ DECLARE
   old_telephone TEXT[];
   merged_telephone TEXT[];
 
+  contact_id UUID;
+
 BEGIN
-  -- Assert that all records have user_id; email is now optional
   IF EXISTS (
     SELECT 1
     FROM unnest(p_contacts_data) AS contact
-    WHERE contact->>'user_id' IS NULL
+    WHERE contact->>'user_id' IS NULL OR contact->>'id' IS NULL
   ) THEN
-    RAISE EXCEPTION 'All records in p_contacts_data must contain user_id field';
+    RAISE EXCEPTION 'All records in p_contacts_data must contain user_id and id fields';
   END IF;
 
   FOREACH contact_record IN ARRAY p_contacts_data
   LOOP
-    -- Skip phone-only records (no email to enrich against)
-    IF contact_record->>'email' IS NULL THEN
-      CONTINUE;
-    END IF;
-
+    contact_id := (contact_record->>'id')::UUID;
     works_for_name := contact_record->>'works_for';
+
     IF works_for_name IS NOT NULL THEN
       SELECT id INTO organization_id
       FROM private.organizations
@@ -996,7 +994,7 @@ BEGIN
         SELECT p.telephone
             INTO old_telephone
             FROM private.persons p
-        WHERE p.email = contact_record->>'email'
+        WHERE p.id = contact_id
             AND p.user_id = (contact_record->>'user_id')::UUID
         LIMIT 1;
 
@@ -1017,7 +1015,7 @@ BEGIN
       SELECT p.name, p.alternate_name
       INTO old_name, old_alternate_name
       FROM private.persons p
-      WHERE p.email = contact_record->>'email' AND p.user_id = (contact_record->>'user_id')::UUID
+      WHERE p.id = contact_id AND p.user_id = (contact_record->>'user_id')::UUID
       LIMIT 1;
       IF old_name IS NOT NULL THEN
         IF (old_name != new_name AND (old_alternate_name IS NULL OR NOT(new_name = ANY(old_alternate_name)))) THEN
@@ -1045,9 +1043,9 @@ BEGIN
         status = COALESCE(pp.status, (contact_record->>'status')::TEXT),
         telephone = COALESCE(pp.telephone, (merged_telephone)::TEXT[])
       WHERE
-        email = (contact_record->>'email')::TEXT AND
-        user_id = (contact_record->>'user_id')::UUID
-      RETURNING pp.id, pp.email;
+        pp.id = contact_id AND
+        pp.user_id = (contact_record->>'user_id')::UUID
+      RETURNING pp.id;
     ELSE
       RETURN QUERY
       UPDATE private.persons pp
@@ -1066,9 +1064,9 @@ BEGIN
         status = COALESCE((contact_record->>'status')::TEXT, pp.status),
         telephone = COALESCE((merged_telephone)::TEXT[], pp.telephone)
       WHERE
-        email = (contact_record->>'email')::TEXT AND
-        user_id = (contact_record->>'user_id')::UUID
-      RETURNING pp.id, pp.email;
+        pp.id = contact_id AND
+        pp.user_id = (contact_record->>'user_id')::UUID
+      RETURNING pp.id;
     END IF;
   END LOOP;
 END;
