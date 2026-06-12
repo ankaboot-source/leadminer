@@ -497,7 +497,7 @@ export default class PgContacts implements Contacts {
         }
 
         insertedContacts.add({ email: person.email, tags });
-        if (person.email && personId) {
+        if (personId) {
           // eslint-disable-next-line no-await-in-loop
           await this.pool.query(
             `
