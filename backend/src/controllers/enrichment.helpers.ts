@@ -143,6 +143,15 @@ export async function enrichFromCache(
   enrichmentsDB: Enrichments,
   contacts: Partial<Contact>[]
 ) {
+  const emailToId = new Map(
+    contacts
+      .filter(
+        (c): c is { email: string; id: string } =>
+          Boolean(c.email) && Boolean(c.id)
+      )
+      .map((c) => [c.email, c.id])
+  );
+
   const cached = await getCached(contacts, EnrichmentService);
   const enrichedEmails = new Set(
     cached
@@ -152,9 +161,13 @@ export async function enrichFromCache(
   );
 
   if (enrichedEmails.size) {
-    const emails = Array.from(enrichedEmails.values());
+    for (const response of cached) {
+      for (const data of response.data) {
+        data.person_id = emailToId.get(data.email);
+      }
+    }
     await enrichmentsDB.enrich(cached);
-    logger.debug('Enriched from cache.', emails);
+    logger.debug('Enriched from cache.', Array.from(enrichedEmails.values()));
   }
 
   return contacts.filter(
@@ -169,23 +182,16 @@ export async function enrichPersonSync(
   const task = enrichmentsDB.redactedTask();
   const enriched = new Set<string>();
 
-  const emailToId = new Map(
-    contacts
-      .filter(
-        (c): c is { email: string; id: string } =>
-          Boolean(c.email) && Boolean(c.id)
-      )
-      .map((c) => [c.email, c.id])
-  );
-
-  for await (const result of EnrichmentService.enrich(contacts)) {
+  for (const contact of contacts) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await EnrichmentService.enrichSync(contact);
+    if (!result) continue;
     for (const data of result.data) {
-      if (data.email && !data.person_id) {
-        data.person_id = emailToId.get(data.email);
-      }
+      data.person_id = contact.id;
     }
+    // eslint-disable-next-line no-await-in-loop
     await enrichmentsDB.enrich([result]);
-    enriched.add(result.data[0].email);
+    if (contact.email) enriched.add(contact.email);
   }
 
   if (enriched.size > 0) {

@@ -205,7 +205,10 @@ export default class Enrichments {
       }
     } catch (err) {
       const msg = (err as Error).message || 'Unexpected error';
-      this.logger.error(`[${this.constructor.name}.enrich]: ${msg}`);
+      this.logger.error(`[${this.constructor.name}.enrich]: ${msg}`, {
+        error: err,
+        resultLength: result?.length
+      });
     }
   }
 }

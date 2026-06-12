@@ -122,13 +122,11 @@ export default class PgContacts implements Contacts {
         OR private.persons.alternate_email IS DISTINCT FROM EXCLUDED.alternate_email
       RETURNING persons.id, persons.email
     )
-    SELECT id, email FROM upserted
+    SELECT p.id, p.email FROM upserted p
     UNION ALL
-    SELECT id, $2 FROM private.persons
-    WHERE email IS NOT NULL
-      AND email = $2
-      AND user_id = $11
-      AND source = $12
+    SELECT p.id, p.email FROM private.persons p
+    WHERE p.user_id = $11 AND p.source = $12
+      AND (p.email = $2 OR (p.email IS NULL AND $2 IS NULL))
     LIMIT 1;`;
 
   private static readonly UPSERT_PERSONS_BULK_SQL = `
@@ -403,7 +401,7 @@ export default class PgContacts implements Contacts {
               tag.reachable,
               tag.source,
               userId,
-              personId ?? null
+              personId
             ])
           )
         );
@@ -492,7 +490,7 @@ export default class PgContacts implements Contacts {
                 tag.reachable,
                 tag.source,
                 userId,
-                personId ?? null
+                personId
               ])
             )
           );
@@ -615,7 +613,7 @@ export default class PgContacts implements Contacts {
           tag.reachable,
           tag.source,
           userId,
-          personId ?? null
+          personId
         ]);
       });
 

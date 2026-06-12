@@ -317,13 +317,9 @@ describe('enrichPersonSync', () => {
       { data: [{ email: 'test2@example.com' }] }
     ];
 
-    (EnrichmentService.enrich as jest.Mock).mockImplementation(
-      async function* generator() {
-        for (const result of enrichmentResults) {
-          yield result;
-        }
-      }
-    );
+    (EnrichmentService.enrichSync as jest.Mock)
+      .mockResolvedValueOnce(enrichmentResults[0])
+      .mockResolvedValueOnce(enrichmentResults[1]);
 
     await enrichPersonSync(enrichmentsDB, contacts);
 
@@ -348,13 +344,9 @@ describe('enrichPersonSync', () => {
 
     const enrichmentResults = [{ data: [{ email: 'test1@example.com' }] }];
 
-    (EnrichmentService.enrich as jest.Mock).mockImplementation(
-      async function* generator() {
-        for (const result of enrichmentResults) {
-          yield result;
-        }
-      }
-    );
+    (EnrichmentService.enrichSync as jest.Mock)
+      .mockResolvedValueOnce(enrichmentResults[0])
+      .mockResolvedValueOnce(null);
 
     const result = await enrichPersonSync(enrichmentsDB, contacts);
 
@@ -369,11 +361,9 @@ describe('enrichPersonSync', () => {
       { id: 'person-2', email: 'test2@example.com' }
     ];
 
-    (EnrichmentService.enrich as jest.Mock).mockImplementation(
-      async function* generator() {
-        // No results
-      }
-    );
+    (EnrichmentService.enrichSync as jest.Mock)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
 
     const result = await enrichPersonSync(enrichmentsDB, contacts);
 

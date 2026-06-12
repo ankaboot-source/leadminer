@@ -974,7 +974,7 @@ BEGIN
     works_for_name := contact_record->>'works_for';
 
     IF works_for_name IS NOT NULL THEN
-      SELECT id INTO organization_id
+      SELECT private.organizations.id INTO organization_id
       FROM private.organizations
       WHERE name = works_for_name
       LIMIT 1;
@@ -982,7 +982,7 @@ BEGIN
       IF NOT FOUND THEN
         INSERT INTO private.organizations (name)
         VALUES (works_for_name)
-        RETURNING id INTO organization_id;
+        RETURNING private.organizations.id INTO organization_id;
       END IF;
     ELSE
       organization_id := NULL;
