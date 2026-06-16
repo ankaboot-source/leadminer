@@ -173,6 +173,7 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const { $saasEdgeFunctions } = useNuxtApp();
+const router = useRouter();
 const $user = useSupabaseUser();
 const $profile = useSupabaseUserProfile();
 
