@@ -374,12 +374,6 @@ LIMIT 1;
     }>();
 
     const { organizations, persons } = result;
-interface EnrichedPersonContext {
-  person: EmailExtractionResult['persons'][number]['person'];
-  tags: Tag[];
-  pointOfContact: EmailExtractionResult['persons'][number]['pointOfContact'];
-  id: string; 
-}
     for (const { name } of organizations) {
       const {
         rows: [{ id }]
@@ -573,6 +567,7 @@ private async createContactsFromEmail(
     
     for (const context of persons) {
       const { person } = context;
+      // eslint-disable-next-line no-await-in-loop
       const result = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
         person.name, person.email, person.url, person.image, person.location,
         person.sameAs, person.givenName, person.familyName, person.jobTitle,
