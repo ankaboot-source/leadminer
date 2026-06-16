@@ -151,6 +151,7 @@
 <script setup lang="ts">
 import type { UserAttributes } from '@supabase/supabase-js';
 import { AcceptNewsLetter } from '~/utils/extras';
+import type { FetchError } from 'ofetch';
 
 import { isInvalidEmail } from '@/utils/email';
 import {
@@ -340,7 +341,7 @@ async function deleteAccount() {
     });
   } catch (err) {
     const message =
-      (err as any)?.response?._data?.error ||
+      (err as unknown as FetchError)?.response?._data?.error ||
       (err as Error)?.message ||
       'Something went wrong';
     $toast.add({
