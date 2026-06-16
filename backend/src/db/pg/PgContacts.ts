@@ -21,7 +21,7 @@ interface EnrichedPersonContext {
   person: EmailExtractionResult['persons'][number]['person'];
   tags: Tag[];
   pointOfContact: EmailExtractionResult['persons'][number]['pointOfContact'];
-  id: string; 
+  id: string;
 }
 
 export default class PgContacts implements Contacts {
@@ -145,7 +145,7 @@ WHERE p.user_id = $11
   AND NOT EXISTS (SELECT 1 FROM upserted)
 LIMIT 1;
 
-`
+`;
 
   private static readonly UPSERT_PERSONS_BULK_SQL = `
     INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for", "mining_id", "telephone")
@@ -548,79 +548,131 @@ LIMIT 1;
     return Array.from(insertedContacts);
   }
 
-private async createContactsFromEmail(
-  { message, persons }: EmailExtractionResult,
-  userId: string,
-  miningId: string
-): Promise<{ email?: string; tags: Tag[] }[]> {
-  try {
-    // 1. Log message presence context
-    await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
-      message.channel, message.folderPath, message.date, message.messageId,
-      message.references, message.listId, message.conversation, userId
-    ]);
-
-    if (!persons.length) return [];
-
-    // 2. Execute writes and cleanly structuralize context matching
-    const enrichedContexts: EnrichedPersonContext[] = [];
-    
-    for (const context of persons) {
-      const { person } = context;
-      // eslint-disable-next-line no-await-in-loop
-      const result = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
-        person.name, person.email, person.url, person.image, person.location,
-        person.sameAs, person.givenName, person.familyName, person.jobTitle,
-        person.identifiers, userId, person.source, person.worksFor, miningId,
-        person.telephone, null, null
+  private async createContactsFromEmail(
+    { message, persons }: EmailExtractionResult,
+    userId: string,
+    miningId: string
+  ): Promise<{ email?: string; tags: Tag[] }[]> {
+    try {
+      // 1. Log message presence context
+      await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
+        message.channel,
+        message.folderPath,
+        message.date,
+        message.messageId,
+        message.references,
+        message.listId,
+        message.conversation,
+        userId
       ]);
 
-      const personId = result.rows[0]?.id as string | undefined;
+      if (!persons.length) return [];
 
-      if (!personId) {
-        this.logger.error('[PgContacts.createContactsFromEmail] Critical: UPSERT failed to resolve ID', { 
-          email: person.email, source: person.source, userId 
-        });
-        throw new Error(`Data integrity violation: Missing person ID for ${person.email}`);
+      // 2. Execute writes and cleanly structuralize context matching
+      const enrichedContexts: EnrichedPersonContext[] = [];
+
+      for (const context of persons) {
+        const { person } = context;
+        // eslint-disable-next-line no-await-in-loop
+        const result = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+          person.name,
+          person.email,
+          person.url,
+          person.image,
+          person.location,
+          person.sameAs,
+          person.givenName,
+          person.familyName,
+          person.jobTitle,
+          person.identifiers,
+          userId,
+          person.source,
+          person.worksFor,
+          miningId,
+          person.telephone,
+          null,
+          null
+        ]);
+
+        const personId = result.rows[0]?.id as string | undefined;
+
+        if (!personId) {
+          this.logger.error(
+            '[PgContacts.createContactsFromEmail] Critical: UPSERT failed to resolve ID',
+            {
+              email: person.email,
+              source: person.source,
+              userId
+            }
+          );
+          throw new Error(
+            `Data integrity violation: Missing person ID for ${person.email}`
+          );
+        }
+
+        enrichedContexts.push({ ...context, id: personId });
       }
 
-      enrichedContexts.push({ ...context, id: personId });
+      // 3. Declarative structural transformations without redundant network calls
+      const tagValues = enrichedContexts.flatMap((ctx) =>
+        ctx.tags.map((tag) => [
+          tag.name,
+          tag.reachable,
+          tag.source,
+          userId,
+          ctx.id
+        ])
+      );
+
+      const pocValues = enrichedContexts.map((ctx) => [
+        message.messageId,
+        ctx.pointOfContact.name,
+        ctx.pointOfContact.from,
+        ctx.pointOfContact.replyTo,
+        ctx.pointOfContact.to,
+        ctx.pointOfContact.cc,
+        ctx.pointOfContact.bcc,
+        ctx.pointOfContact.body,
+        ctx.id,
+        ctx.pointOfContact.plusAddress,
+        userId
+      ]);
+
+      const operations = [
+        tagValues.length
+          ? this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues))
+          : Promise.resolve(),
+        pocValues.length
+          ? this.pool.query(format(PgContacts.INSERT_POC_BULK_SQL, pocValues))
+          : Promise.resolve()
+      ];
+
+      const [tagsResult, pocResult] = await Promise.allSettled(operations);
+
+      if (tagsResult.status === 'rejected') {
+        this.logger.error(
+          '[PgContacts.executeBatchInserts:tags] Failed writing relational tags',
+          { error: tagsResult.reason }
+        );
+        throw tagsResult.reason;
+      }
+      if (pocResult.status === 'rejected') {
+        this.logger.error(
+          '[PgContacts.executeBatchInserts:poc] Failed writing point-of-contact payloads',
+          { error: pocResult.reason }
+        );
+        throw pocResult.reason;
+      }
+
+      return persons.map(({ person, tags }) => ({ email: person.email, tags }));
+    } catch (error) {
+      this.logger.error(
+        'Failed processing email extraction batch execution',
+        error
+      );
+      throw error;
     }
-
-    // 3. Declarative structural transformations without redundant network calls
-    const tagValues = enrichedContexts.flatMap(ctx => 
-      ctx.tags.map(tag => [tag.name, tag.reachable, tag.source, userId, ctx.id])
-    );
-
-    const pocValues = enrichedContexts.map(ctx => [
-      message.messageId, ctx.pointOfContact.name, ctx.pointOfContact.from, 
-      ctx.pointOfContact.replyTo, ctx.pointOfContact.to, ctx.pointOfContact.cc, 
-      ctx.pointOfContact.bcc, ctx.pointOfContact.body, ctx.id, ctx.pointOfContact.plusAddress, userId
-    ]);
-
-    const operations = [
-      tagValues.length ? this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues)) : Promise.resolve(),
-      pocValues.length ? this.pool.query(format(PgContacts.INSERT_POC_BULK_SQL, pocValues)) : Promise.resolve()
-    ];
-
-    const [tagsResult, pocResult] = await Promise.allSettled(operations);
-
-    if (tagsResult.status === 'rejected') {
-      this.logger.error('[PgContacts.executeBatchInserts:tags] Failed writing relational tags', { error: tagsResult.reason });
-      throw tagsResult.reason;
-    }
-    if (pocResult.status === 'rejected') {
-      this.logger.error('[PgContacts.executeBatchInserts:poc] Failed writing point-of-contact payloads', { error: pocResult.reason });
-      throw pocResult.reason;
-    }
-
-    return persons.map(({ person, tags }) => ({ email: person.email, tags }));
-
-  } catch (error) {
-    this.logger.error('Failed processing email extraction batch execution', error);
-    throw error;
   }
-}
 
   async refine(userId: string): Promise<boolean> {
     try {
