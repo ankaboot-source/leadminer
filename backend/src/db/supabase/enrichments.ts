@@ -183,15 +183,15 @@ export default class Enrichments {
           }[] = [];
 
           for (const contact of flatData) {
-            const person_id: string | undefined =
+            const personId: string | undefined =
               (contact as any).person_id ?? contact.id;
-            if (!person_id || !confirmed.has(person_id)) continue;
+            if (!personId || !confirmed.has(personId)) continue;
             const engine = enriched.find(({ data }) =>
               data.includes(contact)
             )?.engine;
             if (!engine) continue;
             registrations.push({
-              person_id,
+              person_id: personId,
               user_id: task.userId,
               engagement_type: 'ENRICH',
               service: engine
