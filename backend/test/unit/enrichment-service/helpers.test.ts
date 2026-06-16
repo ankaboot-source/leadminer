@@ -398,9 +398,13 @@ describe('enrichPersonAsync', () => {
       webhook
     );
     // Verify contacts_map was attached
-    expect((resultData as any).contacts_map).toEqual([
-      { email: 'test1@example.com', person_id: 'person-1' }
-    ]);
+    expect(
+      (
+        resultData as {
+          contacts_map: Array<{ email: string; person_id: string }>;
+        }
+      ).contacts_map
+    ).toEqual([{ email: 'test1@example.com', person_id: 'person-1' }]);
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith([resultData]);
   });
 

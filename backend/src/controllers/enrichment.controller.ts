@@ -120,8 +120,11 @@ async function enrichWebhook(req: Request, res: Response, next: NextFunction) {
     const { engine } = taskResult;
     const result = EnrichmentService.parseResult([req.body], engine);
 
-    const contactsMap: Array<{ email: string; person_id: string }> | undefined =
-      (taskResult as any).contacts_map;
+    const contactsMap = (
+      taskResult as {
+        contacts_map?: Array<{ email: string; person_id: string }>;
+      }
+    ).contacts_map;
 
     if (contactsMap) {
       const emailToId = new Map(contactsMap.map((c) => [c.email, c.person_id]));

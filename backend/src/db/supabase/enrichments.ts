@@ -19,6 +19,7 @@ interface Contact {
   jobTitle?: string;
   sameAs?: string[];
   image?: string;
+  telephone?: string[];
 }
 
 interface TaskRedacted {
@@ -127,7 +128,7 @@ export default class Enrichments {
     const task = this.ensureTask();
     const contactsDB = contacts
       .map((contact) => ({
-        id: (contact as any).person_id ?? contact.id,
+        id: contact.person_id ?? contact.id,
         image: contact.image,
         email: contact.email,
         name: contact.name,
@@ -138,7 +139,7 @@ export default class Enrichments {
         same_as: contact.sameAs?.join(','),
         location: contact.location,
         alternate_name: contact.alternateName?.join(','),
-        telephone: (contact as any).telephone?.join(','),
+        telephone: contact.telephone?.join(','),
         user_id: task.userId
       }))
       .filter((c) => Boolean(c.id));
@@ -184,7 +185,7 @@ export default class Enrichments {
 
           for (const contact of flatData) {
             const personId: string | undefined =
-              (contact as any).person_id ?? contact.id;
+              (contact as { person_id?: string }).person_id ?? contact.id;
             if (!personId || !confirmed.has(personId)) continue;
             const engine = enriched.find(({ data }) =>
               data.includes(contact)

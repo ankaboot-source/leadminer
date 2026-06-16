@@ -216,7 +216,11 @@ export async function enrichPersonAsync(
           Boolean(c.email) && Boolean(c.id)
       )
       .map((c) => ({ email: c.email, person_id: c.id }));
-    (result as any).contacts_map = contactsMap;
+    (
+      result as EngineResponse & {
+        contacts_map: Array<{ email: string; person_id: string }>;
+      }
+    ).contacts_map = contactsMap;
     await enrichmentsDB.enrich([result]);
   }
   return result;
