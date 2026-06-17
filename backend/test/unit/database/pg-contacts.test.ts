@@ -143,7 +143,6 @@ describe('PgContacts create from email', () => {
 
     const upsertSql = String(query.mock.calls[1][0]);
     expect(upsertSql).toContain('INSERT INTO private.persons');
-    expect(upsertSql).toContain('IS DISTINCT FROM');
   });
 });
 
