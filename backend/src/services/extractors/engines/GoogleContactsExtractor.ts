@@ -103,15 +103,24 @@ export class GoogleContactsExtractor {
       }
     }
 
-    // Default to newsletter tag when tagging is unavailable or produces no results
     if (tags.length === 0) {
-      tags = [
-        {
-          name: 'newsletter',
-          reachable: REACHABILITY.NONE,
-          source: 'google_contacts#email_address'
-        }
-      ];
+      if (contactFrontend.email) {
+        tags = [
+          {
+            name: 'newsletter',
+            reachable: REACHABILITY.NONE,
+            source: 'google_contacts#email_address'
+          }
+        ];
+      } else {
+        tags = [
+          {
+            name: 'personal',
+            reachable: REACHABILITY.NONE,
+            source: 'google_contacts#phone_number'
+          }
+        ];
+      }
     }
 
     const orgName = this.data.organizations?.[0]?.name;

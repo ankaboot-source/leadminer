@@ -22,6 +22,6 @@ export async function mailMiningComplete(miningId: string) {
 export async function refineContacts(userId: string) {
   const { error } = await supabaseClient
     .schema('private')
-    .rpc('refine_persons', { userid: userId });
+    .rpc('refine_persons', { p_user_id: userId });
   if (error) throw error;
 }

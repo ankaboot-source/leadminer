@@ -14,6 +14,7 @@ export interface Person {
 }
 
 export interface EngineResult {
+  person_id?: string;
   email: string;
   name?: string;
   image?: string;

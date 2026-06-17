@@ -120,6 +120,21 @@ async function enrichWebhook(req: Request, res: Response, next: NextFunction) {
     const { engine } = taskResult;
     const result = EnrichmentService.parseResult([req.body], engine);
 
+    const contactsMap = (
+      taskResult as {
+        contacts_map?: Array<{ email: string; person_id: string }>;
+      }
+    ).contacts_map;
+
+    if (contactsMap) {
+      const emailToId = new Map(contactsMap.map((c) => [c.email, c.person_id]));
+      for (const data of result.data) {
+        if (data.email && !data.person_id) {
+          data.person_id = emailToId.get(data.email);
+        }
+      }
+    }
+
     await enrichmentsDB.enrich([{ ...taskResult, ...result }]);
     await Billing?.deductCustomerCredits(
       task.userId,

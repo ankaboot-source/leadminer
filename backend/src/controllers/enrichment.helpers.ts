@@ -12,24 +12,23 @@ import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';
 
 /**
- * Queries emails for a given user from table "refinedpersons".
+ * Queries person ids for a given user from table "refinedpersons".
  * @param userId - The ID of the user.
- * @returns List of email addresses.
- * @throws Error if there is an issue fetching data from the database.
+ * @returns List of person UUIDs.
  */
-export async function getRefinedPersonsEmails(userId: string) {
-  const { data: emails, error } = await supabaseClient
+export async function getRefinedPersons(userId: string) {
+  const { data, error } = await supabaseClient
     .schema('private')
     .from('refinedpersons')
-    .select('email')
+    .select('person_id')
     .match({ user_id: userId })
-    .returns<{ email: string }[]>();
+    .returns<{ person_id: string }[]>();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return emails.map((record) => record.email);
+  return data.map((record) => record.person_id);
 }
 
 /**
@@ -47,21 +46,21 @@ export async function getContactsToEnrich(
     return contacts ?? [];
   }
 
-  const refinedEmails = await getRefinedPersonsEmails(userId);
+  const refinedPersonIds = await getRefinedPersons(userId);
 
   const { data, error } = await supabaseClient
     .schema('private')
     .from('persons')
-    .select('email, name')
+    .select('id, email, name')
     .eq('user_id', userId)
-    .in('email', refinedEmails)
-    .returns<{ email: string; name: string }[]>();
+    .in('id', refinedPersonIds)
+    .returns<{ id: string; email: string | null; name: string }[]>();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data.map(({ email, name }) => ({ email, name }));
+  return data.map(({ id, email, name }) => ({ id, email, name }));
 }
 
 export async function restrictOrDecline(userId: string, totalContacts: number) {
@@ -144,6 +143,15 @@ export async function enrichFromCache(
   enrichmentsDB: Enrichments,
   contacts: Partial<Contact>[]
 ) {
+  const emailToId = new Map(
+    contacts
+      .filter(
+        (c): c is { email: string; id: string } =>
+          Boolean(c.email) && Boolean(c.id)
+      )
+      .map((c) => [c.email, c.id])
+  );
+
   const cached = await getCached(contacts, EnrichmentService);
   const enrichedEmails = new Set(
     cached
@@ -153,9 +161,13 @@ export async function enrichFromCache(
   );
 
   if (enrichedEmails.size) {
-    const emails = Array.from(enrichedEmails.values());
+    for (const response of cached) {
+      for (const data of response.data) {
+        data.person_id = emailToId.get(data.email);
+      }
+    }
     await enrichmentsDB.enrich(cached);
-    logger.debug('Enriched from cache.', emails);
+    logger.debug('Enriched from cache.', Array.from(enrichedEmails.values()));
   }
 
   return contacts.filter(
@@ -170,9 +182,16 @@ export async function enrichPersonSync(
   const task = enrichmentsDB.redactedTask();
   const enriched = new Set<string>();
 
-  for await (const result of EnrichmentService.enrich(contacts)) {
+  for (const contact of contacts) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await EnrichmentService.enrichSync(contact);
+    if (!result) continue;
+    for (const data of result.data) {
+      data.person_id = contact.id;
+    }
+    // eslint-disable-next-line no-await-in-loop
     await enrichmentsDB.enrich([result]);
-    enriched.add(result.data[0].email);
+    if (contact.email) enriched.add(contact.email);
   }
 
   if (enriched.size > 0) {
@@ -191,6 +210,17 @@ export async function enrichPersonAsync(
   const result = await EnrichmentService.enrichAsync(contacts, webhook);
 
   if (result) {
+    const contactsMap = contacts
+      .filter(
+        (c): c is { email: string; id: string } =>
+          Boolean(c.email) && Boolean(c.id)
+      )
+      .map((c) => ({ email: c.email, person_id: c.id }));
+    (
+      result as EngineResponse & {
+        contacts_map: Array<{ email: string; person_id: string }>;
+      }
+    ).contacts_map = contactsMap;
     await enrichmentsDB.enrich([result]);
   }
   return result;

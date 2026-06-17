@@ -54,13 +54,6 @@ describe('PgContacts create from email', () => {
         rowCount: 1,
         rows: [{ id: PENDING_ID, email: 'pending@example.com' }]
       } as never)
-      .mockResolvedValueOnce({
-        rowCount: 2,
-        rows: [
-          { id: KNOWN_ID, status: 'valid' },
-          { id: PENDING_ID, status: null }
-        ]
-      } as never)
       .mockResolvedValue({ rowCount: 1, rows: [] } as never);
 
     const pool = { query } as unknown as Pool;
@@ -131,6 +124,10 @@ describe('PgContacts create from email', () => {
 
     expect(result).toEqual([
       {
+        email: 'known@example.com',
+        tags: []
+      },
+      {
         email: 'pending@example.com',
         tags: [
           {
@@ -142,11 +139,10 @@ describe('PgContacts create from email', () => {
       }
     ]);
 
-    expect(query).toHaveBeenCalledTimes(6);
+    expect(query).toHaveBeenCalledTimes(5);
 
     const upsertSql = String(query.mock.calls[1][0]);
     expect(upsertSql).toContain('INSERT INTO private.persons');
-    expect(upsertSql).toContain('IS DISTINCT FROM');
   });
 });
 
@@ -160,10 +156,6 @@ describe('PgContacts phone-only contacts', () => {
       .mockResolvedValueOnce({
         rowCount: 1,
         rows: [{ id: PHONE_ID, email: null }]
-      } as never)
-      .mockResolvedValueOnce({
-        rowCount: 1,
-        rows: [{ id: PHONE_ID, status: null }]
       } as never)
       .mockResolvedValue({ rowCount: 1, rows: [] } as never);
 

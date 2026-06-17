@@ -22,7 +22,6 @@ import { miningSourceService } from '../db/supabase/MiningSourceService';
 import { hasEmailVerificationConfigured } from '../services/email-status/EmailStatusVerifierFactory';
 import { MiningEngine } from '../services/tasks-manager-v2/MiningEngine';
 import { CleanTask } from '../services/tasks-manager-v2/tasks/CleanTask';
-import { ExtractTask } from '../services/tasks-manager-v2/tasks/ExtractTask';
 import { TaskId } from '../services/tasks-manager-v2/types';
 import {
   createImapMining,
@@ -100,6 +99,15 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
     });
 
     await producer.produce(toPublish);
+
+    await redisClient.publish(
+      miningId,
+      JSON.stringify({
+        miningId,
+        progressType: 'createdContacts',
+        count: toPublish.length
+      })
+    );
 
     logger.debug('Successfully re-published contacts for cleaning', {
       userId,
@@ -317,17 +325,12 @@ export default function initializeMiningController(
           const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
-            const totalPublished =
-              await publishPreviouslyUnverifiedEmailsToCleaning(
-                contactsDB,
-                userId,
-                miningId,
-                emailStream
-              );
-            const extractTask = pipeline.getTask<ExtractTask>(TaskId.Extract);
-            if (extractTask) {
-              extractTask.addCreatedContacts(totalPublished);
-            }
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              emailStream
+            );
           }
         }
 
@@ -410,17 +413,12 @@ export default function initializeMiningController(
           const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
-            const totalPublished =
-              await publishPreviouslyUnverifiedEmailsToCleaning(
-                contactsDB,
-                userId,
-                miningId,
-                emailStream
-              );
-            const extractTask = pipeline.getTask<ExtractTask>(TaskId.Extract);
-            if (extractTask) {
-              extractTask.addCreatedContacts(totalPublished);
-            }
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              emailStream
+            );
           }
         }
 
@@ -494,17 +492,12 @@ export default function initializeMiningController(
           const emailStream = cleanTask?.streams?.input[0]?.streamName;
 
           if (emailStream) {
-            const totalPublished =
-              await publishPreviouslyUnverifiedEmailsToCleaning(
-                contactsDB,
-                userId,
-                miningId,
-                emailStream
-              );
-            const extractTask = pipeline.getTask<ExtractTask>(TaskId.Extract);
-            if (extractTask) {
-              extractTask.addCreatedContacts(totalPublished);
-            }
+            await publishPreviouslyUnverifiedEmailsToCleaning(
+              contactsDB,
+              userId,
+              miningId,
+              emailStream
+            );
           }
         }
 
