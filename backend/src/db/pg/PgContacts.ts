@@ -116,22 +116,6 @@ export default class PgContacts implements Contacts {
     telephone = EXCLUDED.telephone,
     alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
     alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
-  WHERE
-    private.persons.name IS DISTINCT FROM EXCLUDED.name
-    OR private.persons.url IS DISTINCT FROM EXCLUDED.url
-    OR private.persons.image IS DISTINCT FROM EXCLUDED.image
-    OR private.persons.location IS DISTINCT FROM EXCLUDED.location
-    OR private.persons.same_as IS DISTINCT FROM EXCLUDED.same_as
-    OR private.persons.given_name IS DISTINCT FROM EXCLUDED.given_name
-    OR private.persons.family_name IS DISTINCT FROM EXCLUDED.family_name
-    OR private.persons.job_title IS DISTINCT FROM EXCLUDED.job_title
-    OR private.persons.identifiers IS DISTINCT FROM EXCLUDED.identifiers
-    OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
-    OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id
-    OR private.persons.telephone IS DISTINCT FROM EXCLUDED.telephone
-    -- Guard array checks safely
-    OR private.persons.alternate_name IS DISTINCT FROM EXCLUDED.alternate_name
-    OR private.persons.alternate_email IS DISTINCT FROM EXCLUDED.alternate_email
   RETURNING persons.id, persons.email
 )
 SELECT p.id, p.email FROM upserted p
