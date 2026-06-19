@@ -315,7 +315,14 @@ function registerFiltersAndStartWatchers() {
     !filter ? true : filter.some((item: string) => value.includes(item)),
   );
   FilterService.register(NOT_EMPTY, (value, filter) =>
-    filter ? !(value === undefined || value === null || value === '') : true,
+    filter
+      ? !(
+          value === undefined ||
+          value === null ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0)
+        )
+      : true,
   );
 
   FilterService.register(LOCATION_MATCH, (value, filter) => {
