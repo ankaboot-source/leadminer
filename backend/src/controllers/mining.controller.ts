@@ -290,7 +290,15 @@ export default function initializeMiningController(
           user.id
         );
         miningSourceCredentials = source?.credentials;
-      } else if (email) {
+        if (!source) {
+          logger.warn('getSourceById returned no source for miningSourceId', {
+            miningSourceId,
+            userId: user.id
+          });
+        }
+      }
+
+      if (!miningSourceCredentials && email) {
         const sources = await miningSourceService.getSourcesForUser(
           user.id,
           sanitizedEmail
