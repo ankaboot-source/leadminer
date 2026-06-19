@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
 
 const miningSource = ref<MiningSource>();
@@ -104,7 +105,8 @@ function closePassiveMiningDialog() {
 }
 
 async function enablePassiveMining() {
-  if (miningSource.value) {
+  if (!miningSource.value) return;
+  try {
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
@@ -115,11 +117,20 @@ async function enablePassiveMining() {
       })
       .match({ email: miningSource.value.email });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+    closePassiveMiningDialog();
+  } catch (error) {
+    const message =
+      (error as { message?: string }).message ||
+      'Failed to enable continuous mining';
+    const $toast = useToast();
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: message,
+      life: 5000,
+    });
   }
-  closePassiveMiningDialog();
 }
 </script>
 
