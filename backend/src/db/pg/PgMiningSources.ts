@@ -87,6 +87,14 @@ export default class PgMiningSources implements MiningSources {
     throw new Error(`Method not implemented, ${userId}, ${email}`);
   }
 
+  getSourceById(
+    sourceId: string,
+    userId: string
+  ): Promise<MiningSource | null> {
+    this.logger.warn('Method getSourceById not implemented');
+    throw new Error(`Method not implemented, ${sourceId}, ${userId}`);
+  }
+
   async delete(userId: string, email: string): Promise<boolean> {
     try {
       const { rows } = await this.client.query(PgMiningSources.DELETE_SQL, [

@@ -34,6 +34,7 @@ export interface OAuthMiningSourceCredentials {
 interface BaseMiningSource {
   email: string;
   userId: string;
+  id?: string;
 }
 
 export interface ImapMiningSource extends BaseMiningSource {
@@ -80,5 +81,6 @@ export interface MiningSources {
     >;
   */
   getSourcesForUser(userId: string, email?: string): Promise<MiningSource[]>;
+  getSourceById(sourceId: string, userId: string): Promise<MiningSource | null>;
   delete(userId: string, email: string): Promise<boolean>;
 }

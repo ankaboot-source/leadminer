@@ -258,14 +258,15 @@ export default function initializeMiningController(
       const {
         extractSignatures,
         cleaningEnabled,
-        miningSource: { email },
+        miningSource: { email, id: miningSourceId },
         boxes: folders,
         since,
         passive_mining: passiveMining,
         googleContactsSync
       }: {
         miningSource: {
-          email: string;
+          email?: string;
+          id?: string;
         };
         boxes: string[];
         extractSignatures: boolean;
@@ -275,18 +276,27 @@ export default function initializeMiningController(
         googleContactsSync?: boolean;
       } = req.body;
 
-      user.email = email; // used when user is not provided (edge function req)
+      user.email = email ?? ''; // used when user is not provided (edge function req)
 
-      const sanitizedEmail = sanitizeImapInput(email);
       const sanitizedFolders = folders.map((folder) =>
         sanitizeImapInput(folder)
       );
+      const sanitizedEmail = email ? sanitizeImapInput(email) : '';
+      let miningSourceCredentials;
 
-      const sources = await miningSourceService.getSourcesForUser(
-        user.id,
-        sanitizedEmail
-      );
-      const miningSourceCredentials = sources?.pop()?.credentials;
+      if (miningSourceId) {
+        const source = await miningSourceService.getSourceById(
+          miningSourceId,
+          user.id
+        );
+        miningSourceCredentials = source?.credentials;
+      } else if (email) {
+        const sources = await miningSourceService.getSourcesForUser(
+          user.id,
+          sanitizedEmail
+        );
+        miningSourceCredentials = sources?.pop()?.credentials;
+      }
 
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
         return res.status(401).json({

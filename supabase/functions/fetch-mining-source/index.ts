@@ -26,6 +26,7 @@ const logger = createLogger("fetch-mining-source");
 
 const RequestSchema = z.object({
   email: z.string().email().optional(),
+  id: z.string().uuid().optional(),
   user_id: z.string().uuid().optional(),
   refresh_email: z.string().email().optional(),
 });
@@ -98,6 +99,7 @@ class FetchMiningSourceHandler {
 
       let sources = await this.fetchSources(userId);
       sources = FetchMiningSourceHandler.filterByEmail(sources, body.email);
+      sources = FetchMiningSourceHandler.filterById(sources, body.id);
 
       const refreshedEmails = await this.refreshTokensIfNeeded(
         sources,
@@ -184,6 +186,17 @@ class FetchMiningSourceHandler {
     }
 
     return (data ?? []) as MiningSource[];
+  }
+
+  private static filterById(
+    sources: MiningSource[],
+    idFilter?: string,
+  ): MiningSource[] {
+    if (!idFilter) {
+      return sources;
+    }
+
+    return sources.filter((s) => s.id === idFilter);
   }
 
   private static filterByEmail(
@@ -273,6 +286,7 @@ class FetchMiningSourceHandler {
   ): Response {
     const response = {
       sources: sources.map((s) => ({
+        id: s.id,
         email: s.email,
         type: s.type,
         credentials: s.credentials,

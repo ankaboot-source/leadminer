@@ -11,6 +11,7 @@ export enum MiningTypes {
 }
 
 export interface MiningSource {
+  id?: string;
   type: MiningSourceType;
   email: string;
   isValid?: boolean;
@@ -18,6 +19,7 @@ export interface MiningSource {
   totalContacts?: number;
   totalFromLastMining?: number;
   lastMiningDate?: string;
+  config?: Record<string, unknown>;
 }
 
 export interface MiningProgress {
