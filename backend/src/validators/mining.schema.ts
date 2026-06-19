@@ -17,7 +17,10 @@ export const startMiningSchema = z.object({
   }),
   body: z.object({
     miningSource: z.object({
-      email: stringField
+      email: stringField.optional(),
+      id: stringField.optional()
+    }).refine(data => data.email || data.id, {
+      message: 'Either miningSource.email or miningSource.id is required'
     }),
     boxes: stringArray,
     extractSignatures: z.boolean(),

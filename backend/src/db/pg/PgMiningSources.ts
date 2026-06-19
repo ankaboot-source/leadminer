@@ -87,7 +87,7 @@ export default class PgMiningSources implements MiningSources {
     throw new Error(`Method not implemented, ${userId}, ${email}`);
   }
 
-  async getSourceById(
+  getSourceById(
     sourceId: string,
     userId: string
   ): Promise<MiningSource | null> {

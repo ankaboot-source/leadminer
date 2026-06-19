@@ -124,9 +124,14 @@
                 >
                   <span>{{ t('google_contacts_sync') }}</span>
                   <ToggleSwitch
-                    :model-value="getSourceConfig(source, 'google_contacts_sync')"
+                    :model-value="
+                      getSourceConfig(source, 'google_contacts_sync')
+                    "
                     :disabled="!source.passive_mining"
-                    @update:model-value="(val: boolean) => toggleSourceConfig(source, 'google_contacts_sync', val)"
+                    @update:model-value="
+                      (val: boolean) =>
+                        toggleSourceConfig(source, 'google_contacts_sync', val)
+                    "
                   />
                 </div>
 

@@ -13,21 +13,30 @@
 
       <div class="flex flex-col gap-3 pt-2 border-t border-surface-200">
         <div v-if="isGoogleSource" class="flex items-center gap-2">
-          <ToggleSwitch v-model="sourceConfig.google_contacts_sync" input-id="googleContactsSync" />
+          <ToggleSwitch
+            v-model="sourceConfig.google_contacts_sync"
+            input-id="googleContactsSync"
+          />
           <label for="googleContactsSync" class="cursor-pointer">
             {{ t('sync_google_contacts') }}
           </label>
         </div>
 
         <div class="flex items-center gap-2">
-          <ToggleSwitch v-model="sourceConfig.cleaning_enabled" input-id="cleaningEnabled" />
+          <ToggleSwitch
+            v-model="sourceConfig.cleaning_enabled"
+            input-id="cleaningEnabled"
+          />
           <label for="cleaningEnabled" class="cursor-pointer">
             {{ t('clean_contacts') }}
           </label>
         </div>
 
         <div class="flex items-center gap-2">
-          <ToggleSwitch v-model="sourceConfig.extract_signatures" input-id="extractSignatures" />
+          <ToggleSwitch
+            v-model="sourceConfig.extract_signatures"
+            input-id="extractSignatures"
+          />
           <label for="extractSignatures" class="cursor-pointer">
             {{ t('extract_signatures') }}
           </label>
@@ -81,7 +90,10 @@ watch(
         google_contacts_sync: true,
         cleaning_enabled: true,
         extract_signatures: false,
-        ...(($leadminerStore.activeMiningSource?.config ?? {}) as Record<string, boolean>),
+        ...(($leadminerStore.activeMiningSource?.config ?? {}) as Record<
+          string,
+          boolean
+        >),
       };
     }
   },
