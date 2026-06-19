@@ -728,13 +728,22 @@ async function saveContactInformations() {
   };
   const userId = getCurrentUserId();
   if (!userId) return;
-  await updateContact(userId, contactToUpdate);
-  if (contactToUpdate.user_tags !== undefined) {
-    contact.value.user_tags = contactToUpdate.user_tags;
+
+  try {
+    await updateContact(userId, contactToUpdate);
+    if (contactToUpdate.user_tags !== undefined) {
+      contact.value.user_tags = contactToUpdate.user_tags;
+    }
+    await $contactsStore.updateContactsCache(contact.value, true);
+    editingContact.value = false;
+    showNotification('success', t('contact_saved'), '');
+  } catch (error) {
+    showNotification(
+      'error',
+      t('error_saving_contact'),
+      (error as { message?: string }).message || t('unknown_error'),
+    );
   }
-  await $contactsStore.updateContactsCache(contact.value, true);
-  editingContact.value = false;
-  showNotification('success', t('contact_saved'), '');
 }
 
 function cancelContactInformations() {
@@ -796,7 +805,9 @@ async function removeContact() {
     "remove_contact_title": "Remove Contact",
     "remove_contact_detail": "Are you sure you want to remove {name}?",
     "contact_removed": "Contact removed",
-    "remove_contact_error": "Failed to remove contact"
+    "remove_contact_error": "Failed to remove contact",
+    "error_saving_contact": "Error saving contact",
+    "unknown_error": "An unknown error occurred"
   },
   "fr": {
     "copy": "Copier",
@@ -814,7 +825,9 @@ async function removeContact() {
     "remove_contact_title": "Supprimer le contact",
     "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
     "contact_removed": "Contact supprimé",
-    "remove_contact_error": "Échec de la suppression du contact"
+    "remove_contact_error": "Échec de la suppression du contact",
+    "error_saving_contact": "Erreur lors de l'enregistrement du contact",
+    "unknown_error": "Une erreur inconnue est survenue"
   }
 }
 </i18n>
