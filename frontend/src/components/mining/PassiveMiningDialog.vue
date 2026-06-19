@@ -75,6 +75,7 @@ const sourceConfig = ref<Record<string, boolean>>({
 
 const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
+const $toast = useToast();
 
 const { t } = useI18n({
   useScope: 'local',
@@ -123,7 +124,6 @@ async function enablePassiveMining() {
     const message =
       (error as { message?: string }).message ||
       'Failed to enable continuous mining';
-    const $toast = useToast();
     $toast.add({
       severity: 'error',
       summary: 'Error',
