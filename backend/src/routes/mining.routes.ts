@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import initializeMiningController, {
   MiningControllerDeps
 } from '../controllers/mining.controller';
@@ -41,9 +42,15 @@ export default function initializeMiningRoutes(
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
+  const miningLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10
+  });
+
   router.post(
     '/mine/sources/imap',
     authMiddleware,
+    miningLimiter,
     validate(createImapMiningSourceSchema),
     createImapMiningSource
   );
@@ -52,24 +59,28 @@ export default function initializeMiningRoutes(
   router.post(
     '/mine/email/:userId',
     authMiddleware,
+    miningLimiter,
     validate(startMiningSchema),
     startMining
   );
   router.post(
     '/mine/file/:userId',
     authMiddleware,
+    miningLimiter,
     validate(startMiningFileSchema),
     startMiningFile
   );
   router.post(
     '/mine/pst/:userId',
     authMiddleware,
+    miningLimiter,
     validate(startMiningPSTSchema),
     startMiningPST
   );
   router.post(
     '/mine/:type/:userId/:id',
     authMiddleware,
+    miningLimiter,
     validate(stopMiningTaskSchema),
     stopMiningTask
   );
