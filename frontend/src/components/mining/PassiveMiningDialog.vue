@@ -66,14 +66,14 @@
 import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
 
+const $leadminerStore = useLeadminerStore();
+
 const miningSource = ref<MiningSource>();
 const sourceConfig = ref<Record<string, boolean>>({
-  google_contacts_sync: true,
-  cleaning_enabled: true,
-  extract_signatures: false,
+  google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
+  cleaning_enabled: $leadminerStore.cleaningEnabled,
+  extract_signatures: $leadminerStore.extractSignatures,
 });
-
-const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
 const $toast = useToast();
 
@@ -85,13 +85,13 @@ const isGoogleSource = computed(() => miningSource.value?.type === 'google');
 
 watch(
   () => $leadminerStore.passiveMiningDialog,
-  (newVal) => {
-    if (newVal) {
+  (newVal, oldVal) => {
+    if (newVal && !oldVal) {
       miningSource.value = $leadminerStore.activeMiningSource;
       sourceConfig.value = {
-        google_contacts_sync: true,
-        cleaning_enabled: true,
-        extract_signatures: false,
+        google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
+        cleaning_enabled: $leadminerStore.cleaningEnabled,
+        extract_signatures: $leadminerStore.extractSignatures,
         ...(($leadminerStore.activeMiningSource?.config ?? {}) as Record<
           string,
           boolean

@@ -380,6 +380,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import parsePhoneNumber from 'libphonenumber-js';
+import { toRaw } from 'vue';
 import { HandledError } from '~/plugins/error-handler';
 import Normalizer from '~/utils/normalizer';
 import { useContactVerification } from '~/composables/useContactVerification';
@@ -442,6 +443,7 @@ const tagAutoComplete = ref();
 const pendingTagInput = ref('');
 
 const allTags = computed(() => {
+  if (!contact.value) return [];
   const autoTags = contact.value.tags ?? [];
   const userTags = contact.value.user_tags ?? [];
   return [...new Set([...autoTags, ...userTags])];
@@ -513,7 +515,8 @@ const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
 
 const skipDialog = computed(
   () =>
-    !(
+    !contact.value ||
+    !!(
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_name?.length ||
@@ -592,6 +595,7 @@ function startRealtimePersons(userId: string, personId: string) {
 }
 
 watch(show, async (value) => {
+  if (!contact.value) return;
   contact.value.works_for = await getOrganizationName(contact.value.works_for);
   const userId = getCurrentUserId();
 
@@ -672,6 +676,7 @@ async function saveContactInformations() {
   }
 
   const contactToUpdate: Partial<Contact> = {
+    id: contact.value.id,
     email: editedContactCopy.email,
     alternate_name:
       JSON.stringify(originalContactCopy.alternate_name) !==
@@ -734,7 +739,7 @@ async function saveContactInformations() {
     if (contactToUpdate.user_tags !== undefined) {
       contact.value.user_tags = contactToUpdate.user_tags;
     }
-    await $contactsStore.updateContactsCache(contact.value, true);
+    await $contactsStore.updateContactsCache(toRaw(contact.value), true);
     editingContact.value = false;
     showNotification('success', t('contact_saved'), '');
   } catch (error) {
