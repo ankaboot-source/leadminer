@@ -98,6 +98,25 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   return sourcesWithStats;
 }
 
+export async function updateMiningSourceConfig(
+  email: string,
+  type: string,
+  config: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await useSupabaseClient()
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
+    .from('mining_sources')
+    .update({ config })
+    .eq('email', email)
+    .eq('type', type);
+
+  if (error) {
+    console.error('Error updating mining source config:', error.message);
+    throw error;
+  }
+}
+
 export async function updatePassiveMining(
   email: string,
   type: string,

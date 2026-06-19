@@ -118,6 +118,18 @@
                   />
                 </div>
 
+                <div
+                  v-if="source.type === 'google'"
+                  class="flex items-center gap-2 text-sm text-surface-600"
+                >
+                  <span>{{ t('google_contacts_sync') }}</span>
+                  <ToggleSwitch
+                    :model-value="getSourceConfig(source, 'google_contacts_sync')"
+                    :disabled="!source.passive_mining"
+                    @update:model-value="(val: boolean) => toggleSourceConfig(source, 'google_contacts_sync', val)"
+                  />
+                </div>
+
                 <Button
                   size="small"
                   outlined
@@ -276,6 +288,7 @@ import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
+import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
@@ -457,6 +470,33 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   }
 }
 
+function getSourceConfig(source: MiningSource, key: string): boolean {
+  return (source.config?.[key] as boolean) ?? false;
+}
+
+async function toggleSourceConfig(
+  source: MiningSource,
+  key: string,
+  value: boolean,
+) {
+  const updatedConfig = {
+    ...(source.config as Record<string, unknown>),
+    [key]: value,
+  };
+
+  try {
+    await updateMiningSourceConfig(source.email, source.type, updatedConfig);
+    source.config = updatedConfig;
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('config_update_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  }
+}
+
 function getSourceStatusBadge(source: MiningSource) {
   return resolveSourceStatusBadge({
     isValid: source.isValid !== false,
@@ -596,6 +636,8 @@ onMounted(async () => {
     "mining_start_failed": "Unable to start mining",
     "mining_already_running": "Mining already running",
     "mining_already_running_detail": "Another source is currently being mined.",
+    "google_contacts_sync": "Google Contacts",
+    "config_update_failed": "Unable to update source settings",
     "passive_mining_update_failed": "Unable to update continuous mining",
     "reconnect_failed": "Unable to reconnect source",
     "reconnect_unavailable": "Reconnect URL is unavailable",
@@ -652,6 +694,8 @@ onMounted(async () => {
     "mining_start_failed": "Impossible de démarrer l'extraction",
     "mining_already_running": "Extraction déjà en cours",
     "mining_already_running_detail": "Une autre source est en cours d'extraction.",
+    "google_contacts_sync": "Contacts Google",
+    "config_update_failed": "Impossible de mettre à jour les paramètres",
     "passive_mining_update_failed": "Impossible de mettre à jour l'extraction continue",
     "reconnect_failed": "Impossible de reconnecter la source",
     "reconnect_unavailable": "URL de reconnexion indisponible",
