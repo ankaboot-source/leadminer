@@ -253,7 +253,6 @@ $$;
 
 CREATE OR REPLACE FUNCTION private.get_mining_source_credentials_for_user(_user_id UUID, _encryption_key TEXT)
 RETURNS TABLE(
-  id UUID,
   email TEXT,
   type TEXT,
   credentials JSONB
@@ -264,7 +263,6 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    ms.id,
     ms.email,
     ms.type::TEXT,
     extensions.pgp_sym_decrypt(ms.credentials, _encryption_key)::JSONB AS credentials
