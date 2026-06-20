@@ -59,7 +59,7 @@ Deno.test({
     const requests: Request[] = [];
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const request = new Request(input, init);
       requests.push(request);
 

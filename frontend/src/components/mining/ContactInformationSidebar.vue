@@ -516,7 +516,7 @@ const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
 const skipDialog = computed(
   () =>
     !contact.value ||
-    !!(
+    Boolean(
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_name?.length ||
@@ -525,7 +525,7 @@ const skipDialog = computed(
       contact.value.works_for ||
       contact.value.job_title ||
       contact.value.same_as?.length ||
-      contact.value.image
+      contact.value.image,
     ),
 );
 

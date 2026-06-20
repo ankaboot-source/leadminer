@@ -109,7 +109,6 @@ async function enablePassiveMining() {
   if (!miningSource.value) return;
   try {
     const { error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('mining_sources')
       .update({
