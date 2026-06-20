@@ -259,6 +259,15 @@
                     @update:model-value="$filtersStore.onPhoneToggle"
                   />
                 </li>
+                <li class="flex justify-between gap-2">
+                  <div>
+                    {{ t('toggle_email_missing_label') }}
+                  </div>
+                  <ToggleSwitch
+                    v-model="$filtersStore.emailMissingToggle"
+                    @update:model-value="$filtersStore.onEmailMissingToggle"
+                  />
+                </li>
                 <Divider class="my-0" />
                 <li>
                   <MultiSelect
@@ -1738,6 +1747,7 @@ table.p-datatable-table {
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
     "toggle_replies_label": "At least one reply",
     "toggle_phone_label": "Only with phone number",
+    "toggle_email_missing_label": "Phone without email",
     "toggle_location_label": "Only with location",
     "toggle_name_label": "Only with name",
     "toggle_name_tooltip": "Named contacts engage more",
@@ -1805,6 +1815,7 @@ table.p-datatable-table {
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
     "toggle_phone_label": "Avec numéro de téléphone",
+    "toggle_email_missing_label": "Téléphone sans email",
     "toggle_location_label": "Avec localisation",
     "toggle_name_label": "Avec nom complet",
     "toggle_name_tooltip": "Les contacts connus par leur nom complet répondent davantage",

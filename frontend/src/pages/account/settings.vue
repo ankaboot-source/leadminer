@@ -318,11 +318,11 @@ async function updateUserDetailsButton() {
 
 async function deleteAccount() {
   isLoading.value = true;
-  showDeleteModal.value = false;
   try {
     await $saasEdgeFunctions('delete-user', {
       method: 'DELETE',
     });
+    showDeleteModal.value = false;
     signOutManually({
       resetUser: () => {
         $user.value = null;

@@ -39,16 +39,18 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
     return c.json({ error: "Unauthorized" }, 401);
   }
   c.set("user", data.user);
+  c.set("supabase", supabase);
   return await next();
 }
 
 app.delete("/", authMiddleware, async (c: Context) => {
   const user = c.get("user");
+  const userClient = c.get("supabase");
   const admin = createSupabaseAdmin();
 
-  const { error: rpcError } = await admin
+  const { error: rpcError } = await userClient
     .schema("private")
-    .rpc("delete_user_data", { user_id: user.id });
+    .rpc("delete_user_data");
 
   if (rpcError) {
     logger.error("Failed to delete user data", { error: rpcError.message });

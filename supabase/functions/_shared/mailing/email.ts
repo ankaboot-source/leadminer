@@ -6,12 +6,21 @@ const user = Deno.env.get("SMTP_USER");
 const pass = Deno.env.get("SMTP_PASS");
 const from = `"leadminer" <${user}>`;
 
+function isSmtpConfigured() {
+  return Boolean(host) && !host?.includes("example");
+}
+
 export async function sendEmail(
   to: string,
   subject: string,
   html: string,
   replyTo?: string,
 ) {
+  if (!isSmtpConfigured()) {
+    console.warn("SMTP not configured, skipping email send", { to, subject });
+    return;
+  }
+
   const transporter = nodemailer.createTransport({
     host,
     port,

@@ -107,7 +107,7 @@ watch(
     () => $leadminerStore.miningSources,
     () => $leadminerStore.isLoadingMiningSources,
   ],
-  ([sourceEmail, miningSources, isLoadingMiningSources]) => {
+  async ([sourceEmail, miningSources, isLoadingMiningSources]) => {
     if (
       shouldInitializeStepperToSourceStep({
         querySource: sourceEmail,
@@ -118,7 +118,7 @@ watch(
       return;
     }
 
-    if ($stepper.index !== -1) {
+    if ($stepper.index !== -1 && !sourceEmail) {
       return;
     }
 
@@ -136,11 +136,20 @@ watch(
 
     handledSourceQuery.value = sourceEmail;
 
-    const resolution = resolvePostOauthSourceSelection({
+    let resolution = resolvePostOauthSourceSelection({
       querySource: sourceEmail,
       miningSources,
       isLoadingMiningSources,
     });
+
+    if (resolution.status === 'fallback') {
+      await $leadminerStore.fetchMiningSources();
+      resolution = resolvePostOauthSourceSelection({
+        querySource: sourceEmail,
+        miningSources: $leadminerStore.miningSources,
+        isLoadingMiningSources: false,
+      });
+    }
 
     if (resolution.status === 'wait') {
       return;

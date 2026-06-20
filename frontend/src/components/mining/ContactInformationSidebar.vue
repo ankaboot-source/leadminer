@@ -380,6 +380,7 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import parsePhoneNumber from 'libphonenumber-js';
+import { toRaw } from 'vue';
 import { HandledError } from '~/plugins/error-handler';
 import Normalizer from '~/utils/normalizer';
 import { useContactVerification } from '~/composables/useContactVerification';
@@ -442,6 +443,7 @@ const tagAutoComplete = ref();
 const pendingTagInput = ref('');
 
 const allTags = computed(() => {
+  if (!contact.value) return [];
   const autoTags = contact.value.tags ?? [];
   const userTags = contact.value.user_tags ?? [];
   return [...new Set([...autoTags, ...userTags])];
@@ -513,7 +515,8 @@ const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
 
 const skipDialog = computed(
   () =>
-    !(
+    !contact.value ||
+    Boolean(
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_name?.length ||
@@ -522,7 +525,7 @@ const skipDialog = computed(
       contact.value.works_for ||
       contact.value.job_title ||
       contact.value.same_as?.length ||
-      contact.value.image
+      contact.value.image,
     ),
 );
 
@@ -592,6 +595,7 @@ function startRealtimePersons(userId: string, personId: string) {
 }
 
 watch(show, async (value) => {
+  if (!contact.value) return;
   contact.value.works_for = await getOrganizationName(contact.value.works_for);
   const userId = getCurrentUserId();
 
@@ -672,6 +676,7 @@ async function saveContactInformations() {
   }
 
   const contactToUpdate: Partial<Contact> = {
+    id: contact.value.id,
     email: editedContactCopy.email,
     alternate_name:
       JSON.stringify(originalContactCopy.alternate_name) !==
@@ -728,13 +733,22 @@ async function saveContactInformations() {
   };
   const userId = getCurrentUserId();
   if (!userId) return;
-  await updateContact(userId, contactToUpdate);
-  if (contactToUpdate.user_tags !== undefined) {
-    contact.value.user_tags = contactToUpdate.user_tags;
+
+  try {
+    await updateContact(userId, contactToUpdate);
+    if (contactToUpdate.user_tags !== undefined) {
+      contact.value.user_tags = contactToUpdate.user_tags;
+    }
+    await $contactsStore.updateContactsCache(toRaw(contact.value), true);
+    editingContact.value = false;
+    showNotification('success', t('contact_saved'), '');
+  } catch (error) {
+    showNotification(
+      'error',
+      t('error_saving_contact'),
+      (error as { message?: string }).message || t('unknown_error'),
+    );
   }
-  await $contactsStore.updateContactsCache(contact.value, true);
-  editingContact.value = false;
-  showNotification('success', t('contact_saved'), '');
 }
 
 function cancelContactInformations() {
@@ -796,7 +810,9 @@ async function removeContact() {
     "remove_contact_title": "Remove Contact",
     "remove_contact_detail": "Are you sure you want to remove {name}?",
     "contact_removed": "Contact removed",
-    "remove_contact_error": "Failed to remove contact"
+    "remove_contact_error": "Failed to remove contact",
+    "error_saving_contact": "Error saving contact",
+    "unknown_error": "An unknown error occurred"
   },
   "fr": {
     "copy": "Copier",
@@ -814,7 +830,9 @@ async function removeContact() {
     "remove_contact_title": "Supprimer le contact",
     "remove_contact_detail": "Êtes-vous sûr de vouloir supprimer {name} ?",
     "contact_removed": "Contact supprimé",
-    "remove_contact_error": "Échec de la suppression du contact"
+    "remove_contact_error": "Échec de la suppression du contact",
+    "error_saving_contact": "Erreur lors de l'enregistrement du contact",
+    "unknown_error": "Une erreur inconnue est survenue"
   }
 }
 </i18n>

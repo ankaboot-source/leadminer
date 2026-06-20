@@ -17,6 +17,7 @@ function createOperatorFilter(
 }
 
 export const NOT_EMPTY = 'NOT_EMPTY';
+export const IS_EMPTY = 'IS_EMPTY';
 export const ANY_SELECTED = 'ANY_SELECTED';
 export const LOCATION_MATCH = 'LOCATION_MATCH';
 export const MAX_YEARS_AGO_TO_FILTER = 3;
@@ -30,6 +31,7 @@ export const DEFAULT_TOGGLES = {
   telephone: false,
   location: false,
   hideUnsubscribed: true,
+  emailMissing: false,
 };
 
 export const CLEARED_TOGGLES = {
@@ -40,12 +42,14 @@ export const CLEARED_TOGGLES = {
   telephone: false,
   location: false,
   hideUnsubscribed: false,
+  emailMissing: false,
 };
 
 export const DEFAULT_FILTERS = {
   global: createConstraint(GLOBAL_SEARCH),
   name: { value: null, matchMode: NOT_EMPTY },
   telephone: { value: null, matchMode: NOT_EMPTY },
+  email: { value: null, matchMode: IS_EMPTY },
   tags: { value: null, matchMode: ANY_SELECTED },
   status: { value: [], matchMode: FilterMatchMode.IN },
   consent_status: {

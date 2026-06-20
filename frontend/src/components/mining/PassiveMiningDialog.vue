@@ -63,17 +63,19 @@
 </template>
 
 <script setup lang="ts">
+import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
+
+const $leadminerStore = useLeadminerStore();
 
 const miningSource = ref<MiningSource>();
 const sourceConfig = ref<Record<string, boolean>>({
-  google_contacts_sync: true,
-  cleaning_enabled: true,
-  extract_signatures: false,
+  google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
+  cleaning_enabled: $leadminerStore.cleaningEnabled,
+  extract_signatures: $leadminerStore.extractSignatures,
 });
-
-const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
+const $toast = useToast();
 
 const { t } = useI18n({
   useScope: 'local',
@@ -83,13 +85,13 @@ const isGoogleSource = computed(() => miningSource.value?.type === 'google');
 
 watch(
   () => $leadminerStore.passiveMiningDialog,
-  (newVal) => {
-    if (newVal) {
+  (newVal, oldVal) => {
+    if (newVal && !oldVal) {
       miningSource.value = $leadminerStore.activeMiningSource;
       sourceConfig.value = {
-        google_contacts_sync: true,
-        cleaning_enabled: true,
-        extract_signatures: false,
+        google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
+        cleaning_enabled: $leadminerStore.cleaningEnabled,
+        extract_signatures: $leadminerStore.extractSignatures,
         ...(($leadminerStore.activeMiningSource?.config ?? {}) as Record<
           string,
           boolean
@@ -104,9 +106,9 @@ function closePassiveMiningDialog() {
 }
 
 async function enablePassiveMining() {
-  if (miningSource.value) {
+  if (!miningSource.value) return;
+  try {
     const { error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
       .from('mining_sources')
       .update({
@@ -115,11 +117,19 @@ async function enablePassiveMining() {
       })
       .match({ email: miningSource.value.email });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+    closePassiveMiningDialog();
+  } catch (error) {
+    const message =
+      (error as { message?: string }).message ||
+      'Failed to enable continuous mining';
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: message,
+      life: 5000,
+    });
   }
-  closePassiveMiningDialog();
 }
 </script>
 
