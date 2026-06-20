@@ -34,6 +34,7 @@ const miningSource = ref<MiningSource>();
 
 const $leadminerStore = useLeadminerStore();
 const $supabase = useSupabaseClient();
+const $toast = useToast();
 
 const { t } = useI18n({
   useScope: 'local',
@@ -54,15 +55,25 @@ function closePassiveMiningDialog() {
 
 async function enablePassiveMining() {
   if (miningSource.value) {
-    const { error } = await $supabase
-      // @ts-expect-error: Issue with nuxt/supabase
-      .schema('private')
-      .from('mining_sources')
-      .update({ passive_mining: true })
-      .match({ email: miningSource.value.email });
+    try {
+      const { error } = await $supabase
+        // @ts-expect-error: Issue with nuxt/supabase
+        .schema('private')
+        .from('mining_sources')
+        .update({ passive_mining: true })
+        .match({ email: miningSource.value.email });
 
-    if (error) {
-      throw error;
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      $toast.add({
+        severity: 'error',
+        summary: t('passive_mining_update_failed'),
+        detail: (error as Error).message,
+        life: 4500,
+      });
+      return;
     }
   }
   closePassiveMiningDialog();
@@ -75,14 +86,15 @@ async function enablePassiveMining() {
     "header": "Continuous Contact Extraction",
     "paragraph_1": "New contacts found in incoming emails will be automatically saved.",
     "paragraph_2": "Enable continuous contact extraction from future emails?",
-    "yes_enable": "Yes, enable"
+    "yes_enable": "Yes, enable",
+    "passive_mining_update_failed": "Unable to update continuous mining"
   },
   "fr": {
     "header": "Extraction continue des contacts",
     "paragraph_1": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
     "paragraph_2": "Activer l'extraction continue des contacts à partir des futurs e-mails ?",
-
-    "yes_enable": "Oui, activer"
+    "yes_enable": "Oui, activer",
+    "passive_mining_update_failed": "Impossible de mettre à jour l'extraction continue"
   }
 }
 </i18n>
