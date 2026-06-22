@@ -47,8 +47,10 @@
       v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
       :disabled="
+        (sourceType === 'email' && $leadminerStore.isLoadingBoxes) ||
         (sourceType === 'email' &&
-          ($leadminerStore.isLoadingBoxes || totalEmails === 0)) ||
+          totalEmails === 0 &&
+          !$leadminerStore.googleContactsSyncEnabled) ||
         $leadminerStore.isLoadingStartMining
       "
       :loading="$leadminerStore.isLoadingStartMining"
@@ -397,11 +399,12 @@ function openMiningSettings() {
 }
 
 async function startMiningBoxes() {
-  if (
+  const hasCheckedBoxes =
     Object.keys(selectedBoxes.value).filter(
       (key) => selectedBoxes.value[key].checked && key !== '',
-    ).length === 0
-  ) {
+    ).length > 0;
+
+  if (!hasCheckedBoxes && !$leadminerStore.googleContactsSyncEnabled) {
     openMiningSettings();
     $toast.add({
       severity: 'error',
