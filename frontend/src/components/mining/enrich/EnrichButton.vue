@@ -109,7 +109,7 @@ const props = defineProps<{
   source?: 'stepper' | 'datatable' | 'contact';
 }>();
 
-const { $api } = useNuxtApp();
+const supabase = useSupabaseClient();
 
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
@@ -261,18 +261,36 @@ async function enrichPerson(
   contacts: Partial<Contact>,
 ) {
   totalTasks.value = 1;
-  await $api<EnrichContactResponse>('/enrich/person/', {
-    method: 'POST',
+  const {
+    data: result,
+    error,
+    response,
+  } = await supabase.functions.invoke<EnrichContactResponse>('enrich/person', {
     body: {
       updateEmptyFieldsOnly,
       enrichAllContacts: false,
       contact: contacts,
     },
-    onResponse({ response }) {
-      enrichmentRequestResponseCallback({ response });
-      enrichmentSingleResponseHandler(response);
-    },
   });
+
+  // For error responses, read the body since supabase doesn't parse non-2xx bodies
+  let parsedResult = result;
+  if (!parsedResult && response) {
+    try {
+      parsedResult = (await response.json()) as EnrichContactResponse;
+    } catch {
+      // Response body may not be JSON
+    }
+  }
+
+  const status = response?.status ?? (error ? 500 : 200);
+  const adaptedResponse = {
+    _data: parsedResult,
+    status,
+  } as FetchResponse<EnrichContactResponse>;
+
+  enrichmentRequestResponseCallback({ response: adaptedResponse });
+  enrichmentSingleResponseHandler(adaptedResponse);
 }
 
 async function enrichPersonBulk(
@@ -286,18 +304,39 @@ async function enrichPersonBulk(
     t('notification.enrichment_started_message'),
     'enrich-info',
   );
-  await $api<EnrichContactResponse>('/enrich/person/bulk', {
-    method: 'POST',
-    body: {
-      updateEmptyFieldsOnly,
-      enrichAllContacts: enrichAll,
-      contacts: enrichAll ? undefined : contacts,
+  const {
+    data: result,
+    error,
+    response,
+  } = await supabase.functions.invoke<EnrichContactResponse>(
+    'enrich/person/bulk',
+    {
+      body: {
+        updateEmptyFieldsOnly,
+        enrichAllContacts: enrichAll,
+        contacts: enrichAll ? undefined : contacts,
+      },
     },
-    onResponse({ response }) {
-      enrichmentRequestResponseCallback({ response });
-      enrichmentBulkResponseHandler(response);
-    },
-  });
+  );
+
+  // For error responses, read the body since supabase doesn't parse non-2xx bodies
+  let parsedResult = result;
+  if (!parsedResult && response) {
+    try {
+      parsedResult = (await response.json()) as EnrichContactResponse;
+    } catch {
+      // Response body may not be JSON
+    }
+  }
+
+  const status = response?.status ?? (error ? 500 : 200);
+  const adaptedResponse = {
+    _data: parsedResult,
+    status,
+  } as FetchResponse<EnrichContactResponse>;
+
+  enrichmentRequestResponseCallback({ response: adaptedResponse });
+  enrichmentBulkResponseHandler(adaptedResponse);
 }
 
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
