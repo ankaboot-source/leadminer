@@ -45,13 +45,6 @@ interface EnrichedCacheRow {
   result: unknown;
 }
 
-interface ValidateCreditsResult {
-  has_deficient_credits: boolean;
-  has_insufficient_credits: boolean;
-  requested_units: number;
-  available_units: number;
-}
-
 async function authMiddleware(c: Context, next: () => Promise<void>) {
   const authHeader = c.req.header("authorization");
 
@@ -107,7 +100,6 @@ app.post("/person", authMiddleware, async (c: Context) => {
   await initI18n(locale);
 
   const supabaseAdmin = createSupabaseAdmin();
-  const UNITS = 1;
 
   try {
     const { data: cacheData, error: cacheError } = await supabaseAdmin
@@ -148,52 +140,6 @@ app.post("/person", authMiddleware, async (c: Context) => {
       error: (err as Error).message,
       email,
     });
-  }
-
-  let credits: ValidateCreditsResult;
-  try {
-    const { data: creditsData, error: creditsError } = await supabaseAdmin
-      .schema("private")
-      .rpc("validate_customer_credits", {
-        p_user_id: user.id,
-        p_units: UNITS,
-      });
-
-    if (creditsError) {
-      throw new Error(creditsError.message);
-    }
-
-    credits = creditsData as ValidateCreditsResult;
-
-    if (credits.has_insufficient_credits || credits.has_deficient_credits) {
-      logger.warn("Insufficient credits", {
-        userId: user.id,
-        requested: UNITS,
-        available: credits.available_units,
-      });
-
-      return c.json({
-        type: "modal",
-        title: t("credits_insufficient.title"),
-        description: t("credits_insufficient.description", {
-          available: String(credits.available_units),
-          requested: String(UNITS),
-        }),
-        data: {
-          total: UNITS,
-          available: credits.available_units,
-          availableAlready: 0,
-          reason: "credits_insufficient",
-        },
-        buttons: [],
-      } satisfies ModalResponse);
-    }
-  } catch (err) {
-    logger.error("Credit validation failed", {
-      error: (err as Error).message,
-      userId: user.id,
-    });
-    return c.json({ error: "Failed to validate credits" }, 500);
   }
 
   let taskId: string | null = null;
@@ -285,18 +231,6 @@ app.post("/person", authMiddleware, async (c: Context) => {
     if (updateError) {
       logger.error("Failed to update contacts", { error: updateError.message });
       throw new Error(updateError.message);
-    }
-
-    const { error: deductError } = await supabaseAdmin
-      .schema("private")
-      .rpc("deduct_customer_credits", {
-        p_user_id: user.id,
-        p_units: UNITS,
-      });
-
-    if (deductError) {
-      logger.error("Failed to deduct credits", { error: deductError.message });
-      throw new Error(deductError.message);
     }
 
     if (taskId) {
@@ -539,58 +473,7 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
     } satisfies ModalResponse);
   }
 
-  const available = uncachedContacts.length;
-  let credits: ValidateCreditsResult;
-  try {
-    const { data: creditsData, error: creditsError } = await supabaseAdmin
-      .schema("private")
-      .rpc("validate_customer_credits", {
-        p_user_id: user.id,
-        p_units: available,
-      });
-
-    if (creditsError) {
-      throw new Error(creditsError.message);
-    }
-
-    credits = creditsData as ValidateCreditsResult;
-
-    if (credits.has_insufficient_credits || credits.has_deficient_credits) {
-      logger.warn("Insufficient credits for bulk enrichment", {
-        userId: user.id,
-        requested: available,
-        available: credits.available_units,
-      });
-
-      if (credits.available_units <= 0) {
-        return c.json({
-          type: "modal",
-          title: t("credits_insufficient.title"),
-          description: t("credits_insufficient.description", {
-            available: String(credits.available_units),
-            requested: String(available),
-          }),
-          data: {
-            total: available,
-            available: credits.available_units,
-            availableAlready: cachedResults.length,
-            reason: "credits_insufficient",
-          },
-          buttons: [],
-        } satisfies ModalResponse);
-      }
-    }
-  } catch (err) {
-    logger.error("Credit validation failed for bulk", {
-      error: (err as Error).message,
-      userId: user.id,
-    });
-    return c.json({ error: "Failed to validate credits" }, 500);
-  }
-
-  const enrichLimit = Math.min(credits!.available_units, available);
-  const contactsToProcess = uncachedContacts.slice(0, enrichLimit);
-  const skippedDueToCredits = available - enrichLimit;
+  const contactsToProcess = uncachedContacts;
 
   let taskId: string | null = null;
   try {
@@ -679,27 +562,6 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
     }
   }
 
-  if (enrichedCount > 0) {
-    try {
-      const { error: deductError } = await supabaseAdmin
-        .schema("private")
-        .rpc("deduct_customer_credits", {
-          p_user_id: user.id,
-          p_units: enrichedCount,
-        });
-
-      if (deductError) {
-        logger.error("Failed to deduct credits (bulk)", {
-          error: deductError.message,
-        });
-      }
-    } catch (err) {
-      logger.error("Credit deduction error for bulk", {
-        error: (err as Error).message,
-      });
-    }
-  }
-
   if (taskId) {
     try {
       await supabaseAdmin
@@ -727,11 +589,9 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
     total: contactsToEnrich.length,
     enriched: enrichedCount,
     cached: cachedResults.length,
-    skippedCredits: skippedDueToCredits,
   });
 
   const totalAvailable = enrichedCount + cachedResults.length;
-  const totalSkipped = skippedDueToCredits;
 
   return c.json({
     type: "modal",
@@ -741,9 +601,6 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
       total: contactsToEnrich.length,
       available: totalAvailable,
       availableAlready: cachedResults.length,
-      ...(totalSkipped > 0
-        ? { reason: "credits_limited", skipped: totalSkipped }
-        : {}),
     },
     buttons: [],
   } satisfies ModalResponse);
