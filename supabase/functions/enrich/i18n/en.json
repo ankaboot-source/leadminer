@@ -1,0 +1,18 @@
+{
+  "success": {
+    "title": "Enrichment completed",
+    "description": "{{count}} contacts enriched successfully"
+  },
+  "no_data": {
+    "title": "No additional information found",
+    "description": "Enrichment completed but no new data was found for the selected contacts"
+  },
+  "credits_insufficient": {
+    "title": "Insufficient credits",
+    "description": "Available: {{available}}, Requested: {{requested}}"
+  },
+  "engine_error": {
+    "title": "Enrichment service unavailable",
+    "description": "The enrichment service is currently unavailable. Please try again later."
+  }
+}
