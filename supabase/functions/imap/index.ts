@@ -4,12 +4,13 @@ import { createLogger } from "../_shared/logger.ts";
 import { createSupabaseClient } from "../_shared/supabase.ts";
 import { emailSchema } from "../_shared/validation.ts";
 import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const logger = createLogger("imap");
 const functionName = "imap";
 const app = new Hono().basePath(`/${functionName}`);
 
-const EMAILS_FETCHER_URL = Deno.env.get("EMAILS_FETCHER_URL") as string;
+const EMAILS_FETCHER_URL = getRequiredEnv("EMAILS_FETCHER_URL");
 
 // CORS middleware
 app.use("*", async (_c, next) => {

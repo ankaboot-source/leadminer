@@ -7,11 +7,12 @@ import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { ContactsClient } from "./contacts-client.ts";
 import ExportFactory from "./formats/factory.ts";
 import { ExportType, ModalResponse, ExportRequestBody, ExportOptions } from "./types.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const functionName = "export-contacts";
 const logger = createLogger(functionName);
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 const app = new Hono().basePath(`/${functionName}`);
 

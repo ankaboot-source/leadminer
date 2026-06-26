@@ -7,14 +7,13 @@ import {
 } from "../_shared/supabase.ts";
 import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { enrichSync, type Person, type EngineResponse } from "./services/engines.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const logger = createLogger("enrich");
 const functionName = "enrich";
 const app = new Hono().basePath(`/${functionName}`);
 
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
-  "SUPABASE_SERVICE_ROLE_KEY",
-) as string;
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 interface ModalButton {
   title: string;
