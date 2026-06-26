@@ -8,6 +8,8 @@ import { ContactsClient } from "./contacts-client.ts";
 import ExportFactory from "./formats/factory.ts";
 import { ExportType, ModalResponse, ExportRequestBody, ExportOptions } from "./types.ts";
 import { getRequiredEnv } from "../_shared/env-helpers.ts";
+import { validationErrorResponse } from "../_shared/validation.ts";
+import { exportParamsSchema, exportBodySchema } from "./schemas.ts";
 
 const functionName = "export-contacts";
 const logger = createLogger(functionName);
@@ -26,25 +28,22 @@ app.use("*", async (c, next) => {
 app.options("*", () => new Response("ok", { headers: corsHeaders }));
 
 app.post("/:type", authMiddleware, async (c: Context) => {
-  const rawType = c.req.param("type") as string;
-  const exportType = rawType as ExportType;
-
-  if (!Object.values(ExportType).includes(exportType)) {
-    return c.json(
-      { error: `Invalid export type: ${rawType}` },
-      400,
-    );
+  const paramsParsed = exportParamsSchema.safeParse({ type: c.req.param("type") });
+  if (!paramsParsed.success) {
+    return validationErrorResponse(paramsParsed.error, corsHeaders);
   }
+  const exportType = paramsParsed.data.type as ExportType;
 
-  let body: ExportRequestBody;
+  let body: unknown;
   try {
-    body = await c.req.json<ExportRequestBody>();
+    body = await c.req.json();
   } catch {
     return c.json({ error: "Invalid JSON payload" }, 400);
   }
 
-  if (!body.exportAllContacts && (!Array.isArray(body.ids) || !body.ids.length)) {
-    return c.json({ error: 'Parameter "ids" must be a non-empty list of person ids' }, 400);
+  const bodyParsed = exportBodySchema.safeParse(body);
+  if (!bodyParsed.success) {
+    return validationErrorResponse(bodyParsed.error, corsHeaders);
   }
 
   const user = c.get("user");
@@ -55,7 +54,9 @@ app.post("/:type", authMiddleware, async (c: Context) => {
   const contactsClient = new ContactsClient(supabaseAdmin);
 
   try {
-    const contactsToExport = body.exportAllContacts ? undefined : body.ids;
+    const contactsToExport = bodyParsed.data.exportAllContacts
+      ? undefined
+      : bodyParsed.data.ids;
     const selectedContacts = await contactsClient.getContacts(
       user.id,
       contactsToExport,
@@ -69,15 +70,15 @@ app.post("/:type", authMiddleware, async (c: Context) => {
       locale,
     };
 
-    if (exportType === ExportType.GOOGLE_CONTACTS) {
-      if (!body.miningSourceId) {
-        return c.json({ error: "miningSourceId is required for Google Contacts export" }, 400);
+if (exportType === ExportType.GOOGLE_CONTACTS) {
+      if (!bodyParsed.data.miningSourceId) {
+        return c.json({ error: "miningSourceId is required for Google contacts export" }, 400);
       }
 
       const oauthCredentials = await resolveGoogleOAuthTokens(
         supabaseAdmin,
         user.id,
-        body.miningSourceId,
+        bodyParsed.data.miningSourceId,
       );
 
       if (!oauthCredentials) {
@@ -108,7 +109,7 @@ app.post("/:type", authMiddleware, async (c: Context) => {
         userId: user.id,
         accessToken: oauthCredentials.accessToken,
         refreshToken: oauthCredentials.refreshToken,
-        updateEmptyFieldsOnly: body.updateEmptyFieldsOnly ?? false,
+        updateEmptyFieldsOnly: bodyParsed.data.updateEmptyFieldsOnly ?? false,
       };
     }
 
