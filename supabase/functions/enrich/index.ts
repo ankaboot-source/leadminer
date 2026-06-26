@@ -6,7 +6,11 @@ import {
   createSupabaseAdmin,
 } from "../_shared/supabase.ts";
 import { initI18n, t, getUserLocale } from "./i18n.ts";
-import { enrichSync, type Person } from "./services/engines.ts";
+import {
+  enrichSync,
+  type Person,
+  type EngineResponse,
+} from "./services/engines.ts";
 
 const logger = createLogger("enrich");
 const functionName = "enrich";

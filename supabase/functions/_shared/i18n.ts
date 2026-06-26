@@ -11,7 +11,7 @@ export async function initI18n(
     await i18nInstance.init({
       lng: locale,
       fallbackLng: "en",
-      resources,
+      resources: resources as never,
       interpolation: {
         escapeValue: false,
       },
