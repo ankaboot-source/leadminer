@@ -8,6 +8,13 @@ import {
 import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { enrichSync, type Person, type EngineResponse } from "./services/engines.ts";
 import { getRequiredEnv } from "../_shared/env-helpers.ts";
+import { validationErrorResponse } from "../_shared/validation.ts";
+import {
+  personBodySchema,
+  bulkPersonBodySchema,
+  webhookBodySchema,
+  webhookParamsSchema,
+} from "./schemas.ts";
 
 const logger = createLogger("enrich");
 const functionName = "enrich";
@@ -81,19 +88,11 @@ app.post("/person", authMiddleware, async (c: Context) => {
   }
 
   const body = await c.req.json().catch(() => ({}));
-  const {
-    email,
-    name,
-    id: contactId,
-  } = body as {
-    email?: string;
-    name?: string;
-    id?: string;
-  };
-
-  if (!email) {
-    return c.json({ error: "Email is required" }, 400);
+  const parsed = personBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
   }
+  const { email, name, id: contactId } = parsed.data;
 
   const locale = getUserLocale(user.user_metadata || {});
   await initI18n(locale);
@@ -312,15 +311,11 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
   }
 
   const body = await c.req.json().catch(() => ({}));
-  const {
-    contacts: inputContacts,
-    enrichAllContacts,
-    updateEmptyFieldsOnly,
-  } = body as {
-    contacts?: Array<{ email: string; name?: string; id?: string }>;
-    enrichAllContacts?: boolean;
-    updateEmptyFieldsOnly?: boolean;
-  };
+  const parsed = bulkPersonBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
+  }
+  const { contacts: inputContacts, enrichAllContacts, updateEmptyFieldsOnly } = parsed.data;
 
   const shouldUpdateEmptyOnly = updateEmptyFieldsOnly !== false;
 
@@ -607,21 +602,18 @@ app.post("/person/bulk", authMiddleware, async (c: Context) => {
 });
 
 app.post("/webhook/:id", async (c) => {
-  const { id } = c.req.param();
-
-  if (!id) {
-    return c.json({ error: "Task ID is required" }, 400);
+  const paramsParsed = webhookParamsSchema.safeParse(c.req.param());
+  if (!paramsParsed.success) {
+    return validationErrorResponse(paramsParsed.error, corsHeaders);
   }
+  const { id } = paramsParsed.data;
 
   const body = await c.req.json().catch(() => ({}));
-  const { token, results } = body as {
-    token?: string;
-    results?: unknown[];
-  };
-
-  if (!token) {
-    return c.json({ error: "Token is required" }, 400);
+  const parsed = webhookBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
   }
+  const { token, results } = parsed.data;
 
   const supabaseAdmin = createSupabaseAdmin();
 
