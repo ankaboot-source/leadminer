@@ -9,7 +9,7 @@ export class ContactsClient {
   async getContacts(userId: string, ids?: string[]): Promise<Contact[]> {
     if (ids && ids.length > 0) {
       const { data, error } = await this.supabase.rpc(
-        "get_contacts_table_by_ids",
+        "private.get_contacts_table_by_ids",
         { p_user_id: userId, p_ids: ids },
       );
       if (error) {
@@ -18,7 +18,7 @@ export class ContactsClient {
       return (data || []) as unknown as Contact[];
     }
 
-    const { data, error } = await this.supabase.rpc("get_contacts_table", {
+    const { data, error } = await this.supabase.rpc("private.get_contacts_table", {
       p_user_id: userId,
     });
     if (error) {
@@ -97,7 +97,7 @@ export class ContactsClient {
     const { error } = await this.supabase
       .schema("private")
       .from("engagement")
-      .insert(values, { ignoreDuplicates: true });
+      .upsert(values);
 
     if (error) {
       throw new Error(
