@@ -1,7 +1,10 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
+import { verifyServiceRole } from "../_shared/middlewares.ts";
+import { createLogger } from "../_shared/logger.ts";
 import { getFolders } from "./boxes.ts";
 const supabase = createSupabaseAdmin();
+const logger = createLogger("passive-mining");
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"); // Edge Functions have access to this secret by default
@@ -15,29 +18,31 @@ type MiningSource = {
   user_id: string;
   config?: Record<string, unknown>;
 };
-app.post("/", async (c: Context) => {
+app.post("/", verifyServiceRole, async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
-    console.log(`Found ${miningSources.length} mining sources:`, miningSources);
+    logger.info(`Found ${miningSources.length} mining sources`, {
+      count: miningSources.length,
+    });
     for (const miningSource of miningSources) {
       try {
         const miningTask = await startMiningEmail(miningSource);
-        console.log(
-          `Started mining task for source ${miningSource.email}:`,
+        logger.info(`Started mining task for source`, {
+          email: miningSource.email,
           miningTask,
-        );
+        });
       } catch (error) {
-        console.error(
-          `Error starting mining for source ${miningSource.email}:`,
-          error,
-        );
+        logger.error(`Error starting mining for source`, {
+          email: miningSource.email,
+          error: String(error),
+        });
         // feedback to sources that passive mining failed, passive_mining.enabled=false, error="string" else null
       }
     }
 
     return c.json({ msg: "Started passive-mining" });
   } catch (error) {
-    console.error("Error in passive-mining:", error);
+    logger.error("Error in passive-mining", { error: String(error) });
     return c.json({ error: "Failed to start passive-mining" }, 500);
   }
 });
@@ -52,7 +57,7 @@ async function getMiningSources() {
     .match({ passive_mining: true });
 
   if (error) {
-    console.error("Error fetching mining sources:", error.message);
+    logger.error("Error fetching mining sources", { error: error.message });
     throw error;
   }
 
@@ -74,7 +79,9 @@ async function getLatestPassiveMiningDate(
     .limit(1);
 
   if (error) {
-    console.error("Error fetching latest passive mining date:", error.message);
+    logger.error("Error fetching latest passive mining date", {
+      error: error.message,
+    });
     return null;
   }
 
@@ -86,9 +93,10 @@ async function getLatestPassiveMiningDate(
 }
 
 async function getBoxes(miningSource: MiningSource) {
-  console.log(
-    `Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
-  );
+  logger.info("Fetching IMAP boxes", {
+    email: miningSource.email,
+    userId: miningSource.user_id,
+  });
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
     {
@@ -101,7 +109,7 @@ async function getBoxes(miningSource: MiningSource) {
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
-  console.log(`Received response for boxes of ${miningSource.email}:`, res);
+  logger.info("Received response for boxes", { email: miningSource.email });
 
   if (!res.ok) {
     throw new Error(res.statusText);
@@ -114,9 +122,9 @@ async function startMiningEmail(miningSource: MiningSource) {
   // Get default folders
   // we should save checked boxes from the frontend in miningSource later on
   const boxes = await getBoxes(miningSource);
-  console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
+  logger.info("Fetched boxes", { email: miningSource.email });
   const folders = getFolders(boxes);
-  console.log(`Extracted folders for ${miningSource.email}:`, folders);
+  logger.info("Extracted folders", { email: miningSource.email });
 
   const since = await getLatestPassiveMiningDate(miningSource.user_id);
 
@@ -145,7 +153,7 @@ async function startMiningEmail(miningSource: MiningSource) {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error("Mining API error:", errText);
+    logger.error("Mining API error", { error: errText });
     throw new Error("Failed to start mining email");
   }
 
