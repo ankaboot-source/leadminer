@@ -13,6 +13,7 @@ import loggerUtil from '../../utils/logger';
 
 export interface MiningSourcesResponse {
   sources: {
+    id?: string;
     email: string;
     type: ExtendedMiningSourceType;
     credentials: OAuthMiningSourceCredentials | ImapMiningSourceCredentials;
@@ -72,6 +73,56 @@ export class MiningSourceService implements MiningSources {
 
       throw new Error(`Unsupported source type from supabase: ${source.type}`);
     });
+  }
+
+  async getSourceById(
+    sourceId: string,
+    userId: string
+  ): Promise<MiningSource | null> {
+    const response = await supabaseClient.functions.invoke(
+      'fetch-mining-source',
+      {
+        method: 'POST',
+        body: {
+          id: sourceId,
+          user_id: userId
+        }
+      }
+    );
+
+    const { data, error } = response;
+
+    if (error) {
+      this.logger.error('Failed to fetch mining source by id', { error });
+      throw new Error(`Failed to fetch mining source: ${error.message}`);
+    }
+
+    const result = data as MiningSourcesResponse;
+
+    const source = result.sources?.[0];
+    if (!source) return null;
+
+    if (source.type === 'imap') {
+      return {
+        userId,
+        email: source.email,
+        type: source.type,
+        id: sourceId,
+        credentials: source.credentials as ImapMiningSourceCredentials
+      };
+    }
+
+    if (isOAuthSourceType(source.type)) {
+      return {
+        userId,
+        email: source.email,
+        type: source.type,
+        id: sourceId,
+        credentials: source.credentials as OAuthMiningSourceCredentials
+      };
+    }
+
+    throw new Error(`Unsupported source type from supabase: ${source.type}`);
   }
 
   upsert(source: MiningSource): Promise<string> {

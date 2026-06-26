@@ -14,7 +14,10 @@ export default function initializeAuthMiddleware(authResolver: AuthResolver) {
         token === ENV.SUPABASE_SECRET_PROJECT_TOKEN
       ) {
         // Extract userId from route or query params
-        const userId = req.params.userId ?? req.query.userId;
+        const queryUserId = Array.isArray(req.query.userId)
+          ? req.query.userId[0]
+          : req.query.userId;
+        const userId = req.params.userId ?? queryUserId;
 
         if (userId) {
           // Create a service user object with the extracted userId

@@ -10,8 +10,10 @@ const functionName = "passive-mining";
 const app = new Hono().basePath(`/${functionName}`);
 
 type MiningSource = {
+  id: string;
   email: string;
   user_id: string;
+  config?: Record<string, unknown>;
 };
 app.post("/", async (c: Context) => {
   try {
@@ -46,7 +48,7 @@ async function getMiningSources() {
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
-    .select("email, user_id")
+    .select("id, email, user_id, config")
     .match({ passive_mining: true });
 
   if (error) {
@@ -118,6 +120,9 @@ async function startMiningEmail(miningSource: MiningSource) {
 
   const since = await getLatestPassiveMiningDate(miningSource.user_id);
 
+  const sourceConfig = miningSource.config ?? {};
+  const googleContactsSync = sourceConfig.google_contacts_sync ?? false;
+
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
     {
@@ -127,12 +132,13 @@ async function startMiningEmail(miningSource: MiningSource) {
         Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({
-        miningSource: { email: miningSource.email },
+        miningSource: { id: miningSource.id },
         boxes: folders,
-        cleaningEnabled: true,
-        extractSignatures: false,
+        cleaningEnabled: sourceConfig.cleaning_enabled ?? true,
+        extractSignatures: sourceConfig.extract_signatures ?? false,
         since,
         passive_mining: true,
+        googleContactsSync,
       }),
     },
   );

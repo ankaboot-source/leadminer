@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import parsePhoneNumber from 'libphonenumber-js';
 import {
   ContactFrontend,
   ExtractionResult,
@@ -46,7 +47,15 @@ export class GoogleContactsExtractor {
       email: this.data.emailAddresses?.[0]?.value || '',
       name: this.data.displayName || '',
       telephone: (this.data.phoneNumbers
-        ?.map((p) => p.value)
+        ?.map((p) => {
+          if (!p.value) return null;
+          try {
+            const parsed = parsePhoneNumber(p.value);
+            return parsed?.number ?? p.value;
+          } catch {
+            return p.value;
+          }
+        })
         .filter((v): v is string => v != null) || []) as string[],
       same_as: (this.data.urls
         ?.map((u) => u.value)
@@ -103,15 +112,24 @@ export class GoogleContactsExtractor {
       }
     }
 
-    // Default to newsletter tag when tagging is unavailable or produces no results
     if (tags.length === 0) {
-      tags = [
-        {
-          name: 'newsletter',
-          reachable: REACHABILITY.NONE,
-          source: 'google_contacts#email_address'
-        }
-      ];
+      if (contactFrontend.email) {
+        tags = [
+          {
+            name: 'newsletter',
+            reachable: REACHABILITY.NONE,
+            source: 'google_contacts#email_address'
+          }
+        ];
+      } else {
+        tags = [
+          {
+            name: 'personal',
+            reachable: REACHABILITY.NONE,
+            source: 'google_contacts#phone_number'
+          }
+        ];
+      }
     }
 
     const orgName = this.data.organizations?.[0]?.name;

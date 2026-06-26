@@ -30,6 +30,7 @@ export interface OAuthMiningSourceCredentials {
 }
 
 export interface MiningSource {
+  id?: string;
   email: string;
   userId: string;
   credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;

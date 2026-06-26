@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 
-type EngagementType = 'CSV' | 'ENRICH';
+export type EngagementType = 'CSV' | 'ENRICH';
 
 export default class Engagements {
   constructor(

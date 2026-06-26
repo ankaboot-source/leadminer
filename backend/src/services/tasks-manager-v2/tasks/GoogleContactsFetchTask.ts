@@ -24,6 +24,7 @@ export interface GoogleContactsFetchTaskConfig {
   userEmail: string;
   outputStream: string;
   fetcherClient: GoogleContactsFetcherClient;
+  passive_mining?: boolean;
 }
 
 export class GoogleContactsFetchTask extends Task {
@@ -44,7 +45,8 @@ export class GoogleContactsFetchTask extends Task {
       userId: config.userId,
       streams: undefined,
       config: {
-        outputStream: config.outputStream
+        outputStream: config.outputStream,
+        passive_mining: config.passive_mining
       }
     });
     this.fetcherClient = config.fetcherClient;

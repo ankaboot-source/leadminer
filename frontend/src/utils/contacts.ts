@@ -264,16 +264,10 @@ export function isValidURL(url: string) {
 export async function removeContactsFromDatabase(
   ids?: string[],
 ): Promise<void> {
-  const $user = useSupabaseUser();
-  const userId =
-    $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
-  if (!userId) return;
-
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
     .schema('private')
     .rpc('delete_contacts', {
-      p_user_id: userId,
       p_ids: ids ?? [],
       p_delete_all: ids === undefined,
     });

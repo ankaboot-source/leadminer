@@ -40,9 +40,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function syncContactsList() {
     if (!contactsCacheMap.size || !updateContactList.value) return;
 
-    const synced = convertDates(
-      structuredClone([...contactsCacheMap.values()].reverse()),
-    );
+    let synced: Contact[];
+    try {
+      synced = convertDates(
+        structuredClone([...contactsCacheMap.values()].reverse()),
+      );
+    } catch {
+      console.warn('Failed to clone contacts cache, retrying on next interval');
+      return;
+    }
 
     contactsList.value = synced;
     updateContactList.value = false;
@@ -118,13 +124,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
     newContact: Contact,
     keepPosition = false,
   ) {
-    const { id } = newContact;
+    const clean: Contact = JSON.parse(JSON.stringify(newContact));
+
+    const { id } = clean;
     const existingContact = contactsCacheMap.get(id);
     const updatedContact = existingContact
-      ? { ...existingContact, ...newContact }
-      : newContact;
+      ? { ...existingContact, ...clean }
+      : clean;
 
-    newContact.works_for = await getOrganizationName(updatedContact.works_for);
+    clean.works_for = await getOrganizationName(updatedContact.works_for);
     if (
       updatedContact.location &&
       updatedContact.location_normalized === null
@@ -190,7 +198,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
           removeOldContact(payload.old.id);
         } else if (payload.new as Contact) {
           setTimeout(async () => {
-            await updateContactsCache(payload.new as Contact);
+            try {
+              await updateContactsCache(payload.new as Contact);
+            } catch (e) {
+              console.warn('Failed to update contacts cache from realtime', e);
+            }
             updateContactList.value = true;
           }, 0);
         }

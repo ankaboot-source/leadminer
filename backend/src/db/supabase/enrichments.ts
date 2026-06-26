@@ -2,10 +2,11 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 import { TaskCategory, TaskStatus, TaskType, EnrichTask } from '../types';
 
-import Engagements from './engagements';
+import Engagements, { EngagementType } from './engagements';
 import SupabaseTasks from './tasks';
 
 interface Contact {
+  person_id?: string;
   id: string;
   userId: string;
   email?: string;
@@ -18,6 +19,7 @@ interface Contact {
   jobTitle?: string;
   sameAs?: string[];
   image?: string;
+  telephone?: string[];
 }
 
 interface TaskRedacted {
@@ -122,13 +124,11 @@ export default class Enrichments {
     return this.task;
   }
 
-  public async updateContacts(contacts: Partial<Contact>[]) {
+  public async updateContacts(contacts: Partial<Contact>[]): Promise<string[]> {
     const task = this.ensureTask();
     const contactsDB = contacts
-      .filter((contact): contact is Contact & { id: string; email: string } =>
-        Boolean(contact.id && contact.email)
-      )
       .map((contact) => ({
+        id: contact.person_id ?? contact.id,
         image: contact.image,
         email: contact.email,
         name: contact.name,
@@ -139,9 +139,11 @@ export default class Enrichments {
         same_as: contact.sameAs?.join(','),
         location: contact.location,
         alternate_name: contact.alternateName?.join(','),
+        telephone: contact.telephone?.join(','),
         user_id: task.userId
-      }));
-    const { error } = await this.client
+      }))
+      .filter((c) => Boolean(c.id));
+    const { data, error } = await this.client
       .schema('private')
       .rpc('enrich_contacts', {
         p_contacts_data: contactsDB,
@@ -150,6 +152,9 @@ export default class Enrichments {
       });
 
     if (error) throw error;
+
+    const rows = data as { id: string }[];
+    return rows.map((row) => row.id);
   }
 
   public async enrich(result: EnrichTask['details']['result']) {
@@ -167,22 +172,44 @@ export default class Enrichments {
 
       if (enriched.length) {
         const flatData = enriched.map(({ data }) => data).flat();
-        await this.updateContacts(flatData);
-        await this.engagements.register(
-          flatData
-            .filter((contact) => Boolean(contact.id))
-            .map((contact) => ({
-              person_id: contact.id as string,
+        const updatedPersonIds = await this.updateContacts(flatData);
+
+        if (updatedPersonIds.length) {
+          const confirmed = new Set(updatedPersonIds);
+          const registrations: {
+            person_id: string;
+            user_id: string;
+            engagement_type: EngagementType;
+            service: string;
+          }[] = [];
+
+          for (const contact of flatData) {
+            const personId: string | undefined =
+              (contact as { person_id?: string }).person_id ?? contact.id;
+            if (!personId || !confirmed.has(personId)) continue;
+            const engine = enriched.find(({ data }) =>
+              data.includes(contact)
+            )?.engine;
+            if (!engine) continue;
+            registrations.push({
+              person_id: personId,
               user_id: task.userId,
               engagement_type: 'ENRICH',
-              service: enriched.find(({ data }) => data.includes(contact))
-                ?.engine as string
-            }))
-        );
+              service: engine
+            });
+          }
+
+          if (registrations.length) {
+            await this.engagements.register(registrations);
+          }
+        }
       }
     } catch (err) {
       const msg = (err as Error).message || 'Unexpected error';
-      this.logger.error(`[${this.constructor.name}.enrich]: ${msg}`);
+      this.logger.error(`[${this.constructor.name}.enrich]: ${msg}`, {
+        error: err,
+        resultLength: result?.length
+      });
     }
   }
 }

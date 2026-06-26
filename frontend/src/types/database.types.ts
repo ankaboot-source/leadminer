@@ -1478,7 +1478,7 @@ export type Database = {
       };
       custom_access_token_hook: { Args: { event: Json }; Returns: Json };
       delete_contacts: {
-        Args: { p_delete_all: boolean; p_ids: string[]; p_user_id: string };
+        Args: { p_delete_all: boolean; p_ids: string[] };
         Returns: undefined;
       };
       delete_expired_clean_cache: {

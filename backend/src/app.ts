@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/node';
 
 import express, { json, urlencoded } from 'express';
+import hpp from 'hpp';
 
 import util from 'util';
 import { Logger } from 'winston';
@@ -54,6 +55,7 @@ export default function initializeApp(
   app.use(json({ limit: '5mb' }));
   app.use(urlencoded({ limit: '5mb', extended: true }));
 
+  app.use(hpp());
   app.disable('x-powered-by');
 
   app.get('/', (_, res) =>

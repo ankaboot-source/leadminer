@@ -19,6 +19,7 @@ export interface MiningSource {
   totalContacts?: number;
   totalFromLastMining?: number;
   lastMiningDate?: string;
+  config?: Record<string, unknown>;
 }
 
 export interface MiningProgress {

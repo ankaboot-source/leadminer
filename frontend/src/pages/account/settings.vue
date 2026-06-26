@@ -151,6 +151,7 @@
 <script setup lang="ts">
 import type { UserAttributes } from '@supabase/supabase-js';
 import { AcceptNewsLetter } from '~/utils/extras';
+import type { FetchError } from 'ofetch';
 
 import { isInvalidEmail } from '@/utils/email';
 import {
@@ -172,6 +173,8 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 const { $saasEdgeFunctions } = useNuxtApp();
+const router = useRouter();
+const $user = useSupabaseUser();
 const $profile = useSupabaseUserProfile();
 
 const {
@@ -319,6 +322,7 @@ async function deleteAccount() {
     await $saasEdgeFunctions('delete-user', {
       method: 'DELETE',
     });
+    showDeleteModal.value = false;
     signOutManually({
       resetUser: () => {
         $user.value = null;
@@ -336,10 +340,19 @@ async function deleteAccount() {
       detail: t('account_deleted_success'),
       life: 3000,
     });
-    isLoading.value = false;
   } catch (err) {
+    const message =
+      (err as unknown as FetchError)?.response?._data?.error ||
+      (err as Error)?.message ||
+      'Something went wrong';
+    $toast.add({
+      severity: 'error',
+      summary: 'Oops!',
+      detail: message,
+      life: 5000,
+    });
+  } finally {
     isLoading.value = false;
-    throw err;
   }
 }
 </script>

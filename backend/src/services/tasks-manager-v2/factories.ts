@@ -66,7 +66,8 @@ export function createImapMining(
         userEmail: params.email,
         outputStream: streams.messagesStream,
         fetcherClient:
-          params.fetcherClient as unknown as GoogleContactsFetcherClient
+          params.fetcherClient as unknown as GoogleContactsFetcherClient,
+        passive_mining: params.passiveMining
       })
     );
   }

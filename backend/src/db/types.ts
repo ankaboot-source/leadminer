@@ -229,6 +229,7 @@ export interface EnrichTaskDetails {
     raw_data: Array<unknown>;
   }[];
   passive_mining?: boolean;
+  contacts_map?: Array<{ email: string; person_id: string }>;
 }
 
 export interface EnrichTask extends Task {

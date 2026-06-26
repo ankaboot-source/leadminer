@@ -373,7 +373,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         method: 'POST',
         body: {
           boxes: folders,
-          miningSource,
+          miningSource: miningSource.id
+            ? { id: miningSource.id }
+            : { email: miningSource.email },
           extractSignatures: extractSignatures.value,
           cleaningEnabled: cleaningEnabled.value,
           googleContactsSync: googleContactsSyncEnabled.value,
