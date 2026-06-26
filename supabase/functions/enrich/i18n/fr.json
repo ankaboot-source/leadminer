@@ -1,0 +1,14 @@
+{
+  "success": {
+    "title": "Enrichissement terminé",
+    "description": "{{count}} contacts enrichis avec succès"
+  },
+  "no_data": {
+    "title": "Aucune information supplémentaire trouvée",
+    "description": "L'enrichissement est terminé mais aucune nouvelle donnée n'a été trouvée pour les contacts sélectionnés"
+  },
+  "engine_error": {
+    "title": "Service d'enrichissement indisponible",
+    "description": "Le service d'enrichissement est actuellement indisponible. Veuillez réessayer plus tard."
+  }
+}

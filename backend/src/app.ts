@@ -17,7 +17,6 @@ import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
-import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeSmtpSendersRoutes from './routes/smtp-senders.routes';
@@ -81,7 +80,6 @@ export default function initializeApp(
     '/api',
     initializeContactsRoutes(contacts, authResolver, miningSourceService)
   );
-  app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
   app.use(
     '/api',
     initializeSmtpSendersRoutes(smtpSenders, authResolver, miningSources)
