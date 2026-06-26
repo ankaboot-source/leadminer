@@ -1,13 +1,9 @@
 import { Context, Hono } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
-import {
-  createSupabaseClient,
-  createSupabaseAdmin,
-} from "../_shared/supabase.ts";
+import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { enrichSync, type Person, type EngineResponse } from "./services/engines.ts";
-import { getRequiredEnv } from "../_shared/env-helpers.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
 import {
   personBodySchema,
@@ -15,12 +11,11 @@ import {
   webhookBodySchema,
   webhookParamsSchema,
 } from "./schemas.ts";
+import { mixedAuth } from "../_shared/middlewares.ts";
 
 const logger = createLogger("enrich");
 const functionName = "enrich";
 const app = new Hono().basePath(`/${functionName}`);
-
-const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 interface ModalButton {
   title: string;
@@ -51,28 +46,6 @@ interface EnrichedCacheRow {
   result: unknown;
 }
 
-async function authMiddleware(c: Context, next: () => Promise<void>) {
-  const authHeader = c.req.header("authorization");
-
-  if (!authHeader) {
-    return c.json({ error: "Missing Authorization header" }, 401);
-  }
-
-  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
-    return await next();
-  }
-
-  const supabase = createSupabaseClient(authHeader);
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user?.id || !data.user.email) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  c.set("user", data.user);
-  return await next();
-}
-
 app.use("*", async (c, next) => {
   await next();
   Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -81,7 +54,7 @@ app.use("*", async (c, next) => {
 });
 app.options("*", () => new Response("ok", { headers: corsHeaders }));
 
-app.post("/person", authMiddleware, async (c: Context) => {
+app.post("/person", mixedAuth, async (c: Context) => {
   const user = c.get("user");
   if (!user?.id) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -304,7 +277,7 @@ app.post("/person", authMiddleware, async (c: Context) => {
 });
 
 // POST /enrich/person/bulk - Bulk enrichment
-app.post("/person/bulk", authMiddleware, async (c: Context) => {
+app.post("/person/bulk", mixedAuth, async (c: Context) => {
   const user = c.get("user");
   if (!user?.id) {
     return c.json({ error: "Unauthorized" }, 401);

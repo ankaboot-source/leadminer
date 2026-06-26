@@ -20,6 +20,32 @@ export async function authorizeUser(
 }
 
 /**
+ * Mixed auth middleware: accepts both service-role key and JWT Bearer tokens.
+ * Sets `c.set("user", user)` for JWT auth, skips for service-role.
+ */
+export async function mixedAuth(c: Context, next: Next) {
+  const authHeader = c.req.header("authorization");
+
+  if (!authHeader) {
+    return c.json({ error: "Missing Authorization header" }, 401);
+  }
+
+  if (authHeader === `Bearer ${serviceRoleKey}`) {
+    return await next();
+  }
+
+  const supabase = createSupabaseClient(authHeader);
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user?.id || !data.user.email) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  c.set("user", data.user);
+  return await next();
+}
+
+/**
  * Middleware to ensure the request originates from a trusted backend service.
  */
 export async function verifyServiceRole(c: Context, next: Next) {
