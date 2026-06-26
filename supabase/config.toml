@@ -360,6 +360,24 @@ entrypoint = "./functions/mining-sources/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/mining-sources/*.html" ]
 
+[functions.imap]
+enabled = true
+verify_jwt = true
+import_map = "./functions/imap/deno.json"
+entrypoint = "./functions/imap/index.ts"
+
+[functions.export-contacts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/export-contacts/deno.json"
+entrypoint = "./functions/export-contacts/index.ts"
+
+[functions.enrich]
+enabled = true
+verify_jwt = true
+import_map = "./functions/enrich/deno.json"
+entrypoint = "./functions/enrich/index.ts"
+
 [functions.sms-campaigns]
 enabled = true
 verify_jwt = false
