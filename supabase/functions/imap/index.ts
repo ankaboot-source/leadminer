@@ -50,7 +50,7 @@ export function sanitizeImapInput(input: string): string {
  * Validates the authorization token and retrieves the authenticated user.
  * Returns the user or throws/returns a 401 Response.
  */
-async function validateAuthAndGetUser(authorization: string | null) {
+async function validateAuthAndGetUser(authorization: string | null | undefined) {
   const client = createSupabaseClient(authorization ?? "");
   const {
     data: { user },
