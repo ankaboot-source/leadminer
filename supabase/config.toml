@@ -378,6 +378,12 @@ verify_jwt = true
 import_map = "./functions/enrich/deno.json"
 entrypoint = "./functions/enrich/index.ts"
 
+[functions.passive-mining]
+enabled = true
+verify_jwt = false
+import_map = "./functions/passive-mining/deno.json"
+entrypoint = "./functions/passive-mining/index.ts"
+
 [functions.sms-campaigns]
 enabled = true
 verify_jwt = false

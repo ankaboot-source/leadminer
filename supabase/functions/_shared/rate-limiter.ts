@@ -4,11 +4,16 @@ import RedisClient from "ioredis";
 const REDIS_URL = Deno.env.get("REDIS_URL");
 
 let redisClient: any = null;
+let redisUnavailable = false;
 
 function getRedisClient(): any {
+  if (redisUnavailable) {
+    return null;
+  }
   if (!redisClient) {
     if (!REDIS_URL) {
-      throw new Error("REDIS_URL is required for rate limiter");
+      redisUnavailable = true;
+      return null;
     }
     redisClient = new RedisClient(REDIS_URL);
   }
@@ -48,6 +53,10 @@ export class TokenBucketRateLimiter {
   }
 
   async removeTokens(tokens: number): Promise<void> {
+    if (!this.redis) {
+      return; // Redis unavailable — skip rate limiting
+    }
+
     const now = Date.now();
     const window = this.intervalSeconds * 1000;
 
@@ -101,6 +110,11 @@ export async function withRateLimit<T>(
   const limiters = requirements.map(
     (r) => new TokenBucketRateLimiter(uniqueKey, r.type),
   );
+
+  // If Redis is unavailable, skip rate limiting entirely
+  if (limiters.some((l) => !(l as any).redis)) {
+    return await callback();
+  }
 
   try {
     await Promise.all(
