@@ -136,7 +136,6 @@
 <script setup lang="ts">
 import GenericComplianceDialog from '@/components/GenericComplianceDialog.vue';
 import type { ModalData } from '@/components/GenericComplianceDialog.vue';
-import type { FetchError } from 'ofetch';
 
 enum ExportTypes {
   CSV = 'csv',
@@ -246,7 +245,7 @@ function getFileName() {
   return `leadminer-${email}-${currentDatetime}`;
 }
 
-function onComplianceAction(action: string, data?: ModalData['data']) {
+function onComplianceAction(action: string, _data?: ModalData['data']) {
   if (action === 'continue_partial') {
     exportTable(
       selectedExportType.value,
