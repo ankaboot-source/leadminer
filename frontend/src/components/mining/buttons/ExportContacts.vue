@@ -202,9 +202,7 @@ async function closeGoogleExportConfirmationDialog() {
 async function openAccountSelectionDialog() {
   const userEmail = $profile.value?.email;
   if (userEmail) {
-    const match = googleMiningSources.value.find(
-      (s) => s.email === userEmail,
-    );
+    const match = googleMiningSources.value.find((s) => s.email === userEmail);
     if (match) {
       selectedMiningSourceId.value = match.id;
     }
@@ -247,11 +245,7 @@ function getFileName() {
 
 function onComplianceAction(action: string, _data?: ModalData['data']) {
   if (action === 'continue_partial') {
-    exportTable(
-      selectedExportType.value,
-      true,
-      updateEmptyFieldsOnly.value,
-    );
+    exportTable(selectedExportType.value, true, updateEmptyFieldsOnly.value);
     return;
   }
 
