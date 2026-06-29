@@ -7,7 +7,7 @@ import AuthResolver from '../services/auth/AuthResolver';
 
 export default function initializeContactsRoutes(
   contacts: Contacts,
-  authResolver: AuthResolver,
+  authResolver: AuthResolver
 ) {
   const router = Router();
   const contactsRouteLimiter = rateLimit({
