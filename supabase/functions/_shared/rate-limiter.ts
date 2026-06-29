@@ -15,7 +15,8 @@ function getRedisClient(): any {
       redisUnavailable = true;
       return null;
     }
-    redisClient = new RedisClient(REDIS_URL);
+    // deno-lint-ignore no-explicit-any
+    redisClient = new (RedisClient as any)(REDIS_URL);
   }
   return redisClient;
 }
