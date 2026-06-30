@@ -42,11 +42,22 @@ export interface Engine {
   readonly isSync: boolean;
   readonly isAsync: boolean;
 
-  isValid: (contact: Partial<Person>) => boolean;
   enrichAsync(
     persons: Partial<Person>[],
     webhook: string
   ): Promise<EngineResponse>;
   enrichSync(persons: Partial<Person>): Promise<EngineResponse>;
   parseResult(data: unknown[]): EngineResponse;
+}
+
+/**
+ * Class-level (static) contract for an engine. Each implementation
+ * exposes `name`, `isSync`, `isAsync`, and a stateless `isValid` check
+ * as static members because they do not depend on instance state.
+ */
+export interface EngineClass {
+  readonly name: string;
+  readonly isSync: boolean;
+  readonly isAsync: boolean;
+  isValid(contact: Partial<Person>): boolean;
 }

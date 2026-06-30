@@ -1,8 +1,7 @@
 // Ported from backend enrichment engines (Deno-compatible)
-// Clients + Engine classes implementing the Engine interface
+// Clients + Engine classes that satisfy the Engine and EngineClass contracts
 
 import type {
-  Engine,
   EngineResponse,
   EngineResult,
   Person,
@@ -285,12 +284,14 @@ class VoilanorbertClient {
 
 // ─── Engine: EnrichLayer ────────────────────────────────────────────────────
 
-class EnrichLayer implements Engine {
-  readonly name = "enrichLayer";
-  readonly isSync = true;
-  readonly isAsync = false;
+class EnrichLayer {
+  static readonly name = "enrichLayer";
+  static readonly isSync = true;
+  static readonly isAsync = false;
 
-  constructor(private readonly client: EnrichLayerClient) {}
+  static isValid(contact: Partial<Person>): boolean {
+    return Boolean(contact.email);
+  }
 
   static getProfileUrls(profile: ProfileExtra): string[] {
     const urls: string[] = [];
@@ -311,10 +312,11 @@ class EnrichLayer implements Engine {
     return urls;
   }
 
-  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
-  isValid(contact: Partial<Person>): boolean {
-    return Boolean(contact.email);
-  }
+  readonly name = EnrichLayer.name;
+  readonly isSync = EnrichLayer.isSync;
+  readonly isAsync = EnrichLayer.isAsync;
+
+  constructor(private readonly client: EnrichLayerClient) {}
 
   async enrichSync(person: Partial<Person>): Promise<EngineResponse> {
     try {
@@ -329,12 +331,13 @@ class EnrichLayer implements Engine {
     }
   }
 
-  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
   enrichAsync(
     _persons: Partial<Person>[],
     _webhook: string
   ): Promise<EngineResponse> {
-    throw new Error("Method not implemented.");
+    throw new Error(
+      `[${this.constructor.name}]: method enrichAsync not implemented.`,
+    );
   }
 
   parseResult(data: ReverseEmailLookupResponse[]): EngineResponse {
@@ -389,17 +392,20 @@ class EnrichLayer implements Engine {
 
 // ─── Engine: TheDig ─────────────────────────────────────────────────────────
 
-class TheDig implements Engine {
-  readonly name = "thedig";
-  readonly isSync = true;
-  readonly isAsync = false;
+class TheDig {
+  static readonly name = "thedig";
+  static readonly isSync = true;
+  static readonly isAsync = false;
 
-  constructor(private readonly client: ThedigClient) {}
-
-  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
-  isValid(contact: Partial<Person>): boolean {
+  static isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email && contact.name);
   }
+
+  readonly name = TheDig.name;
+  readonly isSync = TheDig.isSync;
+  readonly isAsync = TheDig.isAsync;
+
+  constructor(private readonly client: ThedigClient) {}
 
   async enrichSync(person: Partial<Person>): Promise<EngineResponse> {
     try {
@@ -518,17 +524,20 @@ class TheDig implements Engine {
 
 // ─── Engine: Voilanorbert ───────────────────────────────────────────────────
 
-class Voilanorbert implements Engine {
-  readonly name = "voilanorbert";
-  readonly isSync = false;
-  readonly isAsync = true;
+class Voilanorbert {
+  static readonly name = "voilanorbert";
+  static readonly isSync = false;
+  static readonly isAsync = true;
 
-  constructor(private readonly client: VoilanorbertClient) {}
-
-  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
-  isValid(contact: Partial<Person>): boolean {
+  static isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email);
   }
+
+  readonly name = Voilanorbert.name;
+  readonly isSync = Voilanorbert.isSync;
+  readonly isAsync = Voilanorbert.isAsync;
+
+  constructor(private readonly client: VoilanorbertClient) {}
 
   enrichSync(_person: Partial<Person>): Promise<EngineResponse> {
     throw new Error(
@@ -597,9 +606,9 @@ class Voilanorbert implements Engine {
 // ─── Singleton Enricher (used by index.ts) ──────────────────────────────────
 
 const enricher = new Enricher([
-  new EnrichLayer(new EnrichLayerClient()),
-  new TheDig(new ThedigClient()),
-  new Voilanorbert(new VoilanorbertClient()),
+  { ctor: EnrichLayer, instance: new EnrichLayer(new EnrichLayerClient()) },
+  { ctor: TheDig, instance: new TheDig(new ThedigClient()) },
+  { ctor: Voilanorbert, instance: new Voilanorbert(new VoilanorbertClient()) },
 ]);
 
 export function enrichSync(
