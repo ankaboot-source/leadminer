@@ -25,13 +25,12 @@ const COLUMNS = [
   { key: "image", header: "Avatar URL" },
 ] as const;
 
-export default class CsvExport {
-  static readonly type = ExportType.CSV;
-
-  static async export(
+export const CsvExport = {
+  type: ExportType.CSV,
+  export: (
     contacts: Contact[],
     options?: { locale?: string; delimiter?: string },
-  ): Promise<ExportResult> {
+  ): Promise<ExportResult> => {
     const delimiter =
       options?.delimiter ?? getLocalizedCsvSeparator(options?.locale);
 
@@ -72,16 +71,16 @@ export default class CsvExport {
       image: contact.image,
     }));
 
-    const content = await getCsvStr(COLUMNS, csvData, delimiter);
-
-    return {
+    return getCsvStr(COLUMNS, csvData, delimiter).then((content) => ({
       content,
       contentType: "text/csv",
       charset: "utf-8",
       extension: "csv",
-    };
-  }
-}
+    }));
+  },
+};
+
+export default CsvExport;
 
 function getLocalizedCsvSeparator(locale?: string): string {
   const language = locale?.substring(0, 2);
