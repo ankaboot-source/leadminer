@@ -1,15 +1,14 @@
-import { ExportStrategy, ExportType, ExportResult } from "../types.ts";
+import { ExportType, ExportResult } from "../types.ts";
 import type { Contact } from "../types.ts";
 
 function getAppName(): string {
   return Deno.env.get("APP_NAME") || "Leadminer";
 }
 
-export default class VCardExport implements ExportStrategy<Contact> {
-  readonly type = ExportType.VCARD;
+export default class VCardExport {
+  static readonly type = ExportType.VCARD;
 
-  // skipcq: JS-0105 - Instance method satisfies ExportStrategy interface; no instance state needed
-  export(contacts: Contact[]): Promise<ExportResult> {
+  static export(contacts: Contact[]): Promise<ExportResult> {
     const content = contacts
       .map((contact) => contactToVCard(contact))
       .join("\n");

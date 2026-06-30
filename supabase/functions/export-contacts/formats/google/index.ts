@@ -1,18 +1,15 @@
 import { createLogger } from "../../../_shared/logger.ts";
-import { ExportStrategy, ExportType, ExportResult } from "../../types.ts";
+import { ExportType, ExportResult } from "../../types.ts";
 import type { ContactFrontend } from "../../types.ts";
 import GoogleContactsSession from "./contacts-api.ts";
 
 const logger = createLogger("export-contacts:google");
 const APP_NAME = Deno.env.get("APP_NAME") || "Leadminer";
 
-export default class GoogleContactsExport
-  implements ExportStrategy<ContactFrontend>
-{
-  readonly type = ExportType.GOOGLE_CONTACTS;
+export default class GoogleContactsExport {
+  static readonly type = ExportType.GOOGLE_CONTACTS;
 
-  // skipcq: JS-0105 - Instance method satisfies ExportStrategy interface; no instance state needed
-  async export(
+  static async export(
     contacts: ContactFrontend[],
     options?: {
       googleContactsOptions?: {

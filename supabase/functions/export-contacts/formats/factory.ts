@@ -22,9 +22,9 @@ class ExportFactory {
 
 const factory = new ExportFactory(
   new Map<ExportType, ExportStrategy<unknown>>([
-    [ExportType.CSV, new CsvExport()],
-    [ExportType.VCARD, new VCardExport()],
-    [ExportType.GOOGLE_CONTACTS, new GoogleContactsExport()],
+    [ExportType.CSV, CsvExport],
+    [ExportType.VCARD, VCardExport],
+    [ExportType.GOOGLE_CONTACTS, GoogleContactsExport],
   ]),
 );
 

@@ -1,5 +1,5 @@
 import { stringify } from "csv-stringify";
-import { ExportStrategy, ExportType, ExportResult } from "../types.ts";
+import { ExportType, ExportResult } from "../types.ts";
 import type { Contact } from "../types.ts";
 
 const COLUMNS = [
@@ -25,11 +25,10 @@ const COLUMNS = [
   { key: "image", header: "Avatar URL" },
 ] as const;
 
-export default class CsvExport implements ExportStrategy<Contact> {
-  readonly type = ExportType.CSV;
+export default class CsvExport {
+  static readonly type = ExportType.CSV;
 
-  // skipcq: JS-0105 - Instance method satisfies ExportStrategy interface; no instance state needed
-  async export(
+  static async export(
     contacts: Contact[],
     options?: { locale?: string; delimiter?: string },
   ): Promise<ExportResult> {

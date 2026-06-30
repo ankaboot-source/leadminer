@@ -1,6 +1,7 @@
 Deno.env.set("APP_NAME", "Leadminer");
 
 import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { ExportType } from "../types.ts";
 
 Deno.test({
   name: "CSV export: should produce CSV with headers and rows",
@@ -18,7 +19,7 @@ Deno.test({
       },
     ];
 
-    const result = await new CsvExport().export(contacts, { locale: "en" });
+    const result = await CsvExport.export(contacts, { locale: "en" });
 
     assertEquals(result.contentType, "text/csv");
     assertEquals(result.extension, "csv");
@@ -46,7 +47,7 @@ Deno.test({
       },
     ];
 
-    const result = await new CsvExport().export(contacts, { locale: "fr" });
+    const result = await CsvExport.export(contacts, { locale: "fr" });
 
     const content = result.content as string;
     const lines = content.split("\n");
@@ -59,7 +60,7 @@ Deno.test({
   async fn() {
     const { default: CsvExport } = await import("../formats/csv.ts");
 
-    const result = await new CsvExport().export([], { locale: "en" });
+    const result = await CsvExport.export([], { locale: "en" });
 
     const content = result.content as string;
     const lines = content.split("\n").filter((l) => l.trim());
@@ -86,7 +87,7 @@ Deno.test({
       },
     ];
 
-    const result = await new VCardExport().export(contacts);
+    const result = await VCardExport.export(contacts);
 
     assertEquals(result.contentType, "text/vcard");
     assertEquals(result.extension, "vcf");
@@ -115,7 +116,7 @@ Deno.test({
       },
     ];
 
-    const result = await new VCardExport().export(contacts);
+    const result = await VCardExport.export(contacts);
     const content = result.content as string;
     assertEquals(content.includes("CATEGORIES:Leadminer"), true);
   },
@@ -128,7 +129,8 @@ Deno.test({
 
     assertRejects(
       async () => {
-        await ExportFactory.get("unknown" as unknown as ExportType);
+        // deno-lint-ignore no-explicit-any
+        await ExportFactory.get("unknown" as any).export([]);
       },
       Error,
       "Unsupported export type",
@@ -140,7 +142,6 @@ Deno.test({
   name: "Factory: should return CSV exporter for csv type",
   async fn() {
     const { default: ExportFactory } = await import("../formats/factory.ts");
-    const { ExportType } = await import("../types.ts");
 
     const exporter = ExportFactory.get(ExportType.CSV);
     assertEquals(exporter.type, ExportType.CSV);
