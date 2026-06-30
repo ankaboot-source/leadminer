@@ -329,6 +329,7 @@ class EnrichLayer implements Engine {
     }
   }
 
+  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
   enrichAsync(
     _persons: Partial<Person>[],
     _webhook: string
