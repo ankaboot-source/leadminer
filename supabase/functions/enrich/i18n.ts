@@ -1,5 +1,3 @@
-const i18n: Record<string, Record<string, string>> = {};
-type Resources = typeof i18n;
 let initialized = false;
 
 export async function initI18n(_locale?: string) {
