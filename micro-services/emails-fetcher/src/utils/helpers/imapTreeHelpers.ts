@@ -1,10 +1,24 @@
 import { ListResponse } from 'imapflow';
 import { FlatTree } from '../../services/imap/types';
 
-export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
-  const pathMap = new Map<string, FlatTree>();
+/**
+ * FlatTree node after {@link createFlatTreeFromImap} has populated the
+ * counters. The intermediate fields (`total`, `cumulativeTotal`) are always
+ * present once the node has been created; this intersection narrows the
+ * optional fields to required so downstream code does not need non-null
+ * assertions.
+ */
+type PopulatedTree = FlatTree & {
+  total: number;
+  cumulativeTotal: number;
+};
 
-  // Create FlatTree nodes without linking parents yet
+export function createFlatTreeFromImap(
+  boxes: ListResponse[]
+): PopulatedTree[] {
+  const pathMap = new Map<string, PopulatedTree>();
+
+  // Create PopulatedTree nodes without linking parents yet
   for (const box of boxes) {
     pathMap.set(box.path, {
       label: box.name,
@@ -31,7 +45,7 @@ export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
  * @param userEmail - The email address of the user you want to get the data for.
  */
 
-export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
+export function buildFinalTree(flatTree: PopulatedTree[], userEmail: string) {
   const readableTree = [];
   let totalInEmail = 0;
 
@@ -44,13 +58,11 @@ export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
       } else {
         box.parent.children = [box];
       }
-      // skipcq: JS-0339 - Non-null assertion needed; parent always has these props at this point
-      box.parent.cumulativeTotal! += box.total!;
+      box.parent.cumulativeTotal += box.total;
     } else {
       readableTree.push(box);
     }
-    // skipcq: JS-0339 - box.total is available at this point in the loop
-    totalInEmail += box.total!;
+    totalInEmail += box.total;
     delete box.parent;
   }
 
