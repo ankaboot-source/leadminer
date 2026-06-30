@@ -109,7 +109,7 @@ export default class GoogleContactsSession {
           ],
           `google-${this.userId}`,
           async () => {
-            await this.executeBatchUpdate(batch, updateEmptyOnly);
+            await this.executeBatchUpdate(batch);
           },
         );
         logger.debug(
@@ -198,14 +198,12 @@ export default class GoogleContactsSession {
       existing: { resourceName?: string; etag?: string };
       incoming: ContactFrontend;
     }[],
-    updateEmptyOnly: boolean,
   ) {
     const contactsMap: Record<string, Record<string, unknown>> = {};
 
     batch.forEach((item) => {
       const person = this.mapToPerson(
         item.incoming,
-        item.existing,
       );
       if (item.existing.resourceName) {
         contactsMap[item.existing.resourceName] = {
@@ -358,7 +356,6 @@ export default class GoogleContactsSession {
 
   private mapToPerson(
     contact: ContactFrontend,
-    existing?: { resourceName?: string; etag?: string },
   ): Record<string, unknown> {
     const labels = [this.appName, ...(contact.tags ?? [])].filter(Boolean);
 

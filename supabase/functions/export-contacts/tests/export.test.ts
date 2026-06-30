@@ -6,7 +6,6 @@ Deno.test({
   name: "CSV export: should produce CSV with headers and rows",
   async fn() {
     const { default: CsvExport } = await import("../formats/csv.ts");
-    const { ExportType } = await import("../types.ts");
 
     const contacts = [
       {
@@ -72,7 +71,6 @@ Deno.test({
   name: "VCard export: should produce VCF with contact fields",
   async fn() {
     const { default: VCardExport } = await import("../formats/vcard.ts");
-    const { ExportType } = await import("../types.ts");
 
     const contacts = [
       {
@@ -127,7 +125,6 @@ Deno.test({
   name: "Factory: should throw for unsupported export type",
   async fn() {
     const { default: ExportFactory } = await import("../formats/factory.ts");
-    const { ExportType } = await import("../types.ts");
 
     assertRejects(
       async () => {
