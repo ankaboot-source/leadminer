@@ -10,7 +10,7 @@ export default class Enricher {
     console.error(`[${context}] ${engineName}: ${message}`);
   }
 
-  private async sync(engine: Engine, contact: Partial<Person>) {
+  private static async sync(engine: Engine, contact: Partial<Person>) {
     try {
       const result = await engine.enrichSync(contact);
       return result;
@@ -20,7 +20,7 @@ export default class Enricher {
     return null;
   }
 
-  private async asyncRun(
+  private static async asyncRun(
     engine: Engine,
     contacts: Partial<Person>[],
     webhook: string
@@ -42,7 +42,7 @@ export default class Enricher {
     if (!engines.length) throw new Error("No Engines to use.");
 
     for (const engine of engines) {
-      const result = await this.sync(engine, contact);
+      const result = await Enricher.sync(engine, contact);
       // Break on successful enrichment with data
       if (result?.data?.length) return result;
     }
@@ -60,7 +60,7 @@ export default class Enricher {
     if (!engines.length) throw new Error("No Engines to use.");
 
     for (const engine of engines) {
-      const result = await this.asyncRun(engine, contacts, webhook);
+      const result = await Enricher.asyncRun(engine, contacts, webhook);
       // Break on successful enrichment with token
       if (result?.token) return result;
     }
