@@ -143,7 +143,7 @@ export default class GoogleContactsSession {
     const data = await withRateLimit(
       [{ type: "read", weight: 1 }],
       `google-${this.userId}`,
-      async () =>
+      () =>
         this.apiFetch<{
           contactGroups?: { name?: string; resourceName?: string }[];
         }>("/contactGroups?groupFields=name"),
@@ -259,7 +259,7 @@ export default class GoogleContactsSession {
       const data = await withRateLimit(
         [{ type: "criticalRead", weight: 1 }],
         `google-${this.userId}`,
-        async () =>
+        () =>
           this.apiFetch<{
             connections?: {
               resourceName?: string;

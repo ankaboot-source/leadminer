@@ -199,7 +199,7 @@ async function closeGoogleExportConfirmationDialog() {
   dialogVisible.value = false;
 }
 
-async function openAccountSelectionDialog() {
+function openAccountSelectionDialog() {
   const userEmail = $profile.value?.email;
   if (userEmail) {
     const match = googleMiningSources.value.find((s) => s.email === userEmail);

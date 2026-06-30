@@ -1,6 +1,6 @@
 let initialized = false;
 
-export async function initI18n(_locale?: string) {
+export function initI18n(_locale?: string) {
   initialized = true;
 }
 
