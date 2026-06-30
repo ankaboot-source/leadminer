@@ -44,10 +44,12 @@ export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
       } else {
         box.parent.children = [box];
       }
+      // skipcq: JS-0339 - Non-null assertion needed; parent always has these props at this point
       box.parent.cumulativeTotal! += box.total!;
     } else {
       readableTree.push(box);
     }
+    // skipcq: JS-0339 - box.total is available at this point in the loop
     totalInEmail += box.total!;
     delete box.parent;
   }
