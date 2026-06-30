@@ -129,8 +129,7 @@ Deno.test({
 
     assertRejects(
       async () => {
-        // deno-lint-ignore no-explicit-any
-        await ExportFactory.get("unknown" as any).export([]);
+        await ExportFactory.get("unknown" as unknown as ExportType).export([]);
       },
       Error,
       "Unsupported export type",
