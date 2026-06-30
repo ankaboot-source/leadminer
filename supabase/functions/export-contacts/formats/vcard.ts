@@ -8,7 +8,7 @@ function getAppName(): string {
 export default class VCardExport implements ExportStrategy<Contact> {
   readonly type = ExportType.VCARD;
 
-  // skipcq: JS-0356 - Instance method satisfies ExportStrategy interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies ExportStrategy interface; no instance state needed
   export(contacts: Contact[]): Promise<ExportResult> {
     const content = contacts
       .map((contact) => contactToVCard(contact))

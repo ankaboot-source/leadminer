@@ -11,7 +11,7 @@ export default class GoogleContactsExport
 {
   readonly type = ExportType.GOOGLE_CONTACTS;
 
-  // skipcq: JS-0356 - Instance method satisfies ExportStrategy interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies ExportStrategy interface; no instance state needed
   async export(
     contacts: ContactFrontend[],
     options?: {

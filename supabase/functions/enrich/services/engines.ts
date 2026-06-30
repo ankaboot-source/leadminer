@@ -311,7 +311,7 @@ class EnrichLayer implements Engine {
     return urls;
   }
 
-  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email);
   }
@@ -329,7 +329,7 @@ class EnrichLayer implements Engine {
     }
   }
 
-  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
   enrichAsync(
     _persons: Partial<Person>[],
     _webhook: string
@@ -396,7 +396,7 @@ class TheDig implements Engine {
 
   constructor(private readonly client: ThedigClient) {}
 
-  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email && contact.name);
   }
@@ -525,7 +525,7 @@ class Voilanorbert implements Engine {
 
   constructor(private readonly client: VoilanorbertClient) {}
 
-  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
+  // skipcq: JS-0105 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email);
   }
