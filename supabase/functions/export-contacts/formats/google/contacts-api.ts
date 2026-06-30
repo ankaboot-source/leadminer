@@ -206,7 +206,6 @@ export default class GoogleContactsSession {
       const person = this.mapToPerson(
         item.incoming,
         item.existing,
-        updateEmptyOnly,
       );
       if (item.existing.resourceName) {
         contactsMap[item.existing.resourceName] = {
@@ -360,7 +359,6 @@ export default class GoogleContactsSession {
   private mapToPerson(
     contact: ContactFrontend,
     existing?: { resourceName?: string; etag?: string },
-    updateEmptyOnly = false,
   ): Record<string, unknown> {
     const labels = [this.appName, ...(contact.tags ?? [])].filter(Boolean);
 

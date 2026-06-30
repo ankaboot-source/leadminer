@@ -1,5 +1,4 @@
 import { createLogger } from "../../../_shared/logger.ts";
-import { createSupabaseAdmin } from "../../../_shared/supabase.ts";
 import { ExportStrategy, ExportType, ExportResult } from "../../types.ts";
 import type { ContactFrontend } from "../../types.ts";
 import GoogleContactsSession from "./contacts-api.ts";

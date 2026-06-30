@@ -1,4 +1,4 @@
-import { Hono, Context, Next } from "hono";
+import { Hono, Context } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
@@ -6,7 +6,7 @@ import { authMiddleware } from "./middlewares.ts";
 import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { ContactsClient } from "./contacts-client.ts";
 import ExportFactory from "./formats/factory.ts";
-import { ExportType, ModalResponse, ExportRequestBody, ExportOptions } from "./types.ts";
+import { ExportType, ModalResponse, ExportOptions } from "./types.ts";
 import { getRequiredEnv } from "../_shared/env-helpers.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
 import { exportParamsSchema, exportBodySchema } from "./schemas.ts";
