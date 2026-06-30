@@ -11,7 +11,18 @@ import { FlatTree } from '../../services/imap/types';
 type PopulatedTree = FlatTree & {
   total: number;
   cumulativeTotal: number;
+  parent?: PopulatedTree;
+  children?: PopulatedTree[];
 };
+
+/**
+ * Type guard: a FlatTree coming out of {@link createFlatTreeFromImap} always
+ * has its counters set, and any parent/children references also point at
+ * populated nodes (the pathMap only ever stores PopulatedTree values).
+ */
+function asPopulated(node: FlatTree): PopulatedTree {
+  return node as PopulatedTree;
+}
 
 export function createFlatTreeFromImap(
   boxes: ListResponse[]
@@ -52,13 +63,14 @@ export function buildFinalTree(flatTree: PopulatedTree[], userEmail: string) {
   for (const box of flatTree) {
     box.key = box.key.toString();
 
-    if (box.parent) {
-      if (box.parent.children) {
-        box.parent.children.push(box);
+    const parent = box.parent ? asPopulated(box.parent) : undefined;
+    if (parent) {
+      if (parent.children) {
+        parent.children.push(box);
       } else {
-        box.parent.children = [box];
+        parent.children = [box];
       }
-      box.parent.cumulativeTotal += box.total;
+      parent.cumulativeTotal += box.total;
     } else {
       readableTree.push(box);
     }
