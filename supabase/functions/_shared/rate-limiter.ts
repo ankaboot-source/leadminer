@@ -1,12 +1,11 @@
-// deno-lint-ignore-file no-explicit-any
-import RedisClient from "ioredis";
+import { Redis } from "ioredis";
 
 const REDIS_URL = Deno.env.get("REDIS_URL");
 
-let redisClient: any = null;
+let redisClient: Redis | null = null;
 let redisUnavailable = false;
 
-function getRedisClient(): any {
+function getRedisClient(): Redis | null {
   if (redisUnavailable) {
     return null;
   }
@@ -15,8 +14,7 @@ function getRedisClient(): any {
       redisUnavailable = true;
       return null;
     }
-    // deno-lint-ignore no-explicit-any
-    redisClient = new (RedisClient as any)(REDIS_URL);
+    redisClient = new Redis(REDIS_URL);
   }
   return redisClient;
 }
@@ -36,7 +34,7 @@ const DEFAULT_QUOTAS: Record<QuotaType, QuotaConfig> = {
 };
 
 export class TokenBucketRateLimiter {
-  private redis: any;
+  private redis: Redis | null;
   private key: string;
   private requests: number;
   private intervalSeconds: number;
@@ -113,7 +111,7 @@ export async function withRateLimit<T>(
   );
 
   // If Redis is unavailable, skip rate limiting entirely
-  if (limiters.some((l) => !(l as any).redis)) {
+  if (limiters.some((l) => !(l as unknown as { redis: Redis | null }).redis)) {
     return await callback();
   }
 
