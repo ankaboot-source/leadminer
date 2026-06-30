@@ -93,7 +93,7 @@ export class TokenBucketRateLimiter {
     await addMulti.exec();
   }
 
-  async close(): Promise<void> {
+  static async close(): Promise<void> {
     if (redisClient) {
       await redisClient.quit();
       redisClient = null;

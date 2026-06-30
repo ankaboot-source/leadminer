@@ -311,6 +311,7 @@ class EnrichLayer implements Engine {
     return urls;
   }
 
+  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email);
   }
@@ -328,7 +329,7 @@ class EnrichLayer implements Engine {
     }
   }
 
-  async enrichAsync(
+  enrichAsync(
     _persons: Partial<Person>[],
     _webhook: string
   ): Promise<EngineResponse> {
@@ -394,6 +395,7 @@ class TheDig implements Engine {
 
   constructor(private readonly client: ThedigClient) {}
 
+  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email && contact.name);
   }
@@ -522,11 +524,12 @@ class Voilanorbert implements Engine {
 
   constructor(private readonly client: VoilanorbertClient) {}
 
+  // skipcq: JS-0356 - Instance method satisfies Engine interface; no instance state needed
   isValid(contact: Partial<Person>): boolean {
     return Boolean(contact.email);
   }
 
-  async enrichSync(_person: Partial<Person>): Promise<EngineResponse> {
+  enrichSync(_person: Partial<Person>): Promise<EngineResponse> {
     throw new Error(
       `[${this.constructor.name}]: method enrichSync not implemented.`
     );
@@ -598,13 +601,13 @@ const enricher = new Enricher([
   new Voilanorbert(new VoilanorbertClient()),
 ]);
 
-export async function enrichSync(
+export function enrichSync(
   person: Partial<Person>
 ): Promise<EngineResponse | null> {
   return enricher.enrichSync(person);
 }
 
-export async function enrichAsync(
+export function enrichAsync(
   contacts: Partial<Person>[],
   webhook: string
 ): Promise<EngineResponse | null> {

@@ -5,7 +5,7 @@ import { Engine, EngineResponse, Person } from "../types.ts";
 export default class Enricher {
   constructor(private readonly engines: Engine[]) {}
 
-  private logError(context: string, engineName: string, error: unknown): void {
+  private static logError(context: string, engineName: string, error: unknown): void {
     const message = (error as Error).message || "Unexpected error";
     console.error(`[${context}] ${engineName}: ${message}`);
   }
@@ -15,7 +15,7 @@ export default class Enricher {
       const result = await engine.enrichSync(contact);
       return result;
     } catch (error) {
-      this.logError("EnrichEngine._sync", engine.name, error);
+      Enricher.logError("EnrichEngine._sync", engine.name, error);
     }
     return null;
   }
@@ -29,7 +29,7 @@ export default class Enricher {
       const result = await engine.enrichAsync(contacts, webhook);
       return result;
     } catch (error) {
-      this.logError("EnrichEngine._async", engine.name, error);
+      Enricher.logError("EnrichEngine._async", engine.name, error);
     }
     return null;
   }
