@@ -5,10 +5,9 @@ function getAppName(): string {
   return Deno.env.get("APP_NAME") || "Leadminer";
 }
 
-export default class VCardExport {
-  static readonly type = ExportType.VCARD;
-
-  static export(contacts: Contact[]): Promise<ExportResult> {
+export const VCardExport = {
+  type: ExportType.VCARD,
+  export: (contacts: Contact[]): Promise<ExportResult> => {
     const content = contacts
       .map((contact) => contactToVCard(contact))
       .join("\n");
@@ -19,8 +18,10 @@ export default class VCardExport {
       charset: "utf-8",
       extension: "vcf",
     });
-  }
-}
+  },
+};
+
+export default VCardExport;
 
 function contactToVCard(contact: Contact): string {
   const lines: string[] = [];
