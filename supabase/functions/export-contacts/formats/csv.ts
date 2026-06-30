@@ -28,6 +28,7 @@ const COLUMNS = [
 export default class CsvExport implements ExportStrategy<Contact> {
   readonly type = ExportType.CSV;
 
+  // skipcq: JS-0356 - Instance method satisfies ExportStrategy interface; no instance state needed
   async export(
     contacts: Contact[],
     options?: { locale?: string; delimiter?: string },

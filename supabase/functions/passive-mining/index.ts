@@ -27,12 +27,12 @@ app.post("/", verifyServiceRole, async (c: Context) => {
     for (const miningSource of miningSources) {
       try {
         const miningTask = await startMiningEmail(miningSource);
-        logger.info(`Started mining task for source`, {
+        logger.info("Started mining task for source", {
           email: miningSource.email,
           miningTask,
         });
       } catch (error) {
-        logger.error(`Error starting mining for source`, {
+        logger.error("Error starting mining for source", {
           email: miningSource.email,
           error: String(error),
         });

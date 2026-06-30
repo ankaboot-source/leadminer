@@ -258,7 +258,6 @@ function onComplianceAction(action: string, _data?: ModalData['data']) {
       source?.email || $profile.value?.email,
       '/contacts',
     );
-    return;
   }
 }
 
