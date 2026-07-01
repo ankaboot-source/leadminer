@@ -289,9 +289,8 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
 
   // 3. Create enrichment task for the uncached contacts.
   const enrichments = new EnrichmentsClient(supabaseAdmin, logger);
-  let task;
   try {
-    task = await enrichments.create(
+    await enrichments.create(
       user.id,
       uncachedContacts.length,
       shouldUpdateEmptyOnly,

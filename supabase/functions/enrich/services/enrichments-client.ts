@@ -176,7 +176,7 @@ export default class EnrichmentsClient {
    * into comma-separated strings to match the `text[]` column expected
    * by the SQL function.
    */
-  private buildContactsDbPayload(
+  private static buildContactsDbPayload(
     contacts: Array<Partial<ContactRecord> & { user_id: string }>,
   ): Array<Record<string, unknown>> {
     return contacts
@@ -206,7 +206,7 @@ export default class EnrichmentsClient {
     contacts: Partial<ContactRecord>[],
   ): Promise<string[]> {
     const task = this.ensureTask();
-    const contactsDB = this.buildContactsDbPayload(
+    const contactsDB = EnrichmentsClient.buildContactsDbPayload(
       contacts.map((c) => ({ ...c, user_id: task.userId })),
     );
     const { data, error } = await this.client
