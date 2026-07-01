@@ -11,7 +11,7 @@ export enum MiningTypes {
 }
 
 export interface MiningSource {
-  id?: string;
+  id: string;
   type: MiningSourceType;
   email: string;
   isValid?: boolean;

@@ -8,6 +8,7 @@ import EmailsFetcher, {
 import GoogleContactsFetcher from './services/google_contacts/GoogleContactsFetcher';
 import EmailFetcherFactory from './factory/EmailFetcherFactory';
 import PSTFetcherFactory from './factory/PSTFetcherFactory';
+import ImapBoxesFetcher from './services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
 import logger from './utils/logger';
@@ -562,6 +563,83 @@ apiRoutes.delete(
     } catch (err) {
       res.status(500);
       return next(err);
+    }
+  }
+);
+
+apiRoutes.post(
+  '/imap/boxes',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { userId, email } = req.body;
+
+    const errors = [
+      validateType('userId', userId, 'string'),
+      validateType('email', email, 'string')
+    ].filter(Boolean);
+
+    if (errors.length) {
+      return res
+        .status(400)
+        .json({ message: `Invalid input: ${errors.join(', ')}` });
+    }
+
+    const sanitizedEmail = sanitizeImapInput(email);
+    let connection: Connection | undefined;
+
+    try {
+      const sources = await miningSourceService.getSourcesForUser(
+        userId,
+        sanitizedEmail
+      );
+      const miningSourceCredentials = sources?.pop()?.credentials;
+
+      if (!miningSourceCredentials) {
+        return res.status(401).json({
+          message: "This mining source isn't registered for this user"
+        });
+      }
+
+      const credentials =
+        'accessToken' in miningSourceCredentials
+          ? {
+              oauthToken: miningSourceCredentials.accessToken
+            }
+          : {
+              host: miningSourceCredentials.host,
+              password: miningSourceCredentials.password,
+              tls: miningSourceCredentials.tls,
+              port: miningSourceCredentials.port
+            };
+
+      connection = await ImapConnectionProvider.getSingleConnection(
+        sanitizedEmail,
+        credentials
+      );
+
+      const boxesFetcher = new ImapBoxesFetcher(connection, logger);
+      const folders = await boxesFetcher.getTree(sanitizedEmail);
+
+      return res.status(200).json({
+        data: {
+          message: 'IMAP folders fetched successfully',
+          folders
+        }
+      });
+    } catch (err) {
+      logger.error('Failed to fetch IMAP boxes', err);
+      const newError = generateErrorObjectFromImapError(err);
+
+      res.status(500);
+      return next(new Error(newError.message));
+    } finally {
+      if (connection) {
+        try {
+          await connection.logout();
+        } catch (logoutError) {
+          logger.error('Error closing IMAP connection', logoutError);
+          connection.close();
+        }
+      }
     }
   }
 );

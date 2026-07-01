@@ -7,6 +7,7 @@ import {
 import type { MiningSource } from '@/types/mining';
 
 const googleSource: MiningSource = {
+  id: 'test-google-id',
   type: 'google',
   email: 'user@example.com',
   passive_mining: false,

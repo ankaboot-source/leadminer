@@ -1,14 +1,8 @@
 <template>
-  <component
-    :is="CreditsDialog"
-    ref="CreditsDialogExportRef"
-    engagement-type="contact"
-    action-type="export"
-    @secondary-action="
-      exportTable(ExportTypes.GOOGLE_CONTACTS, true, updateEmptyFieldsOnly)
-    "
+  <GenericComplianceDialog
+    ref="genericComplianceDialogRef"
+    @action="onComplianceAction"
   />
-  <!-- Google Account Selection Dialog -->
   <Dialog
     v-model:visible="accountSelectionDialogVisible"
     modal
@@ -23,10 +17,10 @@
         {{ t('select_google_account_description') }}
       </p>
       <Select
-        v-model="selectedGoogleAccount"
+        v-model="selectedMiningSourceId"
         :options="googleMiningSources"
         option-label="email"
-        option-value="email"
+        option-value="id"
         :placeholder="t('select_google_account_placeholder')"
       />
     </div>
@@ -41,7 +35,7 @@
         />
         <Button
           :label="t('continue')"
-          :disabled="!selectedGoogleAccount"
+          :disabled="!selectedMiningSourceId"
           @click="onAccountSelected"
         />
       </div>
@@ -140,12 +134,8 @@
   />
 </template>
 <script setup lang="ts">
-import {
-  CreditsDialog,
-  CreditsDialogExportRef,
-  openCreditsDialog,
-} from '@/utils/credits';
-import type { FetchError } from 'ofetch';
+import GenericComplianceDialog from '@/components/GenericComplianceDialog.vue';
+import type { ModalData } from '@/components/GenericComplianceDialog.vue';
 
 enum ExportTypes {
   CSV = 'csv',
@@ -159,37 +149,32 @@ const disableExport = defineModel<boolean>('disableExport', {
 });
 
 const $toast = useToast();
-const { $api } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
+const genericComplianceDialogRef = ref<typeof GenericComplianceDialog>();
 const $consentSidebar = useMiningConsentSidebar();
 const $profile = useSupabaseUserProfile();
 const $screenStore = useScreenStore();
 const { t } = useI18n();
 
-const selectedExportType = ref<ExportTypes>(ExportTypes.CSV);
-
 const EXPORT_CONFIG: Record<
   ExportTypes,
   {
-    endpoint: string;
     extension?: string;
     mimeType?: string;
     successSummaryKey: string;
   }
 > = {
   [ExportTypes.CSV]: {
-    endpoint: '/contacts/export/csv',
     extension: 'csv',
     mimeType: 'text/csv;charset=utf-8;',
     successSummaryKey: 'export_csv',
   },
   [ExportTypes.VCARD]: {
-    endpoint: '/contacts/export/vcard',
     extension: 'vcf',
     mimeType: 'text/vcard;charset=utf-8;',
     successSummaryKey: 'export_vcard',
   },
   [ExportTypes.GOOGLE_CONTACTS]: {
-    endpoint: '/contacts/export/google_contacts',
     successSummaryKey: 'export_google_contacts',
   },
 };
@@ -198,7 +183,7 @@ const activeExport = ref(false);
 const updateEmptyFieldsOnly = ref(false);
 const dialogVisible = ref(false);
 const accountSelectionDialogVisible = ref(false);
-const selectedGoogleAccount = ref<string | null>(null);
+const selectedMiningSourceId = ref<string | null>(null);
 const mobileExportMenu = ref();
 const $leadminerStore = useLeadminerStore();
 
@@ -214,14 +199,13 @@ async function closeGoogleExportConfirmationDialog() {
   dialogVisible.value = false;
 }
 
-async function openAccountSelectionDialog() {
-  // Preselect user's email if it exists in Google mining sources
+function openAccountSelectionDialog() {
   const userEmail = $profile.value?.email;
-  if (
-    userEmail &&
-    googleMiningSources.value.some((s) => s.email === userEmail)
-  ) {
-    selectedGoogleAccount.value = userEmail;
+  if (userEmail) {
+    const match = googleMiningSources.value.find((s) => s.email === userEmail);
+    if (match) {
+      selectedMiningSourceId.value = match.id;
+    }
   }
 
   accountSelectionDialogVisible.value = true;
@@ -253,54 +237,42 @@ function saveFile(
   URL.revokeObjectURL(url);
 }
 
-const openCreditModel = (
-  hasDeficientCredits: boolean,
-  {
-    total,
-    available,
-    availableAlready,
-  }: {
-    total: number;
-    available: number;
-    availableAlready: number;
-  },
-) => {
-  if (total === undefined || available === undefined) {
-    return $toast.add({
-      severity: 'error',
-      summary: t('error_verifying_export_csv'),
-      life: 3000,
-    });
-  }
-  return openCreditsDialog(
-    CreditsDialogExportRef,
-    hasDeficientCredits,
-    total,
-    available,
-    availableAlready ?? 0,
-  );
-};
-
 function getFileName() {
   const email = $profile.value?.email as string;
   const currentDatetime = new Date().toISOString().slice(0, 10);
-  const fileName = `leadminer-${email}-${currentDatetime}`;
-  return fileName;
+  return `leadminer-${email}-${currentDatetime}`;
+}
+
+function onComplianceAction(action: string, _data?: ModalData['data']) {
+  if (action === 'continue_partial') {
+    exportTable(selectedExportType.value, true, updateEmptyFieldsOnly.value);
+    return;
+  }
+
+  if (action === 'reconnect_google') {
+    const source = googleMiningSources.value.find(
+      (s) => s.id === selectedMiningSourceId.value,
+    );
+    $consentSidebar.show(
+      'google',
+      source?.email || $profile.value?.email,
+      '/contacts',
+    );
+  }
 }
 
 async function exportToGoogle(type: ExportTypes) {
   selectedExportType.value = type;
 
-  // Fetch mining sources if not already loaded
   if (!$leadminerStore.miningSources.length) {
     await $leadminerStore.fetchMiningSources();
   }
 
   if (
     googleMiningSources.value.length === 1 &&
-    googleMiningSources?.value[0]?.email
+    googleMiningSources.value[0]?.id
   ) {
-    selectedGoogleAccount.value = googleMiningSources.value[0].email;
+    selectedMiningSourceId.value = googleMiningSources.value[0].id;
     openGoogleExportConfirmationDialog();
   } else {
     await openAccountSelectionDialog();
@@ -317,7 +289,7 @@ async function exportTable(
   const config = EXPORT_CONFIG[type];
 
   try {
-    await $api(config.endpoint, {
+    await $saasEdgeFunctions(`export-contacts/${type}`, {
       method: 'POST',
       body: {
         exportType: type,
@@ -325,17 +297,20 @@ async function exportTable(
         ids: contactsToTreat.value,
         exportAllContacts: contactsToTreat.value === undefined,
         updateEmptyFieldsOnly: emptyFieldsOnly,
-        targetEmail:
+        miningSourceId:
           type === ExportTypes.GOOGLE_CONTACTS
-            ? selectedGoogleAccount.value
+            ? selectedMiningSourceId.value
             : undefined,
       },
       onResponse({ response }) {
         activeExport.value = false;
 
-        if (response.status === 402 || response.status === 266) {
-          openCreditModel(response.status === 402, response._data);
-          return;
+        if ([400, 401, 266, 402].includes(response.status)) {
+          const modalData = response._data as ModalData;
+          if (modalData?.type === 'modal') {
+            genericComplianceDialogRef.value?.openModal(modalData);
+            return;
+          }
         }
 
         if (response.status === 200 || response.status === 206) {
@@ -344,17 +319,18 @@ async function exportTable(
             saveFile(response._data, filename, config.mimeType);
           }
 
-          let message;
+          let message: string;
           if (contactsToTreat.value === undefined) {
             message = t('contacts_exported_successfully.all');
           } else if (contactsToTreat.value.length === 0) {
             message = t('contacts_exported_successfully.none');
           } else if (contactsToTreat.value.length === 1) {
             message = t('contacts_exported_successfully.one');
-          } else
+          } else {
             message = t('contacts_exported_successfully.other', {
               count: contactsToTreat.value.length,
             });
+          }
 
           if (type === ExportTypes.GOOGLE_CONTACTS) {
             const labelId = response._data?.labelId ?? null;
@@ -394,20 +370,9 @@ async function exportTable(
     });
   } catch (err) {
     activeExport.value = false;
-
-    if ((err as FetchError).response?.status === 401) {
-      $consentSidebar.show(
-        'google',
-        selectedGoogleAccount.value || $profile.value?.email,
-        '/contacts',
-      );
-      return;
-    }
-
     throw err;
   } finally {
-    // Reset selected account after export attempt
-    selectedGoogleAccount.value = null;
+    selectedMiningSourceId.value = null;
   }
 }
 
@@ -433,12 +398,12 @@ const isGoogleUser = computed(
 const exportItems = computed(() => [
   {
     label: t('export_vcard'),
-    icon: 'pi pi-id-card', // You might choose a different icon
+    icon: 'pi pi-id-card',
     command: () => exportTable(ExportTypes.VCARD),
   },
   {
     label: t('export_google_contacts'),
-    icon: 'pi pi-google', // PrimeIcons for Google/similar
+    icon: 'pi pi-google',
     command: async () => await exportToGoogle(ExportTypes.GOOGLE_CONTACTS),
     disabled: !isGoogleUser.value,
   },
