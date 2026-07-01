@@ -1,6 +1,8 @@
 {
   "imports": {
     "hono": "https://esm.sh/hono@4.7.4",
+    "ioredis": "npm:ioredis@5.5.0",
+    "rate-limiter-flexible": "npm:rate-limiter-flexible@^9.0.0",
     "zod": "https://deno.land/x/zod@v3.25/mod.ts"
   }
 }

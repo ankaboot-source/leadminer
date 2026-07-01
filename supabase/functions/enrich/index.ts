@@ -12,6 +12,15 @@ import {
   webhookParamsSchema,
 } from "./schemas.ts";
 import { mixedAuth } from "../_shared/middlewares.ts";
+import EnrichmentsClient from "./services/enrichments-client.ts";
+import TasksClient from "./services/tasks-client.ts";
+import {
+  enrichFromCache,
+  getContactsToEnrich,
+  getEnrichmentCache,
+  type EnrichmentContactRow,
+} from "./services/enrichment-helpers.ts";
+import type { Task } from "./services/db-types.ts";
 
 const logger = createLogger("enrich");
 const functionName = "enrich";
@@ -39,124 +48,6 @@ interface ModalResponse {
   buttons: ModalButton[];
 }
 
-interface EnrichedCacheRow {
-  task_id: string;
-  user_id: string;
-  engine: string;
-  result: unknown;
-}
-
-// ─── Helper: fetch contacts when enrichAllContacts is true ─────────────────
-
-async function fetchAllContactsForBulkEnrichment(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  userId: string,
-): Promise<Array<{ email: string; name?: string; id?: string }>> {
-  const { data: refinedPersons, error: rpError } = await supabaseAdmin
-    .schema("private")
-    .from("refinedpersons")
-    .select("person_id")
-    .eq("user_id", userId);
-
-  if (rpError) {
-    throw new Error(rpError.message);
-  }
-
-  if (!refinedPersons || refinedPersons.length === 0) {
-    return [];
-  }
-
-  const personIds = refinedPersons.map(
-    (rp: { person_id: string }) => rp.person_id,
-  );
-
-  const { data: persons, error: personsError } = await supabaseAdmin
-    .schema("private")
-    .from("persons")
-    .select("id, email, name")
-    .in("id", personIds);
-
-  if (personsError) {
-    throw new Error(personsError.message);
-  }
-
-  return (persons || []).map(
-    (p: { id: string; email: string; name?: string }) => ({
-      email: p.email,
-      name: p.name,
-      id: p.id,
-    }),
-  );
-}
-
-// ─── Helper: check cache for bulk enrichment ───────────────────────────────
-
-async function checkBulkCache(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  emails: string[],
-): Promise<{ cachedResults: EnrichedCacheRow[]; cachedEmails: Set<string> }> {
-  let cachedResults: EnrichedCacheRow[] = [];
-  try {
-    const { data: cacheData, error: cacheError } = await supabaseAdmin
-      .schema("private")
-      .rpc("enriched_most_recent", { emails });
-
-    if (cacheError) {
-      logger.error("Cache check failed for bulk", {
-        error: cacheError.message,
-      });
-    }
-
-    if (cacheData) {
-      cachedResults = cacheData as EnrichedCacheRow[];
-    }
-  } catch (err) {
-    logger.error("Cache check error for bulk", {
-      error: (err as Error).message,
-    });
-  }
-
-  const cachedEmails = new Set(
-    cachedResults
-      .map((r) =>
-        r.result && typeof r.result === "object"
-          ? ((r.result as Record<string, unknown>).email as string)
-          : undefined,
-      )
-      .filter((e): e is string => Boolean(e)),
-  );
-
-  return { cachedResults, cachedEmails };
-}
-
-// ─── Helper: save cached results to contacts DB ────────────────────────────
-
-async function saveCachedBulkResults(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  cachedResults: EnrichedCacheRow[],
-  shouldUpdateEmptyOnly: boolean,
-): Promise<void> {
-  try {
-    const cacheContactsData = cachedResults.map((r) => r.result);
-    const { error: updateCacheError } = await supabaseAdmin
-      .schema("private")
-      .rpc("enrich_contacts", {
-        p_contacts_data: cacheContactsData,
-        p_update_empty_fields_only: shouldUpdateEmptyOnly,
-      });
-
-    if (updateCacheError) {
-      logger.error("Failed to update contacts from cache (bulk)", {
-        error: updateCacheError.message,
-      });
-    }
-  } catch (err) {
-    logger.error("Cache update error for bulk", {
-      error: (err as Error).message,
-    });
-  }
-}
-
 app.use("*", async (c, next) => {
   await next();
   Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -182,32 +73,21 @@ app.post("/person", mixedAuth, async (c: Context) => {
   await initI18n(locale);
 
   const supabaseAdmin = createSupabaseAdmin();
+  const enrichments = new EnrichmentsClient(supabaseAdmin, logger);
 
+  // 1. Cache check — if we have a fresh enrichment for this email, just
+  //    write it through to the contacts table and return a success modal.
   try {
-    const { data: cacheData, error: cacheError } = await supabaseAdmin
-      .schema("private")
-      .rpc("enriched_most_recent", { emails: [email] });
+    const { cachedResults } = await getEnrichmentCache(
+      supabaseAdmin,
+      [email],
+      logger,
+    );
 
-    if (cacheError) {
-      logger.error("Cache check failed", { error: cacheError.message, email });
-    }
-
-    if (cacheData && (cacheData as EnrichedCacheRow[]).length > 0) {
-      const cached = (cacheData as EnrichedCacheRow[])[0];
+    if (cachedResults.length > 0) {
+      const cached = cachedResults[0];
       logger.info("Enrichment cache hit", { email, engine: cached.engine });
-
-      const { error: updateError } = await supabaseAdmin
-        .schema("private")
-        .rpc("enrich_contacts", {
-          p_contacts_data: [cached.result],
-          p_update_empty_fields_only: true,
-        });
-
-      if (updateError) {
-        logger.error("Failed to update contacts from cache", {
-          error: updateError.message,
-        });
-      }
+      await enrichFromCache(supabaseAdmin, [cached], true, logger);
 
       return c.json({
         type: "modal",
@@ -224,31 +104,10 @@ app.post("/person", mixedAuth, async (c: Context) => {
     });
   }
 
-  let taskId: string | null = null;
+  // 2. Create the enrichment task in `running` state.
+  let task;
   try {
-    const { data: taskData, error: taskError } = await supabaseAdmin
-      .schema("private")
-      .from("tasks")
-      .insert({
-        user_id: user.id,
-        status: "running",
-        type: "enrich",
-        category: "enriching",
-        details: {
-          total_enriched: 0,
-          total_to_enrich: 1,
-          update_empty_fields_only: true,
-          result: [],
-        },
-      })
-      .select("id")
-      .single();
-
-    if (taskError) {
-      throw new Error(taskError.message);
-    }
-
-    taskId = taskData?.id ?? null;
+    task = await enrichments.create(user.id, 1, true);
   } catch (err) {
     logger.error("Failed to create task", {
       error: (err as Error).message,
@@ -268,22 +127,7 @@ app.post("/person", mixedAuth, async (c: Context) => {
     const result = await enrichSync(person);
 
     if (!result || result.data.length === 0) {
-      if (taskId) {
-        await supabaseAdmin
-          .schema("private")
-          .from("tasks")
-          .update({
-            status: "done",
-            details: {
-              total_enriched: 0,
-              total_to_enrich: 1,
-              update_empty_fields_only: true,
-              result: [result || { engine: "none", data: [], raw_data: [] }],
-            },
-          })
-          .eq("id", taskId);
-      }
-
+      await enrichments.completeWithEmptyResult(result);
       return c.json({
         type: "modal",
         title: t("no_data.title"),
@@ -298,39 +142,18 @@ app.post("/person", mixedAuth, async (c: Context) => {
       } satisfies ModalResponse);
     }
 
-    const contactsData = result.data.map((d) => ({
-      ...d,
-      user_id: user.id,
-      person_id: contactId || d.person_id,
-    }));
+    // Map the original contact id back onto each data row so the
+    // `enrich_contacts` RPC can find the person to update.
+    const mappedResult: EngineResponse = {
+      ...result,
+      data: result.data.map((d) => ({
+        ...d,
+        person_id: contactId || d.person_id,
+      })),
+    };
 
-    const { error: updateError } = await supabaseAdmin
-      .schema("private")
-      .rpc("enrich_contacts", {
-        p_contacts_data: contactsData,
-        p_update_empty_fields_only: true,
-      });
-
-    if (updateError) {
-      logger.error("Failed to update contacts", { error: updateError.message });
-      throw new Error(updateError.message);
-    }
-
-    if (taskId) {
-      await supabaseAdmin
-        .schema("private")
-        .from("tasks")
-        .update({
-          status: "done",
-          details: {
-            total_enriched: 1,
-            total_to_enrich: 1,
-            update_empty_fields_only: true,
-            result: [result],
-          },
-        })
-        .eq("id", taskId);
-    }
+    await enrichments.enrich([mappedResult]);
+    await enrichments.end();
 
     logger.info("Enrichment completed successfully", {
       email,
@@ -349,27 +172,22 @@ app.post("/person", mixedAuth, async (c: Context) => {
     const errorMessage = (err as Error).message || "Unknown enrichment error";
     logger.error("Enrichment failed", { error: errorMessage, email });
 
-    if (taskId) {
-      try {
-        await supabaseAdmin
-          .schema("private")
-          .from("tasks")
-          .update({
-            status: "canceled",
-            details: {
-              total_enriched: 0,
-              total_to_enrich: 1,
-              update_empty_fields_only: true,
-              error: [errorMessage],
-              result: [],
-            },
-          })
-          .eq("id", taskId);
-      } catch (taskUpdateErr) {
-        logger.error("Failed to update task status", {
-          error: (taskUpdateErr as Error).message,
-        });
-      }
+    try {
+      const canceledTask: Task = {
+        ...task,
+        status: "canceled",
+        details: {
+          ...task.details,
+          error: [errorMessage],
+          result: [],
+        },
+      };
+      const tasksClient = new TasksClient(supabaseAdmin, logger);
+      await tasksClient.update(canceledTask);
+    } catch (taskUpdateErr) {
+      logger.error("Failed to update task status", {
+        error: (taskUpdateErr as Error).message,
+      });
     }
 
     return c.json({
@@ -388,42 +206,6 @@ app.post("/person", mixedAuth, async (c: Context) => {
 });
 
 // ─── Handler: POST /enrich/person/bulk - Bulk enrichment ────────────────────
-
-async function createBulkEnrichTask(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  userId: string,
-  contactsToProcess: Array<{ email: string; name?: string; id?: string }>,
-  shouldUpdateEmptyOnly: boolean,
-): Promise<string | null> {
-  try {
-    const { data: taskData, error: taskError } = await supabaseAdmin
-      .schema("private")
-      .from("tasks")
-      .insert({
-        user_id: userId,
-        status: "running",
-        type: "enrich",
-        category: "enriching",
-        details: {
-          total_enriched: 0,
-          total_to_enrich: contactsToProcess.length,
-          update_empty_fields_only: shouldUpdateEmptyOnly,
-          result: [],
-        },
-      })
-      .select("id")
-      .single();
-
-    if (taskError) throw new Error(taskError.message);
-    return taskData?.id ?? null;
-  } catch (err) {
-    logger.error("Failed to create bulk task", {
-      error: (err as Error).message,
-      userId,
-    });
-    return null;
-  }
-}
 
 app.post("/person/bulk", mixedAuth, async (c: Context) => {
   const user = c.get("user");
@@ -446,13 +228,10 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
   const supabaseAdmin = createSupabaseAdmin();
 
   // 1. Fetch contacts (either all or provided)
-  let contactsToEnrich: Array<{ email: string; name?: string; id?: string }>;
+  let contactsToEnrich: EnrichmentContactRow[];
   if (enrichAllContacts) {
     try {
-      contactsToEnrich = await fetchAllContactsForBulkEnrichment(
-        supabaseAdmin,
-        user.id,
-      );
+      contactsToEnrich = await getContactsToEnrich(supabaseAdmin, user.id);
     } catch (err) {
       logger.error("Failed to fetch contacts for enrichAllContacts", {
         error: (err as Error).message,
@@ -474,19 +253,24 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
     } satisfies ModalResponse);
   }
 
-  // 2. Check cache
+  // 2. Check cache and persist any hits.
   const emails = contactsToEnrich.map((c) => c.email);
-  const { cachedResults, cachedEmails } = await checkBulkCache(
+  const { cachedResults, cachedEmails } = await getEnrichmentCache(
     supabaseAdmin,
     emails,
+    logger,
   );
   const uncachedContacts = contactsToEnrich.filter(
     (c) => !cachedEmails.has(c.email),
   );
 
-  // 3. Save cached results
   if (cachedResults.length > 0) {
-    await saveCachedBulkResults(supabaseAdmin, cachedResults, shouldUpdateEmptyOnly);
+    await enrichFromCache(
+      supabaseAdmin,
+      cachedResults,
+      shouldUpdateEmptyOnly,
+      logger,
+    );
   }
 
   if (uncachedContacts.length === 0) {
@@ -503,23 +287,25 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
     } satisfies ModalResponse);
   }
 
-  // 4. Create enrichment task
-  const taskId = await createBulkEnrichTask(
-    supabaseAdmin,
-    user.id,
-    uncachedContacts,
-    shouldUpdateEmptyOnly,
-  );
-
-  if (!taskId) {
+  // 3. Create enrichment task for the uncached contacts.
+  const enrichments = new EnrichmentsClient(supabaseAdmin, logger);
+  let task;
+  try {
+    task = await enrichments.create(
+      user.id,
+      uncachedContacts.length,
+      shouldUpdateEmptyOnly,
+    );
+  } catch (err) {
+    logger.error("Failed to create bulk task", {
+      error: (err as Error).message,
+      userId: user.id,
+    });
     return c.json({ error: "Failed to create enrichment task" }, 500);
   }
 
-  // 5. Run enrichment
+  // 4. Run enrichment for each uncached contact.
   const enrichedResults: EngineResponse[] = [];
-  const enrichedContactsData: Record<string, unknown>[] = [];
-  let enrichedCount = 0;
-
   for (const contact of uncachedContacts) {
     try {
       const person: Partial<Person> = {
@@ -532,13 +318,13 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
       const result = await enrichSync(person);
 
       if (result && result.data.length > 0) {
-        enrichedResults.push(result);
-        const contactsData = result.data.map((d) => ({
-          ...d,
-          person_id: contact.id || d.person_id,
-        }));
-        enrichedContactsData.push(...contactsData);
-        enrichedCount++;
+        enrichedResults.push({
+          ...result,
+          data: result.data.map((d) => ({
+            ...d,
+            person_id: contact.id || d.person_id,
+          })),
+        });
       }
     } catch (err) {
       logger.error("Enrichment failed for contact", {
@@ -548,48 +334,20 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
     }
   }
 
-  // 6. Update contacts DB
-  if (enrichedContactsData.length > 0) {
+  // 5. Hand the results to EnrichmentsClient — it updates contacts,
+  //    writes engagement rows, and merges the result into the task.
+  try {
+    await enrichments.enrich(enrichedResults);
+    await enrichments.end();
+  } catch (err) {
+    logger.error("Failed to finalize bulk task", {
+      error: (err as Error).message,
+    });
     try {
-      const { error: updateError } = await supabaseAdmin
-        .schema("private")
-        .rpc("enrich_contacts", {
-          p_contacts_data: enrichedContactsData,
-          p_update_empty_fields_only: shouldUpdateEmptyOnly,
-        });
-
-      if (updateError) {
-        logger.error("Failed to update contacts (bulk)", {
-          error: updateError.message,
-        });
-        throw new Error(updateError.message);
-      }
-    } catch (err) {
-      logger.error("Contact update failed for bulk", {
-        error: (err as Error).message,
-      });
-    }
-  }
-
-  // 7. Update task status
-  if (taskId) {
-    try {
-      await supabaseAdmin
-        .schema("private")
-        .from("tasks")
-        .update({
-          status: "done",
-          details: {
-            total_enriched: enrichedCount,
-            total_to_enrich: uncachedContacts.length,
-            update_empty_fields_only: shouldUpdateEmptyOnly,
-            result: enrichedResults,
-          },
-        })
-        .eq("id", taskId);
-    } catch (err) {
-      logger.error("Failed to update task status (bulk)", {
-        error: (err as Error).message,
+      await enrichments.cancel();
+    } catch (cancelErr) {
+      logger.error("Failed to cancel bulk task", {
+        error: (cancelErr as Error).message,
       });
     }
   }
@@ -597,11 +355,11 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
   logger.info("Bulk enrichment completed", {
     userId: user.id,
     total: contactsToEnrich.length,
-    enriched: enrichedCount,
+    enriched: enrichedResults.length,
     cached: cachedResults.length,
   });
 
-  const totalAvailable = enrichedCount + cachedResults.length;
+  const totalAvailable = enrichedResults.length + cachedResults.length;
 
   return c.json({
     type: "modal",
@@ -631,74 +389,66 @@ app.post("/webhook/:id", async (c) => {
   const { token, results } = parsed.data;
 
   const supabaseAdmin = createSupabaseAdmin();
+  const tasksClient = new TasksClient(supabaseAdmin, logger);
 
-  const { data: task, error: taskError } = await supabaseAdmin
-    .schema("private")
-    .from("tasks")
-    .select("id, user_id, details")
-    .eq("id", id)
-    .single();
-
-  if (taskError || !task) {
+  let task;
+  try {
+    task = await tasksClient.getById(id);
+  } catch (err) {
     logger.error("Webhook: task not found", {
       taskId: id,
-      error: taskError?.message,
+      error: (err as Error).message,
     });
     return c.json({ error: "Task not found" }, 404);
   }
 
-  const resultEntry = task.details?.result?.find(
-    (r: { token?: string }) => r.token === token,
-  );
+  const existingResults = (task.details?.result ?? []) as Array<{
+    token?: string;
+    engine?: string;
+    data?: unknown[];
+    raw_data?: unknown[];
+  }>;
 
+  const resultEntry = existingResults.find((r) => r.token === token);
   if (!resultEntry) {
     logger.warn("Webhook: invalid token", { taskId: id, token });
     return c.json({ error: "Invalid token" }, 403);
   }
 
   const { data: userData } = await supabaseAdmin.auth.admin.getUserById(
-    task.user_id,
+    task.userId,
   );
   const locale = getUserLocale(userData?.user?.user_metadata || {});
   await initI18n(locale);
 
   const parsedResults = results || [];
 
-  const existingResults = task.details?.result || [];
-  const updatedResults = existingResults.map(
-    (r: {
-      token?: string;
-      engine?: string;
-      data?: unknown[];
-      raw_data?: unknown[];
-    }) => {
-      if (r.token === token) {
-        return {
-          ...r,
-          data: parsedResults,
-          raw_data: [parsedResults],
-        };
-      }
-      return r;
+  const updatedResults = existingResults.map((r) => {
+    if (r.token === token) {
+      return {
+        ...r,
+        data: parsedResults,
+        raw_data: [parsedResults],
+      };
+    }
+    return r;
+  });
+
+  const updatedTask: Task = {
+    ...task,
+    status: "done",
+    details: {
+      ...(task.details as Record<string, unknown>),
+      result: updatedResults,
     },
-  );
+  };
 
-  const { error: updateError } = await supabaseAdmin
-    .schema("private")
-    .from("tasks")
-    .update({
-      status: "done",
-      details: {
-        ...task.details,
-        result: updatedResults,
-      },
-    })
-    .eq("id", id);
-
-  if (updateError) {
+  try {
+    await tasksClient.update(updatedTask);
+  } catch (err) {
     logger.error("Webhook: failed to update task", {
       taskId: id,
-      error: updateError.message,
+      error: (err as Error).message,
     });
     return c.json({ error: "Failed to update task" }, 500);
   }

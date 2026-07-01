@@ -1,59 +1,30 @@
-// Ported from backend/src/services/enrichment/Engine.ts (Deno-compatible)
+/**
+ * Barrel re-export of the engine type definitions.
+ *
+ * The authoritative definitions now live in `services/engine.ts`. This
+ * file is kept as a stable import path for code that already depends
+ * on the previous `types.ts` exports (`Person`, `EngineResult`,
+ * `EngineResponse`, `Engine`, and the edge-specific `EngineClass`).
+ */
 
-export interface Person {
-  url: string;
-  email: string;
-  name?: string;
-  image?: string;
-  job_title?: string;
-  given_name?: string;
-  family_name?: string;
-  works_for?: string;
-  alternate_name?: string[];
-  location?: string;
-  same_as?: string[];
-  identifiers: string[];
-}
+import type {
+  Person,
+  EngineResult,
+  EngineResponse,
+  Engine,
+} from "./services/engine.ts";
 
-export interface EngineResult {
-  person_id?: string;
-  email: string;
-  name?: string;
-  image?: string;
-  location?: string;
-  jobTitle?: string;
-  organization?: string;
-  givenName?: string;
-  familyName?: string;
-  sameAs?: string[];
-  identifiers?: string[];
-  alternateName?: string[];
-}
-
-export interface EngineResponse {
-  token?: string;
-  engine: string;
-  raw_data: unknown[];
-  data: EngineResult[];
-}
-
-export interface Engine {
-  readonly name: string;
-  readonly isSync: boolean;
-  readonly isAsync: boolean;
-
-  enrichAsync(
-    persons: Partial<Person>[],
-    webhook: string
-  ): Promise<EngineResponse>;
-  enrichSync(persons: Partial<Person>): Promise<EngineResponse>;
-  parseResult(data: unknown[]): EngineResponse;
-}
+export type { Person, EngineResult, EngineResponse, Engine };
 
 /**
  * Class-level (static) contract for an engine. Each implementation
  * exposes `name`, `isSync`, `isAsync`, and a stateless `isValid` check
  * as static members because they do not depend on instance state.
+ *
+ * Retained for backward compatibility with callers that need to reason
+ * about validity via the class without instantiating every engine
+ * upfront. New code should rely on the `Engine` instance interface
+ * from `services/engine.ts`.
  */
 export interface EngineClass {
   readonly name: string;
