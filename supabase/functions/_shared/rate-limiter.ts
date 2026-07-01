@@ -1,27 +1,76 @@
+/**
+ * Rate limiter for Supabase Edge Functions.
+ *
+ * Ported from the backend's `TokenBucketRateLimiter`
+ * (`backend/src/services/rate-limiter/index.ts`) to the Deno edge runtime.
+ *
+ * Differences from the backend:
+ * - Only `Memory` and `Redis` distributions are supported (PostgreSQL is omitted
+ *   because the `pg` Pool is Node-only).
+ * - Falls back to in-memory limiting when `REDIS_URL` is unset.
+ * - Uses the shared edge `createLogger` instead of `winston`.
+ * - `removeTokens` returns `Promise<void>` and retries on
+ *   `RateLimiterRes` (preserves the soft-retry semantics of the previous
+ *   custom implementation so existing callers do not have to handle rejections).
+ */
+
+import {
+  RateLimiterMemory,
+  type RateLimiterAbstract,
+  RateLimiterQueue,
+  RateLimiterRedis,
+  RateLimiterRes,
+} from "rate-limiter-flexible";
 import { Redis } from "ioredis";
+import { createLogger } from "./logger.ts";
+
+const logger = createLogger("rate-limiter");
 
 const REDIS_URL = Deno.env.get("REDIS_URL");
 
+/**
+ * Maximum number of times `removeTokens` will sleep and retry when the
+ * rate-limiter rejects a consume. Bounds total wait time so a misconfigured
+ * quota cannot block a request indefinitely.
+ */
+const MAX_RATE_LIMIT_RETRIES = 10;
+
+/**
+ * Minimum delay between retries in milliseconds. Acts as a safety floor when
+ * `RateLimiterRes.msBeforeNext` is unusually small.
+ */
+const MIN_RETRY_DELAY_MS = 25;
+
 let redisClient: Redis | null = null;
-let redisUnavailable = false;
 
 function getRedisClient(): Redis | null {
-  if (redisUnavailable) {
+  if (redisClient) {
+    return redisClient;
+  }
+  if (!REDIS_URL) {
     return null;
   }
-  if (!redisClient) {
-    if (!REDIS_URL) {
-      redisUnavailable = true;
-      return null;
-    }
-    redisClient = new Redis(REDIS_URL);
+  try {
+    redisClient = new Redis(REDIS_URL, {
+      // Match the backend's redis manager so commands don't fail with
+      // "Reached the max retries per request limit" while we are
+      // establishing the connection.
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn("Failed to create Redis client, falling back to memory", {
+      error: msg,
+    });
+    redisClient = null;
   }
   return redisClient;
 }
 
 export type QuotaType = "criticalRead" | "criticalWrite" | "read" | "write";
 
-interface QuotaConfig {
+export interface QuotaConfig {
   requests: number;
   intervalSeconds: number;
 }
@@ -33,74 +82,113 @@ const DEFAULT_QUOTAS: Record<QuotaType, QuotaConfig> = {
   write: { requests: 90, intervalSeconds: 60 },
 };
 
+function createBaseLimiter(
+  config: QuotaConfig,
+  keyPrefix: string,
+): RateLimiterAbstract {
+  const redis = getRedisClient();
+  if (redis) {
+    return new RateLimiterRedis({
+      storeClient: redis,
+      keyPrefix,
+      points: config.requests,
+      duration: config.intervalSeconds,
+    });
+  }
+  return new RateLimiterMemory({
+    keyPrefix,
+    points: config.requests,
+    duration: config.intervalSeconds,
+  });
+}
+
+/**
+ * Token-bucket rate limiter. Public API is intentionally compatible with the
+ * previous custom implementation so callers (e.g. `contacts-api.ts`) do not
+ * need to change.
+ */
 export class TokenBucketRateLimiter {
-  private redis: Redis | null;
-  private key: string;
-  private requests: number;
-  private intervalSeconds: number;
+  private readonly limiter: RateLimiterQueue;
+  private readonly uniqueKey: string;
+  private readonly quotaType: QuotaType;
 
   constructor(
     uniqueKey: string,
     quotaType: QuotaType,
     customConfig?: Partial<QuotaConfig>,
   ) {
-    this.redis = getRedisClient();
-    this.key = `rate-limit:${uniqueKey}:${quotaType}`;
-    const config = { ...DEFAULT_QUOTAS[quotaType], ...customConfig };
-    this.requests = config.requests;
-    this.intervalSeconds = config.intervalSeconds;
+    this.uniqueKey = uniqueKey;
+    this.quotaType = quotaType;
+
+    const config: QuotaConfig = {
+      ...DEFAULT_QUOTAS[quotaType],
+      ...customConfig,
+    };
+
+    // `rate-limiter-flexible` constructs the storage key from
+    // `<keyPrefix>:<consumeKey>`. We don't pass a consume key, so the
+    // prefix alone is used. Include the quota type to keep different
+    // quotas on independent buckets even when the unique key is the same.
+    const keyPrefix = `rl:${uniqueKey}:${quotaType}`;
+    const baseLimiter = createBaseLimiter(config, keyPrefix);
+    this.limiter = new RateLimiterQueue(baseLimiter);
   }
 
+  /**
+   * Removes `tokens` from the bucket. If the bucket cannot satisfy the
+   * request, waits for `msBeforeNext` and retries. Throws only when the
+   * limiter is misconfigured, the underlying store errors out, or the
+   * retry budget is exhausted.
+   */
   async removeTokens(tokens: number): Promise<void> {
-    if (!this.redis) {
-      return; // Redis unavailable — skip rate limiting
-    }
-
-    const now = Date.now();
-    const window = this.intervalSeconds * 1000;
-
-    const multi = this.redis.multi();
-
-    multi.zremrangebyscore(this.key, 0, now - window);
-    multi.zcard(this.key);
-
-    const results = await multi.exec();
-    const currentCount = (results?.[1]?.[1] as number) || 0;
-
-    if (currentCount + tokens > this.requests) {
-      const oldest = await this.redis.zrange(
-        this.key,
-        0,
-        0,
-        "WITHSCORES",
-      );
-      if (oldest.length >= 2) {
-        const retryAfter = parseInt(oldest[1]) + window - now;
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.max(retryAfter, 0))
-        );
+    for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
+      try {
+        await this.limiter.removeTokens(tokens);
+        return;
+      } catch (err) {
+        if (
+          err instanceof RateLimiterRes &&
+          attempt < MAX_RATE_LIMIT_RETRIES
+        ) {
+          const waitMs = Math.max(
+            err.msBeforeNext ?? 0,
+            MIN_RETRY_DELAY_MS,
+          );
+          logger.debug("Rate limit reached, waiting before retry", {
+            uniqueKey: this.uniqueKey,
+            quotaType: this.quotaType,
+            tokens,
+            attempt,
+            waitMs,
+          });
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          continue;
+        }
+        throw err;
       }
     }
-
-    const timestamps = Array.from({ length: tokens }, () => now);
-    const scoreMembers = timestamps.map((ts) => [ts, `${ts}-${Math.random()}`] as [number, string]);
-
-    const addMulti = this.redis.multi();
-    for (const [score, member] of scoreMembers) {
-      addMulti.zadd(this.key, score, member);
-    }
-    addMulti.expire(this.key, this.intervalSeconds * 2);
-    await addMulti.exec();
   }
 
   static async close(): Promise<void> {
     if (redisClient) {
-      await redisClient.quit();
+      const client = redisClient;
       redisClient = null;
+      try {
+        await client.quit();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn("Error while closing Redis client", { error: msg });
+      }
     }
   }
 }
 
+/**
+ * Runs `callback` after consuming tokens from each requested quota bucket.
+ * If any bucket cannot satisfy its request, the call is delayed (and retried)
+ * rather than rejected, matching the soft behavior of the previous
+ * implementation.
+ */
 export async function withRateLimit<T>(
   requirements: { type: QuotaType; weight: number }[],
   uniqueKey: string,
@@ -110,17 +198,9 @@ export async function withRateLimit<T>(
     (r) => new TokenBucketRateLimiter(uniqueKey, r.type),
   );
 
-  // If Redis is unavailable, skip rate limiting entirely
-  if (limiters.some((l) => !(l as unknown as { redis: Redis | null }).redis)) {
-    return await callback();
-  }
+  await Promise.all(
+    limiters.map((l, i) => l.removeTokens(requirements[i].weight)),
+  );
 
-  try {
-    await Promise.all(
-      limiters.map((l, i) => l.removeTokens(requirements[i].weight)),
-    );
-    return await callback();
-  } finally {
-    // Redis connections are reused via singleton
-  }
+  return await callback();
 }
