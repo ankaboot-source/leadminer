@@ -3,7 +3,16 @@ import { parsePhoneNumberFromString, ParseError } from "libphonenumber-js";
 export function normalizePhoneNumber(phone: string): string | null {
   if (!phone?.trim()) return null;
 
-  const trimmed = phone.trim();
+  let trimmed = phone.trim();
+
+  // Normalize to international format with '+' prefix
+  if (trimmed.startsWith("00")) {
+    // Replace international dialing prefix (00) with +
+    trimmed = "+" + trimmed.slice(2);
+  } else if (!trimmed.startsWith("+")) {
+    // Prepend + for numbers without it (assumes country code is included)
+    trimmed = "+" + trimmed;
+  }
 
   try {
     const phoneNumber = parsePhoneNumberFromString(trimmed);
