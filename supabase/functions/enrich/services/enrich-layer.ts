@@ -228,7 +228,7 @@ export default class EnrichLayer implements Engine {
   ): Promise<ReverseEmailLookupResponse> {
     return await this.rateLimitRetryWithExponentialBackoff(async () => {
       await this.rateLimiter.removeTokens(1);
-      const url = new URL("/api/v2/profile/resolve/email", this.baseUrl);
+      const url = new URL(`${this.baseUrl}/api/v2/profile/resolve/email`);
       url.searchParams.set("email", params.email);
       url.searchParams.set("lookup_depth", params.lookup_depth);
       if (params.enrich_profile) {

@@ -294,8 +294,10 @@ policy = "oneshot"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# [edge_runtime.secrets] was moved to supabase/functions/.env.dev.
+# For local dev: `cp supabase/functions/.env.dev supabase/functions/.env` — the Supabase CLI
+# auto-loads `supabase/functions/.env` and injects the values into the edge runtime container.
+# For production: use `supabase secrets set --env-file supabase/functions/.env.dev` to deploy.
 
 [analytics]
 enabled = true
