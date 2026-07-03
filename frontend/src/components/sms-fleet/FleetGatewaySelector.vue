@@ -356,6 +356,14 @@ async function saveGateway() {
     return;
   }
 
+  // The Save button lives outside <ProviderForm>, so clicking it does not
+  // fire the form's submit event. Trigger the child handler so it emits
+  // `submit` -> handleFormSubmit synchronously populates formConfig.
+  providerFormRef.value?.handleSubmit();
+  if (!formConfig.value) {
+    return;
+  }
+
   isSubmitting.value = true;
 
   const result = await $smsFleetStore.createGateway({

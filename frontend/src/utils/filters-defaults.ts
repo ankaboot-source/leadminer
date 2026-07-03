@@ -31,7 +31,6 @@ export const DEFAULT_TOGGLES = {
   telephone: false,
   location: false,
   hideUnsubscribed: true,
-  emailMissing: false,
 };
 
 export const CLEARED_TOGGLES = {
@@ -42,7 +41,6 @@ export const CLEARED_TOGGLES = {
   telephone: false,
   location: false,
   hideUnsubscribed: false,
-  emailMissing: false,
 };
 
 export const DEFAULT_FILTERS = {

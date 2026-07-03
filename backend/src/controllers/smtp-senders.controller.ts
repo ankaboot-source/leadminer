@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import {
   SmtpOAuthProvider,
+  SmtpSender,
   SmtpSenderCreate,
   SmtpSenders
 } from '../db/interfaces/SmtpSenders';
@@ -39,6 +40,33 @@ function guessSmtpSettings(email: string): {
   return { host: '', port: 587, encryption: 'starttls' };
 }
 
+function toSnakeCaseSender(sender: SmtpSender & { smtpPassword?: string }) {
+  const result: Record<string, unknown> = {
+    id: sender.id,
+    user_id: sender.userId,
+    name: sender.name,
+    email: sender.email,
+    smtp_host: sender.smtpHost,
+    smtp_port: sender.smtpPort,
+    smtp_encryption: sender.smtpEncryption,
+    smtp_user: sender.smtpUser,
+    auth_type: sender.authType,
+    active: sender.active,
+    created_at: sender.createdAt,
+    updated_at: sender.updatedAt
+  };
+  if (sender.smtpPassword !== undefined) {
+    result.smtp_password = sender.smtpPassword;
+  }
+  if (sender.oauthProvider !== undefined) {
+    result.oauth_provider = sender.oauthProvider;
+  }
+  if (sender.miningSourceId !== undefined) {
+    result.mining_source_id = sender.miningSourceId;
+  }
+  return result;
+}
+
 export default function initializeSmtpSendersController(
   smtpSenders: SmtpSenders,
   miningSources?: MiningSources
@@ -48,7 +76,7 @@ export default function initializeSmtpSendersController(
       try {
         const user = res.locals.user as User;
         const senders = await smtpSenders.getByUser(user.id);
-        return res.json({ senders });
+        return res.json({ senders: senders.map(toSnakeCaseSender) });
       } catch (error) {
         return next(error);
       }
@@ -62,7 +90,7 @@ export default function initializeSmtpSendersController(
           res.status(404);
           return next(new Error('Sender not found'));
         }
-        return res.json({ sender });
+        return res.json({ sender: toSnakeCaseSender(sender) });
       } catch (error) {
         return next(error);
       }
@@ -104,7 +132,7 @@ export default function initializeSmtpSendersController(
           smtpPassword
         });
 
-        return res.status(201).json({ sender });
+        return res.status(201).json({ sender: toSnakeCaseSender(sender) });
       } catch (error) {
         return next(error);
       }
@@ -138,7 +166,7 @@ export default function initializeSmtpSendersController(
           return next(new Error('Sender not found'));
         }
 
-        return res.json({ sender });
+        return res.json({ sender: toSnakeCaseSender(sender) });
       } catch (error) {
         return next(error);
       }
@@ -165,6 +193,14 @@ export default function initializeSmtpSendersController(
         if (!sender) {
           res.status(404);
           return next(new Error('Sender not found'));
+        }
+
+        if (sender.authType === 'oauth') {
+          return res.json({
+            success: true,
+            message:
+              'Sender was verified when the OAuth flow completed. Live SMTP test is not available for OAuth senders.'
+          });
         }
 
         const password = await smtpSenders.getPassword(req.params.id, user.id);

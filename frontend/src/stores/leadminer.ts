@@ -83,7 +83,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   );
 
   const passiveMiningDialog = ref(false);
-  const SENDER_OPTIONS_TIMEOUT_MS = 3000;
+  // resolveSenderOptions does per-source verifyTransport (SMTP/OAuth + token
+  // refresh) plus a DB call. With several sources it can easily take 5-10s,
+  // and a previous 3s cap caused false "preserving previous validity" warnings.
+  const SENDER_OPTIONS_TIMEOUT_MS = 10_000;
 
   const miningStartedAndFinished = computed(() =>
     Boolean(miningStartedAt.value && miningCompleted.value),
@@ -181,21 +184,20 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   async function fetchSenderOptionsInBackground(sources: MiningSource[]) {
     try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error('sender-options timeout')),
-          SENDER_OPTIONS_TIMEOUT_MS,
-        ),
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        SENDER_OPTIONS_TIMEOUT_MS,
       );
 
-      const senderOptionsData = (await Promise.race([
-        $saasEdgeFunctions('email-campaigns/campaigns/sender-options', {
-          method: 'POST',
-        }),
-        timeoutPromise,
-      ])) as {
+      const senderOptionsData = (await $saasEdgeFunctions(
+        'email-campaigns/campaigns/sender-options',
+        { method: 'POST', signal: controller.signal },
+      )) as {
         options?: { email: string; available: boolean }[];
       };
+
+      clearTimeout(timeoutId);
 
       const allOptions = (senderOptionsData.options || []).map((option) => ({
         email: option.email,
