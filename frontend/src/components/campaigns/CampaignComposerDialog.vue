@@ -1222,10 +1222,6 @@ async function submit() {
           }
         }
 
-        if (response.status === 200) {
-          return;
-        }
-
         // For non-modal 4xx/5xx, let ofetch reject with the FetchError so
         // response._data (including `code`) is preserved on the thrown error.
         // Throwing a plain Error here would strip the code and force the
