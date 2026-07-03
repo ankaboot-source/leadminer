@@ -376,7 +376,7 @@ entrypoint = "./functions/export-contacts/index.ts"
 
 [functions.enrich]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/enrich/deno.json"
 entrypoint = "./functions/enrich/index.ts"
 
