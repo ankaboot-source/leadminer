@@ -1218,7 +1218,6 @@ async function submit() {
             genericComplianceDialogRef.value?.openModal(modalData);
             shouldCloseDialog = false;
             showErrorToast = false;
-            return;
           }
         }
 
