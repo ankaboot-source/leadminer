@@ -27,7 +27,6 @@ type TogglesType = {
   telephone: boolean;
   location: boolean;
   hideUnsubscribed: boolean;
-  emailMissing: boolean;
 };
 
 const VALID_STATUSES = ['VALID', 'UNKNOWN', null /*'UNVERIFIED'*/];
@@ -42,7 +41,6 @@ const phoneToggle = ref(false);
 const locationToggle = ref(false);
 const jobDetailsToggle = ref(false);
 const hideUnsubscribedToggle = ref(true);
-const emailMissingToggle = ref(false);
 const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(null);
 
 const isDefaultFilters = computed(
@@ -57,8 +55,7 @@ const areToggledFilters = computed(
     Number(phoneToggle.value) +
     Number(locationToggle.value) +
     Number(hideUnsubscribedToggle.value) +
-    Number(jobDetailsToggle.value) +
-    Number(emailMissingToggle.value),
+    Number(jobDetailsToggle.value),
 );
 
 function checkValidStatus(statusValue = filters.value.status.value) {
@@ -119,17 +116,6 @@ function onRecentToggle(toggle?: boolean) {
 function onPhoneToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     phoneToggle.value = toggle;
-    filters.value.telephone.value = toggle || null;
-  }
-}
-
-function onEmailMissingToggle(toggle?: boolean) {
-  if (toggle !== undefined) {
-    emailMissingToggle.value = toggle;
-    if (!filters.value.email) {
-      filters.value.email = { value: null, matchMode: IS_EMPTY };
-    }
-    filters.value.email.value = toggle || null;
     filters.value.telephone.value = toggle || null;
   }
 }
@@ -246,9 +232,6 @@ function syncTogglesWithFilters() {
       ).toLocaleDateString();
   nameToggle.value = Boolean(filters.value.name.value);
   phoneToggle.value = Boolean(filters.value.telephone.value);
-  emailMissingToggle.value =
-    Boolean(filters.value.email?.value) &&
-    Boolean(filters.value.telephone.value);
   locationToggle.value = Boolean(
     filters.value.location.constraints?.[1]?.value,
   );
@@ -418,7 +401,6 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
       telephone: toggles,
       location: toggles,
       hideUnsubscribed: toggles,
-      emailMissing: toggles,
     };
   }
 
@@ -429,7 +411,6 @@ function toggleFilters(toggles: TogglesType | boolean = DEFAULT_TOGGLES) {
   onPhoneToggle(toggles.telephone);
   onLocationToggle(toggles.location);
   onHideUnsubscribedToggle(toggles.hideUnsubscribed);
-  onEmailMissingToggle(toggles.emailMissing);
 }
 
 function clearFilter() {
@@ -463,7 +444,6 @@ export const useFiltersStore = defineStore('filters', () => {
     locationToggle,
     jobDetailsToggle,
     hideUnsubscribedToggle,
-    emailMissingToggle,
 
     areToggledFilters,
     isDefaultFilters,
@@ -475,7 +455,6 @@ export const useFiltersStore = defineStore('filters', () => {
     onPhoneToggle,
     onLocationToggle,
     onHideUnsubscribedToggle,
-    onEmailMissingToggle,
 
     toggleFilters,
     clearFilter,
