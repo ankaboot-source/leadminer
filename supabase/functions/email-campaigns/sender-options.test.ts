@@ -27,5 +27,8 @@ Deno.test("getSenderCredentialIssue flags expired OAuth token", () => {
     2000,
   );
 
-  assertEquals(issue, "OAuth token expired. Reconnect this source.");
+  assertEquals(
+    issue,
+    "OAuth token expired. Please reconnect this account in sources.",
+  );
 });
