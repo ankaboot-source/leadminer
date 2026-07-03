@@ -9,7 +9,9 @@ exclude_patterns = [
   "frontend/public",
   "backend/logs",
   "backend/coverage",
-  "backend/.nyc_output"
+  "backend/.nyc_output",
+  "supabase/functions/.env.dev",
+  "supabase/functions/.env.example"
 ]
 
 [[analyzers]]

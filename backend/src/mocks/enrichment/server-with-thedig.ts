@@ -1,7 +1,5 @@
 import express, { json, urlencoded } from 'express';
-import {
-  SERVER_PORT
-} from './config';
+import { SERVER_PORT } from './config';
 
 import voilanorbertRoutes from './endpoints/voilanorbert';
 import enrichlayerRoutes from './endpoints/enrichlayer';

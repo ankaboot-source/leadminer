@@ -8,10 +8,10 @@ export function normalizePhoneNumber(phone: string): string | null {
   // Normalize to international format with '+' prefix
   if (trimmed.startsWith("00")) {
     // Replace international dialing prefix (00) with +
-    trimmed = "+" + trimmed.slice(2);
+    trimmed = `+${trimmed.slice(2)}`;
   } else if (!trimmed.startsWith("+")) {
     // Prepend + for numbers without it (assumes country code is included)
-    trimmed = "+" + trimmed;
+    trimmed = `+${trimmed}`;
   }
 
   try {

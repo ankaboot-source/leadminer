@@ -16,7 +16,7 @@ router.post('/person/', (req: Request, res: Response) => {
     email: req.body?.email ?? '',
     name: '',
     givenName: '',
-    statusCode: 203, // Non-authoritative (empty result)
+    statusCode: 203 // Non-authoritative (empty result)
   });
 });
 
