@@ -1,4 +1,4 @@
-import { withRateLimit } from "../../../_shared/rate-limiter.ts";
+import { withRateLimitSafe } from "../../../_shared/rate-limiter.ts";
 import { createLogger } from "../../../_shared/logger.ts";
 import type { ContactFrontend } from "../../types.ts";
 
@@ -85,7 +85,7 @@ export default class GoogleContactsSession {
 
       for (let i = 0; i < createBatches.length; i++) {
         const batch = createBatches[i];
-        await withRateLimit(
+        await withRateLimitSafe(
           [
             { type: "criticalRead", weight: 6 },
             { type: "criticalWrite", weight: 6 },
@@ -102,7 +102,7 @@ export default class GoogleContactsSession {
 
       for (let i = 0; i < updateBatches.length; i++) {
         const batch = updateBatches[i];
-        await withRateLimit(
+        await withRateLimitSafe(
           [
             { type: "criticalRead", weight: 6 },
             { type: "criticalWrite", weight: 6 },

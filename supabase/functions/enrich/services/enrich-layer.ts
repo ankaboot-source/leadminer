@@ -227,7 +227,10 @@ export default class EnrichLayer implements Engine {
     params: ReverseEmailLookupParams,
   ): Promise<ReverseEmailLookupResponse> {
     return await this.rateLimitRetryWithExponentialBackoff(async () => {
-      await this.rateLimiter.removeTokens(1);
+      // Graceful fallback: if the rate limiter (Redis) is unreachable,
+      // log a warning and proceed without throttling. The HTTP call is
+      // still retried on 429 via the exponential-backoff wrapper.
+      await this.rateLimiter.removeTokensSafe(1);
       const url = new URL(`${this.baseUrl}/api/v2/profile/resolve/email`);
       url.searchParams.set("email", params.email);
       url.searchParams.set("lookup_depth", params.lookup_depth);

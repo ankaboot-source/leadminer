@@ -169,6 +169,31 @@ export class TokenBucketRateLimiter {
     }
   }
 
+  /**
+   * Like {@link removeTokens}, but never throws. If the limiter fails
+   * (e.g. Redis is unreachable at runtime), logs a warning and returns
+   * `false` so the caller can decide whether to proceed without throttling.
+   *
+   * Use this for OUTBOUND API calls where rate limiting is a safety
+   * guardrail, not a hard requirement. Do NOT use it for INBOUND user
+   * requests, which must be rejected on quota exhaustion.
+   */
+  async removeTokensSafe(tokens: number): Promise<boolean> {
+    try {
+      await this.removeTokens(tokens);
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn("Rate limiter failed, proceeding without throttle", {
+        uniqueKey: this.uniqueKey,
+        quotaType: this.quotaType,
+        tokens,
+        error: msg,
+      });
+      return false;
+    }
+  }
+
   static async close(): Promise<void> {
     if (redisClient) {
       const client = redisClient;
@@ -203,4 +228,28 @@ export async function withRateLimit<T>(
   );
 
   return await callback();
+}
+
+/**
+ * Like {@link withRateLimit}, but never throws. If the rate limiter fails
+ * (e.g. Redis is unreachable at runtime), logs a warning and runs
+ * `callback` anyway. Use this for OUTBOUND API calls (EnrichLayer, TheDig,
+ * VoilaNorbert, Google Contacts) where throttling is a safety guardrail.
+ */
+export async function withRateLimitSafe<T>(
+  requirements: { type: QuotaType; weight: number }[],
+  uniqueKey: string,
+  callback: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await withRateLimit(requirements, uniqueKey, callback);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn("withRateLimit failed, proceeding without throttle", {
+      uniqueKey,
+      requirements,
+      error: msg,
+    });
+    return await callback();
+  }
 }

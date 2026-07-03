@@ -247,7 +247,7 @@ export default class Thedig implements Engine {
     person: EnrichPersonRequest,
   ): Promise<EnrichPersonResponse> {
     try {
-      await this.rateLimiter.removeTokens(1);
+      await this.rateLimiter.removeTokensSafe(1);
       const res = await fetch(`${this.baseUrl}/person/`, {
         method: "POST",
         headers: {
@@ -287,7 +287,7 @@ export default class Thedig implements Engine {
     webhook: string,
   ): Promise<EnrichBulkResponse> {
     try {
-      await this.rateLimiter.removeTokens(1);
+      await this.rateLimiter.removeTokensSafe(1);
       const res = await fetch(
         `${this.baseUrl}/person/bulk?endpoint=${webhook}`,
         {

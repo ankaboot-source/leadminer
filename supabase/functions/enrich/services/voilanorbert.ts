@@ -181,7 +181,7 @@ export default class Voilanorbert implements Engine {
     webhook: string,
   ): Promise<ResponseAsync> {
     try {
-      await this.rateLimiter.removeTokens(1);
+      await this.rateLimiter.removeTokensSafe(1);
       const credentials = btoa(`${this.username}:${this.apiToken}`);
       const formData = new URLSearchParams();
       formData.append("data", emails.join("\n"));
