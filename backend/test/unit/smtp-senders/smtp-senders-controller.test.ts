@@ -72,7 +72,24 @@ describe('SmtpSendersController', () => {
       await controller.listSenders(mockReq, mockRes, mockNext);
 
       expect(mockSmtpSenders.getByUser).toHaveBeenCalledWith('user-1');
-      expect(mockRes.json).toHaveBeenCalledWith({ senders });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        senders: [
+          {
+            id: '1',
+            user_id: 'user-1',
+            name: 'Test',
+            email: 'a@b.com',
+            smtp_host: 'smtp.b.com',
+            smtp_port: 587,
+            smtp_encryption: 'starttls',
+            smtp_user: 'a@b.com',
+            auth_type: 'password',
+            active: true,
+            created_at: '2026-01-01',
+            updated_at: '2026-01-01'
+          }
+        ]
+      });
     });
   });
 
