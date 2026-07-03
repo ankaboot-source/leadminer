@@ -10,16 +10,23 @@ import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { generateShortToken } from "../_shared/short-token.ts";
 import {
+  createSmsProvider,
   isTwilioFallbackAvailable,
   type SimpleSmsGatewayCredentials,
   type SmsGateCredentials,
   TwilioProvider,
-  createSmsProvider,
 } from "./providers/mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 import { estimateSmsSegments } from "./utils/sms-segments.ts";
 import { shortenUrl } from "./utils/short-link.ts";
+import { getRegionFromTimezone } from "./utils/timezone-region.ts";
+import {
+  type DiscoveredSmsSchema,
+  discoverGatewaySpec,
+  extractSmsRequestSchema,
+  testGatewayReachability,
+} from "./utils/gateway-spec.ts";
 
 const logger = createLogger("sms-campaigns");
 
@@ -57,23 +64,31 @@ type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
 const smsCampaignCreateSchema = z.object({
   selectedPhones: z.array(z.string()).optional(),
-  selectedRecipients: z.array(z.object({
-    phone: z.string(),
-    personalization: z.record(z.unknown()).optional(),
-  })).optional(),
+  selectedRecipients: z
+    .array(
+      z.object({
+        phone: z.string(),
+        personalization: z.record(z.unknown()).optional(),
+      }),
+    )
+    .optional(),
   senderName: z.string().min(1),
   messageTemplate: z.string().min(1),
   footerTextTemplate: z.string().optional(),
   useShortLinks: z.boolean().optional(),
   provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]).optional(),
-  smsgateConfig: z.object({
-    baseUrl: z.string().optional(),
-    username: z.string().optional(),
-    password: z.string().optional(),
-  }).optional(),
-  simpleSmsGatewayConfig: z.object({
-    baseUrl: z.string().optional(),
-  }).optional(),
+  smsgateConfig: z
+    .object({
+      baseUrl: z.string().optional(),
+      username: z.string().optional(),
+      password: z.string().optional(),
+    })
+    .optional(),
+  simpleSmsGatewayConfig: z
+    .object({
+      baseUrl: z.string().optional(),
+    })
+    .optional(),
   timezone: z.string().optional(),
   fleetMode: z.boolean().optional(),
   selectedGatewayIds: z.array(z.string()).optional(),
@@ -115,6 +130,7 @@ type SmsFleetGateway = {
     username?: string;
     password?: string;
     simpleSmsGatewayBaseUrl?: string;
+    bodySchema?: DiscoveredSmsSchema | null;
   };
   is_active: boolean;
   daily_limit: number;
@@ -285,6 +301,66 @@ function toSimpleSmsGatewayCredentials(
   return {
     baseUrl,
   };
+}
+
+/**
+ * In-memory cache for spec discovery on the non-fleet code path.
+ *
+ * The non-fleet simple-sms-gateway path doesn't persist a discovered
+ * schema (it lives on the profile, not on a fleet gateway row). To avoid
+ * pinging the gateway on every preview, we cache discovered schemas for
+ * 5 minutes per baseUrl. Previews are infrequent, so the TTL can be
+ * short without harm.
+ */
+const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000;
+const schemaCache = new Map<
+  string,
+  { schema: DiscoveredSmsSchema | null; expiresAt: number }
+>();
+
+function getCachedSchema(
+  baseUrl: string,
+): DiscoveredSmsSchema | null | undefined {
+  const entry = schemaCache.get(baseUrl);
+  if (!entry) {
+    return undefined;
+  }
+  if (entry.expiresAt < Date.now()) {
+    schemaCache.delete(baseUrl);
+    return undefined;
+  }
+  return entry.schema;
+}
+
+function setCachedSchema(
+  baseUrl: string,
+  schema: DiscoveredSmsSchema | null,
+): void {
+  schemaCache.set(baseUrl, {
+    schema,
+    expiresAt: Date.now() + SCHEMA_CACHE_TTL_MS,
+  });
+}
+
+/**
+ * Resolve the simple-sms-gateway body schema for a base URL, consulting
+ * the in-memory cache first. Returns null when the gateway has no
+ * discoverable spec (caller should fall back to legacy fields).
+ */
+async function resolveSimpleSmsGatewaySchema(
+  baseUrl: string,
+): Promise<DiscoveredSmsSchema | null> {
+  if (!baseUrl) {
+    return null;
+  }
+  const cached = getCachedSchema(baseUrl);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const spec = await discoverGatewaySpec(baseUrl);
+  const schema = spec ? extractSmsRequestSchema(spec) : null;
+  setCachedSchema(baseUrl, schema);
+  return schema;
 }
 
 app.get("/providers/status", authMiddleware, async (c: Context) => {
@@ -730,9 +806,10 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
+  const region = getRegionFromTimezone(timezone);
   const validPhones = requestedPhones
-    .filter(isValidPhoneNumber)
-    .map((phone) => normalizePhoneNumber(phone) as string);
+    .filter((phone) => isValidPhoneNumber(phone, region))
+    .map((phone) => normalizePhoneNumber(phone, region) as string);
   const uniquePhones = [...new Set(validPhones)];
 
   if (uniquePhones.length === 0) {
@@ -940,7 +1017,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
 
   const personalizationByPhone = new Map<string, Record<string, unknown>>();
   for (const recipient of selectedRecipients || []) {
-    const normalizedPhone = normalizePhoneNumber(recipient.phone || "");
+    const normalizedPhone = normalizePhoneNumber(recipient.phone || "", region);
     if (!normalizedPhone) continue;
     if (
       !personalizationByPhone.has(normalizedPhone) &&
@@ -1078,8 +1155,9 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 
   // Validate test phone number if provided
+  const region = getRegionFromTimezone(payload.timezone);
   const normalizedTestPhone = testPhoneNumber
-    ? normalizePhoneNumber(testPhoneNumber)
+    ? normalizePhoneNumber(testPhoneNumber, region)
     : null;
   if (testPhoneNumber && !normalizedTestPhone) {
     return c.json(
@@ -1236,6 +1314,7 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
             smsProvider = createSmsProvider("simple-sms-gateway", {
               simpleSmsGateway: {
                 baseUrl: config.simpleSmsGatewayBaseUrl,
+                bodySchema: config.bodySchema ?? null,
               },
             });
           }
@@ -1254,8 +1333,18 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
         if (!simpleSmsGatewayCredentials) {
           throw new Error("simple-sms-gateway credentials missing");
         }
+        // The profile doesn't persist a discovered schema, so we run
+        // discovery on-demand and cache the result. If discovery fails
+        // (no spec, unreachable gateway) we fall back to the legacy
+        // { phone, message } body shape.
+        const bodySchema = await resolveSimpleSmsGatewaySchema(
+          simpleSmsGatewayCredentials.baseUrl,
+        );
         smsProvider = createSmsProvider("simple-sms-gateway", {
-          simpleSmsGateway: simpleSmsGatewayCredentials,
+          simpleSmsGateway: {
+            baseUrl: simpleSmsGatewayCredentials.baseUrl,
+            bodySchema,
+          },
         });
       } else {
         const profileConfig = await getUserSmsProviderConfig(
@@ -1532,8 +1621,56 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
     return c.json(validationErrorBody(parseResult.error), 400);
   }
   const payload = parseResult.data;
-
   const supabaseAdmin = createSupabaseAdmin();
+
+  // For simple-sms-gateway, auto-discover the request body shape and
+  // validate reachability before persisting. This protects users from
+  // adding a gateway URL that simply won't accept their SMS payloads.
+  const baseConfig = (payload.config || {}) as Record<string, unknown>;
+  let discoveredSchema: DiscoveredSmsSchema | null = null;
+  if (payload.provider === "simple-sms-gateway") {
+    const baseUrl = readSimpleSmsGatewayBaseUrl(baseConfig);
+    if (!baseUrl) {
+      return c.json(
+        {
+          error:
+            "Missing simpleSmsGatewayBaseUrl in config for simple-sms-gateway provider",
+          code: "MISSING_BASE_URL",
+        },
+        400,
+      );
+    }
+
+    const spec = await discoverGatewaySpec(baseUrl);
+    if (spec) {
+      discoveredSchema = extractSmsRequestSchema(spec);
+    }
+
+    const reachability = await testGatewayReachability(
+      baseUrl,
+      discoveredSchema,
+    );
+    if (!reachability.success) {
+      logger.warn("simple-sms-gateway reachability test failed", {
+        userId: user.id,
+        baseUrl,
+        message: reachability.message,
+      });
+      return c.json(
+        {
+          error: `Gateway is not reachable: ${reachability.message}`,
+          code: "GATEWAY_UNREACHABLE",
+        },
+        400,
+      );
+    }
+  }
+
+  const finalConfig: Record<string, unknown> = { ...baseConfig };
+  if (discoveredSchema) {
+    finalConfig.bodySchema = discoveredSchema;
+  }
+
   const { data, error } = await supabaseAdmin
     .schema("private")
     .from("sms_fleet_gateways")
@@ -1541,7 +1678,7 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
       user_id: user.id,
       name: payload.name,
       provider: payload.provider,
-      config: payload.config || {},
+      config: finalConfig,
       daily_limit: payload.daily_limit ?? 0,
       monthly_limit: payload.monthly_limit ?? 0,
       is_active: true,
@@ -1556,8 +1693,33 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
     );
   }
 
+  logger.info("Fleet gateway created", {
+    userId: user.id,
+    gatewayId: data.id,
+    provider: data.provider,
+    schemaDiscovered: Boolean(discoveredSchema),
+  });
+
   return c.json({ gateway: data });
 });
+
+/**
+ * Read the simple-sms-gateway base URL from a gateway config record.
+ * Different code paths use different keys (`simpleSmsGatewayBaseUrl`
+ * for the fleet gateway UI, `baseUrl` for the SMSGate path), so we
+ * accept either for safety.
+ */
+function readSimpleSmsGatewayBaseUrl(
+  config: Record<string, unknown>,
+): string | null {
+  for (const key of ["simpleSmsGatewayBaseUrl", "baseUrl"]) {
+    const value = config[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return null;
+}
 
 app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
   const user = c.get("user");
@@ -1673,17 +1835,21 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
           : { success: false, message: "Gateway is not reachable" };
       }
     } else if (gateway.provider === "simple-sms-gateway") {
-      const config = gateway.config as { simpleSmsGatewayBaseUrl?: string };
+      const config = gateway.config as {
+        simpleSmsGatewayBaseUrl?: string;
+        bodySchema?: DiscoveredSmsSchema | null;
+      };
       if (!config.simpleSmsGatewayBaseUrl) {
         testResult = { success: false, message: "Missing gateway URL" };
       } else {
-        const response = await fetch(config.simpleSmsGatewayBaseUrl, {
-          method: "HEAD",
-          signal: AbortSignal.timeout(10000),
-        }).catch(() => null);
-        testResult = response
-          ? { success: true, message: "Gateway is reachable" }
-          : { success: false, message: "Gateway is not reachable" };
+        // Use the discovered schema when available so the test call hits
+        // the actual SMS endpoint with the right field names. Most
+        // gateways reject HEAD, so we POST a test payload instead and
+        // treat any 2xx/4xx as proof of life (5xx is a real failure).
+        testResult = await testGatewayReachability(
+          config.simpleSmsGatewayBaseUrl,
+          config.bodySchema ?? null,
+        );
       }
     } else {
       testResult = { success: false, message: "Unsupported provider" };
@@ -1699,6 +1865,102 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
       500,
     );
   }
+});
+
+/**
+ * Re-run spec discovery + reachability for an existing fleet gateway
+ * and update the stored body schema. Useful when the gateway was
+ * added before the spec was discoverable, or after a gateway app
+ * upgrade that changed the field names.
+ */
+app.post("/fleet/gateways/:id/redetect", authMiddleware, async (c: Context) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const gatewayId = c.req.param("id");
+  const supabaseAdmin = createSupabaseAdmin();
+
+  const { data: existing, error: fetchError } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select("*")
+    .eq("id", gatewayId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !existing) {
+    return c.json({ error: "Gateway not found", code: "NOT_FOUND" }, 404);
+  }
+
+  if (existing.provider !== "simple-sms-gateway") {
+    return c.json(
+      {
+        error: "Redetect only supported for simple-sms-gateway provider",
+        code: "UNSUPPORTED_PROVIDER",
+      },
+      400,
+    );
+  }
+
+  const baseConfig = (existing.config || {}) as Record<string, unknown>;
+  const baseUrl = readSimpleSmsGatewayBaseUrl(baseConfig);
+  if (!baseUrl) {
+    return c.json(
+      {
+        error: "Missing simpleSmsGatewayBaseUrl in gateway config",
+        code: "MISSING_BASE_URL",
+      },
+      400,
+    );
+  }
+
+  const spec = await discoverGatewaySpec(baseUrl);
+  const discoveredSchema = spec ? extractSmsRequestSchema(spec) : null;
+
+  const reachability = await testGatewayReachability(baseUrl, discoveredSchema);
+  if (!reachability.success) {
+    return c.json(
+      {
+        error: `Gateway is not reachable: ${reachability.message}`,
+        code: "GATEWAY_UNREACHABLE",
+      },
+      400,
+    );
+  }
+
+  const nextConfig: Record<string, unknown> = { ...baseConfig };
+  if (discoveredSchema) {
+    nextConfig.bodySchema = discoveredSchema;
+  } else {
+    delete nextConfig.bodySchema;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .update({
+      config: nextConfig,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", gatewayId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) {
+    return c.json(
+      { error: extractErrorMessage(error), code: "UPDATE_FAILED" },
+      500,
+    );
+  }
+
+  logger.info("Fleet gateway redetected", {
+    userId: user.id,
+    gatewayId,
+    schemaDiscovered: Boolean(discoveredSchema),
+  });
+
+  return c.json({ gateway: data });
 });
 
 Deno.serve((req) => app.fetch(req));
