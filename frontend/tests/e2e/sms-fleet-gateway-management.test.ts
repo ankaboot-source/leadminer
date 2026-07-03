@@ -38,6 +38,11 @@ const mockTestGateway = vi
   .fn()
   .mockResolvedValue({ success: true, message: 'OK' });
 const mockUpdateGateway = vi.fn().mockResolvedValue(true);
+const mockDiscoverGatewaySchema = vi.fn().mockResolvedValue(null);
+const mockRedetectGatewaySchema = vi.fn().mockImplementation((id: string) => {
+  const gateway = mockGateways.value.find((g) => g.id === id);
+  return gateway ?? null;
+});
 
 vi.mock('~/stores/sms-fleet', () => ({
   useSmsFleetStore: vi.fn(() => ({
@@ -46,11 +51,14 @@ vi.mock('~/stores/sms-fleet', () => ({
     },
     isLoading: false,
     error: null,
+    loadingDiscover: false,
     fetchGateways: mockFetchGateways,
     createGateway: mockCreateGateway,
     deleteGateway: mockDeleteGateway,
     testGateway: mockTestGateway,
     updateGateway: mockUpdateGateway,
+    discoverGatewaySchema: mockDiscoverGatewaySchema,
+    redetectGatewaySchema: mockRedetectGatewaySchema,
   })),
 }));
 

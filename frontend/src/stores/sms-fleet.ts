@@ -1,6 +1,8 @@
 import type {
+  DiscoveredSmsSchema,
   SmsFleetGateway,
   SmsGatewayCreatePayload,
+  SmsGatewayDiscoverResult,
   SmsGatewayProvider,
   SmsGatewayTestResult,
 } from '@/types/sms-fleet';
@@ -11,6 +13,13 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
   const gateways = ref<SmsFleetGateway[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  /**
+   * UI loading state for the spec-discovery preview button
+   * ("Auto-detect" in the add-gateway form). Separate from
+   * `isLoading` so it doesn't get cleared by unrelated CRUD
+   * requests in flight at the same time.
+   */
+  const loadingDiscover = ref(false);
 
   async function fetchGateways() {
     isLoading.value = true;
@@ -45,18 +54,31 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
+      const body: Record<string, unknown> = {
+        name: payload.name,
+        provider: payload.provider,
+        config: payload.config,
+        daily_limit: payload.daily_limit ?? 200,
+        monthly_limit: payload.monthly_limit ?? 200,
+        is_active: true,
+      };
+      // Only forward overrides when the user has actually set at least
+      // one field. An empty object would still be sent otherwise, which
+      // the backend would silently treat as a no-op.
+      if (
+        payload.overrides &&
+        (payload.overrides.endpoint ||
+          payload.overrides.phoneField ||
+          payload.overrides.messageField)
+      ) {
+        body.overrides = payload.overrides;
+      }
+
       const response = (await $saasEdgeFunctions(
         'sms-campaigns/fleet/gateways',
         {
           method: 'POST',
-          body: {
-            name: payload.name,
-            provider: payload.provider,
-            config: payload.config,
-            daily_limit: payload.daily_limit ?? 200,
-            monthly_limit: payload.monthly_limit ?? 200,
-            is_active: true,
-          },
+          body,
         },
       )) as { gateway: SmsFleetGateway };
 
@@ -165,6 +187,87 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     }
   }
 
+  /**
+   * Preview the auto-discovered request body schema for a not-yet-saved
+   * simple-sms-gateway. Uses the `?dryRun=true` query parameter on
+   * `POST /gateways` to short-circuit persistence and only return the
+   * discovered schema (plus an optional reachability probe).
+   *
+   * Returns `null` on failure so the UI can show a fallback path
+   * (user manually fills the override fields).
+   */
+  async function discoverGatewaySchema(
+    baseUrl: string,
+  ): Promise<DiscoveredSmsSchema | null> {
+    if (!baseUrl) {
+      return null;
+    }
+    loadingDiscover.value = true;
+    error.value = null;
+    try {
+      const response = (await $saasEdgeFunctions(
+        'sms-campaigns/fleet/gateways?dryRun=true',
+        {
+          method: 'POST',
+          body: {
+            name: '__discover__',
+            provider: 'simple-sms-gateway',
+            config: { simpleSmsGatewayBaseUrl: baseUrl },
+          },
+        },
+      )) as Partial<SmsGatewayDiscoverResult>;
+
+      return response?.discoveredSchema ?? null;
+    } catch (err) {
+      error.value =
+        err instanceof Error ? err.message : 'Failed to discover gateway spec';
+      console.error('Error discovering SMS gateway spec:', err);
+      return null;
+    } finally {
+      loadingDiscover.value = false;
+    }
+  }
+
+  /**
+   * Re-run spec discovery + reachability on an existing gateway and
+   * persist the new schema. Mirrors the backend
+   * `POST /gateways/:id/redetect` route.
+   */
+  async function redetectGatewaySchema(
+    gatewayId: string,
+  ): Promise<SmsFleetGateway | null> {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const response = (await $saasEdgeFunctions(
+        `sms-campaigns/fleet/gateways/${gatewayId}/redetect`,
+        {
+          method: 'POST',
+        },
+      )) as SmsFleetGateway;
+
+      if (!response?.id) {
+        throw new Error('Failed to redetect gateway');
+      }
+
+      const index = gateways.value.findIndex((g) => g.id === gatewayId);
+      if (index !== -1) {
+        gateways.value[index] = response;
+      } else {
+        gateways.value.unshift(response);
+      }
+      return response;
+    } catch (err) {
+      error.value =
+        err instanceof Error ? err.message : 'Failed to redetect gateway';
+      console.error('Error redetecting SMS fleet gateway:', err);
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   const activeGateways = computed(() =>
     gateways.value.filter((g) => g.is_active),
   );
@@ -184,6 +287,7 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
   function $reset() {
     gateways.value = [];
     isLoading.value = false;
+    loadingDiscover.value = false;
     error.value = null;
   }
 
@@ -191,6 +295,7 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     gateways,
     isLoading,
     error,
+    loadingDiscover,
     activeGateways,
     gatewaysByProvider,
     fetchGateways,
@@ -198,6 +303,8 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     updateGateway,
     deleteGateway,
     testGateway,
+    discoverGatewaySchema,
+    redetectGatewaySchema,
     $reset,
   };
 });

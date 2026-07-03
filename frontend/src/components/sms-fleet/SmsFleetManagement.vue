@@ -51,6 +51,7 @@ const showDialog = ref(false);
 const isEditing = ref(false);
 const editingGatewayId = ref<string | null>(null);
 const testingGatewayId = ref<string | null>(null);
+const redetectingGatewayId = ref<string | null>(null);
 const providerFormRef = ref<InstanceType<typeof ProviderForm> | null>(null);
 
 const gatewayName = ref('');
@@ -175,6 +176,41 @@ async function testGateway(gatewayId: string) {
   testingGatewayId.value = null;
 }
 
+async function redetectGateway(gateway: SmsFleetGateway) {
+  // The backend `POST /gateways/:id/redetect` endpoint only supports
+  // `simple-sms-gateway` today. Hide the action for other providers
+  // rather than show a confusing 400.
+  if (gateway.provider !== 'simple-sms-gateway') {
+    return;
+  }
+  redetectingGatewayId.value = gateway.id;
+
+  const updated = await $smsFleetStore.redetectGatewaySchema(gateway.id);
+
+  if (updated?.config?.bodySchema) {
+    const { endpoint, phoneField, messageField } = updated.config.bodySchema;
+    $toast.add({
+      severity: 'success',
+      summary: t('redetect_successful'),
+      detail: t('redetect_successful_detail', {
+        endpoint,
+        phoneField,
+        messageField,
+      }),
+      life: 5000,
+    });
+  } else {
+    $toast.add({
+      severity: 'error',
+      summary: t('redetect_failed'),
+      detail: $smsFleetStore.error || t('redetect_no_schema'),
+      life: 5000,
+    });
+  }
+
+  redetectingGatewayId.value = null;
+}
+
 function confirmDelete(gateway: SmsFleetGateway) {
   $confirm.require({
     message: t('delete_confirm_message', { name: gateway.name }),
@@ -258,6 +294,15 @@ onMounted(() => {
             @click="openEditDialog(gateway)"
           />
           <Button
+            v-if="gateway.provider === 'simple-sms-gateway'"
+            text
+            size="small"
+            icon="pi pi-refresh"
+            :label="$screenStore.size.md ? t('redetect') : undefined"
+            :loading="redetectingGatewayId === gateway.id"
+            @click="redetectGateway(gateway)"
+          />
+          <Button
             text
             size="small"
             icon="pi pi-check-circle"
@@ -331,6 +376,9 @@ onMounted(() => {
                 $smsFleetStore.gateways.find((g) => g.id === editingGatewayId)
                   ?.config?.username || '',
               password: '',
+              bodySchema:
+                $smsFleetStore.gateways.find((g) => g.id === editingGatewayId)
+                  ?.config?.bodySchema ?? null,
             }"
             @valid="handleFormValid"
             @submit="handleGatewaySubmit"
@@ -425,7 +473,12 @@ onMounted(() => {
     "test_failed": "Connection test failed",
     "delete_confirm_message": "Are you sure you want to delete the gateway \"{name}\"?",
     "delete_confirm_header": "Confirm Deletion",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "redetect": "Re-detect",
+    "redetect_successful": "Schema re-detected",
+    "redetect_successful_detail": "Endpoint: {endpoint}, phone: {phoneField}, message: {messageField}",
+    "redetect_failed": "Could not re-detect schema",
+    "redetect_no_schema": "No schema was discovered for this gateway"
   },
   "fr": {
     "sms_fleet_management": "Gestion de la flotte SMS",
@@ -454,7 +507,12 @@ onMounted(() => {
     "test_failed": "Échec du test de connexion",
     "delete_confirm_message": "Êtes-vous sûr de vouloir supprimer la passerelle \"{name}\" ?",
     "delete_confirm_header": "Confirmer la suppression",
-    "save_changes": "Enregistrer les modifications"
+    "save_changes": "Enregistrer les modifications",
+    "redetect": "Re-détecter",
+    "redetect_successful": "Schéma re-détecté",
+    "redetect_successful_detail": "Point d'accès : {endpoint}, téléphone : {phoneField}, message : {messageField}",
+    "redetect_failed": "Impossible de re-détecter le schéma",
+    "redetect_no_schema": "Aucun schéma n'a été détecté pour cette passerelle"
   }
 }
 </i18n>

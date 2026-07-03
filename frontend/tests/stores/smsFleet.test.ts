@@ -6,11 +6,14 @@ vi.mock('~/stores/sms-fleet', () => ({
     gateways: [] as SmsFleetGateway[],
     isLoading: false,
     error: null as string | null,
+    loadingDiscover: false,
     fetchGateways: vi.fn().mockResolvedValue([]),
     createGateway: vi.fn().mockResolvedValue({ id: 'test-id' }),
     deleteGateway: vi.fn().mockResolvedValue(true),
     updateGateway: vi.fn().mockResolvedValue(true),
     testGateway: vi.fn().mockResolvedValue({ success: true, message: 'OK' }),
+    discoverGatewaySchema: vi.fn().mockResolvedValue(null),
+    redetectGatewaySchema: vi.fn().mockResolvedValue(null),
   }),
 }));
 
