@@ -1671,6 +1671,19 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
     finalConfig.bodySchema = discoveredSchema;
   }
 
+  // `?dryRun=true` short-circuits persistence and returns the discovered
+  // schema + reachability probe so the frontend can preview the result
+  // before the user commits to saving a new gateway. Mirrors the
+  // behaviour of `supabase/functions/sms-fleet/index.ts` so both
+  // fleet-gateway POST routes are consistent.
+  if (c.req.query("dryRun") === "true") {
+    return c.json({
+      discoveredSchema:
+        (finalConfig.bodySchema as DiscoveredSmsSchema | undefined) ?? null,
+      reachabilityTest: { success: true, message: "Gateway is reachable" },
+    });
+  }
+
   const { data, error } = await supabaseAdmin
     .schema("private")
     .from("sms_fleet_gateways")
