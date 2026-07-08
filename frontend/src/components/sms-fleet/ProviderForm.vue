@@ -1,25 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useToast } from 'primevue/usetoast';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
-import Button from 'primevue/button';
 import { z } from 'zod';
-import { useSmsFleetStore } from '~/stores/sms-fleet';
-import type { DiscoveredSmsSchema } from '@/types/sms-fleet';
 
 const { t } = useI18n({ useScope: 'local' });
-const $toast = useToast();
-const $smsFleetStore = useSmsFleetStore();
+
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway-ios';
 
 const props = defineProps<{
-  provider: 'smsgate' | 'simple-sms-gateway';
+  provider: SupportedProvider;
   initialData?: {
     baseUrl?: string;
     username?: string;
     password?: string;
-    bodySchema?: DiscoveredSmsSchema | null;
+    appId?: string;
   };
 }>();
 
@@ -31,18 +27,6 @@ const emit = defineEmits<{
 const baseUrl = ref(props.initialData?.baseUrl || '');
 const username = ref(props.initialData?.username || '');
 const password = ref(props.initialData?.password || '');
-// Schema-detection state for `simple-sms-gateway`. The override fields
-// double as both: editable inputs and the storage of what the user
-// confirmed. `detectedSchema` is informational only — used to render
-// a small "Detected" hint next to the inputs.
-const detectedSchema = ref<DiscoveredSmsSchema | null>(
-  props.initialData?.bodySchema ?? null,
-);
-const overrideEndpoint = ref(props.initialData?.bodySchema?.endpoint ?? '');
-const overridePhoneField = ref(props.initialData?.bodySchema?.phoneField ?? '');
-const overrideMessageField = ref(
-  props.initialData?.bodySchema?.messageField ?? '',
-);
 
 const smsgateSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -50,7 +34,7 @@ const smsgateSchema = z.object({
   baseUrl: z.string().optional(),
 });
 
-const simpleSmsGatewaySchema = z.object({
+const selfHostedGatewaySchema = z.object({
   baseUrl: z.string().url('Invalid URL').min(1, 'Gateway URL is required'),
 });
 
@@ -62,7 +46,10 @@ const isValid = computed(() => {
       baseUrl: baseUrl.value,
     }).success;
   }
-  return simpleSmsGatewaySchema.safeParse({
+  // Both Android Simple SMS Gateway and iOS SMS Gateway share the same
+  // URL form. The `appId` on the saved config tells the backend which
+  // `SmsProvider` to dispatch to at send time.
+  return selfHostedGatewaySchema.safeParse({
     baseUrl: baseUrl.value,
   }).success;
 });
@@ -88,85 +75,37 @@ function handleSubmit() {
         password: password.value,
       },
     });
-  } else {
-    const config: Record<string, unknown> = {
-      simpleSmsGatewayBaseUrl: baseUrl.value,
-    };
-    // Only forward `overrides` when the user has actually typed in at
-    // least one of the override fields. The backend treats an empty
-    // overrides object as "use discovered values" so we don't need to
-    // filter empty strings — but skipping the field entirely keeps the
-    // payload minimal and matches what the store helper does.
-    const overrideValues = {
-      endpoint: overrideEndpoint.value.trim(),
-      phoneField: overridePhoneField.value.trim(),
-      messageField: overrideMessageField.value.trim(),
-    };
-    const hasAnyOverride = Boolean(
-      overrideValues.endpoint ||
-      overrideValues.phoneField ||
-      overrideValues.messageField,
-    );
-    if (hasAnyOverride) {
-      config.overrides = overrideValues;
-    }
-    emit('submit', {
-      provider: props.provider,
-      config,
-    });
+    return;
   }
+
+  if (props.provider === 'sms-gateway-ios') {
+    // The iOS app exposes `POST /send-sms` with the same URL contract as
+    // the Android Simple SMS Gateway. We re-use the
+    // `simpleSmsGatewayBaseUrl` storage key and tag the row with
+    // `appId: 'ios-sms-gateway'` so the backend dispatches to the
+    // `SmsGatewayIosProvider`.
+    emit('submit', {
+      provider: 'sms-gateway-ios',
+      config: {
+        simpleSmsGatewayBaseUrl: baseUrl.value,
+        appId: 'ios-sms-gateway',
+      },
+    });
+    return;
+  }
+
+  emit('submit', {
+    provider: 'simple-sms-gateway',
+    config: {
+      simpleSmsGatewayBaseUrl: baseUrl.value,
+    },
+  });
 }
 
 function resetForm() {
   baseUrl.value = '';
   username.value = '';
   password.value = '';
-  detectedSchema.value = null;
-  overrideEndpoint.value = '';
-  overridePhoneField.value = '';
-  overrideMessageField.value = '';
-}
-
-async function handleAutoDetect() {
-  if (!baseUrl.value) {
-    $toast.add({
-      severity: 'warn',
-      summary: t('auto_detect_url_required'),
-      life: 3000,
-    });
-    return;
-  }
-  const discovered = await $smsFleetStore.discoverGatewaySchema(baseUrl.value);
-  if (!discovered) {
-    $toast.add({
-      severity: 'error',
-      summary: t('auto_detect_failed'),
-      detail: $smsFleetStore.error || '',
-      life: 5000,
-    });
-    return;
-  }
-  detectedSchema.value = discovered;
-  // Pre-fill but do not overwrite fields the user has already typed in.
-  if (!overrideEndpoint.value) {
-    overrideEndpoint.value = discovered.endpoint;
-  }
-  if (!overridePhoneField.value) {
-    overridePhoneField.value = discovered.phoneField;
-  }
-  if (!overrideMessageField.value) {
-    overrideMessageField.value = discovered.messageField;
-  }
-  $toast.add({
-    severity: 'success',
-    summary: t('auto_detect_success'),
-    detail: t('auto_detect_success_detail', {
-      endpoint: discovered.endpoint,
-      phoneField: discovered.phoneField,
-      messageField: discovered.messageField,
-    }),
-    life: 5000,
-  });
 }
 
 defineExpose({ resetForm, handleSubmit });
@@ -220,99 +159,21 @@ defineExpose({ resetForm, handleSubmit });
         </div>
       </template>
 
-      <!-- Simple SMS Gateway Configuration -->
-      <template v-else-if="provider === 'simple-sms-gateway'">
+      <!-- Self-hosted gateway (Android Simple SMS Gateway or iOS SMS Gateway) -->
+      <template v-else>
         <div>
-          <label for="simple-baseurl" class="block mb-2 font-medium">
+          <label for="self-hosted-baseurl" class="block mb-2 font-medium">
             {{ t('gateway_url') }} *
           </label>
-          <div class="flex items-start gap-2">
-            <InputText
-              id="simple-baseurl"
-              v-model="baseUrl"
-              name="baseUrl"
-              :placeholder="t('gateway_url_placeholder')"
-              class="w-full"
-              required
-            />
-            <Button
-              type="button"
-              outlined
-              size="small"
-              icon="pi pi-search"
-              :label="t('auto_detect')"
-              :loading="$smsFleetStore.loadingDiscover"
-              :disabled="!baseUrl"
-              @click="handleAutoDetect"
-            />
-          </div>
+          <InputText
+            id="self-hosted-baseurl"
+            v-model="baseUrl"
+            name="baseUrl"
+            :placeholder="t('gateway_url_placeholder')"
+            class="w-full"
+            required
+          />
           <small class="text-surface-500">{{ t('gateway_url_help') }}</small>
-        </div>
-
-        <div class="flex flex-col gap-3 pl-3 border-l-2 border-surface-200">
-          <p class="text-sm text-surface-500 m-0">
-            {{ t('override_intro') }}
-          </p>
-          <div>
-            <label
-              for="simple-override-endpoint"
-              class="block mb-2 text-sm font-medium"
-            >
-              {{ t('override_endpoint') }}
-            </label>
-            <InputText
-              id="simple-override-endpoint"
-              v-model="overrideEndpoint"
-              name="overrideEndpoint"
-              :placeholder="t('override_endpoint_placeholder')"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label
-              for="simple-override-phone"
-              class="block mb-2 text-sm font-medium"
-            >
-              {{ t('override_phone_field') }}
-            </label>
-            <InputText
-              id="simple-override-phone"
-              v-model="overridePhoneField"
-              name="overridePhoneField"
-              :placeholder="t('override_phone_field_placeholder')"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label
-              for="simple-override-message"
-              class="block mb-2 text-sm font-medium"
-            >
-              {{ t('override_message_field') }}
-            </label>
-            <InputText
-              id="simple-override-message"
-              v-model="overrideMessageField"
-              name="overrideMessageField"
-              :placeholder="t('override_message_field_placeholder')"
-              class="w-full"
-            />
-          </div>
-          <small
-            v-if="detectedSchema"
-            class="text-surface-500 flex items-center gap-1"
-          >
-            <i class="pi pi-check-circle text-green-500" />
-            <span>
-              {{
-                t('auto_detect_summary', {
-                  endpoint: detectedSchema.endpoint,
-                  phoneField: detectedSchema.phoneField,
-                  messageField: detectedSchema.messageField,
-                })
-              }}
-            </span>
-          </small>
         </div>
       </template>
     </div>
@@ -331,20 +192,7 @@ defineExpose({ resetForm, handleSubmit });
     "api_base_url_help": "Optional - uses default if not specified",
     "gateway_url": "Gateway URL",
     "gateway_url_placeholder": "http://192.168.1.100:8080/send-sms",
-    "gateway_url_help": "The URL of your SMS gateway endpoint",
-    "auto_detect": "Auto-detect",
-    "auto_detect_url_required": "Enter a gateway URL first",
-    "auto_detect_failed": "Could not auto-detect schema",
-    "auto_detect_success": "Schema detected",
-    "auto_detect_success_detail": "Endpoint {endpoint}, phone → {phoneField}, message → {messageField}",
-    "auto_detect_summary": "Detected: {endpoint} ({phoneField}, {messageField})",
-    "override_intro": "Optional overrides — leave blank to use the discovered values.",
-    "override_endpoint": "Endpoint",
-    "override_endpoint_placeholder": "/send-sms",
-    "override_phone_field": "Phone field name",
-    "override_phone_field_placeholder": "to",
-    "override_message_field": "Message field name",
-    "override_message_field_placeholder": "message"
+    "gateway_url_help": "The URL of your SMS gateway endpoint"
   },
   "fr": {
     "username": "Nom d'utilisateur",
@@ -356,20 +204,7 @@ defineExpose({ resetForm, handleSubmit });
     "api_base_url_help": "Optionnel - utilise la valeur par défaut si non spécifié",
     "gateway_url": "URL de la passerelle",
     "gateway_url_placeholder": "http://192.168.1.100:8080/send-sms",
-    "gateway_url_help": "L'URL de votre point d'accès SMS",
-    "auto_detect": "Détection auto",
-    "auto_detect_url_required": "Saisissez d'abord l'URL de la passerelle",
-    "auto_detect_failed": "Impossible de détecter le schéma",
-    "auto_detect_success": "Schéma détecté",
-    "auto_detect_success_detail": "Point d'accès {endpoint}, téléphone → {phoneField}, message → {messageField}",
-    "auto_detect_summary": "Détecté : {endpoint} ({phoneField}, {messageField})",
-    "override_intro": "Remplacements facultatifs — laissez vide pour utiliser les valeurs détectées.",
-    "override_endpoint": "Point d'accès",
-    "override_endpoint_placeholder": "/send-sms",
-    "override_phone_field": "Nom du champ téléphone",
-    "override_phone_field_placeholder": "to",
-    "override_message_field": "Nom du champ message",
-    "override_message_field_placeholder": "message"
+    "gateway_url_help": "L'URL de votre point d'accès SMS"
   }
 }
 </i18n>

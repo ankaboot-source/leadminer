@@ -1,23 +1,12 @@
 import type { SendSmsParams, SendSmsResult, SmsProvider } from "./types.ts";
-import {
-  buildSmsBody,
-  type DiscoveredSmsSchema,
-} from "../utils/gateway-spec.ts";
 
 export interface SimpleSmsGatewayCredentials {
   baseUrl: string;
-  /**
-   * Optional auto-discovered request body schema. When provided, the
-   * provider uses the gateway's expected JSON field names instead of
-   * the hard-coded `{ phone, message }` shape.
-   */
-  bodySchema?: DiscoveredSmsSchema | null;
 }
 
 export class SimpleSmsGatewayProvider implements SmsProvider {
   name = "simple-sms-gateway";
   private baseUrl: string;
-  private bodySchema: DiscoveredSmsSchema | null;
 
   constructor(credentials: SimpleSmsGatewayCredentials) {
     if (!credentials.baseUrl) {
@@ -25,12 +14,10 @@ export class SimpleSmsGatewayProvider implements SmsProvider {
     }
 
     this.baseUrl = credentials.baseUrl;
-    this.bodySchema = credentials.bodySchema ?? null;
   }
 
   async send(params: SendSmsParams): Promise<SendSmsResult> {
     const url = this.baseUrl;
-    const body = buildSmsBody(this.bodySchema, params.to, params.body);
 
     try {
       const response = await fetch(url, {
@@ -38,7 +25,10 @@ export class SimpleSmsGatewayProvider implements SmsProvider {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          phone: params.to,
+          message: params.body,
+        }),
         signal: AbortSignal.timeout(15000),
       });
 

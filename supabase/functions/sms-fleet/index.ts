@@ -6,43 +6,23 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
-import {
-  type DiscoveredSmsSchema,
-  discoverGatewaySpec,
-  extractSmsRequestSchema,
-  testGatewayReachability,
-} from "../sms-campaigns/utils/gateway-spec.ts";
 
 const logger = createLogger("sms-fleet");
 
 const functionName = "sms-fleet";
 
-/**
- * Optional manual overrides for the SMS gateway request shape. The fleet
- * CRUD also accepts these so users can paste in field names discovered
- * outside the auto-discovery flow (e.g. from a custom gateway).
- */
-const smsGatewayOverrideSchema = z
-  .object({
-    endpoint: z.string().optional(),
-    phoneField: z.string().optional(),
-    messageField: z.string().optional(),
-  })
-  .partial();
-
 const gatewaySchema = z.object({
   name: z.string().min(1),
-  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
+  provider: z.enum([
+    "smsgate",
+    "simple-sms-gateway",
+    "sms-gateway-ios",
+    "twilio",
+  ]),
   config: z.record(z.unknown()),
   daily_limit: z.number().int().min(0).optional(),
   monthly_limit: z.number().int().min(0).optional(),
   is_active: z.boolean().optional(),
-  /**
-   * Optional manual overrides for the SMS request body shape. When
-   * provided, these take precedence over values discovered from the
-   * gateway's OpenAPI spec.
-   */
-  overrides: smsGatewayOverrideSchema.optional(),
 });
 
 const updateSchema = z.object({
@@ -155,6 +135,49 @@ function extractSimpleSmsGatewayBaseUrl(
   return null;
 }
 
+/**
+ * Lightweight reachability probe shared by POST /gateways (and the
+ * mirrored route in `sms-campaigns/index.ts`). POSTs a single test SMS
+ * to `<baseUrl>/send-sms` with a throwaway phone number and treats any
+ * 2xx, 3xx, or 4xx response as proof the gateway is reachable. 5xx,
+ * network errors, and timeouts are real failures.
+ *
+ * This works for both the Android "Simple SMS Gateway" and iOS "SMS
+ * Gateway" apps — both expose `POST /send-sms`. The test phone number
+ * is intentionally from a non-routable range so the gateway accepts the
+ * call but never actually delivers an SMS to a real subscriber.
+ */
+async function probeGatewayReachability(
+  baseUrl: string,
+): Promise<{ success: boolean; message: string }> {
+  const url = `${baseUrl.replace(/\/$/, "")}/send-sms`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+15555550100",
+        to: "+15555550100",
+        message: "Reachability test",
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (response.status >= 500) {
+      return {
+        success: false,
+        message: `Gateway returned HTTP ${response.status}`,
+      };
+    }
+    return { success: true, message: "Gateway is reachable" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      message: message || "Network error reaching gateway",
+    };
+  }
+}
+
 app.post("/gateways", authMiddleware, async (c) => {
   try {
     const user = c.get("user");
@@ -174,12 +197,16 @@ app.post("/gateways", authMiddleware, async (c) => {
     const validated = validation.data;
     const supabaseAdmin = createSupabaseAdmin();
 
-    // For simple-sms-gateway, auto-discover the request body shape and
-    // validate reachability before persisting. This protects users from
-    // adding a gateway URL that simply won't accept their SMS payloads.
-    let discoveredSchema: DiscoveredSmsSchema | null = null;
-    let reachabilityTest: { success: boolean; message: string } | null = null;
-    if (validated.provider === "simple-sms-gateway") {
+    // For any self-hosted gateway (Android Simple SMS Gateway or iOS SMS
+    // Gateway), do a lightweight reachability probe before persisting.
+    // This catches "phone is offline / wrong URL" before the user wastes
+    // a campaign on it. The test POSTs a single SMS to `/send-sms` and
+    // treats any 2xx, 3xx, or 4xx as proof the gateway is reachable —
+    // 5xx / network errors / timeouts are real failures.
+    if (
+      validated.provider === "simple-sms-gateway" ||
+      validated.provider === "sms-gateway-ios"
+    ) {
       const baseUrl = extractSimpleSmsGatewayBaseUrl(
         validated.config as Record<string, unknown>,
       );
@@ -188,41 +215,21 @@ app.post("/gateways", authMiddleware, async (c) => {
         return c.json(
           {
             error:
-              "Missing simpleSmsGatewayBaseUrl in config for simple-sms-gateway provider",
+              "Missing simpleSmsGatewayBaseUrl in config for this provider",
             code: "MISSING_BASE_URL",
           },
           400,
         );
       }
 
-      const spec = await discoverGatewaySpec(baseUrl);
-      if (spec) {
-        discoveredSchema = extractSmsRequestSchema(spec);
-      }
-
-      // Reachability test uses the discovered schema (or null for legacy
-      // shape). The test sends a POST with a test phone number, which most
-      // gateways will accept (returning 200) or reject (returning 4xx) —
-      // either response proves the gateway is reachable.
-      reachabilityTest = await testGatewayReachability(
-        baseUrl,
-        discoveredSchema,
-      );
+      const reachabilityTest = await probeGatewayReachability(baseUrl);
       if (!reachabilityTest.success) {
-        logger.warn("simple-sms-gateway reachability test failed", {
+        logger.warn("SMS gateway reachability test failed", {
           userId: user.id,
           baseUrl,
+          provider: validated.provider,
           message: reachabilityTest.message,
         });
-        // When `?dryRun=true` is set we return the failure as part of the
-        // preview payload instead of a 4xx — the caller is asking "what
-        // would happen if I saved this?", not "save this for me".
-        if (c.req.query("dryRun") === "true") {
-          return c.json({
-            discoveredSchema,
-            reachabilityTest,
-          });
-        }
         return c.json(
           {
             error: `Gateway is not reachable: ${reachabilityTest.message}`,
@@ -233,52 +240,11 @@ app.post("/gateways", authMiddleware, async (c) => {
       }
     }
 
-    // Merge discovered schema + manual overrides into the config JSONB.
-    const mergedConfig: Record<string, unknown> = {
-      ...(validated.config as Record<string, unknown>),
-    };
-    if (discoveredSchema) {
-      mergedConfig.bodySchema = discoveredSchema;
-    }
-    if (validated.overrides) {
-      const { endpoint, phoneField, messageField } = validated.overrides;
-      const existing = (mergedConfig.bodySchema ??
-        {}) as Partial<DiscoveredSmsSchema>;
-      const finalEndpoint = endpoint ?? existing.endpoint;
-      const finalPhoneField = phoneField ?? existing.phoneField;
-      const finalMessageField = messageField ?? existing.messageField;
-      // Overrides only apply when there's already a discovered schema (or
-      // when all three overrides are provided). Skip otherwise — the
-      // gateway will use the legacy default body shape.
-      if (finalEndpoint && finalPhoneField && finalMessageField) {
-        mergedConfig.bodySchema = {
-          endpoint: finalEndpoint,
-          phoneField: finalPhoneField,
-          messageField: finalMessageField,
-          method: existing.method ?? "POST",
-          requiredFields: existing.requiredFields ?? [],
-        } satisfies DiscoveredSmsSchema;
-      }
-    }
-
-    // `?dryRun=true` short-circuits persistence and returns the
-    // discovered schema + reachability probe so the frontend can preview
-    // the result before the user commits to saving a new gateway. We
-    // keep the persisted-config merge above so the preview matches what
-    // would actually be stored (overrides included).
-    if (c.req.query("dryRun") === "true") {
-      return c.json({
-        discoveredSchema:
-          (mergedConfig.bodySchema as DiscoveredSmsSchema | undefined) ?? null,
-        reachabilityTest,
-      });
-    }
-
     const gateway = {
       user_id: user.id,
       name: validated.name,
       provider: validated.provider,
-      config: mergedConfig,
+      config: validated.config,
       daily_limit: validated.daily_limit ?? 200,
       monthly_limit: validated.monthly_limit ?? 200,
       is_active: validated.is_active ?? true,
@@ -303,7 +269,6 @@ app.post("/gateways", authMiddleware, async (c) => {
       userId: user.id,
       gatewayId: data.id,
       provider: data.provider,
-      schemaDiscovered: Boolean(discoveredSchema),
     });
 
     return c.json(data, 201);
@@ -403,111 +368,6 @@ app.delete("/gateways/:id", authMiddleware, async (c) => {
     return c.json({ success: true });
   } catch (error) {
     logger.error("Unexpected error in DELETE /gateways/:id", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return c.json({ error: "Internal server error" }, 500);
-  }
-});
-
-/**
- * Re-run spec discovery + reachability for an existing gateway. Useful
- * when the gateway was added before the schema was known, or after the
- * gateway's API surface changed.
- */
-app.post("/gateways/:id/redetect", authMiddleware, async (c) => {
-  try {
-    const user = c.get("user");
-    const id = c.req.param("id");
-    const supabaseAdmin = createSupabaseAdmin();
-
-    const { data: existing, error: fetchError } = await supabaseAdmin
-      .schema("private")
-      .from("sms_fleet_gateways")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (fetchError || !existing) {
-      return c.json({ error: "Gateway not found", code: "NOT_FOUND" }, 404);
-    }
-
-    if (existing.provider !== "simple-sms-gateway") {
-      return c.json(
-        {
-          error: "Redetect only supported for simple-sms-gateway provider",
-          code: "UNSUPPORTED_PROVIDER",
-        },
-        400,
-      );
-    }
-
-    const config = (existing.config as Record<string, unknown>) ?? {};
-    const baseUrl = extractSimpleSmsGatewayBaseUrl(config);
-    if (!baseUrl) {
-      return c.json(
-        {
-          error: "Missing simpleSmsGatewayBaseUrl in gateway config",
-          code: "MISSING_BASE_URL",
-        },
-        400,
-      );
-    }
-
-    const spec = await discoverGatewaySpec(baseUrl);
-    const discoveredSchema = spec ? extractSmsRequestSchema(spec) : null;
-
-    const reachability = await testGatewayReachability(
-      baseUrl,
-      discoveredSchema,
-    );
-    if (!reachability.success) {
-      return c.json(
-        {
-          error: `Gateway is not reachable: ${reachability.message}`,
-          code: "GATEWAY_UNREACHABLE",
-        },
-        400,
-      );
-    }
-
-    const nextConfig: Record<string, unknown> = { ...config };
-    if (discoveredSchema) {
-      nextConfig.bodySchema = discoveredSchema;
-    } else {
-      delete nextConfig.bodySchema;
-    }
-
-    const { data, error } = await supabaseAdmin
-      .schema("private")
-      .from("sms_fleet_gateways")
-      .update({
-        config: nextConfig,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .select()
-      .single();
-
-    if (error) {
-      logger.error("Failed to update gateway after redetect", {
-        userId: user.id,
-        gatewayId: id,
-        error: error.message,
-      });
-      return c.json({ error: error.message }, 500);
-    }
-
-    logger.info("Gateway redetected", {
-      userId: user.id,
-      gatewayId: id,
-      schemaDiscovered: Boolean(discoveredSchema),
-    });
-
-    return c.json(data);
-  } catch (error) {
-    logger.error("Unexpected error in POST /gateways/:id/redetect", {
       error: error instanceof Error ? error.message : String(error),
     });
     return c.json({ error: "Internal server error" }, 500);
