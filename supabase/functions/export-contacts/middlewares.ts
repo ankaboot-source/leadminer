@@ -1,0 +1,1 @@
+export { mixedAuth as authMiddleware } from "../_shared/middlewares.ts";

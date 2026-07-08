@@ -1,22 +1,28 @@
 import { Context, Next } from "hono";
-import { NextFunction, Request, Response } from "npm:express";
 import { createSupabaseClient } from "./supabase.ts";
 
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-export async function authorizeUser(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  const supabaseClient = createSupabaseClient(req.headers["authorization"]);
-  const { user } = (await supabaseClient.auth.getUser()).data;
+/**
+ * User JWT auth middleware. Requires a valid Supabase JWT Bearer token.
+ * Sets `c.set("user", user)` for downstream handlers.
+ */
+export async function mixedAuth(c: Context, next: Next) {
+  const authHeader = c.req.header("authorization");
 
-  if (!user) {
-    return res.status(403).send("Unauthorized");
+  if (!authHeader) {
+    return c.json({ error: "Missing Authorization header" }, 401);
   }
-  res.locals.user = user;
-  return next();
+
+  const supabase = createSupabaseClient(authHeader);
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user?.id || !data.user.email) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  c.set("user", data.user);
+  return await next();
 }
 
 /**

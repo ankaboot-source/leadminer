@@ -3,7 +3,6 @@ import {
   Contact,
   ContactFrontend,
   EmailStatus,
-  ExportService,
   ExtractionResult,
   Tag
 } from '../types';
@@ -24,13 +23,6 @@ export interface Contacts {
   ): Promise<boolean>;
   getContacts(userId: string, ids?: string[]): Promise<Contact[]>;
   getUnverifiedContacts(userId: string, ids: string[]): Promise<Contact[]>;
-  getExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
-  getNonExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
-  registerExportedContacts(
-    personIds: string[],
-    exportService: ExportService,
-    userId: string
-  ): Promise<void>;
   upsertGoogleContacts(
     contacts: Array<{ person: ContactFrontend; tags: string[] }>,
     userId: string,

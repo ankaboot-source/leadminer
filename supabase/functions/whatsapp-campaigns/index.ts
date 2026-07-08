@@ -15,6 +15,7 @@ import {
   isValidPhoneNumber,
   normalizePhoneNumber,
 } from "../sms-campaigns/utils/phone.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const logger = createLogger("whatsapp-campaigns");
 
@@ -39,10 +40,8 @@ app.onError((err, c) => {
   );
 });
 
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
-  "SUPABASE_SERVICE_ROLE_KEY",
-) as string;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
 const OPENWA_API_URL = Deno.env.get("OPENWA_API_URL") || "";
 const OPENWA_API_KEY = Deno.env.get("OPENWA_API_KEY") || "";
 

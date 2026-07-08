@@ -20,6 +20,7 @@ import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 import { estimateSmsSegments } from "./utils/sms-segments.ts";
 import { shortenUrl } from "./utils/short-link.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const logger = createLogger("sms-campaigns");
 
@@ -44,10 +45,8 @@ app.onError((err, c) => {
   );
 });
 
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
-  "SUPABASE_SERVICE_ROLE_KEY",
-) as string;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
 const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
   Deno.env.get(key),
 );

@@ -24,16 +24,15 @@ import {
   complianceMiddleware,
   createFinalResponseMiddleware,
 } from "./middlewares-mod.ts";
+import { getRequiredEnv } from "../_shared/env-helpers.ts";
 
 const logger = createLogger("email-campaigns");
 
 const functionName = "email-campaigns";
 const app = new Hono().basePath(`/${functionName}`);
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
-  "SUPABASE_SERVICE_ROLE_KEY",
-) as string;
+const SUPABASE_URL = getRequiredEnv("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 // skipcq: JS-0356 - Reserved for future API hash verification
 const CAMPAIGN_COMPLIANCE_FOOTER = (
   Deno.env.get("campaign_compliance_footer") ||

@@ -9,7 +9,6 @@ import {
   ContactFrontend,
   EmailExtractionResult,
   EmailStatus,
-  ExportService,
   ExtractionResult,
   FileExtractionResult,
   GoogleContactsExtractionResult,
@@ -31,25 +30,6 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_SQL =
     'SELECT * FROM private.get_contacts_table($1)';
 
-  private static readonly SELECT_EXPORTED_CONTACTS = `
-    SELECT contacts.*
-    FROM private.get_contacts_table($1) contacts
-      JOIN private.engagement e
-        ON e.person_id = contacts.id
-        AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
-    `;
-
-  private static readonly SELECT_NON_EXPORTED_CONTACTS = `
-    SELECT contacts.*
-    FROM private.get_contacts_table($1) contacts
-      LEFT JOIN private.engagement e
-        ON e.person_id = contacts.id
-        AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
-    WHERE e.person_id IS NULL;
-    `;
-
   private static readonly SELECT_CONTACTS_BY_IDS =
     'SELECT * FROM private.get_contacts_table_by_ids($1,$2)';
 
@@ -59,33 +39,11 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_UNVERIFIED =
     'SELECT * FROM private.get_contacts_table($1) WHERE status IS NULL';
 
-  private static readonly SELECT_EXPORTED_CONTACTS_BY_IDS = `
-    SELECT contacts.*
-    FROM private.get_contacts_table_by_ids($1,$2) contacts
-      JOIN private.engagement e
-        ON e.person_id = contacts.id
-        AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
-    `;
-
-  private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_IDS = `
-    SELECT contacts.*
-    FROM private.get_contacts_table_by_ids($1,$2) contacts
-      LEFT JOIN private.engagement e
-        ON e.person_id = contacts.id
-        AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
-    WHERE e.person_id IS NULL;
-    `;
-
   private static readonly UPDATE_PERSON_STATUS_BULK = `
     UPDATE private.persons
     SET status = update.status
     FROM (VALUES %L) AS update(id, status)
     WHERE persons.id = update.id AND persons.user_id = %L AND persons.status IS NULL`;
-
-  private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO private.engagement (user_id, person_id, engagement_type, service) VALUES %L ON  CONFLICT (person_id, user_id, engagement_type, service) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -698,59 +656,6 @@ LIMIT 1;
     } catch (error) {
       this.logger.error(error);
       return [];
-    }
-  }
-
-  async getExportedContacts(
-    userId: string,
-    ids?: string[]
-  ): Promise<Contact[]> {
-    try {
-      const { rows } = ids
-        ? await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS_BY_IDS, [
-            userId,
-            ids
-          ])
-        : await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS, [userId]);
-      return rows;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  async getNonExportedContacts(
-    userId: string,
-    ids?: string[]
-  ): Promise<Contact[]> {
-    try {
-      const { rows } = ids
-        ? await this.pool.query(
-            PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_IDS,
-            [userId, ids]
-          )
-        : await this.pool.query(PgContacts.SELECT_NON_EXPORTED_CONTACTS, [
-            userId
-          ]);
-
-      return rows;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  async registerExportedContacts(
-    personIds: string[],
-    service: ExportService,
-    userId: string
-  ): Promise<void> {
-    try {
-      const values = personIds.map((id) => [userId, id, 'EXPORT', service]);
-      await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
     }
   }
 

@@ -1,0 +1,17 @@
+{
+  "errors": {
+    "no_contacts": "No contacts to export",
+    "invalid_type": "Invalid export type",
+    "export_failed": "Export failed. Please try again."
+  },
+  "modals": {
+    "google_auth": {
+      "title": "Google Account Disconnected",
+      "description": "Your Google account needs to be reconnected to sync contacts.",
+      "buttons": {
+        "reconnect": "Reconnect Google Account",
+        "cancel": "Cancel"
+      }
+    }
+  }
+}

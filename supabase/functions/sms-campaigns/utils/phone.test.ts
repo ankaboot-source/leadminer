@@ -2,8 +2,8 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./phone.ts";
 
 Deno.test("normalizePhoneNumber formats valid numbers to E.164", () => {
-  assertEquals(normalizePhoneNumber("+1234567890"), "+1234567890");
-  assertEquals(normalizePhoneNumber("1234567890"), "+1234567890");
+  assertEquals(normalizePhoneNumber("+12025551234"), "+12025551234");
+  assertEquals(normalizePhoneNumber("12025551234"), "+12025551234");
   assertEquals(normalizePhoneNumber("+33 1 23 45 67 89"), "+33123456789");
   assertEquals(normalizePhoneNumber("+33(0)123456789"), "+33123456789");
   assertEquals(normalizePhoneNumber("0033123456789"), "+33123456789");
@@ -17,9 +17,9 @@ Deno.test("normalizePhoneNumber returns null for invalid numbers", () => {
 });
 
 Deno.test("isValidPhoneNumber validates E.164 numbers with 10+ digits", () => {
-  assertEquals(isValidPhoneNumber("+1234567890"), true);
+  assertEquals(isValidPhoneNumber("+12025551234"), true);
   assertEquals(isValidPhoneNumber("+33123456789"), true);
-  assertEquals(isValidPhoneNumber("1234567890"), true);
+  assertEquals(isValidPhoneNumber("12025551234"), true);
   assertEquals(isValidPhoneNumber("+123456789"), false);
   assertEquals(isValidPhoneNumber("12345"), false);
   assertEquals(isValidPhoneNumber(null), false);
