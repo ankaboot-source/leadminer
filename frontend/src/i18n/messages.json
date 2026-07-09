@@ -123,7 +123,6 @@
       "campaign_delete_failed": "Failed to delete campaign",
       "campaign_failed": "Campaign failed",
       "campaign_failed_detail": "The campaign could not be sent.",
-      "campaign_last_error": "Error: {error}",
       "see_results": "See results",
       "campaign_sent": "Campaign sent",
       "campaign_sent_detail": "Your campaign is being sent.",
@@ -315,8 +314,7 @@
       "opens_tooltip_disabled": "Ouvertures non suivies",
       "clicks_tooltip_enabled": "Clics suivis",
       "clicks_tooltip_disabled": "Clics non suivis",
-      "unsubscribes_tooltip": "Désinscriptions: {count}",
-      "campaign_last_error": "Erreur : {error}"
+      "unsubscribes_tooltip": "Désinscriptions: {count}"
     },
     "contact": {
       "name": "Nom complet",

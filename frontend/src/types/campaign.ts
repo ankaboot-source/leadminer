@@ -1,5 +1,9 @@
 export type CampaignStatus =
-  'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 export interface CampaignLinkClick {
   url: string;
@@ -50,5 +54,4 @@ export interface CampaignOverview {
   selected_gateway_ids?: string[];
   gateway_names?: string[];
   message_template?: string;
-  last_error?: string | null;
 }

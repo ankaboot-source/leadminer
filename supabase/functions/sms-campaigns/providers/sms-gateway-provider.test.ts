@@ -7,7 +7,7 @@ import {
   SMS_GATEWAY_PROVIDER_NAME,
   type SmsGatewayCredentials,
 } from "./mod.ts";
-import { SmsGatewayProviderImpl as SmsGatewayProvider } from "./sms-gateway-provider.ts";
+import { SmsGatewayProvider } from "./sms-gateway-provider.ts";
 
 Deno.test("createSmsProvider creates sms-gateway provider", () => {
   const provider = createSmsProvider("sms-gateway", {

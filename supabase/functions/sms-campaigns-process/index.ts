@@ -274,13 +274,6 @@ async function recordClickLink(
 ): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const token = getUniqueShortToken(8);
-    const attemptStart = Date.now();
-    logger.info("recordClickLink attempt", {
-      campaignId,
-      recipientId,
-      attempt,
-      url,
-    });
     const { error } = await supabaseAdmin
       .schema("private")
       .from("sms_campaign_link_clicks")
@@ -290,14 +283,6 @@ async function recordClickLink(
         token,
         url,
       });
-    logger.info("recordClickLink attempt done", {
-      campaignId,
-      recipientId,
-      attempt,
-      url,
-      elapsedMs: Date.now() - attemptStart,
-      hasError: !!error,
-    });
 
     if (!error) {
       return token;
@@ -309,13 +294,6 @@ async function recordClickLink(
     ) {
       throw new Error(`Failed to record click link: ${error.message}`);
     }
-
-    logger.info("recordClickLink duplicate, retrying", {
-      campaignId,
-      recipientId,
-      attempt,
-      url,
-    });
   }
 
   throw new Error(
@@ -330,28 +308,14 @@ async function injectTrackers(
   message: string,
   useShortLinks: boolean,
 ): Promise<string> {
-  const funcStart = Date.now();
   const hrefRegex = /(https?:\/\/[^\s]+)/gi;
   const matches = [...message.matchAll(hrefRegex)];
   let updatedMessage = message;
-
-  logger.info("injectTrackers start", {
-    campaignId,
-    recipientId,
-    urlCount: matches.length,
-    useShortLinks,
-  });
 
   for (const match of matches) {
     const originalUrl = match[1];
     if (!originalUrl) continue;
 
-    const urlStart = Date.now();
-    logger.info("Tracking URL", {
-      campaignId,
-      recipientId,
-      url: originalUrl,
-    });
     const token = await recordClickLink(
       supabaseAdmin,
       campaignId,
@@ -368,21 +332,7 @@ async function injectTrackers(
     }
 
     updatedMessage = updatedMessage.replace(originalUrl, trackedUrl);
-    logger.info("Tracking URL done", {
-      campaignId,
-      recipientId,
-      url: originalUrl,
-      trackedUrl,
-      elapsedMs: Date.now() - urlStart,
-    });
   }
-
-  logger.info("injectTrackers done", {
-    campaignId,
-    recipientId,
-    urlCount: matches.length,
-    totalElapsedMs: Date.now() - funcStart,
-  });
 
   return updatedMessage;
 }
@@ -474,28 +424,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
     viaServiceRole: isServiceRole,
   });
 
-  // Use a dedicated HTTP client with keepAlive=false to avoid the
-  // shared connection pool issue in the supabase edge runtime where
-  // the default keep-alive connection gets stuck after a few requests
-  // (the response is sent by Kong but never received by Deno's fetch,
-  // leaving all subsequent requests on the same connection hanging).
-  // We force a fresh connection per request by disabling keep-alive
-  // on the HTTP client passed to the custom fetch wrapper.
-  // deno-lint-ignore no-explicit-any
-  const freshConnClient = Deno.createHttpClient({ keepAlive: false } as any);
-  const supabaseAdmin = createSupabaseAdmin(undefined, undefined, {
-    fetch: (input, init) => {
-      // Add Connection: close header to force connection closure
-      // after each request. This works around a Deno 2.x fetch bug
-      // in the supabase edge runtime where the default keep-alive
-      // connection gets stuck after the first few requests (response
-      // is sent by Kong but never received by the Deno fetch
-      // implementation).
-      const newHeaders = new Headers(init?.headers);
-      newHeaders.set("Connection", "close");
-      return fetch(input, { ...init, headers: newHeaders });
-    },
-  });
+  const supabaseAdmin = createSupabaseAdmin();
 
   let campaignQuery = supabaseAdmin
     .schema("private")
@@ -520,11 +449,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
   const campaign = Array.isArray(campaignData) ? campaignData[0] : campaignData;
 
   logger.info("Campaign query result", {
-    campaignId: campaign?.id || campaignId || null,
-    campaignStatus: campaign?.status ?? null,
-    provider: campaign?.provider ?? null,
-    fleetMode: campaign?.fleet_mode_enabled ?? null,
-    fetchError: fetchError?.message ?? null,
+    campaignId: campaign?.id || campaignId,
+    campaignStatus: campaign?.status,
+    provider: campaign?.provider,
+    fleetMode: campaign?.fleet_mode_enabled,
+    fetchError: fetchError?.message,
   });
 
   if (!campaignId && !campaign && !fetchError) {
@@ -555,53 +484,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
       : null;
     const staleThresholdMs = 10 * 60 * 1000; // 10 minutes
     if (!startedAt || Date.now() - startedAt.getTime() > staleThresholdMs) {
-      // Check if any recipient has been attempted — if not, the worker was
-      // killed before it could make any progress. Mark as failed instead
-      // of recovering into an infinite reprocess loop.
-      const { count: attemptedCount } = await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_recipients")
-        .select("*", { count: "exact", head: true })
-        .eq("campaign_id", resolvedCampaignId)
-        .gt("attempt_count", 0);
-
-      if ((attemptedCount ?? 0) === 0) {
-        logger.error(
-          "Stuck processing campaign — marking as failed (no progress made)",
-          {
-            campaignId: resolvedCampaignId,
-            startedAt: campaign.started_at,
-            staleMinutes: startedAt
-              ? (Date.now() - startedAt.getTime()) / 60000
-              : null,
-          },
-        );
-        await supabaseAdmin
-          .schema("private")
-          .from("sms_campaigns")
-          .update({
-            status: "failed",
-            completed_at: new Date().toISOString(),
-            last_error: "Worker was killed before any recipient was attempted",
-          })
-          .eq("id", resolvedCampaignId);
-        return c.json(
-          {
-            error:
-              "Campaign failed — worker was killed before making any progress",
-            code: "WORKER_KILLED_NO_PROGRESS",
-          },
-          200,
-        );
-      }
-
-      logger.info("Recovering stale processing campaign (some progress made)", {
+      logger.info("Recovering stale processing campaign", {
         campaignId: resolvedCampaignId,
         startedAt: campaign.started_at,
         staleMinutes: startedAt
           ? (Date.now() - startedAt.getTime()) / 60000
           : null,
-        attemptedRecipients: attemptedCount,
       });
       // Reset any recipients still in "pending" state (never attempted)
       await supabaseAdmin
@@ -640,10 +528,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
     .update({ status: "processing", started_at: new Date().toISOString() })
     .eq("id", resolvedCampaignId);
 
-  // Capture the wall-clock start time so the in-line checkWatchdog
-  // calls and the in-loop watchdog can measure elapsed time.
-  const processingStartTime = Date.now();
-
   // Set module-level state so beforeunload can save partial progress
   activeCampaignId = resolvedCampaignId;
   activeSentCount = 0;
@@ -655,25 +539,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
     let failedCount = 0;
     let processingError: string | undefined;
 
-    // Hard-bailout watchdog for the pre-loop setup. If we reach a
-    // checkpoint and the wall-clock has exceeded 120s, set the error
-    // and return so the `finally` block writes a `failed` status.
-    // The parallel setTimeout above (130s) is the backstop for the
-    // case where the IIFE hangs BETWEEN checkpoints and never makes
-    // progress at all.
-    const checkWatchdog = (): boolean => {
-      if (Date.now() - processingStartTime > 120_000) {
-        processingError =
-          "Worker hit in-line watchdog (120s) — likely hung in pre-loop setup";
-        logger.error("In-line watchdog triggered (pre-loop)", {
-          campaignId: resolvedCampaignId,
-          elapsedMs: Date.now() - processingStartTime,
-        });
-        return true;
-      }
-      return false;
-    };
-
     try {
       const { data: recipients } = await supabaseAdmin
         .schema("private")
@@ -682,15 +547,13 @@ app.post("/process", authMiddleware, async (c: Context) => {
         .eq("campaign_id", resolvedCampaignId)
         .eq("send_status", "pending");
 
-      logger.info("SMS processing: post-recipients-query", {
-        elapsedMs: Date.now() - processingStartTime,
-        recipientCount: recipients?.length ?? 0,
-      });
-      if (checkWatchdog()) return;
-
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
-        "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
+        | "smsgate"
+        | "simple-sms-gateway"
+        | "sms-gateway"
+        | "twilio"
+        | "fleet";
 
       // Load gateway assignments for fleet mode
       let gatewayAssignments: Map<
@@ -706,19 +569,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
       let fleetGateways: SmsFleetGateway[] = [];
 
       if (isFleetMode) {
-        logger.info("SMS processing: before fleet recipient_gateways query", {
-          elapsedMs: Date.now() - processingStartTime,
-        });
         const { data: assignments } = await supabaseAdmin
           .schema("private")
           .from("sms_campaign_recipient_gateways")
           .select("recipient_id, gateway_id, gateway_name, gateway_provider")
           .eq("campaign_id", resolvedCampaignId);
-
-        logger.info("SMS processing: post fleet recipient_gateways query", {
-          elapsedMs: Date.now() - processingStartTime,
-          assignmentCount: assignments?.length ?? 0,
-        });
 
         if (assignments) {
           // Fetch gateway configs
@@ -726,66 +581,32 @@ app.post("/process", authMiddleware, async (c: Context) => {
             .map((a) => a.gateway_id)
             .filter((id): id is string => id !== null);
 
-          if (gatewayIds.length > 0) {
-            logger.info("SMS processing: before fleet gateways query", {
-              elapsedMs: Date.now() - processingStartTime,
-              gatewayIdCount: gatewayIds.length,
-            });
-            const { data: gateways } = await supabaseAdmin
-              .schema("private")
-              .from("sms_fleet_gateways")
-              .select(
-                "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
-              )
-              .in("id", gatewayIds);
+          const { data: gateways } = await supabaseAdmin
+            .schema("private")
+            .from("sms_fleet_gateways")
+            .select(
+              "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
+            )
+            .in("id", gatewayIds);
 
-            logger.info("SMS processing: post fleet gateways query", {
-              elapsedMs: Date.now() - processingStartTime,
-              gatewayCount: gateways?.length ?? 0,
-            });
+          fleetGateways = (gateways || []) as SmsFleetGateway[];
 
-            fleetGateways = (gateways || []) as SmsFleetGateway[];
-
-            const gatewayConfigs = new Map(
-              (gateways || []).map((g) => [g.id, g.config]),
-            );
-
-            for (const assignment of assignments) {
-              if (assignment.recipient_id && assignment.gateway_id) {
-                gatewayAssignments.set(assignment.recipient_id, {
-                  id: assignment.gateway_id,
-                  name: assignment.gateway_name || "Unknown",
-                  provider: assignment.gateway_provider || "smsgate",
-                  config: gatewayConfigs.get(assignment.gateway_id) || {},
-                });
-              }
-            }
-          } else {
-            logger.warn(
-              "SMS processing: fleet mode but no gateway IDs in assignments",
-              {
-                elapsedMs: Date.now() - processingStartTime,
-              },
-            );
-          }
-        } else {
-          logger.warn(
-            "SMS processing: fleet mode but no assignments returned",
-            {
-              elapsedMs: Date.now() - processingStartTime,
-            },
+          const gatewayConfigs = new Map(
+            (gateways || []).map((g) => [g.id, g.config]),
           );
+
+          for (const assignment of assignments) {
+            if (assignment.recipient_id && assignment.gateway_id) {
+              gatewayAssignments.set(assignment.recipient_id, {
+                id: assignment.gateway_id,
+                name: assignment.gateway_name || "Unknown",
+                provider: assignment.gateway_provider || "smsgate",
+                config: gatewayConfigs.get(assignment.gateway_id) || {},
+              });
+            }
+          }
         }
       }
-
-      logger.info("SMS processing: post-fleet-gateway-queries", {
-        elapsedMs: Date.now() - processingStartTime,
-        isFleetMode,
-        fleetGatewayCount: fleetGateways.length,
-        assignmentCount: gatewayAssignments.size,
-      });
-      if (checkWatchdog()) return;
-
       let smsProvider;
 
       if (selectedProvider === "fleet") {
@@ -836,12 +657,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
         });
       }
 
-      logger.info("SMS processing: post-provider-setup", {
-        elapsedMs: Date.now() - processingStartTime,
-        selectedProvider,
-      });
-      if (checkWatchdog()) return;
-
       // Provider cache for fleet mode to avoid recreating providers
       const providerCache = new Map<
         string,
@@ -873,39 +688,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
         }
       }
 
-      // Watchdog: Supabase Deno edge functions have a 150s wall-clock
-      // limit. Bail out at 140s so the `finally` block (and `beforeunload`
-      // handler) can write a clear `failed` status + `last_error` instead
-      // of being killed mid-loop. `processingStartTime` is the top-level
-      // one declared above the IIFE so both the parallel watchdog and
-      // this in-loop check measure from the same starting point.
-      const MAX_WALL_CLOCK_MS = 140_000;
-
-      for (const [recipientIndex, recipient] of (recipients || []).entries()) {
-        // Watchdog: if we're running long, bail out and let the cron
-        // recover on the next tick instead of being killed silently.
-        if (Date.now() - processingStartTime > MAX_WALL_CLOCK_MS) {
-          processingError =
-            "Worker hit wall-clock watchdog (140s) — deferring remaining recipients to next cron run";
-          logger.error("Wall-clock watchdog triggered", {
-            campaignId: resolvedCampaignId,
-            elapsedMs: Date.now() - processingStartTime,
-            processed: sentCount + failedCount,
-            totalRecipients: (recipients || []).length,
-          });
-          break; // exits the for loop
-        }
-
-        const recipientLoopStart = Date.now();
-        logger.info("Processing recipient", {
-          campaignId: resolvedCampaignId,
-          recipientId: recipient.id,
-          phone: recipient.phone,
-          index: recipientIndex,
-          total: (recipients || []).length,
-          elapsedMs: recipientLoopStart - processingStartTime,
-        });
-
+      for (const recipient of recipients || []) {
         let currentAttempt = 0;
         let sendSuccess = false;
         let lastError: string | undefined;
@@ -914,7 +697,8 @@ app.post("/process", authMiddleware, async (c: Context) => {
           try {
             // For fleet mode, get the assigned gateway and create provider
             let currentProvider:
-              ReturnType<typeof createSmsProvider> | undefined = smsProvider;
+              | ReturnType<typeof createSmsProvider>
+              | undefined = smsProvider;
             let providerUsed = selectedProvider;
 
             // Use Case 5 Fix: Track error types for differentiated handling
@@ -924,15 +708,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
             if (isFleetMode) {
               const gateway = gatewayAssignments.get(recipient.id);
-              logger.info("Fleet-mode gateway lookup", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                gatewayId: gateway?.id,
-                gatewayName: gateway?.name,
-                gatewayProvider: gateway?.provider,
-                markedAsFailed: gateway ? failedGateways.has(gateway.id) : null,
-                attempt: currentAttempt,
-              });
 
               // UseCase 3 Fix: Immediate reassignment if gateway already marked as failed
               // Don't waste retries on known-failed gateways
@@ -971,7 +746,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
                   // Update current gateway for provider creation
                   providerUsed = alternativeGateway.provider as
-                    "smsgate" | "simple-sms-gateway" | "sms-gateway";
+                    | "smsgate"
+                    | "simple-sms-gateway"
+                    | "sms-gateway";
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
@@ -1026,7 +803,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 }
               } else if (gateway) {
                 providerUsed = gateway.provider as
-                  "smsgate" | "simple-sms-gateway" | "sms-gateway";
+                  | "smsgate"
+                  | "simple-sms-gateway"
+                  | "sms-gateway";
 
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
@@ -1076,28 +855,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
               }
 
               if (!currentProvider) {
-                logger.error("Fleet-mode provider creation failed", {
-                  campaignId: resolvedCampaignId,
-                  recipientId: recipient.id,
-                  gatewayId: gateway?.id,
-                  gatewayName: gateway?.name,
-                  gatewayProvider: gateway?.provider,
-                  providerCacheKeys: Array.from(providerCache.keys()),
-                });
                 throw new Error(
                   `Failed to create provider for gateway ${
                     gateway?.name || "unknown"
                   }`,
                 );
               }
-              logger.info("Fleet-mode provider ready", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                gatewayId: gateway?.id,
-                gatewayName: gateway?.name,
-                gatewayProvider: gateway?.provider,
-                providerName: currentProvider?.name,
-              });
             }
 
             if (!currentProvider) {
@@ -1112,11 +875,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
               templateContext,
             );
 
-            const injectTrackersStart = Date.now();
-            logger.info("Step: injectTrackers", {
-              campaignId: resolvedCampaignId,
-              recipientId: recipient.id,
-            });
             let messageWithTrackers = await injectTrackers(
               supabaseAdmin,
               resolvedCampaignId,
@@ -1124,47 +882,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
               renderedBody,
               campaign.use_short_links,
             );
-            logger.info("Step done: injectTrackers", {
-              campaignId: resolvedCampaignId,
-              recipientId: recipient.id,
-              elapsedMs: Date.now() - injectTrackersStart,
-            });
 
             const unsubscribeToken =
               recipient.unsubscribe_short_token || getUniqueShortToken(10);
             if (!recipient.unsubscribe_short_token) {
-              const unsubTokenStart = Date.now();
-              logger.info("Step: persist unsubscribe token", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-              });
               await supabaseAdmin
                 .schema("private")
                 .from("sms_campaign_recipients")
                 .update({ unsubscribe_short_token: unsubscribeToken })
                 .eq("id", recipient.id);
-              logger.info("Step done: persist unsubscribe token", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                elapsedMs: Date.now() - unsubTokenStart,
-              });
             }
             let unsubscribeUrl = buildSmsUnsubscribeUrl(unsubscribeToken);
             if (campaign.use_short_links) {
-              const shortenStart = Date.now();
-              logger.info("Step: shorten unsubscribe URL", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                url: unsubscribeUrl,
-              });
               const shortUnsubUrl = await shortenUrl(unsubscribeUrl);
-              logger.info("Step done: shorten unsubscribe URL", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                url: unsubscribeUrl,
-                shortUrl: shortUnsubUrl ?? null,
-                elapsedMs: Date.now() - shortenStart,
-              });
               if (shortUnsubUrl) {
                 unsubscribeUrl = shortUnsubUrl;
               }
@@ -1180,37 +910,13 @@ app.post("/process", authMiddleware, async (c: Context) => {
               messageWithTrackers += `\n\n${renderedFooter}`;
             }
 
-            logger.info("Calling provider.send", {
-              campaignId: resolvedCampaignId,
-              recipientId: recipient.id,
-              phone: recipient.phone,
-              provider: providerUsed,
-              messageLength: messageWithTrackers.length,
-            });
-            const sendStart = Date.now();
             const result: SendSmsResult = await currentProvider.send({
               to: recipient.phone,
               from: "",
               body: messageWithTrackers,
             });
-            logger.info("provider.send returned", {
-              campaignId: resolvedCampaignId,
-              recipientId: recipient.id,
-              provider: providerUsed,
-              success: result.success,
-              elapsedMs: Date.now() - sendStart,
-              messageId: result.messageId,
-              error: result.success ? undefined : result.error,
-            });
 
             if (result.success) {
-              const sentStatusStart = Date.now();
-              logger.info("Step: mark recipient sent", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                provider: providerUsed,
-                messageId: result.messageId,
-              });
               await supabaseAdmin
                 .schema("private")
                 .from("sms_campaign_recipients")
@@ -1221,11 +927,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   sent_at: new Date().toISOString(),
                 })
                 .eq("id", recipient.id);
-              logger.info("Step done: mark recipient sent", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                elapsedMs: Date.now() - sentStatusStart,
-              });
               sentCount++;
               activeSentCount = sentCount;
               sendSuccess = true;
@@ -1234,28 +935,12 @@ app.post("/process", authMiddleware, async (c: Context) => {
               if (isFleetMode) {
                 const gateway = gatewayAssignments.get(recipient.id);
                 if (gateway) {
-                  const rpcStart = Date.now();
-                  logger.info("Step: increment_gateway_sent_count_atomic", {
-                    campaignId: resolvedCampaignId,
-                    recipientId: recipient.id,
-                    gatewayId: gateway.id,
-                  });
                   // Use Case 8 Fix: Atomic increment with quota check
                   const success = await supabaseAdmin.rpc(
                     "increment_gateway_sent_count_atomic",
                     {
                       p_gateway_id: gateway.id,
                       p_count: 1,
-                    },
-                  );
-                  logger.info(
-                    "Step done: increment_gateway_sent_count_atomic",
-                    {
-                      campaignId: resolvedCampaignId,
-                      recipientId: recipient.id,
-                      gatewayId: gateway.id,
-                      quotaOk: !!success,
-                      elapsedMs: Date.now() - rpcStart,
                     },
                   );
 
@@ -1345,19 +1030,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   ? result.error
                   : JSON.stringify(result.error);
 
-              logger.warn("SMS provider returned failure", {
-                campaignId: resolvedCampaignId,
-                recipientId: recipient.id,
-                recipientPhone: recipient.phone,
-                provider: providerUsed,
-                error: errorMessage,
-                isPermanentError:
-                  errorMessage.includes("401") ||
-                  errorMessage.includes("403") ||
-                  errorMessage.includes("invalid_credentials"),
-                attempt: currentAttempt + 1,
-              });
-
               // Permanent errors - no retry, mark gateway failed immediately
               isPermanentError =
                 errorMessage.includes("401") ||
@@ -1425,16 +1097,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
             }
           } catch (err) {
             lastError = extractErrorMessage(err);
-            const errorStack = err instanceof Error ? err.stack : String(err);
-            logger.error("SMS send threw", {
-              campaignId: resolvedCampaignId,
-              recipientId: recipient.id,
-              recipientPhone: recipient.phone,
-              attempt: currentAttempt + 1,
-              provider: selectedProvider,
-              error: lastError,
-              stack: errorStack,
-            });
             currentAttempt++;
 
             // Exponential backoff before retry
@@ -1448,12 +1110,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
         // If all retries exhausted, mark as failed
         if (!sendSuccess) {
-          const failedStatusStart = Date.now();
-          logger.info("Step: mark recipient failed (retries exhausted)", {
-            campaignId: resolvedCampaignId,
-            recipientId: recipient.id,
-            lastError,
-          });
           await supabaseAdmin
             .schema("private")
             .from("sms_campaign_recipients")
@@ -1463,21 +1119,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
               attempt_count: recipient.attempt_count + MAX_RETRIES,
             })
             .eq("id", recipient.id);
-          logger.info("Step done: mark recipient failed (retries exhausted)", {
-            campaignId: resolvedCampaignId,
-            recipientId: recipient.id,
-            elapsedMs: Date.now() - failedStatusStart,
-          });
           failedCount++;
           activeFailedCount = failedCount;
         }
-
-        logger.info("Recipient loop iteration done", {
-          campaignId: resolvedCampaignId,
-          recipientId: recipient.id,
-          sendSuccess,
-          totalElapsedMs: Date.now() - recipientLoopStart,
-        });
       }
     } catch (err) {
       processingError = extractErrorMessage(err);
@@ -1487,19 +1131,15 @@ app.post("/process", authMiddleware, async (c: Context) => {
       });
     } finally {
       const finalStatus = processingError ? "failed" : "completed";
-      const finalUpdate: Record<string, unknown> = {
-        status: finalStatus,
-        sent_count: sentCount,
-        failed_count: failedCount,
-        completed_at: new Date().toISOString(),
-      };
-      if (processingError) {
-        finalUpdate.last_error = processingError;
-      }
       await supabaseAdmin
         .schema("private")
         .from("sms_campaigns")
-        .update(finalUpdate)
+        .update({
+          status: finalStatus,
+          sent_count: sentCount,
+          failed_count: failedCount,
+          completed_at: new Date().toISOString(),
+        })
         .eq("id", resolvedCampaignId);
 
       // Clear module-level state
@@ -1528,11 +1168,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
   return c.json({ accepted: true, campaignId: resolvedCampaignId }, 202);
 });
 
-// Save partial progress when the worker is being shut down (wall clock limit).
-// Marks the campaign as `failed` with a `last_error` so the frontend no
-// longer shows it as stuck on "processing". The `.eq("status", "processing")`
-// guard makes this idempotent: if the `finally` block already ran and set
-// status to `completed`/`failed`, the `beforeunload` won't overwrite it.
+// Save partial progress when the worker is being shut down (wall clock limit)
 globalThis.addEventListener("beforeunload", (ev) => {
   if (!activeCampaignId) return;
 
@@ -1542,20 +1178,18 @@ globalThis.addEventListener("beforeunload", (ev) => {
     failedCount: activeFailedCount,
   });
 
+  // Update campaign with partial counts but keep status as "processing"
+  // so the cron job can pick it up and resume with remaining pending recipients
   const supabaseAdmin = createSupabaseAdmin();
   const updatePromise = Promise.resolve(
     supabaseAdmin
       .schema("private")
       .from("sms_campaigns")
       .update({
-        status: "failed",
         sent_count: activeSentCount,
         failed_count: activeFailedCount,
-        completed_at: new Date().toISOString(),
-        last_error: `Worker killed by wall-clock limit (sent=${activeSentCount}, failed=${activeFailedCount})`,
       })
-      .eq("id", activeCampaignId)
-      .eq("status", "processing"), // only if not already updated by finally
+      .eq("id", activeCampaignId),
   ).then(() => {
     logger.info("Partial progress saved before shutdown", {
       campaignId: activeCampaignId,

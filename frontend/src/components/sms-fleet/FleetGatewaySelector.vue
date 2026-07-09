@@ -165,11 +165,11 @@
             </a>
           </template>
           <template v-else-if="setupSelectedProvider === 'sms-gateway'">
-            <p class="m-0">{{ t('sms_gateway_setup_intro') }}</p>
+            <p class="m-0">{{ t('ios_sms_gateway_setup_intro') }}</p>
             <ol class="pl-4 m-0 list-decimal">
-              <li class="mb-2">{{ t('sms_gateway_setup_step_1') }}</li>
-              <li class="mb-2">{{ t('sms_gateway_setup_step_2') }}</li>
-              <li>{{ t('sms_gateway_setup_step_3') }}</li>
+              <li class="mb-2">{{ t('ios_sms_gateway_setup_step_1') }}</li>
+              <li class="mb-2">{{ t('ios_sms_gateway_setup_step_2') }}</li>
+              <li>{{ t('ios_sms_gateway_setup_step_3') }}</li>
             </ol>
             <a
               :href="iosSmsGatewayDownloadUrl"
@@ -177,7 +177,7 @@
               rel="noopener noreferrer"
               class="underline"
             >
-              {{ t('open_app_store') }}
+              {{ t('ios_app_store') }}
             </a>
           </template>
         </div>
@@ -482,11 +482,11 @@ const formatProvider = (provider: SmsGatewayProvider) => {
     "simple_sms_gateway_setup_step_3": "Enter the server URL in the form above",
     "open_playstore": "Open in Play Store",
     "ios_sms_gateway": "SMS Gateway (iOS)",
-    "sms_gateway_setup_intro": "To use SMS Gateway (iOS) as your SMS gateway, install the iOS app and configure the server URL.",
-    "sms_gateway_setup_step_1": "Install SMS Gateway from the App Store on your iOS device",
-    "sms_gateway_setup_step_2": "Open the app and configure the server URL in its settings",
-    "sms_gateway_setup_step_3": "Enter the server URL (e.g. http://192.168.x.x:8080) in the form below",
-    "open_app_store": "Open App Store",
+    "ios_sms_gateway_setup_intro": "To use SMS Gateway (iOS) as your SMS gateway, install the iOS app and configure the server URL.",
+    "ios_sms_gateway_setup_step_1": "Install SMS Gateway from the App Store on your iOS device",
+    "ios_sms_gateway_setup_step_2": "Open the app and configure the server URL in its settings",
+    "ios_sms_gateway_setup_step_3": "Enter the server URL (e.g. http://192.168.x.x:8080) in the form below",
+    "ios_app_store": "Open App Store",
     "how_to_install": "How to install",
     "select_provider_to_see_instructions": "Select a provider to see installation instructions",
     "smsgate": "SMSGate",
@@ -525,11 +525,11 @@ const formatProvider = (provider: SmsGatewayProvider) => {
     "simple_sms_gateway_setup_step_3": "Entrez l'URL du serveur dans le formulaire ci-dessus",
     "open_playstore": "Ouvrir sur Play Store",
     "ios_sms_gateway": "SMS Gateway (iOS)",
-    "sms_gateway_setup_intro": "Pour utiliser SMS Gateway (iOS) comme passerelle SMS, installez l'app iOS et configurez l'URL du serveur.",
-    "sms_gateway_setup_step_1": "Installez SMS Gateway depuis l'App Store sur votre appareil iOS",
-    "sms_gateway_setup_step_2": "Ouvrez l'app et configurez l'URL du serveur dans ses paramètres",
-    "sms_gateway_setup_step_3": "Entrez l'URL du serveur (ex. http://192.168.x.x:8080) dans le formulaire ci-dessous",
-    "open_app_store": "Ouvrir l'App Store",
+    "ios_sms_gateway_setup_intro": "Pour utiliser SMS Gateway (iOS) comme passerelle SMS, installez l'app iOS et configurez l'URL du serveur.",
+    "ios_sms_gateway_setup_step_1": "Installez SMS Gateway depuis l'App Store sur votre appareil iOS",
+    "ios_sms_gateway_setup_step_2": "Ouvrez l'app et configurez l'URL du serveur dans ses paramètres",
+    "ios_sms_gateway_setup_step_3": "Entrez l'URL du serveur (ex. http://192.168.x.x:8080) dans le formulaire ci-dessous",
+    "ios_app_store": "Ouvrir l'App Store",
     "how_to_install": "Comment installer",
     "select_provider_to_see_instructions": "Sélectionnez un fournisseur pour voir les instructions d'installation",
     "smsgate": "SMSGate",
