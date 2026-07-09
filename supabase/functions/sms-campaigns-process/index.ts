@@ -567,18 +567,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
         { campaignId: resolvedCampaignId },
       );
 
-      let recipients: any[] | null = [];
+      let recipients: any[] = [];
       try {
-        const { data: recipients } = await supabaseAdmin
+        const { data } = await supabaseAdmin
           .schema("private")
           .from("sms_campaign_recipients")
           .select("*")
           .eq("campaign_id", resolvedCampaignId)
           .eq("send_status", "pending");
+        recipients = data || [];
 
         console.log(
           `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipients done`,
-          { campaignId: resolvedCampaignId, count: recipients?.length ?? 0 },
+          { campaignId: resolvedCampaignId, count: recipients.length },
         );
       } catch (err) {
         console.log("error: ", err);
