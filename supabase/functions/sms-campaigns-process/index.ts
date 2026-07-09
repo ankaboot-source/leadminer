@@ -520,11 +520,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
   const campaign = Array.isArray(campaignData) ? campaignData[0] : campaignData;
 
   logger.info("Campaign query result", {
-    campaignId: campaign?.id || campaignId,
-    campaignStatus: campaign?.status,
-    provider: campaign?.provider,
-    fleetMode: campaign?.fleet_mode_enabled,
-    fetchError: fetchError?.message,
+    campaignId: campaign?.id || campaignId || null,
+    campaignStatus: campaign?.status ?? null,
+    provider: campaign?.provider ?? null,
+    fleetMode: campaign?.fleet_mode_enabled ?? null,
+    fetchError: fetchError?.message ?? null,
   });
 
   if (!campaignId && !campaign && !fetchError) {

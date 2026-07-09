@@ -49,7 +49,16 @@ export function createLogger(service: string) {
       ...context,
     };
 
-    const output = JSON.stringify(entry);
+    // JSON.stringify drops keys whose value is `undefined`, which makes
+    // optional fields (e.g. campaignId when the cron fires with no
+    // payload) silently disappear from the structured log output. Replace
+    // `undefined` with `null` so the field is always present in the JSON.
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(entry)) {
+      normalized[key] = value === undefined ? null : value;
+    }
+
+    const output = JSON.stringify(normalized);
 
     switch (level) {
       case "error":
