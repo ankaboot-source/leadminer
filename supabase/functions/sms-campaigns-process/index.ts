@@ -456,6 +456,14 @@ app.post("/process", authMiddleware, async (c: Context) => {
     fetchError: fetchError?.message,
   });
 
+  console.log(`DEBUG-PROCESSOR[${Date.now()}]: Campaign query result (raw)`, {
+    campaignId: campaign?.id || campaignId,
+    campaignStatus: campaign?.status,
+    provider: campaign?.provider,
+    fleetMode: campaign?.fleet_mode_enabled,
+    fetchError: fetchError?.message,
+  });
+
   if (!campaignId && !campaign && !fetchError) {
     return c.json({ success: true, processed: 0 });
   }
@@ -522,11 +530,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
     recipientCount: campaign.recipient_count,
   });
 
+  console.log(
+    `DEBUG-PROCESSOR[${Date.now()}]: about to UPDATE sms_campaigns status=processing`,
+    { campaignId: resolvedCampaignId },
+  );
   await supabaseAdmin
     .schema("private")
     .from("sms_campaigns")
     .update({ status: "processing", started_at: new Date().toISOString() })
     .eq("id", resolvedCampaignId);
+  console.log(
+    `DEBUG-PROCESSOR[${Date.now()}]: UPDATE sms_campaigns status=processing done`,
+    { campaignId: resolvedCampaignId },
+  );
 
   // Set module-level state so beforeunload can save partial progress
   activeCampaignId = resolvedCampaignId;
@@ -534,26 +550,36 @@ app.post("/process", authMiddleware, async (c: Context) => {
   activeFailedCount = 0;
 
   // Process in background — return 202 immediately
+  console.log(`DEBUG-PROCESSOR[${Date.now()}]: kicking off IIFE`, {
+    campaignId: resolvedCampaignId,
+  });
   const processingPromise = (async () => {
+    console.log(`DEBUG-PROCESSOR[${Date.now()}]: IIFE entered`, {
+      campaignId: resolvedCampaignId,
+    });
     let sentCount = 0;
     let failedCount = 0;
     let processingError: string | undefined;
 
     try {
+      console.log(
+        `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_campaign_recipients`,
+        { campaignId: resolvedCampaignId },
+      );
       const { data: recipients } = await supabaseAdmin
         .schema("private")
         .from("sms_campaign_recipients")
         .select("*")
         .eq("campaign_id", resolvedCampaignId)
         .eq("send_status", "pending");
+      console.log(
+        `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipients done`,
+        { campaignId: resolvedCampaignId, count: recipients?.length ?? 0 },
+      );
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
-        | "smsgate"
-        | "simple-sms-gateway"
-        | "sms-gateway"
-        | "twilio"
-        | "fleet";
+        "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
 
       // Load gateway assignments for fleet mode
       let gatewayAssignments: Map<
@@ -569,11 +595,22 @@ app.post("/process", authMiddleware, async (c: Context) => {
       let fleetGateways: SmsFleetGateway[] = [];
 
       if (isFleetMode) {
+        console.log(
+          `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_campaign_recipient_gateways (fleet)`,
+          { campaignId: resolvedCampaignId },
+        );
         const { data: assignments } = await supabaseAdmin
           .schema("private")
           .from("sms_campaign_recipient_gateways")
           .select("recipient_id, gateway_id, gateway_name, gateway_provider")
           .eq("campaign_id", resolvedCampaignId);
+        console.log(
+          `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipient_gateways (fleet) done`,
+          {
+            campaignId: resolvedCampaignId,
+            count: assignments?.length ?? 0,
+          },
+        );
 
         if (assignments) {
           // Fetch gateway configs
@@ -581,28 +618,44 @@ app.post("/process", authMiddleware, async (c: Context) => {
             .map((a) => a.gateway_id)
             .filter((id): id is string => id !== null);
 
-          const { data: gateways } = await supabaseAdmin
-            .schema("private")
-            .from("sms_fleet_gateways")
-            .select(
-              "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
-            )
-            .in("id", gatewayIds);
+          if (gatewayIds.length > 0) {
+            console.log(
+              `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_fleet_gateways`,
+              {
+                campaignId: resolvedCampaignId,
+                gatewayIdCount: gatewayIds.length,
+              },
+            );
+            const { data: gateways } = await supabaseAdmin
+              .schema("private")
+              .from("sms_fleet_gateways")
+              .select(
+                "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
+              )
+              .in("id", gatewayIds);
+            console.log(
+              `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_fleet_gateways done`,
+              {
+                campaignId: resolvedCampaignId,
+                count: gateways?.length ?? 0,
+              },
+            );
 
-          fleetGateways = (gateways || []) as SmsFleetGateway[];
+            fleetGateways = (gateways || []) as SmsFleetGateway[];
 
-          const gatewayConfigs = new Map(
-            (gateways || []).map((g) => [g.id, g.config]),
-          );
+            const gatewayConfigs = new Map(
+              (gateways || []).map((g) => [g.id, g.config]),
+            );
 
-          for (const assignment of assignments) {
-            if (assignment.recipient_id && assignment.gateway_id) {
-              gatewayAssignments.set(assignment.recipient_id, {
-                id: assignment.gateway_id,
-                name: assignment.gateway_name || "Unknown",
-                provider: assignment.gateway_provider || "smsgate",
-                config: gatewayConfigs.get(assignment.gateway_id) || {},
-              });
+            for (const assignment of assignments) {
+              if (assignment.recipient_id && assignment.gateway_id) {
+                gatewayAssignments.set(assignment.recipient_id, {
+                  id: assignment.gateway_id,
+                  name: assignment.gateway_name || "Unknown",
+                  provider: assignment.gateway_provider || "smsgate",
+                  config: gatewayConfigs.get(assignment.gateway_id) || {},
+                });
+              }
             }
           }
         }
@@ -697,8 +750,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           try {
             // For fleet mode, get the assigned gateway and create provider
             let currentProvider:
-              | ReturnType<typeof createSmsProvider>
-              | undefined = smsProvider;
+              ReturnType<typeof createSmsProvider> | undefined = smsProvider;
             let providerUsed = selectedProvider;
 
             // Use Case 5 Fix: Track error types for differentiated handling
@@ -746,9 +798,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
                   // Update current gateway for provider creation
                   providerUsed = alternativeGateway.provider as
-                    | "smsgate"
-                    | "simple-sms-gateway"
-                    | "sms-gateway";
+                    "smsgate" | "simple-sms-gateway" | "sms-gateway";
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
@@ -803,9 +853,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 }
               } else if (gateway) {
                 providerUsed = gateway.provider as
-                  | "smsgate"
-                  | "simple-sms-gateway"
-                  | "sms-gateway";
+                  "smsgate" | "simple-sms-gateway" | "sms-gateway";
 
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
@@ -910,11 +958,14 @@ app.post("/process", authMiddleware, async (c: Context) => {
               messageWithTrackers += `\n\n${renderedFooter}`;
             }
 
+            console.log("sending...................");
             const result: SendSmsResult = await currentProvider.send({
               to: recipient.phone,
               from: "",
               body: messageWithTrackers,
             });
+
+            console.log("seeeeeeeeeeeeeeent");
 
             if (result.success) {
               await supabaseAdmin
