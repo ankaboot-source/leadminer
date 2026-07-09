@@ -566,16 +566,23 @@ app.post("/process", authMiddleware, async (c: Context) => {
         `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_campaign_recipients`,
         { campaignId: resolvedCampaignId },
       );
-      const { data: recipients } = await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_recipients")
-        .select("*")
-        .eq("campaign_id", resolvedCampaignId)
-        .eq("send_status", "pending");
-      console.log(
-        `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipients done`,
-        { campaignId: resolvedCampaignId, count: recipients?.length ?? 0 },
-      );
+
+      let recipients: any[] | null = [];
+      try {
+        const { data: recipients } = await supabaseAdmin
+          .schema("private")
+          .from("sms_campaign_recipients")
+          .select("*")
+          .eq("campaign_id", resolvedCampaignId)
+          .eq("send_status", "pending");
+
+        console.log(
+          `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipients done`,
+          { campaignId: resolvedCampaignId, count: recipients?.length ?? 0 },
+        );
+      } catch (err) {
+        console.log("error: ", err);
+      }
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
@@ -599,18 +606,31 @@ app.post("/process", authMiddleware, async (c: Context) => {
           `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_campaign_recipient_gateways (fleet)`,
           { campaignId: resolvedCampaignId },
         );
-        const { data: assignments } = await supabaseAdmin
-          .schema("private")
-          .from("sms_campaign_recipient_gateways")
-          .select("recipient_id, gateway_id, gateway_name, gateway_provider")
-          .eq("campaign_id", resolvedCampaignId);
-        console.log(
-          `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipient_gateways (fleet) done`,
-          {
-            campaignId: resolvedCampaignId,
-            count: assignments?.length ?? 0,
-          },
-        );
+
+        let assignments:
+          | {
+              recipient_id: any;
+              gateway_id: any;
+              gateway_name: any;
+              gateway_provider: any;
+            }[]
+          | null = [];
+        try {
+          const { data: assignments } = await supabaseAdmin
+            .schema("private")
+            .from("sms_campaign_recipient_gateways")
+            .select("recipient_id, gateway_id, gateway_name, gateway_provider")
+            .eq("campaign_id", resolvedCampaignId);
+          console.log(
+            `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipient_gateways (fleet) done`,
+            {
+              campaignId: resolvedCampaignId,
+              count: assignments?.length ?? 0,
+            },
+          );
+        } catch (err) {
+          console.log("error happened", err);
+        }
 
         if (assignments) {
           // Fetch gateway configs
@@ -742,6 +762,18 @@ app.post("/process", authMiddleware, async (c: Context) => {
       }
 
       for (const recipient of recipients || []) {
+        console.log(
+          `DEBUG-PROCESSOR[${Date.now()}]: recipient loop iteration start`,
+          {
+            campaignId: resolvedCampaignId,
+            recipientId: recipient.id,
+            phone: recipient.phone,
+            isFleetMode,
+            selectedProvider,
+            fleetGatewaysCount: fleetGateways.length,
+            gatewayAssignmentsSize: gatewayAssignments.size,
+          },
+        );
         let currentAttempt = 0;
         let sendSuccess = false;
         let lastError: string | undefined;
@@ -958,6 +990,16 @@ app.post("/process", authMiddleware, async (c: Context) => {
               messageWithTrackers += `\n\n${renderedFooter}`;
             }
 
+            console.log(
+              `DEBUG-PROCESSOR[${Date.now()}]: about to call currentProvider.send`,
+              {
+                campaignId: resolvedCampaignId,
+                recipientId: recipient.id,
+                providerName: currentProvider?.name,
+                providerUsed,
+                messageLength: messageWithTrackers.length,
+              },
+            );
             console.log("sending...................");
             const result: SendSmsResult = await currentProvider.send({
               to: recipient.phone,
@@ -966,6 +1008,16 @@ app.post("/process", authMiddleware, async (c: Context) => {
             });
 
             console.log("seeeeeeeeeeeeeeent");
+            console.log(
+              `DEBUG-PROCESSOR[${Date.now()}]: currentProvider.send result`,
+              {
+                campaignId: resolvedCampaignId,
+                recipientId: recipient.id,
+                success: result.success,
+                error: result.error,
+                messageId: result.messageId,
+              },
+            );
 
             if (result.success) {
               await supabaseAdmin
@@ -1161,6 +1213,15 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
         // If all retries exhausted, mark as failed
         if (!sendSuccess) {
+          console.log(
+            `DEBUG-PROCESSOR[${Date.now()}]: marking recipient as failed (retries exhausted)`,
+            {
+              campaignId: resolvedCampaignId,
+              recipientId: recipient.id,
+              lastError,
+              currentAttempt,
+            },
+          );
           await supabaseAdmin
             .schema("private")
             .from("sms_campaign_recipients")
@@ -1172,8 +1233,24 @@ app.post("/process", authMiddleware, async (c: Context) => {
             .eq("id", recipient.id);
           failedCount++;
           activeFailedCount = failedCount;
+        } else {
+          console.log(
+            `DEBUG-PROCESSOR[${Date.now()}]: recipient loop iteration end (sent)`,
+            {
+              campaignId: resolvedCampaignId,
+              recipientId: recipient.id,
+              sentCount,
+              failedCount,
+            },
+          );
         }
       }
+      console.log(`DEBUG-PROCESSOR[${Date.now()}]: recipient loop done`, {
+        campaignId: resolvedCampaignId,
+        sentCount,
+        failedCount,
+        recipientsProcessed: (recipients || []).length,
+      });
     } catch (err) {
       processingError = extractErrorMessage(err);
       logger.error("SMS campaign processing failed", {
