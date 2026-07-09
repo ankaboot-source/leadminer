@@ -1189,6 +1189,7 @@ export type Database = {
           fleet_mode_enabled: boolean | null;
           footer_text_template: string | null;
           id: string;
+          last_error: string | null;
           message_template: string;
           provider: string;
           recipient_count: number | null;
@@ -1210,6 +1211,7 @@ export type Database = {
           fleet_mode_enabled?: boolean | null;
           footer_text_template?: string | null;
           id?: string;
+          last_error?: string | null;
           message_template: string;
           provider: string;
           recipient_count?: number | null;
@@ -1231,6 +1233,7 @@ export type Database = {
           fleet_mode_enabled?: boolean | null;
           footer_text_template?: string | null;
           id?: string;
+          last_error?: string | null;
           message_template?: string;
           provider?: string;
           recipient_count?: number | null;
@@ -1434,8 +1437,7 @@ export type Database = {
           alternate_name: string[] | null;
           consent_changed_at: string | null;
           consent_status:
-            | Database['private']['Enums']['contact_consent_status']
-            | null;
+            Database['private']['Enums']['contact_consent_status'] | null;
           created_at: string | null;
           email: string | null;
           family_name: string | null;
@@ -1727,34 +1729,18 @@ export type Database = {
       contact_consent_status: 'legitimate_interest' | 'opt_out' | 'opt_in';
       email_campaign_event_type: 'open' | 'click' | 'unsubscribe';
       email_campaign_recipient_status:
-        | 'pending'
-        | 'sent'
-        | 'failed'
-        | 'skipped';
+        'pending' | 'sent' | 'failed' | 'skipped';
       email_campaign_status:
-        | 'queued'
-        | 'processing'
-        | 'completed'
-        | 'failed'
-        | 'cancelled';
+        'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
       engagement_type_enum: 'EXPORT' | 'ENRICH';
       sms_campaign_recipient_status: 'pending' | 'sent' | 'failed' | 'skipped';
       sms_campaign_status:
-        | 'queued'
-        | 'processing'
-        | 'completed'
-        | 'failed'
-        | 'cancelled';
+        'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
       status_enum: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN';
       task_category_enum: 'mining' | 'enriching' | 'cleaning';
       task_status_enum: 'running' | 'canceled' | 'done';
       task_type_enum:
-        | 'fetch'
-        | 'extract'
-        | 'edit'
-        | 'export'
-        | 'enrich'
-        | 'clean';
+        'fetch' | 'extract' | 'edit' | 'export' | 'enrich' | 'clean';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1850,12 +1836,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1876,13 +1862,12 @@ export type Tables<
     : never;
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1900,13 +1885,12 @@ export type TablesInsert<
     : never;
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1924,13 +1908,12 @@ export type TablesUpdate<
     : never;
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -1942,11 +1925,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

@@ -484,12 +484,53 @@ app.post("/process", authMiddleware, async (c: Context) => {
       : null;
     const staleThresholdMs = 10 * 60 * 1000; // 10 minutes
     if (!startedAt || Date.now() - startedAt.getTime() > staleThresholdMs) {
-      logger.info("Recovering stale processing campaign", {
+      // Check if any recipient has been attempted — if not, the worker was
+      // killed before it could make any progress. Mark as failed instead
+      // of recovering into an infinite reprocess loop.
+      const { count: attemptedCount } = await supabaseAdmin
+        .schema("private")
+        .from("sms_campaign_recipients")
+        .select("*", { count: "exact", head: true })
+        .eq("campaign_id", resolvedCampaignId)
+        .gt("attempt_count", 0);
+
+      if ((attemptedCount ?? 0) === 0) {
+        logger.error(
+          "Stuck processing campaign — marking as failed (no progress made)",
+          {
+            campaignId: resolvedCampaignId,
+            startedAt: campaign.started_at,
+            staleMinutes: startedAt
+              ? (Date.now() - startedAt.getTime()) / 60000
+              : null,
+          },
+        );
+        await supabaseAdmin
+          .schema("private")
+          .from("sms_campaigns")
+          .update({
+            status: "failed",
+            completed_at: new Date().toISOString(),
+            last_error: "Worker was killed before any recipient was attempted",
+          })
+          .eq("id", resolvedCampaignId);
+        return c.json(
+          {
+            error:
+              "Campaign failed — worker was killed before making any progress",
+            code: "WORKER_KILLED_NO_PROGRESS",
+          },
+          200,
+        );
+      }
+
+      logger.info("Recovering stale processing campaign (some progress made)", {
         campaignId: resolvedCampaignId,
         startedAt: campaign.started_at,
         staleMinutes: startedAt
           ? (Date.now() - startedAt.getTime()) / 60000
           : null,
+        attemptedRecipients: attemptedCount,
       });
       // Reset any recipients still in "pending" state (never attempted)
       await supabaseAdmin
@@ -549,11 +590,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
-        | "smsgate"
-        | "simple-sms-gateway"
-        | "sms-gateway"
-        | "twilio"
-        | "fleet";
+        "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
 
       // Load gateway assignments for fleet mode
       let gatewayAssignments: Map<
@@ -688,7 +725,28 @@ app.post("/process", authMiddleware, async (c: Context) => {
         }
       }
 
+      // Watchdog: Supabase Deno edge functions have a 150s wall-clock
+      // limit. Bail out at 140s so the `finally` block (and `beforeunload`
+      // handler) can write a clear `failed` status + `last_error` instead
+      // of being killed mid-loop.
+      const processingStartTime = Date.now();
+      const MAX_WALL_CLOCK_MS = 140_000;
+
       for (const recipient of recipients || []) {
+        // Watchdog: if we're running long, bail out and let the cron
+        // recover on the next tick instead of being killed silently.
+        if (Date.now() - processingStartTime > MAX_WALL_CLOCK_MS) {
+          processingError =
+            "Worker hit wall-clock watchdog (140s) — deferring remaining recipients to next cron run";
+          logger.error("Wall-clock watchdog triggered", {
+            campaignId: resolvedCampaignId,
+            elapsedMs: Date.now() - processingStartTime,
+            processed: sentCount + failedCount,
+            totalRecipients: (recipients || []).length,
+          });
+          break; // exits the for loop
+        }
+
         let currentAttempt = 0;
         let sendSuccess = false;
         let lastError: string | undefined;
@@ -697,8 +755,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           try {
             // For fleet mode, get the assigned gateway and create provider
             let currentProvider:
-              | ReturnType<typeof createSmsProvider>
-              | undefined = smsProvider;
+              ReturnType<typeof createSmsProvider> | undefined = smsProvider;
             let providerUsed = selectedProvider;
 
             // Use Case 5 Fix: Track error types for differentiated handling
@@ -746,9 +803,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
                   // Update current gateway for provider creation
                   providerUsed = alternativeGateway.provider as
-                    | "smsgate"
-                    | "simple-sms-gateway"
-                    | "sms-gateway";
+                    "smsgate" | "simple-sms-gateway" | "sms-gateway";
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
@@ -803,9 +858,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 }
               } else if (gateway) {
                 providerUsed = gateway.provider as
-                  | "smsgate"
-                  | "simple-sms-gateway"
-                  | "sms-gateway";
+                  "smsgate" | "simple-sms-gateway" | "sms-gateway";
 
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
@@ -1030,6 +1083,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   ? result.error
                   : JSON.stringify(result.error);
 
+              logger.warn("SMS provider returned failure", {
+                campaignId: resolvedCampaignId,
+                recipientId: recipient.id,
+                recipientPhone: recipient.phone,
+                provider: providerUsed,
+                error: errorMessage,
+                isPermanentError:
+                  errorMessage.includes("401") ||
+                  errorMessage.includes("403") ||
+                  errorMessage.includes("invalid_credentials"),
+                attempt: currentAttempt + 1,
+              });
+
               // Permanent errors - no retry, mark gateway failed immediately
               isPermanentError =
                 errorMessage.includes("401") ||
@@ -1097,6 +1163,16 @@ app.post("/process", authMiddleware, async (c: Context) => {
             }
           } catch (err) {
             lastError = extractErrorMessage(err);
+            const errorStack = err instanceof Error ? err.stack : String(err);
+            logger.error("SMS send threw", {
+              campaignId: resolvedCampaignId,
+              recipientId: recipient.id,
+              recipientPhone: recipient.phone,
+              attempt: currentAttempt + 1,
+              provider: selectedProvider,
+              error: lastError,
+              stack: errorStack,
+            });
             currentAttempt++;
 
             // Exponential backoff before retry
@@ -1131,15 +1207,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
       });
     } finally {
       const finalStatus = processingError ? "failed" : "completed";
+      const finalUpdate: Record<string, unknown> = {
+        status: finalStatus,
+        sent_count: sentCount,
+        failed_count: failedCount,
+        completed_at: new Date().toISOString(),
+      };
+      if (processingError) {
+        finalUpdate.last_error = processingError;
+      }
       await supabaseAdmin
         .schema("private")
         .from("sms_campaigns")
-        .update({
-          status: finalStatus,
-          sent_count: sentCount,
-          failed_count: failedCount,
-          completed_at: new Date().toISOString(),
-        })
+        .update(finalUpdate)
         .eq("id", resolvedCampaignId);
 
       // Clear module-level state
@@ -1168,7 +1248,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
   return c.json({ accepted: true, campaignId: resolvedCampaignId }, 202);
 });
 
-// Save partial progress when the worker is being shut down (wall clock limit)
+// Save partial progress when the worker is being shut down (wall clock limit).
+// Marks the campaign as `failed` with a `last_error` so the frontend no
+// longer shows it as stuck on "processing". The `.eq("status", "processing")`
+// guard makes this idempotent: if the `finally` block already ran and set
+// status to `completed`/`failed`, the `beforeunload` won't overwrite it.
 globalThis.addEventListener("beforeunload", (ev) => {
   if (!activeCampaignId) return;
 
@@ -1178,18 +1262,20 @@ globalThis.addEventListener("beforeunload", (ev) => {
     failedCount: activeFailedCount,
   });
 
-  // Update campaign with partial counts but keep status as "processing"
-  // so the cron job can pick it up and resume with remaining pending recipients
   const supabaseAdmin = createSupabaseAdmin();
   const updatePromise = Promise.resolve(
     supabaseAdmin
       .schema("private")
       .from("sms_campaigns")
       .update({
+        status: "failed",
         sent_count: activeSentCount,
         failed_count: activeFailedCount,
+        completed_at: new Date().toISOString(),
+        last_error: `Worker killed by wall-clock limit (sent=${activeSentCount}, failed=${activeFailedCount})`,
       })
-      .eq("id", activeCampaignId),
+      .eq("id", activeCampaignId)
+      .eq("status", "processing"), // only if not already updated by finally
   ).then(() => {
     logger.info("Partial progress saved before shutdown", {
       campaignId: activeCampaignId,

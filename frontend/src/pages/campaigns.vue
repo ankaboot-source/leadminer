@@ -178,6 +178,17 @@
                       {{ formatDate(campaign.created_at) }}
                     </template>
                   </div>
+
+                  <!-- Last error (e.g. worker killed by wall-clock watchdog) -->
+                  <div
+                    v-if="campaign.status === 'failed' && campaign.last_error"
+                    class="text-xs text-red-600 mt-1 break-words"
+                    data-testid="campaign-last-error"
+                  >
+                    {{
+                      t('campaign_last_error', { error: campaign.last_error })
+                    }}
+                  </div>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <Button

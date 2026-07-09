@@ -64,6 +64,8 @@ export const useCampaignsStore = defineStore('campaigns-store', () => {
             track_open: false,
             track_click: true,
             link_clicks: [],
+            last_error:
+              (campaign as { last_error?: string | null }).last_error ?? null,
           };
         }
 
