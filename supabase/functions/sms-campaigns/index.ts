@@ -16,6 +16,7 @@ import {
   SMS_GATEWAY_PROVIDER_NAME,
   type SmsGateCredentials,
   type SmsGatewayCredentials,
+  type SmsGatewayProvider,
   TwilioProvider,
 } from "./providers/mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
@@ -23,6 +24,10 @@ import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 import { estimateSmsSegments } from "./utils/sms-segments.ts";
 import { shortenUrl } from "./utils/short-link.ts";
 import { getRegionFromTimezone } from "./utils/timezone-region.ts";
+import {
+  extractSimpleSmsGatewayBaseUrl,
+  probeGatewayReachability,
+} from "../_shared/gateway-probe.ts";
 
 const logger = createLogger("sms-campaigns");
 
@@ -305,7 +310,7 @@ function toSimpleSmsGatewayCredentials(
  * back to the Android provider, preserving historical behaviour.
  */
 function createProviderFromGateway(
-  provider: string,
+  provider: SmsGatewayProvider,
   config: { simpleSmsGatewayBaseUrl?: string },
 ): ReturnType<typeof createSmsProvider> | null {
   const baseUrl = config.simpleSmsGatewayBaseUrl;
@@ -1572,19 +1577,13 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
   const payload = parseResult.data;
   const supabaseAdmin = createSupabaseAdmin();
 
-  // For any self-hosted gateway (Android Simple SMS Gateway or iOS SMS
-  // Gateway), do a lightweight reachability probe before persisting. This
-  // catches "phone is offline / wrong URL" before the user wastes a
-  // campaign on it. The test POSTs a single SMS to `/send-sms` with a
-  // throwaway test phone number. The endpoint exists on both apps, and
-  // we treat any 2xx, 3xx, or 4xx as proof the gateway is reachable —
-  // 5xx / network errors / timeouts are real failures.
+  // Reject self-hosted gateways whose URL isn't reachable.
   const baseConfig = (payload.config || {}) as Record<string, unknown>;
   if (
     payload.provider === "simple-sms-gateway" ||
     payload.provider === "sms-gateway"
   ) {
-    const baseUrl = readSimpleSmsGatewayBaseUrl(baseConfig);
+    const baseUrl = extractSimpleSmsGatewayBaseUrl(baseConfig);
     if (!baseUrl) {
       return c.json(
         {
@@ -1595,7 +1594,9 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
       );
     }
 
-    const reachability = await probeGatewayReachability(baseUrl);
+    const reachability = await probeGatewayReachability(baseUrl, {
+      provider: payload.provider,
+    });
     if (!reachability.success) {
       logger.warn("SMS gateway reachability test failed", {
         userId: user.id,
@@ -1643,66 +1644,6 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
 
   return c.json({ gateway: data });
 });
-
-/**
- * Lightweight reachability probe used by the fleet gateway POST route.
- * Sends a single test SMS to `<baseUrl>/send-sms` with a throwaway phone
- * number and treats any 2xx, 3xx, or 4xx response as proof the gateway
- * is reachable. 5xx, network errors, and timeouts are real failures.
- *
- * This works for both the Android "Simple SMS Gateway" and iOS "SMS
- * Gateway" apps — both expose `POST /send-sms`. The test phone number
- * is intentionally a non-routable range so the gateway accepts the call
- * but never actually delivers an SMS to a real subscriber.
- */
-async function probeGatewayReachability(
-  baseUrl: string,
-): Promise<{ success: boolean; message: string }> {
-  const url = `${baseUrl.replace(/\/$/, "")}/send-sms`;
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: "+15555550100",
-        to: "+15555550100",
-        message: "Reachability test",
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (response.status >= 500) {
-      return {
-        success: false,
-        message: `Gateway returned HTTP ${response.status}`,
-      };
-    }
-    return { success: true, message: "Gateway is reachable" };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      message: message || "Network error reaching gateway",
-    };
-  }
-}
-
-/**
- * Read the simple-sms-gateway base URL from a gateway config record.
- * Different code paths use different keys (`simpleSmsGatewayBaseUrl`
- * for the fleet gateway UI, `baseUrl` for the SMSGate path), so we
- * accept either for safety.
- */
-function readSimpleSmsGatewayBaseUrl(
-  config: Record<string, unknown>,
-): string | null {
-  for (const key of ["simpleSmsGatewayBaseUrl", "baseUrl"]) {
-    const value = config[key];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-  return null;
-}
 
 app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
   const user = c.get("user");

@@ -1,7 +1,7 @@
--- Add "sms-gateway" (iOS SMS Gateway app) to the sms_fleet_gateways
--- provider enum. The previous "sms-gateway-ios" provider id was renamed
--- to "sms-gateway" and the `appId` discriminator was removed in favour
--- of dispatching directly on `gateway.provider`.
+-- Widen the sms_fleet_gateways.provider CHECK constraint to allow
+-- 'sms-gateway' (iOS SMS Gateway app). The previous "sms-gateway-ios"
+-- provider id was renamed to "sms-gateway" and the `appId` discriminator
+-- was removed in favour of dispatching directly on `gateway.provider`.
 --
 -- This migration only widens the allowed values; existing rows are not
 -- touched. After this migration, gateways can be created with provider =

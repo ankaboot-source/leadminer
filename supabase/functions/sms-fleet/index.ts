@@ -6,6 +6,10 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
+import {
+  extractSimpleSmsGatewayBaseUrl,
+  probeGatewayReachability,
+} from "../_shared/gateway-probe.ts";
 
 const logger = createLogger("sms-fleet");
 
@@ -110,69 +114,8 @@ app.get("/gateways", authMiddleware, async (c) => {
 });
 
 /**
- * Extract the base URL the simple-sms-gateway provider needs from the
- * caller-supplied config. The frontend currently uses the
- * `simpleSmsGatewayBaseUrl` key, but the gateway row may also use
- * `baseUrl` for SMSGate and other providers.
+ * Reject self-hosted gateways whose URL isn't reachable.
  */
-function extractSimpleSmsGatewayBaseUrl(
-  config: Record<string, unknown>,
-): string | null {
-  const candidates: unknown[] = [
-    config.simpleSmsGatewayBaseUrl,
-    config.baseUrl,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim();
-    }
-  }
-  return null;
-}
-
-/**
- * Lightweight reachability probe shared by POST /gateways (and the
- * mirrored route in `sms-campaigns/index.ts`). POSTs a single test SMS
- * to `<baseUrl>/send-sms` with a throwaway phone number and treats any
- * 2xx, 3xx, or 4xx response as proof the gateway is reachable. 5xx,
- * network errors, and timeouts are real failures.
- *
- * This works for both the Android "Simple SMS Gateway" and iOS "SMS
- * Gateway" apps — both expose `POST /send-sms`. The test phone number
- * is intentionally from a non-routable range so the gateway accepts the
- * call but never actually delivers an SMS to a real subscriber.
- */
-async function probeGatewayReachability(
-  baseUrl: string,
-): Promise<{ success: boolean; message: string }> {
-  const url = `${baseUrl.replace(/\/$/, "")}/send-sms`;
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: "+15555550100",
-        to: "+15555550100",
-        message: "Reachability test",
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (response.status >= 500) {
-      return {
-        success: false,
-        message: `Gateway returned HTTP ${response.status}`,
-      };
-    }
-    return { success: true, message: "Gateway is reachable" };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      message: message || "Network error reaching gateway",
-    };
-  }
-}
-
 app.post("/gateways", authMiddleware, async (c) => {
   try {
     const user = c.get("user");
@@ -192,12 +135,7 @@ app.post("/gateways", authMiddleware, async (c) => {
     const validated = validation.data;
     const supabaseAdmin = createSupabaseAdmin();
 
-    // For any self-hosted gateway (Android Simple SMS Gateway or iOS SMS
-    // Gateway), do a lightweight reachability probe before persisting.
-    // This catches "phone is offline / wrong URL" before the user wastes
-    // a campaign on it. The test POSTs a single SMS to `/send-sms` and
-    // treats any 2xx, 3xx, or 4xx as proof the gateway is reachable —
-    // 5xx / network errors / timeouts are real failures.
+    // Reject self-hosted gateways whose URL isn't reachable.
     if (
       validated.provider === "simple-sms-gateway" ||
       validated.provider === "sms-gateway"
@@ -217,7 +155,9 @@ app.post("/gateways", authMiddleware, async (c) => {
         );
       }
 
-      const reachabilityTest = await probeGatewayReachability(baseUrl);
+      const reachabilityTest = await probeGatewayReachability(baseUrl, {
+        provider: validated.provider,
+      });
       if (!reachabilityTest.success) {
         logger.warn("SMS gateway reachability test failed", {
           userId: user.id,

@@ -1,22 +1,25 @@
 import type { SendSmsParams, SendSmsResult, SmsProvider } from "./types.ts";
 
-// Provider for the "SMS Gateway" app
-// (https://apps.apple.com/us/app/sms-gateway/id6767250233).
-//
-// Distinct from the Android "Simple SMS Gateway" app: the body field
-// names differ ({ to, message, id } vs { phone, message }).
-// Response shape: { id, status: "sent" | "failed", error } on 2xx,
-// { error } on 4xx/5xx.
-
 export const SMS_GATEWAY_PROVIDER_NAME = "sms-gateway";
-export const SMS_GATEWAY_DOWNLOAD_URL =
-  "https://apps.apple.com/us/app/sms-gateway/id6767250233";
 
 export interface SmsGatewayCredentials {
   baseUrl: string;
 }
 
-export class SmsGatewayProvider implements SmsProvider {
+/**
+ * SmsGatewayProvider implements the "SMS Gateway" iOS app protocol
+ * (https://apps.apple.com/us/app/sms-gateway/id6767250233).
+ *
+ * Wire contract:
+ *   POST <baseUrl>/send-sms
+ *   Request:  { to: string, message: string, id: string }
+ *   Response: { id: string, status: "sent" | "failed", error: string | null }
+ *             on 2xx, or { error: string } on 4xx/5xx.
+ *
+ * Distinct from the Android SimpleSmsGatewayProvider: the body uses
+ * `to` and includes an opaque `id` (we generate a UUID per send).
+ */
+export class SmsGatewayProviderImpl implements SmsProvider {
   name = SMS_GATEWAY_PROVIDER_NAME;
   private baseUrl: string;
 

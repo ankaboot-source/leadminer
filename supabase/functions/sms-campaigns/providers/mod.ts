@@ -9,7 +9,7 @@ import {
   type SimpleSmsGatewayCredentials,
 } from "./simple-sms-gateway-provider.ts";
 import {
-  SmsGatewayProvider,
+  SmsGatewayProviderImpl,
   SMS_GATEWAY_PROVIDER_NAME,
   type SmsGatewayCredentials,
 } from "./sms-gateway-provider.ts";
@@ -20,12 +20,24 @@ export type { SimpleSmsGatewayCredentials } from "./simple-sms-gateway-provider.
 export type { SmsGatewayCredentials } from "./sms-gateway-provider.ts";
 export { TwilioProvider, SMS_GATEWAY_PROVIDER_NAME };
 
+/**
+ * String discriminator for the kind of SMS provider a fleet gateway
+ * uses. Mirrors the frontend `SmsGatewayProvider` union in
+ * `frontend/src/types/sms-fleet.ts` so the same identifiers flow from
+ * the UI down to the Edge Function dispatch logic.
+ */
+export type SmsGatewayProvider =
+  | "smsgate"
+  | "simple-sms-gateway"
+  | "sms-gateway"
+  | "twilio";
+
 export function isTwilioFallbackAvailable(): boolean {
   return TwilioProvider.isConfigured();
 }
 
 export function createSmsProvider(
-  type: "twilio" | "smsgate" | "simple-sms-gateway" | "sms-gateway",
+  type: SmsGatewayProvider,
   options?: {
     smsgate?: SmsGateCredentials;
     simpleSmsGateway?: SimpleSmsGatewayCredentials;
@@ -49,7 +61,7 @@ export function createSmsProvider(
       if (!options?.smsGateway) {
         throw new Error("sms-gateway credentials required");
       }
-      return new SmsGatewayProvider(options.smsGateway);
+      return new SmsGatewayProviderImpl(options.smsGateway);
     default:
       throw new Error(`Unknown SMS provider: ${type}`);
   }
