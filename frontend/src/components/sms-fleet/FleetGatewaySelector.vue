@@ -91,7 +91,7 @@
             <Button
               :label="t('ios_sms_gateway')"
               outlined
-              @click="setupSelectedProvider = 'sms-gateway-ios'"
+              @click="setupSelectedProvider = 'sms-gateway'"
             />
           </div>
         </div>
@@ -164,7 +164,7 @@
               {{ t('open_playstore') }}
             </a>
           </template>
-          <template v-else-if="setupSelectedProvider === 'sms-gateway-ios'">
+          <template v-else-if="setupSelectedProvider === 'sms-gateway'">
             <p class="m-0">{{ t('ios_sms_gateway_setup_intro') }}</p>
             <ol class="pl-4 m-0 list-decimal">
               <li class="mb-2">{{ t('ios_sms_gateway_setup_step_1') }}</li>
@@ -309,13 +309,13 @@ const $smsFleetStore = useSmsFleetStore();
 const showAddDialog = ref(false);
 const showSetupDialog = ref(false);
 const setupSelectedProvider = ref<
-  'smsgate' | 'simple-sms-gateway' | 'sms-gateway-ios' | null
+  'smsgate' | 'simple-sms-gateway' | 'sms-gateway' | null
 >(null);
 const isSubmitting = ref(false);
 
 const gatewayName = ref('');
 const selectedProvider = ref<
-  'smsgate' | 'simple-sms-gateway' | 'sms-gateway-ios' | null
+  'smsgate' | 'simple-sms-gateway' | 'sms-gateway' | null
 >('simple-sms-gateway');
 const dailyLimit = ref(200);
 const monthlyLimit = ref(200);
@@ -363,7 +363,7 @@ const toggleGateway = (gatewayId: string) => {
 const providerOptions = [
   { label: 'SMSGate', value: 'smsgate' },
   { label: 'Simple SMS Gateway', value: 'simple-sms-gateway' },
-  { label: 'SMS Gateway (iOS)', value: 'sms-gateway-ios' },
+  { label: 'SMS Gateway (iOS)', value: 'sms-gateway' },
 ];
 
 function handleFormSubmit(config: {
@@ -432,7 +432,7 @@ const getProviderIcon = (provider: SmsGatewayProvider) => {
   const icons: Record<SmsGatewayProvider, string> = {
     smsgate: 'pi pi-android',
     'simple-sms-gateway': 'pi pi-mobile',
-    'sms-gateway-ios': 'pi pi-mobile',
+    'sms-gateway': 'pi pi-mobile',
     twilio: 'pi pi-phone',
   };
   return icons[provider] || 'pi pi-mobile';
@@ -442,7 +442,7 @@ const formatProvider = (provider: SmsGatewayProvider) => {
   const names: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
-    'sms-gateway-ios': 'SMS Gateway (iOS)',
+    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return names[provider] || provider;

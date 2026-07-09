@@ -1,7 +1,7 @@
 export type SmsGatewayProvider =
   | 'smsgate'
   | 'simple-sms-gateway'
-  | 'sms-gateway-ios'
+  | 'sms-gateway'
   | 'twilio';
 
 export interface SmsFleetGateway {
@@ -25,16 +25,11 @@ export interface SmsGatewayConfig {
   baseUrl?: string;
   username?: string;
   password?: string;
-  // Simple SMS Gateway + iOS SMS Gateway share this storage key so the
-  // existing fleet column doesn't need a migration. The `appId` field
-  // tells the backend which provider to dispatch to.
+  // Simple SMS Gateway (Android) and SMS Gateway (iOS) both expose the
+  // same `POST /send-sms` URL contract. The provider is dispatched via
+  // `gateway.provider` ("simple-sms-gateway" vs "sms-gateway") rather
+  // than an `appId` discriminator.
   simpleSmsGatewayBaseUrl?: string;
-  /**
-   * Stable id of the gateway app the user is running. Maps to a
-   * `SmsProvider` in `supabase/functions/sms-campaigns/providers/mod.ts`
-   * (e.g. `ios-sms-gateway` → `SmsGatewayIosProvider`).
-   */
-  appId?: string;
   // Twilio specific
   accountSid?: string;
   authToken?: string;

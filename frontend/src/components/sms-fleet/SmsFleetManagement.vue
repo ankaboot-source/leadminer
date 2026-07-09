@@ -17,7 +17,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway-ios';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
@@ -64,7 +64,7 @@ const providerOptions = computed(() => [
     label: t('simple_sms_gateway_option'),
     value: 'simple-sms-gateway' as const,
   },
-  { label: t('ios_sms_gateway_option'), value: 'sms-gateway-ios' as const },
+  { label: t('ios_sms_gateway_option'), value: 'sms-gateway' as const },
 ]);
 
 function handleFormValid(valid: boolean) {
@@ -133,7 +133,7 @@ function getDefaultName(provider: SupportedProvider): string {
   const names: Record<SupportedProvider, string> = {
     smsgate: 'SMSGate Gateway',
     'simple-sms-gateway': 'SMS Gateway',
-    'sms-gateway-ios': 'SMS Gateway (iOS)',
+    'sms-gateway': 'SMS Gateway (iOS)',
   };
   return names[provider];
 }
@@ -212,7 +212,7 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   const labels: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
-    'sms-gateway-ios': 'SMS Gateway (iOS)',
+    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return labels[provider] || provider;
@@ -337,9 +337,6 @@ onMounted(() => {
                 $smsFleetStore.gateways.find((g) => g.id === editingGatewayId)
                   ?.config?.username || '',
               password: '',
-              appId: $smsFleetStore.gateways.find(
-                (g) => g.id === editingGatewayId,
-              )?.config?.appId,
             }"
             @valid="handleFormValid"
             @submit="handleGatewaySubmit"

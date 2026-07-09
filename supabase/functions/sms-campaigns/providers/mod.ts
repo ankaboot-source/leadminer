@@ -9,62 +9,27 @@ import {
   type SimpleSmsGatewayCredentials,
 } from "./simple-sms-gateway-provider.ts";
 import {
-  SmsGatewayIosProvider,
-  SMS_GATEWAY_IOS_PROVIDER_NAME,
-  SMS_GATEWAY_IOS_APP_ID,
-  type SmsGatewayIosCredentials,
-} from "./sms-gateway-ios-provider.ts";
+  SmsGatewayProvider,
+  SMS_GATEWAY_PROVIDER_NAME,
+  type SmsGatewayCredentials,
+} from "./sms-gateway-provider.ts";
 
 export type { SmsProvider, SendSmsParams, SendSmsResult } from "./types.ts";
 export type { SmsGateCredentials } from "./smsgate-provider.ts";
 export type { SimpleSmsGatewayCredentials } from "./simple-sms-gateway-provider.ts";
-export type { SmsGatewayIosCredentials } from "./sms-gateway-ios-provider.ts";
-export {
-  TwilioProvider,
-  SMS_GATEWAY_IOS_PROVIDER_NAME,
-  SMS_GATEWAY_IOS_APP_ID,
-};
-
-/**
- * Curated registry of known SMS gateway apps the user can add. Each
- * entry pairs a `provider` (the `SmsProvider` implementation) with a
- * stable `appId` (stored in the gateway's `config.appId`) and a
- * human-readable `displayName` shown in the setup dialog.
- *
- * To add a new app:
- *   1. Implement an `SmsProvider` (see `sms-gateway-ios-provider.ts`).
- *   2. Add it to `case` branches in `createSmsProvider` below.
- *   3. Add an entry here.
- */
-export interface KnownSmsApp {
-  appId: string;
-  displayName: string;
-  provider: "simple-sms-gateway" | "sms-gateway-ios";
-}
-
-export const KNOWN_SMS_APPS: readonly KnownSmsApp[] = [
-  {
-    appId: "android-simple-sms-gateway",
-    displayName: "Simple SMS Gateway (Android)",
-    provider: "simple-sms-gateway",
-  },
-  {
-    appId: SMS_GATEWAY_IOS_APP_ID,
-    displayName: "SMS Gateway (iOS)",
-    provider: SMS_GATEWAY_IOS_PROVIDER_NAME,
-  },
-] as const;
+export type { SmsGatewayCredentials } from "./sms-gateway-provider.ts";
+export { TwilioProvider, SMS_GATEWAY_PROVIDER_NAME };
 
 export function isTwilioFallbackAvailable(): boolean {
   return TwilioProvider.isConfigured();
 }
 
 export function createSmsProvider(
-  type: "twilio" | "smsgate" | "simple-sms-gateway" | "sms-gateway-ios",
+  type: "twilio" | "smsgate" | "simple-sms-gateway" | "sms-gateway",
   options?: {
     smsgate?: SmsGateCredentials;
     simpleSmsGateway?: SimpleSmsGatewayCredentials;
-    smsGatewayIos?: SmsGatewayIosCredentials;
+    smsGateway?: SmsGatewayCredentials;
   },
 ): SmsProvider {
   switch (type) {
@@ -72,7 +37,7 @@ export function createSmsProvider(
       return new TwilioProvider();
     case "smsgate":
       if (!options?.smsgate) {
-        throw new Error("SMSGate credentials required");
+        throw new Error("smsgate credentials required");
       }
       return new SmsGateProvider(options.smsgate);
     case "simple-sms-gateway":
@@ -80,11 +45,11 @@ export function createSmsProvider(
         throw new Error("simple-sms-gateway credentials required");
       }
       return new SimpleSmsGatewayProvider(options.simpleSmsGateway);
-    case "sms-gateway-ios":
-      if (!options?.smsGatewayIos) {
-        throw new Error("SMS Gateway (iOS) credentials required");
+    case "sms-gateway":
+      if (!options?.smsGateway) {
+        throw new Error("sms-gateway credentials required");
       }
-      return new SmsGatewayIosProvider(options.smsGatewayIos);
+      return new SmsGatewayProvider(options.smsGateway);
     default:
       throw new Error(`Unknown SMS provider: ${type}`);
   }

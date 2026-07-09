@@ -13,9 +13,9 @@ import {
   createSmsProvider,
   isTwilioFallbackAvailable,
   type SimpleSmsGatewayCredentials,
-  SMS_GATEWAY_IOS_APP_ID,
+  SMS_GATEWAY_PROVIDER_NAME,
   type SmsGateCredentials,
-  type SmsGatewayIosCredentials,
+  type SmsGatewayCredentials,
   TwilioProvider,
 } from "./providers/mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
@@ -102,12 +102,7 @@ const smsCampaignPreviewSchema = smsCampaignCreateSchema.extend({
 
 const fleetGatewayCreateSchema = z.object({
   name: z.string().min(1),
-  provider: z.enum([
-    "smsgate",
-    "simple-sms-gateway",
-    "sms-gateway-ios",
-    "twilio",
-  ]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
   config: z.record(z.string()).optional(),
   daily_limit: z.number().optional(),
   monthly_limit: z.number().optional(),
@@ -125,18 +120,12 @@ type SmsFleetGateway = {
   id: string;
   user_id: string;
   name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway-ios" | "twilio";
+  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
   config: {
     baseUrl?: string;
     username?: string;
     password?: string;
     simpleSmsGatewayBaseUrl?: string;
-    /**
-     * Stable id of the gateway app the user is running. Maps to a
-     * `SmsProvider` in `providers/mod.ts` so the right request body
-     * shape is used at send time.
-     */
-    appId?: string;
   };
   is_active: boolean;
   daily_limit: number;
@@ -310,25 +299,22 @@ function toSimpleSmsGatewayCredentials(
 }
 
 /**
- * Pick the right `SmsProvider` for a configured gateway. The fleet
- * gateway row stores an optional `config.appId` so we can dispatch to
- * either the Android `SimpleSmsGatewayProvider` or the iOS
- * `SmsGatewayIosProvider`. When `appId` is missing we default to the
- * Android provider — the historical behaviour before iOS support was
- * added.
+ * Pick the right `SmsProvider` for a configured gateway. Dispatches on
+ * `gateway.provider`: "sms-gateway" for the iOS app, "simple-sms-gateway"
+ * for the Android app. Anything else (including unknown providers) falls
+ * back to the Android provider, preserving historical behaviour.
  */
-function createProviderFromGatewayConfig(config: {
-  simpleSmsGatewayBaseUrl?: string;
-  appId?: string;
-}): ReturnType<typeof createSmsProvider> | null {
+function createProviderFromGateway(
+  provider: string,
+  config: { simpleSmsGatewayBaseUrl?: string },
+): ReturnType<typeof createSmsProvider> | null {
   const baseUrl = config.simpleSmsGatewayBaseUrl;
   if (!baseUrl) {
     return null;
   }
-  if (config.appId === SMS_GATEWAY_IOS_APP_ID) {
-    const iosCredentials: SmsGatewayIosCredentials = { baseUrl };
-    return createSmsProvider("sms-gateway-ios", {
-      smsGatewayIos: iosCredentials,
+  if (provider === SMS_GATEWAY_PROVIDER_NAME) {
+    return createSmsProvider("sms-gateway", {
+      smsGateway: { baseUrl },
     });
   }
   return createSmsProvider("simple-sms-gateway", {
@@ -1282,11 +1268,15 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
             });
           }
         } else if (gateway.provider === "simple-sms-gateway") {
-          // Same dispatch as the non-fleet path: pick the Android or iOS
-          // provider based on `config.appId`.
-          smsProvider = createProviderFromGatewayConfig(gateway.config);
-        } else if (gateway.provider === "sms-gateway-ios") {
-          smsProvider = createProviderFromGatewayConfig(gateway.config);
+          smsProvider = createProviderFromGateway(
+            gateway.provider,
+            gateway.config,
+          );
+        } else if (gateway.provider === "sms-gateway") {
+          smsProvider = createProviderFromGateway(
+            gateway.provider,
+            gateway.config,
+          );
         } else if (gateway.provider === "twilio") {
           smsProvider = createSmsProvider("twilio");
         }
@@ -1592,7 +1582,7 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
   const baseConfig = (payload.config || {}) as Record<string, unknown>;
   if (
     payload.provider === "simple-sms-gateway" ||
-    payload.provider === "sms-gateway-ios"
+    payload.provider === "sms-gateway"
   ) {
     const baseUrl = readSimpleSmsGatewayBaseUrl(baseConfig);
     if (!baseUrl) {
@@ -1829,7 +1819,7 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
       }
     } else if (
       gateway.provider === "simple-sms-gateway" ||
-      gateway.provider === "sms-gateway-ios"
+      gateway.provider === "sms-gateway"
     ) {
       const config = gateway.config as { simpleSmsGatewayBaseUrl?: string };
       if (!config.simpleSmsGatewayBaseUrl) {

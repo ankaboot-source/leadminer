@@ -59,7 +59,7 @@ type SmsFleetGateway = {
   id: string;
   user_id: string;
   name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "twilio";
+  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
   config: {
     baseUrl?: string;
     username?: string;
@@ -409,7 +409,10 @@ app.post("/process", authMiddleware, async (c: Context) => {
   if (!user && !isServiceRole) return c.json({ error: "Unauthorized" }, 401);
 
   const body = await c.req.json().catch(() => ({}));
-  const parsed = z.object({ campaignId: z.string().uuid("Invalid campaignId").optional() }).strict().safeParse(body);
+  const parsed = z
+    .object({ campaignId: z.string().uuid("Invalid campaignId").optional() })
+    .strict()
+    .safeParse(body);
   if (!parsed.success) {
     return c.json(validationErrorBody(parsed.error), 400);
   }
@@ -548,6 +551,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
       const selectedProvider = campaign.provider as
         | "smsgate"
         | "simple-sms-gateway"
+        | "sms-gateway"
         | "twilio"
         | "fleet";
 
@@ -625,6 +629,19 @@ app.post("/process", authMiddleware, async (c: Context) => {
         }
         smsProvider = createSmsProvider("simple-sms-gateway", {
           simpleSmsGateway: simpleSmsGatewayCredentials,
+        });
+      } else if (selectedProvider === "sms-gateway") {
+        const profileConfig = await getUserSmsProviderConfig(
+          supabaseAdmin,
+          campaign.user_id,
+        );
+        const smsGatewayBaseUrl =
+          profileConfig.simple_sms_gateway_base_url?.trim() || "";
+        if (!smsGatewayBaseUrl) {
+          throw new Error("sms-gateway credentials missing for campaign owner");
+        }
+        smsProvider = createSmsProvider("sms-gateway", {
+          smsGateway: { baseUrl: smsGatewayBaseUrl },
         });
       } else {
         const profileConfig = await getUserSmsProviderConfig(
@@ -730,7 +747,8 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   // Update current gateway for provider creation
                   providerUsed = alternativeGateway.provider as
                     | "smsgate"
-                    | "simple-sms-gateway";
+                    | "simple-sms-gateway"
+                    | "sms-gateway";
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
@@ -766,6 +784,18 @@ app.post("/process", authMiddleware, async (c: Context) => {
                           }),
                         );
                       }
+                    } else if (alternativeGateway.provider === "sms-gateway") {
+                      const config = alternativeGateway.config;
+                      if (config.simpleSmsGatewayBaseUrl) {
+                        providerCache.set(
+                          cacheKey,
+                          createSmsProvider("sms-gateway", {
+                            smsGateway: {
+                              baseUrl: config.simpleSmsGatewayBaseUrl,
+                            },
+                          }),
+                        );
+                      }
                     }
                   }
 
@@ -774,7 +804,8 @@ app.post("/process", authMiddleware, async (c: Context) => {
               } else if (gateway) {
                 providerUsed = gateway.provider as
                   | "smsgate"
-                  | "simple-sms-gateway";
+                  | "simple-sms-gateway"
+                  | "sms-gateway";
 
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
@@ -800,6 +831,18 @@ app.post("/process", authMiddleware, async (c: Context) => {
                         cacheKey,
                         createSmsProvider("simple-sms-gateway", {
                           simpleSmsGateway: {
+                            baseUrl: config.simpleSmsGatewayBaseUrl,
+                          },
+                        }),
+                      );
+                    }
+                  } else if (gateway.provider === "sms-gateway") {
+                    const config = gateway.config;
+                    if (config.simpleSmsGatewayBaseUrl) {
+                      providerCache.set(
+                        cacheKey,
+                        createSmsProvider("sms-gateway", {
+                          smsGateway: {
                             baseUrl: config.simpleSmsGatewayBaseUrl,
                           },
                         }),

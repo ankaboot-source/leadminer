@@ -13,12 +13,7 @@ const functionName = "sms-fleet";
 
 const gatewaySchema = z.object({
   name: z.string().min(1),
-  provider: z.enum([
-    "smsgate",
-    "simple-sms-gateway",
-    "sms-gateway-ios",
-    "twilio",
-  ]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
   config: z.record(z.unknown()),
   daily_limit: z.number().int().min(0).optional(),
   monthly_limit: z.number().int().min(0).optional(),
@@ -205,7 +200,7 @@ app.post("/gateways", authMiddleware, async (c) => {
     // 5xx / network errors / timeouts are real failures.
     if (
       validated.provider === "simple-sms-gateway" ||
-      validated.provider === "sms-gateway-ios"
+      validated.provider === "sms-gateway"
     ) {
       const baseUrl = extractSimpleSmsGatewayBaseUrl(
         validated.config as Record<string, unknown>,
