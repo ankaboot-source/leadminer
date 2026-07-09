@@ -639,6 +639,16 @@ app.post("/process", authMiddleware, async (c: Context) => {
             .map((a) => a.gateway_id)
             .filter((id): id is string => id !== null);
 
+          console.log(
+            `DEBUG-PROCESSOR[${Date.now()}]: about to filter fleet gateways`,
+            {
+              campaignId: resolvedCampaignId,
+              assignmentsCount: assignments.length,
+              firstAssignment: assignments[0] ?? null,
+              gatewayIds,
+            },
+          );
+
           if (gatewayIds.length > 0) {
             console.log(
               `DEBUG-PROCESSOR[${Date.now()}]: about to SELECT sms_fleet_gateways`,
