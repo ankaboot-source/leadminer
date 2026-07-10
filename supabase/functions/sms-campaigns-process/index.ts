@@ -540,7 +540,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
         "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
 
       // Load gateway assignments for fleet mode
-      let gatewayAssignments: Map<string, SmsFleetGateway> = new Map();
+      const gatewayAssignments: Map<string, SmsFleetGateway> = new Map();
 
       let fleetGateways: SmsFleetGateway[] = [];
 

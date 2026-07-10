@@ -54,5 +54,7 @@ export function createProviderForGateway(
       return null;
     case "twilio":
       return createSmsProvider("twilio");
+    default:
+      return null;
   }
 }
