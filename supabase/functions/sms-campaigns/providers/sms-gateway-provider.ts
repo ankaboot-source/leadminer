@@ -1,12 +1,5 @@
 import type { SendSmsParams, SendSmsResult, SmsProvider } from "./types.ts";
 
-// Provider for the "SMS Gateway" app
-// (https://apps.apple.com/us/app/sms-gateway/id6767250233).
-//
-// Distinct from the Android "Simple SMS Gateway" app: the body field
-// names differ ({ to, message, id } vs { phone, message }).
-// Response shape: { id, status: "sent" | "failed", error } on 2xx,
-// { error } on 4xx/5xx.
 
 export const SMS_GATEWAY_PROVIDER_NAME = "sms-gateway";
 export const SMS_GATEWAY_DOWNLOAD_URL =
@@ -65,16 +58,15 @@ export class SmsGatewayProvider implements SmsProvider {
         messageId: typeof data.id === "string" ? data.id : undefined,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("timeout") || message.includes("abort")) {
         return {
           success: false,
           error:
             "Gateway timeout - the sms-gateway app is not responding. Keep the app active on your phone during the sending process.",
         };
       }
-      return { success: false, error: errorMessage };
+      return { success: false, error: message };
     }
   }
 }

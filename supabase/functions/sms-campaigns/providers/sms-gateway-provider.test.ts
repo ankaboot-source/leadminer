@@ -120,3 +120,25 @@ Deno.test("sms-gateway provider extracts error from 4xx response", async () => {
 Deno.test("SMS_GATEWAY_PROVIDER_NAME is the stable id", () => {
   assertEquals(SMS_GATEWAY_PROVIDER_NAME, "sms-gateway");
 });
+
+Deno.test("sms-gateway provider returns timeout error when fetch aborts", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (() =>
+    Promise.reject(new DOMException("aborted", "AbortError"))) as typeof fetch;
+
+  try {
+    const provider = new SmsGatewayProvider({
+      baseUrl: "https://gateway.example.com",
+    });
+    const result = await provider.send({
+      to: "+21697522154",
+      from: "Leadminer",
+      body: "Hello",
+    });
+    assertEquals(result.success, false);
+    assertEquals(typeof result.error, "string");
+    assertEquals(result.error?.includes("timeout"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
