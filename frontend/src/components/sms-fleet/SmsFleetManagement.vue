@@ -13,7 +13,6 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
-import ConfirmDialog from 'primevue/confirmdialog';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
@@ -399,8 +398,6 @@ onMounted(() => {
         />
       </template>
     </Dialog>
-
-    <ConfirmDialog />
   </div>
 </template>
 
