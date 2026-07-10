@@ -18,7 +18,8 @@ Deno.test("createSmsProvider creates sms-gateway provider", () => {
 
 Deno.test("sms-gateway provider requires baseUrl", () => {
   assertThrows(() => {
-    new SmsGatewayProvider({ baseUrl: "" } as SmsGatewayCredentials);
+    const provider = new SmsGatewayProvider({ baseUrl: "" } as SmsGatewayCredentials);
+    void provider;
   });
 });
 
@@ -29,16 +30,16 @@ Deno.test(
     let capturedUrl = "";
     let capturedBody: unknown = null;
 
-    globalThis.fetch = (async (
+    globalThis.fetch = ((
       input: RequestInfo | URL,
       init?: RequestInit,
     ) => {
       capturedUrl = String(input);
       capturedBody = init?.body;
-      return new Response(
+      return Promise.resolve(new Response(
         JSON.stringify({ id: "msg_1", status: "sent", error: null }),
         { status: 200, headers: { "Content-Type": "application/json" } },
-      );
+      ));
     }) as typeof fetch;
 
     try {
@@ -58,7 +59,7 @@ Deno.test(
       assertEquals(body.to, "+21697522154");
       assertEquals(body.message, "Hello");
       assertEquals(typeof body.id, "string");
-      assertEquals(body.phone, undefined);
+      assertEquals("phone" in body, false);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -69,11 +70,11 @@ Deno.test(
   "sms-gateway provider maps status:failed to a failure result",
   async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () =>
-      new Response(
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response(
         JSON.stringify({ id: "msg_x", status: "failed", error: "no sim" }),
         { status: 200, headers: { "Content-Type": "application/json" } },
-      )) as typeof fetch;
+      ))) as typeof fetch;
 
     try {
       const provider = new SmsGatewayProvider({
@@ -94,11 +95,11 @@ Deno.test(
 
 Deno.test("sms-gateway provider extracts error from 4xx response", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async () =>
-    new Response(JSON.stringify({ error: "bad payload" }), {
+  globalThis.fetch = (() =>
+    Promise.resolve(new Response(JSON.stringify({ error: "bad payload" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
-    })) as typeof fetch;
+    }))) as typeof fetch;
 
   try {
     const provider = new SmsGatewayProvider({

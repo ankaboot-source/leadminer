@@ -73,6 +73,16 @@ type SmsFleetGateway = {
   sent_this_month: number;
 };
 
+interface SmsCampaignRecipient {
+  id: string;
+  phone: string;
+  contact_id: string | null;
+  personalization_data: Record<string, unknown> | null;
+  unsubscribe_short_token: string | null;
+  attempt_count: number;
+  [key: string]: unknown;
+}
+
 type SmsTemplateContext = Record<string, unknown>;
 
 function buildSmsUnsubscribeUrl(token: string): string {
@@ -540,7 +550,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
     let processingError: string | undefined;
 
     try {
-      let recipients: any[] = [];
+      let recipients: SmsCampaignRecipient[] = [];
       try {
         const { data } = await supabaseAdmin
           .schema("private")
@@ -575,10 +585,10 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
       if (isFleetMode) {
         let assignments: {
-          recipient_id: any;
-          gateway_id: any;
-          gateway_name: any;
-          gateway_provider: any;
+          recipient_id: string | null;
+          gateway_id: string | null;
+          gateway_name: string | null;
+          gateway_provider: string | null;
         }[] = [];
         try {
           const { data } = await supabaseAdmin

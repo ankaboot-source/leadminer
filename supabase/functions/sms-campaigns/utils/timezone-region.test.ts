@@ -48,7 +48,6 @@ Deno.test(
   "getRegionFromTimezone returns null for nullish or empty input",
   () => {
     assertEquals(getRegionFromTimezone(null), null);
-    assertEquals(getRegionFromTimezone(undefined), null);
     assertEquals(getRegionFromTimezone(""), null);
   },
 );

@@ -88,6 +88,6 @@ function errorMessage(data: Record<string, unknown>): string | null {
 function joinUrl(base: string, path: string): string {
   if (!path) return base;
   if (base.endsWith("/") && path.startsWith("/")) return base + path.slice(1);
-  if (!base.endsWith("/") && !path.startsWith("/")) return base + "/" + path;
+  if (!base.endsWith("/") && !path.startsWith("/")) return `${base}/${path}`;
   return base + path;
 }

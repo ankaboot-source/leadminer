@@ -15,7 +15,6 @@ import {
   type SimpleSmsGatewayCredentials,
   SMS_GATEWAY_PROVIDER_NAME,
   type SmsGateCredentials,
-  type SmsGatewayCredentials,
   TwilioProvider,
 } from "./providers/mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";

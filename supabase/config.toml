@@ -244,7 +244,7 @@ max_frequency = "5s"
 enabled = true
 # Default google credentials for local development only.
 client_id = "21825381029-993l33883t26n48fv11mmm049j6qn6lh.apps.googleusercontent.com"
-secret = "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"
+secret = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_SECRET"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
@@ -326,6 +326,18 @@ entrypoint = "./functions/email-campaigns/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/email-campaigns/*.html" ]
+
+[functions.campaigns-track]
+enabled = true
+verify_jwt = false
+import_map = "./functions/email-campaigns/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/email-campaigns/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/email-campaigns/*.html" ]
+
 
 [functions.delete-mining-source]
 enabled = true
