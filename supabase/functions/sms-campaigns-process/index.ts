@@ -608,29 +608,29 @@ app.post("/process", authMiddleware, async (c: Context) => {
           { campaignId: resolvedCampaignId },
         );
 
-        let assignments:
-          | {
-              recipient_id: any;
-              gateway_id: any;
-              gateway_name: any;
-              gateway_provider: any;
-            }[]
-          | null = [];
+        let assignments: {
+          recipient_id: any;
+          gateway_id: any;
+          gateway_name: any;
+          gateway_provider: any;
+        }[] = [];
         try {
-          const { data: assignments } = await supabaseAdmin
+          const { data } = await supabaseAdmin
             .schema("private")
             .from("sms_campaign_recipient_gateways")
             .select("recipient_id, gateway_id, gateway_name, gateway_provider")
             .eq("campaign_id", resolvedCampaignId);
+          assignments = data || [];
+
           console.log(
             `DEBUG-PROCESSOR[${Date.now()}]: SELECT sms_campaign_recipient_gateways (fleet) done`,
-            {
-              campaignId: resolvedCampaignId,
-              count: assignments?.length ?? 0,
-            },
+            { campaignId: resolvedCampaignId, count: assignments.length },
           );
         } catch (err) {
-          console.log("error happened", err);
+          logger.error("Failed to fetch recipient gateways", {
+            campaignId: resolvedCampaignId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
 
         if (assignments) {
@@ -1269,7 +1269,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
         error: processingError,
       });
     } finally {
-      const finalStatus = processingError ? "failed" : "completed";
+      const finalStatus = processingError
+        ? "failed"
+        : failedCount > 0 && sentCount === 0
+          ? "failed"
+          : "completed";
       await supabaseAdmin
         .schema("private")
         .from("sms_campaigns")
