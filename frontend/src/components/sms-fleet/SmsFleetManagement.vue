@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
@@ -188,22 +188,24 @@ function confirmDelete(gateway: SmsFleetGateway) {
     acceptLabel: t('delete'),
     rejectLabel: globalT('common.cancel'),
     acceptClass: 'p-button-danger',
-    accept: async () => {
-      const success = await $smsFleetStore.deleteGateway(gateway.id);
-      if (success) {
-        $toast.add({
-          severity: 'success',
-          summary: t('gateway_deleted'),
-          life: 3000,
-        });
-      } else {
-        $toast.add({
-          severity: 'error',
-          summary: t('delete_failed'),
-          detail: $smsFleetStore.error || '',
-          life: 5000,
-        });
-      }
+    accept: () => {
+      nextTick(async () => {
+        const success = await $smsFleetStore.deleteGateway(gateway.id);
+        if (success) {
+          $toast.add({
+            severity: 'success',
+            summary: t('gateway_deleted'),
+            life: 3000,
+          });
+        } else {
+          $toast.add({
+            severity: 'error',
+            summary: t('delete_failed'),
+            detail: $smsFleetStore.error || '',
+            life: 5000,
+          });
+        }
+      });
     },
   });
 }
