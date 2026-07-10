@@ -31,8 +31,11 @@ export async function getRefinedPersons(userId: string) {
   return data.map((record) => record.person_id);
 }
 
+const CHUNK_SIZE = 150;
+
 /**
  * Queries all contacts from the persons that are not yet enriched.
+ * Chunks IDs to avoid URI-too-long errors with Supabase .in().
  * @param userId - The ID of the user.
  * @returns List of contacts to be enriched.
  * @throws Error if there is an issue fetching data from the database.
@@ -48,19 +51,27 @@ export async function getContactsToEnrich(
 
   const refinedPersonIds = await getRefinedPersons(userId);
 
-  const { data, error } = await supabaseClient
-    .schema('private')
-    .from('persons')
-    .select('id, email, name')
-    .eq('user_id', userId)
-    .in('id', refinedPersonIds)
-    .returns<{ id: string; email: string | null; name: string }[]>();
+  const results: { id: string; email: string | null; name: string }[] = [];
 
-  if (error) {
-    throw new Error(error.message);
+  for (let i = 0; i < refinedPersonIds.length; i += CHUNK_SIZE) {
+    const chunk = refinedPersonIds.slice(i, i + CHUNK_SIZE);
+
+    const { data, error } = await supabaseClient
+      .schema('private')
+      .from('persons')
+      .select('id, email, name')
+      .eq('user_id', userId)
+      .in('id', chunk)
+      .returns<{ id: string; email: string | null; name: string }[]>();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    results.push(...data);
   }
 
-  return data.map(({ id, email, name }) => ({ id, email, name }));
+  return results.map(({ id, email, name }) => ({ id, email, name }));
 }
 
 export async function restrictOrDecline(userId: string, totalContacts: number) {
