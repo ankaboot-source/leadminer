@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import parsePhoneNumber from 'libphonenumber-js';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import {
   ContactFrontend,
   ExtractionResult,
@@ -49,12 +49,11 @@ export class GoogleContactsExtractor {
       telephone: (this.data.phoneNumbers
         ?.map((p) => {
           if (!p.value) return null;
-          try {
-            const parsed = parsePhoneNumber(p.value);
-            return parsed?.number ?? p.value;
-          } catch {
-            return p.value;
-          }
+          // The fetcher already prefers canonicalForm (E.164) when available,
+          // so most numbers arrive with a + prefix and country code.
+          // parsePhoneNumberFromString handles both cases gracefully.
+          const parsed = parsePhoneNumberFromString(p.value);
+          return parsed?.number ?? p.value;
         })
         .filter((v): v is string => v != null) || []) as string[],
       same_as: (this.data.urls

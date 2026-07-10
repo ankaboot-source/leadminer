@@ -293,4 +293,31 @@ describe('GoogleContactsExtractor', () => {
     expect(result.persons).toHaveLength(1);
     expect(result.persons[0].tags).toEqual([DEFAULT_NEWSLETTER_TAG]);
   });
+
+  it('normalizes E.164 phone numbers from Google canonicalForm', async () => {
+    const data: GoogleContactsFormat = {
+      resourceName: 'people/303',
+      displayName: 'Phone User',
+      emailAddresses: [{ value: 'phone@example.com' }],
+      phoneNumbers: [
+        { value: '+21697522154' }, // Tunisia E.164
+        { value: '+14155552671' }, // US E.164
+        { value: '97 522 154' } // Local format without country code
+      ]
+    };
+    const extractor = new GoogleContactsExtractor(
+      data,
+      'joe@gmail.com',
+      taggingEngine,
+      redis,
+      domainStatusVerification
+    );
+    const result = await extractor.getContacts();
+
+    expect(result.persons[0].person.telephone).toEqual([
+      '+21697522154',
+      '+14155552671',
+      '97 522 154' // No country code, falls back to raw value
+    ]);
+  });
 });

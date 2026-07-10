@@ -146,7 +146,11 @@ export default class GoogleContactsFetcher {
           givenName: person.names?.[0]?.givenName || undefined,
           familyName: person.names?.[0]?.familyName || undefined,
           emailAddresses: person.emailAddresses,
-          phoneNumbers: person.phoneNumbers,
+          // Prefer canonicalForm (E.164 with country code) over raw value
+          phoneNumbers: person.phoneNumbers?.map((p) => ({
+            ...p,
+            value: p.canonicalForm || p.value
+          })),
           organizations: person.organizations,
           addresses: person.addresses,
           urls: person.urls
