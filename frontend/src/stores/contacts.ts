@@ -132,7 +132,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       ? { ...existingContact, ...clean }
       : clean;
 
-    clean.works_for = await getOrganizationName(updatedContact.works_for);
+    updatedContact.works_for = await getOrganizationName(updatedContact.works_for);
     if (
       updatedContact.location &&
       updatedContact.location_normalized === null
