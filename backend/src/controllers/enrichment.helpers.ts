@@ -53,6 +53,7 @@ export async function getContactsToEnrich(
 
   const results: { id: string; email: string | null; name: string }[] = [];
 
+  /* eslint-disable no-await-in-loop */
   for (let i = 0; i < refinedPersonIds.length; i += CHUNK_SIZE) {
     const chunk = refinedPersonIds.slice(i, i + CHUNK_SIZE);
 
