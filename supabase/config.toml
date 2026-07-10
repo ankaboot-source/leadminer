@@ -430,7 +430,9 @@ entrypoint = "./functions/mail/index.ts"
 [functions.passive-mining]
 enabled = true
 verify_jwt = true
-import_map = "./functions/passive-mining/deno.json"
+# No per-function deno.json — this function uses npm: specifiers only,
+# so it falls back to the default Supabase import resolution.
+# import_map = "./functions/passive-mining/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
 entrypoint = "./functions/passive-mining/index.ts"
