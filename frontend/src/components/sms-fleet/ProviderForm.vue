@@ -7,8 +7,10 @@ import { z } from 'zod';
 
 const { t } = useI18n({ useScope: 'local' });
 
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
+
 const props = defineProps<{
-  provider: 'smsgate' | 'simple-sms-gateway';
+  provider: SupportedProvider;
   initialData?: {
     baseUrl?: string;
     username?: string;
@@ -31,7 +33,7 @@ const smsgateSchema = z.object({
   baseUrl: z.string().optional(),
 });
 
-const simpleSmsGatewaySchema = z.object({
+const selfHostedGatewaySchema = z.object({
   baseUrl: z.string().url('Invalid URL').min(1, 'Gateway URL is required'),
 });
 
@@ -43,7 +45,10 @@ const isValid = computed(() => {
       baseUrl: baseUrl.value,
     }).success;
   }
-  return simpleSmsGatewaySchema.safeParse({
+  // Both Android Simple SMS Gateway and iOS SMS Gateway share the same
+  // URL form. Dispatch between them is driven by `props.provider`
+  // ("simple-sms-gateway" vs "sms-gateway") on the backend.
+  return selfHostedGatewaySchema.safeParse({
     baseUrl: baseUrl.value,
   }).success;
 });
@@ -69,14 +74,30 @@ function handleSubmit() {
         password: password.value,
       },
     });
-  } else {
+    return;
+  }
+
+  if (props.provider === 'sms-gateway') {
+    // The iOS app exposes `POST /send-sms` with the same URL contract as
+    // the Android Simple SMS Gateway. We re-use the
+    // `simpleSmsGatewayBaseUrl` storage key; the `provider` field
+    // ("sms-gateway") tells the backend to dispatch to the
+    // `SmsGatewayProvider`.
     emit('submit', {
-      provider: props.provider,
+      provider: 'sms-gateway',
       config: {
         simpleSmsGatewayBaseUrl: baseUrl.value,
       },
     });
+    return;
   }
+
+  emit('submit', {
+    provider: 'simple-sms-gateway',
+    config: {
+      simpleSmsGatewayBaseUrl: baseUrl.value,
+    },
+  });
 }
 
 function resetForm() {
@@ -136,14 +157,14 @@ defineExpose({ resetForm, handleSubmit });
         </div>
       </template>
 
-      <!-- Simple SMS Gateway Configuration -->
-      <template v-else-if="provider === 'simple-sms-gateway'">
+      <!-- Self-hosted gateway (Android Simple SMS Gateway or iOS SMS Gateway) -->
+      <template v-else>
         <div>
-          <label for="simple-baseurl" class="block mb-2 font-medium">
-            {{ t('gateway_url') }}
+          <label for="self-hosted-baseurl" class="block mb-2 font-medium">
+            {{ t('gateway_url') }} *
           </label>
           <InputText
-            id="simple-baseurl"
+            id="self-hosted-baseurl"
             v-model="baseUrl"
             name="baseUrl"
             :placeholder="t('gateway_url_placeholder')"

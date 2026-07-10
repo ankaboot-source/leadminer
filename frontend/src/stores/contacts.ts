@@ -23,6 +23,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const selectedIds = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
   const visibleColumns = ref(['contacts']);
+  const skipOrgLookup = ref(false);
 
   const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(
     null,
@@ -132,7 +133,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
       ? { ...existingContact, ...clean }
       : clean;
 
-    clean.works_for = await getOrganizationName(updatedContact.works_for);
+    if (!skipOrgLookup.value) {
+      updatedContact.works_for = await getOrganizationName(
+        updatedContact.works_for,
+      );
+    }
     if (
       updatedContact.location &&
       updatedContact.location_normalized === null
@@ -354,6 +359,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contactsList.value = undefined;
     selectedIds.value = undefined;
     selectedContactsCount.value = 0;
+    skipOrgLookup.value = false;
+  }
+
+  function setSkipOrgLookup(value: boolean) {
+    skipOrgLookup.value = value;
   }
 
   return {
@@ -376,5 +386,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     hasPersons,
     getLocationsToNormalize,
     updateContactsCache,
+    setSkipOrgLookup,
   };
 });

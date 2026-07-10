@@ -13,7 +13,7 @@ const functionName = "sms-fleet";
 
 const gatewaySchema = z.object({
   name: z.string().min(1),
-  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
   config: z.record(z.unknown()),
   daily_limit: z.number().int().min(0).optional(),
   monthly_limit: z.number().int().min(0).optional(),
@@ -109,6 +109,53 @@ app.get("/gateways", authMiddleware, async (c) => {
   }
 });
 
+function extractSimpleSmsGatewayBaseUrl(
+  config: Record<string, unknown>,
+): string | null {
+  const candidates: unknown[] = [
+    config.simpleSmsGatewayBaseUrl,
+    config.baseUrl,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}
+
+/** POSTs to /send-sms; 2xx/3xx/4xx = reachable, 5xx/timeout = failure. */
+async function probeGatewayReachability(
+  baseUrl: string,
+): Promise<{ success: boolean; message: string }> {
+  const url = `${baseUrl.replace(/\/$/, "")}/send-sms`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+15555550100",
+        to: "+15555550100",
+        message: "Reachability test",
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (response.status >= 500) {
+      return {
+        success: false,
+        message: `Gateway returned HTTP ${response.status}`,
+      };
+    }
+    return { success: true, message: "Gateway is reachable" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      message: message || "Network error reaching gateway",
+    };
+  }
+}
+
 app.post("/gateways", authMiddleware, async (c) => {
   try {
     const user = c.get("user");
@@ -125,16 +172,54 @@ app.post("/gateways", authMiddleware, async (c) => {
       );
     }
 
+    const validated = validation.data;
     const supabaseAdmin = createSupabaseAdmin();
+
+    if (
+      validated.provider === "simple-sms-gateway" ||
+      validated.provider === "sms-gateway"
+    ) {
+      const baseUrl = extractSimpleSmsGatewayBaseUrl(
+        validated.config as Record<string, unknown>,
+      );
+
+      if (!baseUrl) {
+        return c.json(
+          {
+            error:
+              "Missing simpleSmsGatewayBaseUrl in config for this provider",
+            code: "MISSING_BASE_URL",
+          },
+          400,
+        );
+      }
+
+      const reachabilityTest = await probeGatewayReachability(baseUrl);
+      if (!reachabilityTest.success) {
+        logger.warn("SMS gateway reachability test failed", {
+          userId: user.id,
+          baseUrl,
+          provider: validated.provider,
+          message: reachabilityTest.message,
+        });
+        return c.json(
+          {
+            error: `Gateway is not reachable: ${reachabilityTest.message}`,
+            code: "GATEWAY_UNREACHABLE",
+          },
+          400,
+        );
+      }
+    }
 
     const gateway = {
       user_id: user.id,
-      name: validation.data.name,
-      provider: validation.data.provider,
-      config: validation.data.config,
-      daily_limit: validation.data.daily_limit ?? 200,
-      monthly_limit: validation.data.monthly_limit ?? 200,
-      is_active: validation.data.is_active ?? true,
+      name: validated.name,
+      provider: validated.provider,
+      config: validated.config,
+      daily_limit: validated.daily_limit ?? 200,
+      monthly_limit: validated.monthly_limit ?? 200,
+      is_active: validated.is_active ?? true,
     };
 
     const { data, error } = await supabaseAdmin

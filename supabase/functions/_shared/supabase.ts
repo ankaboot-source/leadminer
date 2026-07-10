@@ -29,5 +29,8 @@ export function createSupabaseAdmin(
   return createClient(
     supabaseUrl,
     supabaseServiceRoleKey,
+    {
+      global: { fetch },
+    }
   );
 }

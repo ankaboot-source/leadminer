@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
@@ -13,11 +13,10 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
-import ConfirmDialog from 'primevue/confirmdialog';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
@@ -60,7 +59,11 @@ const isActive = ref(true);
 
 const providerOptions = computed(() => [
   { label: 'SMSGate', value: 'smsgate' as const },
-  { label: 'Simple SMS Gateway', value: 'simple-sms-gateway' as const },
+  {
+    label: t('simple_sms_gateway_option'),
+    value: 'simple-sms-gateway' as const,
+  },
+  { label: t('ios_sms_gateway_option'), value: 'sms-gateway' as const },
 ]);
 
 function handleFormValid(valid: boolean) {
@@ -129,6 +132,7 @@ function getDefaultName(provider: SupportedProvider): string {
   const names: Record<SupportedProvider, string> = {
     smsgate: 'SMSGate Gateway',
     'simple-sms-gateway': 'SMS Gateway',
+    'sms-gateway': 'SMS Gateway (iOS)',
   };
   return names[provider];
 }
@@ -183,22 +187,24 @@ function confirmDelete(gateway: SmsFleetGateway) {
     acceptLabel: t('delete'),
     rejectLabel: globalT('common.cancel'),
     acceptClass: 'p-button-danger',
-    accept: async () => {
-      const success = await $smsFleetStore.deleteGateway(gateway.id);
-      if (success) {
-        $toast.add({
-          severity: 'success',
-          summary: t('gateway_deleted'),
-          life: 3000,
-        });
-      } else {
-        $toast.add({
-          severity: 'error',
-          summary: t('delete_failed'),
-          detail: $smsFleetStore.error || '',
-          life: 5000,
-        });
-      }
+    accept: () => {
+      nextTick(async () => {
+        const success = await $smsFleetStore.deleteGateway(gateway.id);
+        if (success) {
+          $toast.add({
+            severity: 'success',
+            summary: t('gateway_deleted'),
+            life: 3000,
+          });
+        } else {
+          $toast.add({
+            severity: 'error',
+            summary: t('delete_failed'),
+            detail: $smsFleetStore.error || '',
+            life: 5000,
+          });
+        }
+      });
     },
   });
 }
@@ -207,6 +213,7 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   const labels: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
+    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return labels[provider] || provider;
@@ -391,8 +398,6 @@ onMounted(() => {
         />
       </template>
     </Dialog>
-
-    <ConfirmDialog />
   </div>
 </template>
 
@@ -425,7 +430,9 @@ onMounted(() => {
     "test_failed": "Connection test failed",
     "delete_confirm_message": "Are you sure you want to delete the gateway \"{name}\"?",
     "delete_confirm_header": "Confirm Deletion",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "simple_sms_gateway_option": "Simple SMS Gateway",
+    "ios_sms_gateway_option": "SMS Gateway (iOS)"
   },
   "fr": {
     "sms_fleet_management": "Gestion de la flotte SMS",
@@ -454,7 +461,9 @@ onMounted(() => {
     "test_failed": "Échec du test de connexion",
     "delete_confirm_message": "Êtes-vous sûr de vouloir supprimer la passerelle \"{name}\" ?",
     "delete_confirm_header": "Confirmer la suppression",
-    "save_changes": "Enregistrer les modifications"
+    "save_changes": "Enregistrer les modifications",
+    "simple_sms_gateway_option": "Simple SMS Gateway",
+    "ios_sms_gateway_option": "SMS Gateway (iOS)"
   }
 }
 </i18n>

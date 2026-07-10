@@ -1,4 +1,4 @@
-import type { SmsProvider, SendSmsParams, SendSmsResult } from "./types.ts";
+import type { SendSmsParams, SendSmsResult, SmsProvider } from "./types.ts";
 
 export interface SimpleSmsGatewayCredentials {
   baseUrl: string;

@@ -179,8 +179,6 @@ onMounted(async () => {
       :editing-sender="editingSender"
       @sender-saved="$store.fetchSenders()"
     />
-
-    <ConfirmDialog />
   </div>
 </template>
 

@@ -836,7 +836,7 @@
 
     <!-- Works for -->
     <Column
-      v-if="columnVisibility.works_for"
+      v-if="origin !== 'mine' && columnVisibility.works_for"
       field="works_for"
       sortable
       :show-filter-operator="false"
@@ -1345,7 +1345,7 @@ function formatContactsCountForHeader(count: number) {
     .toLowerCase();
 }
 
-const visibleColumnsOptions = [
+const visibleColumnsOptions = computed(() => [
   { label: t('emails'), value: 'contacts' },
   { label: t('source'), value: 'source' },
   { label: t('occurrence'), value: 'occurrence' },
@@ -1363,7 +1363,9 @@ const visibleColumnsOptions = [
   { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.alternate_email'), value: 'alternate_email' },
   { label: $t('contact.location'), value: 'location' },
-  { label: $t('contact.works_for'), value: 'works_for' },
+  ...(origin !== 'mine'
+    ? [{ label: $t('contact.works_for'), value: 'works_for' }]
+    : []),
   { label: $t('contact.job_title'), value: 'job_title' },
   { label: $t('contact.name'), value: 'name' },
   { label: $t('contact.same_as'), value: 'same_as' },
@@ -1372,7 +1374,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.updated_at'), value: 'updated_at' },
   { label: $t('contact.created_at'), value: 'created_at' },
   { label: t('mining_id'), value: 'mining_id' },
-];
+]);
 
 function disabledColumns(column: { label: string; value: string }) {
   return column.value === 'contacts';

@@ -77,7 +77,7 @@
       <div class="flex flex-col gap-3 text-sm">
         <div v-if="!setupSelectedProvider" class="flex flex-col gap-2">
           <p class="m-0">{{ t('select_provider_to_see_instructions') }}</p>
-          <div class="flex gap-2">
+          <div class="flex gap-2 flex-wrap">
             <Button
               :label="t('smsgate')"
               outlined
@@ -87,6 +87,11 @@
               :label="t('simple_sms_gateway')"
               outlined
               @click="setupSelectedProvider = 'simple-sms-gateway'"
+            />
+            <Button
+              :label="t('ios_sms_gateway')"
+              outlined
+              @click="setupSelectedProvider = 'sms-gateway'"
             />
           </div>
         </div>
@@ -157,6 +162,22 @@
               class="underline"
             >
               {{ t('open_playstore') }}
+            </a>
+          </template>
+          <template v-else-if="setupSelectedProvider === 'sms-gateway'">
+            <p class="m-0">{{ t('ios_sms_gateway_setup_intro') }}</p>
+            <ol class="pl-4 m-0 list-decimal">
+              <li class="mb-2">{{ t('ios_sms_gateway_setup_step_1') }}</li>
+              <li class="mb-2">{{ t('ios_sms_gateway_setup_step_2') }}</li>
+              <li>{{ t('ios_sms_gateway_setup_step_3') }}</li>
+            </ol>
+            <a
+              :href="iosSmsGatewayDownloadUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline"
+            >
+              {{ t('ios_app_store') }}
             </a>
           </template>
         </div>
@@ -287,15 +308,15 @@ const $smsFleetStore = useSmsFleetStore();
 
 const showAddDialog = ref(false);
 const showSetupDialog = ref(false);
-const setupSelectedProvider = ref<'smsgate' | 'simple-sms-gateway' | null>(
-  null,
-);
+const setupSelectedProvider = ref<
+  'smsgate' | 'simple-sms-gateway' | 'sms-gateway' | null
+>(null);
 const isSubmitting = ref(false);
 
 const gatewayName = ref('');
-const selectedProvider = ref<'smsgate' | 'simple-sms-gateway' | null>(
-  'simple-sms-gateway',
-);
+const selectedProvider = ref<
+  'smsgate' | 'simple-sms-gateway' | 'sms-gateway' | null
+>('simple-sms-gateway');
 const dailyLimit = ref(200);
 const monthlyLimit = ref(200);
 const providerFormRef = ref<InstanceType<typeof ProviderForm> | null>(null);
@@ -342,6 +363,7 @@ const toggleGateway = (gatewayId: string) => {
 const providerOptions = [
   { label: 'SMSGate', value: 'smsgate' },
   { label: 'Simple SMS Gateway', value: 'simple-sms-gateway' },
+  { label: 'SMS Gateway (iOS)', value: 'sms-gateway' },
 ];
 
 function handleFormSubmit(config: {
@@ -403,11 +425,14 @@ function openSetupDialog() {
 const smsgateDownloadUrl = 'https://sms-gate.app/';
 const simpleSmsGatewayDownloadUrl =
   'https://play.google.com/store/apps/details?id=com.pabrikaplikasi.simplesmsgateway';
+const iosSmsGatewayDownloadUrl =
+  'https://apps.apple.com/us/app/sms-gateway/id6767250233';
 
 const getProviderIcon = (provider: SmsGatewayProvider) => {
   const icons: Record<SmsGatewayProvider, string> = {
     smsgate: 'pi pi-android',
     'simple-sms-gateway': 'pi pi-mobile',
+    'sms-gateway': 'pi pi-mobile',
     twilio: 'pi pi-phone',
   };
   return icons[provider] || 'pi pi-mobile';
@@ -417,6 +442,7 @@ const formatProvider = (provider: SmsGatewayProvider) => {
   const names: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
+    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return names[provider] || provider;
@@ -455,6 +481,12 @@ const formatProvider = (provider: SmsGatewayProvider) => {
     "simple_sms_gateway_setup_step_2": "Configure the server URL in the app settings",
     "simple_sms_gateway_setup_step_3": "Enter the server URL in the form above",
     "open_playstore": "Open in Play Store",
+    "ios_sms_gateway": "SMS Gateway (iOS)",
+    "ios_sms_gateway_setup_intro": "To use SMS Gateway (iOS) as your SMS gateway, install the iOS app and configure the server URL.",
+    "ios_sms_gateway_setup_step_1": "Install SMS Gateway from the App Store on your iOS device",
+    "ios_sms_gateway_setup_step_2": "Open the app and configure the server URL in its settings",
+    "ios_sms_gateway_setup_step_3": "Enter the server URL (e.g. http://192.168.x.x:8080) in the form below",
+    "ios_app_store": "Open App Store",
     "how_to_install": "How to install",
     "select_provider_to_see_instructions": "Select a provider to see installation instructions",
     "smsgate": "SMSGate",
@@ -492,6 +524,12 @@ const formatProvider = (provider: SmsGatewayProvider) => {
     "simple_sms_gateway_setup_step_2": "Configurez l'URL du serveur dans les paramètres de l'application",
     "simple_sms_gateway_setup_step_3": "Entrez l'URL du serveur dans le formulaire ci-dessus",
     "open_playstore": "Ouvrir sur Play Store",
+    "ios_sms_gateway": "SMS Gateway (iOS)",
+    "ios_sms_gateway_setup_intro": "Pour utiliser SMS Gateway (iOS) comme passerelle SMS, installez l'app iOS et configurez l'URL du serveur.",
+    "ios_sms_gateway_setup_step_1": "Installez SMS Gateway depuis l'App Store sur votre appareil iOS",
+    "ios_sms_gateway_setup_step_2": "Ouvrez l'app et configurez l'URL du serveur dans ses paramètres",
+    "ios_sms_gateway_setup_step_3": "Entrez l'URL du serveur (ex. http://192.168.x.x:8080) dans le formulaire ci-dessous",
+    "ios_app_store": "Ouvrir l'App Store",
     "how_to_install": "Comment installer",
     "select_provider_to_see_instructions": "Sélectionnez un fournisseur pour voir les instructions d'installation",
     "smsgate": "SMSGate",

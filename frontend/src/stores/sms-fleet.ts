@@ -45,18 +45,20 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     error.value = null;
 
     try {
+      const body: Record<string, unknown> = {
+        name: payload.name,
+        provider: payload.provider,
+        config: payload.config,
+        daily_limit: payload.daily_limit ?? 200,
+        monthly_limit: payload.monthly_limit ?? 200,
+        is_active: true,
+      };
+
       const response = (await $saasEdgeFunctions(
         'sms-campaigns/fleet/gateways',
         {
           method: 'POST',
-          body: {
-            name: payload.name,
-            provider: payload.provider,
-            config: payload.config,
-            daily_limit: payload.daily_limit ?? 200,
-            monthly_limit: payload.monthly_limit ?? 200,
-            is_active: true,
-          },
+          body,
         },
       )) as { gateway: SmsFleetGateway };
 
@@ -173,6 +175,7 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     const grouped: Record<SmsGatewayProvider, SmsFleetGateway[]> = {
       smsgate: [],
       'simple-sms-gateway': [],
+      'sms-gateway': [],
       twilio: [],
     };
     gateways.value.forEach((g) => {

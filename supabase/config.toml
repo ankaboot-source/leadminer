@@ -290,7 +290,7 @@ enabled = false
 enabled = true
 # Configure one of the supported request policies: `oneshot`, `per_worker`.
 # Use `oneshot` for hot reload, or `per_worker` for load testing.
-policy = "oneshot"
+policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 
@@ -318,6 +318,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.email-campaigns]
 enabled = true
+# Unsubscribe and tracking routes (/unsubscribe/:token, /track/open/:token,
+# /track/click/:token) are hit by email recipients via browser with no user JWT.
+# Authenticated routes are protected by authMiddleware inside the function.
 verify_jwt = false
 import_map = "./functions/email-campaigns/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
@@ -326,6 +329,18 @@ entrypoint = "./functions/email-campaigns/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/email-campaigns/*.html" ]
+
+[functions.campaigns-track]
+enabled = true
+verify_jwt = false
+import_map = "./functions/campaigns-track/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/campaigns-track/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/email-campaigns/*.html" ]
+
 
 [functions.delete-mining-source]
 enabled = true
@@ -351,6 +366,9 @@ entrypoint = "./functions/fetch-mining-source/index.ts"
 
 [functions.mining-sources]
 enabled = true
+# OAuth callbacks (e.g. /oauth/callback/google) are hit by the user's
+# browser after redirect from the provider — no user JWT is present.
+# The handler authenticates the request via the signed `state` param.
 verify_jwt = false
 import_map = "./functions/mining-sources/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
@@ -362,7 +380,7 @@ entrypoint = "./functions/mining-sources/index.ts"
 
 [functions.sms-campaigns]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/sms-campaigns/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
@@ -370,3 +388,115 @@ entrypoint = "./functions/sms-campaigns/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sms-campaigns/*.html" ]
+
+[functions.delete-user]
+enabled = true
+verify_jwt = true
+import_map = "./functions/delete-user/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/delete-user/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/delete-user/*.html" ]
+
+[functions.email-templates]
+enabled = true
+verify_jwt = true
+import_map = "./functions/email-templates/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/email-templates/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/email-templates/*.html" ]
+
+[functions.imap]
+enabled = true
+verify_jwt = true
+import_map = "./functions/imap/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/imap/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/imap/*.html" ]
+
+[functions.mail]
+enabled = true
+verify_jwt = true
+import_map = "./functions/mail/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/mail/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/mail/*.html" ]
+
+[functions.passive-mining]
+enabled = true
+verify_jwt = true
+# No per-function deno.json — this function uses npm: specifiers only,
+# so it falls back to the default Supabase import resolution.
+# import_map = "./functions/passive-mining/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/passive-mining/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/passive-mining/*.html" ]
+
+[functions.sms-campaigns-process]
+enabled = true
+verify_jwt = true
+import_map = "./functions/sms-campaigns-process/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/sms-campaigns-process/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/sms-campaigns-process/*.html" ]
+
+[functions.sms-fleet]
+enabled = true
+verify_jwt = true
+import_map = "./functions/sms-fleet/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/sms-fleet/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/sms-fleet/*.html" ]
+
+[functions.whatsapp-campaigns]
+enabled = true
+verify_jwt = true
+import_map = "./functions/whatsapp-campaigns/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/whatsapp-campaigns/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/whatsapp-campaigns/*.html" ]
+
+[functions.whatsapp-campaigns-process]
+enabled = true
+verify_jwt = true
+import_map = "./functions/whatsapp-campaigns-process/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/whatsapp-campaigns-process/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/whatsapp-campaigns-process/*.html" ]
+
+[functions.whatsapp-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/whatsapp-webhook/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/whatsapp-webhook/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/whatsapp-webhook/*.html" ]

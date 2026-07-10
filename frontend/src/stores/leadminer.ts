@@ -19,6 +19,7 @@ import {
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
 import { sse } from '../utils/sse';
+import { useContactsStore } from './contacts';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api, $saasEdgeFunctions } = useNuxtApp();
@@ -28,6 +29,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const $stepper = useMiningStepper();
   const supabase = useSupabaseClient();
   const config = useRuntimeConfig();
+  const $contactsStore = useContactsStore();
 
   const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -354,6 +356,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       onMiningCompleted: () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
+        $contactsStore.setSkipOrgLookup(false);
         setTimeout(async () => {
           miningTask.value = undefined;
           await fetchMiningSources();
@@ -557,6 +560,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
+      $contactsStore.setSkipOrgLookup(true);
       startMiningNotification($toast, t, config.public.DATA_PRIVACY_URL);
     } catch (err) {
       sse.closeConnection();
@@ -583,6 +587,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       if (endEntireTask) {
         miningTask.value = undefined;
+        $contactsStore.setSkipOrgLookup(false);
         fetchingFinished.value = true;
         cleaningFinished.value = true;
         signatureExtractionFinished.value = true;
@@ -676,6 +681,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningType.value = mType;
+      $contactsStore.setSkipOrgLookup(true);
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );

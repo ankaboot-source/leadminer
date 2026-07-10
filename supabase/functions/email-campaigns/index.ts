@@ -888,7 +888,7 @@ async function getSelectedContacts(
   const { data, error } = await supabaseAdmin
     .schema("private")
     .rpc("get_contacts_table", {
-      user_id: userId,
+      p_user_id: userId,
     });
 
   if (error) {
@@ -949,7 +949,9 @@ async function getContactsByEmails(
     .in("email", normalizedEmails);
 
   if (personErr) {
-    throw new Error(`Unable to fetch contacts for campaign: ${personErr.message}`);
+    throw new Error(
+      `Unable to fetch contacts for campaign: ${personErr.message}`,
+    );
   }
 
   const ids = (personRows ?? []).map((r) => r.id as string);
@@ -2448,7 +2450,10 @@ app.post("/email-sending-request", authMiddleware, async (c: Context) => {
   if ("error" in auth) return auth.error;
 
   const body = await c.req.json().catch(() => ({}));
-  const parsed = z.object({ contactsCount: z.number().int().positive() }).strict().safeParse(body);
+  const parsed = z
+    .object({ contactsCount: z.number().int().positive() })
+    .strict()
+    .safeParse(body);
   if (!parsed.success) {
     return c.json(validationErrorBody(parsed.error), 400);
   }

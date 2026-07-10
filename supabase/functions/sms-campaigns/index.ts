@@ -10,16 +10,18 @@ import { createLogger } from "../_shared/logger.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { generateShortToken } from "../_shared/short-token.ts";
 import {
+  createSmsProvider,
   isTwilioFallbackAvailable,
   type SimpleSmsGatewayCredentials,
+  SMS_GATEWAY_PROVIDER_NAME,
   type SmsGateCredentials,
   TwilioProvider,
-  createSmsProvider,
 } from "./providers/mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 import { estimateSmsSegments } from "./utils/sms-segments.ts";
 import { shortenUrl } from "./utils/short-link.ts";
+import { getRegionFromTimezone } from "./utils/timezone-region.ts";
 
 const logger = createLogger("sms-campaigns");
 
@@ -57,23 +59,31 @@ type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
 
 const smsCampaignCreateSchema = z.object({
   selectedPhones: z.array(z.string()).optional(),
-  selectedRecipients: z.array(z.object({
-    phone: z.string(),
-    personalization: z.record(z.unknown()).optional(),
-  })).optional(),
+  selectedRecipients: z
+    .array(
+      z.object({
+        phone: z.string(),
+        personalization: z.record(z.unknown()).optional(),
+      }),
+    )
+    .optional(),
   senderName: z.string().min(1),
   messageTemplate: z.string().min(1),
   footerTextTemplate: z.string().optional(),
   useShortLinks: z.boolean().optional(),
   provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]).optional(),
-  smsgateConfig: z.object({
-    baseUrl: z.string().optional(),
-    username: z.string().optional(),
-    password: z.string().optional(),
-  }).optional(),
-  simpleSmsGatewayConfig: z.object({
-    baseUrl: z.string().optional(),
-  }).optional(),
+  smsgateConfig: z
+    .object({
+      baseUrl: z.string().optional(),
+      username: z.string().optional(),
+      password: z.string().optional(),
+    })
+    .optional(),
+  simpleSmsGatewayConfig: z
+    .object({
+      baseUrl: z.string().optional(),
+    })
+    .optional(),
   timezone: z.string().optional(),
   fleetMode: z.boolean().optional(),
   selectedGatewayIds: z.array(z.string()).optional(),
@@ -91,7 +101,7 @@ const smsCampaignPreviewSchema = smsCampaignCreateSchema.extend({
 
 const fleetGatewayCreateSchema = z.object({
   name: z.string().min(1),
-  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
   config: z.record(z.string()).optional(),
   daily_limit: z.number().optional(),
   monthly_limit: z.number().optional(),
@@ -109,7 +119,7 @@ type SmsFleetGateway = {
   id: string;
   user_id: string;
   name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "twilio";
+  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
   config: {
     baseUrl?: string;
     username?: string;
@@ -285,6 +295,30 @@ function toSimpleSmsGatewayCredentials(
   return {
     baseUrl,
   };
+}
+
+/**
+ * Pick the right `SmsProvider` for a configured gateway. Dispatches on
+ * `gateway.provider`: "sms-gateway" for the iOS app, "simple-sms-gateway"
+ * for the Android app. Anything else (including unknown providers) falls
+ * back to the Android provider, preserving historical behaviour.
+ */
+function createProviderFromGateway(
+  provider: string,
+  config: { simpleSmsGatewayBaseUrl?: string },
+): ReturnType<typeof createSmsProvider> | null {
+  const baseUrl = config.simpleSmsGatewayBaseUrl;
+  if (!baseUrl) {
+    return null;
+  }
+  if (provider === SMS_GATEWAY_PROVIDER_NAME) {
+    return createSmsProvider("sms-gateway", {
+      smsGateway: { baseUrl },
+    });
+  }
+  return createSmsProvider("simple-sms-gateway", {
+    simpleSmsGateway: { baseUrl },
+  });
 }
 
 app.get("/providers/status", authMiddleware, async (c: Context) => {
@@ -730,9 +764,10 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
     );
   }
 
+  const region = getRegionFromTimezone(timezone);
   const validPhones = requestedPhones
-    .filter(isValidPhoneNumber)
-    .map((phone) => normalizePhoneNumber(phone) as string);
+    .filter((phone) => isValidPhoneNumber(phone, region))
+    .map((phone) => normalizePhoneNumber(phone, region) as string);
   const uniquePhones = [...new Set(validPhones)];
 
   if (uniquePhones.length === 0) {
@@ -940,7 +975,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
 
   const personalizationByPhone = new Map<string, Record<string, unknown>>();
   for (const recipient of selectedRecipients || []) {
-    const normalizedPhone = normalizePhoneNumber(recipient.phone || "");
+    const normalizedPhone = normalizePhoneNumber(recipient.phone || "", region);
     if (!normalizedPhone) continue;
     if (
       !personalizationByPhone.has(normalizedPhone) &&
@@ -1078,8 +1113,9 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   }
 
   // Validate test phone number if provided
+  const region = getRegionFromTimezone(payload.timezone);
   const normalizedTestPhone = testPhoneNumber
-    ? normalizePhoneNumber(testPhoneNumber)
+    ? normalizePhoneNumber(testPhoneNumber, region)
     : null;
   if (testPhoneNumber && !normalizedTestPhone) {
     return c.json(
@@ -1231,14 +1267,15 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
             });
           }
         } else if (gateway.provider === "simple-sms-gateway") {
-          const config = gateway.config;
-          if (config.simpleSmsGatewayBaseUrl) {
-            smsProvider = createSmsProvider("simple-sms-gateway", {
-              simpleSmsGateway: {
-                baseUrl: config.simpleSmsGatewayBaseUrl,
-              },
-            });
-          }
+          smsProvider = createProviderFromGateway(
+            gateway.provider,
+            gateway.config,
+          );
+        } else if (gateway.provider === "sms-gateway") {
+          smsProvider = createProviderFromGateway(
+            gateway.provider,
+            gateway.config,
+          );
         } else if (gateway.provider === "twilio") {
           smsProvider = createSmsProvider("twilio");
         }
@@ -1532,8 +1569,49 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
     return c.json(validationErrorBody(parseResult.error), 400);
   }
   const payload = parseResult.data;
-
   const supabaseAdmin = createSupabaseAdmin();
+
+  // For any self-hosted gateway (Android Simple SMS Gateway or iOS SMS
+  // Gateway), do a lightweight reachability probe before persisting. This
+  // catches "phone is offline / wrong URL" before the user wastes a
+  // campaign on it. The test POSTs a single SMS to `/send-sms` with a
+  // throwaway test phone number. The endpoint exists on both apps, and
+  // we treat any 2xx, 3xx, or 4xx as proof the gateway is reachable —
+  // 5xx / network errors / timeouts are real failures.
+  const baseConfig = (payload.config || {}) as Record<string, unknown>;
+  if (
+    payload.provider === "simple-sms-gateway" ||
+    payload.provider === "sms-gateway"
+  ) {
+    const baseUrl = readSimpleSmsGatewayBaseUrl(baseConfig);
+    if (!baseUrl) {
+      return c.json(
+        {
+          error: "Missing simpleSmsGatewayBaseUrl in config for this provider",
+          code: "MISSING_BASE_URL",
+        },
+        400,
+      );
+    }
+
+    const reachability = await probeGatewayReachability(baseUrl);
+    if (!reachability.success) {
+      logger.warn("SMS gateway reachability test failed", {
+        userId: user.id,
+        baseUrl,
+        provider: payload.provider,
+        message: reachability.message,
+      });
+      return c.json(
+        {
+          error: `Gateway is not reachable: ${reachability.message}`,
+          code: "GATEWAY_UNREACHABLE",
+        },
+        400,
+      );
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .schema("private")
     .from("sms_fleet_gateways")
@@ -1541,7 +1619,7 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
       user_id: user.id,
       name: payload.name,
       provider: payload.provider,
-      config: payload.config || {},
+      config: baseConfig,
       daily_limit: payload.daily_limit ?? 0,
       monthly_limit: payload.monthly_limit ?? 0,
       is_active: true,
@@ -1556,8 +1634,74 @@ app.post("/fleet/gateways", authMiddleware, async (c: Context) => {
     );
   }
 
+  logger.info("Fleet gateway created", {
+    userId: user.id,
+    gatewayId: data.id,
+    provider: data.provider,
+  });
+
   return c.json({ gateway: data });
 });
+
+/**
+ * Lightweight reachability probe used by the fleet gateway POST route.
+ * Sends a single test SMS to `<baseUrl>/send-sms` with a throwaway phone
+ * number and treats any 2xx, 3xx, or 4xx response as proof the gateway
+ * is reachable. 5xx, network errors, and timeouts are real failures.
+ *
+ * This works for both the Android "Simple SMS Gateway" and iOS "SMS
+ * Gateway" apps — both expose `POST /send-sms`. The test phone number
+ * is intentionally a non-routable range so the gateway accepts the call
+ * but never actually delivers an SMS to a real subscriber.
+ */
+async function probeGatewayReachability(
+  baseUrl: string,
+): Promise<{ success: boolean; message: string }> {
+  const url = `${baseUrl.replace(/\/$/, "")}/send-sms`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+15555550100",
+        to: "+15555550100",
+        message: "Reachability test",
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (response.status >= 500) {
+      return {
+        success: false,
+        message: `Gateway returned HTTP ${response.status}`,
+      };
+    }
+    return { success: true, message: "Gateway is reachable" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      message: message || "Network error reaching gateway",
+    };
+  }
+}
+
+/**
+ * Read the simple-sms-gateway base URL from a gateway config record.
+ * Different code paths use different keys (`simpleSmsGatewayBaseUrl`
+ * for the fleet gateway UI, `baseUrl` for the SMSGate path), so we
+ * accept either for safety.
+ */
+function readSimpleSmsGatewayBaseUrl(
+  config: Record<string, unknown>,
+): string | null {
+  for (const key of ["simpleSmsGatewayBaseUrl", "baseUrl"]) {
+    const value = config[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return null;
+}
 
 app.put("/fleet/gateways/:id", authMiddleware, async (c: Context) => {
   const user = c.get("user");
@@ -1672,18 +1816,21 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
           ? { success: true, message: "Gateway is reachable" }
           : { success: false, message: "Gateway is not reachable" };
       }
-    } else if (gateway.provider === "simple-sms-gateway") {
+    } else if (
+      gateway.provider === "simple-sms-gateway" ||
+      gateway.provider === "sms-gateway"
+    ) {
       const config = gateway.config as { simpleSmsGatewayBaseUrl?: string };
       if (!config.simpleSmsGatewayBaseUrl) {
         testResult = { success: false, message: "Missing gateway URL" };
       } else {
-        const response = await fetch(config.simpleSmsGatewayBaseUrl, {
-          method: "HEAD",
-          signal: AbortSignal.timeout(10000),
-        }).catch(() => null);
-        testResult = response
-          ? { success: true, message: "Gateway is reachable" }
-          : { success: false, message: "Gateway is not reachable" };
+        // Both the Android and iOS apps expose `POST /send-sms`. The test
+        // phone number is from a non-routable range so the gateway
+        // accepts the call but never delivers an SMS to a real
+        // subscriber. 2xx/3xx/4xx ⇒ reachable, 5xx/network ⇒ unreachable.
+        testResult = await probeGatewayReachability(
+          config.simpleSmsGatewayBaseUrl,
+        );
       }
     } else {
       testResult = { success: false, message: "Unsupported provider" };
