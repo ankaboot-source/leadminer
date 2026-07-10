@@ -244,7 +244,7 @@ max_frequency = "5s"
 enabled = true
 # Default google credentials for local development only.
 client_id = "21825381029-993l33883t26n48fv11mmm049j6qn6lh.apps.googleusercontent.com"
-secret = "REPLACE_WITH_YOUR_GOOGLE_CLIENT_SECRET"
+secret = "changeme"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,

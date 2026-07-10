@@ -544,6 +544,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
   activeFailedCount = 0;
 
   // Process in background — return 202 immediately
+  // deepsource-disable-next-line JS-R1005
   const processingPromise = (async () => {
     let sentCount = 0;
     let failedCount = 0;

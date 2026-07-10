@@ -19,7 +19,7 @@ Deno.test("createSmsProvider creates sms-gateway provider", () => {
 Deno.test("sms-gateway provider requires baseUrl", () => {
   assertThrows(() => {
     const provider = new SmsGatewayProvider({ baseUrl: "" } as SmsGatewayCredentials);
-    void provider;
+    return provider;
   });
 });
 

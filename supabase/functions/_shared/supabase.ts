@@ -30,7 +30,7 @@ export function createSupabaseAdmin(
     supabaseUrl,
     supabaseServiceRoleKey,
     {
-      global: { fetch: fetch } 
+      global: { fetch },
     }
   );
 }
