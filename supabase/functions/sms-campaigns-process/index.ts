@@ -16,6 +16,10 @@ import {
 } from "../sms-campaigns/providers/mod.ts";
 import type { SendSmsResult } from "../sms-campaigns/providers/types.ts";
 import { shortenUrl } from "../sms-campaigns/utils/short-link.ts";
+import {
+  createProviderForGateway,
+  type SmsFleetGateway,
+} from "./gateway-dispatch.ts";
 
 const logger = createLogger("sms-campaigns-process");
 
@@ -54,24 +58,6 @@ const PUBLIC_CAMPAIGN_BASE_URL = resolveCampaignBaseUrlFromEnv((key) =>
 const FRONTEND_HOST = Deno.env.get("FRONTEND_HOST") || "";
 
 type RecipientStatus = "pending" | "sent" | "failed" | "skipped";
-
-type SmsFleetGateway = {
-  id: string;
-  user_id: string;
-  name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
-  config: {
-    baseUrl?: string;
-    username?: string;
-    password?: string;
-    simpleSmsGatewayBaseUrl?: string;
-  };
-  is_active: boolean;
-  daily_limit: number;
-  monthly_limit: number;
-  sent_today: number;
-  sent_this_month: number;
-};
 
 interface SmsCampaignRecipient {
   id: string;
@@ -355,22 +341,9 @@ function findAlternativeGateway(
   recipientId: string,
   failedGateways: Set<string>,
   gateways: SmsFleetGateway[],
-  gatewayAssignments: Map<
-    string,
-    {
-      id: string;
-      name: string;
-      provider: string;
-      config: Record<string, string>;
-    }
-  >,
+  gatewayAssignments: Map<string, SmsFleetGateway>,
   gatewayFailureCount: Map<string, number>,
-): {
-  id: string;
-  name: string;
-  provider: string;
-  config: Record<string, string>;
-} | null {
+): SmsFleetGateway | null {
   const currentGateway = gatewayAssignments.get(recipientId);
 
   // Find gateway with lowest failure count and available capacity
@@ -400,12 +373,7 @@ function findAlternativeGateway(
     return aUsage - bUsage;
   });
 
-  return {
-    id: availableGateways[0].id,
-    name: availableGateways[0].name,
-    provider: availableGateways[0].provider,
-    config: availableGateways[0].config,
-  };
+  return availableGateways[0];
 }
 
 // ==========================================
@@ -572,15 +540,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
         "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
 
       // Load gateway assignments for fleet mode
-      let gatewayAssignments: Map<
-        string,
-        {
-          id: string;
-          name: string;
-          provider: string;
-          config: Record<string, string>;
-        }
-      > = new Map();
+      let gatewayAssignments: Map<string, SmsFleetGateway> = new Map();
 
       let fleetGateways: SmsFleetGateway[] = [];
 
@@ -631,9 +591,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 gatewayAssignments.set(assignment.recipient_id, {
                   id: assignment.gateway_id,
                   name: assignment.gateway_name || "Unknown",
-                  provider: assignment.gateway_provider || "smsgate",
+                  provider:
+                    (assignment.gateway_provider || "smsgate") as
+                      SmsFleetGateway["provider"],
                   config: gatewayConfigs.get(assignment.gateway_id) || {},
-                });
+                } as SmsFleetGateway);
               }
             }
           }
@@ -781,50 +743,11 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
-                    if (alternativeGateway.provider === "smsgate") {
-                      const config = alternativeGateway.config;
-                      if (
-                        config.baseUrl &&
-                        config.username &&
-                        config.password
-                      ) {
-                        providerCache.set(
-                          cacheKey,
-                          createSmsProvider("smsgate", {
-                            smsgate: {
-                              baseUrl: config.baseUrl,
-                              username: config.username,
-                              password: config.password,
-                            },
-                          }),
-                        );
-                      }
-                    } else if (
-                      alternativeGateway.provider === "simple-sms-gateway"
-                    ) {
-                      const config = alternativeGateway.config;
-                      if (config.simpleSmsGatewayBaseUrl) {
-                        providerCache.set(
-                          cacheKey,
-                          createSmsProvider("simple-sms-gateway", {
-                            simpleSmsGateway: {
-                              baseUrl: config.simpleSmsGatewayBaseUrl,
-                            },
-                          }),
-                        );
-                      }
-                    } else if (alternativeGateway.provider === "sms-gateway") {
-                      const config = alternativeGateway.config;
-                      if (config.simpleSmsGatewayBaseUrl) {
-                        providerCache.set(
-                          cacheKey,
-                          createSmsProvider("sms-gateway", {
-                            smsGateway: {
-                              baseUrl: config.simpleSmsGatewayBaseUrl,
-                            },
-                          }),
-                        );
-                      }
+                    const provider = createProviderForGateway(
+                      alternativeGateway,
+                    );
+                    if (provider) {
+                      providerCache.set(cacheKey, provider);
                     }
                   }
 
@@ -837,44 +760,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
                 if (!providerCache.has(cacheKey)) {
-                  if (gateway.provider === "smsgate") {
-                    const config = gateway.config;
-                    if (config.baseUrl && config.username && config.password) {
-                      providerCache.set(
-                        cacheKey,
-                        createSmsProvider("smsgate", {
-                          smsgate: {
-                            baseUrl: config.baseUrl,
-                            username: config.username,
-                            password: config.password,
-                          },
-                        }),
-                      );
-                    }
-                  } else if (gateway.provider === "simple-sms-gateway") {
-                    const config = gateway.config;
-                    if (config.simpleSmsGatewayBaseUrl) {
-                      providerCache.set(
-                        cacheKey,
-                        createSmsProvider("simple-sms-gateway", {
-                          simpleSmsGateway: {
-                            baseUrl: config.simpleSmsGatewayBaseUrl,
-                          },
-                        }),
-                      );
-                    }
-                  } else if (gateway.provider === "sms-gateway") {
-                    const config = gateway.config;
-                    if (config.simpleSmsGatewayBaseUrl) {
-                      providerCache.set(
-                        cacheKey,
-                        createSmsProvider("sms-gateway", {
-                          smsGateway: {
-                            baseUrl: config.simpleSmsGatewayBaseUrl,
-                          },
-                        }),
-                      );
-                    }
+                  const provider = createProviderForGateway(gateway);
+                  if (provider) {
+                    providerCache.set(cacheKey, provider);
                   }
                 }
 
