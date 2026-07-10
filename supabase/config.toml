@@ -363,7 +363,10 @@ entrypoint = "./functions/fetch-mining-source/index.ts"
 
 [functions.mining-sources]
 enabled = true
-verify_jwt = true
+# OAuth callbacks (e.g. /oauth/callback/google) are hit by the user's
+# browser after redirect from the provider — no user JWT is present.
+# The handler authenticates the request via the signed `state` param.
+verify_jwt = false
 import_map = "./functions/mining-sources/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
