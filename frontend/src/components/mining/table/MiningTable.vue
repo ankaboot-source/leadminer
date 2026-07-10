@@ -1345,38 +1345,36 @@ function formatContactsCountForHeader(count: number) {
     .toLowerCase();
 }
 
-const visibleColumnsOptions = computed(() =>
-  [
-    { label: t('emails'), value: 'contacts' },
-    { label: t('source'), value: 'source' },
-    { label: t('occurrence'), value: 'occurrence' },
-    { label: t('recency'), value: 'recency' },
-    { label: t('replies'), value: 'replied_conversations' },
-    { label: t('temperature'), value: 'temperature' },
-    { label: t('tags'), value: 'tags' },
-    { label: t('reachable'), value: 'status' },
-    { label: t('consent'), value: 'consent_status' },
-    { label: t('recipient'), value: 'recipient' },
-    { label: t('sender'), value: 'sender' },
-    { label: t('seniority'), value: 'seniority' },
-    { label: $t('contact.given_name'), value: 'given_name' },
-    { label: $t('contact.family_name'), value: 'family_name' },
-    { label: $t('contact.alternate_name'), value: 'alternate_name' },
-    { label: $t('contact.alternate_email'), value: 'alternate_email' },
-    { label: $t('contact.location'), value: 'location' },
-    ...(origin !== 'mine'
-      ? [{ label: $t('contact.works_for'), value: 'works_for' }]
-      : []),
-    { label: $t('contact.job_title'), value: 'job_title' },
-    { label: $t('contact.name'), value: 'name' },
-    { label: $t('contact.same_as'), value: 'same_as' },
-    { label: $t('contact.telephone'), value: 'telephone' },
-    { label: $t('contact.image'), value: 'image' },
-    { label: $t('contact.updated_at'), value: 'updated_at' },
-    { label: $t('contact.created_at'), value: 'created_at' },
-    { label: t('mining_id'), value: 'mining_id' },
-  ],
-);
+const visibleColumnsOptions = computed(() => [
+  { label: t('emails'), value: 'contacts' },
+  { label: t('source'), value: 'source' },
+  { label: t('occurrence'), value: 'occurrence' },
+  { label: t('recency'), value: 'recency' },
+  { label: t('replies'), value: 'replied_conversations' },
+  { label: t('temperature'), value: 'temperature' },
+  { label: t('tags'), value: 'tags' },
+  { label: t('reachable'), value: 'status' },
+  { label: t('consent'), value: 'consent_status' },
+  { label: t('recipient'), value: 'recipient' },
+  { label: t('sender'), value: 'sender' },
+  { label: t('seniority'), value: 'seniority' },
+  { label: $t('contact.given_name'), value: 'given_name' },
+  { label: $t('contact.family_name'), value: 'family_name' },
+  { label: $t('contact.alternate_name'), value: 'alternate_name' },
+  { label: $t('contact.alternate_email'), value: 'alternate_email' },
+  { label: $t('contact.location'), value: 'location' },
+  ...(origin !== 'mine'
+    ? [{ label: $t('contact.works_for'), value: 'works_for' }]
+    : []),
+  { label: $t('contact.job_title'), value: 'job_title' },
+  { label: $t('contact.name'), value: 'name' },
+  { label: $t('contact.same_as'), value: 'same_as' },
+  { label: $t('contact.telephone'), value: 'telephone' },
+  { label: $t('contact.image'), value: 'image' },
+  { label: $t('contact.updated_at'), value: 'updated_at' },
+  { label: $t('contact.created_at'), value: 'created_at' },
+  { label: t('mining_id'), value: 'mining_id' },
+]);
 
 function disabledColumns(column: { label: string; value: string }) {
   return column.value === 'contacts';

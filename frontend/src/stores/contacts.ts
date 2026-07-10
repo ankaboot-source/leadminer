@@ -134,7 +134,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
       : clean;
 
     if (!skipOrgLookup.value) {
-      updatedContact.works_for = await getOrganizationName(updatedContact.works_for);
+      updatedContact.works_for = await getOrganizationName(
+        updatedContact.works_for,
+      );
     }
     if (
       updatedContact.location &&
