@@ -175,6 +175,7 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
     const grouped: Record<SmsGatewayProvider, SmsFleetGateway[]> = {
       smsgate: [],
       'simple-sms-gateway': [],
+      'sms-gateway': [],
       twilio: [],
     };
     gateways.value.forEach((g) => {

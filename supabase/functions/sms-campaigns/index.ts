@@ -13,6 +13,7 @@ import {
   createSmsProvider,
   isTwilioFallbackAvailable,
   type SimpleSmsGatewayCredentials,
+  SMS_GATEWAY_PROVIDER_NAME,
   type SmsGateCredentials,
   TwilioProvider,
 } from "./providers/mod.ts";
@@ -100,7 +101,7 @@ const smsCampaignPreviewSchema = smsCampaignCreateSchema.extend({
 
 const fleetGatewayCreateSchema = z.object({
   name: z.string().min(1),
-  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
   config: z.record(z.string()).optional(),
   daily_limit: z.number().optional(),
   monthly_limit: z.number().optional(),
@@ -118,7 +119,7 @@ type SmsFleetGateway = {
   id: string;
   user_id: string;
   name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "twilio";
+  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
   config: {
     baseUrl?: string;
     username?: string;
@@ -1794,7 +1795,10 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
           ? { success: true, message: "Gateway is reachable" }
           : { success: false, message: "Gateway is not reachable" };
       }
-    } else if (gateway.provider === "simple-sms-gateway") {
+    } else if (
+      gateway.provider === "simple-sms-gateway" ||
+      gateway.provider === "sms-gateway"
+    ) {
       const config = gateway.config as { simpleSmsGatewayBaseUrl?: string };
       if (!config.simpleSmsGatewayBaseUrl) {
         testResult = { success: false, message: "Missing gateway URL" };

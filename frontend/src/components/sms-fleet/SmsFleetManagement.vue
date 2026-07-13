@@ -16,7 +16,7 @@ import Checkbox from 'primevue/checkbox';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
@@ -131,6 +131,7 @@ function getDefaultName(provider: SupportedProvider): string {
   const names: Record<SupportedProvider, string> = {
     smsgate: 'SMSGate Gateway',
     'simple-sms-gateway': 'SMS Gateway',
+    'sms-gateway': 'SMS Gateway (iOS)',
   };
   return names[provider];
 }
@@ -211,9 +212,20 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   const labels: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
+    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return labels[provider] || provider;
+}
+
+function getProviderIcon(provider: SmsGatewayProvider): string {
+  const icons: Record<SmsGatewayProvider, string> = {
+    smsgate: 'pi pi-android',
+    'simple-sms-gateway': 'pi pi-mobile',
+    'sms-gateway': 'pi pi-mobile',
+    twilio: 'pi pi-phone',
+  };
+  return icons[provider] || 'pi pi-mobile';
 }
 
 defineExpose({ openAddDialog });
@@ -246,6 +258,11 @@ onMounted(() => {
         class="flex items-center justify-between p-4 border border-surface-200 rounded-md"
       >
         <div class="flex items-center gap-3">
+          <i
+            :class="getProviderIcon(gateway.provider)"
+            class="text-surface-500 text-lg"
+            :aria-label="getProviderLabel(gateway.provider)"
+          />
           <div class="flex flex-col">
             <span class="font-medium">{{ gateway.name }}</span>
             <span class="text-sm text-surface-500">

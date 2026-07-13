@@ -54,7 +54,7 @@ export function buildTableStorageKey(
 
 export function sanitizeVisibleColumns(columns: unknown): string[] {
   if (!Array.isArray(columns)) {
-    return ['contacts'];
+    return [];
   }
 
   const sanitized = columns.filter(
@@ -62,12 +62,7 @@ export function sanitizeVisibleColumns(columns: unknown): string[] {
       typeof column === 'string' && ALLOWED_COLUMNS.has(column),
   );
 
-  const unique = [...new Set(sanitized)];
-  if (!unique.includes('contacts')) {
-    unique.push('contacts');
-  }
-
-  return unique;
+  return [...new Set(sanitized)];
 }
 
 function reviveDateFilters(filters: ParsedFilters) {

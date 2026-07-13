@@ -264,7 +264,6 @@
                   <MultiSelect
                     v-model="$contactsStore.visibleColumns"
                     :options="visibleColumnsOptions"
-                    :option-disabled="disabledColumns"
                     option-label="label"
                     class="min-w-56"
                     fluid
@@ -273,7 +272,6 @@
                       t('visible_columns', $contactsStore.visibleColumns.length)
                     "
                     :max-selected-labels="0"
-                    @change="onSelectColumnsChange"
                   />
                 </li>
               </ul>
@@ -1387,7 +1385,7 @@ function onSelectColumnsChange() {
 }
 
 function getDefaultVisibleColumns() {
-  return ['contacts', 'location', 'works_for', 'job_title', 'actions'];
+  return ['contacts', 'name', 'location', 'works_for', 'job_title'];
 }
 
 /* Table dynamic Height */
