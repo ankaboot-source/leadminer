@@ -299,7 +299,7 @@ const $leadminer = useLeadminerStore();
 const { t } = useI18n({
   useScope: 'local',
 });
-const { $api, $saasEdgeFunctions } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
 const $route = useRoute();
 const $router = useRouter();
@@ -526,22 +526,7 @@ async function reconnectExpiredSource(source: MiningSource) {
       throw new Error(t('reconnect_unavailable'));
     }
 
-    await useSupabaseClient().auth.refreshSession();
-    const { authorizationUri } = await $api<{ authorizationUri: string }>(
-      `/imap/mine/sources/${source.type}`,
-      {
-        method: 'POST',
-        body: {
-          redirect: '/sources',
-        },
-      },
-    );
-
-    if (!authorizationUri) {
-      throw new Error(t('reconnect_unavailable'));
-    }
-
-    await navigateTo(authorizationUri, { external: true });
+    await addOAuthAccount(source.type, '/sources');
   } catch (error) {
     $toast.add({
       severity: 'error',

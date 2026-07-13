@@ -16,15 +16,23 @@ describe('table preferences helpers', () => {
     );
   });
 
-  it('sanitizes visible columns and keeps contacts mandatory', () => {
-    const sanitized = sanitizeVisibleColumns([
+  it('sanitizes visible columns without forcing any column', () => {
+    const withContacts = sanitizeVisibleColumns([
       'temperature',
       'unknown_column',
       'contacts',
       'temperature',
     ]);
 
-    expect(sanitized).toEqual(['temperature', 'contacts']);
+    expect(withContacts).toEqual(['temperature', 'contacts']);
+
+    const withoutContacts = sanitizeVisibleColumns([
+      'temperature',
+      'name',
+      'contacts',
+    ]).filter((column) => column !== 'contacts');
+
+    expect(withoutContacts).toEqual(['temperature', 'name']);
   });
 
   it('restores Date values in date filters from JSON', () => {
