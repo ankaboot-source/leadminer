@@ -16,7 +16,7 @@ import Checkbox from 'primevue/checkbox';
 import ProgressSpinner from 'primevue/progressspinner';
 import type { SmsGatewayProvider, SmsFleetGateway } from '@/types/sms-fleet';
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
 const props = defineProps<{
   autoAdd?: boolean;
@@ -131,7 +131,6 @@ function getDefaultName(provider: SupportedProvider): string {
   const names: Record<SupportedProvider, string> = {
     smsgate: 'SMSGate Gateway',
     'simple-sms-gateway': 'SMS Gateway',
-    'sms-gateway': 'SMS Gateway (iOS)',
   };
   return names[provider];
 }
@@ -212,7 +211,6 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   const labels: Record<SmsGatewayProvider, string> = {
     smsgate: 'SMSGate',
     'simple-sms-gateway': 'Simple SMS Gateway',
-    'sms-gateway': 'SMS Gateway (iOS)',
     twilio: 'Twilio',
   };
   return labels[provider] || provider;
@@ -222,7 +220,6 @@ function getProviderIcon(provider: SmsGatewayProvider): string {
   const icons: Record<SmsGatewayProvider, string> = {
     smsgate: 'pi pi-android',
     'simple-sms-gateway': 'pi pi-mobile',
-    'sms-gateway': 'pi pi-mobile',
     twilio: 'pi pi-phone',
   };
   return icons[provider] || 'pi pi-mobile';

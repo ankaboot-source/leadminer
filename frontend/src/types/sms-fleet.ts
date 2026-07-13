@@ -1,7 +1,6 @@
 export type SmsGatewayProvider =
   | 'smsgate'
   | 'simple-sms-gateway'
-  | 'sms-gateway'
   | 'twilio';
 
 export interface SmsFleetGateway {
@@ -25,10 +24,7 @@ export interface SmsGatewayConfig {
   baseUrl?: string;
   username?: string;
   password?: string;
-  // Simple SMS Gateway (Android) and SMS Gateway (iOS) both expose the
-  // same `POST /send-sms` URL contract. The provider is dispatched via
-  // `gateway.provider` ("simple-sms-gateway" vs "sms-gateway") rather
-  // than an `appId` discriminator.
+  // Simple SMS Gateway specific
   simpleSmsGatewayBaseUrl?: string;
   // Twilio specific
   accountSid?: string;

@@ -636,19 +636,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
         smsProvider = createSmsProvider("simple-sms-gateway", {
           simpleSmsGateway: simpleSmsGatewayCredentials,
         });
-      } else if (selectedProvider === "sms-gateway") {
-        const profileConfig = await getUserSmsProviderConfig(
-          supabaseAdmin,
-          campaign.user_id,
-        );
-        const smsGatewayBaseUrl =
-          profileConfig.simple_sms_gateway_base_url?.trim() || "";
-        if (!smsGatewayBaseUrl) {
-          throw new Error("sms-gateway credentials missing for campaign owner");
-        }
-        smsProvider = createSmsProvider("sms-gateway", {
-          smsGateway: { baseUrl: smsGatewayBaseUrl },
-        });
       } else {
         const profileConfig = await getUserSmsProviderConfig(
           supabaseAdmin,

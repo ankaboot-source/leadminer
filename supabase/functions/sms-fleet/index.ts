@@ -13,7 +13,7 @@ const functionName = "sms-fleet";
 
 const gatewaySchema = z.object({
   name: z.string().min(1),
-  provider: z.enum(["smsgate", "simple-sms-gateway", "sms-gateway", "twilio"]),
+  provider: z.enum(["smsgate", "simple-sms-gateway", "twilio"]),
   config: z.record(z.unknown()),
   daily_limit: z.number().int().min(0).optional(),
   monthly_limit: z.number().int().min(0).optional(),
@@ -175,10 +175,7 @@ app.post("/gateways", authMiddleware, async (c) => {
     const validated = validation.data;
     const supabaseAdmin = createSupabaseAdmin();
 
-    if (
-      validated.provider === "simple-sms-gateway" ||
-      validated.provider === "sms-gateway"
-    ) {
+    if (validated.provider === "simple-sms-gateway") {
       const baseUrl = extractSimpleSmsGatewayBaseUrl(
         validated.config as Record<string, unknown>,
       );
