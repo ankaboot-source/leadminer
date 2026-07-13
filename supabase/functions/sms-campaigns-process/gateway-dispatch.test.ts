@@ -77,27 +77,6 @@ Deno.test(
   },
 );
 
-Deno.test("createProviderForGateway: sms-gateway with baseUrl returns provider", () => {
-  const provider = createProviderForGateway({
-    ...baseGateway,
-    provider: "sms-gateway",
-    config: { simpleSmsGatewayBaseUrl: "https://gateway.example.com" },
-  });
-  assertEquals(provider !== null, true);
-  assertEquals(provider?.name, "sms-gateway");
-});
-
-Deno.test("createProviderForGateway: sms-gateway without baseUrl returns null", () => {
-  assertEquals(
-    createProviderForGateway({
-      ...baseGateway,
-      provider: "sms-gateway",
-      config: {},
-    }),
-    null,
-  );
-});
-
 Deno.test("createProviderForGateway: twilio returns a provider", () => {
   // twilio-provider requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
   // TWILIO_FROM_NUMBER env vars (pre-existing). This test passes in CI

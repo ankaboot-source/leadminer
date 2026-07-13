@@ -312,12 +312,22 @@ async function injectTrackers(
     const originalUrl = match[1];
     if (!originalUrl) continue;
 
-    const token = await recordClickLink(
-      supabaseAdmin,
-      campaignId,
-      recipientId,
-      originalUrl,
-    );
+    let token: string;
+    try {
+      token = await recordClickLink(
+        supabaseAdmin,
+        campaignId,
+        recipientId,
+        originalUrl,
+      );
+    } catch (error) {
+      logger.error("Failed to record click link, sending untracked URL", {
+        campaignId,
+        recipientId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      continue;
+    }
     let trackedUrl = buildSmsClickTrackingUrl(token);
 
     if (useShortLinks) {
@@ -516,6 +526,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
   const processingPromise = (async () => {
     let sentCount = 0;
     let failedCount = 0;
+    let totalRecipients = 0;
     let processingError: string | undefined;
 
     try {
@@ -528,6 +539,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .eq("campaign_id", resolvedCampaignId)
           .eq("send_status", "pending");
         recipients = data || [];
+        totalRecipients = recipients.length;
       } catch (err) {
         logger.error("Failed to fetch recipients", {
           campaignId: resolvedCampaignId,
@@ -537,7 +549,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
-        "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio" | "fleet";
+        "smsgate" | "simple-sms-gateway" | "twilio" | "fleet";
 
       // Load gateway assignments for fleet mode
       const gatewayAssignments: Map<string, SmsFleetGateway> = new Map();
@@ -623,19 +635,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
         }
         smsProvider = createSmsProvider("simple-sms-gateway", {
           simpleSmsGateway: simpleSmsGatewayCredentials,
-        });
-      } else if (selectedProvider === "sms-gateway") {
-        const profileConfig = await getUserSmsProviderConfig(
-          supabaseAdmin,
-          campaign.user_id,
-        );
-        const smsGatewayBaseUrl =
-          profileConfig.simple_sms_gateway_base_url?.trim() || "";
-        if (!smsGatewayBaseUrl) {
-          throw new Error("sms-gateway credentials missing for campaign owner");
-        }
-        smsProvider = createSmsProvider("sms-gateway", {
-          smsGateway: { baseUrl: smsGatewayBaseUrl },
         });
       } else {
         const profileConfig = await getUserSmsProviderConfig(
@@ -739,7 +738,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
                   // Update current gateway for provider creation
                   providerUsed = alternativeGateway.provider as
-                    "smsgate" | "simple-sms-gateway" | "sms-gateway";
+                    "smsgate" | "simple-sms-gateway" | "twilio";
                   const cacheKey = alternativeGateway.id;
 
                   if (!providerCache.has(cacheKey)) {
@@ -755,7 +754,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 }
               } else if (gateway) {
                 providerUsed = gateway.provider as
-                  "smsgate" | "simple-sms-gateway" | "sms-gateway";
+                  "smsgate" | "simple-sms-gateway" | "twilio";
 
                 // Check cache for provider
                 const cacheKey = `${gateway.id}`;
@@ -1062,6 +1061,14 @@ app.post("/process", authMiddleware, async (c: Context) => {
         : failedCount > 0 && sentCount === 0
           ? "failed"
           : "completed";
+      if (!processingError && sentCount > 0 && failedCount > 0) {
+        logger.warn("Campaign completed with partial failures", {
+          campaignId: resolvedCampaignId,
+          sentCount,
+          failedCount,
+          totalRecipients,
+        });
+      }
       await supabaseAdmin
         .schema("private")
         .from("sms_campaigns")

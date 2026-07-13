@@ -7,7 +7,7 @@ export type SmsFleetGateway = {
   id: string;
   user_id: string;
   name: string;
-  provider: "smsgate" | "simple-sms-gateway" | "sms-gateway" | "twilio";
+  provider: "smsgate" | "simple-sms-gateway" | "twilio";
   config: {
     baseUrl?: string;
     username?: string;
@@ -42,13 +42,6 @@ export function createProviderForGateway(
       if (config.simpleSmsGatewayBaseUrl) {
         return createSmsProvider("simple-sms-gateway", {
           simpleSmsGateway: { baseUrl: config.simpleSmsGatewayBaseUrl },
-        });
-      }
-      return null;
-    case "sms-gateway":
-      if (config.simpleSmsGatewayBaseUrl) {
-        return createSmsProvider("sms-gateway", {
-          smsGateway: { baseUrl: config.simpleSmsGatewayBaseUrl },
         });
       }
       return null;
