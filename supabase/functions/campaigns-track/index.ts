@@ -145,23 +145,26 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     const userId = smsCampaignOwner.user_id as string;
     const phone = smsRecipient.phone as string;
 
-    const { data: existing } = await supabaseAdmin
+    // Upsert handles concurrent unsubscribes on the same (user_id, phone)
+    // via the UNIQUE constraint, eliminating the prior SELECT+INSERT race.
+    const { error: upsertError } = await supabaseAdmin
       .schema("private")
       .from("sms_campaign_unsubscribes")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("phone", phone)
-      .single();
-
-    if (!existing) {
-      await supabaseAdmin
-        .schema("private")
-        .from("sms_campaign_unsubscribes")
-        .insert({
+      .upsert(
+        {
           user_id: userId,
           phone,
           campaign_id: smsRecipient.campaign_id,
-        });
+        },
+        { onConflict: "user_id,phone" },
+      );
+
+    if (upsertError) {
+      logger.error("Failed to record SMS unsubscribe", {
+        userId,
+        phone,
+        error: upsertError.message,
+      });
     }
 
     return c.html(
