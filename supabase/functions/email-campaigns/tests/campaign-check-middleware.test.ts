@@ -1,10 +1,9 @@
 import { Context } from "hono";
 
 Deno.test({
-  name: "campaign-check-middleware: should skip non-create paths",
+  name: "complianceMiddleware: should skip non-create paths",
   async fn() {
-    const { campaignCheckMiddleware } =
-      await import("../campaign-check-middleware.ts");
+    const { complianceMiddleware } = await import("../middlewares-mod.ts");
 
     let nextCalled = false;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -15,7 +14,7 @@ Deno.test({
       json: () => {},
     } as unknown as Context;
 
-    await campaignCheckMiddleware(context, async () => {
+    await complianceMiddleware(context, async () => {
       nextCalled = true;
     });
 
@@ -26,10 +25,9 @@ Deno.test({
 });
 
 Deno.test({
-  name: "campaign-check-middleware: should return 400 when no contacts selected",
+  name: "complianceMiddleware: should return 400 when no contacts selected",
   async fn() {
-    const { campaignCheckMiddleware } =
-      await import("../campaign-check-middleware.ts");
+    const { complianceMiddleware } = await import("../middlewares-mod.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -48,7 +46,7 @@ Deno.test({
       },
     } as unknown as Context;
 
-    await campaignCheckMiddleware(context, async () => {});
+    await complianceMiddleware(context, async () => {});
 
     if (
       !jsonResult ||
@@ -56,7 +54,9 @@ Deno.test({
         "No contacts selected"
     ) {
       throw new Error(
-        `Expected 400 with 'No contacts selected', got: ${JSON.stringify(jsonResult)}`,
+        `Expected 400 with 'No contacts selected', got: ${
+          JSON.stringify(jsonResult)
+        }`,
       );
     }
   },
@@ -124,7 +124,8 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Billing flow: should return 266 for insufficient credits without partial",
+  name:
+    "Billing flow: should return 266 for insufficient credits without partial",
   fn() {
     const requested = 100;
     const availableCredits = 50;

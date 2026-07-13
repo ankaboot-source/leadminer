@@ -1,10 +1,11 @@
 import { Context } from "hono";
 
 Deno.test({
-  name: "campaign-bill-middleware: should skip non-create paths",
+  name: "createFinalResponseMiddleware: should skip non-create paths",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } = await import(
+      "../middlewares-mod.ts"
+    );
 
     let nextCalled = false;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -15,7 +16,7 @@ Deno.test({
       json: () => {},
     } as unknown as Context;
 
-    await campaignBillMiddleware(context, async () => {
+    await createFinalResponseMiddleware(context, async () => {
       nextCalled = true;
     });
 
@@ -26,10 +27,12 @@ Deno.test({
 });
 
 Deno.test({
-  name: "campaign-bill-middleware: should return 500 when campaign data missing",
+  name:
+    "createFinalResponseMiddleware: should return 500 when campaign data missing",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } = await import(
+      "../middlewares-mod.ts"
+    );
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -49,7 +52,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -59,20 +62,24 @@ Deno.test({
     }
     if (
       (jsonResult.data as Record<string, unknown>)?.error !==
-      "Campaign creation data missing"
+        "Campaign creation data missing"
     ) {
       throw new Error(
-        `Expected 'Campaign creation data missing', got: ${(jsonResult.data as Record<string, unknown>)?.error}`,
+        `Expected 'Campaign creation data missing', got: ${
+          (jsonResult.data as Record<string, unknown>)?.error
+        }`,
       );
     }
   },
 });
 
 Deno.test({
-  name: "campaign-bill-middleware: should return success when billing disabled",
+  name:
+    "createFinalResponseMiddleware: should return success when billing disabled",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } = await import(
+      "../middlewares-mod.ts"
+    );
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -101,7 +108,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -116,25 +123,31 @@ Deno.test({
     }
     if (
       (jsonResult.data as Record<string, unknown>)?.campaignId !==
-      "campaign-123"
+        "campaign-123"
     ) {
       throw new Error(
-        `Expected campaignId 'campaign-123', got: ${(jsonResult.data as Record<string, unknown>)?.campaignId}`,
+        `Expected campaignId 'campaign-123', got: ${
+          (jsonResult.data as Record<string, unknown>)?.campaignId
+        }`,
       );
     }
     if ((jsonResult.data as Record<string, unknown>)?.queuedCount !== 10) {
       throw new Error(
-        `Expected queuedCount 10, got: ${(jsonResult.data as Record<string, unknown>)?.queuedCount}`,
+        `Expected queuedCount 10, got: ${
+          (jsonResult.data as Record<string, unknown>)?.queuedCount
+        }`,
       );
     }
   },
 });
 
 Deno.test({
-  name: "campaign-bill-middleware: should return success when charge fails (campaign exists)",
+  name:
+    "createFinalResponseMiddleware: should return success when charge fails (campaign exists)",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } = await import(
+      "../middlewares-mod.ts"
+    );
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -163,7 +176,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -173,15 +186,19 @@ Deno.test({
       (jsonResult.data as Record<string, unknown>)?.msg !== "Campaign queued"
     ) {
       throw new Error(
-        `Expected success response even when billing fails, got: ${JSON.stringify(jsonResult)}`,
+        `Expected success response even when billing fails, got: ${
+          JSON.stringify(jsonResult)
+        }`,
       );
     }
     if (
       (jsonResult.data as Record<string, unknown>)?.campaignId !==
-      "campaign-456"
+        "campaign-456"
     ) {
       throw new Error(
-        `Expected campaignId 'campaign-456', got: ${(jsonResult.data as Record<string, unknown>)?.campaignId}`,
+        `Expected campaignId 'campaign-456', got: ${
+          (jsonResult.data as Record<string, unknown>)?.campaignId
+        }`,
       );
     }
   },

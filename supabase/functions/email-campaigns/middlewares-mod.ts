@@ -1,7 +1,7 @@
 import { Context, Next } from "hono";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { initI18n, t, getUserLocale } from "./i18n.ts";
+import { getUserLocale, initI18n, t } from "./i18n.ts";
 
 // Constants
 const PRIVACY_POLICY_URL = "/privacy-policy";
@@ -50,37 +50,37 @@ interface CheckResult {
   eligibleCount?: number;
 }
 
-async function getSelectedContacts(
+export async function getSelectedContacts(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   userId: string,
   emails: string[],
 ): Promise<ContactSnapshot[]> {
-  const { data, error } = await supabaseAdmin
-    .schema("private")
-    .from("persons")
-    .select("email, consent_status, updated_at")
-    .eq("user_id", userId)
-    .in("email", emails)
-    .order("updated_at", { ascending: false });
+  const BATCH_SIZE = 100;
+  const contacts: ContactSnapshot[] = [];
 
-  if (error) {
-    throw new Error(`Failed to fetch contacts: ${error.message}`);
+  for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+    const batch = emails.slice(i, i + BATCH_SIZE);
+    const { data, error } = await supabaseAdmin
+      .schema("private")
+      .from("contacts_view")
+      .select("email, consent_status, updated_at")
+      .eq("user_id", userId)
+      .in("email", batch);
+
+    if (error) {
+      throw new Error(`Failed to fetch contacts: ${error.message}`);
+    }
+
+    for (const row of data || []) {
+      contacts.push({
+        email: row.email,
+        consent_status: row.consent_status || "legitimate_interest",
+        updated_at: row.updated_at,
+      });
+    }
   }
 
-  const contactsByEmail = new Map<string, ContactSnapshot>();
-
-  for (const row of data || []) {
-    const key = row.email.toLowerCase();
-    if (contactsByEmail.has(key)) continue;
-
-    contactsByEmail.set(key, {
-      email: row.email,
-      consent_status: row.consent_status || "legitimate_interest",
-      updated_at: row.updated_at,
-    });
-  }
-
-  return [...contactsByEmail.values()];
+  return contacts;
 }
 
 /**
@@ -258,8 +258,9 @@ export async function complianceMiddleware(c: Context, next: Next) {
     );
 
     if (complianceCheck.response) {
-      const statusCode =
-        complianceCheck.response.data?.available === 0 ? 400 : 266;
+      const statusCode = complianceCheck.response.data?.available === 0
+        ? 400
+        : 266;
 
       // Add partial_continue field if applicable
       if (complianceCheck.partialField) {
