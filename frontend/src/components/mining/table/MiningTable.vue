@@ -264,6 +264,7 @@
                   <MultiSelect
                     v-model="$contactsStore.visibleColumns"
                     :options="visibleColumnsOptions"
+                    :option-disabled="disabledColumns"
                     option-label="label"
                     class="min-w-56"
                     fluid
@@ -272,6 +273,7 @@
                       t('visible_columns', $contactsStore.visibleColumns.length)
                     "
                     :max-selected-labels="0"
+                    @change="onSelectColumnsChange"
                   />
                 </li>
               </ul>
