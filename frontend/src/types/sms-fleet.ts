@@ -1,7 +1,4 @@
-export type SmsGatewayProvider =
-  | 'smsgate'
-  | 'simple-sms-gateway'
-  | 'twilio';
+export type SmsGatewayProvider = 'smsgate' | 'simple-sms-gateway' | 'twilio';
 
 export interface SmsFleetGateway {
   id: string;
