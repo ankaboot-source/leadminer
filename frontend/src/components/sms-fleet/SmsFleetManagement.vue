@@ -219,6 +219,16 @@ function getProviderLabel(provider: SmsGatewayProvider): string {
   return labels[provider] || provider;
 }
 
+function getProviderIcon(provider: SmsGatewayProvider): string {
+  const icons: Record<SmsGatewayProvider, string> = {
+    smsgate: 'pi pi-android',
+    'simple-sms-gateway': 'pi pi-mobile',
+    'sms-gateway': 'pi pi-mobile',
+    twilio: 'pi pi-phone',
+  };
+  return icons[provider] || 'pi pi-mobile';
+}
+
 defineExpose({ openAddDialog });
 
 onMounted(() => {
@@ -249,6 +259,11 @@ onMounted(() => {
         class="flex items-center justify-between p-4 border border-surface-200 rounded-md"
       >
         <div class="flex items-center gap-3">
+          <i
+            :class="getProviderIcon(gateway.provider)"
+            class="text-surface-500 text-lg"
+            :aria-label="getProviderLabel(gateway.provider)"
+          />
           <div class="flex flex-col">
             <span class="font-medium">{{ gateway.name }}</span>
             <span class="text-sm text-surface-500">

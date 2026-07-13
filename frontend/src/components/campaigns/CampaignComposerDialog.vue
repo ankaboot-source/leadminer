@@ -366,6 +366,7 @@ import {
   getUnavailableSenderReconnectContext,
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
+import { addOAuthAccount } from '@/utils/oauth';
 import Editor from 'primevue/editor';
 import GenericComplianceDialog, {
   type ModalData,
@@ -379,7 +380,7 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
-const { $api, $saasEdgeFunctions } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
 const $screenStore = useScreenStore();
 const $leadminer = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
@@ -914,22 +915,7 @@ async function reconnectSenderSource(email: string) {
   }
 
   try {
-    await useSupabaseClient().auth.refreshSession();
-    const { authorizationUri } = await $api<{ authorizationUri: string }>(
-      `/imap/mine/sources/${source.type}`,
-      {
-        method: 'POST',
-        body: {
-          redirect: '/sources',
-        },
-      },
-    );
-
-    if (!authorizationUri) {
-      throw new Error(t('reconnect_unavailable'));
-    }
-
-    await navigateTo(authorizationUri, { external: true });
+    await addOAuthAccount(source.type, '/sources');
   } catch (error) {
     $toast.add({
       severity: 'error',
