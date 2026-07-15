@@ -929,7 +929,7 @@ async function getSelectedContacts(
   return contacts;
 }
 
-async function getContactsByEmails(
+export async function getContactsByEmails(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   userId: string,
   emails: string[],
@@ -941,20 +941,44 @@ async function getContactsByEmails(
     new Set(emails.map((e) => e.toLowerCase().trim()).filter(Boolean)),
   );
 
-  const { data: personRows, error: personErr } = await supabaseAdmin
-    .schema("private")
-    .from("persons")
-    .select("id, email")
-    .eq("user_id", userId)
-    .in("email", normalizedEmails);
+  if (normalizedEmails.length === 0) return [] as ContactSnapshot[];
 
-  if (personErr) {
-    throw new Error(
-      `Unable to fetch contacts for campaign: ${personErr.message}`,
+  // PostgREST serializes `.in("email", emails)` as `?email=in.(...)` in the URL.
+  // At ~30 chars/email the request blows past PostgREST's URL length limit for
+  // large campaigns, surfacing as "URI too long". Batch the email->id lookup
+  // to keep each query string under the limit.
+  const GET_CONTACTS_BY_EMAILS_BATCH_SIZE = 100;
+  const allPersonRows: Array<{ id: string; email: string }> = [];
+  for (
+    let i = 0;
+    i < normalizedEmails.length;
+    i += GET_CONTACTS_BY_EMAILS_BATCH_SIZE
+  ) {
+    const chunk = normalizedEmails.slice(
+      i,
+      i + GET_CONTACTS_BY_EMAILS_BATCH_SIZE,
     );
+    const { data: personRows, error: personErr } = await supabaseAdmin
+      .schema("private")
+      .from("persons")
+      .select("id, email")
+      .eq("user_id", userId)
+      .in("email", chunk);
+
+    if (personErr) {
+      throw new Error(
+        `Unable to fetch contacts for campaign: ${personErr.message}`,
+      );
+    }
+
+    if (personRows) {
+      allPersonRows.push(
+        ...(personRows as Array<{ id: string; email: string }>),
+      );
+    }
   }
 
-  const ids = (personRows ?? []).map((r) => r.id as string);
+  const ids = allPersonRows.map((r) => r.id);
   if (!ids.length) return [] as ContactSnapshot[];
 
   const { data, error } = await supabaseAdmin
@@ -2585,4 +2609,10 @@ async function sendOAuthFailureNotification(
   }
 }
 
-Deno.serve((req) => app.fetch(req));
+// Guard: only start the HTTP server when this module is the entrypoint.
+// `import.meta.main` is `true` for `deno run index.ts` (production / supabase
+// functions serve) and `false` for `import("./index.ts")` in tests, where we
+// want to import helpers like `getContactsByEmails` without binding a port.
+if (import.meta.main) {
+  Deno.serve((req) => app.fetch(req));
+}
