@@ -2,7 +2,7 @@ import { Context, Hono } from "hono";
 import { z } from "zod";
 import { createLogger } from "../_shared/logger.ts";
 import corsHeaders from "../_shared/cors.ts";
-import { defaultConfig, type MockConfig } from "./config.ts";
+import type { MockConfig } from "./config.ts";
 
 const logger = createLogger("sms-gateway-mock");
 
@@ -26,7 +26,8 @@ type ConfigOutput = z.infer<typeof configSchema>;
 
 // In-memory config and state (module-level for shared state)
 let config: ConfigOutput = configSchema.parse({});
-let sequentialCounter = 0;
+// Separate counter for /send-sms only (not incremented by /config or /health)
+let sendSmsCounter = 0;
 
 const app = new Hono();
 
@@ -143,11 +144,11 @@ app.post("/send-sms", async (c: Context) => {
       );
     }
 
-    // Generate message ID
+    // Generate message ID (only /send-sms increments this counter)
+    sendSmsCounter++;
     let messageId: string;
     if (config.sequentialId) {
-      sequentialCounter++;
-      messageId = `${config.idPrefix}${sequentialCounter}`;
+      messageId = `${config.idPrefix}${sendSmsCounter}`;
     } else {
       messageId = `${config.idPrefix}${crypto.randomUUID()}`;
     }
@@ -196,7 +197,7 @@ export function createMockServer(): Hono {
  */
 export function resetMockServer(): void {
   config = configSchema.parse({});
-  sequentialCounter = 0;
+  sendSmsCounter = 0;
   logger.info("Mock server reset to defaults");
 }
 

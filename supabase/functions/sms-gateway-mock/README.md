@@ -28,7 +28,11 @@ Response:
   "service": "sms-gateway-mock",
   "config": {
     "successRate": 1.0,
-    "delayMs": 0
+    "delayMs": 0,
+    "failMessage": "Mock gateway error",
+    "failStatusCode": 500,
+    "sequentialId": true,
+    "idPrefix": "mock_"
   }
 }
 ```
@@ -48,14 +52,16 @@ curl -X POST http://localhost:8000/send-sms \
 ```json
 {
   "id": "mock_1",
-  "messageId": "mock_1"
+  "messageId": "mock_1",
+  "success": true
 }
 ```
 
 **Error Response (HTTP 4xx/5xx):**
 ```json
 {
-  "message": "Mock gateway error"
+  "message": "Mock gateway error",
+  "success": false
 }
 ```
 
@@ -109,6 +115,18 @@ curl -X POST http://localhost:8000/config \
 curl -X POST http://localhost:8000/config \
   -H "Content-Type: application/json" \
   -d '{"sequentialId":false}'
+```
+
+## Programmatic Use
+
+```typescript
+import { createMockServer, resetMockServer } from "./index.ts";
+
+// Create server instance for testing
+const app = createMockServer();
+
+// Reset state between tests
+resetMockServer();
 ```
 
 ## Environment Variables
