@@ -75,6 +75,9 @@
         <small v-if="showFieldError('messageTemplate')" class="text-red-500">
           {{ validationErrors.messageTemplate }}
         </small>
+        <small v-if="validationErrors.placeholders" class="text-red-500">
+          {{ validationErrors.placeholders }}
+        </small>
       </div>
 
       <div class="border border-surface-200 rounded-md p-3">
@@ -272,11 +275,12 @@ const form = reactive({
   selectedGatewayIds: [] as string[],
 });
 
-type FormField = 'messageTemplate' | 'gateways';
+type FormField = 'messageTemplate' | 'gateways' | 'placeholders';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
   gateways: false,
+  placeholders: false,
 });
 
 const charCount = ref(0);
@@ -360,20 +364,30 @@ const toggleAttributeMenu = (event: MouseEvent) => {
 };
 
 const validationErrors = computed<Record<FormField, string>>(() => {
-  return {
+  const errors: Record<FormField, string> = {
     messageTemplate: form.messageTemplate.trim().length
       ? ''
       : t('message_required'),
     gateways: '',
+    placeholders: '',
   };
+
+  if (form.messageTemplate.trim().length > 0) {
+    const singleBraceRegex = /(?<![{])\{(?:name|email|worksFor|jobTitle|location)\}(?![}])/;
+    if (singleBraceRegex.test(form.messageTemplate)) {
+      errors.placeholders = t('placeholder_syntax_error');
+    }
+  }
+
+  return errors;
 });
 
 const showFieldError = (field: FormField) => {
   return touched[field] && validationErrors.value[field];
 };
 
-const isFormValid = computed(() =>
-  Object.values(validationErrors.value).every((value) => !value),
+const isFormValid = computed(
+  () => !validationErrors.value.messageTemplate && !validationErrors.value.gateways,
 );
 
 const selectedContactsLength = computed(() => {
@@ -664,6 +678,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "characters_left": "{count} characters left",
     "insert_person_attribute_body": "Insert contact attribute in SMS",
     "attribute_syntax_help": "Insert placeholders like {{name}}, {{email}}, or {{worksFor}} — they will be replaced with the contact's data.",
+    "placeholder_syntax_error": "Use {{name}} (double braces) instead of {name} for placeholders",
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
@@ -705,6 +720,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "characters_left": "{count} caractères restants",
     "insert_person_attribute_body": "Insérer un attribut contact dans le SMS",
     "attribute_syntax_help": "Insérez des variables comme {{name}}, {{email}} ou {{worksFor}} — elles seront remplacées par les données du contact.",
+    "placeholder_syntax_error": "Utilisez {{nom}} (doubles accolades) au lieu de {nom} pour les variables",
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",

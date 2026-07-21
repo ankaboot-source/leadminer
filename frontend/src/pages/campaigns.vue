@@ -234,6 +234,12 @@
                         campaign.recipient_count || 0
                       }}
                     </div>
+                    <Tag
+                      v-if="campaign.channel === 'sms' && campaign.failed_count > 0 && campaign.status === 'completed'"
+                      severity="warn"
+                      :value="t('partial_failure_indicator', { count: campaign.failed_count })"
+                      class="mt-1"
+                    />
                   </div>
 
                   <div class="p-2 rounded bg-surface-50">
@@ -847,6 +853,7 @@ onBeforeUnmount(() => {
     "delivery_tooltip": "Delivered: {delivered}/{attempted} | Hard bounces: {hard} | Soft bounces: {soft} | Other failures: {other}",
     "delivery_batch_progress": "Batch {current}/{total} · {time}",
     "delivery_tooltip_with_batch": "Batch {current} of {total}\nRemaining: {time}\nProcessed: {delivered}/{attempted} delivered\nHard bounces: {hard} | Soft bounces: {soft} | Other: {other}",
+    "partial_failure_indicator": "{count} failed",
     "opens_tooltip_enabled": "Open tracking is enabled. Open rates are indicative only and can be inflated by Apple Mail Privacy Protection (especially on iOS) and email client prefetching.",
     "opens_tooltip_disabled": "Open tracking is disabled for this campaign, so opening metrics are not measured.",
     "clicks_tooltip_enabled": "Click tracking is enabled. Unique clicks are counted per recipient when they click tracked links.",
@@ -913,6 +920,7 @@ onBeforeUnmount(() => {
     "delivery_tooltip": "Livrés : {delivered}/{attempted} | Hard bounces : {hard} | Soft bounces : {soft} | Autres échecs : {other}",
     "delivery_batch_progress": "Lot {current}/{total} · {time}",
     "delivery_tooltip_with_batch": "Lot {current} sur {total}\nRestant : {time}\nTraités : {delivered}/{attempted} livrés\nHard bounces : {hard} | Soft bounces : {soft} | Autres : {other}",
+    "partial_failure_indicator": "{count} échecs",
     "opens_tooltip_enabled": "Le tracking des ouvertures est activé. Le taux d'ouverture reste indicatif et peut être surestimé (Apple Mail Privacy Protection, notamment sur iOS, et préchargements des clients email).",
     "opens_tooltip_disabled": "Le tracking des ouvertures est désactivé pour cette campagne, les ouvertures ne sont donc pas mesurées.",
     "clicks_tooltip_enabled": "Le tracking des clics est activé. Les clics uniques sont comptés une seule fois par destinataire et par lien.",
