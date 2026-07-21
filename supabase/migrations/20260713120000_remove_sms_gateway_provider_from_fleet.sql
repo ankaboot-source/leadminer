@@ -13,6 +13,13 @@
 --   SELECT id, name, provider, created_at
 --     FROM private.sms_fleet_gateways
 --    WHERE provider = 'sms-gateway';
+--
+-- Fallback: migrate any remaining iOS gateways to the Android provider.
+-- The provider config is identical (POST /send-sms contract), so the
+-- same simpleSmsGatewayBaseUrl key continues to work.
+UPDATE private.sms_fleet_gateways
+SET provider = 'simple-sms-gateway', updated_at = NOW()
+WHERE provider = 'sms-gateway';
 
 ALTER TABLE private.sms_fleet_gateways
   DROP CONSTRAINT IF EXISTS sms_fleet_gateways_provider_check;

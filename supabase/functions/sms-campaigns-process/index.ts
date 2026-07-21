@@ -539,13 +539,13 @@ app.post("/process", authMiddleware, async (c: Context) => {
           .eq("campaign_id", resolvedCampaignId)
           .eq("send_status", "pending");
         recipients = data || [];
-        totalRecipients = recipients.length;
       } catch (err) {
         logger.error("Failed to fetch recipients", {
           campaignId: resolvedCampaignId,
           error: err instanceof Error ? err.message : String(err),
         });
       }
+      totalRecipients = recipients.length;
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
       const selectedProvider = campaign.provider as
