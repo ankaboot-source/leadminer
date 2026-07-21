@@ -235,9 +235,17 @@
                       }}
                     </div>
                     <Tag
-                      v-if="campaign.channel === 'sms' && campaign.failed_count > 0 && campaign.status === 'completed'"
+                      v-if="
+                        campaign.channel === 'sms' &&
+                        campaign.failed_count > 0 &&
+                        campaign.status === 'completed'
+                      "
                       severity="warn"
-                      :value="t('partial_failure_indicator', { count: campaign.failed_count })"
+                      :value="
+                        t('partial_failure_indicator', {
+                          count: campaign.failed_count,
+                        })
+                      "
                       class="mt-1"
                     />
                   </div>

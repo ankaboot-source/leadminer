@@ -373,7 +373,8 @@ const validationErrors = computed<Record<FormField, string>>(() => {
   };
 
   if (form.messageTemplate.trim().length > 0) {
-    const singleBraceRegex = /(?<![{])\{(?:name|email|worksFor|jobTitle|location)\}(?![}])/;
+    const singleBraceRegex =
+      /(?<![{])\{(?:name|email|worksFor|jobTitle|location)\}(?![}])/;
     if (singleBraceRegex.test(form.messageTemplate)) {
       errors.placeholders = t('placeholder_syntax_error');
     }
@@ -387,7 +388,8 @@ const showFieldError = (field: FormField) => {
 };
 
 const isFormValid = computed(
-  () => !validationErrors.value.messageTemplate && !validationErrors.value.gateways,
+  () =>
+    !validationErrors.value.messageTemplate && !validationErrors.value.gateways,
 );
 
 const selectedContactsLength = computed(() => {
