@@ -1064,6 +1064,7 @@ app.post("/campaigns/create", authMiddleware, async (c: Context) => {
   });
 });
 
+// skipcq: JS-R1005 — Refactor: extract preview route into smaller helpers (provider setup, validation, message rendering)
 app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
