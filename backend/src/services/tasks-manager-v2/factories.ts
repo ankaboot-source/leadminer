@@ -41,24 +41,29 @@ export function createImapMining(
 
   const tasks: Task[] = [];
 
-  tasks.push(
-    new FetchTask({
-      miningId,
-      userId: params.userId,
-      outputStream: streams.messagesStream,
-      fetcherClient: params.fetcherClient,
-      extractSignatures: params.fetchEmailBody,
-      signatureStream: streams.signatureStream,
-      fetchParams: {
-        email: params.email,
-        folders: params.boxes,
-        since: params.since
-      },
-      passive_mining: params.passiveMining
-    })
-  );
+  const hasBoxes = params.boxes.length > 0;
+  const hasGoogleContacts = params.googleContactsSync;
 
-  if (params.googleContactsSync) {
+  if (hasBoxes) {
+    tasks.push(
+      new FetchTask({
+        miningId,
+        userId: params.userId,
+        outputStream: streams.messagesStream,
+        fetcherClient: params.fetcherClient,
+        extractSignatures: params.fetchEmailBody,
+        signatureStream: streams.signatureStream,
+        fetchParams: {
+          email: params.email,
+          folders: params.boxes,
+          since: params.since
+        },
+        passive_mining: params.passiveMining
+      })
+    );
+  }
+
+  if (hasGoogleContacts) {
     tasks.push(
       new GoogleContactsFetchTask({
         miningId,
@@ -114,7 +119,7 @@ export function createImapMining(
     );
   }
 
-  if (params.fetchEmailBody) {
+  if (params.fetchEmailBody && hasBoxes) {
     tasks.push(
       new SignatureTask({
         miningId,
@@ -139,11 +144,17 @@ export function createImapMining(
     deps
   );
 
-  const upstreams: string[] = [TaskId.Fetch];
-  if (params.googleContactsSync) {
+  const upstreams: string[] = [];
+  if (hasBoxes) {
+    upstreams.push(TaskId.Fetch);
+  }
+  if (hasGoogleContacts) {
     upstreams.push(TaskId.GoogleContactsFetch);
   }
-  pipeline.addProgressLink(TaskId.Extract, upstreams);
+
+  if (upstreams.length > 0) {
+    pipeline.addProgressLink(TaskId.Extract, upstreams);
+  }
 
   if (params.cleaningEnabled && hasEmailVerificationConfigured(ENV)) {
     pipeline.addProgressLink(TaskId.Clean, TaskId.Extract, {
@@ -151,7 +162,7 @@ export function createImapMining(
     });
   }
 
-  if (params.fetchEmailBody) {
+  if (params.fetchEmailBody && hasBoxes) {
     pipeline.addProgressLink(TaskId.Signature, TaskId.Fetch, {
       skipTotal: true
     });
