@@ -27,3 +27,4 @@ docs/plans/
 .agents/
 skills-lock.json
 supabase/snippets/*
+.slim/deepwork/

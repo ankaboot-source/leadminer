@@ -46,11 +46,7 @@
     <Button
       v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
-      :disabled="
-        (sourceType === 'email' &&
-          ($leadminerStore.isLoadingBoxes || totalEmails === 0)) ||
-        $leadminerStore.isLoadingStartMining
-      "
+      :disabled="!canStartMining"
       :loading="$leadminerStore.isLoadingStartMining"
       :label="$t('common.start_mining_now')"
       @click="startMining"
@@ -242,6 +238,13 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
+const hasSelectedBoxes = computed(
+  () =>
+    Object.keys(selectedBoxes.value).filter(
+      (key) => selectedBoxes.value[key].checked && key !== '',
+    ).length > 0,
+);
+
 const sourceTypeIsEmail = computed(
   () => sourceType.value === 'email' || sourceType.value === 'pst',
 );
@@ -289,6 +292,13 @@ const totalMinedMessage = computed(() =>
 
 const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
+
+const canStartMining = computed(() => {
+  if (sourceType.value !== 'email') return true;
+  if ($leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining)
+    return false;
+  return totalEmails.value > 0 || $leadminerStore.googleContactsSyncEnabled;
+});
 
 const extractionProgress = computed(() =>
   $leadminerStore.fetchingFinished && !canceled.value
@@ -390,6 +400,24 @@ watch(extractionFinished, async (finished) => {
   }
 });
 
+watch(
+  () => $leadminerStore.googleContactsFetched,
+  async (fetched) => {
+    if (fetched && !canceled.value && !hasSelectedBoxes.value) {
+      $toast.add({
+        severity: 'info',
+        summary: t('mining_done'),
+        detail: totalExtractedNotificationMessage.value,
+        group: 'achievement',
+        life: 8000,
+      });
+      $stepper.next();
+      if (isSupported.value && permissionGranted.value) show();
+      await reloadContacts();
+    }
+  },
+);
+
 function openMiningSettings() {
   if (sourceType.value === 'email' || sourceType.value === 'pst') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
@@ -398,6 +426,7 @@ function openMiningSettings() {
 
 async function startMiningBoxes() {
   if (
+    !$leadminerStore.googleContactsSyncEnabled &&
     Object.keys(selectedBoxes.value).filter(
       (key) => selectedBoxes.value[key].checked && key !== '',
     ).length === 0
