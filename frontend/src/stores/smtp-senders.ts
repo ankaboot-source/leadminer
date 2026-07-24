@@ -7,7 +7,7 @@ import type {
 } from '@/types/smtp-senders';
 
 export const useSmtpSendersStore = defineStore('smtp-senders', () => {
-  const { $api } = useNuxtApp();
+  const { $api, $saasEdgeFunctions } = useNuxtApp();
 
   const senders = ref<SmtpSender[]>([]);
   const isLoading = ref(false);
@@ -132,6 +132,8 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
         success: false,
         message: err instanceof Error ? err.message : 'Test failed',
       };
+    } finally {
+      await fetchSenders();
     }
   }
 
@@ -169,6 +171,33 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
 
   const activeSenders = computed(() => senders.value.filter((s) => s.active));
 
+  const availability = ref<Record<string, boolean>>({});
+
+  async function fetchSenderAvailability(): Promise<void> {
+    try {
+      const response = await $saasEdgeFunctions(
+        'email-campaigns/campaigns/sender-options',
+        { method: 'POST', body: {} },
+      );
+      const options: Array<{ email?: string; available?: boolean }> =
+        response?.options ?? [];
+      const next: Record<string, boolean> = {};
+      for (const option of options) {
+        const email = String(option.email ?? '')
+          .trim()
+          .toLowerCase();
+        if (email) {
+          next[email] = Boolean(option.available);
+        }
+      }
+      availability.value = next;
+    } catch (err) {
+      // Silent failure — stale availability is better than broken UI
+      error.value =
+        err instanceof Error ? err.message : 'Failed to fetch availability';
+    }
+  }
+
   function $reset() {
     senders.value = [];
     isLoading.value = false;
@@ -180,6 +209,7 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
     isLoading,
     error,
     activeSenders,
+    availability,
     fetchSenders,
     createSender,
     updateSender,
@@ -187,6 +217,7 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
     testSender,
     autodetect,
     regenerateFromSources,
+    fetchSenderAvailability,
     $reset,
   };
 });

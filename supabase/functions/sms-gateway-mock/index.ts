@@ -59,23 +59,48 @@ const providerOverrideSchema = z.object({
   delayMs: z.number().min(0).max(60000).optional(),
 });
 
+const defaultGlobalConfig = {
+  successRate: 1.0,
+  delayMs: 0,
+  failMessage: "Mock gateway error",
+  failStatusCode: 500,
+  sequentialId: true,
+  idPrefix: "mock_",
+};
+
+const defaultProvidersConfig = {
+  smsgate: undefined as { successRate?: number; failStatusCode?: number; failMessage?: string; delayMs?: number } | undefined,
+  "simple-sms-gateway": undefined as { successRate?: number; failStatusCode?: number; failMessage?: string; delayMs?: number } | undefined,
+};
+
 const configSchema = z.object({
-  global: z
-    .object({
-      successRate: z.number().min(0).max(1).default(1.0),
-      delayMs: z.number().min(0).max(60000).default(0),
-      failMessage: z.string().default("Mock gateway error"),
-      failStatusCode: z.number().min(400).max(599).default(500),
-      sequentialId: z.boolean().default(true),
-      idPrefix: z.string().default("mock_"),
-    })
-    .default(),
-  providers: z
-    .object({
-      smsgate: providerOverrideSchema.optional(),
-      "simple-sms-gateway": providerOverrideSchema.optional(),
-    })
-    .default(),
+  global: z.object({
+    successRate: z.number().min(0).max(1),
+    delayMs: z.number().min(0).max(60000),
+    failMessage: z.string(),
+    failStatusCode: z.number().min(400).max(599),
+    sequentialId: z.boolean(),
+    idPrefix: z.string(),
+  }),
+  providers: z.object({
+    smsgate: providerOverrideSchema.optional(),
+    "simple-sms-gateway": providerOverrideSchema.optional(),
+  }),
+});
+
+const partialConfigSchema = z.object({
+  global: z.object({
+    successRate: z.number().min(0).max(1).optional(),
+    delayMs: z.number().min(0).max(60000).optional(),
+    failMessage: z.string().optional(),
+    failStatusCode: z.number().min(400).max(599).optional(),
+    sequentialId: z.boolean().optional(),
+    idPrefix: z.string().optional(),
+  }).optional(),
+  providers: z.object({
+    smsgate: providerOverrideSchema.optional(),
+    "simple-sms-gateway": providerOverrideSchema.optional(),
+  }).optional(),
 });
 
 type ConfigOutput = z.infer<typeof configSchema>;
@@ -129,7 +154,10 @@ function clearMessageStore(): void {
 // State
 // ============================================================
 
-let config: ConfigOutput = configSchema.parse({});
+let config: ConfigOutput = {
+  global: defaultGlobalConfig,
+  providers: defaultProvidersConfig,
+};
 let sendSmsCounter = 0;
 
 // ============================================================
@@ -283,7 +311,7 @@ app.get("/health", (c: Context) => {
 app.post("/config", async (c: Context) => {
   try {
     const body = await c.req.json();
-    const validation = configSchema.partial().safeParse(body);
+    const validation = partialConfigSchema.safeParse(body);
 
     if (!validation.success) {
       return c.json(
@@ -295,15 +323,21 @@ app.post("/config", async (c: Context) => {
       );
     }
 
+    // Deep merge global config
+    if (validation.data.global) {
+      config.global = {
+        ...config.global,
+        ...validation.data.global,
+      };
+    }
+
     // Deep merge providers
     if (validation.data.providers) {
       config.providers = {
         ...config.providers,
         ...validation.data.providers,
       };
-      delete validation.data.providers;
     }
-    config = { ...config, ...validation.data };
 
     logger.info("Config updated", { config });
 
@@ -423,7 +457,7 @@ app.post("/:provider/send-sms", async (c: Context) => {
 
   try {
     const body = await c.req.json();
-    const campaignId = extractCampaignId(provider, c.req.headers, body);
+    const campaignId = extractCampaignId(provider, c.req.raw.headers, body);
 
     let phone: string;
     let message: string;

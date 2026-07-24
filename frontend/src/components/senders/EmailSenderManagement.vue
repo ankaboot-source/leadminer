@@ -94,6 +94,7 @@ defineExpose({ openAddDialog });
 
 onMounted(async () => {
   await $store.fetchSenders();
+  await $store.fetchSenderAvailability();
   if ($store.senders.length === 0) {
     await $store.regenerateFromSources();
   }
@@ -167,9 +168,20 @@ onMounted(async () => {
             @click="confirmDelete(sender)"
           />
           <Tag
-            :value="sender.active ? t('active') : t('inactive')"
-            :severity="sender.active ? 'success' : 'secondary'"
+            v-if="
+              sender.active &&
+              $store.availability[sender.email.toLowerCase()] !== false
+            "
+            :value="t('active')"
+            severity="success"
           />
+          <Tag
+            v-else-if="sender.active"
+            v-tooltip.top="t('active_stale_tooltip')"
+            :value="t('active_stale')"
+            severity="warn"
+          />
+          <Tag v-else :value="t('inactive')" severity="secondary" />
         </div>
       </div>
     </div>
@@ -177,7 +189,9 @@ onMounted(async () => {
     <AddEmailSenderDialog
       v-model:visible="showAddDialog"
       :editing-sender="editingSender"
-      @sender-saved="$store.fetchSenders()"
+      @sender-saved="
+        $store.fetchSenders().then(() => $store.fetchSenderAvailability())
+      "
     />
   </div>
 </template>
@@ -189,6 +203,8 @@ onMounted(async () => {
     "no_senders_configured": "No email senders configured",
     "active": "Active",
     "inactive": "Inactive",
+    "active_stale": "Stale",
+    "active_stale_tooltip": "Saved as active but the last live SMTP/OAuth check failed. Click Test to retry.",
     "edit": "Edit",
     "test": "Test",
     "delete": "Delete",
@@ -205,6 +221,8 @@ onMounted(async () => {
     "no_senders_configured": "Aucun expéditeur email configuré",
     "active": "Actif",
     "inactive": "Inactif",
+    "active_stale": "Obsolète",
+    "active_stale_tooltip": "Enregistré comme actif mais la dernière vérification SMTP/OAuth a échoué. Cliquez sur Tester pour réessayer.",
     "edit": "Modifier",
     "test": "Tester",
     "delete": "Supprimer",
