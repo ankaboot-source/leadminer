@@ -250,6 +250,9 @@ export default function initializeSmtpSendersController(
         } finally {
           transport.close();
         }
+      } catch (error) {
+        return next(error);
+      }
     },
 
     autodetect(req: Request, res: Response, next: NextFunction) {
