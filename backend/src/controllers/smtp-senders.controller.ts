@@ -223,14 +223,14 @@ export default function initializeSmtpSendersController(
             from: `"${sender.name}" <${sender.email}>`,
             to: testTo,
             subject: 'Leadminer SMTP Test',
-            text: 'This is a test email from Leadminer to verify your SMTP configuration.',
+            text: 'This is a test email from Leadminer to verify your SMTP configuration.'
           });
 
           if (!result) {
             await smtpSenders.update(req.params.id, user.id, { active: false });
             return res.status(400).json({
               success: false,
-              message: 'SMTP transport returned no result',
+              message: 'SMTP transport returned no result'
             });
           }
 
@@ -239,13 +239,20 @@ export default function initializeSmtpSendersController(
           await smtpSenders
             .update(req.params.id, user.id, { active: false })
             .catch((updateError) => {
-              logger.warn('Failed to mark sender inactive after SMTP test failure', {
-                senderId: req.params.id,
-                userId: user.id,
-                error: updateError instanceof Error ? updateError.message : String(updateError),
-              });
+              logger.warn(
+                'Failed to mark sender inactive after SMTP test failure',
+                {
+                  senderId: req.params.id,
+                  userId: user.id,
+                  error:
+                    updateError instanceof Error
+                      ? updateError.message
+                      : String(updateError)
+                }
+              );
             });
-          const message = error instanceof Error ? error.message : 'Test failed';
+          const message =
+            error instanceof Error ? error.message : 'Test failed';
           return res.status(400).json({ success: false, message });
         } finally {
           transport.close();
