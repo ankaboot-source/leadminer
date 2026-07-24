@@ -362,6 +362,7 @@ function findAlternativeGateway(
       !failedGateways.has(g.id) &&
       g.is_active &&
       (g.daily_limit === 0 || g.sent_today < g.daily_limit) &&
+      (g.monthly_limit === 0 || g.sent_this_month < g.monthly_limit) &&
       g.id !== currentGateway?.id,
   );
 
@@ -588,7 +589,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
               .schema("private")
               .from("sms_fleet_gateways")
               .select(
-                "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today",
+                "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today, sent_this_month",
               )
               .in("id", gatewayIds);
 
@@ -853,24 +854,33 @@ app.post("/process", authMiddleware, async (c: Context) => {
                   sent_at: new Date().toISOString(),
                 })
                 .eq("id", recipient.id);
-              sentCount++;
-              activeSentCount = sentCount;
               sendSuccess = true;
 
               // Increment gateway sent counters for fleet mode
               if (isFleetMode) {
                 const gateway = gatewayAssignments.get(recipient.id);
                 if (gateway) {
+                  logger.info("Incrementing gateway sent_count", {
+                    campaignId: resolvedCampaignId,
+                    recipientId: recipient.id,
+                    gatewayId: gateway.id,
+                    gatewayName: gateway.name,
+                  });
                   // Use Case 8 Fix: Atomic increment with quota check
-                  const success = await supabaseAdmin.rpc(
-                    "increment_gateway_sent_count_atomic",
-                    {
+                  const success = await supabaseAdmin
+                    .schema("private")
+                    .rpc("increment_gateway_sent_count_atomic", {
                       p_gateway_id: gateway.id,
                       p_count: 1,
-                    },
-                  );
+                    });
+                  logger.info("Gateway increment result", {
+                    campaignId: resolvedCampaignId,
+                    recipientId: recipient.id,
+                    gatewayId: gateway.id,
+                    success,
+                  });
 
-                  if (!success) {
+                  if (!success.data) {
                     // Quota exceeded atomically - mark gateway as failed
                     failedGateways.add(gateway.id);
                     logger.error(
@@ -947,8 +957,28 @@ app.post("/process", authMiddleware, async (c: Context) => {
 
                   // Reset failure count on success
                   gatewayFailureCount.set(gateway.id, 0);
+                  sentCount++;
+                  activeSentCount = sentCount;
                 }
               }
+
+              // Increment campaign-level sent_count for real-time visibility
+              logger.info("Incrementing campaign sent_count", {
+                campaignId: resolvedCampaignId,
+                recipientId: recipient.id,
+              });
+              const campaignIncrementResult = await supabaseAdmin
+                .schema("private")
+                .rpc("increment_sms_campaign_counts_atomic", {
+                  p_campaign_id: resolvedCampaignId,
+                  p_sent_increment: 1,
+                  p_failed_increment: 0,
+                });
+              logger.info("Campaign increment result", {
+                campaignId: resolvedCampaignId,
+                recipientId: recipient.id,
+                result: campaignIncrementResult.data,
+              });
             } else {
               // Use Case 5 Fix: Categorize errors for differentiated handling
               const errorMessage =
@@ -1047,6 +1077,15 @@ app.post("/process", authMiddleware, async (c: Context) => {
             .eq("id", recipient.id);
           failedCount++;
           activeFailedCount = failedCount;
+
+          // Increment campaign-level failed_count for real-time visibility
+          await supabaseAdmin
+            .schema("private")
+            .rpc("increment_sms_campaign_counts_atomic", {
+              p_campaign_id: resolvedCampaignId,
+              p_sent_increment: 0,
+              p_failed_increment: 1,
+            });
         }
       }
     } catch (err) {
