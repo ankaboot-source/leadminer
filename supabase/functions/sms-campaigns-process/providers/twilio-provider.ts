@@ -39,12 +39,17 @@ export class TwilioProvider implements SmsProvider {
     const auth = btoa(`${this.accountSid}:${this.authToken}`);
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      };
+      if (params.campaignId) {
+        headers["X-Campaign-Id"] = params.campaignId;
+      }
+
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers,
         body: new URLSearchParams({
           To: params.to,
           From: params.from || this.fromNumber,

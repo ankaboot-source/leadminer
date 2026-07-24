@@ -7,6 +7,7 @@ export interface SendSmsParams {
   to: string;
   from: string;
   body: string;
+  campaignId?: string;
 }
 
 export interface SendSmsResult {

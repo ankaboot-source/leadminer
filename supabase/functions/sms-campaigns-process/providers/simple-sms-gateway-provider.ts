@@ -20,11 +20,16 @@ export class SimpleSmsGatewayProvider implements SmsProvider {
     const url = this.baseUrl;
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (params.campaignId) {
+        headers["X-Campaign-Id"] = params.campaignId;
+      }
+
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           phone: params.to,
           message: params.body,
