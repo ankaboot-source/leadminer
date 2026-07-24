@@ -173,10 +173,10 @@ function getEffectiveConfig(provider?: string): {
   idPrefix: string;
 } {
   const global = config.global;
-  if (!provider || !config.providers?.[provider]) {
+  if (!provider || !(provider in config.providers) || !config.providers[provider as keyof typeof config.providers]) {
     return global;
   }
-  const override = config.providers[provider]!;
+  const override = config.providers[provider as keyof typeof config.providers]!;
   return {
     successRate: override.successRate ?? global.successRate,
     delayMs: override.delayMs ?? global.delayMs,
@@ -437,7 +437,7 @@ app.post("/:provider/send-sms", async (c: Context) => {
   // smsgate requires Basic Auth
   if (provider === "smsgate") {
     const authHeader = c.req.header("Authorization");
-    const credentials = parseBasicAuth(authHeader);
+    const credentials = parseBasicAuth(authHeader ?? null);
     if (!credentials) {
       logger.warn("Missing or invalid Basic Auth for smsgate", { timestamp });
       return c.json(
@@ -638,7 +638,17 @@ export function createMockServer(): Hono {
  * Resets config, sequential counter, and message store.
  */
 export function resetMockServer(): void {
-  config = configSchema.parse({});
+  config = {
+    global: {
+      successRate: 1.0,
+      delayMs: 0,
+      failMessage: "Mock gateway error",
+      failStatusCode: 500,
+      sequentialId: true,
+      idPrefix: "mock_",
+    },
+    providers: {},
+  };
   sendSmsCounter = 0;
   clearMessageStore();
   logger.info("Mock server reset to defaults");
