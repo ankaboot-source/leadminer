@@ -192,7 +192,7 @@ curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?campaignId=t
 
 # Get full message data (includes phone numbers)
 curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?full=true&limit=10" \
-  -H "X-Mock-Token: debug-token"
+  -H "X-Mock-Token: <your-mock-token>"
 ```
 
 **Response:**
@@ -215,7 +215,7 @@ curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?full=true&li
 }
 ```
 
-**PII Redaction:** By default, phone numbers are redacted in responses (e.g., `+336****5678`). Use the `X-Mock-Token: debug-token` header with `full=true` to retrieve unmasked data.
+**PII Redaction:** By default, phone numbers are redacted in responses (e.g., `+336****5678`). Use the `X-Mock-Token: <your-mock-token>` header with `full=true` to retrieve unmasked data.
 
 ### DELETE /messages
 
@@ -237,7 +237,7 @@ curl -X DELETE "http://localhost:54321/functions/v1/sms-gateway-mock/messages?ca
 
 # Clear all messages (requires auth token)
 curl -X DELETE "http://localhost:54321/functions/v1/sms-gateway-mock/messages?all=true" \
-  -H "X-Mock-Token: debug-token"
+  -H "X-Mock-Token: <your-mock-token>"
 ```
 
 **Response:**
@@ -370,7 +370,7 @@ curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?campaignId=m
 
 # Get full data (unredacted)
 curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?full=true" \
-  -H "X-Mock-Token: debug-token"
+  -H "X-Mock-Token: <your-mock-token>"
 ```
 
 ## Programmatic Use

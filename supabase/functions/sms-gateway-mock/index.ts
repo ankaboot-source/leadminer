@@ -176,7 +176,10 @@ function getEffectiveConfig(provider?: string): {
   if (!provider || !(provider in config.providers) || !config.providers[provider as keyof typeof config.providers]) {
     return global;
   }
-  const override = config.providers[provider as keyof typeof config.providers]!;
+  const override = config.providers[provider as keyof typeof config.providers];
+  if (!override) {
+    return global;
+  }
   return {
     successRate: override.successRate ?? global.successRate,
     delayMs: override.delayMs ?? global.delayMs,
@@ -255,7 +258,7 @@ function redactBody(body: string): string {
   if (body.length <= 50) {
     return body;
   }
-  return body.slice(0, 50) + "...";
+  return `${body.slice(0, 50)}...`;
 }
 
 function redactMessage(msg: StoredMessage, full: boolean): StoredMessage {
@@ -354,7 +357,7 @@ app.post("/config", async (c: Context) => {
 });
 
 // GET /messages
-app.get("/messages", async (c: Context) => {
+app.get("/messages", (c: Context) => {
   const campaignId = c.req.query("campaignId");
   const provider = c.req.query("provider");
   const phone = c.req.query("phone");
@@ -599,7 +602,7 @@ app.post("/:provider/send-sms", async (c: Context) => {
 
     return c.json({
       id: messageId,
-      messageId: messageId,
+      messageId,
       success: true,
     });
   } catch (error) {
