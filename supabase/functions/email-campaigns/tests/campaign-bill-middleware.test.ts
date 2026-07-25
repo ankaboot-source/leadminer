@@ -3,8 +3,8 @@ import { Context } from "hono";
 Deno.test({
   name: "campaign-bill-middleware: should skip non-create paths",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } =
+      await import("../middlewares-mod.ts");
 
     let nextCalled = false;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -15,7 +15,7 @@ Deno.test({
       json: () => {},
     } as unknown as Context;
 
-    await campaignBillMiddleware(context, async () => {
+    await createFinalResponseMiddleware(context, async () => {
       nextCalled = true;
     });
 
@@ -28,8 +28,8 @@ Deno.test({
 Deno.test({
   name: "campaign-bill-middleware: should return 500 when campaign data missing",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } =
+      await import("../middlewares-mod.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -49,7 +49,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -71,8 +71,8 @@ Deno.test({
 Deno.test({
   name: "campaign-bill-middleware: should return success when billing disabled",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } =
+      await import("../middlewares-mod.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -101,7 +101,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }
@@ -133,8 +133,8 @@ Deno.test({
 Deno.test({
   name: "campaign-bill-middleware: should return success when charge fails (campaign exists)",
   async fn() {
-    const { campaignBillMiddleware } =
-      await import("../campaign-bill-middleware.ts");
+    const { createFinalResponseMiddleware } =
+      await import("../middlewares-mod.ts");
 
     let jsonResult: Record<string, unknown> | undefined;
     // skipcq: JS-0323 - Test mock requires minimal Context interface
@@ -163,7 +163,7 @@ Deno.test({
     };
 
     try {
-      await campaignBillMiddleware(context, async () => {});
+      await createFinalResponseMiddleware(context, async () => {});
     } finally {
       Deno.env.get = originalEnv;
     }

@@ -286,8 +286,6 @@ export async function complianceMiddleware(c: Context, next: Next) {
       userId: user.id,
       payload,
     });
-
-    return await next();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error("Campaign check failed", {
@@ -303,4 +301,10 @@ export async function complianceMiddleware(c: Context, next: Next) {
       500,
     );
   }
+
+  // Call next() OUTSIDE the compliance try-catch so downstream errors (e.g.
+  // billing service unavailability) propagate to the framework's error
+  // handler instead of being masked as compliance CHECK_FAILED failures.
+  // Billing is best-effort and must not block campaign creation.
+  return await next();
 }
