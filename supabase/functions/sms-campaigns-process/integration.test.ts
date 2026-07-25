@@ -110,7 +110,7 @@ function createFailingThenSucceedingFetch(
   failUntilCall: number,
   successId: string,
 ): typeof fetch {
-  return async (url: URL | RequestInfo, init?: RequestInit) => {
+  return async (url: URL | RequestInfo, init?: RequestInit) => { // skipcq: JS-0116
     const urlString = typeof url === "string"
       ? url
       : url instanceof URL
@@ -288,7 +288,7 @@ Deno.test("handles partial failures", async () => {
 
     // Custom fetch that succeeds for first 2, fails for 3rd
     let callCount = 0;
-    globalThis.fetch = async (url: URL | RequestInfo, init?: RequestInit) => {
+    globalThis.fetch = async (url: URL | RequestInfo, init?: RequestInit) => { // skipcq: JS-0116
       const urlString = typeof url === "string"
         ? url
         : url instanceof URL
@@ -343,7 +343,7 @@ Deno.test("handles timeout gracefully", async () => {
 
   try {
     // Mock fetch that throws AbortError (timeout)
-    globalThis.fetch = async () => {
+    globalThis.fetch = async () => { // skipcq: JS-0116
       const error = new Error("Request aborted - timeout exceeded");
       error.name = "AbortError";
       throw error;
@@ -441,7 +441,7 @@ Deno.test("SimpleSmsGatewayProvider - handles gateway timeout", async () => {
 
   try {
     // Mock fetch that throws AbortError
-    globalThis.fetch = async () => {
+    globalThis.fetch = async () => { // skipcq: JS-0116
       const error = new Error("Request aborted - timeout exceeded");
       error.name = "AbortError";
       throw error;

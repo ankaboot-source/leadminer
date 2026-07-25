@@ -33,21 +33,6 @@ interface ProviderOverride {
   delayMs?: number;
 }
 
-interface Config {
-  global: {
-    successRate: number;
-    delayMs: number;
-    failMessage: string;
-    failStatusCode: number;
-    sequentialId: boolean;
-    idPrefix: string;
-  };
-  providers: {
-    smsgate?: ProviderOverride;
-    "simple-sms-gateway"?: ProviderOverride;
-  };
-}
-
 // ============================================================
 // Schemas
 // ============================================================
@@ -73,20 +58,20 @@ const defaultProvidersConfig = {
   "simple-sms-gateway": undefined as { successRate?: number; failStatusCode?: number; failMessage?: string; delayMs?: number } | undefined,
 };
 
-const configSchema = z.object({
-  global: z.object({
-    successRate: z.number().min(0).max(1),
-    delayMs: z.number().min(0).max(60000),
-    failMessage: z.string(),
-    failStatusCode: z.number().min(400).max(599),
-    sequentialId: z.boolean(),
-    idPrefix: z.string(),
-  }),
-  providers: z.object({
-    smsgate: providerOverrideSchema.optional(),
-    "simple-sms-gateway": providerOverrideSchema.optional(),
-  }),
-});
+type ConfigOutput = {
+  global: {
+    successRate: number;
+    delayMs: number;
+    failMessage: string;
+    failStatusCode: number;
+    sequentialId: boolean;
+    idPrefix: string;
+  };
+  providers: {
+    smsgate?: ProviderOverride;
+    "simple-sms-gateway"?: ProviderOverride;
+  };
+};
 
 const partialConfigSchema = z.object({
   global: z.object({
@@ -102,8 +87,6 @@ const partialConfigSchema = z.object({
     "simple-sms-gateway": providerOverrideSchema.optional(),
   }).optional(),
 });
-
-type ConfigOutput = z.infer<typeof configSchema>;
 
 // ============================================================
 // In-memory message store
@@ -140,7 +123,10 @@ function addMessage(message: StoredMessage): void {
     if (!campaignIndex.has(message.campaignId)) {
       campaignIndex.set(message.campaignId, new Set());
     }
-    campaignIndex.get(message.campaignId)!.add(message.id);
+    const ids = campaignIndex.get(message.campaignId);
+    if (ids) {
+      ids.add(message.id);
+    }
   }
 }
 

@@ -360,7 +360,7 @@ export default function initializeSmtpSendersController(
               smtpPassword: '',
               authType: 'oauth',
               oauthProvider: source.type as SmtpOAuthProvider,
-              oauthRefreshToken: oauthCreds.refreshToken!
+              oauthRefreshToken: oauthCreds.refreshToken ?? '',
             });
           } else if (source.type === 'imap') {
             const imapCreds = source.credentials as ImapMiningSourceCredentials;
