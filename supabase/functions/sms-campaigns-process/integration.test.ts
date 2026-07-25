@@ -12,7 +12,6 @@
 import {
   assertEquals,
   assertExists,
-  assertMatch,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createSmsProvider } from "../sms-campaigns/providers/mod.ts";
 import type { SendSmsResult } from "../sms-campaigns/providers/types.ts";
