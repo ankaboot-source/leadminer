@@ -257,6 +257,7 @@ function buildSmsTemplateContext(
     ),
     sender: toTemplateValue(source.sender),
     recipient: toTemplateValue(source.recipient),
+    code: toTemplateValue(source.code),
   };
 
   return context;
@@ -385,6 +386,30 @@ function findAlternativeGateway(
   });
 
   return availableGateways[0];
+}
+
+async function resolveGatewayForNonFleetMode(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  campaign: { user_id: string; provider: string },
+  _providerUsed: string,
+): Promise<SmsFleetGateway | undefined> {
+  // Non-fleet mode: find the user's gateway matching the campaign provider
+  const { data: gateways } = await supabaseAdmin
+    .schema("private")
+    .from("sms_fleet_gateways")
+    .select(
+      "id, name, provider, config, daily_limit, monthly_limit, is_active, sent_today, sent_this_month",
+    )
+    .eq("user_id", campaign.user_id)
+    .eq("provider", campaign.provider)
+    .eq("is_active", true)
+    .limit(1);
+
+  if (!gateways || gateways.length === 0) {
+    return undefined;
+  }
+
+  return gateways[0] as SmsFleetGateway;
 }
 
 // ==========================================
@@ -546,6 +571,15 @@ app.post("/process", authMiddleware, async (c: Context) => {
           error: err instanceof Error ? err.message : String(err),
         });
       }
+
+      // Fetch unsubscribed phones for this campaign owner
+      const { data: unsubs } = await supabaseAdmin
+        .schema("private")
+        .from("sms_campaign_unsubscribes")
+        .select("phone")
+        .eq("user_id", campaign.user_id);
+      const unsubscribedPhones = new Set((unsubs || []).map((u) => u.phone));
+
       totalRecipients = recipients.length;
 
       const isFleetMode = campaign.fleet_mode_enabled === true;
@@ -683,6 +717,16 @@ app.post("/process", authMiddleware, async (c: Context) => {
       }
 
       for (const recipient of recipients || []) {
+        // Skip unsubscribed recipients before the retry loop
+        if (unsubscribedPhones.has(recipient.phone)) {
+          await supabaseAdmin
+            .schema("private")
+            .from("sms_campaign_recipients")
+            .update({ send_status: "skipped" })
+            .eq("id", recipient.id);
+          continue;
+        }
+
         let currentAttempt = 0;
         let sendSuccess = false;
         let lastError: string | undefined;
@@ -782,22 +826,6 @@ app.post("/process", authMiddleware, async (c: Context) => {
               throw new Error("SMS provider not available");
             }
 
-            const templateContext = buildSmsTemplateContext(
-              recipient.personalization_data as Record<string, unknown> | null,
-            );
-            const renderedBody = renderSmsTemplate(
-              campaign.message_template,
-              templateContext,
-            );
-
-            let messageWithTrackers = await injectTrackers(
-              supabaseAdmin,
-              resolvedCampaignId,
-              recipient.id,
-              renderedBody,
-              campaign.use_short_links,
-            );
-
             const unsubscribeToken =
               recipient.unsubscribe_short_token || getUniqueShortToken(10);
             if (!recipient.unsubscribe_short_token) {
@@ -814,6 +842,23 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 unsubscribeUrl = shortUnsubUrl;
               }
             }
+
+            const templateContext = buildSmsTemplateContext(
+              recipient.personalization_data as Record<string, unknown> | null,
+            );
+            const renderedBody = renderSmsTemplate(
+              campaign.message_template,
+              { ...templateContext, unsubscribeUrl },
+            );
+
+            let messageWithTrackers = await injectTrackers(
+              supabaseAdmin,
+              resolvedCampaignId,
+              recipient.id,
+              renderedBody,
+              campaign.use_short_links,
+            );
+
             const footerTemplate =
               campaign.footer_text_template ||
               "Unsubscribe me: {{unsubscribeUrl}}";
@@ -830,6 +875,7 @@ app.post("/process", authMiddleware, async (c: Context) => {
               to: recipient.phone,
               from: "",
               body: messageWithTrackers,
+              campaignId: resolvedCampaignId,
             });
 
             logger.info("SMS provider send", {
@@ -856,111 +902,121 @@ app.post("/process", authMiddleware, async (c: Context) => {
                 .eq("id", recipient.id);
               sendSuccess = true;
 
-              // Increment gateway sent counters for fleet mode
+              // Increment gateway sent counters (works for both fleet and non-fleet modes)
+              let gateway: SmsFleetGateway | undefined;
               if (isFleetMode) {
-                const gateway = gatewayAssignments.get(recipient.id);
-                if (gateway) {
-                  logger.info("Incrementing gateway sent_count", {
-                    campaignId: resolvedCampaignId,
-                    recipientId: recipient.id,
-                    gatewayId: gateway.id,
-                    gatewayName: gateway.name,
+                gateway = gatewayAssignments.get(recipient.id);
+              } else {
+                gateway = await resolveGatewayForNonFleetMode(
+                  supabaseAdmin,
+                  campaign,
+                  providerUsed,
+                );
+              }
+
+              if (gateway) {
+                logger.info("Incrementing gateway sent_count", {
+                  campaignId: resolvedCampaignId,
+                  recipientId: recipient.id,
+                  gatewayId: gateway.id,
+                  gatewayName: gateway.name,
+                });
+                // Use Case 8 Fix: Atomic increment with quota check
+                const success = await supabaseAdmin
+                  .schema("private")
+                  .rpc("increment_gateway_sent_count_atomic", {
+                    p_gateway_id: gateway.id,
+                    p_count: 1,
                   });
-                  // Use Case 8 Fix: Atomic increment with quota check
-                  const success = await supabaseAdmin
-                    .schema("private")
-                    .rpc("increment_gateway_sent_count_atomic", {
-                      p_gateway_id: gateway.id,
-                      p_count: 1,
-                    });
-                  logger.info("Gateway increment result", {
-                    campaignId: resolvedCampaignId,
-                    recipientId: recipient.id,
-                    gatewayId: gateway.id,
-                    success,
-                  });
+                logger.info("Gateway increment result", {
+                  campaignId: resolvedCampaignId,
+                  recipientId: recipient.id,
+                  gatewayId: gateway.id,
+                  success,
+                });
 
-                  if (!success.data) {
-                    // Quota exceeded atomically - mark gateway as failed
-                    failedGateways.add(gateway.id);
-                    logger.error(
-                      "Gateway quota exceeded during atomic increment",
-                      {
-                        gatewayId: gateway.id,
-                        gatewayName: gateway.name,
-                        recipientId: recipient.id,
-                      },
-                    );
+                // Quota-exceeded handling is fleet-mode only (alternative gateway reassignment)
+                if (isFleetMode && !success.data) {
+                  // Quota exceeded atomically - mark gateway as failed
+                  failedGateways.add(gateway.id);
+                  logger.error(
+                    "Gateway quota exceeded during atomic increment",
+                    {
+                      gatewayId: gateway.id,
+                      gatewayName: gateway.name,
+                      recipientId: recipient.id,
+                    },
+                  );
 
-                    // Find alternative gateway
-                    const alternativeGateway = findAlternativeGateway(
-                      recipient.id,
-                      failedGateways,
-                      fleetGateways,
-                      gatewayAssignments,
-                      gatewayFailureCount,
-                    );
+                  // Find alternative gateway
+                  const alternativeGateway = findAlternativeGateway(
+                    recipient.id,
+                    failedGateways,
+                    fleetGateways,
+                    gatewayAssignments,
+                    gatewayFailureCount,
+                  );
 
-                    if (alternativeGateway) {
-                      // Reassign and retry with alternative gateway
-                      gatewayAssignments.set(recipient.id, alternativeGateway);
-
-                      await supabaseAdmin
-                        .schema("private")
-                        .from("sms_campaign_recipient_gateways")
-                        .update({
-                          gateway_id: alternativeGateway.id,
-                          gateway_name: alternativeGateway.name,
-                          gateway_provider: alternativeGateway.provider,
-                          reassigned_at: new Date().toISOString(),
-                          original_gateway_id: gateway.id,
-                        })
-                        .eq("campaign_id", resolvedCampaignId)
-                        .eq("recipient_id", recipient.id);
-
-                      logger.info(
-                        "Reassigned recipient to alternative gateway due to quota",
-                        {
-                          recipientId: recipient.id,
-                          oldGatewayId: gateway.id,
-                          newGatewayId: alternativeGateway.id,
-                        },
-                      );
-
-                      // Continue with alternative gateway in next iteration
-                      continue;
-                    }
-
-                    // No alternative available - mark recipient as failed
-                    logger.error(
-                      "No alternative gateway available after quota exceeded",
-                      {
-                        recipientId: recipient.id,
-                        failedGatewayId: gateway.id,
-                      },
-                    );
+                  if (alternativeGateway) {
+                    // Reassign and retry with alternative gateway
+                    gatewayAssignments.set(recipient.id, alternativeGateway);
 
                     await supabaseAdmin
                       .schema("private")
-                      .from("sms_campaign_recipients")
+                      .from("sms_campaign_recipient_gateways")
                       .update({
-                        send_status: "failed",
-                        provider_error:
-                          "Gateway quota exceeded, no alternative available",
-                        attempt_count: recipient.attempt_count + 1,
+                        gateway_id: alternativeGateway.id,
+                        gateway_name: alternativeGateway.name,
+                        gateway_provider: alternativeGateway.provider,
+                        reassigned_at: new Date().toISOString(),
+                        original_gateway_id: gateway.id,
                       })
-                      .eq("id", recipient.id);
-                    failedCount++;
-                    activeFailedCount = failedCount;
-                    continue; // Skip to next recipient
+                      .eq("campaign_id", resolvedCampaignId)
+                      .eq("recipient_id", recipient.id);
+
+                    logger.info(
+                      "Reassigned recipient to alternative gateway due to quota",
+                      {
+                        recipientId: recipient.id,
+                        oldGatewayId: gateway.id,
+                        newGatewayId: alternativeGateway.id,
+                      },
+                    );
+
+                    // Continue with alternative gateway in next iteration
+                    continue;
                   }
 
-                  // Reset failure count on success
-                  gatewayFailureCount.set(gateway.id, 0);
-                  sentCount++;
-                  activeSentCount = sentCount;
+                  // No alternative available - mark recipient as failed
+                  logger.error(
+                    "No alternative gateway available after quota exceeded",
+                    {
+                      recipientId: recipient.id,
+                      failedGatewayId: gateway.id,
+                    },
+                  );
+
+                  await supabaseAdmin
+                    .schema("private")
+                    .from("sms_campaign_recipients")
+                    .update({
+                      send_status: "failed",
+                      provider_error:
+                        "Gateway quota exceeded, no alternative available",
+                      attempt_count: recipient.attempt_count + 1,
+                    })
+                    .eq("id", recipient.id);
+                  failedCount++;
+                  activeFailedCount = failedCount;
+                  continue; // Skip to next recipient
                 }
+
+                // Reset failure count on success
+                gatewayFailureCount.set(gateway.id, 0);
               }
+
+              sentCount++;
+              activeSentCount = sentCount;
 
               // Increment campaign-level sent_count for real-time visibility
               logger.info("Incrementing campaign sent_count", {
@@ -1075,6 +1131,9 @@ app.post("/process", authMiddleware, async (c: Context) => {
               attempt_count: recipient.attempt_count + MAX_RETRIES,
             })
             .eq("id", recipient.id);
+        }
+
+        if (!sendSuccess) {
           failedCount++;
           activeFailedCount = failedCount;
 
