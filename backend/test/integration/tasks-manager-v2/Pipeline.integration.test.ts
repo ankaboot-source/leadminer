@@ -12,6 +12,7 @@ import type { FetcherClient } from '../../../src/services/tasks-manager-v2/tasks
 import type { Tasks } from '../../../src/db/interfaces/Tasks';
 import SSEBroadcasterFactory from '../../../src/services/factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../../src/db/supabase/tasks';
+import { TaskId } from '../../../src/services/tasks-manager-v2/types';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -241,6 +242,118 @@ describe('Pipeline Integration', () => {
       expect(pipeline.getTask('fetch')).toBeDefined();
       expect(pipeline.getTask('extract')).toBeDefined();
       expect(pipeline.getTask('signature')).toBeDefined();
+    });
+  });
+
+  describe('Google Contacts mining scenario', () => {
+    it('should create pipeline with GoogleContactsFetchTask + ExtractTask (no FetchTask, no SignatureTask) when boxes: [] + googleContactsSync: true', () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-gc-only',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: [],
+          fetchEmailBody: false,
+          cleaningEnabled: false,
+          fetcherClient: mockFetcher,
+          googleContactsSync: true
+        },
+        pipelineDeps
+      );
+
+      expect(pipeline.getTask(TaskId.GoogleContactsFetch)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Extract)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Fetch)).toBeUndefined();
+      expect(pipeline.getTask(TaskId.Signature)).toBeUndefined();
+    });
+
+    it('should create pipeline with GoogleContactsFetchTask + ExtractTask + CleanTask when boxes: [] + googleContactsSync: true + cleaningEnabled: true', () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-gc-clean',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: [],
+          fetchEmailBody: false,
+          cleaningEnabled: true,
+          fetcherClient: mockFetcher,
+          googleContactsSync: true
+        },
+        pipelineDeps
+      );
+
+      expect(pipeline.getTask(TaskId.GoogleContactsFetch)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Extract)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Clean)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Fetch)).toBeUndefined();
+    });
+
+    it('should create pipeline with FetchTask + GoogleContactsFetchTask + ExtractTask when boxes: ["INBOX"] + googleContactsSync: true', () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-combined',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: false,
+          fetcherClient: mockFetcher,
+          googleContactsSync: true
+        },
+        pipelineDeps
+      );
+
+      expect(pipeline.getTask(TaskId.Fetch)).toBeDefined();
+      expect(pipeline.getTask(TaskId.GoogleContactsFetch)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Extract)).toBeDefined();
+    });
+
+    it('should create pipeline with FetchTask + ExtractTask (no GoogleContactsFetchTask) when boxes: ["INBOX"] + googleContactsSync: false', () => {
+      const mockFetcher = {
+        startFetch: jest
+          .fn()
+          .mockResolvedValue({ data: { totalMessages: 100 } } as never),
+        stopFetch: jest.fn<() => Promise<void>>().mockResolvedValue()
+      } as unknown as FetcherClient;
+
+      const pipeline = createImapMining(
+        {
+          miningId: 'test-folders-only',
+          userId: 'user-1',
+          email: 'test@example.com',
+          boxes: ['INBOX'],
+          fetchEmailBody: false,
+          cleaningEnabled: false,
+          fetcherClient: mockFetcher,
+          googleContactsSync: false
+        },
+        pipelineDeps
+      );
+
+      expect(pipeline.getTask(TaskId.Fetch)).toBeDefined();
+      expect(pipeline.getTask(TaskId.Extract)).toBeDefined();
+      expect(pipeline.getTask(TaskId.GoogleContactsFetch)).toBeUndefined();
     });
   });
 });

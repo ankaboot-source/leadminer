@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { stringField, positiveNumber, stringArray } from './index';
+import { stringField, positiveNumber } from './index';
 
 export const createImapMiningSourceSchema = z.object({
   body: z.object({
@@ -15,22 +15,29 @@ export const startMiningSchema = z.object({
   params: z.object({
     userId: stringField
   }),
-  body: z.object({
-    miningSource: z
-      .object({
-        email: stringField.optional(),
-        id: stringField.optional()
-      })
-      .refine((data) => data.email || data.id, {
-        message: 'Either miningSource.email or miningSource.id is required'
-      }),
-    boxes: stringArray,
-    extractSignatures: z.boolean(),
-    cleaningEnabled: z.boolean(),
-    since: z.string().optional(),
-    passive_mining: z.boolean().optional(),
-    googleContactsSync: z.boolean().optional()
-  })
+  body: z
+    .object({
+      miningSource: z
+        .object({
+          email: stringField.optional(),
+          id: stringField.optional()
+        })
+        .refine((data) => data.email || data.id, {
+          message: 'Either miningSource.email or miningSource.id is required'
+        }),
+      boxes: z
+        .array(z.string().min(1, 'must be a non-empty string'))
+        .default([]),
+      extractSignatures: z.boolean(),
+      cleaningEnabled: z.boolean(),
+      since: z.string().optional(),
+      passive_mining: z.boolean().optional(),
+      googleContactsSync: z.boolean().optional()
+    })
+    .refine((data) => data.googleContactsSync || data.boxes.length > 0, {
+      message: 'boxes must be non-empty when Google Contacts sync is disabled',
+      path: ['boxes']
+    })
 });
 
 export const startMiningFileSchema = z.object({
