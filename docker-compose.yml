@@ -30,6 +30,26 @@ services:
     ports:
       - ${EMAIL_FETCHING_SERVICE_PORT}:${EMAIL_FETCHING_SERVICE_PORT}
 
+  # NOTE: This service is a dev-only mock. It intentionally exits at
+  # startup when NODE_ENV=production (see the production guard in
+  # micro-services/sms-gateway-mock/src/utils/errors.ts). The block
+  # is here so the image is built as part of the prod pipeline, but
+  # it will never run successfully in production. Override
+  # NODE_ENV=development in a dev compose overlay if you want to
+  # use it.
+  leadminer-sms-gateway-mock-service:
+    image: leadminer-sms-gateway-mock-service:git
+    container_name: leadminer_sms_gateway_mock_service
+    build:
+      context: micro-services/sms-gateway-mock
+      dockerfile: sms-gateway-mock.Dockerfile
+    env_file:
+      - .env
+    ports:
+      - ${SMS_GATEWAY_MOCK_SERVICE_PORT}:${SMS_GATEWAY_MOCK_SERVICE_PORT}
+    environment:
+      - NODE_ENV=production
+
   leadminer-contact-extraction-worker:
     image: leadminer-contact-extraction-worker:git
     container_name: leadminer_contact_extraction

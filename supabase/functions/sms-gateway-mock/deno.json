@@ -1,7 +1,0 @@
-{
-  "lock": false,
-  "imports": {
-    "hono": "https://esm.sh/hono@4.7.4",
-    "zod": "https://deno.land/x/zod@v3.25/mod.ts"
-  }
-}

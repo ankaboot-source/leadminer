@@ -248,17 +248,32 @@ Key implementation details:
 - `beforeunload` handler saves partial `sent_count`/`failed_count` when wall-clock limit hits (so cron can resume)
 - Final status: `completed` (if any sent), `failed` (if all failed or processing error), keeps `processing` on partial save
 
-### `sms-gateway-mock` Edge Function (`supabase/functions/sms-gateway-mock/index.ts`)
+### `sms-gateway-mock` Microservice
 
-Base path: `/functions/v1/sms-gateway-mock`
+The SMS gateway mock is now a standalone microservice, not a Supabase
+edge function. See:
 
-| Route | Method | Purpose | Notes |
-|-------|--------|---------|-------|
-| `/health` | GET | Health + current config | Returns `{ status, service, config }` |
-| `/config` | POST | Update mock behavior at runtime | Body: `{ successRate: 0-1, delayMs, failMessage, failStatusCode, sequentialId, idPrefix }` |
-| `/send-sms` | POST | Simulate SMS send | Body: `{ phone, message }`. Returns success/fail based on `successRate` |
+- `micro-services/sms-gateway-mock/README.md` — service overview, route
+  surface, and dev tunnel setup (ngrok + alternatives)
+- `micro-services/sms-gateway-mock/src/api.ts` — router mount points
+  (the canonical source of truth for the URL contract)
+- `micro-services/sms-gateway-mock/test/unit/*.test.ts` — automated
+  contract tests (Jest + supertest)
 
-Used for integration testing without real SMS providers. The mock's base URL is the gateway's configured endpoint.
+The route map is:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/health` | Service status + config snapshot |
+| `POST` | `/config` | Update mock behavior (global or per-provider) |
+| `GET` | `/messages` | List stored messages (filters, pagination, PII redaction, `X-Mock-Token` for `?full=true`) |
+| `DELETE` | `/messages` | Clear the message store |
+| `POST` | `/:provider/send-sms` | Provider routing — `simple-sms-gateway` or `smsgate` |
+| `POST` | `/smsgate/3rdparty/v1/messages` | Alias for the live SMSGate provider path (provider appends `/3rdparty/v1/messages` to `baseUrl`) |
+
+Default port: `8085`. Use ngrok (or any HTTPS tunnel) to expose the
+mock to the Supabase edge function runtime, which runs in Docker
+and cannot reach `localhost` on the host.
 
 ---
 
@@ -497,7 +512,8 @@ ORDER BY c.created_at DESC;
 
 | Field | Value |
 |-------|-------|
-| **Preconditions** | SMSGate gateway configured with mock URL (`http://localhost:54321/functions/v1/sms-gateway-mock/smsgate/send-sms`), valid credentials |
+| **Preconditions** | SMSGate gateway configured with mock URL (`https://YOUR-SUBDOMAIN.ngrok-free.app/smsgate/3rdparty/v1/messages`), valid credentials
+(Replace `YOUR-SUBDOMAIN.ngrok-free.app` with the URL ngrok prints when you run `ngrok http 8085`) |
 | **Trigger** | Create campaign using SMSGate provider, send to 5 recipients |
 | **Curl example** | `curl -X POST $SUPABASE_URL/functions/v1/sms-campaigns/campaigns/create -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"senderName":"Test","messageTemplate":"Hello {{name}}","selectedRecipients":[{"phone":"+12002000000","personalization":{"name":"Charles"}},...],"provider":"smsgate","fleetMode":true,"selectedGatewayIds":["gateway-id"]}'` |
 | **Expected final** | Status `completed`, sent_count=5, failed_count=0. Messages stored with `provider: "smsgate"` |
@@ -512,8 +528,8 @@ ORDER BY c.created_at DESC;
 | **Trigger** | Query message history via GET `/messages` with various filters |
 | **Test cases** | (1) `?limit=5` returns 5 most recent. (2) `?campaignId=X` returns only campaign X messages. (3) `?phone=+33612345678` returns only that phone. (4) `?full=true` with `X-Mock-Token` returns unmasked phone numbers. (5) `?offset=5&limit=5` returns paginated results. |
 | **Expected** | Each filter returns correctly filtered subset. Default `full=false` redacts phones as `+336****5678`. |
-| **Verify PII redaction** | `curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?limit=1"` — phone should be redacted |
-| **Verify full data** | `curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?full=true" -H "X-Mock-Token: debug-token"` — phone should be full number |
+| **Verify PII redaction** | `curl "http://localhost:8085/messages?limit=1"` — phone should be redacted |
+| **Verify full data** | `curl "http://localhost:8085/messages?full=true" -H "X-Mock-Token: $SMS_GATEWAY_MOCK_TOKEN"` — phone should be full number |
 | **Verify delete** | `DELETE /messages?campaignId=X` removes campaign messages. `DELETE /messages?all=true` with token clears all. |
 | **Cleanup** | Clear test messages via DELETE endpoint |
 
@@ -524,7 +540,7 @@ ORDER BY c.created_at DESC;
 | **Preconditions** | Campaign sent with template `"Hello {{name}}, your code is {{code}}"`, recipients have personalization data |
 | **Trigger** | Send campaign, then query `GET /messages?campaignId=<id>&full=true` |
 | **Expected** | Each message shows the fully substituted text (e.g., `"Hello Charles, your code is ABC123"`), not the raw template |
-| **Verify via API** | `curl "http://localhost:54321/functions/v1/sms-gateway-mock/messages?campaignId=<id>&full=true" -H "X-Mock-Token: debug-token"` |
+| **Verify via API** | `curl "http://localhost:8085/messages?campaignId=<id>&full=true" -H "X-Mock-Token: $SMS_GATEWAY_MOCK_TOKEN"` |
 | **Expected message text** | Recipients should have received personalized messages, not template placeholders |
 | **Test with multiple variables** | Template with 3+ variables, verify all are substituted correctly per recipient |
 | **Cleanup** | DELETE campaign, clear messages |
@@ -535,7 +551,7 @@ ORDER BY c.created_at DESC;
 
 1. **What is the actual `dailyLimit` / `monthlyRecipientLimit` in production?** The test gateway has 200/200. The processor function `getSmsQuota()` reads from env vars (not from gateway limits for non-fleet mode). In fleet mode, gateway `daily_limit` is used.
 
-2. **The mock gateway and the actual Simple SMS Gateway**: The mock implements `POST /send-sms` at a configurable endpoint. The production gateway also uses `POST /send-sms`. When testing with the mock, the gateway's `config.simpleSmsGatewayBaseUrl` must point to the mock's URL (e.g., `http://localhost:54321/functions/v1/sms-gateway-mock`).
+2. **The mock gateway and the actual Simple SMS Gateway**: The mock implements `POST /send-sms` at a configurable endpoint. The production gateway also uses `POST /send-sms`. When testing with the mock, the gateway's `config.simpleSmsGatewayBaseUrl` must point to the mock's URL (e.g., `http://localhost:8085/simple-sms-gateway/send-sms` via ngrok tunnel, or `http://host.docker.internal:8085/simple-sms-gateway/send-sms` on Docker Desktop).
 
 3. **How does the frontend refresh after gateway quota changes?** After campaign creation, there's a `setTimeout(8000)` refresh. During processing, the 60s polling catches changes. There's no websocket/push mechanism — users might see stale quota for up to 60s.
 
