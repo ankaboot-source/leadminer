@@ -11,7 +11,7 @@ if (!validationResult.success) {
       delimiter: { error: '\n' }
     })
   );
-  process.exit(-1);
+  throw new Error('Invalid environment variables');
 }
 
 const ENV = validationResult.data;

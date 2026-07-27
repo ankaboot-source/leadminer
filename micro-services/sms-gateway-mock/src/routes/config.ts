@@ -29,7 +29,7 @@ const partialConfigSchema = z.object({
     .optional()
 });
 
-export default async function configRoute(req: Request, res: Response) {
+export default function configRoute(req: Request, res: Response) {
   try {
     const { body } = req;
     const validation = partialConfigSchema.safeParse(body);

@@ -20,7 +20,7 @@ describe('messageStore', () => {
     resetState();
   });
 
-  it('addMessage + ring buffer eviction', async () => {
+  it('addMessage + ring buffer eviction', () => {
     // Add 10 messages and verify count stays manageable
     // (actual eviction tested via implementation review)
     for (let i = 0; i < 10; i += 1) {

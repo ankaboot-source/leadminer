@@ -4,7 +4,7 @@ import { clearMessageStore, getState } from '../store/messageStore';
 import { redactMessage } from '../utils/redaction';
 import ENV from '../config';
 
-export async function getMessagesRoute(req: Request, res: Response) {
+export function getMessagesRoute(req: Request, res: Response) {
   const campaignId = req.query.campaignId as string | undefined;
   const provider = req.query.provider as string | undefined;
   const phone = req.query.phone as string | undefined;
@@ -65,7 +65,7 @@ export async function getMessagesRoute(req: Request, res: Response) {
   });
 }
 
-export async function deleteMessagesRoute(req: Request, res: Response) {
+export function deleteMessagesRoute(req: Request, res: Response) {
   clearMessageStore();
   logger.info('All messages cleared');
   return res.json({ success: true, message: 'All messages cleared' });

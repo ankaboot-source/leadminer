@@ -26,13 +26,13 @@ describe('sendSmsHelpers', () => {
     });
 
     it('returns null for undefined', () => {
-      expect(validateProvider(undefined)).toBeNull();
+      expect(validateProvider()).toBeNull();
     });
   });
 
   describe('validateSmsgateAuth', () => {
     it('returns null for undefined', () => {
-      expect(validateSmsgateAuth(undefined)).toBeNull();
+      expect(validateSmsgateAuth()).toBeNull();
     });
 
     it('returns null for Bearer token', () => {
