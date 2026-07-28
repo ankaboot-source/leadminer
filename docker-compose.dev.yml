@@ -18,5 +18,19 @@ services:
       - openwa-data:/app/data
     restart: unless-stopped
 
+  sms-gateway-mock:
+    image: leadminer-sms-gateway-mock-service:git
+    container_name: leadminer_sms_gateway_mock_service
+    build:
+      context: micro-services/sms-gateway-mock
+      dockerfile: sms-gateway-mock.Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 8085:8085
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
 volumes:
   openwa-data:

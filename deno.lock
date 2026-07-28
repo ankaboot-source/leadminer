@@ -2,10 +2,8 @@
   "version": "5",
   "specifiers": {
     "npm:husky@^9.1.7": "9.1.7",
-    "npm:lint-staged@^15.5.2": "15.5.2",
     "npm:prettier@^3.8.1": "3.8.1",
-    "npm:simple-oauth2@latest": "5.1.0",
-    "npm:supabase@^2.19.7": "2.76.16"
+    "npm:simple-oauth2@latest": "5.1.0"
   },
   "npm": {
     "@hapi/boom@10.0.1": {
@@ -522,9 +520,9 @@
     "packageJson": {
       "dependencies": [
         "npm:husky@^9.1.7",
-        "npm:lint-staged@^15.5.2",
+        "npm:lint-staged@^16.4.0",
         "npm:prettier@^3.8.1",
-        "npm:supabase@^2.19.7"
+        "npm:supabase@^2.88.0"
       ]
     }
   }

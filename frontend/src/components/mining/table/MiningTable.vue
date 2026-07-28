@@ -264,6 +264,7 @@
                   <MultiSelect
                     v-model="$contactsStore.visibleColumns"
                     :options="visibleColumnsOptions"
+                    :option-disabled="disabledColumns"
                     option-label="label"
                     class="min-w-56"
                     fluid
@@ -272,6 +273,7 @@
                       t('visible_columns', $contactsStore.visibleColumns.length)
                     "
                     :max-selected-labels="0"
+                    @change="onSelectColumnsChange"
                   />
                 </li>
               </ul>
@@ -1373,6 +1375,16 @@ const visibleColumnsOptions = computed(() => [
   { label: $t('contact.created_at'), value: 'created_at' },
   { label: t('mining_id'), value: 'mining_id' },
 ]);
+
+function disabledColumns(column: { label: string; value: string }) {
+  return column.value === 'contacts';
+}
+function onSelectColumnsChange() {
+  // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
+  if (!visibleColumns.value.includes('contacts')) {
+    visibleColumns.value.push('contacts');
+  }
+}
 
 function getDefaultVisibleColumns() {
   return ['contacts', 'name', 'location', 'works_for', 'job_title'];

@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
 import { createPinia, setActivePinia } from 'pinia';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-const COMPONENT_PATH =
-  '/home/badreddine/Projects/leadminer/.worktrees/sms-fleet-mode/frontend/src/components/campaigns/SmsCampaignComposerDialog.vue';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const COMPONENT_PATH = resolve(
+  __dirname,
+  '../../../src/components/campaigns/SmsCampaignComposerDialog.vue',
+);
 
 describe('SmsCampaignComposerDialog Structure Tests', () => {
   let componentContent: string;

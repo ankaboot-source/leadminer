@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 const { t } = useI18n({ useScope: 'local' });
 
-type SupportedProvider = 'smsgate' | 'simple-sms-gateway' | 'sms-gateway';
+type SupportedProvider = 'smsgate' | 'simple-sms-gateway';
 
 const props = defineProps<{
   provider: SupportedProvider;
@@ -45,9 +45,6 @@ const isValid = computed(() => {
       baseUrl: baseUrl.value,
     }).success;
   }
-  // Both Android Simple SMS Gateway and iOS SMS Gateway share the same
-  // URL form. Dispatch between them is driven by `props.provider`
-  // ("simple-sms-gateway" vs "sms-gateway") on the backend.
   return selfHostedGatewaySchema.safeParse({
     baseUrl: baseUrl.value,
   }).success;
@@ -72,21 +69,6 @@ function handleSubmit() {
           baseUrl.value || 'https://api.sms-gate.app/3rdparty/v1/messages',
         username: username.value,
         password: password.value,
-      },
-    });
-    return;
-  }
-
-  if (props.provider === 'sms-gateway') {
-    // The iOS app exposes `POST /send-sms` with the same URL contract as
-    // the Android Simple SMS Gateway. We re-use the
-    // `simpleSmsGatewayBaseUrl` storage key; the `provider` field
-    // ("sms-gateway") tells the backend to dispatch to the
-    // `SmsGatewayProvider`.
-    emit('submit', {
-      provider: 'sms-gateway',
-      config: {
-        simpleSmsGatewayBaseUrl: baseUrl.value,
       },
     });
     return;

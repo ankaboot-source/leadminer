@@ -67,12 +67,16 @@
           :placeholder="t('message_placeholder')"
           @input="updateCharCount"
         />
+        <small class="text-surface-500">{{ t('attribute_syntax_help') }}</small>
         <div class="flex justify-between text-xs text-surface-500">
           <span>{{ smsParts }} {{ smsParts === 1 ? 'SMS' : 'SMS' }}</span>
           <span>{{ charactersLeftLabel }}</span>
         </div>
         <small v-if="showFieldError('messageTemplate')" class="text-red-500">
           {{ validationErrors.messageTemplate }}
+        </small>
+        <small v-if="validationErrors.placeholders" class="text-red-500">
+          {{ validationErrors.placeholders }}
         </small>
       </div>
 
@@ -271,11 +275,12 @@ const form = reactive({
   selectedGatewayIds: [] as string[],
 });
 
-type FormField = 'messageTemplate' | 'gateways';
+type FormField = 'messageTemplate' | 'gateways' | 'placeholders';
 
 const touched = reactive<Record<FormField, boolean>>({
   messageTemplate: false,
   gateways: false,
+  placeholders: false,
 });
 
 const charCount = ref(0);
@@ -359,20 +364,32 @@ const toggleAttributeMenu = (event: MouseEvent) => {
 };
 
 const validationErrors = computed<Record<FormField, string>>(() => {
-  return {
+  const errors: Record<FormField, string> = {
     messageTemplate: form.messageTemplate.trim().length
       ? ''
       : t('message_required'),
     gateways: '',
+    placeholders: '',
   };
+
+  if (form.messageTemplate.trim().length > 0) {
+    const singleBraceRegex =
+      /(?<![{])\{(?:name|email|worksFor|jobTitle|location)\}(?![}])/;
+    if (singleBraceRegex.test(form.messageTemplate)) {
+      errors.placeholders = t('placeholder_syntax_error');
+    }
+  }
+
+  return errors;
 });
 
 const showFieldError = (field: FormField) => {
   return touched[field] && validationErrors.value[field];
 };
 
-const isFormValid = computed(() =>
-  Object.values(validationErrors.value).every((value) => !value),
+const isFormValid = computed(
+  () =>
+    !validationErrors.value.messageTemplate && !validationErrors.value.gateways,
 );
 
 const selectedContactsLength = computed(() => {
@@ -658,10 +675,12 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "sms_limit_note": "SMS is distributed across your gateways. Each gateway has a default limit of 200 SMS/day and 200 recipients/month.",
     "sms_gateways": "SMS Gateways",
     "message": "Message",
-    "message_placeholder": "Enter your SMS message here...",
+    "message_placeholder": "Hi {{name}}, your message here... Use {{name}} for the recipient's name.",
     "message_required": "Message is required",
     "characters_left": "{count} characters left",
     "insert_person_attribute_body": "Insert contact attribute in SMS",
+    "attribute_syntax_help": "Insert placeholders like {{name}}, {{email}}, or {{worksFor}} — they will be replaced with the contact's data.",
+    "placeholder_syntax_error": "Use {{name}} (double braces) instead of {name} for placeholders",
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
@@ -669,7 +688,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "monthly_recipient_limit_exceeded": "You selected {selected} recipients, but the limit is {limit}.",
     "footer_template": "Footer template",
     "footer_template_help": "Editable footer appended to each SMS.",
-    "footer_template_hint": "Use {placeholder} to insert the unsubscribe link.",
+    "footer_template_hint": "Use {{unsubscribeUrl}} to insert the unsubscribe link.",
     "default_footer_template": "Unsubscribe me: {placeholder}",
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
@@ -698,10 +717,12 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "sms_limit_note": "Les SMS sont distribués sur vos passerelles. Chaque passerelle a une limite par défaut de 200 SMS/jour et 200 destinataires/mois.",
     "sms_gateways": "Passerelles SMS",
     "message": "Message",
-    "message_placeholder": "Entrez votre message SMS ici...",
+    "message_placeholder": "Bonjour {{name}}, votre message ici... Utilisez {{name}} pour le nom du destinataire.",
     "message_required": "Le message est requis",
     "characters_left": "{count} caractères restants",
     "insert_person_attribute_body": "Insérer un attribut contact dans le SMS",
+    "attribute_syntax_help": "Insérez des variables comme {{name}}, {{email}} ou {{worksFor}} — elles seront remplacées par les données du contact.",
+    "placeholder_syntax_error": "Utilisez {{nom}} (doubles accolades) au lieu de {nom} pour les variables",
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
@@ -709,7 +730,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "monthly_recipient_limit_exceeded": "Vous avez sélectionné {selected} destinataires, mais la limite est de {limit}.",
     "footer_template": "Modèle de pied de message",
     "footer_template_help": "Pied de message modifiable ajouté à chaque SMS.",
-    "footer_template_hint": "Utilisez {placeholder} pour insérer le lien de désinscription.",
+    "footer_template_hint": "Utilisez {{unsubscribeUrl}} pour insérer le lien de désinscription.",
     "default_footer_template": "Se désinscrire : {placeholder}",
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",

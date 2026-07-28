@@ -23,6 +23,7 @@ SERVICES=(
   "./frontend"
   "./backend"
   "./micro-services/emails-fetcher"
+  "./micro-services/sms-gateway-mock"
   "./supabase/functions"
 )
 

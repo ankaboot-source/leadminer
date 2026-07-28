@@ -29,12 +29,17 @@ export class SmsGateProvider implements SmsProvider {
       : `${normalizedBaseUrl}/3rdparty/v1/messages`;
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${btoa(`${this.username}:${this.password}`)}`,
+      };
+      if (params.campaignId) {
+        headers["X-Campaign-Id"] = params.campaignId;
+      }
+
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${btoa(`${this.username}:${this.password}`)}`,
-        },
+        headers,
         body: JSON.stringify({
           textMessage: { text: params.body },
           phoneNumbers: [params.to],
