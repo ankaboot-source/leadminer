@@ -64,10 +64,10 @@
           v-model="form.messageTemplate"
           :rows="6"
           :auto-resize="true"
-          :placeholder="t('message_placeholder')"
+          :placeholder="messagePlaceholder"
           @input="updateCharCount"
         />
-        <small class="text-surface-500">{{ t('attribute_syntax_help') }}</small>
+        <small class="text-surface-500">{{ attributeSyntaxHelp }}</small>
         <div class="flex justify-between text-xs text-surface-500">
           <span>{{ smsParts }} {{ smsParts === 1 ? 'SMS' : 'SMS' }}</span>
           <span>{{ charactersLeftLabel }}</span>
@@ -142,7 +142,7 @@
             <Textarea v-model="form.footerTextTemplate" rows="2" auto-resize />
             <small class="text-surface-500">{{
               t('footer_template_hint', {
-                placeholder: UNSUBSCRIBE_PLACEHOLDER,
+                unsubscribeUrl: UNSUBSCRIBE_PLACEHOLDER,
               })
             }}</small>
           </div>
@@ -265,6 +265,22 @@ const showAdvanced = ref(false);
 const UNSUBSCRIBE_PLACEHOLDER = '{{unsubscribeUrl}}';
 const UNSUBSCRIBE_SAMPLE_URL = 'https://example.com/unsubscribe';
 
+const NAME_TOKEN = '{{name}}';
+const EMAIL_TOKEN = '{{email}}';
+const WORKS_FOR_TOKEN = '{{worksFor}}';
+
+const messagePlaceholder = computed(() =>
+  t('message_placeholder', { name: NAME_TOKEN }),
+);
+
+const attributeSyntaxHelp = computed(() =>
+  t('attribute_syntax_help', {
+    name: NAME_TOKEN,
+    email: EMAIL_TOKEN,
+    worksFor: WORKS_FOR_TOKEN,
+  }),
+);
+
 const form = reactive({
   messageTemplate: '',
   footerTextTemplate: t('default_footer_template', {
@@ -376,7 +392,10 @@ const validationErrors = computed<Record<FormField, string>>(() => {
     const singleBraceRegex =
       /(?<![{])\{(?:name|email|worksFor|jobTitle|location)\}(?![}])/;
     if (singleBraceRegex.test(form.messageTemplate)) {
-      errors.placeholders = t('placeholder_syntax_error');
+      errors.placeholders = t('placeholder_syntax_error', {
+        name: '{{name}}',
+        singleName: '{name}',
+      });
     }
   }
 
@@ -675,12 +694,12 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "sms_limit_note": "SMS is distributed across your gateways. Each gateway has a default limit of 200 SMS/day and 200 recipients/month.",
     "sms_gateways": "SMS Gateways",
     "message": "Message",
-    "message_placeholder": "Hi {{name}}, your message here... Use {{name}} for the recipient's name.",
+    "message_placeholder": "Hi {name}, your message here... Use {name} for the recipient's name.",
     "message_required": "Message is required",
     "characters_left": "{count} characters left",
     "insert_person_attribute_body": "Insert contact attribute in SMS",
-    "attribute_syntax_help": "Insert placeholders like {{name}}, {{email}}, or {{worksFor}} — they will be replaced with the contact's data.",
-    "placeholder_syntax_error": "Use {{name}} (double braces) instead of {name} for placeholders",
+    "attribute_syntax_help": "Insert placeholders like {name}, {email}, or {worksFor} — they will be replaced with the contact's data.",
+    "placeholder_syntax_error": "Use {name} (double braces) instead of {singleName} for placeholders",
     "show_advanced": "Show advanced options",
     "hide_advanced": "Hide advanced options",
     "monthly_recipient_limit": "Monthly recipient limit",
@@ -688,7 +707,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "monthly_recipient_limit_exceeded": "You selected {selected} recipients, but the limit is {limit}.",
     "footer_template": "Footer template",
     "footer_template_help": "Editable footer appended to each SMS.",
-    "footer_template_hint": "Use {{unsubscribeUrl}} to insert the unsubscribe link.",
+    "footer_template_hint": "Use {unsubscribeUrl} to insert the unsubscribe link.",
     "default_footer_template": "Unsubscribe me: {placeholder}",
     "use_short_links": "Use short links",
     "use_short_links_help": "Shorten URLs to reduce message length. Falls back to full URL if shortening fails.",
@@ -717,12 +736,12 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "sms_limit_note": "Les SMS sont distribués sur vos passerelles. Chaque passerelle a une limite par défaut de 200 SMS/jour et 200 destinataires/mois.",
     "sms_gateways": "Passerelles SMS",
     "message": "Message",
-    "message_placeholder": "Bonjour {{name}}, votre message ici... Utilisez {{name}} pour le nom du destinataire.",
+    "message_placeholder": "Bonjour {name}, votre message ici... Utilisez {name} pour le nom du destinataire.",
     "message_required": "Le message est requis",
     "characters_left": "{count} caractères restants",
     "insert_person_attribute_body": "Insérer un attribut contact dans le SMS",
-    "attribute_syntax_help": "Insérez des variables comme {{name}}, {{email}} ou {{worksFor}} — elles seront remplacées par les données du contact.",
-    "placeholder_syntax_error": "Utilisez {{nom}} (doubles accolades) au lieu de {nom} pour les variables",
+    "attribute_syntax_help": "Insérez des variables comme {name}, {email} ou {worksFor} — elles seront remplacées par les données du contact.",
+    "placeholder_syntax_error": "Utilisez {nom} (doubles accolades) au lieu de {singleNom} pour les variables",
     "show_advanced": "Afficher les options avancées",
     "hide_advanced": "Masquer les options avancées",
     "monthly_recipient_limit": "Limite mensuelle de destinataires",
@@ -730,7 +749,7 @@ watch(() => form.footerTextTemplate, updateCharCount);
     "monthly_recipient_limit_exceeded": "Vous avez sélectionné {selected} destinataires, mais la limite est de {limit}.",
     "footer_template": "Modèle de pied de message",
     "footer_template_help": "Pied de message modifiable ajouté à chaque SMS.",
-    "footer_template_hint": "Utilisez {{unsubscribeUrl}} pour insérer le lien de désinscription.",
+    "footer_template_hint": "Utilisez {unsubscribeUrl} pour insérer le lien de désinscription.",
     "default_footer_template": "Se désinscrire : {placeholder}",
     "use_short_links": "Utiliser des liens courts",
     "use_short_links_help": "Raccourcit les URLs pour réduire la longueur du message. Revient à l'URL complète en cas d'échec.",
