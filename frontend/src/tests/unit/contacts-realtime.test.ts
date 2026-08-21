@@ -76,4 +76,10 @@ describe('applyReconciledContacts', () => {
     expect(upserts).toHaveLength(1);
     expect(prunes).toEqual(['a@b.c']);
   });
+  it('does not prune a buffered key that is not currently cached', () => {
+    const cached = [contact({ id: 'z', email: 'keep@b.c' })];
+    const { upserts, prunes } = applyReconciledContacts(cached, ['a@b.c'], []);
+    expect(prunes).toEqual([]);
+    expect(upserts).toEqual([]);
+  });
 });
