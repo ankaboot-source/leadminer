@@ -804,6 +804,27 @@
       </template>
     </Column>
 
+    <!-- Telephone -->
+    <Column
+      v-if="columnVisibility.telephone"
+      field="telephone"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="$t('contact.telephone_definition')">
+          {{ $t('contact.telephone') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+      <template #body="{ data }">
+        <div>{{ data.telephone?.join(', ') }}</div>
+      </template>
+    </Column>
+
     <!-- Location -->
     <Column
       v-if="columnVisibility.location"

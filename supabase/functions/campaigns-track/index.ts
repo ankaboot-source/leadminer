@@ -159,7 +159,21 @@ app.get("/unsubscribe/:token", async (c: Context) => {
         { onConflict: "user_id,phone" },
       );
 
-    if (upsertError) {
+    if (!upsertError) {
+      // Increment the campaign unsubscribe counter so results are reflected
+      const { data: campaign } = await supabaseAdmin
+        .schema("private")
+        .from("sms_campaigns")
+        .select("unsubscribe_count")
+        .eq("id", smsRecipient.campaign_id)
+        .single();
+      const currentUnsubscribeCount = campaign?.unsubscribe_count || 0;
+      await supabaseAdmin
+        .schema("private")
+        .from("sms_campaigns")
+        .update({ unsubscribe_count: currentUnsubscribeCount + 1 })
+        .eq("id", smsRecipient.campaign_id);
+    } else {
       logger.error("Failed to record SMS unsubscribe", {
         userId,
         phone,

@@ -616,7 +616,7 @@ const submitCampaign = async () => {
 
     const data = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     });
 
     $toast.add({

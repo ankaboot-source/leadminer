@@ -152,13 +152,21 @@ export const useSmsFleetStore = defineStore('sms-fleet', () => {
 
   async function testGateway(gatewayId: string): Promise<SmsGatewayTestResult> {
     try {
-      const result = await $saasEdgeFunctions(
+      const result = (await $saasEdgeFunctions(
         `sms-campaigns/fleet/gateways/${gatewayId}/test`,
         {
           method: 'POST',
         },
-      );
-      return result as SmsGatewayTestResult;
+      )) as SmsGatewayTestResult;
+
+      if (result.gateway) {
+        const index = gateways.value.findIndex((g) => g.id === gatewayId);
+        if (index !== -1) {
+          gateways.value[index] = result.gateway;
+        }
+      }
+
+      return result;
     } catch (err) {
       return {
         success: false,

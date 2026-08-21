@@ -33,17 +33,19 @@
           </div>
         </div>
       </template>
-      <div v-show="senderFilter !== 'sms'">
-        <EmailSenderManagement
-          ref="$emailSenderRef"
-          :hide-empty-state="senderFilter === 'all'"
-        />
-      </div>
-      <div v-show="senderFilter !== 'email'">
-        <SmsFleetManagement
-          ref="$smsFleetRef"
-          :hide-empty-state="senderFilter === 'all'"
-        />
+      <div class="flex flex-col gap-4">
+        <div v-show="senderFilter !== 'sms'">
+          <EmailSenderManagement
+            ref="$emailSenderRef"
+            :hide-empty-state="senderFilter === 'all'"
+          />
+        </div>
+        <div v-show="senderFilter !== 'email'">
+          <SmsFleetManagement
+            ref="$smsFleetRef"
+            :hide-empty-state="senderFilter === 'all'"
+          />
+        </div>
       </div>
 
       <div
@@ -119,20 +121,20 @@
                             80,
                           )
                         }}
-                        <template v-if="campaign.gateway_names?.length">
-                          par {{ campaign.sender_name }} &lt;{{
-                            campaign.gateway_names.join(', ')
-                          }}&gt;
-                        </template>
-                        <template
-                          v-else-if="
-                            campaign.provider && campaign.provider !== 'fleet'
-                          "
-                        >
-                          par {{ campaign.sender_name }} &lt;{{
-                            campaign.provider
-                          }}&gt;
-                        </template>
+                        <span class="text-surface-600">
+                          par {{ campaign.sender_name }}
+                          <template v-if="campaign.gateway_names?.length"
+                            >&lt;{{
+                              campaign.gateway_names.join(', ')
+                            }}&gt;</template
+                          >
+                          <template
+                            v-else-if="
+                              campaign.provider && campaign.provider !== 'fleet'
+                            "
+                            >&lt;{{ campaign.provider }}&gt;</template
+                          >
+                        </span>
                       </template>
                       <template v-else>
                         {{ campaign.subject }} par
