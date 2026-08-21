@@ -42,10 +42,15 @@ async function testSender(sender: SmtpSender) {
   testingSenderId.value = sender.id;
 
   const result = await $store.testSender(sender.id);
+  const isOAuth = sender.auth_type === 'oauth';
 
   $toast.add({
-    severity: result.success ? 'success' : 'error',
-    summary: result.success ? t('test_successful') : t('test_failed'),
+    severity: isOAuth ? 'info' : result.success ? 'success' : 'error',
+    summary: isOAuth
+      ? t('test_info_oauth')
+      : result.success
+        ? t('test_successful')
+        : t('test_failed'),
     detail: result.message,
     life: 5000,
   });
@@ -211,6 +216,7 @@ onMounted(async () => {
     "linked_to_source": "Linked to source",
     "test_successful": "Test email sent successfully",
     "test_failed": "Test email failed",
+    "test_info_oauth": "OAuth sender verified",
     "sender_deleted": "Email sender deleted",
     "delete_failed": "Failed to delete sender",
     "delete_confirm_message": "Are you sure you want to delete the sender \"{name}\"?",
@@ -229,6 +235,7 @@ onMounted(async () => {
     "linked_to_source": "Lié à une source",
     "test_successful": "Email de test envoyé avec succès",
     "test_failed": "Échec de l'envoi de l'email de test",
+    "test_info_oauth": "Expéditeur OAuth vérifié",
     "sender_deleted": "Expéditeur email supprimé",
     "delete_failed": "Échec de la suppression",
     "delete_confirm_message": "Êtes-vous sûr de vouloir supprimer l'expéditeur \"{name}\" ?",

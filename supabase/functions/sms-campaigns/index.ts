@@ -1812,7 +1812,28 @@ app.post("/fleet/gateways/:id/test", authMiddleware, async (c: Context) => {
       testResult = { success: false, message: "Unsupported provider" };
     }
 
-    return c.json(testResult);
+    // Persist the test outcome so the gateway status reflects the last test.
+    const { data: updatedGateway, error: updateError } = await supabaseAdmin
+      .schema("private")
+      .from("sms_fleet_gateways")
+      .update({
+        is_active: testResult.success,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", gatewayId)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateError || !updatedGateway) {
+      logger.warn("Failed to persist SMS gateway test status", {
+        userId: user.id,
+        gatewayId,
+        message: updateError ? extractErrorMessage(updateError) : "no row",
+      });
+    }
+
+    return c.json({ ...testResult, gateway: updatedGateway ?? null });
   } catch (error) {
     return c.json(
       {

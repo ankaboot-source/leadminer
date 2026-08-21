@@ -31,7 +31,21 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
-        // feedback to sources that passive mining failed, passive_mining.enabled=false, error="string" else null
+        // Disable passive mining for failing sources so the scheduler does
+        // not retry a broken source on every cycle and silently stall
+        // continuous extraction. The user sees and can re-enable it from the
+        // sources page.
+        await supabase
+          .schema("private")
+          .from("mining_sources")
+          .update({ passive_mining: false })
+          .eq("id", miningSource.id)
+          .catch((updateError: unknown) => {
+            console.error(
+              `Failed to disable passive-mining for ${miningSource.email}:`,
+              updateError,
+            );
+          });
       }
     }
 

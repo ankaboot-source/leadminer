@@ -41,6 +41,7 @@ export interface SmsGatewayCreatePayload {
 export interface SmsGatewayTestResult {
   success: boolean;
   message: string;
+  gateway?: SmsFleetGateway | null;
 }
 
 export interface CampaignRecipientGateway {

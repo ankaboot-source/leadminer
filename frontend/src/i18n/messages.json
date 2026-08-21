@@ -374,7 +374,7 @@
       "extract_signatures_option": "Extraire les coordonnées depuis les signatures",
       "extract_signatures_sub": "(l'extraction prendra plus de temps)",
       "cleaning_enabled_option": "Activer la vérification des e-mails",
-      "cleaning_enabled_sub": "( ignorer pour une extraction plus rapide )",
+      "cleaning_enabled_sub": "(ignorer pour une extraction plus rapide)",
       "sync_google_contacts": "Synchroniser les contacts Google",
       "sync_google_contacts_sub": "(synchronise les contacts de votre compte Google)",
       "syncing_google_contacts": "Synchronisation des contacts Google...",

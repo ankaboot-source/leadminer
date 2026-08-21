@@ -178,13 +178,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
       }));
 
-      fetchSenderOptionsInBackground(sources);
+      fetchSenderOptionsInBackground();
     } finally {
       isLoadingMiningSources.value = false;
     }
   }
 
-  async function fetchSenderOptionsInBackground(sources: MiningSource[]) {
+  async function fetchSenderOptionsInBackground() {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(
@@ -208,7 +208,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const unavailableEmails = extractUnavailableSenderEmails(allOptions);
 
       miningSources.value = updateMiningSourcesValidityFromUnavailable(
-        sources,
+        miningSources.value,
         unavailableEmails,
       );
     } catch (error) {
