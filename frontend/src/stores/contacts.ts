@@ -19,6 +19,7 @@ import Normalizer from '~/utils/normalizer';
 import { useLeadminerStore } from './leadminer';
 
 const REALTIME_DEBOUNCE_MS = 700;
+const REALTIME_RECONCILE_MAX_RETRIES = 3;
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
@@ -46,6 +47,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   let reconcileTimer: ReturnType<typeof setTimeout> | null = null;
   let reconciling = false;
+  let reconcileRetryCount = 0;
   const pendingReconcilePersonIds = new Set<string>();
 
   /**
@@ -193,8 +195,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       void flushRealtimeReconcile();
     }, REALTIME_DEBOUNCE_MS);
   }
-
-  async function flushRealtimeReconcile() {
+async function flushRealtimeReconcile() {
     if (reconciling) {
       scheduleReconcile();
       return;
@@ -207,7 +208,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
       if ($leadminerStore.activeMiningTask) return;
 
       const ids = [...pendingReconcilePersonIds];
-      pendingReconcilePersonIds.clear();
       if (ids.length === 0) return;
 
       const { data, error } = await $supabase
@@ -218,8 +218,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
         });
       if (error) throw error;
 
+      // RPC succeeded — safe to drop the buffered ids.
+      pendingReconcilePersonIds.clear();
+
       const reconciled = data as Contact[];
       const cached = [...contactsCacheMap.values()];
+
       const { upserts, prunes } = applyReconciledContacts(
         cached,
         ids,
@@ -233,8 +237,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
         await updateContactsCache(row);
       }
       updateContactList.value = true;
+      reconcileRetryCount = 0;
     } catch (e) {
       console.warn('Failed to reconcile contacts from realtime', e);
+      // The buffered ids were not cleared (clear happens only after a
+      // successful RPC), so a transient failure retries the same groups.
+      const retried = reconcileRetryCount + 1;
+      if (retried < REALTIME_RECONCILE_MAX_RETRIES) {
+        reconcileRetryCount = retried;
+        scheduleReconcile();
+      }
     } finally {
       reconciling = false;
     }
