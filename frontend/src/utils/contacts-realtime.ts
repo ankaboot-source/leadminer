@@ -4,48 +4,62 @@ type RealtimeRow = { id?: string; email?: string | null };
 
 /**
  * Stable identity for a merged contact group.
- * Email contacts merge under their email; phone-only persons never merge so
- * their person id is the group key.
+ * The DB exposes contact.contact_id (deterministic uuid per group) — this is
+ * the cache key. It does NOT change when person membership or the primary
+ * person changes.
  */
-export function getContactKey(contact: Pick<Contact, 'id' | 'email'>): string {
-  return contact.email ? contact.email.toLowerCase() : contact.id;
+export function getContactKey(contact: Pick<Contact, 'contact_id' | 'id'>): string {
+  return contact.contact_id ?? contact.id;
 }
 
 /**
- * Derive the group keys a realtime payload must re-read.
- * Identity transitions (email rename, group member deleted) require both the
- * old and the new key so the pre- and post-change groups are both reconciled.
+ * Collect the person_id(s) a realtime payload signals changed. These are the
+ * keys used to reverse-lookup the affected aggregate group(s) via
+ * get_contacts_view_by_ids.
+ *
+ * - INSERT / UPDATE buffer the NEW row's person id.
+ * - UPDATE / DELETE also buffer the OLD row's person id (covers the case where
+ *   the id itself changes, and any rename on the person).
  */
-export function collectRealtimeKeys(payload: {
+export function collectRealtimePersonIds(payload: {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
   new?: RealtimeRow | null;
   old?: RealtimeRow | null;
 }): string[] {
-  const keys = new Set<string>();
+  const ids = new Set<string>();
   const push = (row?: RealtimeRow | null) => {
-    if (!row || !row.id) return;
-    keys.add(row.email ? row.email.toLowerCase() : row.id);
+    if (row?.id) ids.add(row.id);
   };
   if (payload.eventType !== 'INSERT') push(payload.old);
   if (payload.eventType !== 'DELETE') push(payload.new);
-  return [...keys];
+  return [...ids];
 }
 
 /**
- * Apply the freshly read merge rows to the cache decision.
- * Rows returned by get_contacts_table_by_emails are upserts. Any buffered key
- * that no longer exists in the view means its group was deleted (or renamed
- * away) and must be pruned from the cache.
+ * Decide which cache entries to upsert vs prune after re-reading contacts.
+ *
+ * `reconciled` = the aggregate groups returned by get_contacts_view_by_ids for
+ * the buffered `personIds`. Their rows carry person_ids which we use to know a
+ * cached contact was touched.
+ *
+ * - upserts: all reconciled groups (fresh merged state).
+ * - prunes: cached contacts whose person_ids overlap the buffered ids but that
+ *   were NOT returned — i.e. their last member was removed, or the group
+ *   disappeared. Contacts with no overlap are untouched.
  */
 export function applyReconciledContacts(
   cached: Contact[],
-  bufferedKeys: string[],
+  bufferedPersonIds: string[],
   reconciled: Contact[],
 ): { upserts: Contact[]; prunes: string[] } {
-  const bufferedSet = new Set(bufferedKeys);
+  const bufferedSet = new Set(bufferedPersonIds);
   const reconciledKeys = new Set(reconciled.map(getContactKey));
   const prunes = cached
-    .filter((c) => bufferedSet.has(getContactKey(c)) && !reconciledKeys.has(getContactKey(c)))
+    .filter(
+      (c) =>
+        (c.person_ids ?? []).some((pid) => bufferedSet.has(pid)) &&
+        !reconciledKeys.has(getContactKey(c)),
+    )
     .map(getContactKey);
   return { upserts: reconciled, prunes };
 }

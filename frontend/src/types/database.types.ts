@@ -1533,6 +1533,7 @@ export type Database = {
           alternate_name: string[];
           consent_changed_at: string;
           consent_status: Database['private']['Enums']['contact_consent_status'];
+          contact_id: string;
           conversations: number;
           created_at: string;
           email: string;
@@ -1547,6 +1548,7 @@ export type Database = {
           mining_id: string;
           name: string;
           occurrence: number;
+          person_ids: string[];
           recency: string;
           recipient: number;
           replied_conversations: number;
@@ -1564,13 +1566,14 @@ export type Database = {
           works_for: string;
         }[];
       };
-      get_contacts_table_by_emails: {
-        Args: { p_emails: string[]; p_user_id: string };
+      get_contacts_view_by_ids: {
+        Args: { p_person_ids: string[]; p_user_id: string };
         Returns: {
           alternate_email: string[];
           alternate_name: string[];
           consent_changed_at: string;
           consent_status: Database['private']['Enums']['contact_consent_status'];
+          contact_id: string;
           conversations: number;
           created_at: string;
           email: string;
@@ -1585,6 +1588,7 @@ export type Database = {
           mining_id: string;
           name: string;
           occurrence: number;
+          person_ids: string[];
           recency: string;
           recipient: number;
           replied_conversations: number;

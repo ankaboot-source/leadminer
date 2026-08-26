@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyReconciledContacts,
-  collectRealtimeKeys,
+  collectRealtimePersonIds,
   getContactKey,
 } from '@/utils/contacts-realtime';
 import type { Contact } from '@/types/contact';
 
-function contact(partial: Partial<Contact> & { id: string; email?: string | null }): Contact {
+function contact(partial: Partial<Contact> & { id: string; contact_id?: string }): Contact {
+  const cid = partial.contact_id ?? `cid-${partial.id}`;
   return {
     user_id: 'u1',
+    contact_id: cid,
     name: null,
     given_name: null,
     family_name: null,
@@ -27,58 +29,56 @@ function contact(partial: Partial<Contact> & { id: string; email?: string | null
 }
 
 describe('getContactKey', () => {
-  it('keys email contacts by their email (lowercased)', () => {
-    expect(getContactKey(contact({ id: 'a', email: 'Foo@Bar.com' }))).toBe('foo@bar.com');
-  });
-  it('keys phone-only contacts by their id', () => {
-    expect(getContactKey(contact({ id: 'p1', email: null }))).toBe('p1');
+  it('keys a contact by its stable contact_id', () => {
+    expect(getContactKey(contact({ id: 'a', contact_id: 'cid-a' }))).toBe('cid-a');
   });
 });
 
-describe('collectRealtimeKeys', () => {
-  it('INSERT buffers the new row key', () => {
-    expect(collectRealtimeKeys({ eventType: 'INSERT', new: { id: 'x', email: 'A@b.c' } })).toEqual(['a@b.c']);
+describe('collectRealtimePersonIds', () => {
+  it('INSERT buffers the new row id', () => {
+    expect(collectRealtimePersonIds({ eventType: 'INSERT', new: { id: 'p1' } })).toEqual(['p1']);
   });
-  it('UPDATE buffers both old and new keys (email rename)', () => {
-    const keys = collectRealtimeKeys({
+  it('UPDATE buffers both old and new ids', () => {
+    const ids = collectRealtimePersonIds({
       eventType: 'UPDATE',
-      old: { id: 'x', email: 'A@b.c' },
-      new: { id: 'x', email: 'd@e.f' },
+      old: { id: 'p-old' },
+      new: { id: 'p-new' },
     });
-    expect(keys.sort()).toEqual(['a@b.c', 'd@e.f']);
+    expect(ids.sort()).toEqual(['p-new', 'p-old']);
   });
-  it('DELETE buffers the old key, falling back to id when email missing', () => {
+  it('UPDATE same id dedupes', () => {
     expect(
-      collectRealtimeKeys({ eventType: 'DELETE', old: { id: 'p1', email: null } }),
+      collectRealtimePersonIds({ eventType: 'UPDATE', old: { id: 'p1' }, new: { id: 'p1' } }),
     ).toEqual(['p1']);
-    expect(
-      collectRealtimeKeys({ eventType: 'DELETE', old: { id: 'x', email: 'a@b.c' } }),
-    ).toEqual(['a@b.c']);
+  });
+  it('DELETE buffers the old id', () => {
+    expect(collectRealtimePersonIds({ eventType: 'DELETE', old: { id: 'p1' } })).toEqual(['p1']);
   });
 });
 
 describe('applyReconciledContacts', () => {
-  it('returns only upserts for rows that still exist', () => {
-    const cached = [contact({ id: 'x', email: 'a@b.c' })];
-    const reconciled = [contact({ id: 'y', email: 'a@b.c', name: 'New Primary' })];
-    const { upserts, prunes } = applyReconciledContacts(cached, ['a@b.c'], reconciled);
+  it('returns reconciled groups as upserts and no prunes when they still exist', () => {
+    const cached = [contact({ id: 'x', contact_id: 'c1', person_ids: ['p1'] })];
+    const reconciled = [
+      contact({ id: 'y', contact_id: 'c1', person_ids: ['p1', 'p2'], name: 'Merged' }),
+    ];
+    const { upserts, prunes } = applyReconciledContacts(cached, ['p1'], reconciled);
     expect(upserts).toEqual(reconciled);
     expect(prunes).toEqual([]);
   });
-  it('prunes buffered keys that no longer exist in the view', () => {
+  it('prunes a cached contact whose member person was removed and group vanished', () => {
     const cached = [
-      contact({ id: 'x', email: 'a@b.c' }),
-      contact({ id: 'z', email: 'keep@b.c' }),
+      contact({ id: 'x', contact_id: 'c1', person_ids: ['p1'] }),
+      contact({ id: 'z', contact_id: 'c2', person_ids: ['p9'] }),
     ];
-    const { upserts, prunes } = applyReconciledContacts(cached, ['a@b.c', 'keep@b.c'], [
-      contact({ id: 'z', email: 'keep@b.c' }),
-    ]);
-    expect(upserts).toHaveLength(1);
-    expect(prunes).toEqual(['a@b.c']);
+    const { upserts, prunes } = applyReconciledContacts(cached, ['p1'], []);
+    expect(upserts).toEqual([]);
+    expect(prunes).toEqual(['c1']);
+    expect(prunes).not.toContain('c2');
   });
-  it('does not prune a buffered key that is not currently cached', () => {
-    const cached = [contact({ id: 'z', email: 'keep@b.c' })];
-    const { upserts, prunes } = applyReconciledContacts(cached, ['a@b.c'], []);
+  it('does not prune a cached contact unaffected by the buffered person ids', () => {
+    const cached = [contact({ id: 'z', contact_id: 'c2', person_ids: ['p9'] })];
+    const { upserts, prunes } = applyReconciledContacts(cached, ['p1'], []);
     expect(prunes).toEqual([]);
     expect(upserts).toEqual([]);
   });
