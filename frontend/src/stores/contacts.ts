@@ -10,11 +10,20 @@ import {
   type TableOrigin,
 } from '~/utils/table-preferences';
 import { convertDates } from '~/utils/contacts';
+import {
+  applyReconciledContacts,
+  collectRealtimePersonIds,
+  getContactKey,
+} from '~/utils/contacts-realtime';
 import Normalizer from '~/utils/normalizer';
+import { useLeadminerStore } from './leadminer';
+
+const REALTIME_DEBOUNCE_MS = 700;
 
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
   const $supabase = useSupabaseClient();
+  const $leadminerStore = useLeadminerStore();
 
   const updateContactList = ref<boolean>(false);
   const contactsCacheMap = new Map<string, Contact>();
@@ -34,6 +43,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let realtimeChannel: RealtimeChannel | null = null;
   let realtimeChannelUserId: string | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  let reconcileTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconciling = false;
+  const pendingReconcilePersonIds = new Set<string>();
 
   /**
    * Applies cached contacts to the main contacts list.
@@ -98,12 +111,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Loads contacts from db and restarts SyncInterval.
    */
   async function reloadContacts() {
+    pendingReconcilePersonIds.clear();
+    clearReconcileTimer();
     updateContactList.value = false;
     contactsCacheMap.clear();
     const contacts = await loadContacts();
     contacts
       .toReversed()
-      .forEach((contact) => contactsCacheMap.set(contact.id, contact));
+      .forEach((contact) => contactsCacheMap.set(getContactKey(contact), contact));
     updateContactList.value = true;
     syncContactsList();
   }
@@ -127,8 +142,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   ) {
     const clean: Contact = JSON.parse(JSON.stringify(newContact));
 
-    const { id } = clean;
-    const existingContact = contactsCacheMap.get(id);
+    const key = getContactKey(clean);
+    const existingContact = contactsCacheMap.get(key);
     const updatedContact = existingContact
       ? { ...existingContact, ...clean }
       : clean;
@@ -146,19 +161,83 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
 
     if (keepPosition) {
-      contactsCacheMap.set(updatedContact.id, updatedContact);
+      contactsCacheMap.set(getContactKey(updatedContact), updatedContact);
     } else {
       // Remove and reinsert to change position in the Map
-      contactsCacheMap.delete(id);
-      contactsCacheMap.set(id, updatedContact);
+      contactsCacheMap.delete(key);
+      contactsCacheMap.set(key, updatedContact);
     }
   }
 
-  function removeOldContact(id: string) {
-    contactsCacheMap.delete(id);
+  function removeContactsByKeys(keys: string[]) {
+    const keySet = new Set(keys);
+    if (keySet.size === 0) return;
+    for (const key of keySet) {
+      contactsCacheMap.delete(key);
+    }
     contactsList.value = contactsList.value?.filter(
-      (contact) => contact.id !== id,
+      (contact) => !keySet.has(getContactKey(contact)),
     );
+  }
+
+  function clearReconcileTimer() {
+    if (reconcileTimer) {
+      clearTimeout(reconcileTimer);
+      reconcileTimer = null;
+    }
+  }
+
+  function scheduleReconcile() {
+    clearReconcileTimer();
+    reconcileTimer = setTimeout(() => {
+      void flushRealtimeReconcile();
+    }, REALTIME_DEBOUNCE_MS);
+  }
+
+  async function flushRealtimeReconcile() {
+    if (reconciling) {
+      scheduleReconcile();
+      return;
+    }
+    reconciling = true;
+    clearReconcileTimer();
+    const userId = getCurrentUserId();
+    try {
+      if (!userId) return;
+      if ($leadminerStore.activeMiningTask) return;
+
+      const ids = [...pendingReconcilePersonIds];
+      pendingReconcilePersonIds.clear();
+      if (ids.length === 0) return;
+
+      const { data, error } = await $supabase
+        .schema('private')
+        .rpc('get_contacts_view_by_ids', {
+          p_user_id: userId,
+          p_person_ids: ids,
+        });
+      if (error) throw error;
+
+      const reconciled = data as Contact[];
+      const cached = [...contactsCacheMap.values()];
+      const { upserts, prunes } = applyReconciledContacts(
+        cached,
+        ids,
+        reconciled,
+      );
+
+      for (const key of prunes) {
+        removeContactsByKeys([key]);
+      }
+      for (const row of upserts) {
+        await updateContactsCache(row);
+      }
+      updateContactList.value = true;
+    } catch (e) {
+      console.warn('Failed to reconcile contacts from realtime', e);
+    } finally {
+      reconciling = false;
+    }
   }
 
   function removeOldContacts(ids?: string[]) {
@@ -190,7 +269,19 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (realtimeChannel) return;
 
-    realtimeChannel = $supabase.channel(`contacts-table-${userId}`).on(
+    realtimeChannel = $supabase.channel(`contacts-table-${userId}`);
+
+    realtimeChannel.on(
+      'system',
+      { event: 'reconnected' },
+      () => {
+        console.debug('Realtime reconnected — reloading contacts');
+        pendingReconcilePersonIds.clear();
+        void reloadContacts();
+      },
+    );
+
+    realtimeChannel.on(
       'postgres_changes',
       {
         event: '*',
@@ -198,19 +289,22 @@ export const useContactsStore = defineStore('contacts-store', () => {
         table: 'persons',
         filter: `user_id=eq.${userId}`,
       },
-      (payload: RealtimePostgresChangesPayload<Contact>) => {
-        if (payload.eventType === 'DELETE' && payload.old.id) {
-          removeOldContact(payload.old.id);
-        } else if (payload.new as Contact) {
-          setTimeout(async () => {
-            try {
-              await updateContactsCache(payload.new as Contact);
-            } catch (e) {
-              console.warn('Failed to update contacts cache from realtime', e);
-            }
-            updateContactList.value = true;
-          }, 0);
+      (
+        payload: RealtimePostgresChangesPayload<{
+          id?: string;
+          email?: string | null;
+        }>,
+      ) => {
+        const ids = collectRealtimePersonIds(payload);
+        if (ids.length === 0) return;
+
+        if (!getCurrentUserId()) return;
+        if ($leadminerStore.activeMiningTask) return;
+
+        for (const id of ids) {
+          pendingReconcilePersonIds.add(id);
         }
+        scheduleReconcile();
       },
     );
     realtimeChannelUserId = userId;
@@ -222,6 +316,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Unsubscribes from real-time updates and clears the sync interval.
    */
   async function unsubscribeFromRealtimeUpdates() {
+    pendingReconcilePersonIds.clear();
+    clearReconcileTimer();
     await syncContactsList();
 
     if (realtimeChannel) {
@@ -399,5 +495,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     getLocationsToNormalize,
     updateContactsCache,
     setSkipOrgLookup,
+    clearReconcileTimer,
+    collectRealtimePersonIds,
   };
 });
