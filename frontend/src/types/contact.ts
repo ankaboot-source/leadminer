@@ -36,8 +36,8 @@ export interface Contact {
   same_as: string[] | null;
   image: string | null;
   engagement?: number;
-  sender?: string;
-  recipient?: string;
+  sender?: number;
+  recipient?: number;
   conversations?: number;
   replied_conversations?: number;
   status: EmailStatus | null;

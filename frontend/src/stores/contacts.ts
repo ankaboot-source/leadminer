@@ -106,7 +106,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       .rpc('get_contacts_table', { p_user_id: userId });
 
     if (error) throw error;
-    return data as Contact[];
+    return data as unknown as Contact[];
   }
 
   /**
@@ -221,7 +221,7 @@ async function flushRealtimeReconcile() {
       // RPC succeeded — safe to drop the buffered ids.
       pendingReconcilePersonIds.clear();
 
-      const reconciled = data as Contact[];
+      const reconciled = data as unknown as Contact[];
       const cached = [...contactsCacheMap.values()];
 
       const { upserts, prunes } = applyReconciledContacts(
