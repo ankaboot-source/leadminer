@@ -313,7 +313,7 @@ class FetchMiningSourceHandler {
         // Permanent rejection (invalid_grant): the user revoked access or the
         // grant is dead. Mark the source as needing re-auth, stop continuous
         // mining so we don't hammer a dead source, and notify the user.
-        await this.handlePermanentRejection(source, userId, error);
+        await this.handlePermanentRejection(source, userId);
       }
     }
 
@@ -323,7 +323,6 @@ class FetchMiningSourceHandler {
   private async handlePermanentRejection(
     source: MiningSource,
     userId: string,
-    error: unknown,
   ): Promise<void> {
     if (!source.id) {
       logger.error(
@@ -356,7 +355,7 @@ class FetchMiningSourceHandler {
         await sendEmail(
           userEmail,
           "Continuous mining paused: connection needs re-authentication",
-          `<p>Your continuous mining for <strong>${this.escapeHtml(
+          `<p>Your continuous mining for <strong>${FetchMiningSourceHandler.escapeHtml(
             source.email,
           )}</strong> was paused because the connection was revoked or expired.</p>
           <p>Please reconnect this source to resume automatic mining.</p>`,
@@ -422,7 +421,7 @@ class FetchMiningSourceHandler {
     }
   }
 
-  private escapeHtml(value: string): string {
+  private static escapeHtml(value: string): string {
     return value
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")

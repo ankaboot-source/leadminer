@@ -17,12 +17,6 @@ type MiningSource = {
   config?: Record<string, unknown>;
 };
 
-type PassiveMiningStatus =
-  | "idle"
-  | "running"
-  | "completed"
-  | "failed";
-
 function mergeConfig(
   current: MiningSource["config"],
   patch: Record<string, unknown>,
