@@ -125,7 +125,7 @@
           "
         >
           <RemoveContactButton
-            :contacts-to-delete="contactsToTreat"
+            :contacts-to-delete="contactsToDelete"
             :contacts-to-delete-length="selectedContactsLength"
             :is-remove-disabled="isExportDisabled || !selectedContactsLength"
             :deselect-contacts="deselectContacts"
@@ -1270,6 +1270,18 @@ const contactsToTreat = computed<string[] | undefined>(() =>
   implicitSelectAll.value
     ? undefined
     : implicitlySelectedContacts.value.map((item: Contact) => item.id),
+);
+
+// Delete must remove EVERY member of a merged contact, not just its primary
+// person. `contactsToTreat` maps to `item.id` (primary person) which would leave
+// orphan members that re-materialize the contact after delete. Flatten all
+// person_ids instead.
+const contactsToDelete = computed<string[] | undefined>(() =>
+  implicitSelectAll.value
+    ? undefined
+    : implicitlySelectedContacts.value.flatMap((item: Contact) =>
+        item.person_ids?.length ? item.person_ids : [item.id],
+      ),
 );
 
 const updateSelectedIds = useDebounceFn((ids: string[] | undefined) => {

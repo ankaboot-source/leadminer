@@ -14,6 +14,8 @@ import {
   applyReconciledContacts,
   collectRealtimePersonIds,
   getContactKey,
+  resolveRealtimeAction,
+  type RealtimePersonRow,
 } from '~/utils/contacts-realtime';
 import Normalizer from '~/utils/normalizer';
 import { useLeadminerStore } from './leadminer';
@@ -302,21 +304,32 @@ async function flushRealtimeReconcile() {
         filter: `user_id=eq.${userId}`,
       },
       (
-        payload: RealtimePostgresChangesPayload<{
-          id?: string;
-          email?: string | null;
-        }>,
+        payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
       ) => {
-        const ids = collectRealtimePersonIds(payload);
-        if (ids.length === 0) return;
-
         if (!getCurrentUserId()) return;
-        if ($leadminerStore.activeMiningTask) return;
 
-        for (const id of ids) {
-          pendingReconcilePersonIds.add(id);
+        const action = resolveRealtimeAction(payload, {
+          activeMining: $leadminerStore.activeMiningTask,
+        });
+
+        switch (action.kind) {
+          case 'stream':
+            void updateContactsCache(action.row as unknown as Contact);
+            updateContactList.value = true;
+            return;
+          case 'remove':
+            removeOldContacts([action.id]);
+            updateContactList.value = true;
+            return;
+          case 'reconcile':
+            for (const id of action.personIds) {
+              pendingReconcilePersonIds.add(id);
+            }
+            scheduleReconcile();
+            return;
+          case 'none':
+            return;
         }
-        scheduleReconcile();
       },
     );
     realtimeChannelUserId = userId;

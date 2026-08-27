@@ -3,6 +3,7 @@ import {
   applyReconciledContacts,
   collectRealtimePersonIds,
   getContactKey,
+  resolveRealtimeAction,
 } from '@/utils/contacts-realtime';
 import type { Contact } from '@/types/contact';
 
@@ -81,5 +82,66 @@ describe('applyReconciledContacts', () => {
     const { upserts, prunes } = applyReconciledContacts(cached, ['p1'], []);
     expect(prunes).toEqual([]);
     expect(upserts).toEqual([]);
+  });
+});
+
+describe('resolveRealtimeAction', () => {
+  it('streams a raw INSERT row while mining is active', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'INSERT', new: { id: 'p1', name: 'Mined', email: 'm@x.com' } },
+      { activeMining: true },
+    );
+    expect(action.kind).toBe('stream');
+    if (action.kind === 'stream') {
+      expect(action.row.id).toBe('p1');
+    }
+  });
+
+  it('streams a raw UPDATE row while mining is active', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'UPDATE', old: { id: 'p1' }, new: { id: 'p1', name: 'NewName' } },
+      { activeMining: true },
+    );
+    expect(action.kind).toBe('stream');
+  });
+
+  it('removes by person id on DELETE while mining is active', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'DELETE', old: { id: 'p1' } },
+      { activeMining: true },
+    );
+    expect(action).toEqual({ kind: 'remove', id: 'p1' });
+  });
+
+  it('returns none for a mining DELETE without an old id', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'DELETE', old: null },
+      { activeMining: true },
+    );
+    expect(action.kind).toBe('none');
+  });
+
+  it('buffers person ids for merged reconcile outside mining', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'INSERT', new: { id: 'p1' } },
+      { activeMining: false },
+    );
+    expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
+  });
+
+  it('reconciles old+new ids on UPDATE outside mining', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'UPDATE', old: { id: 'old' }, new: { id: 'new' } },
+      { activeMining: false },
+    );
+    expect(action).toEqual({ kind: 'reconcile', personIds: ['old', 'new'] });
+  });
+
+  it('reconciles the old id on DELETE outside mining', () => {
+    const action = resolveRealtimeAction(
+      { eventType: 'DELETE', old: { id: 'p1' } },
+      { activeMining: false },
+    );
+    expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
   });
 });

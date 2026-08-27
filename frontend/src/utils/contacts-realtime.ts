@@ -1,6 +1,28 @@
 import type { Contact } from '@/types/contact';
 
-type RealtimeRow = { id?: string; email?: string | null };
+export type RealtimePersonRow = {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  source?: string | null;
+  telephone?: string[] | null;
+  location?: string | null;
+  works_for?: string | null;
+  job_title?: string | null;
+  given_name?: string | null;
+  family_name?: string | null;
+  image?: string | null;
+  alternate_name?: string[] | null;
+  same_as?: string[] | null;
+  alternate_email?: string[] | null;
+  status?: string | null;
+  consent_status?: string | null;
+  consent_changed_at?: string | null;
+  updated_at?: string | null;
+  created_at?: string | null;
+};
+
+type RealtimeRow = RealtimePersonRow;
 
 /**
  * Stable identity for a merged contact group.
@@ -62,4 +84,43 @@ export function applyReconciledContacts(
     )
     .map(getContactKey);
   return { upserts: reconciled, prunes };
+}
+
+/**
+ * Decide how the contacts store should react to a realtime person event.
+ *
+ * - During active mining: stream raw person rows (keyed by person id) so newly
+ *   mined people appear live. The post-mining reloadContacts() performs a full
+ *   contacts_view load that migrates the cache to the merged logic.
+ * - Outside mining: buffer person ids for the debounced merged reconcile.
+ *
+ * Returns a discriminated action the store dispatches.
+ */
+export type RealtimeAction =
+  | { kind: 'stream'; row: RealtimePersonRow }
+  | { kind: 'remove'; id: string }
+  | { kind: 'reconcile'; personIds: string[] }
+  | { kind: 'none' };
+
+export function resolveRealtimeAction(
+  payload: {
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new?: RealtimePersonRow | null;
+    old?: RealtimePersonRow | null;
+  },
+  opts: { activeMining: boolean },
+): RealtimeAction {
+  if (opts.activeMining) {
+    if (payload.eventType === 'DELETE' && payload.old?.id) {
+      return { kind: 'remove', id: payload.old.id };
+    }
+    if (payload.new?.id) {
+      return { kind: 'stream', row: payload.new };
+    }
+    return { kind: 'none' };
+  }
+
+  const personIds = collectRealtimePersonIds(payload);
+  if (personIds.length === 0) return { kind: 'none' };
+  return { kind: 'reconcile', personIds };
 }
