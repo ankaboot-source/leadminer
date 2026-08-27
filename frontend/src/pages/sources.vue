@@ -168,6 +168,22 @@
               </div>
             </div>
 
+            <div
+              v-if="needsReauth(source)"
+              class="mt-3 p-3 rounded bg-red-50 border border-red-200 flex items-center justify-between flex-wrap gap-2"
+            >
+              <div class="flex items-center gap-2 text-sm text-red-600">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span class="font-medium">{{ t('source_needs_reauth') }}</span>
+              </div>
+              <Button
+                :label="t('reconnect')"
+                size="small"
+                severity="danger"
+                @click="reconnectExpiredSource(source)"
+              />
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('provider') }}</div>
@@ -525,14 +541,20 @@ function passiveMiningStatus(source: MiningSource) {
         ? 'mining_status_done'
         : status === 'failed'
           ? 'mining_status_failed'
-          : status === 'idle'
-            ? 'passive_mining_idle'
-            : '';
+          : status === 'retrying'
+            ? 'passive_mining_retrying'
+            : status === 'idle'
+              ? 'passive_mining_idle'
+              : '';
   return { status, label };
 }
 
 function passiveMiningErrors(source: MiningSource): string[] {
   return (source.config?.['errors'] as string[]) ?? [];
+}
+
+function needsReauth(source: MiningSource): boolean {
+  return source.config?.['needs_reauth'] === true;
 }
 
 async function toggleSourceConfig(
@@ -657,8 +679,10 @@ onMounted(async () => {
     "last_passive_run": "Last passive run",
     "folders_mined": "Folders mined",
     "passive_mining_errors": "Errors",
+    "passive_mining_retrying": "Retrying",
     "passive_mining_idle": "Idle",
     "mining_status_failed": "Failed",
+    "source_needs_reauth": "Connection lost — please reconnect to continue",
     "continuous_mining": "Continuous mining",
     "remove": "Remove",
     "remove_source": "Remove source",
@@ -721,8 +745,10 @@ onMounted(async () => {
     "last_passive_run": "Dernière exécution passive",
     "folders_mined": "Dossiers traités",
     "passive_mining_errors": "Erreurs",
+    "passive_mining_retrying": "Nouvel essai",
     "passive_mining_idle": "En attente",
     "mining_status_failed": "Échec",
+    "source_needs_reauth": "Connexion perdue — veuillez vous reconnecter pour continuer",
     "continuous_mining": "Extraction continue",
     "remove": "Supprimer",
     "remove_source": "Supprimer la source",

@@ -16,11 +16,13 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import {
+  isPermanentOAuthError,
   isTokenExpired,
   MiningSource,
   OAuthMiningSourceCredentials,
   refreshAccessToken,
 } from "./oauth-handler/index.ts";
+import { sendEmail } from "../_shared/mailing/email.ts";
 
 const logger = createLogger("fetch-mining-source");
 
@@ -269,15 +271,163 @@ class FetchMiningSourceHandler {
         refreshedEmails.push(source.email);
 
         logger.info("Token refreshed successfully", { email: source.email });
+
+        // A successful refresh means the connection is healthy again; clear any
+        // stale needs_reauth / failed-run flag set by an earlier rejection.
+        if (source.config?.needs_reauth || source.config?.status) {
+          const config = {
+            ...(source.config ?? {}),
+            needs_reauth: false,
+            status: "idle",
+            errors: [],
+          };
+          const { error: configError } = await this.admin
+            .schema("private")
+            .from("mining_sources")
+            .update({ config })
+            .eq("id", source.id);
+          if (configError) {
+            logger.error("Failed to clear needs_reauth flag", {
+              email: source.email,
+              error: configError.message,
+            });
+          }
+        }
       } catch (error) {
+        const permanent = isPermanentOAuthError(error);
         logger.error("Failed to refresh token", {
           email: source.email,
+          userId,
+          permanent,
           error: error instanceof Error ? error.message : String(error),
         });
+
+        if (!permanent) {
+          // Transient failure (network blip, token server hiccup, rate limit):
+          // keep passive_mining enabled and surface the last-run error. It will
+          // retry on the next schedule cycle.
+          await this.recordError(source.id, source.email, error);
+          continue;
+        }
+
+        // Permanent rejection (invalid_grant): the user revoked access or the
+        // grant is dead. Mark the source as needing re-auth, stop continuous
+        // mining so we don't hammer a dead source, and notify the user.
+        await this.handlePermanentRejection(source, userId, error);
       }
     }
 
     return refreshedEmails;
+  }
+
+  private async handlePermanentRejection(
+    source: MiningSource,
+    userId: string,
+    error: unknown,
+  ): Promise<void> {
+    if (!source.id) {
+      logger.error(
+        "Cannot flag source for re-auth: missing source id",
+        { email: source.email },
+      );
+      return;
+    }
+    try {
+      const config = { ...(source.config ?? {}), needs_reauth: true };
+      await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .update({ config, passive_mining: false })
+        .eq("id", source.id);
+      logger.info("Disabled passive mining for permanently rejected source", {
+        email: source.email,
+        userId,
+      });
+    } catch (configError) {
+      logger.error("Failed to flag source for re-auth", {
+        email: source.email,
+        error: configError instanceof Error ? configError.message : String(configError),
+      });
+    }
+
+    const userEmail = await this.getUserEmail(userId);
+    if (userEmail) {
+      try {
+        await sendEmail(
+          userEmail,
+          "Continuous mining paused: connection needs re-authentication",
+          `<p>Your continuous mining for <strong>${this.escapeHtml(
+            source.email,
+          )}</strong> was paused because the connection was revoked or expired.</p>
+          <p>Please reconnect this source to resume automatic mining.</p>`,
+        );
+        logger.info("Sent reconnect notification email", { userId });
+      } catch (mailError) {
+        logger.error("Failed to send reconnect notification", {
+          email: source.email,
+          error: mailError instanceof Error ? mailError.message : String(mailError),
+        });
+      }
+    }
+  }
+
+  private async recordError(
+    sourceId: string | undefined,
+    email: string,
+    error: unknown,
+  ): Promise<void> {
+    if (!sourceId) {
+      logger.error("Cannot record transient refresh error: missing source id", {
+        email,
+      });
+      return;
+    }
+    try {
+      const existing = await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .select("config")
+        .eq("id", sourceId)
+        .single();
+      const config = {
+        ...((existing.data?.config as Record<string, unknown>) ?? {}),
+        status: "failed",
+        last_run: new Date().toISOString(),
+        errors: [error instanceof Error ? error.message : String(error)],
+      };
+      await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .update({ config })
+        .eq("id", sourceId);
+    } catch (configError) {
+      logger.error("Failed to record transient refresh error", {
+        email,
+        error: configError instanceof Error ? configError.message : String(configError),
+      });
+    }
+  }
+
+  private async getUserEmail(userId: string): Promise<string | null> {
+    try {
+      const { data } = await this.admin
+        .schema("private")
+        .from("profiles")
+        .select("email")
+        .eq("user_id", userId)
+        .maybeSingle();
+      return data?.email ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
   }
 
   private static buildSuccessResponse(

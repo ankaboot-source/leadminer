@@ -35,6 +35,7 @@ export interface MiningSource {
   userId: string;
   credentials: ImapMiningSourceCredentials | OAuthMiningSourceCredentials;
   type: MiningSourceType;
+  config?: Record<string, unknown>;
 }
 
 export function getAuthClient(provider: OAuthMiningSourceProvider) {
@@ -59,6 +60,33 @@ export function isTokenExpired(
     expires_at: credentials.expiresAt,
   });
   return token.expired(300);
+}
+
+/**
+ * Classify an OAuth refresh error as a permanent rejection (the refresh token or
+ * grant is dead and can never be refreshed again) vs a transient failure (retryable).
+ *
+ * - Permanent: Google/Azure `invalid_grant` (revoked access, app uninstalled, refresh
+ *   token rotated/reset). An expired token that is otherwise valid is NOT permanent —
+ *   it refreshes fine once network/token-server hiccups clear.
+ * - Transient: network errors, 5xx, rate limits — should be retried, not acted on.
+ */
+export function isPermanentOAuthError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const body = (error as { data?: unknown })?.data;
+  const bodyText =
+    typeof body === "string"
+      ? body
+      : JSON.stringify(body ?? "").toLowerCase();
+
+  return (
+    /invalid_grant/i.test(message) ||
+    /invalid_grant/i.test(bodyText) ||
+    /token.*(revoked|invalid|expired)|revoked (the )?(user )?(grant|token)/i.test(
+      message,
+    ) ||
+    /invalid_grant/i.test(JSON.stringify(error).toLowerCase())
+  );
 }
 
 export async function refreshAccessToken(

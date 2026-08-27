@@ -1,6 +1,7 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
+import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
@@ -66,6 +67,10 @@ async function recordRun(
   });
 }
 
+async function markNeedsReauth(sourceId: string): Promise<void> {
+  await updateConfig(sourceId, { needs_reauth: true });
+}
+
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
@@ -90,14 +95,20 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
+        const permanent = isPermanentOAuthError(error);
         await recordRun(miningSource.id, {
-          status: "failed",
+          status: permanent ? "failed" : "retrying",
           errors: [error instanceof Error ? error.message : String(error)],
+          ...(permanent ? { needs_reauth: true } : {}),
         });
-        // Disable passive mining for failing sources so the scheduler does
-        // not retry a broken source on every cycle and silently stall
-        // continuous extraction. The user sees and can re-enable it from the
-        // sources page.
+
+        // Only disable passive mining for a permanent OAuth rejection
+        // (invalid_grant / revoked grant). Transient failures (network blips,
+        // IMAP server down) should keep passive_mining enabled so the scheduler
+        // retries on the next cycle instead of silently stopping continuous
+        // extraction.
+        if (!permanent) continue;
+
         await supabase
           .schema("private")
           .from("mining_sources")
@@ -109,6 +120,7 @@ app.post("/", async (c: Context) => {
               updateError,
             );
           });
+        await markNeedsReauth(miningSource.id);
       }
     }
 
