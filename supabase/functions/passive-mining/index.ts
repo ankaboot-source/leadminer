@@ -15,22 +15,85 @@ type MiningSource = {
   user_id: string;
   config?: Record<string, unknown>;
 };
+
+type PassiveMiningStatus =
+  | "idle"
+  | "running"
+  | "completed"
+  | "failed";
+
+function mergeConfig(
+  current: MiningSource["config"],
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  return { ...(current ?? {}), ...patch };
+}
+
+async function updateConfig(
+  sourceId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const source = await supabase
+    .schema("private")
+    .from("mining_sources")
+    .select("config")
+    .eq("id", sourceId)
+    .single();
+  if (source.error) {
+    console.error(
+      `Failed to fetch config for ${sourceId}: ${source.error.message}`,
+    );
+    return;
+  }
+  const merged = mergeConfig(source.data?.config as MiningSource["config"], patch);
+  const { error } = await supabase
+    .schema("private")
+    .from("mining_sources")
+    .update({ config: merged })
+    .eq("id", sourceId);
+  if (error) {
+    console.error(`Failed to persist config for ${sourceId}: ${error.message}`);
+  }
+}
+
+async function recordRun(
+  sourceId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  await updateConfig(sourceId, {
+    last_run: new Date().toISOString(),
+    ...patch,
+  });
+}
+
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
     console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
       try {
-        const miningTask = await startMiningEmail(miningSource);
+        await recordRun(miningSource.id, { status: "running" });
+        const { task, folders } = await startMiningEmail(miningSource);
+        await recordRun(miningSource.id, {
+          status: "completed",
+          mining_id: (task as { miningId?: string } | undefined)?.miningId
+            ?? null,
+          folders_mined: folders,
+          errors: [],
+        });
         console.log(
           `Started mining task for source ${miningSource.email}:`,
-          miningTask,
+          task,
         );
       } catch (error) {
         console.error(
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
+        await recordRun(miningSource.id, {
+          status: "failed",
+          errors: [error instanceof Error ? error.message : String(error)],
+        });
         // Disable passive mining for failing sources so the scheduler does
         // not retry a broken source on every cycle and silently stall
         // continuous extraction. The user sees and can re-enable it from the
@@ -164,5 +227,5 @@ async function startMiningEmail(miningSource: MiningSource) {
   }
 
   const json = await res.json();
-  return json?.data ?? json;
+  return { task: json?.data ?? json, folders };
 }
