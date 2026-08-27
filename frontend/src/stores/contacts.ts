@@ -194,7 +194,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function scheduleReconcile() {
     clearReconcileTimer();
     reconcileTimer = setTimeout(() => {
-      void flushRealtimeReconcile();
+      flushRealtimeReconcile();
     }, REALTIME_DEBOUNCE_MS);
   }
 async function flushRealtimeReconcile() {
@@ -291,7 +291,7 @@ async function flushRealtimeReconcile() {
       () => {
         console.debug('Realtime reconnected — reloading contacts');
         pendingReconcilePersonIds.clear();
-        void reloadContacts();
+        reloadContacts();
       },
     );
 
@@ -314,7 +314,7 @@ async function flushRealtimeReconcile() {
 
         switch (action.kind) {
           case 'stream':
-            void updateContactsCache(action.row as unknown as Contact);
+            updateContactsCache(action.row as unknown as Contact);
             updateContactList.value = true;
             return;
           case 'remove':
@@ -328,6 +328,8 @@ async function flushRealtimeReconcile() {
             scheduleReconcile();
             return;
           case 'none':
+            return;
+          default:
             return;
         }
       },
