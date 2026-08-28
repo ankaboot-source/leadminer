@@ -30,7 +30,9 @@ type RealtimeRow = RealtimePersonRow;
  * the cache key. It does NOT change when person membership or the primary
  * person changes.
  */
-export function getContactKey(contact: Pick<Contact, 'contact_id' | 'id'>): string {
+export function getContactKey(
+  contact: Pick<Contact, 'contact_id' | 'id'>,
+): string {
   return contact.contact_id ?? contact.id;
 }
 

@@ -122,7 +122,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const contacts = await loadContacts();
     contacts
       .toReversed()
-      .forEach((contact) => contactsCacheMap.set(getContactKey(contact), contact));
+      .forEach((contact) =>
+        contactsCacheMap.set(getContactKey(contact), contact),
+      );
     updateContactList.value = true;
     syncContactsList();
   }
@@ -197,7 +199,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       flushRealtimeReconcile();
     }, REALTIME_DEBOUNCE_MS);
   }
-async function flushRealtimeReconcile() {
+  async function flushRealtimeReconcile() {
     if (reconciling) {
       scheduleReconcile();
       return;
@@ -285,15 +287,11 @@ async function flushRealtimeReconcile() {
 
     realtimeChannel = $supabase.channel(`contacts-table-${userId}`);
 
-    realtimeChannel.on(
-      'system',
-      { event: 'reconnected' },
-      () => {
-        console.debug('Realtime reconnected — reloading contacts');
-        pendingReconcilePersonIds.clear();
-        reloadContacts();
-      },
-    );
+    realtimeChannel.on('system', { event: 'reconnected' }, () => {
+      console.debug('Realtime reconnected — reloading contacts');
+      pendingReconcilePersonIds.clear();
+      reloadContacts();
+    });
 
     realtimeChannel.on(
       'postgres_changes',
@@ -303,9 +301,7 @@ async function flushRealtimeReconcile() {
         table: 'persons',
         filter: `user_id=eq.${userId}`,
       },
-      (
-        payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
-      ) => {
+      (payload: RealtimePostgresChangesPayload<RealtimePersonRow>) => {
         if (!getCurrentUserId()) return;
 
         const action = resolveRealtimeAction(payload, {

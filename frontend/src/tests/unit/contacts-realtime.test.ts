@@ -7,7 +7,9 @@ import {
 } from '@/utils/contacts-realtime';
 import type { Contact } from '@/types/contact';
 
-function contact(partial: Partial<Contact> & { id: string; contact_id?: string }): Contact {
+function contact(
+  partial: Partial<Contact> & { id: string; contact_id?: string },
+): Contact {
   const cid = partial.contact_id ?? `cid-${partial.id}`;
   return {
     user_id: 'u1',
@@ -31,13 +33,17 @@ function contact(partial: Partial<Contact> & { id: string; contact_id?: string }
 
 describe('getContactKey', () => {
   it('keys a contact by its stable contact_id', () => {
-    expect(getContactKey(contact({ id: 'a', contact_id: 'cid-a' }))).toBe('cid-a');
+    expect(getContactKey(contact({ id: 'a', contact_id: 'cid-a' }))).toBe(
+      'cid-a',
+    );
   });
 });
 
 describe('collectRealtimePersonIds', () => {
   it('INSERT buffers the new row id', () => {
-    expect(collectRealtimePersonIds({ eventType: 'INSERT', new: { id: 'p1' } })).toEqual(['p1']);
+    expect(
+      collectRealtimePersonIds({ eventType: 'INSERT', new: { id: 'p1' } }),
+    ).toEqual(['p1']);
   });
   it('UPDATE buffers both old and new ids', () => {
     const ids = collectRealtimePersonIds({
@@ -49,11 +55,17 @@ describe('collectRealtimePersonIds', () => {
   });
   it('UPDATE same id dedupes', () => {
     expect(
-      collectRealtimePersonIds({ eventType: 'UPDATE', old: { id: 'p1' }, new: { id: 'p1' } }),
+      collectRealtimePersonIds({
+        eventType: 'UPDATE',
+        old: { id: 'p1' },
+        new: { id: 'p1' },
+      }),
     ).toEqual(['p1']);
   });
   it('DELETE buffers the old id', () => {
-    expect(collectRealtimePersonIds({ eventType: 'DELETE', old: { id: 'p1' } })).toEqual(['p1']);
+    expect(
+      collectRealtimePersonIds({ eventType: 'DELETE', old: { id: 'p1' } }),
+    ).toEqual(['p1']);
   });
 });
 
@@ -61,9 +73,18 @@ describe('applyReconciledContacts', () => {
   it('returns reconciled groups as upserts and no prunes when they still exist', () => {
     const cached = [contact({ id: 'x', contact_id: 'c1', person_ids: ['p1'] })];
     const reconciled = [
-      contact({ id: 'y', contact_id: 'c1', person_ids: ['p1', 'p2'], name: 'Merged' }),
+      contact({
+        id: 'y',
+        contact_id: 'c1',
+        person_ids: ['p1', 'p2'],
+        name: 'Merged',
+      }),
     ];
-    const { upserts, prunes } = applyReconciledContacts(cached, ['p1'], reconciled);
+    const { upserts, prunes } = applyReconciledContacts(
+      cached,
+      ['p1'],
+      reconciled,
+    );
     expect(upserts).toEqual(reconciled);
     expect(prunes).toEqual([]);
   });
@@ -88,7 +109,10 @@ describe('applyReconciledContacts', () => {
 describe('resolveRealtimeAction', () => {
   it('streams a raw INSERT row while mining is active', () => {
     const action = resolveRealtimeAction(
-      { eventType: 'INSERT', new: { id: 'p1', name: 'Mined', email: 'm@x.com' } },
+      {
+        eventType: 'INSERT',
+        new: { id: 'p1', name: 'Mined', email: 'm@x.com' },
+      },
       { activeMining: true },
     );
     expect(action.kind).toBe('stream');
@@ -99,7 +123,11 @@ describe('resolveRealtimeAction', () => {
 
   it('streams a raw UPDATE row while mining is active', () => {
     const action = resolveRealtimeAction(
-      { eventType: 'UPDATE', old: { id: 'p1' }, new: { id: 'p1', name: 'NewName' } },
+      {
+        eventType: 'UPDATE',
+        old: { id: 'p1' },
+        new: { id: 'p1', name: 'NewName' },
+      },
       { activeMining: true },
     );
     expect(action.kind).toBe('stream');
