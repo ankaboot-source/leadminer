@@ -16,6 +16,7 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import {
+  isPermanentOAuthError,
   isTokenExpired,
   MiningSource,
   OAuthMiningSourceCredentials,
@@ -101,15 +102,27 @@ class FetchMiningSourceHandler {
       sources = FetchMiningSourceHandler.filterByEmail(sources, body.email);
       sources = FetchMiningSourceHandler.filterById(sources, body.id);
 
-      const refreshedEmails = await this.refreshTokensIfNeeded(
-        sources,
-        userId,
-        body.refresh_email,
-      );
+      const { refreshedEmails, deauthorizedEmails } =
+        await this.refreshTokensIfNeeded(
+          sources,
+          userId,
+          body.refresh_email,
+        );
+
+      // If the specifically requested source (by email or id) was permanently
+      // deauthorized (revoked / invalid_grant), return a clear 401 so callers
+      // like getImapBoxes can surface a "reconnect needed" state instead of
+      // attempting to connect with dead credentials.
+      if (sources.length > 0 && sources.every((s) => deauthorizedEmails.includes(s.email))) {
+        return FetchMiningSourceHandler.buildUnauthorizedResponse(
+          deauthorizedEmails,
+        );
+      }
 
       return FetchMiningSourceHandler.buildSuccessResponse(
         sources,
         refreshedEmails,
+        deauthorizedEmails,
       );
     } catch (error) {
       return FetchMiningSourceHandler.handleError(error);
@@ -215,8 +228,9 @@ class FetchMiningSourceHandler {
     sources: MiningSource[],
     userId: string,
     forceRefreshEmail?: string,
-  ): Promise<string[]> {
+  ): Promise<{ refreshedEmails: string[]; deauthorizedEmails: string[] }> {
     const refreshedEmails: string[] = [];
+    const deauthorizedEmails: string[] = [];
 
     const forceRefreshSet = forceRefreshEmail
       ? new Set([forceRefreshEmail.toLowerCase()])
@@ -269,20 +283,127 @@ class FetchMiningSourceHandler {
         refreshedEmails.push(source.email);
 
         logger.info("Token refreshed successfully", { email: source.email });
+
+        // A successful refresh means the connection is healthy again; clear any
+        // stale needs_reauth / failed-run flag set by an earlier rejection.
+        if (source.config?.needs_reauth || source.config?.status) {
+          const config = {
+            ...(source.config ?? {}),
+            needs_reauth: false,
+            status: "idle",
+            errors: [],
+          };
+          const { error: configError } = await this.admin
+            .schema("private")
+            .from("mining_sources")
+            .update({ config })
+            .eq("id", source.id);
+          if (configError) {
+            logger.error("Failed to clear needs_reauth flag", {
+              email: source.email,
+              error: configError.message,
+            });
+          }
+        }
       } catch (error) {
+        const permanent = isPermanentOAuthError(error);
         logger.error("Failed to refresh token", {
           email: source.email,
+          userId,
+          permanent,
           error: error instanceof Error ? error.message : String(error),
         });
+
+        if (!permanent) {
+          // Transient failure (network blip, token server hiccup, rate limit):
+          // keep passive_mining enabled and surface the last-run error. It will
+          // retry on the next schedule cycle.
+          await this.recordError(source.id, source.email, error);
+          continue;
+        }
+
+        // Permanent rejection (invalid_grant): the user revoked access or the
+        // grant is dead. Mark the source as needing re-auth and stop continuous
+        // mining so we don't hammer a dead source.
+        deauthorizedEmails.push(source.email);
+        await this.handlePermanentRejection(source, userId);
       }
     }
 
-    return refreshedEmails;
+    return { refreshedEmails, deauthorizedEmails };
+  }
+
+  private async handlePermanentRejection(
+    source: MiningSource,
+    userId: string,
+  ): Promise<void> {
+    if (!source.id) {
+      logger.error(
+        "Cannot flag source for re-auth: missing source id",
+        { email: source.email },
+      );
+      return;
+    }
+    try {
+      const config = { ...(source.config ?? {}), needs_reauth: true };
+      await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .update({ config, passive_mining: false })
+        .eq("id", source.id);
+      logger.info("Disabled passive mining for permanently rejected source", {
+        email: source.email,
+        userId,
+      });
+    } catch (configError) {
+      logger.error("Failed to flag source for re-auth", {
+        email: source.email,
+        error: configError instanceof Error ? configError.message : String(configError),
+      });
+    }
+  }
+
+  private async recordError(
+    sourceId: string | undefined,
+    email: string,
+    error: unknown,
+  ): Promise<void> {
+    if (!sourceId) {
+      logger.error("Cannot record transient refresh error: missing source id", {
+        email,
+      });
+      return;
+    }
+    try {
+      const existing = await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .select("config")
+        .eq("id", sourceId)
+        .single();
+      const config = {
+        ...((existing.data?.config as Record<string, unknown>) ?? {}),
+        status: "failed",
+        last_run: new Date().toISOString(),
+        errors: [error instanceof Error ? error.message : String(error)],
+      };
+      await this.admin
+        .schema("private")
+        .from("mining_sources")
+        .update({ config })
+        .eq("id", sourceId);
+    } catch (configError) {
+      logger.error("Failed to record transient refresh error", {
+        email,
+        error: configError instanceof Error ? configError.message : String(configError),
+      });
+    }
   }
 
   private static buildSuccessResponse(
     sources: MiningSource[],
     refreshedEmails: string[],
+    deauthorizedEmails: string[],
   ): Response {
     const response = {
       sources: sources.map((s) => ({
@@ -292,12 +413,29 @@ class FetchMiningSourceHandler {
         credentials: s.credentials,
       })),
       refreshed: refreshedEmails,
+      deauthorized: deauthorizedEmails,
     };
 
     return new Response(JSON.stringify(response), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  private static buildUnauthorizedResponse(
+    deauthorizedEmails: string[],
+  ): Response {
+    return new Response(
+      JSON.stringify({
+        error: "OAuth connection needs re-authentication",
+        code: "OAUTH_NEEDS_REAUTH",
+        deauthorized: deauthorizedEmails,
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   private static handleError(error: unknown): Response {

@@ -168,6 +168,22 @@
               </div>
             </div>
 
+            <div
+              v-if="needsReauth(source)"
+              class="mt-3 p-3 rounded bg-red-50 border border-red-200 flex items-center justify-between flex-wrap gap-2"
+            >
+              <div class="flex items-center gap-2 text-sm text-red-600">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span class="font-medium">{{ t('source_needs_reauth') }}</span>
+              </div>
+              <Button
+                :label="t('reconnect')"
+                size="small"
+                severity="danger"
+                @click="reconnectExpiredSource(source)"
+              />
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('provider') }}</div>
@@ -201,6 +217,53 @@
                   class="text-xs text-surface-500"
                 >
                   {{ source.totalFromLastMining }} {{ t('contacts') }}
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="source.passive_mining && passiveMiningStatus(source).status"
+              class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-sm"
+            >
+              <div class="p-2 rounded bg-surface-50">
+                <div class="text-surface-500">
+                  {{ t('passive_mining_status') }}
+                </div>
+                <div class="font-semibold mt-1 capitalize">
+                  {{ t(passiveMiningStatus(source).label) }}
+                </div>
+              </div>
+
+              <div class="p-2 rounded bg-surface-50">
+                <div class="text-surface-500">{{ t('last_passive_run') }}</div>
+                <div class="font-semibold mt-1">
+                  {{
+                    source.config?.['last_run']
+                      ? formatDate(source.config['last_run'] as string)
+                      : '-'
+                  }}
+                </div>
+              </div>
+
+              <div
+                v-if="(source.config?.['folders_mined'] as string[])?.length"
+                class="p-2 rounded bg-surface-50"
+              >
+                <div class="text-surface-500">{{ t('folders_mined') }}</div>
+                <div class="font-semibold mt-1">
+                  {{ (source.config?.['folders_mined'] as string[]).length }}
+                </div>
+              </div>
+
+              <div
+                v-if="passiveMiningErrors(source).length"
+                class="p-2 rounded bg-surface-50 md:col-span-2"
+              >
+                <div class="text-surface-500">
+                  {{ t('passive_mining_errors') }}
+                </div>
+                <div class="text-xs text-red-500 mt-1">
+                  {{ passiveMiningErrors(source).join('; ') }}
                 </div>
               </div>
             </div>
@@ -479,6 +542,31 @@ function getSourceConfig(source: MiningSource, key: string): boolean {
   return (source.config?.[key] as boolean) ?? false;
 }
 
+function passiveMiningStatus(source: MiningSource) {
+  const status = (source.config?.['status'] as string) ?? '';
+  const label =
+    status === 'running'
+      ? 'mining_status_running'
+      : status === 'completed'
+        ? 'mining_status_done'
+        : status === 'failed'
+          ? 'mining_status_failed'
+          : status === 'retrying'
+            ? 'passive_mining_retrying'
+            : status === 'idle'
+              ? 'passive_mining_idle'
+              : '';
+  return { status, label };
+}
+
+function passiveMiningErrors(source: MiningSource): string[] {
+  return (source.config?.['errors'] as string[]) ?? [];
+}
+
+function needsReauth(source: MiningSource): boolean {
+  return source.config?.['needs_reauth'] === true;
+}
+
 async function toggleSourceConfig(
   source: MiningSource,
   key: string,
@@ -597,6 +685,14 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Provider",
     "last_extraction": "Last extraction",
+    "passive_mining_status": "Passive mining status",
+    "last_passive_run": "Last passive run",
+    "folders_mined": "Folders mined",
+    "passive_mining_errors": "Errors",
+    "passive_mining_retrying": "Retrying",
+    "passive_mining_idle": "Idle",
+    "mining_status_failed": "Failed",
+    "source_needs_reauth": "Connection lost — please reconnect to continue",
     "continuous_mining": "Continuous mining",
     "remove": "Remove",
     "remove_source": "Remove source",
@@ -655,6 +751,14 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
+    "passive_mining_status": "Statut de l'extraction passive",
+    "last_passive_run": "Dernière exécution passive",
+    "folders_mined": "Dossiers traités",
+    "passive_mining_errors": "Erreurs",
+    "passive_mining_retrying": "Nouvel essai",
+    "passive_mining_idle": "En attente",
+    "mining_status_failed": "Échec",
+    "source_needs_reauth": "Connexion perdue — veuillez vous reconnecter pour continuer",
     "continuous_mining": "Extraction continue",
     "remove": "Supprimer",
     "remove_source": "Supprimer la source",

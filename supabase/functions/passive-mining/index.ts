@@ -1,6 +1,7 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
+import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
@@ -15,26 +16,93 @@ type MiningSource = {
   user_id: string;
   config?: Record<string, unknown>;
 };
+
+function mergeConfig(
+  current: MiningSource["config"],
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  return { ...(current ?? {}), ...patch };
+}
+
+async function updateConfig(
+  sourceId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const source = await supabase
+    .schema("private")
+    .from("mining_sources")
+    .select("config")
+    .eq("id", sourceId)
+    .single();
+  if (source.error) {
+    console.error(
+      `Failed to fetch config for ${sourceId}: ${source.error.message}`,
+    );
+    return;
+  }
+  const merged = mergeConfig(source.data?.config as MiningSource["config"], patch);
+  const { error } = await supabase
+    .schema("private")
+    .from("mining_sources")
+    .update({ config: merged })
+    .eq("id", sourceId);
+  if (error) {
+    console.error(`Failed to persist config for ${sourceId}: ${error.message}`);
+  }
+}
+
+async function recordRun(
+  sourceId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  await updateConfig(sourceId, {
+    last_run: new Date().toISOString(),
+    ...patch,
+  });
+}
+
+async function markNeedsReauth(sourceId: string): Promise<void> {
+  await updateConfig(sourceId, { needs_reauth: true });
+}
+
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
     console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
       try {
-        const miningTask = await startMiningEmail(miningSource);
+        await recordRun(miningSource.id, { status: "running" });
+        const { task, folders } = await startMiningEmail(miningSource);
+        await recordRun(miningSource.id, {
+          status: "completed",
+          mining_id: (task as { miningId?: string } | undefined)?.miningId
+            ?? null,
+          folders_mined: folders,
+          errors: [],
+        });
         console.log(
           `Started mining task for source ${miningSource.email}:`,
-          miningTask,
+          task,
         );
       } catch (error) {
         console.error(
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
-        // Disable passive mining for failing sources so the scheduler does
-        // not retry a broken source on every cycle and silently stall
-        // continuous extraction. The user sees and can re-enable it from the
-        // sources page.
+        const permanent = isPermanentOAuthError(error);
+        await recordRun(miningSource.id, {
+          status: permanent ? "failed" : "retrying",
+          errors: [error instanceof Error ? error.message : String(error)],
+          ...(permanent ? { needs_reauth: true } : {}),
+        });
+
+        // Only disable passive mining for a permanent OAuth rejection
+        // (invalid_grant / revoked grant). Transient failures (network blips,
+        // IMAP server down) should keep passive_mining enabled so the scheduler
+        // retries on the next cycle instead of silently stopping continuous
+        // extraction.
+        if (!permanent) continue;
+
         await supabase
           .schema("private")
           .from("mining_sources")
@@ -46,6 +114,7 @@ app.post("/", async (c: Context) => {
               updateError,
             );
           });
+        await markNeedsReauth(miningSource.id);
       }
     }
 
@@ -164,5 +233,5 @@ async function startMiningEmail(miningSource: MiningSource) {
   }
 
   const json = await res.json();
-  return json?.data ?? json;
+  return { task: json?.data ?? json, folders };
 }

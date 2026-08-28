@@ -1,30 +1,12 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import {
-  MiningSources,
-  OAuthMiningSourceCredentials
-} from '../db/interfaces/MiningSources';
-import azureOAuth2Client from '../services/OAuth2/azure';
-import googleOAuth2Client from '../services/OAuth2/google';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './imap.helpers';
-
-function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
-  const { provider, accessToken, refreshToken, expiresAt } = data;
-  const client = provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
-
-  const token = client.createToken({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    expires_at: expiresAt
-  });
-
-  return { token, refreshToken, provider };
-}
 
 export default function initializeImapController(
   miningSourceService: MiningSources
@@ -66,18 +48,12 @@ export default function initializeImapController(
         }
 
         if ('accessToken' in data) {
-          const { token, refreshToken } = getTokenAndProvider(data);
-
-          if (!refreshToken)
-            return res.status(401).send({
-              data: { message: 'No Refresh Token' }
-            });
-
-          if (token.expired(1000)) {
-            return res.status(401).send({
-              data: { message: 'Access token is expired' }
-            });
-          }
+          // Credentials come from miningSourceService.getSourcesForUser, which
+          // invokes the `fetch-mining-source` edge function. That function
+          // refreshes and persists expired OAuth tokens automatically, so the
+          // credentials here are already valid/refreshed. Any further
+          // local expiry check is redundant and would spuriously 401 even
+          // after a successful refresh, so it is intentionally omitted.
         }
 
         imapConnection = await ImapConnectionProvider.getSingleConnection(
@@ -112,6 +88,19 @@ export default function initializeImapController(
           stack: error.stack,
           code: error.code
         });
+
+        // OAuth source needs re-authentication (fetch-mining-source returned
+        // OAUTH_NEEDS_REAUTH). Surface a clear "reconnect needed" response so
+        // the frontend can prompt the user to reconnect instead of a generic
+        // IMAP auth failure.
+        if (
+          error?.status === 401 ||
+          error?.message?.includes('re-authentication')
+        ) {
+          return res.status(401).send({
+            data: { message: 'OAuth connection needs re-authentication' }
+          });
+        }
 
         if ([502, 503].includes(error?.output?.payload?.statusCode)) {
           return res
