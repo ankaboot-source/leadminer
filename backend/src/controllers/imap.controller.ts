@@ -93,7 +93,10 @@ export default function initializeImapController(
         // OAUTH_NEEDS_REAUTH). Surface a clear "reconnect needed" response so
         // the frontend can prompt the user to reconnect instead of a generic
         // IMAP auth failure.
-        if (error?.status === 401 || error?.message?.includes('re-authentication')) {
+        if (
+          error?.status === 401 ||
+          error?.message?.includes('re-authentication')
+        ) {
           return res.status(401).send({
             data: { message: 'OAuth connection needs re-authentication' }
           });

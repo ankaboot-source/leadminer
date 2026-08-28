@@ -49,7 +49,7 @@ export class MiningSourceService implements MiningSources {
       this.logger.error('Failed to fetch mining sources', {
         error,
         status: error.context?.status,
-        code: (error as { context?: { code?: string } }).context?.code,
+        code: (error as { context?: { code?: string } }).context?.code
       });
       const status = error.context?.status as number | undefined;
       const code = (error as { context?: { code?: string } }).context?.code;
@@ -59,7 +59,7 @@ export class MiningSourceService implements MiningSources {
         const reauthError = new Error(
           code === 'OAUTH_NEEDS_REAUTH'
             ? 'OAuth connection needs re-authentication'
-            : `Failed to fetch mining sources: ${error.message}`,
+            : `Failed to fetch mining sources: ${error.message}`
         );
         (reauthError as { status?: number }).status = 401;
         throw reauthError;
