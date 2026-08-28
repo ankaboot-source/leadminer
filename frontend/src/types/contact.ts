@@ -20,6 +20,8 @@ export interface NormalizedLocation {
 }
 export interface Contact {
   id: string;
+  contact_id?: string;
+  person_ids?: string[];
   user_id: string;
   email?: string | null;
   name: string | null;
@@ -34,8 +36,8 @@ export interface Contact {
   same_as: string[] | null;
   image: string | null;
   engagement?: number;
-  sender?: string;
-  recipient?: string;
+  sender?: number;
+  recipient?: number;
   conversations?: number;
   replied_conversations?: number;
   status: EmailStatus | null;
