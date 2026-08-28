@@ -22,7 +22,6 @@ import {
   OAuthMiningSourceCredentials,
   refreshAccessToken,
 } from "./oauth-handler/index.ts";
-import { sendEmail } from "../_shared/mailing/email.ts";
 
 const logger = createLogger("fetch-mining-source");
 
@@ -103,15 +102,27 @@ class FetchMiningSourceHandler {
       sources = FetchMiningSourceHandler.filterByEmail(sources, body.email);
       sources = FetchMiningSourceHandler.filterById(sources, body.id);
 
-      const refreshedEmails = await this.refreshTokensIfNeeded(
-        sources,
-        userId,
-        body.refresh_email,
-      );
+      const { refreshedEmails, deauthorizedEmails } =
+        await this.refreshTokensIfNeeded(
+          sources,
+          userId,
+          body.refresh_email,
+        );
+
+      // If the specifically requested source (by email or id) was permanently
+      // deauthorized (revoked / invalid_grant), return a clear 401 so callers
+      // like getImapBoxes can surface a "reconnect needed" state instead of
+      // attempting to connect with dead credentials.
+      if (sources.length > 0 && sources.every((s) => deauthorizedEmails.includes(s.email))) {
+        return FetchMiningSourceHandler.buildUnauthorizedResponse(
+          deauthorizedEmails,
+        );
+      }
 
       return FetchMiningSourceHandler.buildSuccessResponse(
         sources,
         refreshedEmails,
+        deauthorizedEmails,
       );
     } catch (error) {
       return FetchMiningSourceHandler.handleError(error);
@@ -217,8 +228,9 @@ class FetchMiningSourceHandler {
     sources: MiningSource[],
     userId: string,
     forceRefreshEmail?: string,
-  ): Promise<string[]> {
+  ): Promise<{ refreshedEmails: string[]; deauthorizedEmails: string[] }> {
     const refreshedEmails: string[] = [];
+    const deauthorizedEmails: string[] = [];
 
     const forceRefreshSet = forceRefreshEmail
       ? new Set([forceRefreshEmail.toLowerCase()])
@@ -311,13 +323,14 @@ class FetchMiningSourceHandler {
         }
 
         // Permanent rejection (invalid_grant): the user revoked access or the
-        // grant is dead. Mark the source as needing re-auth, stop continuous
-        // mining so we don't hammer a dead source, and notify the user.
+        // grant is dead. Mark the source as needing re-auth and stop continuous
+        // mining so we don't hammer a dead source.
+        deauthorizedEmails.push(source.email);
         await this.handlePermanentRejection(source, userId);
       }
     }
 
-    return refreshedEmails;
+    return { refreshedEmails, deauthorizedEmails };
   }
 
   private async handlePermanentRejection(
@@ -347,26 +360,6 @@ class FetchMiningSourceHandler {
         email: source.email,
         error: configError instanceof Error ? configError.message : String(configError),
       });
-    }
-
-    const userEmail = await this.getUserEmail(userId);
-    if (userEmail) {
-      try {
-        await sendEmail(
-          userEmail,
-          "Continuous mining paused: connection needs re-authentication",
-          `<p>Your continuous mining for <strong>${FetchMiningSourceHandler.escapeHtml(
-            source.email,
-          )}</strong> was paused because the connection was revoked or expired.</p>
-          <p>Please reconnect this source to resume automatic mining.</p>`,
-        );
-        logger.info("Sent reconnect notification email", { userId });
-      } catch (mailError) {
-        logger.error("Failed to send reconnect notification", {
-          email: source.email,
-          error: mailError instanceof Error ? mailError.message : String(mailError),
-        });
-      }
     }
   }
 
@@ -407,31 +400,10 @@ class FetchMiningSourceHandler {
     }
   }
 
-  private async getUserEmail(userId: string): Promise<string | null> {
-    try {
-      const { data } = await this.admin
-        .schema("private")
-        .from("profiles")
-        .select("email")
-        .eq("user_id", userId)
-        .maybeSingle();
-      return data?.email ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  private static escapeHtml(value: string): string {
-    return value
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-  }
-
   private static buildSuccessResponse(
     sources: MiningSource[],
     refreshedEmails: string[],
+    deauthorizedEmails: string[],
   ): Response {
     const response = {
       sources: sources.map((s) => ({
@@ -441,12 +413,29 @@ class FetchMiningSourceHandler {
         credentials: s.credentials,
       })),
       refreshed: refreshedEmails,
+      deauthorized: deauthorizedEmails,
     };
 
     return new Response(JSON.stringify(response), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  private static buildUnauthorizedResponse(
+    deauthorizedEmails: string[],
+  ): Response {
+    return new Response(
+      JSON.stringify({
+        error: "OAuth connection needs re-authentication",
+        code: "OAUTH_NEEDS_REAUTH",
+        deauthorized: deauthorizedEmails,
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   private static handleError(error: unknown): Response {

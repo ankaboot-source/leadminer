@@ -46,7 +46,24 @@ export class MiningSourceService implements MiningSources {
     const { data, error } = response;
 
     if (error) {
-      this.logger.error('Failed to fetch mining sources', { error });
+      this.logger.error('Failed to fetch mining sources', {
+        error,
+        status: error.context?.status,
+        code: (error as { context?: { code?: string } }).context?.code,
+      });
+      const status = error.context?.status as number | undefined;
+      const code = (error as { context?: { code?: string } }).context?.code;
+      // Propagate a deauthorized OAuth source as 401 so callers (e.g. IMAP box
+      // fetch) can surface "reconnect needed" instead of a generic failure.
+      if (status === 401 || code === 'OAUTH_NEEDS_REAUTH') {
+        const reauthError = new Error(
+          code === 'OAUTH_NEEDS_REAUTH'
+            ? 'OAuth connection needs re-authentication'
+            : `Failed to fetch mining sources: ${error.message}`,
+        );
+        (reauthError as { status?: number }).status = 401;
+        throw reauthError;
+      }
       throw new Error(`Failed to fetch mining sources: ${error.message}`);
     }
 
