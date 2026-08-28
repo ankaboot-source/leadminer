@@ -226,7 +226,9 @@
               class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-sm"
             >
               <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('passive_mining_status') }}</div>
+                <div class="text-surface-500">
+                  {{ t('passive_mining_status') }}
+                </div>
                 <div class="font-semibold mt-1 capitalize">
                   {{ t(passiveMiningStatus(source).label) }}
                 </div>
@@ -243,15 +245,23 @@
                 </div>
               </div>
 
-              <div v-if="(source.config?.['folders_mined'] as string[])?.length" class="p-2 rounded bg-surface-50">
+              <div
+                v-if="(source.config?.['folders_mined'] as string[])?.length"
+                class="p-2 rounded bg-surface-50"
+              >
                 <div class="text-surface-500">{{ t('folders_mined') }}</div>
                 <div class="font-semibold mt-1">
                   {{ (source.config?.['folders_mined'] as string[]).length }}
                 </div>
               </div>
 
-              <div v-if="passiveMiningErrors(source).length" class="p-2 rounded bg-surface-50 md:col-span-2">
-                <div class="text-surface-500">{{ t('passive_mining_errors') }}</div>
+              <div
+                v-if="passiveMiningErrors(source).length"
+                class="p-2 rounded bg-surface-50 md:col-span-2"
+              >
+                <div class="text-surface-500">
+                  {{ t('passive_mining_errors') }}
+                </div>
                 <div class="text-xs text-red-500 mt-1">
                   {{ passiveMiningErrors(source).join('; ') }}
                 </div>
