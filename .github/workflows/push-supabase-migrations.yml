@@ -23,7 +23,7 @@ jobs:
       - name: Sync supabase migrations (mirror mode)
         run: |
           mkdir -p leadminer-io/supabase/migrations
-          rsync -a --delete supabase/migrations/ leadminer-io/supabase/migrations/
+          rsync -a supabase/migrations/ leadminer-io/supabase/migrations/
 
       - name: Commit and push changes
         run: |

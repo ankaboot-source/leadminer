@@ -19,7 +19,7 @@ jobs:
 
       - name: Sync leadminer.io with leadminer repo
         run: |
-          rsync -av supabase/functions/. leadminer.io/supabase/functions/
+          rsync -av --exclude 'billing/' --exclude 'email-campaigns/middlewares-mod.ts' supabase/functions/. leadminer.io/supabase/functions/
 
       - name: Commit and push changes
         run: |
