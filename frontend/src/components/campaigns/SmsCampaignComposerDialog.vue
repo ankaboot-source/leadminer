@@ -600,15 +600,6 @@ const getSelectedRecipients = (): Array<{
   return recipients;
 };
 
-function handleComplianceAction(action: string, data?: ModalData['data']) {
-  if (action === 'continue_partial' && data) {
-    if (data.partial_continue === 'partial_two') {
-      partialTwo.value = true;
-    }
-    submitCampaign();
-  }
-}
-
 const submitCampaign = async () => {
   isSubmitting.value = true;
 
@@ -695,6 +686,15 @@ const submitCampaign = async () => {
     isSubmitting.value = false;
   }
 };
+
+function handleComplianceAction(action: string, data?: ModalData['data']) {
+  if (action === 'continue_partial' && data) {
+    if (data.partial_continue === 'partial_two') {
+      partialTwo.value = true;
+    }
+    submitCampaign();
+  }
+}
 
 function resetForm() {
   form.messageTemplate = '';

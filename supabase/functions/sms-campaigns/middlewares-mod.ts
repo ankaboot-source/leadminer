@@ -105,7 +105,7 @@ export async function complianceMiddleware(c: Context, next: Next) {
  */
 export async function createFinalResponseMiddleware(c: Context, next: Next) {
   if (!c.req.path.endsWith("/campaigns/create")) {
-    return next();
+    return await next();
   }
 
   const campaignData = c.get("campaignCreate");
