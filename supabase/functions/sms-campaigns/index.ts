@@ -19,6 +19,7 @@ import {
 import {
   complianceMiddleware,
   createFinalResponseMiddleware,
+  type CampaignCheckData,
 } from "./middlewares-mod.ts";
 import { getLocalTimeBounds, getSmsQuota } from "./utils/quota.ts";
 import { normalizePhoneNumber } from "./utils/phone.ts";
@@ -718,14 +719,7 @@ app.post(
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const checkData = c.get("campaignCheck") as
-      | {
-          filteredPhones: string[];
-          eligibleCount: number;
-          userId: string;
-          payload: Record<string, unknown>;
-        }
-      | undefined;
+    const checkData = c.get("campaignCheck") as CampaignCheckData | undefined;
 
     if (!checkData) {
       return c.json(

@@ -5,11 +5,23 @@ import { isValidPhoneNumber, normalizePhoneNumber } from "./utils/phone.ts";
 
 const logger = createLogger("sms-campaigns:middleware");
 
-interface SmsPayload {
+export interface SmsPayload {
   selectedPhones?: string[];
   selectedRecipients?: { phone: string; personalization?: Record<string, unknown> }[];
   timezone?: string;
   [key: string]: unknown;
+}
+
+/**
+ * Context shape stored under `campaignCheck` and consumed by the create
+ * route handler. The commercial override replaces this file and keeps this
+ * contract stable so the handler does not need to change.
+ */
+export interface CampaignCheckData {
+  filteredPhones: string[];
+  eligibleCount: number;
+  userId: string;
+  payload: Record<string, unknown>;
 }
 
 interface SuccessResponse {
