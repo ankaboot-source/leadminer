@@ -715,6 +715,10 @@ app.post(
   "/campaigns/create",
   authMiddleware,
   complianceMiddleware,
+  // skipcq: JS-R1005 — Pre-existing create-handler complexity; phone validation was
+  // extracted to complianceMiddleware, remaining branches are the legacy provider,
+  // quota, recipient, and gateway-scheduling logic kept in place to avoid a behavioral
+  // rewrite. Splitting further tracked with the sibling preview-route refactor.
   async (c: Context, next: () => Promise<void>) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
