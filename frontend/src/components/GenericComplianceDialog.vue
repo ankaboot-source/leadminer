@@ -55,6 +55,7 @@ export interface ModalData {
     available: number;
     availableAlready: number;
     reason?: string;
+    partial_continue?: 'partial_one' | 'partial_two';
   };
   buttons: ModalButton[];
 }

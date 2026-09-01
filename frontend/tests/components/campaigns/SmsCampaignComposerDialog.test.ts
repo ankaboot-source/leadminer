@@ -81,6 +81,21 @@ describe('SmsCampaignComposerDialog Structure Tests', () => {
     expect(componentContent).toContain(':max="200"');
     expect(componentContent).not.toContain(':max="250"');
   });
+
+  it('should include the generic compliance dialog for credits modals', () => {
+    expect(componentContent).toContain('GenericComplianceDialog');
+    expect(componentContent).toContain('handleComplianceAction');
+  });
+
+  it('should send partial_two flag on submit', () => {
+    expect(componentContent).toContain('partial_two: partialTwo.value');
+    expect(componentContent).toContain('const partialTwo = ref(false)');
+  });
+
+  it('should handle 402/266 modal responses in onResponse', () => {
+    expect(componentContent).toContain('[402, 266, 400]');
+    expect(componentContent).toContain("modalData?.type === 'modal'");
+  });
 });
 
 describe('SmsCampaignComposerDialog i18n', () => {

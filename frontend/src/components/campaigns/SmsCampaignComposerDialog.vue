@@ -224,6 +224,11 @@
       </div>
     </template>
   </Dialog>
+
+  <GenericComplianceDialog
+    ref="genericComplianceDialogRef"
+    @action="handleComplianceAction"
+  />
 </template>
 
 <script setup lang="ts">
@@ -235,6 +240,9 @@ import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import type { Contact } from '~/types/contact';
 import FleetGatewaySelector from '~/components/sms-fleet/FleetGatewaySelector.vue';
+import GenericComplianceDialog, {
+  type ModalData,
+} from '@/components/GenericComplianceDialog.vue';
 
 const { t } = useI18n({ useScope: 'local' });
 const { t: globalT } = useI18n({ useScope: 'global' });
@@ -426,6 +434,10 @@ const dialogHeader = computed(() =>
 );
 
 const isSubmitting = ref(false);
+const partialTwo = ref(false);
+const genericComplianceDialogRef = ref<InstanceType<
+  typeof GenericComplianceDialog
+> | null>(null);
 const isSendingPreview = ref(false);
 const isPreviewDialogVisible = ref(false);
 const previewPhoneNumber = ref('');
@@ -598,6 +610,9 @@ const submitCampaign = async () => {
     life: 8000,
   });
 
+  let shouldCloseDialog = true;
+  let showErrorToast = true;
+
   try {
     const recipients = getSelectedRecipients();
     const phones = recipients.map((recipient) => recipient.phone);
@@ -612,49 +627,74 @@ const submitCampaign = async () => {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       fleetMode: true,
       selectedGatewayIds: form.selectedGatewayIds,
+      partial_two: partialTwo.value,
     };
 
     const data = await $saasEdgeFunctions('sms-campaigns/campaigns/create', {
       method: 'POST',
       body: payload,
+      onResponse: ({ response }) => {
+        if ([402, 266, 400].includes(response.status)) {
+          const modalData = response._data as ModalData;
+
+          if (modalData?.type === 'modal') {
+            genericComplianceDialogRef.value?.openModal(modalData);
+            shouldCloseDialog = false;
+            showErrorToast = false;
+          }
+        }
+      },
     });
 
-    $toast.add({
-      severity: 'success',
-      summary: t('campaign_created'),
-      detail: t('campaign_created_detail', { count: data.recipientCount }),
-      life: 5000,
-    });
+    if (shouldCloseDialog) {
+      $toast.add({
+        severity: 'success',
+        summary: t('campaign_created'),
+        detail: t('campaign_created_detail', { count: data.recipientCount }),
+        life: 5000,
+      });
 
-    emit('campaign-created', data.campaignId);
-    isVisible.value = false;
-    resetForm();
+      emit('campaign-created', data.campaignId);
+      isVisible.value = false;
+      resetForm();
+    }
   } catch (error) {
-    const backendError = (error as { data?: Record<string, unknown> })?.data;
-    const backendCode =
-      typeof backendError?.code === 'string' ? backendError.code : '';
+    if (showErrorToast) {
+      const backendError = (error as { data?: Record<string, unknown> })?.data;
+      const backendCode =
+        typeof backendError?.code === 'string' ? backendError.code : '';
 
-    const detailParts = [
-      (typeof backendError?.error === 'string' && backendError.error) ||
-        (error instanceof Error ? error.message : String(error)),
-    ];
-    if (typeof backendError?.detail === 'string') {
-      detailParts.push(`- ${backendError.detail}`);
-    }
-    if (backendCode) {
-      detailParts.push(`(code: ${backendCode})`);
-    }
+      const detailParts = [
+        (typeof backendError?.error === 'string' && backendError.error) ||
+          (error instanceof Error ? error.message : String(error)),
+      ];
+      if (typeof backendError?.detail === 'string') {
+        detailParts.push(`- ${backendError.detail}`);
+      }
+      if (backendCode) {
+        detailParts.push(`(code: ${backendCode})`);
+      }
 
-    $toast.add({
-      severity: 'error',
-      summary: t('campaign_creation_failed'),
-      detail: detailParts.join(' '),
-      life: 5000,
-    });
+      $toast.add({
+        severity: 'error',
+        summary: t('campaign_creation_failed'),
+        detail: detailParts.join(' '),
+        life: 5000,
+      });
+    }
   } finally {
     isSubmitting.value = false;
   }
 };
+
+function handleComplianceAction(action: string, data?: ModalData['data']) {
+  if (action === 'continue_partial' && data) {
+    if (data.partial_continue === 'partial_two') {
+      partialTwo.value = true;
+    }
+    submitCampaign();
+  }
+}
 
 function resetForm() {
   form.messageTemplate = '';
@@ -671,6 +711,7 @@ function resetForm() {
 }
 
 const onDialogShow = () => {
+  partialTwo.value = false;
   updateCharCount();
   // Load fleet gateways
   const $smsFleetStore = useSmsFleetStore();
