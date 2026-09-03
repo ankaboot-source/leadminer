@@ -22,8 +22,8 @@ import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
-  const { $api, $saasEdgeFunctions } = useNuxtApp();
-  const { t, getBrowserLocale } = useI18n();
+  const { $api, $saasEdgeFunctions, $i18n } = useNuxtApp();
+  const { t, getBrowserLocale } = $i18n;
   const language = getBrowserLocale() || 'en';
   const $toast = useToast();
   const $stepper = useMiningStepper();
@@ -73,7 +73,32 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const signatureExtractionFinished = ref(false);
 
   const googleContactsFetched = ref(false);
-  const googleContactsSyncEnabled = ref(true);
+  const googleContactsSyncEnabled = ref(false);
+
+  /**
+   * Syncs the transient google-contacts-sync run flag from the active
+   * source's persisted config. The DB config is the source of truth
+   * (default false); the store ref only holds the "this run" value.
+   */
+  function syncGoogleContactsSyncFromSource() {
+    const source = activeMiningSource.value;
+    const configValue = source?.config?.google_contacts_sync;
+    googleContactsSyncEnabled.value =
+      source?.type === 'google' ? configValue === true : false;
+  }
+
+  /**
+   * Offers the "Enable continuous contact extraction?" dialog at the end of a
+   * mining run, unless the source is already on continuous (passive) mining or
+   * the run was interrupted. Owned by the store so it survives component
+   * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
+   */
+  function maybeOpenPassiveMiningDialog() {
+    if (miningInterrupted.value) return;
+    const source = activeMiningSource.value;
+    if (!source || source.passive_mining) return;
+    passiveMiningDialog.value = true;
+  }
 
   const miningCompleted = ref(false);
 
@@ -133,7 +158,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     miningCompleted.value = false;
     googleContactsFetched.value = false;
-    googleContactsSyncEnabled.value = true;
 
     activeEnrichment.value = false;
 
@@ -357,6 +381,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
+        maybeOpenPassiveMiningDialog();
         setTimeout(async () => {
           miningTask.value = undefined;
           await fetchMiningSources();
@@ -364,6 +389,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
       onGoogleContactsFetched: () => {
         googleContactsFetched.value = true;
+        maybeOpenPassiveMiningDialog();
       },
     });
   }
@@ -685,6 +711,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );
+      syncGoogleContactsSyncFromSource();
 
       const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
       if (firstStepFetch) {
@@ -708,6 +735,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  watch(activeMiningSource, () => syncGoogleContactsSyncFromSource(), {
+    immediate: true,
+  });
+
   return {
     fetchInbox,
     fetchMiningSources,
@@ -715,6 +746,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     getCurrentRunningMining,
     startMining,
     stopMining,
+    syncGoogleContactsSyncFromSource,
+    maybeOpenPassiveMiningDialog,
 
     $reset,
     $resetMining,
