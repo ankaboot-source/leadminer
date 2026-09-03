@@ -8,6 +8,10 @@ import {
   updateMiningSourcesValidityFromUnavailable,
 } from '@/utils/sources';
 import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
+import {
+  type MiningSourceConfigFlags,
+  deriveSourceConfig,
+} from '@/utils/miningSourceConfig';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -45,8 +49,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const isLoadingMiningSources = ref(false);
   const hasLoadedMiningSources = ref(false);
   const boxes = ref<BoxNode[]>([]);
-  const extractSignatures = ref(true);
-  const cleaningEnabled = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
@@ -74,19 +76,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const signatureExtractionFinished = ref(false);
 
   const googleContactsFetched = ref(false);
-  const googleContactsSyncEnabled = ref(false);
-
-  /**
-   * Syncs the transient google-contacts-sync run flag from the active
-   * source's persisted config. The DB config is the source of truth
-   * (default false); the store ref only holds the "this run" value.
-   */
-  function syncGoogleContactsSyncFromSource() {
-    const source = activeMiningSource.value;
-    const configValue = source?.config?.google_contacts_sync;
-    googleContactsSyncEnabled.value =
-      source?.type === 'google' ? configValue === true : false;
-  }
+  const sourceConfig = ref<MiningSourceConfigFlags>(
+    deriveSourceConfig(undefined),
+  );
 
   const miningCompleted = ref(false);
 
@@ -137,8 +129,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes.value = [];
     excludedBoxes.value = new Set();
     selectedFile.value = null;
-    extractSignatures.value = true;
-    cleaningEnabled.value = true;
+    sourceConfig.value = deriveSourceConfig(undefined);
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
@@ -273,7 +264,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
-      extractSignatures.value = true;
 
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
@@ -431,9 +421,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           miningSource: miningSource.id
             ? { id: miningSource.id }
             : { email: miningSource.email },
-          extractSignatures: extractSignatures.value,
-          cleaningEnabled: cleaningEnabled.value,
-          googleContactsSync: googleContactsSyncEnabled.value,
+          extractSignatures: sourceConfig.value.extract_signatures,
+          cleaningEnabled: sourceConfig.value.cleaning_enabled,
+          googleContactsSync: sourceConfig.value.google_contacts_sync,
         },
       },
     );
@@ -450,6 +440,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = true;
     scannedEmails.value = 1;
 
+    // File mining has no active source — use fresh defaults, not the last
+    // email source's config.
+    const fileConfig = deriveSourceConfig(undefined);
+
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
@@ -457,7 +451,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           contacts: importedContacts,
-          cleaningEnabled: cleaningEnabled.value,
+          cleaningEnabled: fileConfig.cleaning_enabled,
         },
       },
     );
@@ -468,14 +462,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function startMiningPST(userId: string, fileName: string) {
     miningType.value = 'pst';
 
+    // PST mining has no active source — use fresh defaults.
+    const pstConfig = deriveSourceConfig(undefined);
+
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,
       {
         method: 'POST',
         body: {
           name: fileName,
-          extractSignatures: extractSignatures.value,
-          cleaningEnabled: cleaningEnabled.value,
+          extractSignatures: pstConfig.extract_signatures,
+          cleaningEnabled: pstConfig.cleaning_enabled,
         },
       },
     );
@@ -732,7 +729,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );
-      syncGoogleContactsSyncFromSource();
+      sourceConfig.value = deriveSourceConfig(activeMiningSource.value?.config);
 
       const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
       if (firstStepFetch) {
@@ -756,9 +753,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  watch(activeMiningSource, () => syncGoogleContactsSyncFromSource(), {
-    immediate: true,
-  });
+  watch(
+    activeMiningSource,
+    () => {
+      sourceConfig.value = deriveSourceConfig(activeMiningSource.value?.config);
+    },
+    {
+      immediate: true,
+    },
+  );
 
   return {
     fetchInbox,
@@ -768,7 +771,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     getCurrentRunningMining,
     startMining,
     stopMining,
-    syncGoogleContactsSyncFromSource,
     maybeOpenPassiveMiningDialog,
 
     $reset,
@@ -784,8 +786,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes,
     selectedBoxes,
     excludedBoxes,
-    extractSignatures,
-    cleaningEnabled,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,
@@ -804,7 +804,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     signatureExtractionFinished,
     miningCompleted,
     googleContactsFetched,
-    googleContactsSyncEnabled,
+    sourceConfig,
     activeMiningTask,
     activeTask,
     passiveMiningDialog,

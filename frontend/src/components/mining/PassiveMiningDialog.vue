@@ -14,7 +14,7 @@
       <div class="flex flex-col gap-3 pt-2 border-t border-surface-200">
         <div v-if="isGoogleSource" class="flex items-center gap-2">
           <ToggleSwitch
-            v-model="sourceConfig.google_contacts_sync"
+            v-model="draftConfig.google_contacts_sync"
             input-id="googleContactsSync"
           />
           <label for="googleContactsSync" class="cursor-pointer">
@@ -24,7 +24,7 @@
 
         <div class="flex items-center gap-2">
           <ToggleSwitch
-            v-model="sourceConfig.cleaning_enabled"
+            v-model="draftConfig.cleaning_enabled"
             input-id="cleaningEnabled"
           />
           <label for="cleaningEnabled" class="cursor-pointer">
@@ -34,7 +34,7 @@
 
         <div class="flex items-center gap-2">
           <ToggleSwitch
-            v-model="sourceConfig.extract_signatures"
+            v-model="draftConfig.extract_signatures"
             input-id="extractSignatures"
           />
           <label for="extractSignatures" class="cursor-pointer">
@@ -65,14 +65,15 @@
 <script setup lang="ts">
 import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
+import { deriveSourceConfig } from '~/utils/miningSourceConfig';
 
 const $leadminerStore = useLeadminerStore();
 
 const miningSource = ref<MiningSource>();
-const sourceConfig = ref<Record<string, boolean>>({
-  google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
-  cleaning_enabled: $leadminerStore.cleaningEnabled,
-  extract_signatures: $leadminerStore.extractSignatures,
+const draftConfig = ref<Record<string, boolean>>({
+  google_contacts_sync: false,
+  cleaning_enabled: true,
+  extract_signatures: false,
 });
 const $supabase = useSupabaseClient();
 const $toast = useToast();
@@ -88,15 +89,10 @@ watch(
   (newVal, oldVal) => {
     if (newVal && !oldVal) {
       miningSource.value = $leadminerStore.activeMiningSource;
-      sourceConfig.value = {
-        google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
-        cleaning_enabled: $leadminerStore.cleaningEnabled,
-        extract_signatures: $leadminerStore.extractSignatures,
-        ...(($leadminerStore.activeMiningSource?.config ?? {}) as Record<
-          string,
-          boolean
-        >),
-      };
+      const flags = deriveSourceConfig(
+        $leadminerStore.activeMiningSource?.config,
+      );
+      draftConfig.value = { ...flags };
     }
   },
 );
@@ -113,11 +109,15 @@ async function enablePassiveMining() {
       .from('mining_sources')
       .update({
         passive_mining: true,
-        config: sourceConfig.value,
+        config: draftConfig.value,
       })
       .match({ email: miningSource.value.email });
 
     if (error) throw error;
+    // reflect the new config in the store immediately
+    $leadminerStore.sourceConfig = deriveSourceConfig(
+      $leadminerStore.activeMiningSource?.config,
+    );
     closePassiveMiningDialog();
   } catch (error) {
     const message =

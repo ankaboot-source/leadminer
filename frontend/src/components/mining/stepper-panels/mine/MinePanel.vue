@@ -261,7 +261,9 @@ const canStartMining = computed(() => {
   if (sourceType.value !== 'email') return true;
   if ($leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining)
     return false;
-  return totalEmails.value > 0 || $leadminerStore.googleContactsSyncEnabled;
+  return (
+    totalEmails.value > 0 || $leadminerStore.sourceConfig.google_contacts_sync
+  );
 });
 
 const extractionProgress = computed(() =>
@@ -390,7 +392,7 @@ function openMiningSettings() {
 
 async function startMiningBoxes() {
   if (
-    !$leadminerStore.googleContactsSyncEnabled &&
+    !$leadminerStore.sourceConfig.google_contacts_sync &&
     Object.keys(selectedBoxes.value).filter(
       (key) => selectedBoxes.value[key].checked && key !== '',
     ).length === 0
