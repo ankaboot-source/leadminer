@@ -73,7 +73,7 @@ export function isTokenExpired(
  */
 function safeJsonStringify(value: unknown): string {
   try {
-    return JSON.stringify(value ?? "");
+    return JSON.stringify(value ?? "") ?? "";
   } catch {
     return "";
   }
@@ -93,8 +93,10 @@ export function isPermanentOAuthError(error: unknown): boolean {
     /token.*(revoked|invalid|expired)|revoked (the )?(user )?(grant|token)/i.test(
       message,
     ) ||
-    /invalid_grant/i.test(safeJsonStringify(error).toLowerCase()) ||
-    /invalid_grant/i.test(message.toLowerCase())
+    /token.*(revoked|invalid|expired)|revoked (the )?(user )?(grant|token)/i.test(
+      bodyText,
+    ) ||
+    /invalid_grant/i.test(safeJsonStringify(error).toLowerCase())
   );
 }
 
