@@ -324,6 +324,8 @@ async function signInWithEmailAndPassword() {
     if (error) {
       throw error;
     }
+    const $leadminerStore = useLeadminerStore();
+    await $leadminerStore.fetchMiningSources();
     await navigateTo({ path: '/' });
   } catch (error) {
     if (error instanceof Error) {

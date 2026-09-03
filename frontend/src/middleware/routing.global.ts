@@ -58,6 +58,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     });
   }
 
+  if (session && protectedPaths.some((path) => to.path.startsWith(path))) {
+    const $leadminerStore = useLeadminerStore();
+    if ($leadminerStore.miningSources.length === 0) {
+      await $leadminerStore.fetchMiningSources();
+    }
+    return true;
+  }
+
   if (!session && protectedPaths.some((path) => to.path.startsWith(path))) {
     return navigateTo({ name: 'auth-login' });
   }
