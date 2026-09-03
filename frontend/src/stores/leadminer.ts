@@ -43,6 +43,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
   const isLoadingMiningSources = ref(false);
+  const hasLoadedMiningSources = ref(false);
   const boxes = ref<BoxNode[]>([]);
   const extractSignatures = ref(true);
   const cleaningEnabled = ref(true);
@@ -172,6 +173,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   function $reset() {
     miningSources.value = [];
+    hasLoadedMiningSources.value = false;
     $resetMining();
   }
 
@@ -205,6 +207,25 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       fetchSenderOptionsInBackground();
     } finally {
       isLoadingMiningSources.value = false;
+    }
+  }
+
+  /**
+   * Loads mining sources once per session. Consumers that display a mining
+   * source call this instead of fetchMiningSources() directly, which keeps
+   * source fetching lazy (only where a source is shown) and avoids duplicate
+   * fetches (auth screen, every protected-route navigation).
+   */
+  async function ensureMiningSourcesLoaded() {
+    if (hasLoadedMiningSources.value || isLoadingMiningSources.value) {
+      return;
+    }
+    try {
+      await fetchMiningSources();
+      hasLoadedMiningSources.value = true;
+    } catch (error) {
+      // Leave hasLoadedMiningSources=false so the next consumer retries.
+      console.warn('[mining] failed to load mining sources', error);
     }
   }
 
@@ -742,6 +763,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   return {
     fetchInbox,
     fetchMiningSources,
+    ensureMiningSourcesLoaded,
     getMiningSourceByEmail,
     getCurrentRunningMining,
     startMining,

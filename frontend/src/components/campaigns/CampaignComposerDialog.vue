@@ -1277,6 +1277,7 @@ watch(
   async (visible) => {
     if (!visible) return;
     resetTouched();
+    await $leadminer.ensureMiningSourcesLoaded();
 
     if (!form.senderName) {
       form.senderName = getSenderDisplayLabel(

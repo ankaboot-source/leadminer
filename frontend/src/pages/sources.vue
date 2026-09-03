@@ -626,6 +626,8 @@ async function reconnectExpiredSource(source: MiningSource) {
 }
 
 onMounted(async () => {
+  await $leadminer.ensureMiningSourcesLoaded();
+
   const reconnectEmail = $route.query.reconnect as string;
 
   if (reconnectEmail) {
