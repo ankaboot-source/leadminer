@@ -61,7 +61,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (session && protectedPaths.some((path) => to.path.startsWith(path))) {
     const $leadminerStore = useLeadminerStore();
     if ($leadminerStore.miningSources.length === 0) {
-      await $leadminerStore.fetchMiningSources();
+      try {
+        await $leadminerStore.fetchMiningSources();
+      } catch (fetchError) {
+        // Surface sources later (app bootstrap / next navigation) rather than
+        // aborting the current navigation because the fetch failed.
+        console.error(
+          '[routing] failed to prefetch mining sources',
+          fetchError,
+        );
+      }
     }
     return true;
   }

@@ -151,6 +151,10 @@ async function close() {
         ...(src.config ?? {}),
         google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
       });
+      if (src.config) {
+        src.config.google_contacts_sync =
+          $leadminerStore.googleContactsSyncEnabled;
+      }
     } catch (err) {
       $toast.add({
         severity: 'error',

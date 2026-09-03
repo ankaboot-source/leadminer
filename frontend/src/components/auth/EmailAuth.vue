@@ -324,8 +324,17 @@ async function signInWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    const $leadminerStore = useLeadminerStore();
-    await $leadminerStore.fetchMiningSources();
+    // Prefetch sources outside the auth try/catch: a transient fetch failure
+    // must not show a misleading "invalid login" error or strand the user.
+    try {
+      const $leadminerStore = useLeadminerStore();
+      await $leadminerStore.fetchMiningSources();
+    } catch (fetchError) {
+      console.error(
+        '[EmailAuth] failed to prefetch mining sources',
+        fetchError,
+      );
+    }
     await navigateTo({ path: '/' });
   } catch (error) {
     if (error instanceof Error) {
