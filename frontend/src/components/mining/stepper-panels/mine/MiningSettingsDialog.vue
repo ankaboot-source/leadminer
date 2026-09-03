@@ -91,10 +91,12 @@
 <script setup lang="ts">
 // skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
+import { updateMiningSourceConfig } from '@/utils/sources';
 
 const { t } = useI18n({
   useScope: 'local',
 });
+const $toast = useToast();
 
 const props = defineProps({
   totalEmails: { type: Number, required: true },
@@ -141,7 +143,24 @@ function open() {
   isVisible.value = true;
 }
 
-function close() {
+async function close() {
+  const src = activeMiningSource.value;
+  if (src?.type === 'google') {
+    try {
+      await updateMiningSourceConfig(src.email, src.type, {
+        ...(src.config ?? {}),
+        google_contacts_sync: $leadminerStore.googleContactsSyncEnabled,
+      });
+    } catch (err) {
+      $toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: (err as Error).message,
+        life: 4500,
+      });
+      return;
+    }
+  }
   isVisible.value = false;
 }
 
