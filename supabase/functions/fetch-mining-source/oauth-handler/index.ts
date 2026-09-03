@@ -71,13 +71,21 @@ export function isTokenExpired(
  *   it refreshes fine once network/token-server hiccups clear.
  * - Transient: network errors, 5xx, rate limits — should be retried, not acted on.
  */
+function safeJsonStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value ?? "");
+  } catch {
+    return "";
+  }
+}
+
 export function isPermanentOAuthError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const body = (error as { data?: unknown })?.data;
   const bodyText =
     typeof body === "string"
       ? body
-      : JSON.stringify(body ?? "").toLowerCase();
+      : safeJsonStringify(body).toLowerCase();
 
   return (
     /invalid_grant/i.test(message) ||
@@ -85,7 +93,8 @@ export function isPermanentOAuthError(error: unknown): boolean {
     /token.*(revoked|invalid|expired)|revoked (the )?(user )?(grant|token)/i.test(
       message,
     ) ||
-    /invalid_grant/i.test(JSON.stringify(error).toLowerCase())
+    /invalid_grant/i.test(safeJsonStringify(error).toLowerCase()) ||
+    /invalid_grant/i.test(message.toLowerCase())
   );
 }
 

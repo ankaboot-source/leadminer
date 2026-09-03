@@ -96,25 +96,14 @@ app.post("/", async (c: Context) => {
           ...(permanent ? { needs_reauth: true } : {}),
         });
 
-        // Only disable passive mining for a permanent OAuth rejection
-        // (invalid_grant / revoked grant). Transient failures (network blips,
-        // IMAP server down) should keep passive_mining enabled so the scheduler
-        // retries on the next cycle instead of silently stopping continuous
-        // extraction.
-        if (!permanent) continue;
-
-        await supabase
-          .schema("private")
-          .from("mining_sources")
-          .update({ passive_mining: false })
-          .eq("id", miningSource.id)
-          .catch((updateError: unknown) => {
-            console.error(
-              `Failed to disable passive-mining for ${miningSource.email}:`,
-              updateError,
-            );
-          });
-        await markNeedsReauth(miningSource.id);
+        // For a permanent OAuth rejection (invalid_grant / revoked grant), mark the
+        // source as needing re-auth but PRESERVE the user's passive_mining intent.
+        // Do NOT set passive_mining=false here: the source stays listed, the UI shows
+        // the "Connection lost - please reconnect" state, and once the token is
+        // refreshed / re-authorized the scheduler resumes continuous extraction.
+        if (permanent) {
+          await markNeedsReauth(miningSource.id);
+        }
       }
     }
 
