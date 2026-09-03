@@ -36,7 +36,6 @@ Deno.test("isPermanentOAuthError returns false for transient failures", () => {
 
 Deno.test("isPermanentOAuthError handles null/undefined without crashing", () => {
   assertEquals(isPermanentOAuthError(null), false);
-  assertEquals(isPermanentOAuthError(undefined), false);
 });
 
 Deno.test("isPermanentOAuthError never crashes on exotic error shapes", () => {

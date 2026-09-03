@@ -87,19 +87,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       source?.type === 'google' ? configValue === true : false;
   }
 
-  /**
-   * Offers the "Enable continuous contact extraction?" dialog at the end of a
-   * mining run, unless the source is already on continuous (passive) mining or
-   * the run was interrupted. Owned by the store so it survives component
-   * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
-   */
-  function maybeOpenPassiveMiningDialog() {
-    if (miningInterrupted.value) return;
-    const source = activeMiningSource.value;
-    if (!source || source.passive_mining) return;
-    passiveMiningDialog.value = true;
-  }
-
   const miningCompleted = ref(false);
 
   const activeMiningTask = computed(() => miningTask.value !== undefined);
@@ -121,6 +108,19 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const miningInterrupted = ref(false);
   const errors = ref({});
+
+  /**
+   * Offers the "Enable continuous contact extraction?" dialog at the end of a
+   * mining run, unless the source is already on continuous (passive) mining or
+   * the run was interrupted. Owned by the store so it survives component
+   * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
+   */
+  function maybeOpenPassiveMiningDialog() {
+    if (miningInterrupted.value) return;
+    const source = activeMiningSource.value;
+    if (!source || source.passive_mining) return;
+    passiveMiningDialog.value = true;
+  }
 
   function getCurrentUserId() {
     const user = useSupabaseUser().value;
