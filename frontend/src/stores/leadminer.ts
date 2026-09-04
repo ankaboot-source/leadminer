@@ -76,9 +76,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const signatureExtractionFinished = ref(false);
 
   const googleContactsFetched = ref(false);
-  const sourceConfig = ref<MiningSourceConfigFlags>(
-    deriveSourceConfig(undefined),
-  );
+  const sourceConfig = ref<MiningSourceConfigFlags>(deriveSourceConfig());
 
   const miningCompleted = ref(false);
 
@@ -129,7 +127,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes.value = [];
     excludedBoxes.value = new Set();
     selectedFile.value = null;
-    sourceConfig.value = deriveSourceConfig(undefined);
+    sourceConfig.value = deriveSourceConfig();
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
@@ -442,7 +440,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     // File mining has no active source — use fresh defaults, not the last
     // email source's config.
-    const fileConfig = deriveSourceConfig(undefined);
+    const fileConfig = deriveSourceConfig();
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
@@ -463,7 +461,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningType.value = 'pst';
 
     // PST mining has no active source — use fresh defaults.
-    const pstConfig = deriveSourceConfig(undefined);
+    const pstConfig = deriveSourceConfig();
 
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,

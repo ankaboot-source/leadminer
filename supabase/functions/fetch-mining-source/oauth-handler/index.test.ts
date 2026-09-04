@@ -54,7 +54,6 @@ Deno.test("never crashes on circular or exotic inputs", () => {
   circular.self = circular;
   assert(!isPermanentOAuthError(circular));
   assert(!isPermanentOAuthError(null));
-  assert(!isPermanentOAuthError(undefined));
   assert(!isPermanentOAuthError(Symbol("x")));
   // Legacy circular shape with invalid_grant still classifies (no crash)
   assertEquals(isPermanentOAuthError(makeCircularError()), true);

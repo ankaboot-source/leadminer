@@ -3,7 +3,7 @@ import { deriveSourceConfig } from '~/utils/miningSourceConfig';
 
 describe('deriveSourceConfig', () => {
   it('returns defaults when config is missing', () => {
-    expect(deriveSourceConfig(undefined)).toEqual({
+    expect(deriveSourceConfig()).toEqual({
       extract_signatures: false,
       cleaning_enabled: true,
       google_contacts_sync: false,

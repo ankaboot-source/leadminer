@@ -13,7 +13,7 @@ export interface MiningSourceConfigFlags {
  * With no config (or no active source) the defaults are returned.
  */
 export function deriveSourceConfig(
-  config: MiningSource['config'] | undefined,
+  config?: MiningSource['config'],
 ): MiningSourceConfigFlags {
   return {
     extract_signatures: config?.extract_signatures === true,
