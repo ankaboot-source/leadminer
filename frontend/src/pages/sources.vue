@@ -494,7 +494,12 @@ async function confirmDelete() {
 
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
-    await updatePassiveMining(source.email, source.type, value);
+    await updatePassiveMining(
+      source.email,
+      source.type,
+      value,
+      source.config ?? {},
+    );
   } catch (error) {
     source.passive_mining = !value;
     $toast.add({
@@ -627,6 +632,14 @@ async function reconnectExpiredSource(source: MiningSource) {
 
 onMounted(async () => {
   await $leadminer.ensureMiningSourcesLoaded();
+
+  // Refresh the active-mining state so an in-progress run shows under its
+  // source even when the app bootstrap ran before this mining started.
+  try {
+    await $leadminer.getCurrentRunningMining();
+  } catch {
+    // non-blocking: sources list still renders without mining state
+  }
 
   const reconnectEmail = $route.query.reconnect as string;
 

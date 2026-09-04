@@ -127,7 +127,11 @@ async function getMiningSources() {
     .from("mining_sources")
     .select("id, email, user_id, config")
     .match({ passive_mining: true })
-    .not("config->>needs_reauth", "eq", "true");
+    // Keep sources unless needs_reauth is EXACTLY "true". A missing key or
+    // "false" must NOT exclude the source — PostgREST `not.eq` on a jsonb key
+    // that is absent evaluates to NULL and incorrectly drops the row, which
+    // made the cron report "Found 0 mining sources" after a config rewrite.
+    .or("config->>needs_reauth.is.null,config->>needs_reauth.neq.true");
 
   if (error) {
     console.error("Error fetching mining sources:", error.message);

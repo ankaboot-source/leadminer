@@ -109,7 +109,11 @@ async function enablePassiveMining() {
       .from('mining_sources')
       .update({
         passive_mining: true,
-        config: draftConfig.value,
+        config: {
+          ...(miningSource.value.config ?? {}),
+          ...draftConfig.value,
+          needs_reauth: false,
+        },
       })
       .match({ email: miningSource.value.email });
 
