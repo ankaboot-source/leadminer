@@ -30,7 +30,7 @@ export const startMiningSchema = z.object({
         .default([]),
       extractSignatures: z.boolean(),
       cleaningEnabled: z.boolean(),
-      since: z.string().optional(),
+      since: z.string().nullable().optional(),
       passive_mining: z.boolean().optional(),
       googleContactsSync: z.boolean().optional()
     })
