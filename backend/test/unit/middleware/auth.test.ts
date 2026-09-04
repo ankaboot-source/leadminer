@@ -1,85 +1,87 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+
+import ENV from '../../../src/config';
+import initializeAuthMiddleware from '../../../src/middleware/auth';
+import supabaseClient from '../../../src/utils/supabase';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_HOST: 'leadminer-test.io',
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
-  // NOTE: these two are intentionally DIFFERENT to prove the middleware accepts
-  // both the legacy project token and the service role key.
-  SUPABASE_SECRET_PROJECT_TOKEN: 'project-token',
-  SUPABASE_SERVICE_ROLE_KEY: 'service-role-key'
+  // Distinct sentinels only. The real values are long JWTs; these literals are
+  // intentionally credential-free so the secrets analyzer doesn't flag them.
+  SUPABASE_SECRET_PROJECT_TOKEN: 'legacy',
+  SUPABASE_SERVICE_ROLE_KEY: 'edge'
 }));
 
-const adminGetUserById = jest.fn();
-jest.mock('../../../src/utils/supabase', () => ({
-  auth: {
-    admin: {
-      getUserById: adminGetUserById
+function mockSupabaseClient() {
+  return {
+    auth: {
+      admin: {
+        getUserById: jest.fn()
+      }
     }
-  }
-}));
+  };
+}
 
-import initializeAuthMiddleware from '../../../src/middleware/auth';
-import ENV from '../../../src/config';
+jest.mock('../../../src/utils/supabase', () => mockSupabaseClient());
 
 const authMiddleware = initializeAuthMiddleware({
   getAccessToken: () => null,
-  getUser: async () => null
+  getUser: () => Promise.resolve(null)
 });
 
-function mockRes() {
-  const res: Record<string, any> = { locals: {} };
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as unknown as Response;
+function mockResponse(): Response {
+  const res = { locals: {} } as Response;
+  res.status = jest.fn().mockReturnValue(res) as unknown as Response['status'];
+  res.json = jest.fn().mockReturnValue(res) as unknown as Response['json'];
+  return res;
+}
+
+function mockRequest(headers: Record<string, string>): Request {
+  return {
+    headers,
+    query: { userId: 'userId-1' },
+    params: {}
+  } as unknown as Request;
 }
 
 describe('auth middleware service token acceptance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    adminGetUserById.mockResolvedValue({
+    (supabaseClient.auth.admin.getUserById as jest.Mock).mockResolvedValue({
       data: { user: { id: 'userId-1', email: 'user@example.com' } }
     });
   });
 
   it('accepts the SUPABASE_SECRET_PROJECT_TOKEN (legacy)', async () => {
-    const req = {
-      headers: {
-        authorization: `Bearer ${ENV.SUPABASE_SECRET_PROJECT_TOKEN}`
-      },
-      query: { userId: 'userId-1' },
-      params: {}
-    };
+    const req = mockRequest({
+      authorization: `Bearer ${ENV.SUPABASE_SECRET_PROJECT_TOKEN}`
+    });
     let called = false;
-    await authMiddleware(req as any, mockRes(), () => {
+    await authMiddleware(req, mockResponse(), () => {
       called = true;
     });
     expect(called).toBe(true);
   });
 
   it('accepts the SUPABASE_SERVICE_ROLE_KEY (edge-function default)', async () => {
-    const req = {
-      headers: { authorization: `Bearer ${ENV.SUPABASE_SERVICE_ROLE_KEY}` },
-      query: { userId: 'userId-1' },
-      params: {}
-    };
+    const req = mockRequest({
+      authorization: `Bearer ${ENV.SUPABASE_SERVICE_ROLE_KEY}`
+    });
     let called = false;
-    await authMiddleware(req as any, mockRes(), () => {
+    await authMiddleware(req, mockResponse(), () => {
       called = true;
     });
     expect(called).toBe(true);
   });
 
   it('rejects an arbitrary bearer token with 401', async () => {
-    const req = {
-      headers: { authorization: 'Bearer some-garbage-token' },
-      query: { userId: 'userId-1' },
-      params: {}
-    };
+    const req = mockRequest({ authorization: 'Bearer unknown-value' });
     let called = false;
-    const res = mockRes();
-    await authMiddleware(req as any, res, () => {
+    const res = mockResponse();
+    await authMiddleware(req, res, () => {
       called = true;
     });
     expect(called).toBe(false);
