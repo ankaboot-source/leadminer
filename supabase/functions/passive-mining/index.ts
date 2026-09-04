@@ -14,6 +14,7 @@ type MiningSource = {
   id: string;
   email: string;
   user_id: string;
+  type?: string;
   config?: Record<string, unknown>;
 };
 
@@ -78,8 +79,8 @@ app.post("/", async (c: Context) => {
         const { task, folders } = await startMiningEmail(miningSource);
         await recordRun(miningSource.id, {
           status: "completed",
-          mining_id:
-            (task as { miningId?: string } | undefined)?.miningId ?? null,
+          mining_id: (task as { miningId?: string } | undefined)?.miningId ??
+            null,
           folders_mined: folders,
           errors: [],
         });
@@ -92,7 +93,20 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
-        const permanent = isPermanentOAuthError(error);
+        // For OAuth sources a 401 from the backend on these endpoints means
+        // the token/grant is dead — either the refresh returned invalid_grant
+        // (isPermanentOAuthError) or the presented access token was rejected at
+        // the IMAP layer (401 ImapAuthError). Both require the user to
+        // re-connect the source, so treat them as permanent instead of
+        // retrying forever. Plain IMAP sources can also 401 on a bad password;
+        // that is a credentials problem the user must fix too, but it is
+        // surfaced by isPermanentOAuthError only when the server reports
+        // invalid_grant.
+        const status = (error as { status?: number } | undefined)?.status;
+        const isOAuth = miningSource.type === "google" ||
+          miningSource.type === "azure";
+        const permanent = isPermanentOAuthError(error) ||
+          (status === 401 && isOAuth);
         await recordRun(miningSource.id, {
           status: permanent ? "failed" : "retrying",
           errors: [error instanceof Error ? error.message : String(error)],
@@ -128,7 +142,7 @@ async function getMiningSources() {
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
-    .select("id, email, user_id, config")
+    .select("id, email, user_id, type, config")
     .match({ passive_mining: true })
     // Keep sources unless needs_reauth is EXACTLY "true". A missing key or
     // "false" must NOT exclude the source — PostgREST `not.eq` on a jsonb key
@@ -189,7 +203,28 @@ async function getBoxes(miningSource: MiningSource) {
   console.log(`Received response for boxes of ${miningSource.email}:`, res);
 
   if (!res.ok) {
-    throw new Error(res.statusText);
+    // Preserve the backend's error detail (e.g. "OAuth connection needs
+    // re-authentication") and the HTTP status so the run is recorded with a
+    // meaningful message instead of a raw statusText like "Unauthorized".
+    const errText = await res.text();
+    const payload = (() => {
+      try {
+        return JSON.parse(errText);
+      } catch {
+        return {};
+      }
+    })() as Record<string, unknown>;
+    const detail =
+      (payload?.data as Record<string, unknown> | undefined)?.message ??
+        payload?.message ??
+        payload?.error ??
+        errText ??
+        res.statusText;
+    const error = new Error(
+      `Failed to fetch IMAP boxes (${res.status}): ${String(detail)}`,
+    ) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
   const { folders } = (await res.json()).data || {};
   return [...folders];
@@ -235,9 +270,9 @@ async function startMiningEmail(miningSource: MiningSource) {
   if (!res.ok) {
     const errText = await res.text();
     console.error("Mining API error:", errText);
-    // Propagate the error payload so the caller can classify it via
-    // isPermanentOAuthError (invalid_grant / revoked grant) instead of
-    // swallowing it into a generic message.
+    // Propagate the error payload and HTTP status so the caller can classify it
+    // via isPermanentOAuthError (invalid_grant / revoked grant) and the
+    // status-based fallback below instead of swallowing a generic message.
     const payload = (() => {
       try {
         return JSON.parse(errText);
@@ -245,11 +280,13 @@ async function startMiningEmail(miningSource: MiningSource) {
         return {};
       }
     })() as Record<string, unknown>;
-    throw new Error(
+    const error = new Error(
       `Failed to start mining email: ${
         (payload?.error as string) || errText || res.statusText
       }`,
-    );
+    ) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
 
   const json = await res.json();
