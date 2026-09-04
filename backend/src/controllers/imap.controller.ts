@@ -11,6 +11,11 @@ import { generateErrorObjectFromImapError } from './imap.helpers';
 export default function initializeImapController(
   miningSourceService: MiningSources
 ) {
+  const sendOAuthReauth = (res: Response) =>
+    res.status(401).send({
+      data: { message: 'OAuth connection needs re-authentication' }
+    });
+
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
       const { email } = req.body;
@@ -18,6 +23,7 @@ export default function initializeImapController(
       let imapConnection: Awaited<
         ReturnType<typeof ImapConnectionProvider.getSingleConnection>
       > | null = null;
+      let isOAuthCredentials = false;
 
       try {
         const userId = (res.locals.user as User).id;
@@ -47,14 +53,7 @@ export default function initializeImapController(
           });
         }
 
-        if ('accessToken' in data) {
-          // Credentials come from miningSourceService.getSourcesForUser, which
-          // invokes the `fetch-mining-source` edge function. That function
-          // refreshes and persists expired OAuth tokens automatically, so the
-          // credentials here are already valid/refreshed. Any further
-          // local expiry check is redundant and would spuriously 401 even
-          // after a successful refresh, so it is intentionally omitted.
-        }
+        isOAuthCredentials = 'accessToken' in data;
 
         imapConnection = await ImapConnectionProvider.getSingleConnection(
           email,
@@ -90,16 +89,13 @@ export default function initializeImapController(
         });
 
         // OAuth source needs re-authentication (fetch-mining-source returned
-        // OAUTH_NEEDS_REAUTH). Surface a clear "reconnect needed" response so
-        // the frontend can prompt the user to reconnect instead of a generic
-        // IMAP auth failure.
+        // OAUTH_NEEDS_REAUTH, or the access token was rejected at IMAP connect).
         if (
-          error?.status === 401 ||
-          error?.message?.includes('re-authentication')
+          isOAuthCredentials &&
+          (error?.status === 401 ||
+            error?.message?.includes('re-authentication'))
         ) {
-          return res.status(401).send({
-            data: { message: 'OAuth connection needs re-authentication' }
-          });
+          return sendOAuthReauth(res);
         }
 
         if ([502, 503].includes(error?.output?.payload?.statusCode)) {
@@ -109,6 +105,13 @@ export default function initializeImapController(
         }
 
         const generatedError = generateErrorObjectFromImapError(error);
+        if (
+          isOAuthCredentials &&
+          generatedError instanceof ImapAuthError &&
+          generatedError.status === 401
+        ) {
+          return sendOAuthReauth(res);
+        }
         if (generatedError instanceof ImapAuthError) {
           return res.status(generatedError.status).send(generatedError);
         }

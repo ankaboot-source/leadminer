@@ -14,6 +14,7 @@ type MiningSource = {
   id: string;
   email: string;
   user_id: string;
+  type?: string;
   config?: Record<string, unknown>;
 };
 
@@ -68,6 +69,35 @@ async function markNeedsReauth(sourceId: string): Promise<void> {
   await updateConfig(sourceId, { needs_reauth: true });
 }
 
+function isOAuthType(type?: string): boolean {
+  return type === "google" || type === "azure";
+}
+
+async function backendError(
+  res: Response,
+  message: (status: number, detail: string) => string,
+): Promise<Error & { status: number }> {
+  const errText = await res.text();
+  const payload = (() => {
+    try {
+      return JSON.parse(errText);
+    } catch {
+      return {};
+    }
+  })() as Record<string, unknown>;
+  const detail =
+    (payload?.data as Record<string, unknown> | undefined)?.message ??
+      payload?.message ??
+      payload?.error ??
+      errText ??
+      res.statusText;
+  const error = new Error(message(res.status, String(detail))) as Error & {
+    status: number;
+  };
+  error.status = res.status;
+  return error;
+}
+
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
@@ -78,8 +108,8 @@ app.post("/", async (c: Context) => {
         const { task, folders } = await startMiningEmail(miningSource);
         await recordRun(miningSource.id, {
           status: "completed",
-          mining_id:
-            (task as { miningId?: string } | undefined)?.miningId ?? null,
+          mining_id: (task as { miningId?: string } | undefined)?.miningId ??
+            null,
           folders_mined: folders,
           errors: [],
         });
@@ -92,18 +122,19 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.email}:`,
           error,
         );
-        const permanent = isPermanentOAuthError(error);
+        // OAuth sources 401 on these endpoints when the grant is dead (either
+        // invalid_grant on refresh or the access token rejected at the IMAP
+        // layer). Treat as permanent so the user is asked to reconnect instead
+        // of retrying every cycle. Plain IMAP 401s (bad password) stay retrying.
+        const status = (error as { status?: number } | undefined)?.status;
+        const permanent = isPermanentOAuthError(error) ||
+          (status === 401 && isOAuthType(miningSource.type));
         await recordRun(miningSource.id, {
           status: permanent ? "failed" : "retrying",
           errors: [error instanceof Error ? error.message : String(error)],
           ...(permanent ? { needs_reauth: true } : {}),
         });
 
-        // For a permanent OAuth rejection (invalid_grant / revoked grant), mark the
-        // source as needing re-auth but PRESERVE the user's passive_mining intent.
-        // Do NOT set passive_mining=false here: the source stays listed, the UI shows
-        // the "Connection lost - please reconnect" state, and once the token is
-        // refreshed / re-authorized the scheduler resumes continuous extraction.
         if (permanent) {
           await markNeedsReauth(miningSource.id);
         }
@@ -120,20 +151,14 @@ app.post("/", async (c: Context) => {
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
-  // Only pick sources that are (a) enabled for continuous mining and (b) not
-  // currently awaiting re-auth. A source flagged needs_reauth keeps its
-  // passive_mining=true (so it isn't silently dropped from the UI), but we
-  // don't hammer the mining API until fetch-mining-source clears the flag on
-  // a successful token refresh / re-authorization.
+  // Sources enabled for continuous mining that aren't awaiting re-auth.
+  // Match the jsonb key explicitly (is.null / neq.true) since `not.eq` on an
+  // absent key evaluates to NULL and would drop valid sources.
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
-    .select("id, email, user_id, config")
+    .select("id, email, user_id, type, config")
     .match({ passive_mining: true })
-    // Keep sources unless needs_reauth is EXACTLY "true". A missing key or
-    // "false" must NOT exclude the source — PostgREST `not.eq` on a jsonb key
-    // that is absent evaluates to NULL and incorrectly drops the row, which
-    // made the cron report "Found 0 mining sources" after a config rewrite.
     .or("config->>needs_reauth.is.null,config->>needs_reauth.neq.true");
 
   if (error) {
@@ -189,7 +214,10 @@ async function getBoxes(miningSource: MiningSource) {
   console.log(`Received response for boxes of ${miningSource.email}:`, res);
 
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw await backendError(
+      res,
+      (status, detail) => `Failed to fetch IMAP boxes (${status}): ${detail}`,
+    );
   }
   const { folders } = (await res.json()).data || {};
   return [...folders];
@@ -235,20 +263,9 @@ async function startMiningEmail(miningSource: MiningSource) {
   if (!res.ok) {
     const errText = await res.text();
     console.error("Mining API error:", errText);
-    // Propagate the error payload so the caller can classify it via
-    // isPermanentOAuthError (invalid_grant / revoked grant) instead of
-    // swallowing it into a generic message.
-    const payload = (() => {
-      try {
-        return JSON.parse(errText);
-      } catch {
-        return {};
-      }
-    })() as Record<string, unknown>;
-    throw new Error(
-      `Failed to start mining email: ${
-        (payload?.error as string) || errText || res.statusText
-      }`,
+    throw await backendError(
+      res,
+      (_status, detail) => `Failed to start mining email: ${detail}`,
     );
   }
 
