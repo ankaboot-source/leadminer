@@ -716,8 +716,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       const hasRequiredPhases =
         mType === MiningTypes.FILE
-          ? Boolean(extract) && Boolean(clean)
-          : Boolean(fetch) && Boolean(extract) && Boolean(clean);
+          ? Boolean(extract)
+          : Boolean(fetch) && Boolean(extract);
 
       if (!hasRequiredPhases) return 1;
 

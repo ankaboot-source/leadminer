@@ -121,12 +121,22 @@ export async function updatePassiveMining(
   email: string,
   type: string,
   value: boolean,
+  existingConfig: Record<string, unknown> = {},
 ): Promise<void> {
+  const update: Record<string, unknown> = { passive_mining: value };
+
+  // When enabling continuous extraction, clear a stale needs_reauth flag and
+  // preserve any existing config keys (errors/status/last_run) instead of
+  // letting passive-mining exclude the source.
+  if (value) {
+    update.config = { ...existingConfig, needs_reauth: false };
+  }
+
   const { error } = await useSupabaseClient()
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('mining_sources')
-    .update({ passive_mining: value })
+    .update(update)
     .eq('email', email)
     .eq('type', type);
 

@@ -494,7 +494,12 @@ async function confirmDelete() {
 
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
-    await updatePassiveMining(source.email, source.type, value);
+    await updatePassiveMining(
+      source.email,
+      source.type,
+      value,
+      source.config ?? {},
+    );
   } catch (error) {
     source.passive_mining = !value;
     $toast.add({
