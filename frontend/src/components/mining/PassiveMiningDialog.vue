@@ -113,6 +113,8 @@ async function enablePassiveMining() {
           ...(miningSource.value.config ?? {}),
           ...draftConfig.value,
           needs_reauth: false,
+          status: miningSource.value.config?.status ?? 'idle',
+          last_run: miningSource.value.config?.last_run ?? null,
         },
       })
       .match({ email: miningSource.value.email });

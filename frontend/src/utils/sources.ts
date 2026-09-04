@@ -125,11 +125,18 @@ export async function updatePassiveMining(
 ): Promise<void> {
   const update: Record<string, unknown> = { passive_mining: value };
 
-  // When enabling continuous extraction, clear a stale needs_reauth flag and
-  // preserve any existing config keys (errors/status/last_run) instead of
-  // letting passive-mining exclude the source.
+  // When enabling continuous extraction, clear a stale needs_reauth flag,
+  // preserve any existing config keys (errors/status/last_run) and seed the
+  // passive mining state so the /sources UI shows a status immediately —
+  // otherwise the config stays as a bare { needs_reauth:false } with no
+  // passive-mining tracking fields.
   if (value) {
-    update.config = { ...existingConfig, needs_reauth: false };
+    update.config = {
+      ...existingConfig,
+      needs_reauth: false,
+      status: existingConfig.status ?? 'idle',
+      last_run: existingConfig.last_run ?? null,
+    };
   }
 
   const { error } = await useSupabaseClient()
