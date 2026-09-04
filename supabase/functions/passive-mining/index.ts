@@ -40,7 +40,10 @@ async function updateConfig(
     );
     return;
   }
-  const merged = mergeConfig(source.data?.config as MiningSource["config"], patch);
+  const merged = mergeConfig(
+    source.data?.config as MiningSource["config"],
+    patch,
+  );
   const { error } = await supabase
     .schema("private")
     .from("mining_sources")
@@ -75,8 +78,8 @@ app.post("/", async (c: Context) => {
         const { task, folders } = await startMiningEmail(miningSource);
         await recordRun(miningSource.id, {
           status: "completed",
-          mining_id: (task as { miningId?: string } | undefined)?.miningId
-            ?? null,
+          mining_id:
+            (task as { miningId?: string } | undefined)?.miningId ?? null,
           folders_mined: folders,
           errors: [],
         });
