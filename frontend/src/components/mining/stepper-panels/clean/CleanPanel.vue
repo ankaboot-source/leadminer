@@ -76,7 +76,9 @@ const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
-  () => $leadminerStore.cleaningEnabled && !$leadminerStore.miningInterrupted,
+  () =>
+    $leadminerStore.sourceConfig.cleaning_enabled &&
+    !$leadminerStore.miningInterrupted,
 );
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
@@ -93,9 +95,10 @@ const isPostCleaningPhase = computed(
   () =>
     ($leadminerStore.miningType === MiningTypes.EMAIL ||
       $leadminerStore.miningType === MiningTypes.PST) &&
-    ($leadminerStore.cleaningFinished || !$leadminerStore.cleaningEnabled) &&
+    ($leadminerStore.cleaningFinished ||
+      !$leadminerStore.sourceConfig.cleaning_enabled) &&
     !$leadminerStore.miningCompleted &&
-    $leadminerStore.extractSignatures,
+    $leadminerStore.sourceConfig.extract_signatures,
 );
 
 const isMiningFinished = computed(() => $leadminerStore.miningCompleted);

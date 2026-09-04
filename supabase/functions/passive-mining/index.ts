@@ -96,25 +96,14 @@ app.post("/", async (c: Context) => {
           ...(permanent ? { needs_reauth: true } : {}),
         });
 
-        // Only disable passive mining for a permanent OAuth rejection
-        // (invalid_grant / revoked grant). Transient failures (network blips,
-        // IMAP server down) should keep passive_mining enabled so the scheduler
-        // retries on the next cycle instead of silently stopping continuous
-        // extraction.
-        if (!permanent) continue;
-
-        await supabase
-          .schema("private")
-          .from("mining_sources")
-          .update({ passive_mining: false })
-          .eq("id", miningSource.id)
-          .catch((updateError: unknown) => {
-            console.error(
-              `Failed to disable passive-mining for ${miningSource.email}:`,
-              updateError,
-            );
-          });
-        await markNeedsReauth(miningSource.id);
+        // For a permanent OAuth rejection (invalid_grant / revoked grant), mark the
+        // source as needing re-auth but PRESERVE the user's passive_mining intent.
+        // Do NOT set passive_mining=false here: the source stays listed, the UI shows
+        // the "Connection lost - please reconnect" state, and once the token is
+        // refreshed / re-authorized the scheduler resumes continuous extraction.
+        if (permanent) {
+          await markNeedsReauth(miningSource.id);
+        }
       }
     }
 
@@ -128,11 +117,17 @@ app.post("/", async (c: Context) => {
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
+  // Only pick sources that are (a) enabled for continuous mining and (b) not
+  // currently awaiting re-auth. A source flagged needs_reauth keeps its
+  // passive_mining=true (so it isn't silently dropped from the UI), but we
+  // don't hammer the mining API until fetch-mining-source clears the flag on
+  // a successful token refresh / re-authorization.
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
     .select("id, email, user_id, config")
-    .match({ passive_mining: true });
+    .match({ passive_mining: true })
+    .not("config->>needs_reauth", "eq", "true");
 
   if (error) {
     console.error("Error fetching mining sources:", error.message);
@@ -229,7 +224,21 @@ async function startMiningEmail(miningSource: MiningSource) {
   if (!res.ok) {
     const errText = await res.text();
     console.error("Mining API error:", errText);
-    throw new Error("Failed to start mining email");
+    // Propagate the error payload so the caller can classify it via
+    // isPermanentOAuthError (invalid_grant / revoked grant) instead of
+    // swallowing it into a generic message.
+    const payload = (() => {
+      try {
+        return JSON.parse(errText);
+      } catch {
+        return {};
+      }
+    })() as Record<string, unknown>;
+    throw new Error(
+      `Failed to start mining email: ${
+        (payload?.error as string) || errText || res.statusText
+      }`,
+    );
   }
 
   const json = await res.json();

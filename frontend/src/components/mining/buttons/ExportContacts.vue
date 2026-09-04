@@ -293,7 +293,7 @@ async function exportToGoogle(type: ExportTypes) {
 
   // Fetch mining sources if not already loaded
   if (!$leadminerStore.miningSources.length) {
-    await $leadminerStore.fetchMiningSources();
+    await $leadminerStore.ensureMiningSourcesLoaded();
   }
 
   if (

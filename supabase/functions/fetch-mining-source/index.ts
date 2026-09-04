@@ -346,12 +346,16 @@ class FetchMiningSourceHandler {
     }
     try {
       const config = { ...(source.config ?? {}), needs_reauth: true };
+      // Preserve the user's passive_mining intent: do NOT flip it to false here.
+      // If this source was enabled for continuous mining, it stays enabled and will
+      // resume on the next schedule cycle once the token is refreshed/re-authorized.
+      // The needs_reauth flag surfaces the reconnect state in the UI instead.
       await this.admin
         .schema("private")
         .from("mining_sources")
-        .update({ config, passive_mining: false })
+        .update({ config })
         .eq("id", source.id);
-      logger.info("Disabled passive mining for permanently rejected source", {
+      logger.info("Flagged permanently rejected source for re-auth", {
         email: source.email,
         userId,
       });

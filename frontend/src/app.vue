@@ -158,7 +158,7 @@ watch(activeTask, () => {
 
 if ($user.value) {
   $stepper.isInitializing = true;
-  await $leadminerStore.fetchMiningSources();
+  await $leadminerStore.ensureMiningSourcesLoaded();
   const step = await $leadminerStore.getCurrentRunningMining();
   if (step !== undefined) {
     $stepper.index = step;

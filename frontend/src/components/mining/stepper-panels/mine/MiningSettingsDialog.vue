@@ -13,7 +13,7 @@
     <!-- Toggle -->
     <div class="flex flex-row items-center gap-2 pb-4">
       <ToggleSwitch
-        v-model="$leadminerStore.extractSignatures"
+        v-model="$leadminerStore.sourceConfig.extract_signatures"
         input-id="extractSignatures"
       />
       <label for="extractSignatures" class="cursor-pointer flex-1">
@@ -25,7 +25,7 @@
     <!-- Toggle cleaningEnabled -->
     <div class="flex flex-row items-center gap-2 pb-4">
       <ToggleSwitch
-        v-model="$leadminerStore.cleaningEnabled"
+        v-model="$leadminerStore.sourceConfig.cleaning_enabled"
         input-id="cleaningEnabled"
       />
       <label for="cleaningEnabled" class="cursor-pointer flex-1">
@@ -40,7 +40,7 @@
       class="flex flex-row items-center gap-2 pb-4"
     >
       <ToggleSwitch
-        v-model="$leadminerStore.googleContactsSyncEnabled"
+        v-model="$leadminerStore.sourceConfig.google_contacts_sync"
         input-id="googleContactsSyncEnabled"
       />
       <label for="googleContactsSyncEnabled" class="cursor-pointer flex-1">
@@ -91,10 +91,12 @@
 <script setup lang="ts">
 // skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
+import { updateMiningSourceConfig } from '@/utils/sources';
 
 const { t } = useI18n({
   useScope: 'local',
 });
+const $toast = useToast();
 
 const props = defineProps({
   totalEmails: { type: Number, required: true },
@@ -114,7 +116,7 @@ const shouldShowEmailFoldersTree = computed(
 const shouldShowGoogleContactsProgress = computed(
   () =>
     activeMiningSource.value?.type === 'google' &&
-    $leadminerStore.googleContactsSyncEnabled &&
+    $leadminerStore.sourceConfig.google_contacts_sync &&
     !$leadminerStore.googleContactsFetched &&
     $leadminerStore.activeTask,
 );
@@ -141,7 +143,30 @@ function open() {
   isVisible.value = true;
 }
 
-function close() {
+async function close() {
+  const src = activeMiningSource.value;
+  if (!src) {
+    // PST/file run: no active source; keep the toggles as transient for this run.
+    isVisible.value = false;
+    return;
+  }
+  try {
+    await updateMiningSourceConfig(src.email, src.type, {
+      ...(src.config ?? {}),
+      ...$leadminerStore.sourceConfig,
+    });
+    if (src.config) {
+      src.config = { ...src.config, ...$leadminerStore.sourceConfig };
+    }
+  } catch (err) {
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: (err as Error).message,
+      life: 4500,
+    });
+    return;
+  }
   isVisible.value = false;
 }
 

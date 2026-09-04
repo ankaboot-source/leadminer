@@ -63,30 +63,118 @@ export function isTokenExpired(
 }
 
 /**
+ * Microsoft Entra STS error codes that document a dead grant (refresh token
+ * expired, inactive, or revoked). Sources:
+ * - https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
+ *   (error field contract; error_description "should not be used" for logic)
+ * - https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes
+ */
+const PERMANENT_AZURE_ERROR_CODES = new Set([
+  "70000",
+  "70008",
+  "700082",
+  "700084",
+  "70043",
+  "50173",
+]);
+
+interface ParsedOAuthError {
+  message: string;
+  /** OAuth `error` code from Google / Microsoft (documented contract). */
+  error?: string;
+  /** Azure numeric STS codes from `error_codes` or AADSTS### in prose. */
+  codes: string[];
+}
+
+/**
  * Classify an OAuth refresh error as a permanent rejection (the refresh token or
  * grant is dead and can never be refreshed again) vs a transient failure (retryable).
  *
- * - Permanent: Google/Azure `invalid_grant` (revoked access, app uninstalled, refresh
- *   token rotated/reset). An expired token that is otherwise valid is NOT permanent —
- *   it refreshes fine once network/token-server hiccups clear.
- * - Transient: network errors, 5xx, rate limits — should be retried, not acted on.
+ * Signals are ordered by authority:
+ * 1. `error === "invalid_grant"` — the documented OAuth error code from Google
+ *    ("token ... expired or has been invalidated ... must be re-authorized") and
+ *    Microsoft ("issued tokens ... no longer valid ... require re-authentication").
+ * 2. Azure numeric `error_codes` containing a documented dead-grant STS code.
+ * 3. Fallback: message-only `invalid_grant` for libraries that surface the code
+ *    in the message but not in the body.
+ *
+ * The real runtime error shape is simple-oauth2's Boom error from @hapi/wreck:
+ * `message = "Response Error: 400 Bad Request"` with the parsed JSON body at
+ * `error.data.payload` — that is unwrapped first.
  */
-export function isPermanentOAuthError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  const body = (error as { data?: unknown })?.data;
-  const bodyText =
-    typeof body === "string"
-      ? body
-      : JSON.stringify(body ?? "").toLowerCase();
+function parseErrorPayload(error: unknown): ParsedOAuthError {
+  const rawMessage =
+    error instanceof Error
+      ? error.message
+      : typeof (error as { message?: unknown } | null)?.message === "string"
+        ? (error as { message: string }).message
+        : String(error ?? "");
+  const message = rawMessage;
+  const root = (error as { data?: unknown })?.data;
+  // simple-oauth2 / @hapi/wreck Boom error: body lives at data.payload
+  const payloadCandidate =
+    root && typeof root === "object"
+      ? (root as Record<string, unknown>).payload ?? root
+      : root;
 
-  return (
-    /invalid_grant/i.test(message) ||
-    /invalid_grant/i.test(bodyText) ||
-    /token.*(revoked|invalid|expired)|revoked (the )?(user )?(grant|token)/i.test(
-      message,
-    ) ||
-    /invalid_grant/i.test(JSON.stringify(error).toLowerCase())
-  );
+  let errorCode = "";
+  let codes: string[] = [];
+
+  const readBody = (body: unknown): void => {
+    if (typeof body === "string") {
+      try {
+        readBody(JSON.parse(body));
+      } catch {
+        // not JSON; message-scan fallback below
+      }
+      return;
+    }
+    if (!body || typeof body !== "object") return;
+    const rec = body as Record<string, unknown>;
+    if (typeof rec.error === "string") errorCode = rec.error;
+    if (Array.isArray(rec.error_codes)) {
+      codes = rec.error_codes
+        .filter((c): c is string | number =>
+          typeof c === "string" || typeof c === "number"
+        )
+        .map(String);
+    }
+  };
+
+  readBody(payloadCandidate);
+
+  // Some callers surface the parsed JSON body directly (no `data` wrapper).
+  if (!errorCode && !codes.length) {
+    readBody(error);
+  }
+
+  // Documented codes also appear inline in error_description / messages.
+  if (!codes.length) {
+    for (const code of PERMANENT_AZURE_ERROR_CODES) {
+      if (message.includes(`AADSTS${code}`)) {
+        codes.push(code);
+        break;
+      }
+    }
+  }
+  return { message, error: errorCode, codes };
+}
+
+export function isPermanentOAuthError(error: unknown): boolean {
+  const payload = parseErrorPayload(error);
+
+  // Documented signal #1: the OAuth `error` field (Google + Microsoft).
+  if (payload.error === "invalid_grant") {
+    return true;
+  }
+
+  // Documented signal #2: Microsoft Entra STS error_codes for a dead grant.
+  if (payload.codes.some((code) => PERMANENT_AZURE_ERROR_CODES.has(code))) {
+    return true;
+  }
+
+  // Documented signal #3 (fallback): message-only `invalid_grant`.
+  return /invalid_grant/i.test(payload.message);
 }
 
 export async function refreshAccessToken(

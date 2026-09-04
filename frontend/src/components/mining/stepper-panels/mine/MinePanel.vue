@@ -69,34 +69,6 @@
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
   />
-
-  <Dialog
-    v-model:visible="autoExtractDialog"
-    modal
-    header="Continuous Contact Extraction"
-    class="w-full sm:w-[35rem]"
-  >
-    <p>
-      Enable continuous contact extraction from future emails?
-      <br />
-      New contacts found in incoming emails will be automatically saved.
-    </p>
-    <template #footer>
-      <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
-        <Button
-          label="Yes, enable"
-          class="w-full sm:w-auto"
-          @click="enableAutoExtract()"
-        />
-        <Button
-          :label="$t('common.cancel')"
-          class="w-full sm:w-auto"
-          severity="secondary"
-          @click="closeAutoExtractDialog()"
-        />
-      </div>
-    </template>
-  </Dialog>
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -122,7 +94,6 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource | undefined;
 }>();
 
-const autoExtractDialog = ref(false); // mining_source.autoExtract
 const sourceType = computed(() => $leadminerStore.miningType);
 const $toast = useToast();
 const $stepper = useMiningStepper();
@@ -218,13 +189,6 @@ function getMiningErrorDetail(error: unknown, sourceTypeVal?: string) {
   return backendMessage || t('mining_issue');
 }
 
-function closeAutoExtractDialog() {
-  autoExtractDialog.value = false;
-}
-function enableAutoExtract() {
-  closeAutoExtractDialog();
-}
-
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
@@ -297,7 +261,9 @@ const canStartMining = computed(() => {
   if (sourceType.value !== 'email') return true;
   if ($leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining)
     return false;
-  return totalEmails.value > 0 || $leadminerStore.googleContactsSyncEnabled;
+  return (
+    totalEmails.value > 0 || $leadminerStore.sourceConfig.google_contacts_sync
+  );
 });
 
 const extractionProgress = computed(() =>
@@ -385,8 +351,7 @@ watch(extractionFinished, async (finished) => {
     });
     $stepper.next();
   } else if (finished) {
-    if (miningSource && !miningSource.passive_mining)
-      $leadminerStore.passiveMiningDialog = true;
+    $leadminerStore.maybeOpenPassiveMiningDialog();
     $toast.add({
       severity: 'info',
       summary: t('mining_done'),
@@ -404,6 +369,7 @@ watch(
   () => $leadminerStore.googleContactsFetched,
   async (fetched) => {
     if (fetched && !canceled.value && !hasSelectedBoxes.value) {
+      $leadminerStore.maybeOpenPassiveMiningDialog();
       $toast.add({
         severity: 'info',
         summary: t('mining_done'),
@@ -426,7 +392,7 @@ function openMiningSettings() {
 
 async function startMiningBoxes() {
   if (
-    !$leadminerStore.googleContactsSyncEnabled &&
+    !$leadminerStore.sourceConfig.google_contacts_sync &&
     Object.keys(selectedBoxes.value).filter(
       (key) => selectedBoxes.value[key].checked && key !== '',
     ).length === 0

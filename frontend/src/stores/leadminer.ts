@@ -8,6 +8,10 @@ import {
   updateMiningSourcesValidityFromUnavailable,
 } from '@/utils/sources';
 import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
+import {
+  type MiningSourceConfigFlags,
+  deriveSourceConfig,
+} from '@/utils/miningSourceConfig';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -22,8 +26,8 @@ import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
-  const { $api, $saasEdgeFunctions } = useNuxtApp();
-  const { t, getBrowserLocale } = useI18n();
+  const { $api, $saasEdgeFunctions, $i18n } = useNuxtApp();
+  const { t, getBrowserLocale } = $i18n;
   const language = getBrowserLocale() || 'en';
   const $toast = useToast();
   const $stepper = useMiningStepper();
@@ -43,9 +47,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
   const isLoadingMiningSources = ref(false);
+  const hasLoadedMiningSources = ref(false);
   const boxes = ref<BoxNode[]>([]);
-  const extractSignatures = ref(true);
-  const cleaningEnabled = ref(true);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
   const excludedBoxes = ref<Set<string>>(new Set());
   const selectedFile = ref<{
@@ -73,7 +76,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const signatureExtractionFinished = ref(false);
 
   const googleContactsFetched = ref(false);
-  const googleContactsSyncEnabled = ref(true);
+  const sourceConfig = ref<MiningSourceConfigFlags>(deriveSourceConfig());
 
   const miningCompleted = ref(false);
 
@@ -97,6 +100,19 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningInterrupted = ref(false);
   const errors = ref({});
 
+  /**
+   * Offers the "Enable continuous contact extraction?" dialog at the end of a
+   * mining run, unless the source is already on continuous (passive) mining or
+   * the run was interrupted. Owned by the store so it survives component
+   * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
+   */
+  function maybeOpenPassiveMiningDialog() {
+    if (miningInterrupted.value) return;
+    const source = activeMiningSource.value;
+    if (!source || source.passive_mining) return;
+    passiveMiningDialog.value = true;
+  }
+
   function getCurrentUserId() {
     const user = useSupabaseUser().value;
     return user?.id || (user as { sub?: string } | null)?.sub;
@@ -111,8 +127,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     selectedBoxes.value = [];
     excludedBoxes.value = new Set();
     selectedFile.value = null;
-    extractSignatures.value = true;
-    cleaningEnabled.value = true;
+    sourceConfig.value = deriveSourceConfig();
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
@@ -133,7 +148,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     miningCompleted.value = false;
     googleContactsFetched.value = false;
-    googleContactsSyncEnabled.value = true;
 
     activeEnrichment.value = false;
 
@@ -148,6 +162,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   function $reset() {
     miningSources.value = [];
+    hasLoadedMiningSources.value = false;
     $resetMining();
   }
 
@@ -181,6 +196,25 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       fetchSenderOptionsInBackground();
     } finally {
       isLoadingMiningSources.value = false;
+    }
+  }
+
+  /**
+   * Loads mining sources once per session. Consumers that display a mining
+   * source call this instead of fetchMiningSources() directly, which keeps
+   * source fetching lazy (only where a source is shown) and avoids duplicate
+   * fetches (auth screen, every protected-route navigation).
+   */
+  async function ensureMiningSourcesLoaded() {
+    if (hasLoadedMiningSources.value || isLoadingMiningSources.value) {
+      return;
+    }
+    try {
+      await fetchMiningSources();
+      hasLoadedMiningSources.value = true;
+    } catch (error) {
+      // Leave hasLoadedMiningSources=false so the next consumer retries.
+      console.warn('[mining] failed to load mining sources', error);
     }
   }
 
@@ -228,7 +262,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingBoxes.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
-      extractSignatures.value = true;
 
       const { data } = await $api<{
         data: { message: string; folders: BoxNode[] };
@@ -357,6 +390,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
+        maybeOpenPassiveMiningDialog();
         setTimeout(async () => {
           miningTask.value = undefined;
           await fetchMiningSources();
@@ -364,6 +398,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
       onGoogleContactsFetched: () => {
         googleContactsFetched.value = true;
+        maybeOpenPassiveMiningDialog();
       },
     });
   }
@@ -384,9 +419,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           miningSource: miningSource.id
             ? { id: miningSource.id }
             : { email: miningSource.email },
-          extractSignatures: extractSignatures.value,
-          cleaningEnabled: cleaningEnabled.value,
-          googleContactsSync: googleContactsSyncEnabled.value,
+          extractSignatures: sourceConfig.value.extract_signatures,
+          cleaningEnabled: sourceConfig.value.cleaning_enabled,
+          googleContactsSync: sourceConfig.value.google_contacts_sync,
         },
       },
     );
@@ -403,6 +438,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = true;
     scannedEmails.value = 1;
 
+    // File mining has no active source — use fresh defaults, not the last
+    // email source's config.
+    const fileConfig = deriveSourceConfig();
+
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
@@ -410,7 +449,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         body: {
           name: fileName,
           contacts: importedContacts,
-          cleaningEnabled: cleaningEnabled.value,
+          cleaningEnabled: fileConfig.cleaning_enabled,
         },
       },
     );
@@ -421,14 +460,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function startMiningPST(userId: string, fileName: string) {
     miningType.value = 'pst';
 
+    // PST mining has no active source — use fresh defaults.
+    const pstConfig = deriveSourceConfig();
+
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/pst/${userId}`,
       {
         method: 'POST',
         body: {
           name: fileName,
-          extractSignatures: extractSignatures.value,
-          cleaningEnabled: cleaningEnabled.value,
+          extractSignatures: pstConfig.extract_signatures,
+          cleaningEnabled: pstConfig.cleaning_enabled,
         },
       },
     );
@@ -685,6 +727,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );
+      sourceConfig.value = deriveSourceConfig(activeMiningSource.value?.config);
 
       const firstStepFetch = miningType.value === MiningTypes.EMAIL && fetch;
       if (firstStepFetch) {
@@ -708,13 +751,25 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  watch(
+    activeMiningSource,
+    () => {
+      sourceConfig.value = deriveSourceConfig(activeMiningSource.value?.config);
+    },
+    {
+      immediate: true,
+    },
+  );
+
   return {
     fetchInbox,
     fetchMiningSources,
+    ensureMiningSourcesLoaded,
     getMiningSourceByEmail,
     getCurrentRunningMining,
     startMining,
     stopMining,
+    maybeOpenPassiveMiningDialog,
 
     $reset,
     $resetMining,
@@ -729,8 +784,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes,
     selectedBoxes,
     excludedBoxes,
-    extractSignatures,
-    cleaningEnabled,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,
@@ -749,7 +802,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     signatureExtractionFinished,
     miningCompleted,
     googleContactsFetched,
-    googleContactsSyncEnabled,
+    sourceConfig,
     activeMiningTask,
     activeTask,
     passiveMiningDialog,

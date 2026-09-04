@@ -29,4 +29,8 @@ const $stepper = useMiningStepper();
 const showTable = computed(
   () => $leadminer.activeMiningTask || $stepper.index > 2,
 );
+
+onMounted(() => {
+  $leadminer.ensureMiningSourcesLoaded();
+});
 </script>
