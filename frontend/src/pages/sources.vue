@@ -633,6 +633,14 @@ async function reconnectExpiredSource(source: MiningSource) {
 onMounted(async () => {
   await $leadminer.ensureMiningSourcesLoaded();
 
+  // Refresh the active-mining state so an in-progress run shows under its
+  // source even when the app bootstrap ran before this mining started.
+  try {
+    await $leadminer.getCurrentRunningMining();
+  } catch {
+    // non-blocking: sources list still renders without mining state
+  }
+
   const reconnectEmail = $route.query.reconnect as string;
 
   if (reconnectEmail) {
