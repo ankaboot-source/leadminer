@@ -31,15 +31,13 @@ jest.mock('../../../src/services/imap/ImapConnectionProvider', () => ({
 
 jest.mock('../../../src/services/imap/ImapBoxesFetcher', () => ({
   __esModule: true,
-  default: jest
-    .fn()
-    .mockImplementation(() => ({
-      getTree: jest.fn().mockImplementation(() => {
-        const e = new Error('AUTHENTICATIONFAILED');
-        (e as Error & { code?: string }).code = 'AUTHENTICATIONFAILED';
-        throw e;
-      })
-    }))
+  default: jest.fn().mockImplementation(() => ({
+    getTree: jest.fn().mockImplementation(() => {
+      const error = new Error('AUTHENTICATIONFAILED');
+      (error as Error & { code?: string }).code = 'AUTHENTICATIONFAILED';
+      throw error;
+    })
+  }))
 }));
 
 function mockResponse() {
