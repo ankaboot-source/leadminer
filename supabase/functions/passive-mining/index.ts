@@ -205,6 +205,18 @@ async function startMiningEmail(miningSource: MiningSource) {
   const sourceConfig = miningSource.config ?? {};
   const googleContactsSync = sourceConfig.google_contacts_sync ?? false;
 
+  const body: Record<string, unknown> = {
+    miningSource: { id: miningSource.id },
+    boxes: folders,
+    cleaningEnabled: sourceConfig.cleaning_enabled ?? true,
+    extractSignatures: sourceConfig.extract_signatures ?? false,
+    passive_mining: true,
+    googleContactsSync,
+  };
+  if (since) {
+    body.since = since;
+  }
+
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
     {
@@ -213,15 +225,7 @@ async function startMiningEmail(miningSource: MiningSource) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       },
-      body: JSON.stringify({
-        miningSource: { id: miningSource.id },
-        boxes: folders,
-        cleaningEnabled: sourceConfig.cleaning_enabled ?? true,
-        extractSignatures: sourceConfig.extract_signatures ?? false,
-        since,
-        passive_mining: true,
-        googleContactsSync,
-      }),
+      body: JSON.stringify(body),
     },
   );
 

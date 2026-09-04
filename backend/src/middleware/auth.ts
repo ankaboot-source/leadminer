@@ -8,11 +8,16 @@ export default function initializeAuthMiddleware(authResolver: AuthResolver) {
     try {
       const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
-      // Check for service role authentication
-      if (
-        ENV.SUPABASE_SECRET_PROJECT_TOKEN &&
-        token === ENV.SUPABASE_SECRET_PROJECT_TOKEN
-      ) {
+      // Check for service role authentication. Edge Functions authenticate
+      // backend calls with the Supabase service role key (their default secret),
+      // which matches the backend's SUPABASE_SERVICE_ROLE_KEY from the same
+      // cluster. Also accept SUPABASE_SECRET_PROJECT_TOKEN for backward compat.
+      const isServiceToken =
+        (ENV.SUPABASE_SECRET_PROJECT_TOKEN &&
+          token === ENV.SUPABASE_SECRET_PROJECT_TOKEN) ||
+        (ENV.SUPABASE_SERVICE_ROLE_KEY &&
+          token === ENV.SUPABASE_SERVICE_ROLE_KEY);
+      if (isServiceToken) {
         // Extract userId from route or query params
         const queryUserId = Array.isArray(req.query.userId)
           ? req.query.userId[0]

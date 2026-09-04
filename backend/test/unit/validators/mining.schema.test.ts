@@ -77,5 +77,34 @@ describe('startMiningSchema', () => {
       });
       expect(result.success).toBe(true);
     });
+
+    it('should accept since: null (passive-mining first run)', () => {
+      const result = startMiningSchema.safeParse({
+        params: { userId: 'user-1' },
+        body: {
+          miningSource: { email: 'test@example.com' },
+          boxes: ['INBOX'],
+          googleContactsSync: false,
+          cleaningEnabled: false,
+          extractSignatures: false,
+          since: null
+        }
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept when since is omitted entirely', () => {
+      const result = startMiningSchema.safeParse({
+        params: { userId: 'user-1' },
+        body: {
+          miningSource: { email: 'test@example.com' },
+          boxes: ['INBOX'],
+          googleContactsSync: false,
+          cleaningEnabled: false,
+          extractSignatures: false
+        }
+      });
+      expect(result.success).toBe(true);
+    });
   });
 });
