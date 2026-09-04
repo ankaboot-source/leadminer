@@ -156,13 +156,24 @@ watch(activeTask, () => {
   reset();
 });
 
+// Resume an in-progress mining run / restore the stepper after the app has
+// mounted. Keeping this out of the root component's async setup prevents a
+// post-login SPA navigation from freezing the whole app on the network round
+// trip (the layout would otherwise stay stuck on the "Loading..." loader).
 if ($user.value) {
-  $stepper.isInitializing = true;
-  await $leadminerStore.ensureMiningSourcesLoaded();
-  const step = await $leadminerStore.getCurrentRunningMining();
-  if (step !== undefined) {
-    $stepper.index = step;
-  }
-  $stepper.isInitializing = false;
+  onMounted(async () => {
+    $stepper.isInitializing = true;
+    try {
+      await $leadminerStore.ensureMiningSourcesLoaded();
+      const step = await $leadminerStore.getCurrentRunningMining();
+      if (step !== undefined) {
+        $stepper.index = step;
+      }
+    } catch (error) {
+      console.error('[app] failed to resume mining state', error);
+    } finally {
+      $stepper.isInitializing = false;
+    }
+  });
 }
 </script>
