@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildPersonChangeFilters,
   applyReconciledContacts,
   collectRealtimePersonIds,
   getContactKey,
@@ -171,5 +172,23 @@ describe('resolveRealtimeAction', () => {
       { activeMining: false },
     );
     expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
+  });
+});
+
+describe('buildPersonChangeFilters', () => {
+  it('always includes UPDATE + DELETE and excludes INSERT when not mining', () => {
+    const filters = buildPersonChangeFilters('u1', false);
+    expect(filters).toHaveLength(2);
+    expect(filters.map((f) => f.event).sort()).toEqual(['DELETE', 'UPDATE']);
+    expect(filters.every((f) => f.filter === 'user_id=eq.u1')).toBe(true);
+  });
+
+  it('adds the INSERT filter while a foreground mining is active', () => {
+    const filters = buildPersonChangeFilters('u1', true);
+    expect(filters.map((f) => f.event).sort()).toEqual([
+      'DELETE',
+      'INSERT',
+      'UPDATE',
+    ]);
   });
 });
