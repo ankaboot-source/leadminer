@@ -1,10 +1,37 @@
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, MiningSourceConfig } from '~/types/mining';
+import { readSourceConfig } from './miningSourceConfig';
 
 interface MiningSourceOverview {
   source_email: string;
   total_contacts: number;
   last_mining_date: string;
   total_from_last_mining: number;
+}
+
+/** Recursively merges `patch` into `target` (returns a new object). */
+function deepMerge(
+  target: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...target };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) {
+      delete out[key];
+    } else if (
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      typeof out[key] === 'object' &&
+      !Array.isArray(out[key])
+    ) {
+      out[key] = deepMerge(
+        out[key] as Record<string, unknown>,
+        value as Record<string, unknown>,
+      );
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 
 export function updateMiningSourcesValidity(
@@ -46,8 +73,7 @@ export async function getMiningSources(): Promise<MiningSource[]> {
 
   const userId = user.value.id || (user.value as { sub?: string } | null)?.sub;
 
-  const { data: miningSources, error } = await supabase
-    // @ts-expect-error: Issue with nuxt/supabase
+  const { data: rawSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
     .select('*');
@@ -56,6 +82,8 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     console.error('Error fetching mining sources:', error.message);
     throw error;
   }
+
+  const miningSources = (rawSources ?? []) as MiningSource[];
 
   let overviewData: MiningSourceOverview[] | null = null;
   let overviewError: Error | null = null;
@@ -98,16 +126,46 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   return sourcesWithStats;
 }
 
+async function readConfigForSource(
+  email: string,
+  type: string,
+): Promise<MiningSourceConfig> {
+  const supabase = useSupabaseClient();
+  const { data, error } = await supabase
+    .schema('private')
+    .from('mining_sources')
+    .select('config')
+    .eq('email', email)
+    .eq('type', type)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error reading mining source config:', error.message);
+    throw error;
+  }
+  return readSourceConfig(
+    (data as { config?: MiningSourceConfig } | null)?.config,
+  );
+}
+
+/**
+ * Atomically-ish patched update of a source config: reads the persisted row,
+ * deep-merges the patch on top (typed), and writes back. Fixes the historical
+ * wholesale-replace bug that wiped sibling keys on every write.
+ */
 export async function updateMiningSourceConfig(
   email: string,
   type: string,
-  config: Record<string, unknown>,
+  patch: MiningSourceConfig | Record<string, unknown>,
 ): Promise<void> {
+  const current = await readConfigForSource(email, type);
+  const merged = deepMerge(current, patch as Record<string, unknown>);
+
   const { error } = await useSupabaseClient()
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('mining_sources')
-    .update({ config })
+    // @ts-expect-error: Issue with nuxt/supabase
+    .update({ config: merged })
     .eq('email', email)
     .eq('type', type);
 
@@ -121,26 +179,38 @@ export async function updatePassiveMining(
   email: string,
   type: string,
   value: boolean,
-  existingConfig: Record<string, unknown> = {},
+  existingConfig: MiningSourceConfig | Record<string, unknown> = {},
 ): Promise<void> {
   const update: Record<string, unknown> = { passive_mining: value };
 
-  // When enabling continuous extraction, clear a stale needs_reauth flag,
-  // preserve any existing config keys (errors/status/last_run) and seed the
-  // passive mining state so the /sources UI shows a status immediately —
-  // otherwise the config stays as a bare { needs_reauth:false } with no
-  // passive-mining tracking fields.
+  const current = {
+    ...existingConfig,
+    ...(await readConfigForSource(email, type)),
+  };
+
   if (value) {
+    // Enable continuous mining: reset health to active (clear any stale
+    // needs_reauth / error), persist the user's folders, and keep everything
+    // else (flags, watermark) intact.
+    const merge: Record<string, unknown> = {
+      health: { state: 'active', last_error: null },
+    };
+    // Only override folders when the caller explicitly supplies them; an
+    // `undefined` here would drop the persisted folder selection on write.
+    if (Array.isArray(existingConfig.folders)) {
+      merge.folders = existingConfig.folders;
+    }
+    const merged = deepMerge(current, merge);
+    update.config = merged;
+  } else {
+    // Disabling passive mining should only flip the toggle, keep config.
     update.config = {
-      ...existingConfig,
-      needs_reauth: false,
-      status: existingConfig.status ?? 'idle',
-      last_run: existingConfig.last_run ?? null,
+      ...current,
+      passive_mining_toggled_off_at: new Date().toISOString(),
     };
   }
 
   const { error } = await useSupabaseClient()
-    // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .from('mining_sources')
     .update(update)

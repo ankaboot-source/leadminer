@@ -66,6 +66,7 @@
 import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
 import { deriveSourceConfig } from '~/utils/miningSourceConfig';
+import { updatePassiveMining } from '~/utils/sources';
 
 const $leadminerStore = useLeadminerStore();
 
@@ -75,7 +76,6 @@ const draftConfig = ref<Record<string, boolean>>({
   cleaning_enabled: true,
   extract_signatures: false,
 });
-const $supabase = useSupabaseClient();
 const $toast = useToast();
 
 const { t } = useI18n({
@@ -104,26 +104,33 @@ function closePassiveMiningDialog() {
 async function enablePassiveMining() {
   if (!miningSource.value) return;
   try {
-    const { error } = await $supabase
-      .schema('private')
-      .from('mining_sources')
-      .update({
-        passive_mining: true,
-        config: {
-          ...(miningSource.value.config ?? {}),
-          ...draftConfig.value,
-          needs_reauth: false,
-          status: miningSource.value.config?.status ?? 'idle',
-          last_run: miningSource.value.config?.last_run ?? null,
-        },
-      })
-      .match({ email: miningSource.value.email });
-
-    if (error) throw error;
-    // reflect the new config in the store immediately
-    $leadminerStore.sourceConfig = deriveSourceConfig(
-      $leadminerStore.activeMiningSource?.config,
+    // Persist the chosen flags + the currently selected folders under the typed
+    // config shape (read-merge-write so unrelated keys/watermarks survive), and
+    // flip the toggle. The new health.state 'active' clears any stale
+    // needs_reauth/error from a previous run.
+    await updatePassiveMining(
+      miningSource.value.email,
+      miningSource.value.type,
+      true,
+      {
+        flags: { ...draftConfig.value },
+        folders: $leadminerStore.selectedBoxes
+          ? Object.keys($leadminerStore.selectedBoxes).filter(
+              (key) =>
+                $leadminerStore.selectedBoxes[key]?.checked &&
+                !$leadminerStore.excludedBoxes?.has(key) &&
+                key !== '',
+            )
+          : undefined,
+      },
     );
+
+    // reflect the new config in the store immediately, using the draft the
+    // user actually chose (the active source object wasn't re-fetched).
+    $leadminerStore.sourceConfig = deriveSourceConfig({
+      ...($leadminerStore.activeMiningSource?.config ?? {}),
+      flags: { ...(draftConfig.value as Record<string, boolean>) },
+    });
     closePassiveMiningDialog();
   } catch (error) {
     const message =

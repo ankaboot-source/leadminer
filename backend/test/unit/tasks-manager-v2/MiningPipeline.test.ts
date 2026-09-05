@@ -14,11 +14,13 @@ import {
   TaskStatus,
   TaskType,
   TaskCategory,
-  TaskId
+  TaskId,
+  type ProgressMessage
 } from '../../../src/services/tasks-manager-v2/types';
 import SupabaseTasks from '../../../src/db/supabase/tasks';
 import type { Task as DbTask } from '../../../src/db/types';
 import { mailMiningComplete, refineContacts } from '../../../src/db/mail';
+import { recordPassiveCompletion } from '../../../src/db/completion';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -29,6 +31,10 @@ jest.mock('../../../src/config', () => ({
   REDIS_SIGNATURE_STREAM_NAME: 'signature-test-stream',
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'fake-pubsub-channel',
   IMAP_FETCH_BODY: true
+}));
+
+jest.mock('../../../src/db/completion', () => ({
+  recordPassiveCompletion: jest.fn()
 }));
 
 jest.mock('../../../src/utils/logger', () => ({
@@ -1062,6 +1068,113 @@ describe('Pipeline', () => {
       );
       expect(miningCompletedCalls.length).toBeGreaterThan(0);
     });
+
+    it('should persist the passive watermark on successful completion', async () => {
+      (recordPassiveCompletion as jest.Mock).mockClear();
+      const { factory } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running,
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
+      } as unknown as SupabaseTasks;
+
+      const fetch = new FetchTask({
+        miningId: 'test-passive',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: {
+          startFetch: jest
+            .fn<
+              (opts: {
+                miningId: string;
+                contactStream: string;
+                signatureStream?: string;
+                extractSignatures?: boolean;
+                userId: string;
+                fetchParams?: Record<string, unknown>;
+              }) => Promise<{ data: { totalMessages: number } }>
+            >()
+            .mockResolvedValue({ data: { totalMessages: 0 } }),
+          stopFetch: jest
+            .fn<
+              (opts: { miningId: string; canceled: boolean }) => Promise<void>
+            >()
+            .mockResolvedValue()
+        } as unknown as FetcherClient,
+        passive_mining: true,
+        sourceId: 'source-123'
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-passive',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      // Feed the fetcher's final progress message carrying the UID watermark.
+      fetch.onMessage({
+        miningId: 'test-passive',
+        progressType: 'fetched',
+        count: 3,
+        isCompleted: true,
+        isCanceled: false,
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 42,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      } as ProgressMessage & { watermark?: unknown });
+
+      expect(fetch.status).toBe(TaskStatus.Done);
+
+      // @ts-ignore - accessing private method for testing
+      await (
+        pipeline as unknown as { complete: () => Promise<void> }
+      ).complete();
+
+      expect(recordPassiveCompletion).toHaveBeenCalledWith('source-123', {
+        mining_id: 'test-passive',
+        mined_count: 3,
+        folders_mined: ['INBOX'],
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 42,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      });
+    });
   });
 
   describe('cancel', () => {
@@ -1106,6 +1219,101 @@ describe('Pipeline', () => {
       await expect(
         pipeline.cancel('not-an-array' as unknown as string[])
       ).rejects.toThrow('processIds must be an array of strings');
+    });
+
+    it('should NOT persist the passive watermark when the run is canceled', async () => {
+      (recordPassiveCompletion as jest.Mock).mockClear();
+      const { factory } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest
+          .fn<(task: DbTask) => Promise<DbTask>>()
+          .mockResolvedValue({
+            id: 'fetch-task-id',
+            userId: 'test-user',
+            type: TaskType.Fetch,
+            category: TaskCategory.Mining,
+            details: {},
+            status: TaskStatus.Running,
+            startedAt: new Date().toISOString()
+          }),
+        update: jest
+          .fn<(task: DbTask) => Promise<DbTask>>()
+          .mockResolvedValue({
+            id: 'fetch-task-id',
+            userId: 'test-user',
+            type: TaskType.Fetch,
+            category: TaskCategory.Mining,
+            details: {},
+            status: TaskStatus.Running
+          })
+      } as unknown as SupabaseTasks;
+
+      const fetch = new FetchTask({
+        miningId: 'test-passive-cancel',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: {
+          startFetch: jest
+            .fn<
+              (opts: {
+                miningId: string;
+                contactStream: string;
+                signatureStream?: string;
+                extractSignatures?: boolean;
+                userId: string;
+                fetchParams?: Record<string, unknown>;
+              }) => Promise<{ data: { totalMessages: number } }>
+            >()
+            .mockResolvedValue({ data: { totalMessages: 0 } }),
+          stopFetch: jest
+            .fn<
+              (opts: { miningId: string; canceled: boolean }) => Promise<void>
+            >()
+            .mockResolvedValue()
+        } as unknown as FetcherClient,
+        passive_mining: true,
+        sourceId: 'source-123'
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-passive-cancel',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      // Simulate the fetcher's final message arriving canceled (with a
+      // watermark present) — the FetchTask must NOT retain it, and cancel()
+      // must NOT persist it.
+      fetch.onMessage({
+        miningId: 'test-passive-cancel',
+        progressType: 'fetched',
+        count: 3,
+        isCompleted: false,
+        isCanceled: true,
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 42,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      } as ProgressMessage & { watermark?: unknown });
+
+      await pipeline.cancel();
+
+      expect(recordPassiveCompletion).not.toHaveBeenCalled();
     });
   });
 

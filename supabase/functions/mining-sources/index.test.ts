@@ -3,7 +3,7 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
-import { createSchema, authorizeSchema, callbackQuerySchema } from "./schemas.ts";
+import { createSchema, authorizeSchema, callbackQuerySchema, configPatchSchema } from "./schemas.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
   "http://127.0.0.1:54321";
@@ -255,4 +255,74 @@ Deno.test("callbackQuerySchema allows both google and azure providers for SMTP t
     state: "state456",
   });
   assertEquals(azureResult.success, true);
+});
+
+Deno.test("configPatchSchema accepts a completion patch", () => {
+  const result = configPatchSchema.safeParse({
+    health: { state: "active", last_run_at: "2026-09-04T00:00:00.000Z" },
+    mining: {
+      last: {
+        mining_id: "mining-1",
+        mined_count: 12,
+        folders_mined: ["INBOX", "Sent"],
+        folders: {
+          INBOX: {
+            uidvalidity: "123",
+            last_uid: 42,
+            updated_at: "2026-09-04T00:00:00.000Z",
+          },
+        },
+      },
+    },
+  });
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.data.mining?.last?.folders?.INBOX?.last_uid, 42);
+  }
+});
+
+Deno.test("configPatchSchema accepts clearing the watermark (mining.last null)", () => {
+  const result = configPatchSchema.safeParse({ mining: { last: null } });
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.data.mining?.last, null);
+  }
+});
+
+Deno.test("configPatchSchema accepts folders + flags patch", () => {
+  const result = configPatchSchema.safeParse({
+    folders: ["INBOX", "Archive"],
+    flags: { cleaning_enabled: false, extract_signatures: true },
+  });
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.data.folders?.length, 2);
+    assertEquals(result.data.flags?.extract_signatures, true);
+  }
+});
+
+Deno.test("configPatchSchema rejects invalid health state", () => {
+  const result = configPatchSchema.safeParse({
+    health: { state: "banana" },
+  });
+  assertEquals(result.success, false);
+});
+
+Deno.test("configPatchSchema rejects non-object body", () => {
+  assertEquals(configPatchSchema.safeParse("nope").success, false);
+  assertEquals(configPatchSchema.safeParse(null).success, false);
+});
+
+Deno.test("configPatchSchema preserves unknown keys (passthrough)", () => {
+  const result = configPatchSchema.safeParse({
+    health: { state: "active", future_key: "keep" },
+    future_top_level: true,
+  });
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(
+      (result.data.health as Record<string, unknown> | undefined)?.future_key,
+      "keep",
+    );
+  }
 });

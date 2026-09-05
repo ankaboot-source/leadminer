@@ -238,20 +238,22 @@
                 <div class="text-surface-500">{{ t('last_passive_run') }}</div>
                 <div class="font-semibold mt-1">
                   {{
-                    source.config?.['last_run']
-                      ? formatDate(source.config['last_run'] as string)
+                    deriveSourceState(source).lastRunAt
+                      ? formatDate(
+                          deriveSourceState(source).lastRunAt as string,
+                        )
                       : '-'
                   }}
                 </div>
               </div>
 
               <div
-                v-if="(source.config?.['folders_mined'] as string[])?.length"
+                v-if="deriveSourceState(source).minableFolders.length"
                 class="p-2 rounded bg-surface-50"
               >
                 <div class="text-surface-500">{{ t('folders_mined') }}</div>
                 <div class="font-semibold mt-1">
-                  {{ (source.config?.['folders_mined'] as string[]).length }}
+                  {{ deriveSourceState(source).minableFolders.length }}
                 </div>
               </div>
 
@@ -357,6 +359,7 @@ import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
+import { deriveSourceState } from '@/utils/miningSourceConfig';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
@@ -494,6 +497,15 @@ async function confirmDelete() {
 
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
+    if (value) {
+      const { watermark } = deriveSourceState(source);
+      // Default to incremental: resume from the persisted watermark so the
+      // first passive run only fetches new messages. Users asking for a full
+      // re-scan can start a manual mining from /mine instead.
+      $leadminer.resumeFromMining = watermark ? { folders: watermark } : null;
+    } else {
+      $leadminer.resumeFromMining = null;
+    }
     await updatePassiveMining(
       source.email,
       source.type,
@@ -544,32 +556,40 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
 }
 
 function getSourceConfig(source: MiningSource, key: string): boolean {
-  return (source.config?.[key] as boolean) ?? false;
+  const flags = (source.config?.flags ?? {}) as Record<string, unknown>;
+  return flags[key] === true;
 }
 
 function passiveMiningStatus(source: MiningSource) {
-  const status = (source.config?.['status'] as string) ?? '';
-  const label =
-    status === 'running'
-      ? 'mining_status_running'
-      : status === 'completed'
-        ? 'mining_status_done'
-        : status === 'failed'
-          ? 'mining_status_failed'
-          : status === 'retrying'
-            ? 'passive_mining_retrying'
-            : status === 'idle'
-              ? 'passive_mining_idle'
-              : '';
+  const { state, lastRunAt } = deriveSourceState(source);
+  // Running derives from live task rows (passiveMinings); here we map the
+  // durable source health to UI labels.
+  const status = state;
+  let label = '';
+  if (isSourceMiningNow(source)) {
+    label = 'mining_status_running';
+  } else if (status === 'error') {
+    label = 'mining_status_failed';
+  } else if (status === 'needs_reauth') {
+    label = 'source_needs_reauth';
+  } else if (status === 'active') {
+    label = lastRunAt ? 'mining_status_done' : 'passive_mining_idle';
+  }
   return { status, label };
 }
 
+function isSourceMiningNow(source: MiningSource): boolean {
+  return $leadminer.passiveMinings?.some(
+    (g) => g?.task?.miningSource?.source === source.email,
+  );
+}
+
 function passiveMiningErrors(source: MiningSource): string[] {
-  return (source.config?.['errors'] as string[]) ?? [];
+  return deriveSourceState(source).lastError ?? [];
 }
 
 function needsReauth(source: MiningSource): boolean {
-  return source.config?.['needs_reauth'] === true;
+  return deriveSourceState(source).state === 'needs_reauth';
 }
 
 async function toggleSourceConfig(
@@ -577,14 +597,15 @@ async function toggleSourceConfig(
   key: string,
   value: boolean,
 ) {
-  const updatedConfig = {
-    ...(source.config as Record<string, unknown>),
-    [key]: value,
-  };
-
   try {
-    await updateMiningSourceConfig(source.email, source.type, updatedConfig);
-    source.config = updatedConfig;
+    // Read-merge-write patch: build a namespaced flags patch so sibling config
+    // keys (watermarks, health) survive the write.
+    const patch = { flags: { [key]: value } };
+    await updateMiningSourceConfig(source.email, source.type, patch);
+    source.config = {
+      ...(source.config ?? {}),
+      flags: { ...(source.config?.flags ?? {}), [key]: value },
+    };
   } catch (error) {
     $toast.add({
       severity: 'error',

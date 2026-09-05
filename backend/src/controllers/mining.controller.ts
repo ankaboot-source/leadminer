@@ -262,7 +262,8 @@ export default function initializeMiningController(
         boxes: folders,
         since,
         passive_mining: passiveMining,
-        googleContactsSync
+        googleContactsSync,
+        resumeFrom
       }: {
         miningSource: {
           email?: string;
@@ -274,6 +275,9 @@ export default function initializeMiningController(
         since?: string;
         passive_mining?: boolean;
         googleContactsSync?: boolean;
+        resumeFrom?: {
+          folders: Record<string, { uidvalidity: string; last_uid: number }>;
+        };
       } = req.body;
 
       user.email = email ?? ''; // used when user is not provided (edge function req)
@@ -283,6 +287,12 @@ export default function initializeMiningController(
       );
       const sanitizedEmail = email ? sanitizeImapInput(email) : '';
       let miningSourceCredentials;
+      // Resolve the source config write target to the source that was actually
+      // looked up and owned by this user. Using the raw body `miningSourceId`
+      // is unsafe: if the id belongs to a different user, getSourceById returns
+      // null and the run falls back to `email`, but persisting the watermark to
+      // the body id would poison a victim's config (service-role write).
+      let resolvedSourceId: string | undefined;
 
       if (miningSourceId) {
         const source = await miningSourceService.getSourceById(
@@ -290,7 +300,9 @@ export default function initializeMiningController(
           user.id
         );
         miningSourceCredentials = source?.credentials;
-        if (!source) {
+        if (source) {
+          resolvedSourceId = source.id ?? miningSourceId;
+        } else {
           logger.warn('getSourceById returned no source for miningSourceId', {
             miningSourceId,
             userId: user.id
@@ -327,6 +339,8 @@ export default function initializeMiningController(
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
             since,
+            resumeFrom,
+            sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,
             googleContactsSync

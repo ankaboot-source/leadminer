@@ -25,10 +25,15 @@ export interface FetchTaskConfig {
   signatureStream?: string;
   fetchParams?: Record<string, unknown>;
   passive_mining?: boolean;
+  sourceId?: string;
 }
 
 export class FetchTask extends Task {
   private fetcherClient: FetcherClient;
+
+  private detailsCursor: unknown;
+
+  private totalFetched = 0;
 
   constructor(config: FetchTaskConfig) {
     super({
@@ -42,7 +47,8 @@ export class FetchTask extends Task {
         extractSignatures: config.extractSignatures,
         signatureStream: config.signatureStream,
         fetchParams: config.fetchParams,
-        outputStream: config.outputStream
+        outputStream: config.outputStream,
+        ...(config.sourceId ? { sourceId: config.sourceId } : {})
       },
       passive_mining: config.passive_mining
     });
@@ -104,7 +110,27 @@ export class FetchTask extends Task {
     }
     if (msg.progressType === 'fetched' && (msg.isCompleted || msg.isCanceled)) {
       this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
+
+      // Capture the fetcher's UID watermark (present on the final message)
+      // so the pipeline can persist it to the mining source on completion.
+      // Only trusted if the run actually completed; a canceled run's cursor
+      // would mark messages as mined before they were extracted/cleaned.
+      const { watermark } = msg as ProgressMessage & { watermark?: unknown };
+      if (watermark && !msg.isCanceled) {
+        this.detailsCursor = watermark;
+      }
+      this.totalFetched = this.progress.processed;
     }
+  }
+
+  /** Watermark emitted by the fetcher on the final progress message. */
+  getWatermark(): unknown | undefined {
+    return this.detailsCursor;
+  }
+
+  /** Total messages fetched by the fetcher this run. */
+  getFetchedCount(): number {
+    return this.totalFetched;
   }
 
   isComplete(): boolean {

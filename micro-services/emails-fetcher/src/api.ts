@@ -54,6 +54,9 @@ interface FetchPostBody {
   contactStream: string;
   signatureStream: string;
   since: string | undefined;
+  resumeFrom?: {
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  };
 }
 
 interface FetchStartPayload {
@@ -142,7 +145,8 @@ apiRoutes.post(
       extractSignatures,
       email,
       boxes: folders,
-      since
+      since,
+      resumeFrom
     }: FetchPostBody = req.body;
 
     const errors = [
@@ -155,6 +159,9 @@ apiRoutes.post(
       validateType('extractSignatures', extractSignatures, 'boolean'),
       ...(req.body.since
         ? [validateType('since', req.body.since, 'string')]
+        : []),
+      ...(req.body.resumeFrom
+        ? [validateType('resumeFrom', req.body.resumeFrom, 'object')]
         : [])
     ].filter(Boolean);
 
@@ -236,7 +243,8 @@ apiRoutes.post(
         maxConcurrentConnections: totalApprovedImapConnections,
         filterBodySize: ENV.FETCHING_MAX_BODY_TEXT_PLAIN_SIZE,
         imapConnectionProvider,
-        since
+        since,
+        resumeFrom
       });
 
       const totalMessages = await emailFetcher.getTotalMessages();

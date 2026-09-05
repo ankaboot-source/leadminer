@@ -1,5 +1,6 @@
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import ImapEmailsFetcher from '../services/imap/ImapEmailsFetcher';
+import type { ImapResumeCursor } from '../services/imap/types';
 
 interface Options {
   email: string;
@@ -14,6 +15,7 @@ interface Options {
   maxConcurrentConnections: number;
   filterBodySize: number | undefined;
   since: string | undefined;
+  resumeFrom?: ImapResumeCursor | null;
 }
 
 export default class EmailFetcherFactory {
@@ -33,7 +35,8 @@ export default class EmailFetcherFactory {
     batchSize,
     maxConcurrentConnections,
     filterBodySize,
-    since
+    since,
+    resumeFrom
   }: Options) {
     return new ImapEmailsFetcher(
       imapConnectionProvider,
@@ -47,6 +50,7 @@ export default class EmailFetcherFactory {
       batchSize,
       filterBodySize,
       since,
+      resumeFrom ?? undefined,
       maxConcurrentConnections
     );
   }

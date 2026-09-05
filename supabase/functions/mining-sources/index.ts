@@ -7,7 +7,12 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
-import { createSchema, authorizeSchema, callbackQuerySchema } from "./schemas.ts";
+import {
+  createSchema,
+  authorizeSchema,
+  callbackQuerySchema,
+  configPatchSchema,
+} from "./schemas.ts";
 import {
   getAuthClient,
   getTokenConfig,
@@ -235,6 +240,55 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       302,
     );
   }
+});
+
+app.patch("/:id/config", authMiddleware, async (c: Context) => {
+  const sourceId = c.req.param("id");
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = configPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error, corsHeaders);
+  }
+
+  const admin = createSupabaseAdmin();
+  const user = c.get("user") as { id: string } | undefined;
+
+  // Service-role callers (backend completion callback) may update any source;
+  // user JWTs may only update their own sources.
+  if (user) {
+    const { data: owned, error: ownerError } = await admin
+      .schema("private")
+      .from("mining_sources")
+      .select("id")
+      .eq("id", sourceId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (ownerError || !owned) {
+      return c.json({ error: "Mining source not found" }, 404);
+    }
+  }
+
+  const { data: newConfig, error: rpcError } = await admin
+    .schema("private")
+    .rpc("update_mining_source_config", {
+      p_id: sourceId,
+      p_patch: parsed.data,
+    });
+
+  if (rpcError) {
+    logger.error("Failed to patch mining source config", {
+      sourceId,
+      error: rpcError.message,
+    });
+    // Don't surface raw Postgres error text to clients. A missing source (the
+    // RPC raises "mining source <id> not found") should be a 404.
+    if (/not found/.test(rpcError.message)) {
+      return c.json({ error: "Mining source not found" }, 404);
+    }
+    return c.json({ error: "Failed to update mining source config" }, 500);
+  }
+
+  return c.json({ config: newConfig });
 });
 
 Deno.serve((req) => app.fetch(req));

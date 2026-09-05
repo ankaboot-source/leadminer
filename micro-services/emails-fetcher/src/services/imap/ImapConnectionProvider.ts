@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import * as nodeTls from 'tls';
 import util from 'util';
 import ENV from '../../config';
 import {
@@ -53,7 +54,19 @@ class ImapConnectionProvider {
       secure: true,
       disableAutoIdle: true,
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        // A few networks (local TLS-inspection / MITM proxies on IMAP) present
+        // a self-signed certificate whose subject is null, which makes Node's
+        // default checkServerIdentity throw before the (already
+        // rejectUnauthorized:false) connection is usable. Keep the hostname
+        // check for well-formed certs and only skip it for that crash case.
+        checkServerIdentity: (host: string, cert: nodeTls.PeerCertificate) => {
+          try {
+            return nodeTls.checkServerIdentity(host, cert);
+          } catch {
+            return undefined;
+          }
+        }
       }
     };
 
@@ -178,7 +191,21 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       disableAutoIdle: true,
-      tls: options?.tls ? { rejectUnauthorized: false } : undefined
+      tls: options?.tls
+        ? {
+            rejectUnauthorized: false,
+            checkServerIdentity: (
+              host: string,
+              cert: nodeTls.PeerCertificate
+            ) => {
+              try {
+                return nodeTls.checkServerIdentity(host, cert);
+              } catch {
+                return undefined;
+              }
+            }
+          }
+        : undefined
     };
 
     if (!options?.host || !options?.port) {

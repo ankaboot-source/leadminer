@@ -78,6 +78,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const googleContactsFetched = ref(false);
   const sourceConfig = ref<MiningSourceConfigFlags>(deriveSourceConfig());
 
+  // Resume-vs-full choice for incremental mining. When resumeFromMining.value
+  // is set, startMiningEmail sends it as resumeFrom so the fetcher only pulls
+  // UIDs above the persisted watermark. Chosen via the dialog in sources.vue.
+  const resumeFromMining = ref<{
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  } | null>(null);
+
   const miningCompleted = ref(false);
 
   const activeMiningTask = computed(() => miningTask.value !== undefined);
@@ -156,6 +163,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningType.value = 'email';
 
     passiveMiningDialog.value = false;
+
+    resumeFromMining.value = null;
 
     errors.value = {};
   }
@@ -422,9 +431,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           extractSignatures: sourceConfig.value.extract_signatures,
           cleaningEnabled: sourceConfig.value.cleaning_enabled,
           googleContactsSync: sourceConfig.value.google_contacts_sync,
+          ...(resumeFromMining.value
+            ? { resumeFrom: resumeFromMining.value }
+            : {}),
         },
       },
     );
+
+    // Consumed once: don't leak one source's watermark into a later run for a
+    // different source (the value is only meaningful for the fetch just issued).
+    resumeFromMining.value = null;
 
     return task;
   }
@@ -806,6 +822,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     passiveMiningDialog,
+    resumeFromMining,
     passiveMinings,
     miningStartedAndFinished,
     miningInterrupted,

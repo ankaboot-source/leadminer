@@ -20,6 +20,10 @@ export interface CreateImapMiningParams {
   fetchEmailBody: boolean;
   passiveMining?: boolean;
   since?: string;
+  sourceId?: string;
+  resumeFrom?: {
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  };
   cleaningEnabled: boolean;
   fetcherClient: FetcherClient;
   googleContactsSync?: boolean;
@@ -56,9 +60,11 @@ export function createImapMining(
         fetchParams: {
           email: params.email,
           folders: params.boxes,
-          since: params.since
+          since: params.since,
+          resumeFrom: params.resumeFrom
         },
-        passive_mining: params.passiveMining
+        passive_mining: params.passiveMining,
+        sourceId: params.sourceId
       })
     );
   }

@@ -32,7 +32,18 @@ export const startMiningSchema = z.object({
       cleaningEnabled: z.boolean(),
       since: z.string().nullable().optional(),
       passive_mining: z.boolean().optional(),
-      googleContactsSync: z.boolean().optional()
+      googleContactsSync: z.boolean().optional(),
+      resumeFrom: z
+        .object({
+          folders: z.record(
+            z.string(),
+            z.object({
+              uidvalidity: z.string().min(1),
+              last_uid: z.number().int().nonnegative()
+            })
+          )
+        })
+        .optional()
     })
     .refine((data) => data.googleContactsSync || data.boxes.length > 0, {
       message: 'boxes must be non-empty when Google Contacts sync is disabled',

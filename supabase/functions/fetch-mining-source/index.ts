@@ -103,17 +103,16 @@ class FetchMiningSourceHandler {
       sources = FetchMiningSourceHandler.filterById(sources, body.id);
 
       const { refreshedEmails, deauthorizedEmails } =
-        await this.refreshTokensIfNeeded(
-          sources,
-          userId,
-          body.refresh_email,
-        );
+        await this.refreshTokensIfNeeded(sources, userId, body.refresh_email);
 
       // If the specifically requested source (by email or id) was permanently
       // deauthorized (revoked / invalid_grant), return a clear 401 so callers
       // like getImapBoxes can surface a "reconnect needed" state instead of
       // attempting to connect with dead credentials.
-      if (sources.length > 0 && sources.every((s) => deauthorizedEmails.includes(s.email))) {
+      if (
+        sources.length > 0 &&
+        sources.every((s) => deauthorizedEmails.includes(s.email))
+      ) {
         return FetchMiningSourceHandler.buildUnauthorizedResponse(
           deauthorizedEmails,
         );
@@ -286,12 +285,24 @@ class FetchMiningSourceHandler {
 
         // A successful refresh means the connection is healthy again; clear any
         // stale needs_reauth / failed-run flag set by an earlier rejection.
-        if (source.config?.needs_reauth || source.config?.status) {
+        const priorHealth =
+          typeof source.config?.health === "object" &&
+          source.config?.health !== null
+            ? (source.config.health as Record<string, unknown>)
+            : {};
+        if (
+          source.config?.needs_reauth ||
+          source.config?.status ||
+          priorHealth.state
+        ) {
           const config = {
-            ...(source.config ?? {}),
+            ...(source.config ?? ({} as Record<string, unknown>)),
             needs_reauth: false,
             status: "idle",
             errors: [],
+            // New namespaced health shape (passive-mining gate reads
+            // health.state); keep it in sync so a reconnected source resumes.
+            health: { ...priorHealth, state: "active" },
           };
           const { error: configError } = await this.admin
             .schema("private")
@@ -338,14 +349,18 @@ class FetchMiningSourceHandler {
     userId: string,
   ): Promise<void> {
     if (!source.id) {
-      logger.error(
-        "Cannot flag source for re-auth: missing source id",
-        { email: source.email },
-      );
+      logger.error("Cannot flag source for re-auth: missing source id", {
+        email: source.email,
+      });
       return;
     }
     try {
-      const config = { ...(source.config ?? {}), needs_reauth: true };
+      const config = {
+        ...(source.config ?? {}),
+        needs_reauth: true,
+        // New namespaced health shape (passive-mining gate reads health.state).
+        health: { ...(source.config?.health ?? {}), state: "needs_reauth" },
+      };
       // Preserve the user's passive_mining intent: do NOT flip it to false here.
       // If this source was enabled for continuous mining, it stays enabled and will
       // resume on the next schedule cycle once the token is refreshed/re-authorized.
@@ -362,7 +377,10 @@ class FetchMiningSourceHandler {
     } catch (configError) {
       logger.error("Failed to flag source for re-auth", {
         email: source.email,
-        error: configError instanceof Error ? configError.message : String(configError),
+        error:
+          configError instanceof Error
+            ? configError.message
+            : String(configError),
       });
     }
   }
@@ -399,7 +417,10 @@ class FetchMiningSourceHandler {
     } catch (configError) {
       logger.error("Failed to record transient refresh error", {
         email,
-        error: configError instanceof Error ? configError.message : String(configError),
+        error:
+          configError instanceof Error
+            ? configError.message
+            : String(configError),
       });
     }
   }

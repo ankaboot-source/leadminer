@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 import { Request, Response } from 'express';
 import { Task } from './tasks/Task';
+import { TaskId, TaskStatus } from './types';
 import type {
   TaskProgress,
   MiningSource,
@@ -13,6 +14,7 @@ import SupabaseTasks from '../../db/supabase/tasks';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
+import { recordPassiveCompletion } from '../../db/completion';
 import logger from '../../utils/logger';
 
 export interface PipelineConfig {
@@ -222,6 +224,7 @@ export class Pipeline {
       if (!this.failed) {
         await refineContacts(this.userId);
         await mailMiningComplete(this.miningId);
+        await this.persistPassiveCompletionIfNeeded();
       }
     } catch (err) {
       logger.error(
@@ -274,6 +277,63 @@ export class Pipeline {
           }
         })
     );
+  }
+
+  private async persistPassiveCompletionIfNeeded(): Promise<void> {
+    // Only for passive runs, and only on full success. complete() is also
+    // reached from cancel(), so gating on `this.failed` alone is insufficient:
+    // a user cancel force-stops tasks with canceled=true and would otherwise
+    // persist a watermark past messages that were never extracted/cleaned.
+    if (this.failed) return;
+
+    const fetchTask = this.tasks.get(TaskId.Fetch);
+    if (!fetchTask || !fetchTask.config?.passive_mining) return;
+    if (fetchTask.status !== TaskStatus.Done) {
+      logger.info(
+        `[passive-completion] Skipping watermark persistence for ${this.miningId}: fetch task did not complete successfully`
+      );
+      return;
+    }
+
+    const sourceId = fetchTask.config.sourceId as string | undefined;
+    const watermark = (
+      fetchTask as unknown as { getWatermark?: () => unknown }
+    ).getWatermark?.();
+    const fetchedCount =
+      (
+        fetchTask as unknown as { getFetchedCount?: () => number }
+      ).getFetchedCount?.() ?? 0;
+    const folders = (() => {
+      try {
+        const wm = watermark as {
+          folders?: Record<string, unknown>;
+        };
+        return wm?.folders ? Object.keys(wm.folders) : [];
+      } catch {
+        return [];
+      }
+    })();
+
+    if (!sourceId) {
+      logger.warn(
+        `[passive-completion] Skipping watermark persistence for ${this.miningId}: no sourceId on fetch task`
+      );
+      return;
+    }
+
+    await recordPassiveCompletion(sourceId, {
+      mining_id: this.miningId,
+      mined_count: fetchedCount,
+      folders_mined: folders,
+      watermark: watermark
+        ? (watermark as {
+            folders: Record<
+              string,
+              { uidvalidity: string; last_uid: number; updated_at: string }
+            >;
+          })
+        : null
+    });
   }
 
   private broadcastTaskFinished(task: Task): void {
