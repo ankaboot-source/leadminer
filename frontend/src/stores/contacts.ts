@@ -12,6 +12,7 @@ import {
 import { convertDates } from '~/utils/contacts';
 import {
   applyReconciledContacts,
+  buildPersonChangeFilters,
   collectRealtimePersonIds,
   getContactKey,
   resolveRealtimeAction,
@@ -271,6 +272,79 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
+   * Handle one person realtime event. UPDATE + DELETE always apply; INSERT
+   * arrives only while a foreground mining runs (see syncRealtimeInsertListener).
+   */
+  function handlePersonRealtimeEvent(
+    payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
+  ) {
+    if (!getCurrentUserId()) return;
+
+    const action = resolveRealtimeAction(payload, {
+      activeMining: $leadminerStore.activeMiningTask,
+    });
+
+    switch (action.kind) {
+      case 'stream':
+        updateContactsCache(action.row as unknown as Contact);
+        updateContactList.value = true;
+        return;
+      case 'remove':
+        removeOldContacts([action.id]);
+        updateContactList.value = true;
+        return;
+      case 'reconcile':
+        for (const id of action.personIds) {
+          pendingReconcilePersonIds.add(id);
+        }
+        scheduleReconcile();
+        return;
+      case 'none':
+        return;
+      default:
+        return;
+    }
+  }
+
+  /**
+   * Build the contacts channel for a user. Filters are fixed at subscribe time,
+   * so the INSERT listener is included only when a mining is active.
+   */
+  function createContactsRealtimeChannel(userId: string) {
+    const channel = $supabase.channel(`contacts-table-${userId}`);
+
+    channel.on('system', { event: 'reconnected' }, () => {
+      console.debug('Realtime reconnected — reloading contacts');
+      pendingReconcilePersonIds.clear();
+      reloadContacts();
+    });
+
+    for (const filter of buildPersonChangeFilters(
+      userId,
+      $leadminerStore.activeMiningTask,
+    )) {
+      channel.on('postgres_changes', filter, handlePersonRealtimeEvent);
+    }
+
+    return channel;
+  }
+
+  /**
+   * Rebuild the channel when mining state flips, to toggle the INSERT
+   * listener at the server side.
+   */
+  function syncRealtimeInsertListener() {
+    if (!realtimeChannel || !realtimeChannelUserId) return;
+    const userId = realtimeChannelUserId;
+
+    $supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+
+    realtimeChannel = createContactsRealtimeChannel(userId);
+    realtimeChannel.subscribe();
+  }
+
+  /**
    * Subscribes to real-time updates for contacts.
    */
   function subscribeToRealtimeUpdates() {
@@ -285,51 +359,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     if (realtimeChannel) return;
 
-    realtimeChannel = $supabase.channel(`contacts-table-${userId}`);
-
-    realtimeChannel.on('system', { event: 'reconnected' }, () => {
-      console.debug('Realtime reconnected — reloading contacts');
-      pendingReconcilePersonIds.clear();
-      reloadContacts();
-    });
-
-    realtimeChannel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'private',
-        table: 'persons',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload: RealtimePostgresChangesPayload<RealtimePersonRow>) => {
-        if (!getCurrentUserId()) return;
-
-        const action = resolveRealtimeAction(payload, {
-          activeMining: $leadminerStore.activeMiningTask,
-        });
-
-        switch (action.kind) {
-          case 'stream':
-            updateContactsCache(action.row as unknown as Contact);
-            updateContactList.value = true;
-            return;
-          case 'remove':
-            removeOldContacts([action.id]);
-            updateContactList.value = true;
-            return;
-          case 'reconcile':
-            for (const id of action.personIds) {
-              pendingReconcilePersonIds.add(id);
-            }
-            scheduleReconcile();
-            return;
-          case 'none':
-            return;
-          default:
-            return;
-        }
-      },
-    );
+    realtimeChannel = createContactsRealtimeChannel(userId);
     realtimeChannelUserId = userId;
     startSyncInterval();
     realtimeChannel.subscribe();
@@ -468,6 +498,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
     { deep: true },
   );
 
+  watch(
+    () => $leadminerStore.activeMiningTask,
+    () => {
+      // Flip the server-side postgres_changes filter between UPDATE+DELETE-only
+      // and +INSERT when a foreground mining starts/stops.
+      syncRealtimeInsertListener();
+    },
+  );
+
   const combinedLocations = computed(() => {
     return contactsList.value
       ?.filter(
@@ -511,6 +550,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     refineContacts,
     subscribeToRealtimeUpdates,
     unsubscribeFromRealtimeUpdates,
+    syncRealtimeInsertListener,
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,
