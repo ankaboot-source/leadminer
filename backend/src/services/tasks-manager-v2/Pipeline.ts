@@ -224,10 +224,13 @@ export class Pipeline {
         await mailMiningComplete(this.miningId);
       }
     } catch (err) {
-      logger.error(
-        'Failed to trigger email notification, refine contacts',
-        err
-      );
+      // Refine (or the completion email) failed after mining completed. The
+      // email reads refined stats, so a failure here leaves them stale.
+      logger.error('Refine contacts / completion email failed', {
+        miningId: this.miningId,
+        userId: this.userId,
+        error: (err as Error).message
+      });
     } finally {
       const eventName = this.failed ? 'mining-failed' : 'mining-completed';
       this.progressHandlerSSE.sendSSE(eventName, eventName);
