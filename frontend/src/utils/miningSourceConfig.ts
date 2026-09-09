@@ -24,6 +24,69 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Folds legacy health keys (needs_reauth, status, last_run, errors) into health. */
+function foldLegacyHealth(source: Record<string, unknown>): SourceHealth {
+  const health = (
+    isRecord(source.health) ? { ...source.health } : {}
+  ) as SourceHealth;
+
+  if (source.needs_reauth === true) {
+    // Authoritative: an explicit re-auth flag always wins.
+    health.state = 'needs_reauth';
+  } else if (health.state === undefined && typeof source.status === 'string') {
+    // Fold legacy status only when no explicit namespaced health.state exists.
+    if (source.status === 'completed') health.state = 'active';
+    if (source.status === 'failed' || source.status === 'retrying') {
+      health.state = 'error';
+    }
+  }
+  if (typeof source.last_run === 'string' && !health.last_run_at) {
+    health.last_run_at = source.last_run;
+  }
+  if (Array.isArray(source.errors) && !health.last_error) {
+    health.last_error = source.errors.filter(
+      (e): e is string => typeof e === 'string',
+    );
+  }
+  return health;
+}
+
+/** Folds legacy flag keys (cleaning_enabled, extract_signatures, ...) into flags. */
+function foldLegacyFlags(
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  const flags = isRecord(source.flags) ? { ...source.flags } : {};
+  if (typeof source.cleaning_enabled === 'boolean') {
+    flags.cleaning_enabled = source.cleaning_enabled;
+  }
+  if (typeof source.extract_signatures === 'boolean') {
+    flags.extract_signatures = source.extract_signatures;
+  }
+  if (typeof source.google_contacts_sync === 'boolean') {
+    flags.google_contacts_sync = source.google_contacts_sync;
+  }
+  return flags;
+}
+
+/** Folds legacy mining keys (folders_mined, mining_id) into mining.last. */
+function foldLegacyMining(source: Record<string, unknown>): {
+  mining: Record<string, unknown>;
+  last: Record<string, unknown>;
+} {
+  const mining = isRecord(source.mining) ? { ...source.mining } : {};
+  const last = isRecord(mining.last) ? { ...mining.last } : {};
+
+  if (Array.isArray(source.folders_mined) && !last.folders_mined) {
+    last.folders_mined = source.folders_mined.filter(
+      (f): f is string => typeof f === 'string',
+    );
+  }
+  if (source.mining_id !== undefined && last.mining_id === undefined) {
+    last.mining_id = source.mining_id as string;
+  }
+  return { mining, last };
+}
+
 /**
  * Folds the legacy top-level config keys (status, needs_reauth, last_run,
  * errors, folders_mined, mining_id, ...) into the namespaced V1 shape so the
@@ -49,51 +112,9 @@ function normalizeConfig(raw?: unknown): MiningSourceConfig {
     'google_contacts_sync',
   ]);
 
-  const health = (
-    isRecord(source.health) ? { ...source.health } : {}
-  ) as SourceHealth;
-
-  if (source.needs_reauth === true) {
-    // Authoritative: an explicit re-auth flag always wins.
-    health.state = 'needs_reauth';
-  } else if (health.state === undefined && typeof source.status === 'string') {
-    // Fold legacy status only when no explicit namespaced health.state exists.
-    if (source.status === 'completed') health.state = 'active';
-    if (source.status === 'failed' || source.status === 'retrying') {
-      health.state = 'error';
-    }
-  }
-  if (typeof source.last_run === 'string' && !health.last_run_at) {
-    health.last_run_at = source.last_run;
-  }
-  if (Array.isArray(source.errors) && !health.last_error) {
-    health.last_error = source.errors.filter(
-      (e): e is string => typeof e === 'string',
-    );
-  }
-
-  const flags = isRecord(source.flags) ? { ...source.flags } : {};
-  if (typeof source.cleaning_enabled === 'boolean') {
-    flags.cleaning_enabled = source.cleaning_enabled;
-  }
-  if (typeof source.extract_signatures === 'boolean') {
-    flags.extract_signatures = source.extract_signatures;
-  }
-  if (typeof source.google_contacts_sync === 'boolean') {
-    flags.google_contacts_sync = source.google_contacts_sync;
-  }
-
-  const mining = isRecord(source.mining) ? { ...source.mining } : {};
-  const last = isRecord(mining.last) ? { ...mining.last } : {};
-
-  if (Array.isArray(source.folders_mined) && !last.folders_mined) {
-    last.folders_mined = source.folders_mined.filter(
-      (f): f is string => typeof f === 'string',
-    );
-  }
-  if (source.mining_id !== undefined && last.mining_id === undefined) {
-    last.mining_id = source.mining_id as string;
-  }
+  const health = foldLegacyHealth(source);
+  const flags = foldLegacyFlags(source);
+  const { mining, last } = foldLegacyMining(source);
 
   const folders = Array.isArray(source.folders)
     ? source.folders.filter((f): f is string => typeof f === 'string')

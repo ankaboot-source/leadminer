@@ -98,10 +98,8 @@ function asStringArray(value: unknown): string[] | undefined {
   return strings.length > 0 ? strings : undefined;
 }
 
-/** Folds legacy top-level config keys into the namespaced V1 shape. */
-export function normalizeConfig(raw: unknown): Record<string, unknown> {
-  const source = isRecord(raw) ? { ...raw } : {};
-
+/** Folds legacy health keys (needs_reauth, status, last_run, errors) into health. */
+function foldLegacyHealth(source: Record<string, unknown>): Record<string, unknown> {
   const health: Record<string, unknown> = isRecord(source.health)
     ? { ...source.health }
     : {};
@@ -124,7 +122,11 @@ export function normalizeConfig(raw: unknown): Record<string, unknown> {
     asStringArray(source.errors) ??
     (typeof source.error === "string" ? [source.error] : undefined);
   if (legacyErrors) health.last_error = legacyErrors;
+  return health;
+}
 
+/** Folds legacy flag keys (cleaning_enabled, extract_signatures, ...) into flags. */
+function foldLegacyFlags(source: Record<string, unknown>): Record<string, unknown> {
   const flags = isRecord(source.flags) ? { ...source.flags } : {};
   for (const key of [
     "cleaning_enabled",
@@ -133,7 +135,14 @@ export function normalizeConfig(raw: unknown): Record<string, unknown> {
   ] as const) {
     if (typeof source[key] === "boolean") flags[key] = source[key];
   }
+  return flags;
+}
 
+/** Folds legacy mining keys (folders_mined, mining_id, last_run) into mining.last. */
+function foldLegacyMining(source: Record<string, unknown>): {
+  mining: Record<string, unknown>;
+  lastMined: Record<string, unknown>;
+} {
   const mining = isRecord(source.mining) ? { ...source.mining } : {};
   const lastMined = isRecord(mining.last) ? { ...mining.last } : {};
   const foldersMined = asStringArray(source.folders_mined);
@@ -143,6 +152,16 @@ export function normalizeConfig(raw: unknown): Record<string, unknown> {
     const iso = asIsoString(source.last_run);
     if (iso) lastMined.updated_at = iso;
   }
+  return { mining, lastMined };
+}
+
+/** Folds legacy top-level config keys into the namespaced V1 shape. */
+export function normalizeConfig(raw: unknown): Record<string, unknown> {
+  const source = isRecord(raw) ? { ...raw } : {};
+
+  const health = foldLegacyHealth(source);
+  const flags = foldLegacyFlags(source);
+  const { mining, lastMined } = foldLegacyMining(source);
 
   const folders = Array.isArray(source.folders)
     ? source.folders.filter((f): f is string => typeof f === "string")

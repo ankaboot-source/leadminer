@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
-import * as nodeTls from 'tls';
+import { checkServerIdentity, type PeerCertificate } from 'tls';
 import util from 'util';
 import ENV from '../../config';
 import {
@@ -60,9 +60,9 @@ class ImapConnectionProvider {
         // default checkServerIdentity throw before the (already
         // rejectUnauthorized:false) connection is usable. Keep the hostname
         // check for well-formed certs and only skip it for that crash case.
-        checkServerIdentity: (host: string, cert: nodeTls.PeerCertificate) => {
+        checkServerIdentity: (host: string, cert: PeerCertificate) => {
           try {
-            return nodeTls.checkServerIdentity(host, cert);
+            return checkServerIdentity(host, cert);
           } catch {
             return undefined;
           }
@@ -194,12 +194,9 @@ class ImapConnectionProvider {
       tls: options?.tls
         ? {
             rejectUnauthorized: false,
-            checkServerIdentity: (
-              host: string,
-              cert: nodeTls.PeerCertificate
-            ) => {
+            checkServerIdentity: (host: string, cert: PeerCertificate) => {
               try {
-                return nodeTls.checkServerIdentity(host, cert);
+                return checkServerIdentity(host, cert);
               } catch {
                 return undefined;
               }

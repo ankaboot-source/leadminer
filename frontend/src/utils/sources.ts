@@ -14,9 +14,12 @@ function deepMerge(
   patch: Record<string, unknown>,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = { ...target };
+  // Keys whose patch value is null are removed. Collected instead of using
+  // `delete` on a computed key (JS-0320), then filtered out on return.
+  const removed = new Set<string>();
   for (const [key, value] of Object.entries(patch)) {
     if (value === null) {
-      delete out[key];
+      removed.add(key);
     } else if (
       typeof value === 'object' &&
       !Array.isArray(value) &&
@@ -31,7 +34,9 @@ function deepMerge(
       out[key] = value;
     }
   }
-  return out;
+  return Object.fromEntries(
+    Object.entries(out).filter(([key]) => !removed.has(key)),
+  );
 }
 
 export function updateMiningSourcesValidity(
