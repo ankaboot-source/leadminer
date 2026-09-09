@@ -1,5 +1,5 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
     "npm:@types/node@*": "22.12.0",
     "npm:simple-oauth2@5.1.0": "5.1.0"
@@ -155,6 +155,20 @@
     "https://esm.sh/bufferutil@4.1.0/denonext/bufferutil.mjs": "9b6e81087bdc57848ad1de1f8618ebbace98ebd9ff6cab51260b48c2a045a9c9",
     "https://esm.sh/bufferutil@4.1.0?target=denonext": "aaa2a112199593ccc40da1aedf5124779862ea166afb0a8529f04f907001428a",
     "https://esm.sh/hono@4.7.4": "174d520e05dd0a3a1405b1435ee8a8cfe08b16ea80a8363879a88b8a6ff14f69",
+    "https://esm.sh/hono@4.7.4/denonext/dist/compose.mjs": "1196166f399a52036503ee70ed098af79ea34e1268233970859b2ff355bcffd1",
+    "https://esm.sh/hono@4.7.4/denonext/dist/context.mjs": "6eb4bfb07b2b129ec5df08ccb4ddeae28e39c91cc0a2dae5ce8e4151548d218f",
+    "https://esm.sh/hono@4.7.4/denonext/dist/hono.mjs": "b2701b3ab66ab91d39b5d521109c4e0cb78d88a71cdbb094ff4a5b8832548e0c",
+    "https://esm.sh/hono@4.7.4/denonext/dist/utils/body.mjs": "9459ea130b33427fd1f67d9dc96900528e6ab747b296836a524c01ad6f2eb806",
+    "https://esm.sh/hono@4.7.4/denonext/dist/utils/constants.mjs": "b68b3ccd4d516d19a31f1b56a4fb65529b033deb9c8ff34d4b2e44e6e259ef72",
+    "https://esm.sh/hono@4.7.4/denonext/dist/utils/html.mjs": "9949836effcbff234d47fed244e8fa2c3d0a00b89c55767a16c15b7b35e12006",
+    "https://esm.sh/hono@4.7.4/denonext/dist/utils/url.mjs": "aa55b9a667876655d972b7e086ff11c05ae9327ef29f174b87d2ce87791fa0fd",
+    "https://esm.sh/hono@4.7.4/denonext/hono-base.mjs": "29af9473270ed537bced9d32bc38a858353fe2dba647c1e7ba63dfa98d33838f",
+    "https://esm.sh/hono@4.7.4/denonext/hono.mjs": "4d667dd609e6792e5447ea24c718ea906617b8d150675895a04ee4ba7e5e1c52",
+    "https://esm.sh/hono@4.7.4/denonext/request.mjs": "5e2499f74cad11ede4fd777c22479bfb2161c86e81435f20b205b9d3d02223b4",
+    "https://esm.sh/hono@4.7.4/denonext/router.mjs": "51c7a9987e81971338d9e342a305a4c2ce231e7ab6d398aa6a0b74f46443f63b",
+    "https://esm.sh/hono@4.7.4/denonext/router/reg-exp-router.mjs": "56a9c48e0ec3a264170db8de1c0342bec844ace172cab882223fcf809c0ce0f6",
+    "https://esm.sh/hono@4.7.4/denonext/router/smart-router.mjs": "69dec2229dadfda412d6736719104ed3dceabe667ddff6804a028cb9650b990b",
+    "https://esm.sh/hono@4.7.4/denonext/router/trie-router.mjs": "13d18e17ea528e9bfb85cec0221a2da76d9c18b9fe44db8caee98cb51b357234",
     "https://esm.sh/node-gyp-build@4.8.4/denonext/node-gyp-build.mjs": "9a86f2d044fc77bd60aaa3d697c2ba1b818da5fb1b9aaeedec59a40b8e908803",
     "https://esm.sh/node-gyp-build@4.8.4?target=denonext": "261a6cedf1fdbf159798141ba1e2311ac1510682c5c8b55dacc8cf5fdee4aa06",
     "https://esm.sh/tr46@0.0.3/denonext/tr46.mjs": "5753ec0a99414f4055f0c1f97691100f13d88e48a8443b00aebb90a512785fa2",

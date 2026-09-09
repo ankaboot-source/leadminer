@@ -21,6 +21,7 @@ import {
   MiningSource,
   OAuthMiningSourceCredentials,
   refreshAccessToken,
+  refreshedExpiresAtMs,
 } from "./oauth-handler/index.ts";
 
 const logger = createLogger("fetch-mining-source");
@@ -256,18 +257,19 @@ class FetchMiningSourceHandler {
       try {
         const refreshed = await refreshAccessToken(credentials);
 
-        if (!refreshed.access_token || !refreshed.expires_at) {
+        if (!refreshed.access_token) {
           logger.warn("Token refresh returned incomplete data", {
             email: source.email,
           });
           continue;
         }
 
+        // Canonical storage unit: epoch milliseconds (see isTokenExpired).
         const updatedCredentials = {
           ...credentials,
           accessToken: refreshed.access_token,
           refreshToken: refreshed.refresh_token ?? credentials.refreshToken,
-          expiresAt: refreshed.expires_at,
+          expiresAt: refreshedExpiresAtMs(refreshed),
         };
 
         await this.admin.schema("private").rpc("upsert_mining_source", {

@@ -1,7 +1,10 @@
 import { Context, Hono } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { getRequiredEnv } from "../_shared/env-helpers.ts";
+import {
+  getOptionalEnv,
+  getRequiredEnv,
+} from "../_shared/env-helpers.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -37,12 +40,33 @@ app.onError((err, c) => {
   return c.json({ error: "Unexpected server error" }, 500);
 });
 
-const SUPABASE_SERVICE_ROLE_KEY = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-const FRONTEND_HOST = getRequiredEnv("FRONTEND_HOST").replace(/\/$/, "");
-const HASH_SECRET = getRequiredEnv("LEADMINER_API_HASH_SECRET");
-const OAUTH_CALLBACK_BASE_URL = getRequiredEnv(
-  "OAUTH_CALLBACK_BASE_URL",
-).replace(/\/+$/, "");
+// Resolved lazily (first request) instead of at import: import-time
+// getRequiredEnv crashed the WHOLE function on deployments that legitimately
+// omit a var (e.g. self-hosted single-provider setups without FRONTEND_HOST),
+// breaking even routes that never need it. Required-for-all vars throw on
+// first use with a clear message; FRONTEND_HOST / OAUTH_CALLBACK_BASE_URL
+// degrade to empty so only the OAuth flows that need them fail.
+let envCache: {
+  serviceRoleKey: string;
+  frontendHost: string;
+  hashSecret: string;
+  oauthCallbackBaseUrl: string;
+} | undefined;
+
+function envs() {
+  if (!envCache) {
+    envCache = {
+      serviceRoleKey: getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      frontendHost: getOptionalEnv("FRONTEND_HOST").replace(/\/$/, ""),
+      hashSecret: getRequiredEnv("LEADMINER_API_HASH_SECRET"),
+      oauthCallbackBaseUrl: getOptionalEnv("OAUTH_CALLBACK_BASE_URL").replace(
+        /\/+$/,
+        "",
+      ),
+    };
+  }
+  return envCache;
+}
 
 app.use("*", async (c, next) => {
   await next();
@@ -58,7 +82,7 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   if (!authHeader) {
     return c.json({ error: "Missing Authorization header" }, 401);
   }
-  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+  if (authHeader === `Bearer ${envs().serviceRoleKey}`) {
     return await next();
   }
   const supabase = createSupabaseClient(authHeader);
@@ -79,6 +103,7 @@ app.post("/", authMiddleware, async (c: Context) => {
 
   const user = c.get("user");
   const { provider, provider_token, provider_refresh_token } = parsed.data;
+  // Canonical storage unit for credentials.expiresAt: epoch milliseconds.
   const expiresAt = Date.now() + 7 * 60 * 60 * 1000;
 
   const credentials = JSON.stringify({
@@ -97,7 +122,7 @@ app.post("/", authMiddleware, async (c: Context) => {
       _email: user.email,
       _type: provider,
       _credentials: credentials,
-      _encryption_key: HASH_SECRET,
+      _encryption_key: envs().hashSecret,
     });
 
   if (rpcError) {
@@ -121,9 +146,9 @@ app.post("/oauth/authorize", authMiddleware, async (c: Context) => {
 
   const state = await signOAuthState(
     { userId: user.id, afterCallbackRedirect },
-    HASH_SECRET,
+    envs().hashSecret,
   );
-  const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
+  const callbackUrl = `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
   const client = getAuthClient(provider);
   const authorizationUri = client.authorizeURL({
@@ -143,7 +168,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
     });
     if (!parsed.success) {
       return c.redirect(
-        `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
+        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
         302,
       );
     }
@@ -152,10 +177,10 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
 
     const { userId, afterCallbackRedirect } = await parseOAuthState(
       state,
-      HASH_SECRET,
+      envs().hashSecret,
     );
 
-    const callbackUrl = `${OAUTH_CALLBACK_BASE_URL}/functions/v1/${functionName}/oauth/callback/${provider}`;
+    const callbackUrl = `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
     const token = await exchangeForToken(
       code,
@@ -179,7 +204,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
         _email: token.email,
         _type: provider,
         _credentials: credentials,
-        _encryption_key: HASH_SECRET,
+        _encryption_key: envs().hashSecret,
       });
 
     if (rpcError) {
@@ -187,7 +212,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
         error: rpcError.message,
       });
       return c.redirect(
-        `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${encodeURIComponent(afterCallbackRedirect)}&navigate_to=${encodeURIComponent(afterCallbackRedirect)}`,
+        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${provider}&referrer=${encodeURIComponent(afterCallbackRedirect)}&navigate_to=${encodeURIComponent(afterCallbackRedirect)}`,
         302,
       );
     }
@@ -214,7 +239,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
           _provider: provider,
           _oauth_refresh_token: token.refreshToken,
           _mining_source_id: sourceData.id,
-          _encryption_key: HASH_SECRET,
+          _encryption_key: envs().hashSecret,
         });
 
       if (smtpError) {
@@ -230,13 +255,13 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       redirectUrl = `${afterCallbackRedirect}?source=${encodeURIComponent(token.email)}`;
     }
 
-    return c.redirect(`${FRONTEND_HOST}${redirectUrl}`, 302);
+    return c.redirect(`${envs().frontendHost}${redirectUrl}`, 302);
   } catch (error) {
     logger.error("OAuth callback failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return c.redirect(
-      `${FRONTEND_HOST}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
+      `${envs().frontendHost}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
       302,
     );
   }
