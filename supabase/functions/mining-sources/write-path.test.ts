@@ -17,6 +17,7 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
+// skipcq: SCT-A000 - fake test credential, not a real secret
 const SERVICE_ROLE_KEY = "srk-mining-sources-write-path-test";
 
 Deno.env.set("SUPABASE_URL", "http://127.0.0.1:8000");
@@ -108,7 +109,9 @@ const ID_TOKEN = `${btoa(JSON.stringify({ alg: "none", typ: "JWT" }))}.${
 client.getToken = () =>
   Promise.resolve({
     token: {
+      // skipcq: SCT-A000 - fake test credential, not a real secret
       access_token: "cb-access-token",
+      // skipcq: SCT-A000 - fake test credential, not a real secret
       refresh_token: "cb-refresh-token",
       id_token: ID_TOKEN,
       scope:
@@ -129,7 +132,7 @@ let serveHandler: ((req: Request) => Promise<Response>) | undefined;
     b?: unknown,
   ) => {
     serveHandler = (typeof a === "function" ? a : b) as typeof serveHandler;
-    return { finished: Promise.resolve(), shutdown: async () => {} };
+    return { finished: Promise.resolve(), shutdown: () => Promise.resolve() };
   }) as typeof Deno.serve;
 
   await import("./index.ts");
@@ -137,6 +140,8 @@ let serveHandler: ((req: Request) => Promise<Response>) | undefined;
 }
 
 assert(serveHandler, "Deno.serve handler was not captured");
+// Narrowed copy: module-level `let` loses its narrowing inside function bodies.
+const handler = serveHandler;
 
 Deno.test(
   "POST / stores credentials.expiresAt as an epoch-ms number (now + 7h)",
@@ -146,7 +151,7 @@ Deno.test(
     capturedUpsert = undefined;
     const before = Date.now();
 
-    const res = await serveHandler!(
+    const res = await handler(
       new Request("http://127.0.0.1:8000/mining-sources", {
         method: "POST",
         headers: {
@@ -157,7 +162,9 @@ Deno.test(
         },
         body: JSON.stringify({
           provider: "google",
+          // skipcq: SCT-A000 - fake test credential, not a real secret
           provider_token: "handoff-access-token",
+          // skipcq: SCT-A000 - fake test credential, not a real secret
           provider_refresh_token: "handoff-refresh-token",
         }),
       }),
@@ -199,7 +206,7 @@ Deno.test(
       "test-hash-secret",
     );
 
-    const res = await serveHandler!(
+    const res = await handler(
       new Request(
         `http://127.0.0.1:8000/mining-sources/oauth/callback/google?code=cb-code&state=${
           encodeURIComponent(state)

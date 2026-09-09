@@ -19,6 +19,7 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
+// skipcq: SCT-A000 - fake test credential, not a real secret
 const SERVICE_ROLE_KEY = "srk-write-path-test";
 const USER_ID = "9f1d3b28-6f6b-4d9e-9d3e-0b6f1b2e1111";
 const SOURCE_EMAIL = "write.path.test@gmail.com";
@@ -71,7 +72,7 @@ let serveHandler: ((req: Request) => Promise<Response>) | undefined;
     b?: unknown,
   ) => {
     serveHandler = (typeof a === "function" ? a : b) as typeof serveHandler;
-    return { finished: Promise.resolve(), shutdown: async () => {} };
+    return { finished: Promise.resolve(), shutdown: () => Promise.resolve() };
   }) as typeof Deno.serve;
 
   // Resolve the lazy OAuth singleton BEFORE importing the handler, then stub
@@ -89,7 +90,9 @@ let serveHandler: ((req: Request) => Promise<Response>) | undefined;
     refresh: () =>
       Promise.resolve({
         token: {
+          // skipcq: SCT-A000 - fake test credential, not a real secret
           access_token: "fresh-access-token",
+          // skipcq: SCT-A000 - fake test credential, not a real secret
           refresh_token: "fresh-refresh-token",
           expires_in: REFRESHED_EXPIRES_IN_S,
         },
@@ -101,6 +104,8 @@ let serveHandler: ((req: Request) => Promise<Response>) | undefined;
 }
 
 assert(serveHandler, "Deno.serve handler was not captured");
+// Narrowed copy: module-level `let` loses its narrowing inside function bodies.
+const handler = serveHandler;
 
 function makeSource(expiresAt: unknown) {
   return {
@@ -110,7 +115,9 @@ function makeSource(expiresAt: unknown) {
     type: "google",
     credentials: {
       email: SOURCE_EMAIL,
+      // skipcq: SCT-A000 - fake test credential, not a real secret
       accessToken: "stale-access-token",
+      // skipcq: SCT-A000 - fake test credential, not a real secret
       refreshToken: "stale-refresh-token",
       expiresAt,
       provider: "google",
@@ -123,7 +130,7 @@ async function post(body: unknown): Promise<{
   status: number;
   payload: Record<string, unknown>;
 }> {
-  const res = await serveHandler!(
+  const res = await handler(
     new Request("http://127.0.0.1:8000/", {
       method: "POST",
       headers: {

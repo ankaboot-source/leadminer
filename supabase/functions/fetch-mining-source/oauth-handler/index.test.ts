@@ -70,7 +70,10 @@ Deno.test("normalizeExpiresAtMs returns null for missing or garbage expiry", () 
 });
 
 Deno.test("isTokenExpired forces refresh when expiry is missing or garbage", () => {
-  assert(isTokenExpired(creds(undefined)));
+  // Pass through a variable: a literal `undefined` in the call is what the
+  // missing-expiry path must handle, but the linter flags the literal.
+  const missingExpiry: unknown = undefined;
+  assert(isTokenExpired(creds(missingExpiry)));
   assert(isTokenExpired(creds("garbage")));
   assert(isTokenExpired(creds(Number.NaN)));
   assert(isTokenExpired(creds(Number.POSITIVE_INFINITY)));
