@@ -1311,6 +1311,124 @@ describe('Pipeline', () => {
 
       expect(recordPassiveCompletion).not.toHaveBeenCalled();
     });
+
+    it('should NOT persist the passive watermark when a downstream task was canceled after fetch completed', async () => {
+      (recordPassiveCompletion as jest.Mock).mockClear();
+      const { factory } = makeMockSSEFactory();
+
+      const mockTasksResolver = {
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running,
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
+      } as unknown as SupabaseTasks;
+
+      const fetch = new FetchTask({
+        miningId: 'test-passive-late-cancel',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: {
+          startFetch: jest
+            .fn<
+              (opts: {
+                miningId: string;
+                contactStream: string;
+                signatureStream?: string;
+                extractSignatures?: boolean;
+                userId: string;
+                fetchParams?: Record<string, unknown>;
+              }) => Promise<{ data: { totalMessages: number } }>
+            >()
+            .mockResolvedValue({ data: { totalMessages: 0 } }),
+          stopFetch: jest
+            .fn<
+              (opts: { miningId: string; canceled: boolean }) => Promise<void>
+            >()
+            .mockResolvedValue()
+        } as unknown as FetcherClient,
+        passive_mining: true,
+        sourceId: 'source-123'
+      });
+
+      const extract = new ExtractTask({
+        miningId: 'test-passive-late-cancel',
+        userId: 'test-user',
+        streams: {
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              role: TaskId.Extract,
+              consumerGroup: 'test-group'
+            }
+          ],
+          output: []
+        }
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-passive-late-cancel',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch, extract],
+          onComplete: undefined
+        },
+        {
+          tasksResolver: mockTasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      // Fetch finished successfully BEFORE the user canceled (its final
+      // message carried a watermark and it is Done).
+      fetch.onMessage({
+        miningId: 'test-passive-late-cancel',
+        progressType: 'fetched',
+        count: 400,
+        isCompleted: true,
+        isCanceled: false,
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 538,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      } as ProgressMessage & { watermark?: unknown });
+
+      expect(fetch.status).toBe(TaskStatus.Done);
+
+      // User cancels while extraction is still working -> the extract task
+      // is force-stopped with canceled=true, then completion fires because
+      // every task has stoppedAt set.
+      extract.status = TaskStatus.Canceled;
+      extract.stoppedAt = new Date().toUTCString();
+
+      // @ts-ignore - accessing private method for testing
+      await (
+        pipeline as unknown as { complete: () => Promise<void> }
+      ).complete();
+
+      // The watermark (last_uid 538) must NOT be persisted: 400 messages were
+      // fetched but only part of them were extracted when the user canceled.
+      expect(recordPassiveCompletion).not.toHaveBeenCalled();
+    });
   });
 
   describe('attachSSE', () => {

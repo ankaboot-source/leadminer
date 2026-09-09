@@ -295,6 +295,21 @@ export class Pipeline {
       return;
     }
 
+    // The fetch finishing first does not mean the run finished: if the user
+    // cancels while extract/clean is still working, messages already counted
+    // by the watermark were never extracted or cleaned. Persisting then would
+    // permanently skip those messages on the next resume, so block whenever
+    // ANY task in the pipeline was canceled, not just the fetch.
+    const canceledTask = [...this.tasks.values()].find(
+      (t) => t.status === TaskStatus.Canceled
+    );
+    if (canceledTask) {
+      logger.info(
+        `[passive-completion] Skipping watermark persistence for ${this.miningId}: ${canceledTask.id} was canceled mid-run`
+      );
+      return;
+    }
+
     const sourceId = fetchTask.config.sourceId as string | undefined;
     const watermark = (
       fetchTask as unknown as { getWatermark?: () => unknown }
