@@ -245,6 +245,7 @@ import {
   isInvalidPassword as isInvalidPasswordSyntax,
 } from '@/utils/password';
 import { AuthApiError, AuthWeakPasswordError } from '@supabase/supabase-js';
+import { reloadNuxtApp } from '#app';
 import type { ToastMessageOptions } from 'primevue/toast';
 import { useI18n } from 'vue-i18n';
 
@@ -324,7 +325,16 @@ async function signInWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    await navigateTo({ path: '/' });
+    // Hard-reload instead of an SPA push: right after signInWithPassword the
+    // supabase cookie-write plugin and PKCE session detection are mid-flight,
+    // which can leave the Nuxt router frozen on the login route (URL shows the
+    // target path but the layout/page never re-render → permanent "Loading...").
+    // A fresh SSR+hydrate load of the target route is the reliable path.
+    reloadNuxtApp({
+      path: '/',
+      persistState: false,
+      fresh: true,
+    });
   } catch (error) {
     if (error instanceof Error) {
       setInvalidInputs(true);
