@@ -36,8 +36,11 @@ DECLARE
     v_total bigint := 0;
 BEGIN
     LOOP
+        -- Join on the PK (id, user_id), not ctid: ctid is only unique per
+        -- partition, so cross-partition ctid collisions would delete valid
+        -- rows living at the same physical position in another partition.
         WITH orphans AS (
-            SELECT poc.ctid
+            SELECT poc.id, poc.user_id
             FROM private.pointsofcontact poc
             WHERE NOT EXISTS (
                 SELECT 1 FROM private.messages m
@@ -48,7 +51,7 @@ BEGIN
         )
         DELETE FROM private.pointsofcontact poc
         USING orphans o
-        WHERE poc.ctid = o.ctid;
+        WHERE poc.id = o.id AND poc.user_id = o.user_id;
         GET DIAGNOSTICS v_deleted := ROW_COUNT;
         v_total := v_total + v_deleted;
         EXIT WHEN v_deleted < v_batch;
