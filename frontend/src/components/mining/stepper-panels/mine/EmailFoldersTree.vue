@@ -39,7 +39,7 @@ const expandedKeys = ref({ '': true });
 function folderStatus(node: unknown) {
   const folder = node as { key?: string; cursor?: ImapFolderCursor };
   if (!folder.key) {
-    return resolveMiningFolderState(undefined);
+    return resolveMiningFolderState();
   }
   const watermark =
     leadminerStore.activeMiningSource?.config?.mining?.last?.folders?.[

@@ -35,7 +35,7 @@ function isValidWatermark(
  * have gaps, so this function never reports an exact message count.
  */
 export function resolveMiningFolderState(
-  cursor: ImapFolderCursor | undefined,
+  cursor?: ImapFolderCursor,
   watermark?: SupportedWatermark,
 ): FolderState {
   if (!watermark) {
