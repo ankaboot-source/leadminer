@@ -6,14 +6,14 @@ import {
   MiningRunMode,
   SourceBadge,
   SourceHealthState,
-  TaskStatus
+  TaskStatus,
 } from '~/types/enums';
 
 const manifest = JSON.parse(
   readFileSync(
     resolve(process.cwd(), '../contracts/mining-enums.json'),
-    'utf8'
-  )
+    'utf8',
+  ),
 ) as Record<string, Record<string, string>>;
 
 const mirrors = {
@@ -21,17 +21,15 @@ const mirrors = {
   TaskStatus,
   SourceHealthState,
   FolderStatus,
-  SourceBadge
+  SourceBadge,
 };
 
 describe('mining enum contract (frontend)', () => {
   it.each(Object.keys(mirrors))(
     '%s matches contracts/mining-enums.json',
     (name) => {
-      expect(mirrors[name as keyof typeof mirrors]).toEqual(
-        manifest[name]
-      );
-    }
+      expect(mirrors[name as keyof typeof mirrors]).toEqual(manifest[name]);
+    },
   );
 
   it('defines every key in the manifest', () => {

@@ -26,9 +26,7 @@ describe('mining enum contract (backend)', () => {
   it.each(Object.keys(mirrors))(
     '%s matches contracts/mining-enums.json',
     (name) => {
-      expect(mirrors[name as keyof typeof mirrors]).toEqual(
-        manifest[name]
-      );
+      expect(mirrors[name as keyof typeof mirrors]).toEqual(manifest[name]);
     }
   );
 });

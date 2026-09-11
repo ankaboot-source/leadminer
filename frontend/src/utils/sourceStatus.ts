@@ -1,9 +1,5 @@
 import type { MiningSource } from '~/types/mining';
-import {
-  SourceBadge,
-  SourceHealthState,
-  TaskStatus,
-} from '~/types/enums';
+import { SourceBadge, SourceHealthState, TaskStatus } from '~/types/enums';
 import { deriveSourceState } from './miningSourceConfig';
 
 export type BadgeSeverity = 'success' | 'info' | 'warn' | 'danger';

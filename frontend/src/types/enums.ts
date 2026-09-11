@@ -9,19 +9,19 @@
 
 export enum MiningRunMode {
   Full = 'full',
-  Incremental = 'incremental'
+  Incremental = 'incremental',
 }
 
 export enum TaskStatus {
   Running = 'running',
   Done = 'done',
-  Canceled = 'canceled'
+  Canceled = 'canceled',
 }
 
 export enum SourceHealthState {
   Active = 'active',
   NeedsReauth = 'needs_reauth',
-  Error = 'error'
+  Error = 'error',
 }
 
 export enum FolderStatus {
@@ -29,7 +29,7 @@ export enum FolderStatus {
   UpToDate = 'up_to_date',
   NewMessages = 'new_messages',
   UidvalidityChanged = 'uidvalidity_changed',
-  MetadataUnavailable = 'metadata_unavailable'
+  MetadataUnavailable = 'metadata_unavailable',
 }
 
 export enum SourceBadge {
@@ -39,5 +39,5 @@ export enum SourceBadge {
   MiningStatusRunning = 'mining_status_running',
   MiningStatusDone = 'mining_status_done',
   MiningStatusCanceled = 'mining_status_canceled',
-  MiningInProgress = 'mining_in_progress'
+  MiningInProgress = 'mining_in_progress',
 }

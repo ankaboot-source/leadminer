@@ -92,7 +92,11 @@ export function buildFolderStatus(
     };
   }
 
-  if (!cursor || cursor.uidvalidity === null || cursor.high_water_uid === null) {
+  if (
+    !cursor ||
+    cursor.uidvalidity === null ||
+    cursor.high_water_uid === null
+  ) {
     return {
       status: FolderStatus.MetadataUnavailable,
       hasNewMessages: false,
@@ -110,9 +114,7 @@ export function buildFolderStatus(
 
   const hasNewMessages = cursor.high_water_uid > watermark.last_uid;
   return {
-    status: hasNewMessages
-      ? FolderStatus.NewMessages
-      : FolderStatus.UpToDate,
+    status: hasNewMessages ? FolderStatus.NewMessages : FolderStatus.UpToDate,
     hasNewMessages,
     requiresFullScan: false
   };
@@ -126,7 +128,9 @@ export function buildFolderStatus(
  */
 export function buildResumeFromConfig(
   rawConfig: unknown
-): { folders: Record<string, { uidvalidity: string; last_uid: number }> } | undefined {
+):
+  | { folders: Record<string, { uidvalidity: string; last_uid: number }> }
+  | undefined {
   const watermarks = extractFolderWatermarks(rawConfig);
   const folders: Record<string, { uidvalidity: string; last_uid: number }> = {};
   for (const [folder, watermark] of Object.entries(watermarks)) {
