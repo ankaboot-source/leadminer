@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 import { Request, Response } from 'express';
 import { Task } from './tasks/Task';
-import { TaskId, TaskCategory, TaskStatus } from './types';
+import { TaskStatus, TaskType } from './types';
 import type {
   TaskProgress,
   MiningSource,
@@ -51,11 +51,11 @@ export class Pipeline {
   private completionStarted = false;
 
   /**
-   * Guards the one-shot watermark persistence. Persistence is driven by the
-   * mining tasks settling, which can happen before optional enriching tasks
-   * (signature/contacts) finish, so it must never run twice.
+   * Guards the one-shot completion callback. It fires when the Extract task
+   * succeeds, which can happen before optional enriching tasks (signature) or
+   * the optional cleaning step, so it must never run twice.
    */
-  private watermarkPersisted = false;
+  private completionRecorded = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -211,10 +211,10 @@ export class Pipeline {
         }
       }
 
-      // Persist as soon as the mining tasks have settled, without waiting on
-      // optional enriching tasks (e.g. signature extraction), which must not
-      // hold the durable cursor hostage.
-      await this.maybePersistMiningCompletion();
+      // The Extract task succeeding is the durable signal that messages were
+      // actually processed (clean and signature are optional). Record the run
+      // on the mining source via the completion edge function.
+      await this.maybeRecordMiningCompletion();
 
       if (this.isAllCompleted() && !this.completionStarted) {
         this.completionStarted = true;
@@ -239,11 +239,9 @@ export class Pipeline {
     try {
       await this.cleanupStreams();
       if (!this.failed) {
-        // Persist the cursor independently of optional post-processing and
-        // notification work. All pipeline tasks are already done here, so a
-        // mail/refinement failure must not make a successfully mined mailbox
-        // replay the same messages forever.
-        await this.maybePersistMiningCompletion();
+        // Notification/refinement are best-effort and independent of the
+        // watermark, which the completion edge function already persisted when
+        // extraction succeeded.
         await refineContacts(this.userId);
         await mailMiningComplete(this.miningId);
       }
@@ -300,98 +298,33 @@ export class Pipeline {
     );
   }
 
-  /** Mining-category tasks whose completion defines a run's watermark. */
-  private get miningTasks(): Task[] {
-    return [...this.tasks.values()].filter(
-      (t) => t.category === TaskCategory.Mining
-    );
-  }
-
-  private allMiningTasksSettled(): boolean {
-    const mining = this.miningTasks;
-    return mining.length > 0 && mining.every((t) => t.isComplete());
-  }
-
   /**
-   * One-shot watermark persistence, triggered once every mining task has
-   * settled (done or canceled). Enriching tasks (signature/contacts) are
-   * optional post-processing and must not delay a durable cursor.
+   * Triggers the completion edge function once the Extract task has succeeded.
+   *
+   * The watermark itself lives in the Fetch task's DB row (FetchTask.toDetails)
+   * and the edge function reads it from there, so this only has to fire the
+   * command. Cleaning and signature extraction are optional post-processing and
+   * must not influence whether the run is recorded. A canceled extraction (or
+   * fetch) leaves the status at Canceled, so nothing is recorded and the next
+   * cycle re-fetches — at-least-once.
    */
-  private async maybePersistMiningCompletion(): Promise<void> {
-    if (this.watermarkPersisted) return;
-    if (!this.allMiningTasksSettled()) return;
-    this.watermarkPersisted = true;
-    await this.persistMiningCompletionIfNeeded();
-  }
+  private async maybeRecordMiningCompletion(): Promise<void> {
+    if (this.completionRecorded || this.failed) return;
 
-  private async persistMiningCompletionIfNeeded(): Promise<void> {
-    // Only successful email runs may advance folder watermarks. complete() is
-    // also reached from cancel(), so task status guards are mandatory.
-    if (this.failed) return;
-
-    const fetchTask = this.tasks.get(TaskId.Fetch);
-    if (!fetchTask || this.source.type !== 'email') return;
-    if (fetchTask.status !== TaskStatus.Done) {
-      logger.info(
-        `[mining-completion] Skipping watermark persistence for ${this.miningId}: fetch task did not complete successfully`
-      );
-      return;
-    }
-
-    // The fetch finishing first does not mean the run finished: if the user
-    // cancels while extract/clean is still working, messages already counted
-    // by the watermark were never extracted or cleaned. Persisting then would
-    // permanently skip those messages on the next resume, so block whenever
-    // ANY *mining* task was canceled, not just the fetch.
-    const canceledTask = this.miningTasks.find(
-      (t) => t.status === TaskStatus.Canceled
+    const extractTask = [...this.tasks.values()].find(
+      (t) => t.type === TaskType.Extract
     );
-    if (canceledTask) {
-      logger.info(
-        `[mining-completion] Skipping watermark persistence for ${this.miningId}: ${canceledTask.id} was canceled mid-run`
+    if (!extractTask || extractTask.status !== TaskStatus.Done) return;
+
+    this.completionRecorded = true;
+    try {
+      await recordMiningCompletion(this.miningId);
+    } catch (err) {
+      logger.error(
+        `[mining-completion] Failed to record completion for ${this.miningId}`,
+        { error: err }
       );
-      return;
     }
-
-    const sourceId = fetchTask.config.sourceId as string | undefined;
-    const watermark = (
-      fetchTask as unknown as { getWatermark?: () => unknown }
-    ).getWatermark?.();
-    const fetchedCount =
-      (
-        fetchTask as unknown as { getFetchedCount?: () => number }
-      ).getFetchedCount?.() ?? 0;
-    const folders = (() => {
-      try {
-        const wm = watermark as {
-          folders?: Record<string, unknown>;
-        };
-        return wm?.folders ? Object.keys(wm.folders) : [];
-      } catch {
-        return [];
-      }
-    })();
-
-    if (!sourceId) {
-      logger.warn(
-        `[mining-completion] Skipping watermark persistence for ${this.miningId}: no sourceId on fetch task`
-      );
-      return;
-    }
-
-    await recordMiningCompletion(sourceId, {
-      mining_id: this.miningId,
-      mined_count: fetchedCount,
-      folders_mined: folders,
-      watermark: watermark
-        ? (watermark as {
-            folders: Record<
-              string,
-              { uidvalidity: string; last_uid: number; updated_at: string }
-            >;
-          })
-        : null
-    });
   }
 
   private broadcastTaskFinished(task: Task): void {

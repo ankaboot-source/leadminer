@@ -33,8 +33,6 @@ export class FetchTask extends Task {
 
   private detailsCursor: unknown;
 
-  private totalFetched = 0;
-
   constructor(config: FetchTaskConfig) {
     super({
       id: config.id ?? TaskId.Fetch,
@@ -119,18 +117,19 @@ export class FetchTask extends Task {
       if (watermark && !msg.isCanceled) {
         this.detailsCursor = watermark;
       }
-      this.totalFetched = this.progress.processed;
     }
   }
 
-  /** Watermark emitted by the fetcher on the final progress message. */
-  getWatermark(): unknown | undefined {
-    return this.detailsCursor;
-  }
-
-  /** Total messages fetched by the fetcher this run. */
-  getFetchedCount(): number {
-    return this.totalFetched;
+  /**
+   * Persist the watermark captured from the fetcher's final message into the
+   * task row. The completion edge function reads it from here when extraction
+   * succeeds, decoupling source writes from this service.
+   */
+  toDetails(): Record<string, unknown> {
+    return {
+      ...super.toDetails(),
+      ...(this.detailsCursor ? { watermark: this.detailsCursor } : {})
+    };
   }
 
   isComplete(): boolean {

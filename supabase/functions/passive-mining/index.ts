@@ -25,37 +25,21 @@ type MiningSource = {
 };
 
 /**
- * Centralized config writer: PATCH the mining-sources edge function so ALL
+ * Centralized config writer: invoke the mining-sources edge function so ALL
  * mining_sources.config mutations flow through one atomic, row-locked merge.
+ * Uses the Supabase client (service-role) rather than a hand-rolled fetch.
  */
 async function patchSourceConfig(
   sourceId: string,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  const base = Deno.env.get("SUPABASE_URL") ?? SERVER_ENDPOINT;
-  if (typeof base !== "string" || base.length === 0) {
-    console.error(
-      `Cannot write config for ${sourceId}: SUPABASE_URL / SERVER_ENDPOINT not set`,
-    );
-    return;
-  }
-  const baseUrl = base.replace(/\/+$/, "");
-  const url = `${baseUrl}/functions/v1/mining-sources/${encodeURIComponent(sourceId)}/config`;
+  const { error } = await supabase.functions.invoke(
+    `mining-sources/${encodeURIComponent(sourceId)}/config`,
+    { method: "PATCH", body: patch },
+  );
 
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify(patch),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error(
-      `Failed to persist config for ${sourceId}: ${res.status} ${body}`,
-    );
+  if (error) {
+    console.error(`Failed to persist config for ${sourceId}: ${error.message}`);
   }
 }
 

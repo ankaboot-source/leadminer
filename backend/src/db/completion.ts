@@ -1,89 +1,29 @@
-import ENV from '../config';
+import supabaseClient from '../utils/supabase';
 import logger from '../utils/logger';
 
-export interface MiningCompletionPayload {
-  mining_id: string;
-  mined_count: number;
-  folders_mined: string[];
-  watermark: {
-    folders: Record<
-      string,
-      { uidvalidity: string; last_uid: number; updated_at: string }
-    >;
-  } | null;
-}
-
 /**
- * Records a successful email mining run's watermark + summary on the mining
- * source, via the centralized mining-sources edge function (PATCH /:id/config).
+ * Triggers the mining-completion edge function after extraction succeeds.
  *
- * Called from Pipeline.complete() only (success path). The edge function does
- * the atomic, row-locked deep merge so concurrent writers never lose keys.
- *
- * Failure here is non-fatal to the mining run itself — the watermark simply
- * stays at the last good run and the next cycle re-attempts it (at-least-once).
+ * The edge function reads the fetch task's persisted watermark and updates the
+ * mining source (health + `mining.last`), so no watermark logic lives in the
+ * backend. Failure is non-fatal: the source keeps its last good cursor and the
+ * next cycle retries (at-least-once).
  */
-export async function recordMiningCompletion(
-  sourceId: string,
-  payload: MiningCompletionPayload
-): Promise<void> {
-  try {
-    if (!payload.watermark) {
-      logger.info(
-        `[mining-completion] No watermark for ${sourceId}, skipping record-completion`,
-        { mining_id: payload.mining_id }
-      );
-      return;
-    }
+export async function recordMiningCompletion(miningId: string): Promise<void> {
+  const { error } = await supabaseClient.functions.invoke('mining-completion', {
+    method: 'POST',
+    body: { miningId }
+  });
 
-    const url = `${ENV.SUPABASE_PROJECT_URL.replace(/\/$/, '')}/functions/v1/mining-sources/${encodeURIComponent(sourceId)}/config`;
-
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${ENV.SUPABASE_SECRET_PROJECT_TOKEN}`
-      },
-      signal: AbortSignal.timeout(10_000),
-      body: JSON.stringify({
-        health: {
-          state: 'active',
-          last_run_at: new Date().toISOString(),
-          last_error: null
-        },
-        mining: {
-          last: {
-            mining_id: payload.mining_id,
-            mined_count: payload.mined_count,
-            folders_mined: payload.folders_mined,
-            updated_at: new Date().toISOString(),
-            folders: payload.watermark.folders
-          }
-        }
-      })
+  if (error) {
+    logger.error('[mining-completion] Failed to record mining completion', {
+      miningId,
+      error: error.message
     });
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      logger.error('Failed to record mining completion', {
-        sourceId,
-        mining_id: payload.mining_id,
-        status: response.status,
-        body
-      });
-      return;
-    }
-
-    logger.info('[mining-completion] Recorded mining completion', {
-      sourceId,
-      mining_id: payload.mining_id,
-      folders: payload.folders_mined
-    });
-  } catch (err) {
-    logger.error('Failed to record mining completion', {
-      sourceId,
-      mining_id: payload.mining_id,
-      error: err instanceof Error ? err.message : String(err)
-    });
+    return;
   }
+
+  logger.info('[mining-completion] Recorded mining completion', { miningId });
 }
+
+export default recordMiningCompletion;

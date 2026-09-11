@@ -1069,120 +1069,13 @@ describe('Pipeline', () => {
       expect(miningCompletedCalls.length).toBeGreaterThan(0);
     });
 
-    it('should persist the passive watermark on successful completion', async () => {
-      (recordMiningCompletion as jest.Mock).mockClear();
-      const { factory } = makeMockSSEFactory();
-
-      const mockTasksResolver = {
-        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
-          id: 'fetch-task-id',
-          userId: 'test-user',
-          type: TaskType.Fetch,
-          category: TaskCategory.Mining,
-          details: {},
-          status: TaskStatus.Running,
-          startedAt: new Date().toISOString()
-        }),
-        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
-          id: 'fetch-task-id',
-          userId: 'test-user',
-          type: TaskType.Fetch,
-          category: TaskCategory.Mining,
-          details: {},
-          status: TaskStatus.Running
-        })
-      } as unknown as SupabaseTasks;
-
-      const fetch = new FetchTask({
-        miningId: 'test-passive',
-        userId: 'test-user',
-        outputStream: 'messages_stream-test',
-        fetcherClient: {
-          startFetch: jest
-            .fn<
-              (opts: {
-                miningId: string;
-                contactStream: string;
-                signatureStream?: string;
-                extractSignatures?: boolean;
-                userId: string;
-                fetchParams?: Record<string, unknown>;
-              }) => Promise<{ data: { totalMessages: number } }>
-            >()
-            .mockResolvedValue({ data: { totalMessages: 0 } }),
-          stopFetch: jest
-            .fn<
-              (opts: { miningId: string; canceled: boolean }) => Promise<void>
-            >()
-            .mockResolvedValue()
-        } as unknown as FetcherClient,
-        passive_mining: true,
-        sourceId: 'source-123'
-      });
-
-      const pipeline = new Pipeline(
-        {
-          miningId: 'test-passive',
-          userId: 'test-user',
-          source: { type: 'email' as const, source: 'test@test.com' },
-          tasks: [fetch],
-          onComplete: undefined
-        },
-        {
-          tasksResolver: mockTasksResolver,
-          redisPublisher: { publish: jest.fn() } as unknown as Redis,
-          sseBroadcasterFactory: factory
-        }
-      );
-
-      // Feed the fetcher's final progress message carrying the UID watermark.
-      fetch.onMessage({
-        miningId: 'test-passive',
-        progressType: 'fetched',
-        count: 3,
-        isCompleted: true,
-        isCanceled: false,
-        watermark: {
-          folders: {
-            INBOX: {
-              uidvalidity: '12',
-              last_uid: 42,
-              updated_at: '2026-09-04T00:00:00.000Z'
-            }
-          }
-        }
-      } as ProgressMessage & { watermark?: unknown });
-
-      expect(fetch.status).toBe(TaskStatus.Done);
-
-      // @ts-ignore - accessing private method for testing
-      await (
-        pipeline as unknown as { complete: () => Promise<void> }
-      ).complete();
-
-      expect(recordMiningCompletion).toHaveBeenCalledWith('source-123', {
-        mining_id: 'test-passive',
-        mined_count: 3,
-        folders_mined: ['INBOX'],
-        watermark: {
-          folders: {
-            INBOX: {
-              uidvalidity: '12',
-              last_uid: 42,
-              updated_at: '2026-09-04T00:00:00.000Z'
-            }
-          }
-        }
-      });
-    });
-
-    it('persists the watermark once mining tasks settle even while an enriching task is still running', async () => {
+    it('records the run when the Extract task succeeds, regardless of pending enriching tasks', async () => {
       (recordMiningCompletion as jest.Mock).mockClear();
       const { factory } = makeMockSSEFactory();
 
       const tasksResolver = {
         create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
-          id: 'fetch-task-id',
+          id: 'task-id',
           userId: 'test-user',
           type: TaskType.Fetch,
           category: TaskCategory.Mining,
@@ -1191,7 +1084,7 @@ describe('Pipeline', () => {
           startedAt: new Date().toISOString()
         }),
         update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
-          id: 'fetch-task-id',
+          id: 'task-id',
           userId: 'test-user',
           type: TaskType.Fetch,
           category: TaskCategory.Mining,
@@ -1201,7 +1094,8 @@ describe('Pipeline', () => {
       } as unknown as SupabaseTasks;
 
       const fetch = new FetchTask({
-        miningId: 'test-signature-pending',
+        id: 'fetch-task',
+        miningId: 'test-extract-complete',
         userId: 'test-user',
         outputStream: 'messages_stream-test',
         fetcherClient: {
@@ -1224,14 +1118,31 @@ describe('Pipeline', () => {
             .mockResolvedValue()
         } as unknown as FetcherClient,
         passive_mining: true,
-        sourceId: 'source-456'
+        sourceId: 'source-999'
+      });
+
+      const extract = new ExtractTask({
+        id: 'extract-task',
+        miningId: 'test-extract-complete',
+        userId: 'test-user',
+        streams: {
+          role: 'extract' as const,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
+            }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
+        }
       });
 
       const signature = new SignatureTask({
-        miningId: 'test-signature-pending',
+        id: 'signature-task',
+        miningId: 'test-extract-complete',
         userId: 'test-user',
         streams: {
-          role: TaskId.Signature,
+          role: 'signature' as const,
           input: [{ streamName: 'signature-test-stream' }],
           output: []
         },
@@ -1240,10 +1151,10 @@ describe('Pipeline', () => {
 
       const pipeline = new Pipeline(
         {
-          miningId: 'test-signature-pending',
+          miningId: 'test-extract-complete',
           userId: 'test-user',
           source: { type: 'email' as const, source: 'test@test.com' },
-          tasks: [fetch, signature],
+          tasks: [fetch, extract, signature],
           onComplete: undefined
         },
         {
@@ -1254,45 +1165,98 @@ describe('Pipeline', () => {
       );
 
       fetch.onMessage({
-        miningId: 'test-signature-pending',
+        miningId: 'test-extract-complete',
         progressType: 'fetched',
         count: 5,
         isCompleted: true,
-        isCanceled: false,
-        watermark: {
-          folders: {
-            INBOX: {
-              uidvalidity: '12',
-              last_uid: 77,
-              updated_at: '2026-09-04T00:00:00.000Z'
-            }
-          }
-        }
-      } as ProgressMessage & { watermark?: unknown });
+        isCanceled: false
+      });
+
+      extract.upstreamDone = true;
+      extract.progress.total = 5;
+      extract.progress.processed = 5;
+      extract.status = TaskStatus.Done;
+      extract.stoppedAt = new Date().toUTCString();
 
       expect(signature.status).toBe(TaskStatus.Running);
 
       // @ts-ignore - accessing private method for testing
       await pipeline.checkCompletion();
-      // A second completion check must not persist twice.
+      // A second completion check must not record twice.
       // @ts-ignore - accessing private method for testing
       await pipeline.checkCompletion();
 
       expect(recordMiningCompletion).toHaveBeenCalledTimes(1);
-      expect(recordMiningCompletion).toHaveBeenCalledWith('source-456', {
-        mining_id: 'test-signature-pending',
-        mined_count: 5,
-        folders_mined: ['INBOX'],
-        watermark: {
-          folders: {
-            INBOX: {
-              uidvalidity: '12',
-              last_uid: 77,
-              updated_at: '2026-09-04T00:00:00.000Z'
+      expect(recordMiningCompletion).toHaveBeenCalledWith(
+        'test-extract-complete'
+      );
+    });
+
+    it('does not record the run when extraction is canceled', async () => {
+      (recordMiningCompletion as jest.Mock).mockClear();
+      const { factory } = makeMockSSEFactory();
+
+      const tasksResolver = {
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'extract-task-id',
+          userId: 'test-user',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running,
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'extract-task-id',
+          userId: 'test-user',
+          type: TaskType.Extract,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
+      } as unknown as SupabaseTasks;
+
+      const extract = new ExtractTask({
+        id: 'extract-task',
+        miningId: 'test-extract-canceled',
+        userId: 'test-user',
+        streams: {
+          role: 'extract' as const,
+          input: [
+            {
+              streamName: 'messages_stream-test',
+              consumerGroup: 'test-consumer-group'
             }
-          }
+          ],
+          output: [{ streamName: 'contacts_stream-test' }]
         }
       });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-extract-canceled',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [extract],
+          onComplete: undefined
+        },
+        {
+          tasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      extract.status = TaskStatus.Canceled;
+      extract.stoppedAt = new Date().toUTCString();
+
+      // @ts-ignore - accessing private method for testing
+      await pipeline.checkCompletion();
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
+
+      expect(recordMiningCompletion).not.toHaveBeenCalled();
     });
   });
 
