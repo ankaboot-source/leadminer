@@ -1,11 +1,15 @@
 // @ts-expect-error missing types definition file
 import objectScan from 'object-scan';
 import type { TreeSelectionKeys } from 'primevue/tree';
+import type { ImapFolderCursor } from '~/types/mining';
+
+export type { ImapFolderCursor } from '~/types/mining';
 
 export interface BoxNode {
   key: string;
   label: string;
   total: number;
+  cursor?: ImapFolderCursor;
   children?: BoxNode[];
   attribs?: string[];
 }

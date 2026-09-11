@@ -626,8 +626,10 @@ export default class ImapEmailsFetcher {
             this.uidNextPerFolder.set(folder, mailbox.uidNext);
           }
 
+          // Empty folders still contribute a valid mailbox identity. They may
+          // persist last_uid: 0 after a successful run so they are distinguishable
+          // from folders that have never been mined.
           await connection.mailboxClose();
-
           if (totalInFolder === 0) return;
 
           let ranges: string[] | undefined;
@@ -638,12 +640,16 @@ export default class ImapEmailsFetcher {
             ? String(resume.uidvalidity)
             : undefined;
           const liveUidValidity = this.uidValidityPerFolder.get(folder);
+          const hasMatchingUidNamespace =
+            resume !== undefined &&
+            resumeUidValidity !== undefined &&
+            liveUidValidity !== undefined &&
+            resumeUidValidity === liveUidValidity;
 
           // 1) Resume cursor valid -> fetch UIDs [last_uid+1 .. uidNext-1]
           if (
-            resume &&
-            resumeUidValidity === liveUidValidity &&
-            typeof resume.last_uid === 'number' &&
+            hasMatchingUidNamespace &&
+            typeof resume?.last_uid === 'number' &&
             resume.last_uid >= 0
           ) {
             const uidNext = this.uidNextPerFolder.get(folder);
@@ -886,12 +892,15 @@ export default class ImapEmailsFetcher {
     for (const [folder, uidValidity] of this.uidValidityPerFolder) {
       const lastUid = this.maxUidPerFolder.get(folder);
       const resume = this.resumeFrom?.folders?.[folder];
-      // Never go backwards: floor the new watermark at the previous one.
-      const previous = resume ? Math.max(0, resume.last_uid) : 0;
-      if (lastUid === undefined && previous === 0) {
-        // Nothing mined in this folder and no prior watermark -> skip.
-        continue;
-      }
+      const previous =
+        resume && String(resume.uidvalidity) === uidValidity
+          ? Math.max(0, resume.last_uid)
+          : 0;
+
+      // A folder with no fetched messages can still be successfully scanned;
+      // persist last_uid: 0 when its mailbox identity was observed. For a
+      // matching resume this also preserves the prior cursor when there were
+      // no UIDs above the watermark.
       folders[folder] = {
         uidvalidity: uidValidity,
         last_uid: Math.max(previous, lastUid ?? 0),

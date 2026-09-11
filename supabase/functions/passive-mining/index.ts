@@ -100,10 +100,10 @@ async function backendError(
   })() as Record<string, unknown>;
   const detail =
     (payload?.data as Record<string, unknown> | undefined)?.message ??
-      payload?.message ??
-      payload?.error ??
-      errText ??
-      res.statusText;
+    payload?.message ??
+    payload?.error ??
+    errText ??
+    res.statusText;
   const error = new Error(message(res.status, String(detail))) as Error & {
     status: number;
   };
@@ -131,7 +131,8 @@ app.post("/", async (c: Context) => {
         // of retrying every cycle. Plain IMAP 401s (bad password) stay retrying.
         // (#2880 classification, ported onto the V1 config-write path.)
         const status = (error as { status?: number } | undefined)?.status;
-        const permanent = isPermanentOAuthError(error) ||
+        const permanent =
+          isPermanentOAuthError(error) ||
           (status === 401 && isOAuthType(miningSource.type));
         await recordRunFailure(
           miningSource.id,
@@ -274,6 +275,7 @@ async function startMiningEmail(miningSource: MiningSource) {
     extractSignatures: flags.extract_signatures ?? false,
     passive_mining: true,
     googleContactsSync,
+    miningMode: "incremental",
   };
   if (resumeFrom) {
     body.resumeFrom = resumeFrom;

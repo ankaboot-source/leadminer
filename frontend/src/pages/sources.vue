@@ -497,21 +497,13 @@ async function confirmDelete() {
 
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
-    if (value) {
-      const { watermark } = deriveSourceState(source);
-      // Default to incremental: resume from the persisted watermark so the
-      // first passive run only fetches new messages. Users asking for a full
-      // re-scan can start a manual mining from /mine instead.
-      $leadminer.resumeFromMining = watermark ? { folders: watermark } : null;
-    } else {
-      $leadminer.resumeFromMining = null;
-    }
-    await updatePassiveMining(
+    const config = await updatePassiveMining(
       source.email,
       source.type,
       value,
-      source.config ?? {},
+      {},
     );
+    source.config = config;
   } catch (error) {
     source.passive_mining = !value;
     $toast.add({
@@ -543,7 +535,7 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
     $leadminer.activeMiningSource = source;
     await $leadminer.fetchInbox();
-    await $leadminer.startMining('email');
+    await $leadminer.startMining('email', undefined, 'incremental');
     await $leadminer.getCurrentRunningMining();
   } catch (error) {
     $toast.add({
@@ -601,11 +593,11 @@ async function toggleSourceConfig(
     // Read-merge-write patch: build a namespaced flags patch so sibling config
     // keys (watermarks, health) survive the write.
     const patch = { flags: { [key]: value } };
-    await updateMiningSourceConfig(source.email, source.type, patch);
-    source.config = {
-      ...(source.config ?? {}),
-      flags: { ...(source.config?.flags ?? {}), [key]: value },
-    };
+    source.config = await updateMiningSourceConfig(
+      source.email,
+      source.type,
+      patch,
+    );
   } catch (error) {
     $toast.add({
       severity: 'error',

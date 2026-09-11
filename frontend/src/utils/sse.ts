@@ -64,6 +64,7 @@ class SSE {
       onVerifiedContacts,
       onCreatedContacts,
       onMiningCompleted,
+      onGoogleContactsFetched,
       onSignatureExtractionDone,
     }: {
       onFetchedUpdate: (count: number) => void;
@@ -77,6 +78,7 @@ class SSE {
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
       onMiningCompleted: () => void;
+      onGoogleContactsFetched?: () => void;
       onSignatureExtractionDone: () => void;
     },
   ) {
@@ -116,7 +118,7 @@ class SSE {
             },
           });
         },
-        onopen: (response) => {
+        onopen: async (response) => {
           if (response.status === 200) {
             retries = 0;
             console.debug(
@@ -178,6 +180,8 @@ class SSE {
             event === 'cleaning-finished'
           ) {
             onCleaningDone(parseInt(data));
+          } else if (event === `google-contacts-fetch-finished-${miningId}`) {
+            onGoogleContactsFetched?.();
           } else if (event === `signature-finished-${miningId}`) {
             onSignatureExtractionDone();
           } else if (event === `verifiedContacts-${miningId}`) {

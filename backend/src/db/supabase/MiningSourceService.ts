@@ -73,6 +73,7 @@ export class MiningSourceService implements MiningSources {
       if (source.type === 'imap') {
         return {
           userId,
+          id: source.id,
           email: source.email,
           type: source.type,
           credentials: source.credentials as ImapMiningSourceCredentials
@@ -82,6 +83,7 @@ export class MiningSourceService implements MiningSources {
       if (isOAuthSourceType(source.type)) {
         return {
           userId,
+          id: source.id,
           email: source.email,
           type: source.type,
           credentials: source.credentials as OAuthMiningSourceCredentials

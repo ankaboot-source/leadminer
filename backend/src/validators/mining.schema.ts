@@ -30,6 +30,7 @@ export const startMiningSchema = z.object({
         .default([]),
       extractSignatures: z.boolean(),
       cleaningEnabled: z.boolean(),
+      miningMode: z.enum(['full', 'incremental']).default('full'),
       since: z.string().nullable().optional(),
       passive_mining: z.boolean().optional(),
       googleContactsSync: z.boolean().optional(),
@@ -49,6 +50,15 @@ export const startMiningSchema = z.object({
       message: 'boxes must be non-empty when Google Contacts sync is disabled',
       path: ['boxes']
     })
+    .refine(
+      (data) =>
+        data.miningMode === 'incremental' ||
+        (data.resumeFrom === undefined && data.since === undefined),
+      {
+        message: 'full mining cannot include resumeFrom or since',
+        path: ['miningMode']
+      }
+    )
 });
 
 export const startMiningFileSchema = z.object({

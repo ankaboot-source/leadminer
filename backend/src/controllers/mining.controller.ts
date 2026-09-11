@@ -260,6 +260,7 @@ export default function initializeMiningController(
         cleaningEnabled,
         miningSource: { email, id: miningSourceId },
         boxes: folders,
+        miningMode,
         since,
         passive_mining: passiveMining,
         googleContactsSync,
@@ -272,6 +273,7 @@ export default function initializeMiningController(
         boxes: string[];
         extractSignatures: boolean;
         cleaningEnabled: boolean;
+        miningMode?: 'full' | 'incremental';
         since?: string;
         passive_mining?: boolean;
         googleContactsSync?: boolean;
@@ -338,8 +340,9 @@ export default function initializeMiningController(
             boxes: sanitizedFolders,
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
-            since,
-            resumeFrom,
+            miningMode: miningMode ?? 'full',
+            since: miningMode === 'incremental' ? since : undefined,
+            resumeFrom: miningMode === 'incremental' ? resumeFrom : undefined,
             sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,

@@ -77,6 +77,9 @@
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
+    <p v-if="shouldShowEmailFoldersTree" class="mt-2 text-xs text-surface-500">
+      {{ t('folder_status_legend') }}
+    </p>
     <EmailFoldersTree
       v-if="shouldShowEmailFoldersTree"
       :class="{ disabled: $leadminerStore.activeMiningTask }"
@@ -151,13 +154,16 @@ async function close() {
     return;
   }
   try {
-    await updateMiningSourceConfig(src.email, src.type, {
-      ...(src.config ?? {}),
-      ...$leadminerStore.sourceConfig,
+    const config = await updateMiningSourceConfig(src.email, src.type, {
+      flags: { ...$leadminerStore.sourceConfig },
+      folders: Object.keys($leadminerStore.selectedBoxes).filter(
+        (key) =>
+          key !== '' &&
+          $leadminerStore.selectedBoxes[key]?.checked &&
+          !$leadminerStore.excludedBoxes.has(key),
+      ),
     });
-    if (src.config) {
-      src.config = { ...src.config, ...$leadminerStore.sourceConfig };
-    }
+    src.config = config;
   } catch (err) {
     $toast.add({
       severity: 'error',
@@ -181,6 +187,7 @@ defineExpose({
     "fine_tune_mining": "Fine-tune your mining",
     "select_folders_to_mine": "Select folders to mine",
     "email_messages_selected": "Email messages selected",
+    "folder_status_legend": "Amber means new messages are available. Red means the mailbox identity changed and a full scan is required.",
     "sync_google_contacts": "Sync Google Contacts",
     "sync_google_contacts_sub": "(syncs contacts from your Google account)",
     "syncing_google_contacts": "Syncing Google Contacts..."
@@ -189,6 +196,7 @@ defineExpose({
     "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
+    "folder_status_legend": "L'ambre indique que de nouveaux messages sont disponibles. Le rouge indique que l'identité de la boîte a changé et qu'une analyse complète est nécessaire.",
     "sync_google_contacts": "Synchroniser les contacts Google",
     "sync_google_contacts_sub": "(synchronise les contacts de votre compte Google)",
     "syncing_google_contacts": "Synchronisation des contacts Google..."

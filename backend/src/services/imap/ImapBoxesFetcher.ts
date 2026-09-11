@@ -18,7 +18,11 @@ export default class ImapBoxesFetcher {
    */
   async getTree(userEmail: string) {
     const tree = await this.imapConnection.list({
-      statusQuery: { messages: true }
+      statusQuery: {
+        messages: true,
+        uidNext: true,
+        uidValidity: true
+      }
     });
 
     return buildFinalTree(createFlatTreeFromImap(tree), userEmail);

@@ -1,7 +1,7 @@
 import ENV from '../config';
 import logger from '../utils/logger';
 
-export interface PassiveCompletionPayload {
+export interface MiningCompletionPayload {
   mining_id: string;
   mined_count: number;
   folders_mined: string[];
@@ -14,7 +14,7 @@ export interface PassiveCompletionPayload {
 }
 
 /**
- * Records a successful passive-mining run's watermark + summary on the mining
+ * Records a successful email mining run's watermark + summary on the mining
  * source, via the centralized mining-sources edge function (PATCH /:id/config).
  *
  * Called from Pipeline.complete() only (success path). The edge function does
@@ -23,14 +23,14 @@ export interface PassiveCompletionPayload {
  * Failure here is non-fatal to the mining run itself — the watermark simply
  * stays at the last good run and the next cycle re-attempts it (at-least-once).
  */
-export async function recordPassiveCompletion(
+export async function recordMiningCompletion(
   sourceId: string,
-  payload: PassiveCompletionPayload
+  payload: MiningCompletionPayload
 ): Promise<void> {
   try {
     if (!payload.watermark) {
       logger.info(
-        `[passive-completion] No watermark for ${sourceId}, skipping record-completion`,
+        `[mining-completion] No watermark for ${sourceId}, skipping record-completion`,
         { mining_id: payload.mining_id }
       );
       return;
@@ -65,7 +65,7 @@ export async function recordPassiveCompletion(
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      logger.error('Failed to record passive completion', {
+      logger.error('Failed to record mining completion', {
         sourceId,
         mining_id: payload.mining_id,
         status: response.status,
@@ -74,13 +74,13 @@ export async function recordPassiveCompletion(
       return;
     }
 
-    logger.info('[passive-completion] Recorded passive completion', {
+    logger.info('[mining-completion] Recorded mining completion', {
       sourceId,
       mining_id: payload.mining_id,
       folders: payload.folders_mined
     });
   } catch (err) {
-    logger.error('Failed to record passive completion', {
+    logger.error('Failed to record mining completion', {
       sourceId,
       mining_id: payload.mining_id,
       error: err instanceof Error ? err.message : String(err)

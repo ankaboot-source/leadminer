@@ -14,7 +14,7 @@ import SupabaseTasks from '../../db/supabase/tasks';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
-import { recordPassiveCompletion } from '../../db/completion';
+import { recordMiningCompletion } from '../../db/completion';
 import logger from '../../utils/logger';
 
 export interface PipelineConfig {
@@ -47,6 +47,8 @@ export class Pipeline {
   onComplete?: () => Promise<void>;
 
   public failed = false;
+
+  private completionStarted = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -178,6 +180,8 @@ export class Pipeline {
   }
 
   private async checkCompletion(): Promise<void> {
+    if (this.completionStarted) return;
+
     const tasksToStop: Task[] = [];
     for (const task of this.tasks.values()) {
       if (!task.stoppedAt && task.isComplete()) {
@@ -200,8 +204,9 @@ export class Pipeline {
         }
       }
 
-      if (this.isAllCompleted()) {
-        this.complete();
+      if (this.isAllCompleted() && !this.completionStarted) {
+        this.completionStarted = true;
+        await this.complete();
       }
     }
   }
@@ -222,9 +227,13 @@ export class Pipeline {
     try {
       await this.cleanupStreams();
       if (!this.failed) {
+        // Persist the cursor independently of optional post-processing and
+        // notification work. All pipeline tasks are already done here, so a
+        // mail/refinement failure must not make a successfully mined mailbox
+        // replay the same messages forever.
+        await this.persistMiningCompletionIfNeeded();
         await refineContacts(this.userId);
         await mailMiningComplete(this.miningId);
-        await this.persistPassiveCompletionIfNeeded();
       }
     } catch (err) {
       logger.error(
@@ -279,18 +288,16 @@ export class Pipeline {
     );
   }
 
-  private async persistPassiveCompletionIfNeeded(): Promise<void> {
-    // Only for passive runs, and only on full success. complete() is also
-    // reached from cancel(), so gating on `this.failed` alone is insufficient:
-    // a user cancel force-stops tasks with canceled=true and would otherwise
-    // persist a watermark past messages that were never extracted/cleaned.
+  private async persistMiningCompletionIfNeeded(): Promise<void> {
+    // Only successful email runs may advance folder watermarks. complete() is
+    // also reached from cancel(), so task status guards are mandatory.
     if (this.failed) return;
 
     const fetchTask = this.tasks.get(TaskId.Fetch);
-    if (!fetchTask || !fetchTask.config?.passive_mining) return;
+    if (!fetchTask || this.source.type !== 'email') return;
     if (fetchTask.status !== TaskStatus.Done) {
       logger.info(
-        `[passive-completion] Skipping watermark persistence for ${this.miningId}: fetch task did not complete successfully`
+        `[mining-completion] Skipping watermark persistence for ${this.miningId}: fetch task did not complete successfully`
       );
       return;
     }
@@ -305,7 +312,7 @@ export class Pipeline {
     );
     if (canceledTask) {
       logger.info(
-        `[passive-completion] Skipping watermark persistence for ${this.miningId}: ${canceledTask.id} was canceled mid-run`
+        `[mining-completion] Skipping watermark persistence for ${this.miningId}: ${canceledTask.id} was canceled mid-run`
       );
       return;
     }
@@ -331,12 +338,12 @@ export class Pipeline {
 
     if (!sourceId) {
       logger.warn(
-        `[passive-completion] Skipping watermark persistence for ${this.miningId}: no sourceId on fetch task`
+        `[mining-completion] Skipping watermark persistence for ${this.miningId}: no sourceId on fetch task`
       );
       return;
     }
 
-    await recordPassiveCompletion(sourceId, {
+    await recordMiningCompletion(sourceId, {
       mining_id: this.miningId,
       mined_count: fetchedCount,
       folders_mined: folders,
@@ -442,7 +449,8 @@ export class Pipeline {
       }
     }
 
-    if (this.isAllCompleted()) {
+    if (this.isAllCompleted() && !this.completionStarted) {
+      this.completionStarted = true;
       await this.complete();
     }
 

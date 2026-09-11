@@ -1,5 +1,24 @@
 import { ListResponse } from 'imapflow';
-import { FlatTree } from '../../services/imap/types';
+import { FlatTree, ImapFolderCursor } from '../../services/imap/types';
+
+function normalizeCursor(status: ListResponse['status']): ImapFolderCursor {
+  const uidValidity = status?.uidValidity;
+  const uidNext = status?.uidNext;
+  const uidvalidity =
+    uidValidity === undefined || uidValidity === null
+      ? null
+      : String(uidValidity);
+  const uidnext =
+    typeof uidNext === 'number' && Number.isInteger(uidNext) && uidNext > 0
+      ? uidNext
+      : null;
+
+  return {
+    uidvalidity,
+    uidnext,
+    high_water_uid: uidnext === null ? null : Math.max(0, uidnext - 1)
+  };
+}
 
 export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
   const pathMap = new Map<string, FlatTree>();
@@ -11,7 +30,8 @@ export function createFlatTreeFromImap(boxes: ListResponse[]): FlatTree[] {
       key: box.path,
       total: box.status?.messages || 0,
       cumulativeTotal: box.status?.messages || 0,
-      attribs: Array.from(box.flags.values())
+      attribs: Array.from(box.flags.values()),
+      cursor: normalizeCursor(box.status)
     });
   }
 

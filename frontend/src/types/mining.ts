@@ -1,4 +1,4 @@
-export type OAuthMiningSource = 'azure' | 'google';
+export type OAuthMiningSource = 'azure' | 'google' | 'microsoft';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
 export type MiningType = 'file' | 'email' | 'pst' | 'postgresql';
@@ -15,6 +15,24 @@ export interface MiningFolderWatermark {
   last_uid: number;
   updated_at: string;
 }
+
+export type MiningFolderResumeWatermark = Pick<
+  MiningFolderWatermark,
+  'uidvalidity' | 'last_uid'
+>;
+
+export interface ImapFolderCursor {
+  uidvalidity: string | null;
+  uidnext: number | null;
+  high_water_uid: number | null;
+}
+
+export type MiningFolderState =
+  | 'unmined'
+  | 'up_to_date'
+  | 'new_messages'
+  | 'uidvalidity_changed'
+  | 'metadata_unavailable';
 
 export interface MiningCompletion {
   mining_id?: string | null;
@@ -37,6 +55,8 @@ export interface MiningSourceFlags {
 }
 
 /** Typed V1 mining_sources.config (mirrors backend/src/services/mining-source-config). */
+export type MiningRunMode = 'full' | 'incremental';
+
 export interface MiningSourceConfig {
   version?: 1;
   flags?: MiningSourceFlags;

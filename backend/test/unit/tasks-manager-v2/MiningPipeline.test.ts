@@ -20,7 +20,7 @@ import {
 import SupabaseTasks from '../../../src/db/supabase/tasks';
 import type { Task as DbTask } from '../../../src/db/types';
 import { mailMiningComplete, refineContacts } from '../../../src/db/mail';
-import { recordPassiveCompletion } from '../../../src/db/completion';
+import { recordMiningCompletion } from '../../../src/db/completion';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -34,7 +34,7 @@ jest.mock('../../../src/config', () => ({
 }));
 
 jest.mock('../../../src/db/completion', () => ({
-  recordPassiveCompletion: jest.fn()
+  recordMiningCompletion: jest.fn()
 }));
 
 jest.mock('../../../src/utils/logger', () => ({
@@ -1070,7 +1070,7 @@ describe('Pipeline', () => {
     });
 
     it('should persist the passive watermark on successful completion', async () => {
-      (recordPassiveCompletion as jest.Mock).mockClear();
+      (recordMiningCompletion as jest.Mock).mockClear();
       const { factory } = makeMockSSEFactory();
 
       const mockTasksResolver = {
@@ -1160,7 +1160,7 @@ describe('Pipeline', () => {
         pipeline as unknown as { complete: () => Promise<void> }
       ).complete();
 
-      expect(recordPassiveCompletion).toHaveBeenCalledWith('source-123', {
+      expect(recordMiningCompletion).toHaveBeenCalledWith('source-123', {
         mining_id: 'test-passive',
         mined_count: 3,
         folders_mined: ['INBOX'],
@@ -1222,7 +1222,7 @@ describe('Pipeline', () => {
     });
 
     it('should NOT persist the passive watermark when the run is canceled', async () => {
-      (recordPassiveCompletion as jest.Mock).mockClear();
+      (recordMiningCompletion as jest.Mock).mockClear();
       const { factory } = makeMockSSEFactory();
 
       const mockTasksResolver = {
@@ -1309,11 +1309,11 @@ describe('Pipeline', () => {
 
       await pipeline.cancel();
 
-      expect(recordPassiveCompletion).not.toHaveBeenCalled();
+      expect(recordMiningCompletion).not.toHaveBeenCalled();
     });
 
     it('should NOT persist the passive watermark when a downstream task was canceled after fetch completed', async () => {
-      (recordPassiveCompletion as jest.Mock).mockClear();
+      (recordMiningCompletion as jest.Mock).mockClear();
       const { factory } = makeMockSSEFactory();
 
       const mockTasksResolver = {
@@ -1427,7 +1427,7 @@ describe('Pipeline', () => {
 
       // The watermark (last_uid 538) must NOT be persisted: 400 messages were
       // fetched but only part of them were extracted when the user canceled.
-      expect(recordPassiveCompletion).not.toHaveBeenCalled();
+      expect(recordMiningCompletion).not.toHaveBeenCalled();
     });
   });
 

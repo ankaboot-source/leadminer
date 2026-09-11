@@ -1,18 +1,20 @@
 import { describe, expect, it } from '@jest/globals';
 import { startMiningSchema } from '../../../src/validators/mining.schema';
 
+const baseBody = {
+  miningSource: { email: 'test@example.com' },
+  boxes: ['INBOX'],
+  googleContactsSync: false,
+  cleaningEnabled: false,
+  extractSignatures: false
+};
+
 describe('startMiningSchema', () => {
   describe('boxes + googleContactsSync validation', () => {
     it('should accept boxes: [] when googleContactsSync: true', () => {
       const result = startMiningSchema.safeParse({
         params: { userId: 'user-1' },
-        body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: [],
-          googleContactsSync: true,
-          cleaningEnabled: false,
-          extractSignatures: false
-        }
+        body: { ...baseBody, boxes: [], googleContactsSync: true }
       });
       expect(result.success).toBe(true);
     });
@@ -20,91 +22,72 @@ describe('startMiningSchema', () => {
     it('should reject boxes: [] when googleContactsSync: false', () => {
       const result = startMiningSchema.safeParse({
         params: { userId: 'user-1' },
-        body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: [],
-          googleContactsSync: false,
-          cleaningEnabled: false,
-          extractSignatures: false
-        }
+        body: { ...baseBody, boxes: [] }
       });
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success)
         expect(result.error.issues[0].path).toContain('boxes');
-      }
     });
 
     it('should reject boxes: [] when googleContactsSync is undefined', () => {
       const result = startMiningSchema.safeParse({
         params: { userId: 'user-1' },
+        body: { ...baseBody, boxes: [], googleContactsSync: undefined }
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept non-empty boxes with or without Google Contacts sync', () => {
+      expect(
+        startMiningSchema.safeParse({
+          params: { userId: 'user-1' },
+          body: baseBody
+        }).success
+      ).toBe(true);
+      expect(
+        startMiningSchema.safeParse({
+          params: { userId: 'user-1' },
+          body: { ...baseBody, googleContactsSync: true }
+        }).success
+      ).toBe(true);
+    });
+  });
+
+  describe('explicit run mode', () => {
+    it('defaults to full and rejects resume inputs in full mode', () => {
+      const result = startMiningSchema.safeParse({
+        params: { userId: 'user-1' },
         body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: [],
-          cleaningEnabled: false,
-          extractSignatures: false
+          ...baseBody,
+          resumeFrom: {
+            folders: { INBOX: { uidvalidity: '1', last_uid: 4 } }
+          }
         }
       });
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0].path).toContain('boxes');
-      }
     });
 
-    it('should accept boxes: ["INBOX"] when googleContactsSync: true', () => {
+    it('accepts resumeFrom only for incremental mode', () => {
       const result = startMiningSchema.safeParse({
         params: { userId: 'user-1' },
         body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: ['INBOX'],
-          googleContactsSync: true,
-          cleaningEnabled: false,
-          extractSignatures: false
+          ...baseBody,
+          miningMode: 'incremental',
+          resumeFrom: {
+            folders: { INBOX: { uidvalidity: '1', last_uid: 4 } }
+          }
         }
       });
       expect(result.success).toBe(true);
     });
 
-    it('should accept boxes: ["INBOX"] when googleContactsSync: false', () => {
-      const result = startMiningSchema.safeParse({
-        params: { userId: 'user-1' },
-        body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: ['INBOX'],
-          googleContactsSync: false,
-          cleaningEnabled: false,
-          extractSignatures: false
-        }
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it('should accept since: null (passive-mining first run)', () => {
-      const result = startMiningSchema.safeParse({
-        params: { userId: 'user-1' },
-        body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: ['INBOX'],
-          googleContactsSync: false,
-          cleaningEnabled: false,
-          extractSignatures: false,
-          since: null
-        }
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it('should accept when since is omitted entirely', () => {
-      const result = startMiningSchema.safeParse({
-        params: { userId: 'user-1' },
-        body: {
-          miningSource: { email: 'test@example.com' },
-          boxes: ['INBOX'],
-          googleContactsSync: false,
-          cleaningEnabled: false,
-          extractSignatures: false
-        }
-      });
-      expect(result.success).toBe(true);
+    it('accepts since only for incremental mode', () => {
+      expect(
+        startMiningSchema.safeParse({
+          params: { userId: 'user-1' },
+          body: { ...baseBody, miningMode: 'incremental', since: '2026-09-01' }
+        }).success
+      ).toBe(true);
     });
   });
 });

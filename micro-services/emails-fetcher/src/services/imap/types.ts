@@ -1,5 +1,14 @@
 import ImapConnectionProvider from './ImapConnectionProvider';
 
+export interface ImapFolderCursor {
+  /** IMAP mailbox identity. A changed value invalidates persisted UIDs. */
+  uidvalidity: string | null;
+  /** Next UID the server will assign; it is not necessarily an existing UID. */
+  uidnext: number | null;
+  /** uidnext - 1, used only as a high-water bound because UIDs may have gaps. */
+  high_water_uid: number | null;
+}
+
 export interface FlatTree {
   label: string;
   key: string;
@@ -7,6 +16,7 @@ export interface FlatTree {
   parent?: FlatTree;
   total?: number;
   cumulativeTotal?: number;
+  cursor?: ImapFolderCursor;
   children?: FlatTree[];
 }
 

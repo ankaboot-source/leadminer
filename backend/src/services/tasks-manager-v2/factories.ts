@@ -19,6 +19,7 @@ export interface CreateImapMiningParams {
   boxes: string[];
   fetchEmailBody: boolean;
   passiveMining?: boolean;
+  miningMode?: 'full' | 'incremental';
   since?: string;
   sourceId?: string;
   resumeFrom?: {
@@ -60,8 +61,14 @@ export function createImapMining(
         fetchParams: {
           email: params.email,
           folders: params.boxes,
-          since: params.since,
-          resumeFrom: params.resumeFrom
+          ...(params.miningMode === 'incremental'
+            ? {
+                ...(params.since !== undefined ? { since: params.since } : {}),
+                ...(params.resumeFrom !== undefined
+                  ? { resumeFrom: params.resumeFrom }
+                  : {})
+              }
+            : {})
         },
         passive_mining: params.passiveMining,
         sourceId: params.sourceId

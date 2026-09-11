@@ -297,24 +297,17 @@ class FetchMiningSourceHandler {
           source.config?.status ||
           priorHealth.state
         ) {
-          const config = {
-            ...(source.config ?? ({} as Record<string, unknown>)),
-            needs_reauth: false,
-            status: "idle",
-            errors: [],
-            // New namespaced health shape (passive-mining gate reads
-            // health.state); keep it in sync so a reconnected source resumes.
-            health: { ...priorHealth, state: "active" },
-          };
-          const { error: configError } = await this.admin
-            .schema("private")
-            .from("mining_sources")
-            .update({ config })
-            .eq("id", source.id);
-          if (configError) {
+          try {
+            await this.patchConfig(source.id as string, {
+              health: { state: "active", last_error: null },
+            });
+          } catch (configError) {
             logger.error("Failed to clear needs_reauth flag", {
               email: source.email,
-              error: configError.message,
+              error:
+                configError instanceof Error
+                  ? configError.message
+                  : String(configError),
             });
           }
         }
@@ -346,6 +339,23 @@ class FetchMiningSourceHandler {
     return { refreshedEmails, deauthorizedEmails };
   }
 
+  private async patchConfig(
+    sourceId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const { error } = await this.admin
+      .schema("private")
+      .rpc("update_mining_source_config", {
+        p_id: sourceId,
+        p_patch: patch,
+      });
+    if (error) {
+      throw new Error(
+        `Failed to update mining source config: ${error.message}`,
+      );
+    }
+  }
+
   private async handlePermanentRejection(
     source: MiningSource,
     userId: string,
@@ -357,21 +367,11 @@ class FetchMiningSourceHandler {
       return;
     }
     try {
-      const config = {
-        ...(source.config ?? {}),
-        needs_reauth: true,
-        // New namespaced health shape (passive-mining gate reads health.state).
-        health: { ...(source.config?.health ?? {}), state: "needs_reauth" },
-      };
-      // Preserve the user's passive_mining intent: do NOT flip it to false here.
-      // If this source was enabled for continuous mining, it stays enabled and will
-      // resume on the next schedule cycle once the token is refreshed/re-authorized.
-      // The needs_reauth flag surfaces the reconnect state in the UI instead.
-      await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .update({ config })
-        .eq("id", source.id);
+      // Preserve the user's passive_mining intent and all sibling config keys:
+      // the row-locked canonical writer performs the merge atomically.
+      await this.patchConfig(source.id, {
+        health: { state: "needs_reauth" },
+      });
       logger.info("Flagged permanently rejected source for re-auth", {
         email: source.email,
         userId,
@@ -399,23 +399,13 @@ class FetchMiningSourceHandler {
       return;
     }
     try {
-      const existing = await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .select("config")
-        .eq("id", sourceId)
-        .single();
-      const config = {
-        ...((existing.data?.config as Record<string, unknown>) ?? {}),
-        status: "failed",
-        last_run: new Date().toISOString(),
-        errors: [error instanceof Error ? error.message : String(error)],
-      };
-      await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .update({ config })
-        .eq("id", sourceId);
+      await this.patchConfig(sourceId, {
+        health: {
+          state: "error",
+          last_run_at: new Date().toISOString(),
+          last_error: [error instanceof Error ? error.message : String(error)],
+        },
+      });
     } catch (configError) {
       logger.error("Failed to record transient refresh error", {
         email,

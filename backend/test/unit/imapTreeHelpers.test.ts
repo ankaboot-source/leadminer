@@ -13,7 +13,7 @@ describe('IMAP Tree Utilities', () => {
       name: 'INBOX',
       flags: new Set(['HasChildren']),
       delimiter: '/',
-      status: { messages: 5 }
+      status: { messages: 5, uidValidity: 12n, uidNext: 20 }
     } as ListResponse,
     {
       path: 'INBOX/Work',
@@ -21,7 +21,7 @@ describe('IMAP Tree Utilities', () => {
       flags: new Set(['HasNoChildren']),
       delimiter: '/',
       parentPath: 'INBOX',
-      status: { messages: 10 }
+      status: { messages: 10, uidValidity: 12n, uidNext: 30 }
     } as ListResponse,
     {
       path: 'INBOX/Spam',
@@ -29,14 +29,14 @@ describe('IMAP Tree Utilities', () => {
       flags: new Set(['Junk', 'HasNoChildren']),
       delimiter: '/',
       parentPath: 'INBOX',
-      status: { messages: 2 }
+      status: { messages: 2, uidValidity: 12n, uidNext: 8 }
     } as ListResponse,
     {
       path: 'Drafts',
       name: 'Drafts',
       flags: new Set(['Drafts', 'HasNoChildren']),
       delimiter: '/',
-      status: { messages: 1 }
+      status: { messages: 1, uidValidity: 15n, uidNext: 4 }
     } as ListResponse
   ];
 
@@ -50,6 +50,11 @@ describe('IMAP Tree Utilities', () => {
     expect(inbox?.label).toBe('INBOX');
     expect(inbox?.attribs).toContain('HasChildren');
     expect(inbox?.total).toBe(5);
+    expect(inbox?.cursor).toEqual({
+      uidvalidity: '12',
+      uidnext: 20,
+      high_water_uid: 19
+    });
 
     const work = flatTree.find((node) => node.key === 'INBOX/Work');
     expect(work).toBeDefined();
@@ -57,6 +62,11 @@ describe('IMAP Tree Utilities', () => {
     expect(work?.parent).toStrictEqual({
       attribs: ['HasChildren'],
       cumulativeTotal: 5,
+      cursor: {
+        uidvalidity: '12',
+        uidnext: 20,
+        high_water_uid: 19
+      },
       key: 'INBOX',
       label: 'INBOX',
       total: 5
@@ -71,6 +81,11 @@ describe('IMAP Tree Utilities', () => {
     expect(spam?.parent).toStrictEqual({
       attribs: ['HasChildren'],
       cumulativeTotal: 5,
+      cursor: {
+        uidvalidity: '12',
+        uidnext: 20,
+        high_water_uid: 19
+      },
       key: 'INBOX',
       label: 'INBOX',
       total: 5
