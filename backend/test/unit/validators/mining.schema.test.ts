@@ -54,34 +54,15 @@ describe('startMiningSchema', () => {
   });
 
   describe('explicit run mode', () => {
-    it('defaults to full and rejects resume inputs in full mode', () => {
+    it('defaults to full and rejects `since` in full mode', () => {
       const result = startMiningSchema.safeParse({
         params: { userId: 'user-1' },
-        body: {
-          ...baseBody,
-          resumeFrom: {
-            folders: { INBOX: { uidvalidity: '1', last_uid: 4 } }
-          }
-        }
+        body: { ...baseBody, since: '2026-09-01' }
       });
       expect(result.success).toBe(false);
     });
 
-    it('accepts resumeFrom only for incremental mode', () => {
-      const result = startMiningSchema.safeParse({
-        params: { userId: 'user-1' },
-        body: {
-          ...baseBody,
-          miningMode: 'incremental',
-          resumeFrom: {
-            folders: { INBOX: { uidvalidity: '1', last_uid: 4 } }
-          }
-        }
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it('accepts since only for incremental mode', () => {
+    it('accepts `since` only for incremental mode', () => {
       expect(
         startMiningSchema.safeParse({
           params: { userId: 'user-1' },

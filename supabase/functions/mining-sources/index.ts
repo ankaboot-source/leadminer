@@ -14,8 +14,10 @@ import {
   createSchema,
   authorizeSchema,
   callbackQuerySchema,
-  configPatchSchema,
+  configureSourceSchema,
 } from "./schemas.ts";
+import { MiningSourceConfigService } from "./config.ts";
+import type { ConfigureSourceParams } from "./config.ts";
 import {
   getAuthClient,
   getTokenConfig,
@@ -270,7 +272,7 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
 app.patch("/:id/config", authMiddleware, async (c: Context) => {
   const sourceId = c.req.param("id");
   const body = await c.req.json().catch(() => ({}));
-  const parsed = configPatchSchema.safeParse(body);
+  const parsed = configureSourceSchema.safeParse(body);
   if (!parsed.success) {
     return validationErrorResponse(parsed.error, corsHeaders);
   }
@@ -278,8 +280,8 @@ app.patch("/:id/config", authMiddleware, async (c: Context) => {
   const admin = createSupabaseAdmin();
   const user = c.get("user") as { id: string } | undefined;
 
-  // Service-role callers (backend completion callback) may update any source;
-  // user JWTs may only update their own sources.
+  // Service-role callers (completion/health) may update any source; user JWTs
+  // may only update their own sources.
   if (user) {
     const { data: owned, error: ownerError } = await admin
       .schema("private")
@@ -293,27 +295,23 @@ app.patch("/:id/config", authMiddleware, async (c: Context) => {
     }
   }
 
-  const { data: newConfig, error: rpcError } = await admin
-    .schema("private")
-    .rpc("update_mining_source_config", {
-      p_id: sourceId,
-      p_patch: parsed.data,
-    });
-
-  if (rpcError) {
-    logger.error("Failed to patch mining source config", {
+  try {
+    // Single writer: the service owns the read-merge-CAS-write of the config.
+    const result = await new MiningSourceConfigService().apply(
       sourceId,
-      error: rpcError.message,
-    });
-    // Don't surface raw Postgres error text to clients. A missing source (the
-    // RPC raises "mining source <id> not found") should be a 404.
-    if (/not found/.test(rpcError.message)) {
+      parsed.data as ConfigureSourceParams,
+    );
+    if (!result) {
       return c.json({ error: "Mining source not found" }, 404);
     }
+    return c.json({ config: result.config });
+  } catch (error) {
+    logger.error("Failed to patch mining source config", {
+      sourceId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return c.json({ error: "Failed to update mining source config" }, 500);
   }
-
-  return c.json({ config: newConfig });
 });
 
 Deno.serve((req) => app.fetch(req));

@@ -23,8 +23,6 @@ import {
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
-import { buildSelectedResumeCursor } from '../utils/miningFolderState';
-import { deriveSourceState } from '../utils/miningSourceConfig';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
 
@@ -82,9 +80,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const sourceConfig = ref<MiningSourceConfigFlags>(deriveSourceConfig());
 
   const miningCompleted = ref(false);
-  // Every foreground/resumed run gets its own token. Late SSE messages from a
-  // previous run must never mutate the new run's counters or completion state.
-  const miningRunToken = ref(0);
 
   const activeMiningTask = computed(() => miningTask.value !== undefined);
 
@@ -125,7 +120,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   function $resetMining() {
-    miningRunToken.value += 1;
     miningTask.value = undefined;
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
@@ -339,9 +333,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningId: string,
     serverEndpoint: string,
     token: string | null,
-    runToken: number,
   ) {
-    const isCurrentRun = () => runToken === miningRunToken.value;
+    // Stale SSE callbacks are ignored by comparing the run's miningId (unique
+    // per run) with the active task — no separate run-token counter needed.
+    const isCurrentRun = () => miningTask.value?.miningId === miningId;
 
     sse.initConnection(type, miningId, serverEndpoint, token, {
       onExtractedUpdate: (count) => {
@@ -429,22 +424,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     runMode: MiningRunMode,
   ) {
     miningType.value = 'email';
-    const sourceState = deriveSourceState(miningSource);
-    const flattenBoxes = (nodes: BoxNode[]): BoxNode[] =>
-      nodes.flatMap((node) => [
-        node,
-        ...(node.children ? flattenBoxes(node.children) : []),
-      ]);
-    const cursors = Object.fromEntries(
-      flattenBoxes(boxes.value)
-        .filter((box) => box.key !== '')
-        .map((box) => [box.key, box.cursor]),
-    );
-    const resumeFrom =
-      runMode === 'incremental'
-        ? buildSelectedResumeCursor(folders, cursors, sourceState.watermark)
-        : undefined;
 
+    // The server derives the resume cursor from the source's persisted
+    // watermark; the client only sends intent (folders + run mode).
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
@@ -458,13 +440,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           cleaningEnabled: sourceConfig.value.cleaning_enabled,
           googleContactsSync: sourceConfig.value.google_contacts_sync,
           miningMode: runMode,
-          ...(runMode === 'incremental' && resumeFrom ? { resumeFrom } : {}),
         },
       },
     );
 
-    // Consumed once: don't leak one source's watermark into a later run for a
-    // different source (the value is only meaningful for the fetch just issued).
     return task;
   }
 
@@ -593,7 +572,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
-      const runToken = ++miningRunToken.value;
       miningCompleted.value = false;
       googleContactsFetched.value = false;
       miningInterrupted.value = false;
@@ -648,7 +626,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         task.miningId,
         config.public.SERVER_ENDPOINT,
         token,
-        runToken,
       );
       miningStartedAt.value = performance.now();
       $contactsStore.setSkipOrgLookup(true);
@@ -793,13 +770,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       const resumedToken = (await supabase.auth.getSession()).data.session
         ?.access_token;
-      const runToken = ++miningRunToken.value;
       startProgressListener(
         miningType.value,
         task.miningId,
         config.public.SERVER_ENDPOINT,
         resumedToken ?? null,
-        runToken,
       );
 
       return extractionFinished.value ? 3 : 2;

@@ -593,9 +593,8 @@ async function toggleSourceConfig(
   value: boolean,
 ) {
   try {
-    // Read-merge-write patch: build a namespaced flags patch so sibling config
-    // keys (watermarks, health) survive the write.
-    const patch = { flags: { [key]: value } };
+    // Send params only; mining-sources merges them (unknown keys preserved).
+    const patch = { mining_flags: { [key]: value } };
     source.config = await updateMiningSourceConfig(
       source.email,
       source.type,

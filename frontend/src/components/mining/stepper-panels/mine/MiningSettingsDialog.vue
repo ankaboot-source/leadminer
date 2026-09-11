@@ -176,7 +176,7 @@ async function close() {
   writeForceFullMining(src.email, forceFullMining.value);
   try {
     const config = await updateMiningSourceConfig(src.email, src.type, {
-      flags: { ...$leadminerStore.sourceConfig },
+      mining_flags: { ...$leadminerStore.sourceConfig },
       folders: Object.keys($leadminerStore.selectedBoxes).filter(
         (key) =>
           key !== '' &&

@@ -1,0 +1,32 @@
+{
+  "MiningRunMode": {
+    "Full": "full",
+    "Incremental": "incremental"
+  },
+  "TaskStatus": {
+    "Running": "running",
+    "Done": "done",
+    "Canceled": "canceled"
+  },
+  "SourceHealthState": {
+    "Active": "active",
+    "NeedsReauth": "needs_reauth",
+    "Error": "error"
+  },
+  "FolderStatus": {
+    "Unmined": "unmined",
+    "UpToDate": "up_to_date",
+    "NewMessages": "new_messages",
+    "UidvalidityChanged": "uidvalidity_changed",
+    "MetadataUnavailable": "metadata_unavailable"
+  },
+  "SourceBadge": {
+    "Connected": "connected",
+    "CredentialExpired": "credential_expired",
+    "MiningStatusFailed": "mining_status_failed",
+    "MiningStatusRunning": "mining_status_running",
+    "MiningStatusDone": "mining_status_done",
+    "MiningStatusCanceled": "mining_status_canceled",
+    "MiningInProgress": "mining_in_progress"
+  }
+}

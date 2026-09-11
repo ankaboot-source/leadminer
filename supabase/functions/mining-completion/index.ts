@@ -90,18 +90,18 @@ app.post("/", verifyServiceRole, async (c: Context) => {
     return c.json({ skipped: true, reason: "already-recorded" });
   }
 
-  const { error: rpcError } = await admin
-    .schema("private")
-    .rpc("update_mining_source_config", {
-      p_id: outcome.sourceId,
-      p_patch: outcome.patch,
-    });
+  // Single writer: mining-sources performs the merge/persist. We only send the
+  // params (health + mining.last).
+  const { error: invokeError } = await admin.functions.invoke(
+    `mining-sources/${encodeURIComponent(outcome.sourceId)}/config`,
+    { method: "PATCH", body: outcome.patch },
+  );
 
-  if (rpcError) {
+  if (invokeError) {
     logger.error("Failed to write mining source config", {
       miningId,
       sourceId: outcome.sourceId,
-      error: rpcError.message,
+      error: invokeError.message,
     });
     return c.json({ error: "Failed to record mining completion" }, 500);
   }

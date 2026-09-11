@@ -147,31 +147,19 @@ export async function updatePassiveMining(
   const source = await findSourceByEmail(email, type);
   if (!source?.id) throw new Error('Mining source not found');
 
-  const configPatch: Record<string, unknown> = {
-    ...(value
-      ? { health: { state: 'active', last_error: null } }
-      : { passive_mining_toggled_off_at: new Date().toISOString() }),
-    ...(patch.folders !== undefined ? { folders: patch.folders } : {}),
-    ...(patch.flags !== undefined ? { flags: patch.flags } : {}),
-  };
+  // Send params only; mining-sources merges them and owns the column update.
+  const params: Record<string, unknown> = { passive_mining: value };
+  if (patch.folders !== undefined) params.folders = patch.folders;
+  if (patch.flags !== undefined) params.mining_flags = patch.flags;
 
   const { $saasEdgeFunctions } = useNuxtApp();
   const response = await $saasEdgeFunctions<{ config: MiningSourceConfig }>(
     `mining-sources/${encodeURIComponent(source.id)}/config`,
     {
       method: 'PATCH',
-      body: configPatch,
+      body: params,
     },
   );
-
-  // passive_mining is a column, not part of config. Preserve the existing
-  // authenticated update for that single column without touching config.
-  const { error } = await useSupabaseClient()
-    .schema('private')
-    .from('mining_sources')
-    .update({ passive_mining: value })
-    .eq('id', source.id);
-  if (error) throw error;
 
   return response.config;
 }

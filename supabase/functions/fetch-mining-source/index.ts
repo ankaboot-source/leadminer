@@ -343,12 +343,11 @@ class FetchMiningSourceHandler {
     sourceId: string,
     patch: Record<string, unknown>,
   ): Promise<void> {
-    const { error } = await this.admin
-      .schema("private")
-      .rpc("update_mining_source_config", {
-        p_id: sourceId,
-        p_patch: patch,
-      });
+    // Single writer: mining-sources owns config persistence.
+    const { error } = await this.admin.functions.invoke(
+      `mining-sources/${encodeURIComponent(sourceId)}/config`,
+      { method: "PATCH", body: patch },
+    );
     if (error) {
       throw new Error(
         `Failed to update mining source config: ${error.message}`,
@@ -428,6 +427,7 @@ class FetchMiningSourceHandler {
         email: s.email,
         type: s.type,
         credentials: s.credentials,
+        config: s.config,
       })),
       refreshed: refreshedEmails,
       deauthorized: deauthorizedEmails,

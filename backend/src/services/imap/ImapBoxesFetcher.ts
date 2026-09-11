@@ -4,6 +4,7 @@ import {
   buildFinalTree,
   createFlatTreeFromImap
 } from '../../utils/helpers/imapTreeHelpers';
+import { FolderWatermark } from './types';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 
 export default class ImapBoxesFetcher {
@@ -13,10 +14,17 @@ export default class ImapBoxesFetcher {
   ) {}
 
   /**
-   * Retrieves the IMAP tree of the email account.
+   * Retrieves the IMAP tree of the email account, annotated with each folder's
+   * persisted watermark and derived sync status so callers (frontend) don't
+   * have to compare UIDs themselves.
+   * @param userEmail - mailbox owner
+   * @param watermarks - `config.mining.last.folders` keyed by folder path
    * @returns IMAP tree.
    */
-  async getTree(userEmail: string) {
+  async getTree(
+    userEmail: string,
+    watermarks: Record<string, FolderWatermark> = {}
+  ) {
     const tree = await this.imapConnection.list({
       statusQuery: {
         messages: true,
@@ -25,7 +33,7 @@ export default class ImapBoxesFetcher {
       }
     });
 
-    return buildFinalTree(createFlatTreeFromImap(tree), userEmail);
+    return buildFinalTree(createFlatTreeFromImap(tree, watermarks), userEmail);
   }
 
   /**

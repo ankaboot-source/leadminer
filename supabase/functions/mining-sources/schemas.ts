@@ -12,23 +12,22 @@ export const createSchema = z.object({
 });
 
 /**
- * PATCH /:id/config body — a partial, namespaced update to the source config.
- * Applied atomically (row-locked deep merge) via private.update_mining_source_config.
- * - `mining.last` accepts an object snapshot (write on completion) or `null`
- *   (clear the watermark, e.g. when the user picks "full scan from scratch").
+ * PATCH /:id/config body — the caller sends **params**, never the persisted
+ * config object. The mining-sources service maps/merges them (unknown keys are
+ * preserved, `null` clears, per-folder cursors are monotonic).
  */
-export const configPatchSchema = z.object({
-  flags: MINING_SOURCE_FLAGS_SCHEMA.passthrough().optional(),
+export const configureSourceSchema = z.object({
+  mining_flags: MINING_SOURCE_FLAGS_SCHEMA.optional(),
   folders: z.array(z.string()).nullable().optional(),
-  health: SOURCE_HEALTH_SCHEMA.passthrough().partial().optional(),
+  passive_mining: z.boolean().optional(),
+  health: SOURCE_HEALTH_SCHEMA.partial().optional(),
   mining: z
     .object({
-      last: MINING_COMPLETION_SCHEMA.passthrough().nullable().optional(),
+      last: MINING_COMPLETION_SCHEMA.nullable().optional(),
     })
-    .passthrough()
     .optional(),
 });
-export type ConfigPatch = z.infer<typeof configPatchSchema>;
+export type ConfigureSourceInput = z.infer<typeof configureSourceSchema>;
 
 export const authorizeSchema = z.object({
   provider: z.enum(["google", "azure"]),

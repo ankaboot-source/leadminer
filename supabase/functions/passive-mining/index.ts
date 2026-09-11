@@ -3,7 +3,6 @@ import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
 import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
 import {
-  buildResumeFrom,
   parseConfig,
   type MiningSourceConfigV1,
 } from "../_shared/mining-source-config.ts";
@@ -242,10 +241,13 @@ async function startMiningEmail(miningSource: MiningSource) {
     console.log(`Extracted folders for ${miningSource.email}:`, folders);
   }
 
-  // Resume point: per-folder UID watermark persisted by the backend on the
-  // previous successful run. Only fall back to a date when no watermark exists.
-  const resumeFrom = buildResumeFrom(sourceConfig);
-  const since = resumeFrom
+  // The backend builds `resumeFrom` from the persisted watermark. The edge only
+  // decides the date fallback, used when no watermark exists yet.
+  const hasWatermark = Boolean(
+    sourceConfig.mining?.last?.folders &&
+      Object.keys(sourceConfig.mining.last.folders).length > 0,
+  );
+  const since = hasWatermark
     ? undefined
     : await getLatestPassiveMiningDate(miningSource.user_id);
 
@@ -261,9 +263,7 @@ async function startMiningEmail(miningSource: MiningSource) {
     googleContactsSync,
     miningMode: "incremental",
   };
-  if (resumeFrom) {
-    body.resumeFrom = resumeFrom;
-  } else if (since) {
+  if (since) {
     body.since = since;
   }
 

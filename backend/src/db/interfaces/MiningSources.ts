@@ -35,6 +35,8 @@ interface BaseMiningSource {
   email: string;
   userId: string;
   id?: string;
+  /** Raw namespaced config (flags/health/mining.last). Read-only on the backend. */
+  config?: Record<string, unknown>;
 }
 
 export interface ImapMiningSource extends BaseMiningSource {

@@ -3,6 +3,7 @@ import type {
   MiningSourceConfig,
   SourceHealth,
 } from '~/types/mining';
+import { SourceHealthState } from '~/types/enums';
 
 export interface MiningSourceConfigFlags {
   extract_signatures: boolean;
@@ -11,7 +12,7 @@ export interface MiningSourceConfigFlags {
 }
 
 export interface DerivedSourceState {
-  state: 'active' | 'needs_reauth' | 'error';
+  state: SourceHealthState;
   lastRunAt?: string;
   lastError?: string[];
   /** Folders with a persisted UID watermark (used for resume-vs-full). */
@@ -32,12 +33,12 @@ function foldLegacyHealth(source: Record<string, unknown>): SourceHealth {
 
   if (source.needs_reauth === true) {
     // Authoritative: an explicit re-auth flag always wins.
-    health.state = 'needs_reauth';
+    health.state = SourceHealthState.NeedsReauth;
   } else if (health.state === undefined && typeof source.status === 'string') {
     // Fold legacy status only when no explicit namespaced health.state exists.
-    if (source.status === 'completed') health.state = 'active';
+    if (source.status === 'completed') health.state = SourceHealthState.Active;
     if (source.status === 'failed' || source.status === 'retrying') {
-      health.state = 'error';
+      health.state = SourceHealthState.Error;
     }
   }
   if (typeof source.last_run === 'string' && !health.last_run_at) {
@@ -190,7 +191,7 @@ export function deriveSourceState(source?: MiningSource): DerivedSourceState {
     : undefined;
 
   return {
-    state: health.state ?? (source?.passive_mining ? 'active' : 'active'),
+    state: health.state ?? SourceHealthState.Active,
     lastRunAt: health.last_run_at ?? undefined,
     lastError: health.last_error ?? undefined,
     minableFolders: watermark ? Object.keys(watermark) : [],

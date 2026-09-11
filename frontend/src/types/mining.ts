@@ -27,13 +27,6 @@ export interface ImapFolderCursor {
   high_water_uid: number | null;
 }
 
-export type MiningFolderState =
-  | 'unmined'
-  | 'up_to_date'
-  | 'new_messages'
-  | 'uidvalidity_changed'
-  | 'metadata_unavailable';
-
 export interface MiningCompletion {
   mining_id?: string | null;
   mined_count?: number;
@@ -43,7 +36,7 @@ export interface MiningCompletion {
 }
 
 export interface SourceHealth {
-  state?: 'active' | 'needs_reauth' | 'error';
+  state?: import('./enums').SourceHealthState;
   last_error?: string[] | null;
   last_run_at?: string | null;
 }

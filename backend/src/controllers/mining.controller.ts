@@ -7,6 +7,7 @@ import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCac
 import { ContactFormat } from '../services/extractors/engines/FileImport';
 import { SupabaseTask as DBTask, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
+import { buildResumeFromConfig } from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
 import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
@@ -263,8 +264,7 @@ export default function initializeMiningController(
         miningMode,
         since,
         passive_mining: passiveMining,
-        googleContactsSync,
-        resumeFrom
+        googleContactsSync
       }: {
         miningSource: {
           email?: string;
@@ -277,9 +277,6 @@ export default function initializeMiningController(
         since?: string;
         passive_mining?: boolean;
         googleContactsSync?: boolean;
-        resumeFrom?: {
-          folders: Record<string, { uidvalidity: string; last_uid: number }>;
-        };
       } = req.body;
 
       user.email = email ?? ''; // used when user is not provided (edge function req)
@@ -295,6 +292,9 @@ export default function initializeMiningController(
       // null and the run falls back to `email`, but persisting the watermark to
       // the body id would poison a victim's config (service-role write).
       let resolvedSourceId: string | undefined;
+      // Config of the resolved, owned source. The server derives `resumeFrom`
+      // from it (the client no longer sends the watermark).
+      let resolvedSourceConfig: Record<string, unknown> | undefined;
 
       if (miningSourceId) {
         const source = await miningSourceService.getSourceById(
@@ -304,6 +304,7 @@ export default function initializeMiningController(
         miningSourceCredentials = source?.credentials;
         if (source) {
           resolvedSourceId = source.id ?? miningSourceId;
+          resolvedSourceConfig = source.config;
         } else {
           logger.warn('getSourceById returned no source for miningSourceId', {
             miningSourceId,
@@ -325,6 +326,9 @@ export default function initializeMiningController(
         if (!resolvedSourceId && matchedSource?.id) {
           resolvedSourceId = matchedSource.id;
         }
+        if (matchedSource?.config) {
+          resolvedSourceConfig = matchedSource.config;
+        }
       }
 
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
@@ -335,6 +339,13 @@ export default function initializeMiningController(
 
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
+
+      // The client sends intent; the server builds the resume cursor from the
+      // persisted watermark. The emails-fetcher owns all IMAP logic from here.
+      const resumeFrom =
+        miningMode === 'incremental'
+          ? buildResumeFromConfig(resolvedSourceConfig)
+          : undefined;
 
       try {
         const miningId = await deps.idGenerator();
@@ -349,7 +360,7 @@ export default function initializeMiningController(
             cleaningEnabled: effectiveCleaningEnabled,
             miningMode: miningMode ?? 'full',
             since: miningMode === 'incremental' ? since : undefined,
-            resumeFrom: miningMode === 'incremental' ? resumeFrom : undefined,
+            resumeFrom,
             sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,

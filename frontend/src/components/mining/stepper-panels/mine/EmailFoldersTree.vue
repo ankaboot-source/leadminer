@@ -8,13 +8,13 @@
   >
     <template #default="{ node }">
       <span
-        v-if="folderStatus(node).state === 'new_messages'"
+        v-if="node.status === FolderStatus.NewMessages"
         class="inline-block size-2 rounded-full bg-amber-500 mr-2"
         :title="t('new_messages_available')"
         :aria-label="t('new_messages_available')"
       />
       <span
-        v-else-if="folderStatus(node).state === 'uidvalidity_changed'"
+        v-else-if="node.status === FolderStatus.UidvalidityChanged"
         class="inline-block size-2 rounded-full bg-red-500 mr-2"
         :title="t('mailbox_identity_changed')"
         :aria-label="t('mailbox_identity_changed')"
@@ -29,24 +29,11 @@
 
 <script setup lang="ts">
 import { useLeadminerStore } from '@/stores/leadminer';
-import { resolveMiningFolderState } from '@/utils/miningFolderState';
-import type { ImapFolderCursor } from '@/utils/boxes';
+import { FolderStatus } from '~/types/enums';
 
 const { t } = useI18n({ useScope: 'local' });
 const leadminerStore = useLeadminerStore();
 const expandedKeys = ref({ '': true });
-
-function folderStatus(node: unknown) {
-  const folder = node as { key?: string; cursor?: ImapFolderCursor };
-  if (!folder.key) {
-    return resolveMiningFolderState();
-  }
-  const watermark =
-    leadminerStore.activeMiningSource?.config?.mining?.last?.folders?.[
-      folder.key
-    ];
-  return resolveMiningFolderState(folder.cursor, watermark);
-}
 </script>
 
 <i18n lang="json">

@@ -1,18 +1,22 @@
 import type { MiningSource } from '~/types/mining';
+import {
+  SourceBadge,
+  SourceHealthState,
+  TaskStatus,
+} from '~/types/enums';
 import { deriveSourceState } from './miningSourceConfig';
 
-export type SourceHealthState = 'active' | 'needs_reauth' | 'error';
 export type BadgeSeverity = 'success' | 'info' | 'warn' | 'danger';
 
 export interface SourceStatusBadge {
-  labelKey: string;
+  labelKey: SourceBadge;
   severity: BadgeSeverity;
   icon?: string;
 }
 
 export interface ActiveMiningLike {
   email?: string;
-  status?: string;
+  status?: TaskStatus | string;
 }
 
 export interface SourceStatus {
@@ -24,17 +28,17 @@ export interface SourceStatus {
 }
 
 function activeBadge(miningStatus?: string): SourceStatusBadge {
-  if (miningStatus === 'done') {
-    return { labelKey: 'mining_status_done', severity: 'info' };
+  if (miningStatus === TaskStatus.Done) {
+    return { labelKey: SourceBadge.MiningStatusDone, severity: 'info' };
   }
-  if (miningStatus === 'canceled') {
-    return { labelKey: 'mining_status_canceled', severity: 'info' };
+  if (miningStatus === TaskStatus.Canceled) {
+    return { labelKey: SourceBadge.MiningStatusCanceled, severity: 'info' };
   }
   return {
     labelKey:
-      miningStatus === 'running'
-        ? 'mining_status_running'
-        : 'mining_in_progress',
+      miningStatus === TaskStatus.Running
+        ? SourceBadge.MiningStatusRunning
+        : SourceBadge.MiningInProgress,
     severity: 'info',
   };
 }
@@ -53,17 +57,17 @@ export function deriveSourceStatus(
 ): SourceStatus {
   const health: SourceHealthState = source
     ? deriveSourceState(source).state
-    : 'active';
+    : SourceHealthState.Active;
 
   const isActiveMiningSource = Boolean(
     source?.email && activeMining?.email === source.email,
   );
 
-  if (health === 'needs_reauth') {
+  if (health === SourceHealthState.NeedsReauth) {
     return {
       health,
       badge: {
-        labelKey: 'credential_expired',
+        labelKey: SourceBadge.CredentialExpired,
         severity: 'danger',
         icon: 'pi pi-exclamation-triangle',
       },
@@ -81,11 +85,11 @@ export function deriveSourceStatus(
     };
   }
 
-  if (health === 'error') {
+  if (health === SourceHealthState.Error) {
     return {
       health,
       badge: {
-        labelKey: 'mining_status_failed',
+        labelKey: SourceBadge.MiningStatusFailed,
         severity: 'danger',
         icon: 'pi pi-exclamation-triangle',
       },
@@ -96,7 +100,7 @@ export function deriveSourceStatus(
 
   return {
     health,
-    badge: { labelKey: 'connected', severity: 'success' },
+    badge: { labelKey: SourceBadge.Connected, severity: 'success' },
     showReconnect: false,
     isActiveMiningSource,
   };
