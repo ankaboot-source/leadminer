@@ -80,6 +80,10 @@ import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource } from '~/types/mining';
+import {
+  readForceFullMining,
+  resolveMiningRunMode,
+} from '~/utils/miningRunMode';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 
 const { t } = useI18n({
@@ -418,8 +422,12 @@ async function startMiningBoxes() {
   const activeSource = $leadminerStore.activeMiningSource;
   if (!activeSource) return;
 
+  // Resume by default from the persisted watermark; only an explicit opt-out
+  // (Advanced settings) forces a full re-mine.
+  const runMode = resolveMiningRunMode(readForceFullMining(activeSource.email));
+
   await handleAuthErrorAndRetry(
-    () => $leadminerStore.startMining(sourceType.value),
+    () => $leadminerStore.startMining(sourceType.value, undefined, runMode),
     activeSource.email,
     activeSource.type,
   );

@@ -1175,6 +1175,129 @@ describe('Pipeline', () => {
         }
       });
     });
+
+    it('persists the watermark once mining tasks settle even while an enriching task is still running', async () => {
+      (recordMiningCompletion as jest.Mock).mockClear();
+      const { factory } = makeMockSSEFactory();
+
+      const tasksResolver = {
+        create: jest
+          .fn<(task: DbTask) => Promise<DbTask>>()
+          .mockResolvedValue({
+            id: 'fetch-task-id',
+            userId: 'test-user',
+            type: TaskType.Fetch,
+            category: TaskCategory.Mining,
+            details: {},
+            status: TaskStatus.Running,
+            startedAt: new Date().toISOString()
+          }),
+        update: jest
+          .fn<(task: DbTask) => Promise<DbTask>>()
+          .mockResolvedValue({
+            id: 'fetch-task-id',
+            userId: 'test-user',
+            type: TaskType.Fetch,
+            category: TaskCategory.Mining,
+            details: {},
+            status: TaskStatus.Running
+          })
+      } as unknown as SupabaseTasks;
+
+      const fetch = new FetchTask({
+        miningId: 'test-signature-pending',
+        userId: 'test-user',
+        outputStream: 'messages_stream-test',
+        fetcherClient: {
+          startFetch: jest
+            .fn<
+              (opts: {
+                miningId: string;
+                contactStream: string;
+                signatureStream?: string;
+                extractSignatures?: boolean;
+                userId: string;
+                fetchParams?: Record<string, unknown>;
+              }) => Promise<{ data: { totalMessages: number } }>
+            >()
+            .mockResolvedValue({ data: { totalMessages: 0 } }),
+          stopFetch: jest
+            .fn<
+              (opts: { miningId: string; canceled: boolean }) => Promise<void>
+            >()
+            .mockResolvedValue()
+        } as unknown as FetcherClient,
+        passive_mining: true,
+        sourceId: 'source-456'
+      });
+
+      const signature = new SignatureTask({
+        miningId: 'test-signature-pending',
+        userId: 'test-user',
+        streams: {
+          role: TaskId.Signature,
+          input: [{ streamName: 'signature-test-stream' }],
+          output: []
+        },
+        passive_mining: true
+      });
+
+      const pipeline = new Pipeline(
+        {
+          miningId: 'test-signature-pending',
+          userId: 'test-user',
+          source: { type: 'email' as const, source: 'test@test.com' },
+          tasks: [fetch, signature],
+          onComplete: undefined
+        },
+        {
+          tasksResolver,
+          redisPublisher: { publish: jest.fn() } as unknown as Redis,
+          sseBroadcasterFactory: factory
+        }
+      );
+
+      fetch.onMessage({
+        miningId: 'test-signature-pending',
+        progressType: 'fetched',
+        count: 5,
+        isCompleted: true,
+        isCanceled: false,
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 77,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      } as ProgressMessage & { watermark?: unknown });
+
+      expect(signature.status).toBe(TaskStatus.Running);
+
+      // @ts-ignore - accessing private method for testing
+      await pipeline.checkCompletion();
+      // A second completion check must not persist twice.
+      // @ts-ignore - accessing private method for testing
+      await pipeline.checkCompletion();
+
+      expect(recordMiningCompletion).toHaveBeenCalledTimes(1);
+      expect(recordMiningCompletion).toHaveBeenCalledWith('source-456', {
+        mining_id: 'test-signature-pending',
+        mined_count: 5,
+        folders_mined: ['INBOX'],
+        watermark: {
+          folders: {
+            INBOX: {
+              uidvalidity: '12',
+              last_uid: 77,
+              updated_at: '2026-09-04T00:00:00.000Z'
+            }
+          }
+        }
+      });
+    });
   });
 
   describe('cancel', () => {

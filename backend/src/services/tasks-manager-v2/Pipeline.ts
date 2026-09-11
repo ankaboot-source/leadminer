@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 import { Request, Response } from 'express';
 import { Task } from './tasks/Task';
-import { TaskId, TaskStatus } from './types';
+import { TaskId, TaskCategory, TaskStatus } from './types';
 import type {
   TaskProgress,
   MiningSource,
@@ -49,6 +49,13 @@ export class Pipeline {
   public failed = false;
 
   private completionStarted = false;
+
+  /**
+   * Guards the one-shot watermark persistence. Persistence is driven by the
+   * mining tasks settling, which can happen before optional enriching tasks
+   * (signature/contacts) finish, so it must never run twice.
+   */
+  private watermarkPersisted = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -204,6 +211,11 @@ export class Pipeline {
         }
       }
 
+      // Persist as soon as the mining tasks have settled, without waiting on
+      // optional enriching tasks (e.g. signature extraction), which must not
+      // hold the durable cursor hostage.
+      await this.maybePersistMiningCompletion();
+
       if (this.isAllCompleted() && !this.completionStarted) {
         this.completionStarted = true;
         await this.complete();
@@ -231,7 +243,7 @@ export class Pipeline {
         // notification work. All pipeline tasks are already done here, so a
         // mail/refinement failure must not make a successfully mined mailbox
         // replay the same messages forever.
-        await this.persistMiningCompletionIfNeeded();
+        await this.maybePersistMiningCompletion();
         await refineContacts(this.userId);
         await mailMiningComplete(this.miningId);
       }
@@ -288,6 +300,30 @@ export class Pipeline {
     );
   }
 
+  /** Mining-category tasks whose completion defines a run's watermark. */
+  private get miningTasks(): Task[] {
+    return [...this.tasks.values()].filter(
+      (t) => t.category === TaskCategory.Mining
+    );
+  }
+
+  private allMiningTasksSettled(): boolean {
+    const mining = this.miningTasks;
+    return mining.length > 0 && mining.every((t) => t.isComplete());
+  }
+
+  /**
+   * One-shot watermark persistence, triggered once every mining task has
+   * settled (done or canceled). Enriching tasks (signature/contacts) are
+   * optional post-processing and must not delay a durable cursor.
+   */
+  private async maybePersistMiningCompletion(): Promise<void> {
+    if (this.watermarkPersisted) return;
+    if (!this.allMiningTasksSettled()) return;
+    this.watermarkPersisted = true;
+    await this.persistMiningCompletionIfNeeded();
+  }
+
   private async persistMiningCompletionIfNeeded(): Promise<void> {
     // Only successful email runs may advance folder watermarks. complete() is
     // also reached from cancel(), so task status guards are mandatory.
@@ -306,8 +342,8 @@ export class Pipeline {
     // cancels while extract/clean is still working, messages already counted
     // by the watermark were never extracted or cleaned. Persisting then would
     // permanently skip those messages on the next resume, so block whenever
-    // ANY task in the pipeline was canceled, not just the fetch.
-    const canceledTask = [...this.tasks.values()].find(
+    // ANY *mining* task was canceled, not just the fetch.
+    const canceledTask = this.miningTasks.find(
       (t) => t.status === TaskStatus.Canceled
     );
     if (canceledTask) {

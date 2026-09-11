@@ -147,11 +147,14 @@
                   @click="openDeleteDialog(source)"
                 />
 
-                <div v-if="!source.isValid" class="flex gap-2 items-center">
+                <div
+                  v-if="sourceStatus(source).showReconnect"
+                  class="flex gap-2 items-center"
+                >
                   <Tag
-                    :value="t(getSourceStatusBadge(source).labelKey)"
-                    :severity="getSourceStatusBadge(source).severity"
-                    :icon="getSourceStatusBadge(source).icon"
+                    :value="t(sourceStatus(source).badge.labelKey)"
+                    :severity="sourceStatus(source).badge.severity"
+                    :icon="sourceStatus(source).badge.icon"
                   />
                   <Button
                     :label="t('reconnect')"
@@ -162,8 +165,8 @@
                 </div>
                 <Tag
                   v-else
-                  :value="t(getSourceStatusBadge(source).labelKey)"
-                  :severity="getSourceStatusBadge(source).severity"
+                  :value="t(sourceStatus(source).badge.labelKey)"
+                  :severity="sourceStatus(source).badge.severity"
                 />
               </div>
             </div>
@@ -357,7 +360,7 @@ import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceIm
 import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource, MiningTaskGroup } from '~/types/mining';
-import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
+import { deriveSourceStatus } from '@/utils/sourceStatus';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
 import { deriveSourceState } from '@/utils/miningSourceConfig';
 
@@ -608,16 +611,15 @@ async function toggleSourceConfig(
   }
 }
 
-function getSourceStatusBadge(source: MiningSource) {
-  return resolveSourceStatusBadge({
-    isValid: source.isValid !== false,
-    isActiveMiningSource: isActiveMiningSource(source),
-    miningStatus: $leadminer.miningTask?.status,
+function sourceStatus(source: MiningSource) {
+  return deriveSourceStatus(source, {
+    email: isActiveMiningSource(source) ? source.email : undefined,
+    status: $leadminer.miningTask?.status,
   });
 }
 
 async function reconnectExpiredSource(source: MiningSource) {
-  if (source.isValid) {
+  if (!sourceStatus(source).showReconnect) {
     return;
   }
 
@@ -663,7 +665,7 @@ onMounted(async () => {
 
     const clearReconnectQuery = () => $router.replace({ query: {} });
 
-    if (source && !source.isValid) {
+    if (source && sourceStatus(source).showReconnect) {
       clearReconnectQuery();
 
       if (source.type === 'imap') {

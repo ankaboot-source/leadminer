@@ -317,7 +317,14 @@ export default function initializeMiningController(
           user.id,
           sanitizedEmail
         );
-        miningSourceCredentials = sources?.pop()?.credentials;
+        const matchedSource = sources?.pop();
+        miningSourceCredentials = matchedSource?.credentials;
+        // Resolve the owned source id even when the caller started the run by
+        // email only, so the completion watermark is persisted on the correct
+        // row instead of being dropped for lack of a sourceId.
+        if (!resolvedSourceId && matchedSource?.id) {
+          resolvedSourceId = matchedSource.id;
+        }
       }
 
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
