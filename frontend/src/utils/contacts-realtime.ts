@@ -104,6 +104,35 @@ export type RealtimeAction =
   | { kind: 'reconcile'; personIds: string[] }
   | { kind: 'none' };
 
+export type PersonChangeFilter = {
+  event: 'INSERT' | 'UPDATE' | 'DELETE';
+  schema: 'private';
+  table: 'persons';
+  filter: string;
+};
+
+/**
+ * Filters for the contacts realtime channel. UPDATE + DELETE are always
+ * subscribed; INSERT only while a foreground mining is streaming new contacts,
+ * so background mining never floods the client (new rows appear on reload).
+ */
+export function buildPersonChangeFilters(
+  userId: string,
+  includeInsert: boolean,
+): PersonChangeFilter[] {
+  const base = {
+    schema: 'private' as const,
+    table: 'persons' as const,
+    filter: `user_id=eq.${userId}`,
+  };
+  const filters: PersonChangeFilter[] = [
+    { ...base, event: 'UPDATE' },
+    { ...base, event: 'DELETE' },
+  ];
+  if (includeInsert) filters.push({ ...base, event: 'INSERT' });
+  return filters;
+}
+
 export function resolveRealtimeAction(
   payload: {
     eventType: 'INSERT' | 'UPDATE' | 'DELETE';
