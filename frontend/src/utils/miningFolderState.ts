@@ -36,7 +36,7 @@ function isValidWatermark(
  */
 export function resolveMiningFolderState(
   cursor: ImapFolderCursor | undefined,
-  watermark: SupportedWatermark | undefined,
+  watermark?: SupportedWatermark,
 ): FolderState {
   if (!watermark) {
     return { state: 'unmined', hasNewMessages: false, requiresFullScan: false };

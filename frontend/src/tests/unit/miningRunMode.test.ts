@@ -4,7 +4,7 @@ import {
   readForceFullMining,
   writeForceFullMining,
   resolveMiningRunMode,
-  type StorageLike
+  type StorageLike,
 } from '~/utils/miningRunMode';
 
 function makeStorage(): StorageLike & { map: Map<string, string> } {
@@ -14,7 +14,7 @@ function makeStorage(): StorageLike & { map: Map<string, string> } {
     getItem: (k: string) => map.get(k) ?? null,
     setItem: (k: string, v: string) => {
       map.set(k, v);
-    }
+    },
   };
 }
 
@@ -27,7 +27,7 @@ describe('miningRunMode', () => {
 
   it('keys preferences per source email, case-insensitively', () => {
     expect(forceFullMiningKey('Playtest@Example.com')).toBe(
-      forceFullMiningKey('playtest@example.com')
+      forceFullMiningKey('playtest@example.com'),
     );
   });
 
@@ -46,8 +46,8 @@ describe('miningRunMode', () => {
   });
 
   it('treats a missing storage as no opt-out and never throws on write', () => {
-    expect(readForceFullMining('a@b.com', undefined)).toBe(false);
-    expect(() => writeForceFullMining('a@b.com', true, undefined)).not.toThrow();
+    expect(readForceFullMining('a@b.com', null)).toBe(false);
+    expect(() => writeForceFullMining('a@b.com', true, null)).not.toThrow();
   });
 
   it('swallows storage errors (private mode)', () => {
@@ -57,7 +57,7 @@ describe('miningRunMode', () => {
       },
       setItem: () => {
         throw new Error('denied');
-      }
+      },
     };
     expect(readForceFullMining('a@b.com', throwing)).toBe(false);
     expect(() => writeForceFullMining('a@b.com', true, throwing)).not.toThrow();

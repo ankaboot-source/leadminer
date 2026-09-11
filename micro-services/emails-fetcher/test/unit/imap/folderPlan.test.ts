@@ -39,7 +39,7 @@ describe('planFolderFetch', () => {
   });
 
   it('resumes from the persisted cursor when uidvalidity matches', async () => {
-    const searchUids = jest.fn(async (): Promise<number[]> => []);
+    const searchUids = jest.fn((): Promise<number[]> => Promise.resolve([]));
     const plan = await planFolderFetch({
       ...base,
       resume: { uidvalidity: '42', last_uid: 50 },
@@ -74,9 +74,9 @@ describe('planFolderFetch', () => {
 
   it('uses the since strategy when there is no usable cursor and matches exist', async () => {
     const sinceArgs: Date[] = [];
-    const searchUids = jest.fn(async (since: Date): Promise<number[]> => {
+    const searchUids = jest.fn((since: Date): Promise<number[]> => {
       sinceArgs.push(since);
-      return [10, 20, 30];
+      return Promise.resolve([10, 20, 30]);
     });
     const plan = await planFolderFetch({
       ...base,
@@ -101,7 +101,7 @@ describe('planFolderFetch', () => {
       resume: undefined,
       since: '2026-09-10T00:00:00Z',
       chunkSize: 2,
-      searchUids: async () => uids
+      searchUids: () => Promise.resolve(uids)
     });
     expect(plan.ranges).toEqual(['10:20', '30:40', '50:50']);
   });
@@ -111,7 +111,7 @@ describe('planFolderFetch', () => {
       ...base,
       resume: undefined,
       since: '2026-09-10T00:00:00Z',
-      searchUids: async () => []
+      searchUids: () => Promise.resolve([])
     });
     expect(plan).toMatchObject({
       kind: 'skip',

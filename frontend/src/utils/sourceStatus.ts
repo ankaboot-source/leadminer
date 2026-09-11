@@ -32,8 +32,10 @@ function activeBadge(miningStatus?: string): SourceStatusBadge {
   }
   return {
     labelKey:
-      miningStatus === 'running' ? 'mining_status_running' : 'mining_in_progress',
-    severity: 'info'
+      miningStatus === 'running'
+        ? 'mining_status_running'
+        : 'mining_in_progress',
+    severity: 'info',
   };
 }
 
@@ -47,14 +49,14 @@ function activeBadge(miningStatus?: string): SourceStatusBadge {
  */
 export function deriveSourceStatus(
   source: MiningSource | undefined,
-  activeMining?: ActiveMiningLike
+  activeMining?: ActiveMiningLike,
 ): SourceStatus {
   const health: SourceHealthState = source
     ? deriveSourceState(source).state
     : 'active';
 
   const isActiveMiningSource = Boolean(
-    source?.email && activeMining?.email === source.email
+    source?.email && activeMining?.email === source.email,
   );
 
   if (health === 'needs_reauth') {
@@ -63,10 +65,10 @@ export function deriveSourceStatus(
       badge: {
         labelKey: 'credential_expired',
         severity: 'danger',
-        icon: 'pi pi-exclamation-triangle'
+        icon: 'pi pi-exclamation-triangle',
       },
       showReconnect: true,
-      isActiveMiningSource
+      isActiveMiningSource,
     };
   }
 
@@ -75,7 +77,7 @@ export function deriveSourceStatus(
       health,
       badge: activeBadge(activeMining?.status),
       showReconnect: false,
-      isActiveMiningSource
+      isActiveMiningSource,
     };
   }
 
@@ -85,10 +87,10 @@ export function deriveSourceStatus(
       badge: {
         labelKey: 'mining_status_failed',
         severity: 'danger',
-        icon: 'pi pi-exclamation-triangle'
+        icon: 'pi pi-exclamation-triangle',
       },
       showReconnect: false,
-      isActiveMiningSource
+      isActiveMiningSource,
     };
   }
 
@@ -96,7 +98,7 @@ export function deriveSourceStatus(
     health,
     badge: { labelKey: 'connected', severity: 'success' },
     showReconnect: false,
-    isActiveMiningSource
+    isActiveMiningSource,
   };
 }
 

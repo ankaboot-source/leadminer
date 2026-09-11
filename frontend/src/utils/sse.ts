@@ -99,7 +99,7 @@ class SSE {
 
     if (!token) {
       console.error('[SSE] No access token available.');
-      return;
+      return Promise.resolve();
     }
 
     return fetchEventSource(
@@ -118,6 +118,7 @@ class SSE {
             },
           });
         },
+        // skipcq: JS-0116 - fetch-event-source requires a Promise-returning onopen.
         onopen: async (response) => {
           if (response.status === 200) {
             retries = 0;

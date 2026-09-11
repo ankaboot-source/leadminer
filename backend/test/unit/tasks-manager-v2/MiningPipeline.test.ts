@@ -1181,27 +1181,23 @@ describe('Pipeline', () => {
       const { factory } = makeMockSSEFactory();
 
       const tasksResolver = {
-        create: jest
-          .fn<(task: DbTask) => Promise<DbTask>>()
-          .mockResolvedValue({
-            id: 'fetch-task-id',
-            userId: 'test-user',
-            type: TaskType.Fetch,
-            category: TaskCategory.Mining,
-            details: {},
-            status: TaskStatus.Running,
-            startedAt: new Date().toISOString()
-          }),
-        update: jest
-          .fn<(task: DbTask) => Promise<DbTask>>()
-          .mockResolvedValue({
-            id: 'fetch-task-id',
-            userId: 'test-user',
-            type: TaskType.Fetch,
-            category: TaskCategory.Mining,
-            details: {},
-            status: TaskStatus.Running
-          })
+        create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running,
+          startedAt: new Date().toISOString()
+        }),
+        update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+          id: 'fetch-task-id',
+          userId: 'test-user',
+          type: TaskType.Fetch,
+          category: TaskCategory.Mining,
+          details: {},
+          status: TaskStatus.Running
+        })
       } as unknown as SupabaseTasks;
 
       const fetch = new FetchTask({

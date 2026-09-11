@@ -8,14 +8,14 @@ function src(overrides: Partial<MiningSource> = {}): MiningSource {
     type: 'imap',
     email: 'miner@example.com',
     config: { version: 1, health: { state: 'active' } },
-    ...overrides
+    ...overrides,
   };
 }
 
 describe('deriveSourceStatus', () => {
   it('shows a reconnect badge for needs_reauth', () => {
     const status = deriveSourceStatus(
-      src({ config: { version: 1, health: { state: 'needs_reauth' } } })
+      src({ config: { version: 1, health: { state: 'needs_reauth' } } }),
     );
     expect(status.health).toBe('needs_reauth');
     expect(status.badge.labelKey).toBe('credential_expired');
@@ -25,7 +25,7 @@ describe('deriveSourceStatus', () => {
 
   it('folds the legacy needs_reauth key', () => {
     const status = deriveSourceStatus(
-      src({ config: { needs_reauth: true } as never })
+      src({ config: { needs_reauth: true } as never }),
     );
     expect(status.health).toBe('needs_reauth');
     expect(status.showReconnect).toBe(true);
@@ -33,7 +33,7 @@ describe('deriveSourceStatus', () => {
 
   it('shows a failure badge for error without a reconnect action', () => {
     const status = deriveSourceStatus(
-      src({ config: { version: 1, health: { state: 'error' } } })
+      src({ config: { version: 1, health: { state: 'error' } } }),
     );
     expect(status.badge.labelKey).toBe('mining_status_failed');
     expect(status.badge.severity).toBe('danger');
@@ -51,7 +51,7 @@ describe('deriveSourceStatus', () => {
   it('prioritises the active mining run badge', () => {
     const status = deriveSourceStatus(src(), {
       email: 'miner@example.com',
-      status: 'running'
+      status: 'running',
     });
     expect(status.isActiveMiningSource).toBe(true);
     expect(status.badge.labelKey).toBe('mining_status_running');
@@ -61,20 +61,20 @@ describe('deriveSourceStatus', () => {
   it('maps the done and canceled run statuses', () => {
     expect(
       deriveSourceStatus(src(), { email: 'miner@example.com', status: 'done' })
-        .badge.labelKey
+        .badge.labelKey,
     ).toBe('mining_status_done');
     expect(
       deriveSourceStatus(src(), {
         email: 'miner@example.com',
-        status: 'canceled'
-      }).badge.labelKey
+        status: 'canceled',
+      }).badge.labelKey,
     ).toBe('mining_status_canceled');
   });
 
   it('does not treat a different source as actively mining', () => {
     const status = deriveSourceStatus(src(), {
       email: 'other@example.com',
-      status: 'running'
+      status: 'running',
     });
     expect(status.isActiveMiningSource).toBe(false);
     expect(status.badge.labelKey).toBe('connected');
@@ -83,7 +83,7 @@ describe('deriveSourceStatus', () => {
   it('needs_reauth wins over an active run', () => {
     const status = deriveSourceStatus(
       src({ config: { version: 1, health: { state: 'needs_reauth' } } }),
-      { email: 'miner@example.com', status: 'running' }
+      { email: 'miner@example.com', status: 'running' },
     );
     expect(status.badge.labelKey).toBe('credential_expired');
     expect(status.showReconnect).toBe(true);

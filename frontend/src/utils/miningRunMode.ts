@@ -18,7 +18,7 @@ export function forceFullMiningKey(email?: string): string {
  */
 export function readForceFullMining(
   email: string | undefined,
-  storage: StorageLike | undefined = globalThis.localStorage
+  storage: StorageLike | null | undefined = globalThis.localStorage,
 ): boolean {
   if (!storage) return false;
   try {
@@ -31,7 +31,7 @@ export function readForceFullMining(
 export function writeForceFullMining(
   email: string | undefined,
   value: boolean,
-  storage: StorageLike | undefined = globalThis.localStorage
+  storage: StorageLike | null | undefined = globalThis.localStorage,
 ): void {
   if (!storage) return;
   try {

@@ -18,7 +18,7 @@ const watermark = (uidvalidity: string, last_uid: number) => ({
 
 describe('resolveMiningFolderState', () => {
   it('marks an unseen folder as unmined', () => {
-    expect(resolveMiningFolderState(cursor('1', 10), undefined)).toEqual({
+    expect(resolveMiningFolderState(cursor('1', 10))).toEqual({
       state: 'unmined',
       hasNewMessages: false,
       requiresFullScan: false,
