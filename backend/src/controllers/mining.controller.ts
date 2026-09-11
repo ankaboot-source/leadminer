@@ -49,6 +49,56 @@ interface MiningTaskGroup {
   signature: { status: string; started_at: string | undefined } | null;
 }
 
+/**
+ * Resolves the credentials, owned source id and config for a mine request,
+ * scoped to the requesting user. Extracted from startMining to keep that
+ * handler readable (and to keep the security reasoning in one place).
+ */
+async function resolveMiningSourceAccess(
+  user: User,
+  {
+    email,
+    miningSourceId,
+    sanitizedEmail
+  }: { email?: string; miningSourceId?: string; sanitizedEmail: string }
+) {
+  let credentials;
+  let sourceId: string | undefined;
+  let config: Record<string, unknown> | undefined;
+
+  if (miningSourceId) {
+    // Ownership is enforced by passing user.id: a body id belonging to another
+    // user yields null and is never used as the (service-role) write target.
+    const source = await miningSourceService.getSourceById(
+      miningSourceId,
+      user.id
+    );
+    credentials = source?.credentials;
+    if (source) {
+      sourceId = source.id ?? miningSourceId;
+      config = source.config;
+    } else {
+      logger.warn('getSourceById returned no source for miningSourceId', {
+        miningSourceId,
+        userId: user.id
+      });
+    }
+  }
+
+  if (!credentials && email) {
+    const sources = await miningSourceService.getSourcesForUser(
+      user.id,
+      sanitizedEmail
+    );
+    const matchedSource = sources?.pop();
+    credentials = matchedSource?.credentials;
+    if (!sourceId && matchedSource?.id) sourceId = matchedSource.id;
+    if (matchedSource?.config) config = matchedSource.config;
+  }
+
+  return { credentials, sourceId, config };
+}
+
 async function publishPreviouslyUnverifiedEmailsToCleaning(
   contacts: Contacts,
   userId: string,
@@ -285,51 +335,15 @@ export default function initializeMiningController(
         sanitizeImapInput(folder)
       );
       const sanitizedEmail = email ? sanitizeImapInput(email) : '';
-      let miningSourceCredentials;
-      // Resolve the source config write target to the source that was actually
-      // looked up and owned by this user. Using the raw body `miningSourceId`
-      // is unsafe: if the id belongs to a different user, getSourceById returns
-      // null and the run falls back to `email`, but persisting the watermark to
-      // the body id would poison a victim's config (service-role write).
-      let resolvedSourceId: string | undefined;
-      // Config of the resolved, owned source. The server derives `resumeFrom`
-      // from it (the client no longer sends the watermark).
-      let resolvedSourceConfig: Record<string, unknown> | undefined;
-
-      if (miningSourceId) {
-        const source = await miningSourceService.getSourceById(
-          miningSourceId,
-          user.id
-        );
-        miningSourceCredentials = source?.credentials;
-        if (source) {
-          resolvedSourceId = source.id ?? miningSourceId;
-          resolvedSourceConfig = source.config;
-        } else {
-          logger.warn('getSourceById returned no source for miningSourceId', {
-            miningSourceId,
-            userId: user.id
-          });
-        }
-      }
-
-      if (!miningSourceCredentials && email) {
-        const sources = await miningSourceService.getSourcesForUser(
-          user.id,
-          sanitizedEmail
-        );
-        const matchedSource = sources?.pop();
-        miningSourceCredentials = matchedSource?.credentials;
-        // Resolve the owned source id even when the caller started the run by
-        // email only, so the completion watermark is persisted on the correct
-        // row instead of being dropped for lack of a sourceId.
-        if (!resolvedSourceId && matchedSource?.id) {
-          resolvedSourceId = matchedSource.id;
-        }
-        if (matchedSource?.config) {
-          resolvedSourceConfig = matchedSource.config;
-        }
-      }
+      const {
+        credentials: miningSourceCredentials,
+        sourceId: resolvedSourceId,
+        config: resolvedSourceConfig
+      } = await resolveMiningSourceAccess(user, {
+        email,
+        miningSourceId,
+        sanitizedEmail
+      });
 
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
         return res.status(401).json({

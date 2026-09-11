@@ -17,7 +17,7 @@ const CURSOR = {
 
 describe('buildFolderStatus', () => {
   it('is unmined without a watermark', () => {
-    expect(buildFolderStatus(CURSOR, undefined)).toEqual({
+    expect(buildFolderStatus({ cursor: CURSOR })).toEqual({
       status: FolderStatus.Unmined,
       hasNewMessages: false,
       requiresFullScan: false
@@ -26,23 +26,26 @@ describe('buildFolderStatus', () => {
 
   it('is up_to_date when the high-water UID equals the watermark', () => {
     expect(
-      buildFolderStatus(CURSOR, { uidvalidity: '12', last_uid: 19 }).status
+      buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '12', last_uid: 19 }
+      }).status
     ).toBe(FolderStatus.UpToDate);
   });
 
   it('is new_messages when the high-water UID is above the watermark', () => {
-    const result = buildFolderStatus(CURSOR, {
-      uidvalidity: '12',
-      last_uid: 10
+    const result = buildFolderStatus({
+      cursor: CURSOR,
+      watermark: { uidvalidity: '12', last_uid: 10 }
     });
     expect(result.status).toBe(FolderStatus.NewMessages);
     expect(result.hasNewMessages).toBe(true);
   });
 
   it('is uidvalidity_changed when the namespace differs', () => {
-    const result = buildFolderStatus(CURSOR, {
-      uidvalidity: '99',
-      last_uid: 19
+    const result = buildFolderStatus({
+      cursor: CURSOR,
+      watermark: { uidvalidity: '99', last_uid: 19 }
     });
     expect(result.status).toBe(FolderStatus.UidvalidityChanged);
     expect(result.requiresFullScan).toBe(true);
@@ -50,13 +53,18 @@ describe('buildFolderStatus', () => {
 
   it('is uidvalidity_changed when the watermark is malformed', () => {
     expect(
-      buildFolderStatus(CURSOR, { uidvalidity: '', last_uid: -1 }).status
+      buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '', last_uid: -1 }
+      }).status
     ).toBe(FolderStatus.UidvalidityChanged);
   });
 
   it('is metadata_unavailable when the cursor is missing', () => {
     expect(
-      buildFolderStatus(undefined, { uidvalidity: '12', last_uid: 1 }).status
+      buildFolderStatus({
+        watermark: { uidvalidity: '12', last_uid: 1 }
+      }).status
     ).toBe(FolderStatus.MetadataUnavailable);
   });
 });

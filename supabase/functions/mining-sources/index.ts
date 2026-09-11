@@ -16,8 +16,10 @@ import {
   callbackQuerySchema,
   configureSourceSchema,
 } from "./schemas.ts";
-import { MiningSourceConfigService } from "./config.ts";
-import type { ConfigureSourceParams } from "./config.ts";
+import {
+  applySourceConfig,
+  type ConfigureSourceParams,
+} from "./config.ts";
 import {
   getAuthClient,
   getTokenConfig,
@@ -296,8 +298,8 @@ app.patch("/:id/config", authMiddleware, async (c: Context) => {
   }
 
   try {
-    // Single writer: the service owns the read-merge-CAS-write of the config.
-    const result = await new MiningSourceConfigService().apply(
+    // Single writer: read-merge-CAS-write of the config.
+    const result = await applySourceConfig(
       sourceId,
       parsed.data as ConfigureSourceParams,
     );

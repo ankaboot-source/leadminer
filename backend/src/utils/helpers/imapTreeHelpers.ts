@@ -62,15 +62,20 @@ export function extractFolderWatermarks(
   return watermarks;
 }
 
+export interface BuildFolderStatusInput {
+  cursor?: ImapFolderCursor;
+  watermark?: FolderWatermark;
+}
+
 /**
  * The single decision function for a folder's sync state: the live IMAP cursor
  * vs the persisted watermark. Mirrors the rules that used to live in the
  * frontend (`miningFolderState.ts`), now computed where the boxes are fetched.
  */
-export function buildFolderStatus(
-  cursor: ImapFolderCursor | undefined,
-  watermark: FolderWatermark | undefined
-): FolderStatusInfo {
+export function buildFolderStatus({
+  cursor,
+  watermark
+}: BuildFolderStatusInput): FolderStatusInfo {
   if (!watermark) {
     return {
       status: FolderStatus.Unmined,
@@ -152,7 +157,7 @@ export function createFlatTreeFromImap(
   for (const box of boxes) {
     const cursor = normalizeCursor(box.status);
     const watermark = watermarks[box.path];
-    const { status, hasNewMessages } = buildFolderStatus(cursor, watermark);
+    const { status, hasNewMessages } = buildFolderStatus({ cursor, watermark });
 
     pathMap.set(box.path, {
       label: box.name,

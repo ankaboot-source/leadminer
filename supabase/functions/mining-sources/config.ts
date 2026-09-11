@@ -141,59 +141,57 @@ export interface AppliedConfig {
  * optimistic compare-and-swap on `config_revision` (retried once) instead of a
  * bespoke SQL merge function.
  */
-export class MiningSourceConfigService {
-  async apply(
-    sourceId: string,
-    params: ConfigureSourceParams,
-  ): Promise<AppliedConfig | null> {
-    const admin = createSupabaseAdmin();
+export async function applySourceConfig(
+  sourceId: string,
+  params: ConfigureSourceParams,
+): Promise<AppliedConfig | null> {
+  const admin = createSupabaseAdmin();
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const { data, error } = await admin
-        .schema("private")
-        .from("mining_sources")
-        .select("config, config_revision")
-        .eq("id", sourceId)
-        .maybeSingle();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const { data, error } = await admin
+      .schema("private")
+      .from("mining_sources")
+      .select("config, config_revision")
+      .eq("id", sourceId)
+      .maybeSingle();
 
-      if (error) throw new Error(error.message);
-      if (!data) return null;
+    if (error) throw new Error(error.message);
+    if (!data) return null;
 
-      const revision = Number(data.config_revision ?? 0);
-      const config = mergeConfig(data.config, params);
+    const revision = Number(data.config_revision ?? 0);
+    const config = mergeConfig(data.config, params);
 
-      const update: PlainObject = {
-        config,
-        config_revision: revision + 1,
-      };
-      if (params.passive_mining !== undefined) {
-        update.passive_mining = params.passive_mining;
-      }
-
-      const { data: updated, error: updateError } = await admin
-        .schema("private")
-        .from("mining_sources")
-        .update(update)
-        .eq("id", sourceId)
-        .eq("config_revision", revision)
-        .select("config, config_revision")
-        .maybeSingle();
-
-      if (updateError) throw new Error(updateError.message);
-
-      if (updated) {
-        return {
-          config: updated.config as MiningSourceConfigV1,
-          revision: Number(updated.config_revision ?? revision + 1),
-        };
-      }
-
-      logger.warn("Config revision changed underneath us; retrying", {
-        sourceId,
-        revision,
-      });
+    const update: PlainObject = {
+      config,
+      config_revision: revision + 1,
+    };
+    if (params.passive_mining !== undefined) {
+      update.passive_mining = params.passive_mining;
     }
 
-    throw new Error("Failed to update mining source config after retry");
+    const { data: updated, error: updateError } = await admin
+      .schema("private")
+      .from("mining_sources")
+      .update(update)
+      .eq("id", sourceId)
+      .eq("config_revision", revision)
+      .select("config, config_revision")
+      .maybeSingle();
+
+    if (updateError) throw new Error(updateError.message);
+
+    if (updated) {
+      return {
+        config: updated.config as MiningSourceConfigV1,
+        revision: Number(updated.config_revision ?? revision + 1),
+      };
+    }
+
+    logger.warn("Config revision changed underneath us; retrying", {
+      sourceId,
+      revision,
+    });
   }
+
+  throw new Error("Failed to update mining source config after retry");
 }

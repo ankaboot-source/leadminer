@@ -75,7 +75,7 @@ export default function initializeImapController(
         // cursor with the persisted watermark and hand the frontend a ready
         // status per folder.
         const watermarks = extractFolderWatermarks(source?.config);
-        const tree: any = await imapBoxesFetcher.getTree(email, watermarks);
+        const tree = await imapBoxesFetcher.getTree(email, watermarks);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {

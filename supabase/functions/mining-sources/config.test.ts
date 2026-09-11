@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { mergeConfig } from "./config.ts";
 
 Deno.test("mergeConfig merges mining_flags and preserves unknown keys", () => {
@@ -25,7 +25,7 @@ Deno.test("mergeConfig null clears folders and mining.last", () => {
     { version: 1, folders: ["INBOX"], mining: { last: { mining_id: "x" } } },
     { folders: null, mining: { last: null } },
   );
-  assertEquals(result.folders, undefined);
+  assert(result.folders === undefined);
   assertEquals(result.mining, {});
 });
 
