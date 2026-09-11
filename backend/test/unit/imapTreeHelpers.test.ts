@@ -85,7 +85,7 @@ describe('extractFolderWatermarks', () => {
   });
 
   it('ignores missing or malformed entries', () => {
-    expect(extractFolderWatermarks(undefined)).toEqual({});
+    expect(extractFolderWatermarks(null)).toEqual({});
     expect(
       extractFolderWatermarks({
         mining: { last: { folders: { INBOX: { last_uid: 'nope' } } } }
