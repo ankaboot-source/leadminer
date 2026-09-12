@@ -11,6 +11,7 @@ import { z } from "zod";
 import { timingSafeEqual } from "node:crypto";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -299,7 +300,7 @@ class FetchMiningSourceHandler {
         ) {
           try {
             await this.patchConfig(source.id as string, {
-              health: { state: "active", last_error: null },
+              health: { state: SourceHealthState.Active, last_error: null },
             });
           } catch (configError) {
             logger.error("Failed to clear needs_reauth flag", {
@@ -369,7 +370,7 @@ class FetchMiningSourceHandler {
       // Preserve the user's passive_mining intent and all sibling config keys:
       // the row-locked canonical writer performs the merge atomically.
       await this.patchConfig(source.id, {
-        health: { state: "needs_reauth" },
+        health: { state: SourceHealthState.NeedsReauth },
       });
       logger.info("Flagged permanently rejected source for re-auth", {
         email: source.email,
@@ -400,7 +401,7 @@ class FetchMiningSourceHandler {
     try {
       await this.patchConfig(sourceId, {
         health: {
-          state: "error",
+          state: SourceHealthState.Error,
           last_run_at: new Date().toISOString(),
           last_error: [error instanceof Error ? error.message : String(error)],
         },

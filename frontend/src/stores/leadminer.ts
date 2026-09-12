@@ -18,11 +18,11 @@ import {
   type MiningTask,
   type MiningTaskGroup,
   type MiningType,
-  type MiningRunMode,
   type TaskState,
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
+import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
 
@@ -543,7 +543,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   async function startMining(
     source: MiningType,
     storagePath?: string,
-    runMode: MiningRunMode = 'full',
+    runMode: MiningRunMode = MiningRunMode.Full,
   ) {
     await supabase.auth.refreshSession(); // Refresh session on mining start
 

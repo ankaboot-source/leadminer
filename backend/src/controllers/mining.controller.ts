@@ -5,7 +5,7 @@ import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import { SupabaseTask as DBTask, TaskType } from '../db/types';
+import { SupabaseTask as DBTask, MiningRunMode, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
 import { buildResumeFromConfig } from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
@@ -323,7 +323,7 @@ export default function initializeMiningController(
         boxes: string[];
         extractSignatures: boolean;
         cleaningEnabled: boolean;
-        miningMode?: 'full' | 'incremental';
+        miningMode?: MiningRunMode;
         since?: string;
         passive_mining?: boolean;
         googleContactsSync?: boolean;
@@ -357,7 +357,7 @@ export default function initializeMiningController(
       // The client sends intent; the server builds the resume cursor from the
       // persisted watermark. The emails-fetcher owns all IMAP logic from here.
       const resumeFrom =
-        miningMode === 'incremental'
+        miningMode === MiningRunMode.Incremental
           ? buildResumeFromConfig(resolvedSourceConfig)
           : undefined;
 
@@ -372,8 +372,8 @@ export default function initializeMiningController(
             boxes: sanitizedFolders,
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
-            miningMode: miningMode ?? 'full',
-            since: miningMode === 'incremental' ? since : undefined,
+            miningMode: miningMode ?? MiningRunMode.Full,
+            since: miningMode === MiningRunMode.Incremental ? since : undefined,
             resumeFrom,
             sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,

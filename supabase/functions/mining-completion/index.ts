@@ -4,6 +4,7 @@ import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { verifyServiceRole } from "../_shared/middlewares.ts";
 import { buildCompletionPatch, type TaskDetails } from "./completion.ts";
+import { TaskStatus } from "../_shared/enums.ts";
 
 const logger = createLogger("mining-completion");
 const functionName = "mining-completion";
@@ -53,7 +54,7 @@ app.post("/", verifyServiceRole, async (c: Context) => {
   }
 
   const task = (data?.[0] ?? null) as FetchTaskRow | null;
-  if (!task || task.status !== "done") {
+  if (!task || task.status !== TaskStatus.Done) {
     logger.warn("No successful fetch task to record", {
       miningId,
       status: task?.status,

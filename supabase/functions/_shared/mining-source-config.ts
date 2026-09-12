@@ -3,13 +3,7 @@
 // mining-sources and passive-mining can parse/normalize persisted config the
 // same way the backend does.
 import { z } from "zod";
-
-export const SOURCE_HEALTH_STATES = [
-  "active",
-  "needs_reauth",
-  "error",
-] as const;
-export type SourceHealthState = (typeof SOURCE_HEALTH_STATES)[number];
+import { SourceHealthState } from "./enums.ts";
 
 export const FOLDER_WATERMARK_SCHEMA = z.object({
   uidvalidity: z.string(),
@@ -30,7 +24,7 @@ export const MINING_COMPLETION_SCHEMA = z
 export type MiningCompletion = z.infer<typeof MINING_COMPLETION_SCHEMA>;
 
 export const SOURCE_HEALTH_SCHEMA = z.object({
-  state: z.enum(SOURCE_HEALTH_STATES).optional(),
+  state: z.nativeEnum(SourceHealthState).optional(),
   last_error: z.array(z.string()).nullable().optional(),
   last_run_at: z.string().nullable().optional(),
 });
@@ -80,8 +74,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function legacyStatusToState(status: unknown): SourceHealthState | undefined {
-  if (status === "completed") return "active";
-  if (status === "failed" || status === "retrying") return "error";
+  if (status === "completed") return SourceHealthState.Active;
+  if (status === "failed" || status === "retrying") {
+    return SourceHealthState.Error;
+  }
   return undefined;
 }
 
@@ -106,7 +102,7 @@ function foldLegacyHealth(source: Record<string, unknown>): Record<string, unkno
 
   if (source.needs_reauth === true) {
     // Authoritative — an explicit re-auth flag always wins.
-    health.state = "needs_reauth";
+    health.state = SourceHealthState.NeedsReauth;
   } else if (health.state === undefined && source.status !== undefined) {
     // Fold legacy status only when the config doesn't already carry a
     // namespaced health.state (a stale legacy `status` written by older

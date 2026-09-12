@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   FolderStatus,
@@ -9,30 +7,44 @@ import {
   TaskStatus,
 } from '~/types/enums';
 
-const manifest = JSON.parse(
-  readFileSync(
-    resolve(process.cwd(), '../contracts/mining-enums.json'),
-    'utf8',
-  ),
-) as Record<string, Record<string, string>>;
+/**
+ * Locks the cross-runtime enum values (mirrored in the backend and edge
+ * functions). Inline so no shared file is shipped.
+ */
+describe('mining enums (frontend)', () => {
+  it('MiningRunMode / TaskStatus / SourceHealthState / FolderStatus', () => {
+    expect(MiningRunMode).toEqual({
+      Full: 'full',
+      Incremental: 'incremental',
+    });
+    expect(TaskStatus).toEqual({
+      Running: 'running',
+      Done: 'done',
+      Canceled: 'canceled',
+    });
+    expect(SourceHealthState).toEqual({
+      Active: 'active',
+      NeedsReauth: 'needs_reauth',
+      Error: 'error',
+    });
+    expect(FolderStatus).toEqual({
+      Unmined: 'unmined',
+      UpToDate: 'up_to_date',
+      NewMessages: 'new_messages',
+      UidvalidityChanged: 'uidvalidity_changed',
+      MetadataUnavailable: 'metadata_unavailable',
+    });
+  });
 
-const mirrors = {
-  MiningRunMode,
-  TaskStatus,
-  SourceHealthState,
-  FolderStatus,
-  SourceBadge,
-};
-
-describe('mining enum contract (frontend)', () => {
-  it.each(Object.keys(mirrors))(
-    '%s matches contracts/mining-enums.json',
-    (name) => {
-      expect(mirrors[name as keyof typeof mirrors]).toEqual(manifest[name]);
-    },
-  );
-
-  it('defines every key in the manifest', () => {
-    expect(Object.keys(manifest).sort()).toEqual(Object.keys(mirrors).sort());
+  it('SourceBadge', () => {
+    expect(SourceBadge).toEqual({
+      Connected: 'connected',
+      CredentialExpired: 'credential_expired',
+      MiningStatusFailed: 'mining_status_failed',
+      MiningStatusRunning: 'mining_status_running',
+      MiningStatusDone: 'mining_status_done',
+      MiningStatusCanceled: 'mining_status_canceled',
+      MiningInProgress: 'mining_in_progress',
+    });
   });
 });

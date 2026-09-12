@@ -85,20 +85,6 @@
       :class="{ disabled: $leadminerStore.activeMiningTask }"
     />
 
-    <!-- Advanced: opt out of resume for this source -->
-    <div
-      v-if="activeMiningSource"
-      class="flex flex-row items-center gap-2 mt-4 pt-4 border-t border-surface-200"
-    >
-      <ToggleSwitch v-model="forceFullMining" input-id="forceFullMining" />
-      <label for="forceFullMining" class="cursor-pointer flex-1">
-        {{ t('force_full_mining_option') }}
-        <span class="block text-xs text-surface-500">
-          {{ t('force_full_mining_sub') }}
-        </span>
-      </label>
-    </div>
-
     <template #footer>
       <Button :label="$t('common.save')" @click="close" />
     </template>
@@ -109,10 +95,6 @@
 // skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
 import { updateMiningSourceConfig } from '@/utils/sources';
-import {
-  readForceFullMining,
-  writeForceFullMining,
-} from '~/utils/miningRunMode';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -126,7 +108,6 @@ const props = defineProps({
 
 const $leadminerStore = useLeadminerStore();
 const isVisible = ref(false);
-const forceFullMining = ref(false);
 const $screenStore = useScreenStore();
 
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
@@ -162,7 +143,6 @@ async function onRefreshImapTree() {
 }
 
 function open() {
-  forceFullMining.value = readForceFullMining(activeMiningSource.value?.email);
   isVisible.value = true;
 }
 
@@ -173,7 +153,6 @@ async function close() {
     isVisible.value = false;
     return;
   }
-  writeForceFullMining(src.email, forceFullMining.value);
   try {
     const config = await updateMiningSourceConfig(src.email, src.type, {
       mining_flags: { ...$leadminerStore.sourceConfig },
@@ -209,8 +188,6 @@ defineExpose({
     "select_folders_to_mine": "Select folders to mine",
     "email_messages_selected": "Email messages selected",
     "folder_status_legend": "Amber means new messages are available. Red means the mailbox identity changed and a full scan is required.",
-    "force_full_mining_option": "Re-mine everything from scratch",
-    "force_full_mining_sub": "(ignore saved progress for this source)",
     "sync_google_contacts": "Sync Google Contacts",
     "sync_google_contacts_sub": "(syncs contacts from your Google account)",
     "syncing_google_contacts": "Syncing Google Contacts..."
@@ -220,8 +197,6 @@ defineExpose({
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
     "folder_status_legend": "L'ambre indique que de nouveaux messages sont disponibles. Le rouge indique que l'identité de la boîte a changé et qu'une analyse complète est nécessaire.",
-    "force_full_mining_option": "Tout ré-extraire depuis le début",
-    "force_full_mining_sub": "(ignorer la progression enregistrée pour cette source)",
     "sync_google_contacts": "Synchroniser les contacts Google",
     "sync_google_contacts_sub": "(synchronise les contacts de votre compte Google)",
     "syncing_google_contacts": "Synchronisation des contacts Google..."

@@ -6,6 +6,11 @@ import {
   parseConfig,
   type MiningSourceConfigV1,
 } from "../_shared/mining-source-config.ts";
+import {
+  MiningRunMode,
+  SourceHealthState,
+  TaskStatus,
+} from "../_shared/enums.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
@@ -45,7 +50,7 @@ async function patchSourceConfig(
 async function recordRunStart(sourceId: string): Promise<void> {
   await patchSourceConfig(sourceId, {
     health: {
-      state: "active",
+      state: SourceHealthState.Active,
       last_run_at: new Date().toISOString(),
     },
   });
@@ -58,7 +63,9 @@ async function recordRunFailure(
 ): Promise<void> {
   await patchSourceConfig(sourceId, {
     health: {
-      state: permanent ? "needs_reauth" : "error",
+      state: permanent
+        ? SourceHealthState.NeedsReauth
+        : SourceHealthState.Error,
       last_run_at: new Date().toISOString(),
       last_error: [message],
     },
@@ -162,7 +169,9 @@ async function getMiningSources() {
       const legacyNeedsReauth =
         (source.config as Record<string, unknown> | undefined)?.needs_reauth ===
         true;
-      return healthState !== "needs_reauth" && !legacyNeedsReauth;
+      return (
+        healthState !== SourceHealthState.NeedsReauth && !legacyNeedsReauth
+      );
     })
     .map((source) => ({
       ...source,
@@ -179,7 +188,7 @@ async function getLatestPassiveMiningDate(
     .select("started_at")
     .eq("user_id", userId)
     .eq("type", "fetch")
-    .eq("status", "done")
+    .eq("status", TaskStatus.Done)
     .contains("details", { passive_mining: true })
     .order("started_at", { ascending: false })
     .limit(1);
@@ -261,7 +270,7 @@ async function startMiningEmail(miningSource: MiningSource) {
     extractSignatures: flags.extract_signatures ?? false,
     passive_mining: true,
     googleContactsSync,
-    miningMode: "incremental",
+    miningMode: MiningRunMode.Incremental,
   };
   if (since) {
     body.since = since;

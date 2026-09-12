@@ -10,6 +10,7 @@ import { CleanTask } from './tasks/CleanTask';
 import { SignatureTask } from './tasks/SignatureTask';
 import { TaskId } from './types';
 import ENV from '../../config';
+import { MiningRunMode } from '../../db/types';
 import { hasEmailVerificationConfigured } from '../email-status/EmailStatusVerifierFactory';
 
 export interface CreateImapMiningParams {
@@ -19,7 +20,7 @@ export interface CreateImapMiningParams {
   boxes: string[];
   fetchEmailBody: boolean;
   passiveMining?: boolean;
-  miningMode?: 'full' | 'incremental';
+  miningMode?: MiningRunMode;
   since?: string;
   sourceId?: string;
   resumeFrom?: {
@@ -61,7 +62,7 @@ export function createImapMining(
         fetchParams: {
           email: params.email,
           folders: params.boxes,
-          ...(params.miningMode === 'incremental'
+          ...(params.miningMode === MiningRunMode.Incremental
             ? {
                 ...(params.since !== undefined ? { since: params.since } : {}),
                 ...(params.resumeFrom !== undefined

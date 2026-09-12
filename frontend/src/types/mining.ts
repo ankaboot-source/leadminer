@@ -48,7 +48,7 @@ export interface MiningSourceFlags {
 }
 
 /** Typed V1 mining_sources.config (mirrors backend/src/services/mining-source-config). */
-export type MiningRunMode = 'full' | 'incremental';
+export { MiningRunMode } from './enums';
 
 export interface MiningSourceConfig {
   version?: 1;

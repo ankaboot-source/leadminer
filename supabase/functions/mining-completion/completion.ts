@@ -3,6 +3,7 @@ import {
   FOLDER_WATERMARK_SCHEMA,
   type FolderWatermark,
 } from "../_shared/mining-source-config.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
 
 /** Watermark shape persisted by FetchTask into `tasks.details.watermark`. */
 const WATERMARK_SCHEMA = z.object({
@@ -20,7 +21,11 @@ export type CompletionOutcome =
       skip: false;
       sourceId: string;
       patch: {
-        health: { state: "active"; last_run_at: string; last_error: null };
+        health: {
+          state: typeof SourceHealthState.Active;
+          last_run_at: string;
+          last_error: null;
+        };
         mining: {
           last: {
             mining_id: string;
@@ -61,7 +66,11 @@ export function buildCompletionPatch(
     skip: false,
     sourceId,
     patch: {
-      health: { state: "active", last_run_at: now, last_error: null },
+      health: {
+        state: SourceHealthState.Active,
+        last_run_at: now,
+        last_error: null,
+      },
       mining: {
         last: {
           mining_id: miningId,

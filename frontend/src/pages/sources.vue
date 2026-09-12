@@ -363,6 +363,7 @@ import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { deriveSourceStatus } from '@/utils/sourceStatus';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
 import { deriveSourceState } from '@/utils/miningSourceConfig';
+import { MiningRunMode, SourceHealthState } from '~/types/enums';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
@@ -538,7 +539,7 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
     $leadminer.activeMiningSource = source;
     await $leadminer.fetchInbox();
-    await $leadminer.startMining('email', undefined, 'incremental');
+    await $leadminer.startMining('email', undefined, MiningRunMode.Incremental);
     await $leadminer.getCurrentRunningMining();
   } catch (error) {
     $toast.add({
@@ -563,11 +564,11 @@ function passiveMiningStatus(source: MiningSource) {
   let label = '';
   if (isSourceMiningNow(source)) {
     label = 'mining_status_running';
-  } else if (status === 'error') {
+  } else if (status === SourceHealthState.Error) {
     label = 'mining_status_failed';
-  } else if (status === 'needs_reauth') {
+  } else if (status === SourceHealthState.NeedsReauth) {
     label = 'source_needs_reauth';
-  } else if (status === 'active') {
+  } else if (status === SourceHealthState.Active) {
     label = lastRunAt ? 'mining_status_done' : 'passive_mining_idle';
   }
   return { status, label };
@@ -584,7 +585,7 @@ function passiveMiningErrors(source: MiningSource): string[] {
 }
 
 function needsReauth(source: MiningSource): boolean {
-  return deriveSourceState(source).state === 'needs_reauth';
+  return deriveSourceState(source).state === SourceHealthState.NeedsReauth;
 }
 
 async function toggleSourceConfig(
