@@ -192,8 +192,9 @@ export enum TaskStatus {
 }
 
 /**
- * Cross-runtime enum mirrors — values are the single source of truth in
- * `contracts/mining-enums.json`, enforced by test/unit/contracts/mining-enums.test.ts.
+ * Cross-runtime enum mirrors for mining concepts. Mirrored in
+ * `supabase/functions/_shared/enums.ts` and `frontend/src/types/enums.ts`;
+ * `test/unit/mining-enums.test.ts` locks the values.
  */
 export enum MiningRunMode {
   Full = 'full',

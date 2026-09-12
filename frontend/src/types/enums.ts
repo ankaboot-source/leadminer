@@ -1,10 +1,8 @@
 /**
  * Cross-runtime enum mirrors for mining concepts.
  *
- * Values are the single source of truth in `contracts/mining-enums.json`, and
- * the contract test fails if this frontend mirror drifts from that manifest.
- * The backend (`backend/src/db/types.ts`) and edge (`supabase/functions/_shared/enums.ts`)
- * carry the same contract.
+ * Mirrored in `backend/src/db/types.ts` and `supabase/functions/_shared/enums.ts`;
+ * each runtime's tests lock the values inline.
  */
 
 export enum MiningRunMode {

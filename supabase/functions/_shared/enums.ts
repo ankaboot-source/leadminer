@@ -1,10 +1,8 @@
 /**
  * Cross-runtime enum mirrors for mining concepts.
  *
- * Values are the single source of truth in `contracts/mining-enums.json`, and
- * `enums.test.ts` fails if this Deno mirror drifts from that manifest. The
- * backend (`backend/src/db/types.ts`) and frontend (`frontend/src/types/enums.ts`)
- * carry the same contract.
+ * Mirrored in `backend/src/db/types.ts` and `frontend/src/types/enums.ts`; each
+ * runtime's tests lock the values inline.
  */
 
 export const MiningRunMode = {
