@@ -161,7 +161,8 @@ export default class PgSmtpSenders implements SmtpSenders {
         updates.smtpUser ?? null,
         updates.smtpPassword ?? null,
         this.encryptionKey,
-        updates.active ?? null
+        updates.active ?? null,
+        updates.miningSourceId ?? null
       ]);
       return rows[0] ? toSmtpSender(rows[0]) : null;
     } catch (error) {
