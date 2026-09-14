@@ -363,12 +363,16 @@ import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { deriveSourceStatus } from '@/utils/sourceStatus';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
 import { deriveSourceState } from '@/utils/miningSourceConfig';
-import { MiningRunMode, SourceHealthState } from '~/types/enums';
+import { SourceHealthState } from '~/types/enums';
+import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
   useScope: 'local',
 });
+// Global-scope translator for keys shared with data-driven toasts
+// (resolved by the global toast template in app.vue).
+const { t: $tGlobal } = useI18n({ useScope: 'global' });
 const { $saasEdgeFunctions } = useNuxtApp();
 const $toast = useToast();
 const $route = useRoute();
@@ -499,6 +503,10 @@ async function confirmDelete() {
   }
 }
 
+/**
+ * Continuous (passive) mining is scheduled server-side by a daily cron job —
+ * toggling it must only PATCH the source preference, never start a mining run.
+ */
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
     const config = await updatePassiveMining(
@@ -520,35 +528,41 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   }
 
   if (!value) {
-    return;
-  }
-
-  if (
-    $leadminer.activeMiningTask &&
-    $leadminer.activeMiningSource?.email !== source.email
-  ) {
     $toast.add({
-      severity: 'warn',
-      summary: t('mining_already_running'),
-      detail: t('mining_already_running_detail'),
+      severity: 'info',
+      summary: t('passive_mining_disabled'),
+      detail: t('passive_mining_disabled_detail'),
       life: 4500,
     });
     return;
   }
 
-  try {
-    $leadminer.activeMiningSource = source;
-    await $leadminer.fetchInbox();
-    await $leadminer.startMining('email', undefined, MiningRunMode.Incremental);
-    await $leadminer.getCurrentRunningMining();
-  } catch (error) {
-    $toast.add({
-      severity: 'error',
-      summary: t('mining_start_failed'),
-      detail: (error as Error).message,
-      life: 4500,
-    });
-  }
+  // Explain what enabling actually does: when it will run and on which
+  // folders (saved folders if any, otherwise the server defaults).
+  const schedule = describeCronSchedule(PASSIVE_CRON_SCHEDULE);
+  const folderCount = deriveSourceState(source).minableFolders.length;
+  const nextRun = schedule.nextRunAt;
+  $toast.add({
+    severity: 'success',
+    summary: t('passive_mining_enabled'),
+    detail: $tGlobal('sources.passive_mining_enabled_detail', {
+      schedule: $tGlobal(schedule.schedule.key, schedule.schedule.value ?? {}),
+      nextRunDay: nextRun
+        ? $tGlobal(
+            isSameUtcDay(nextRun, new Date())
+              ? 'sources.today'
+              : 'sources.tomorrow',
+          )
+        : '',
+      nextRunTime: schedule.time ?? '',
+      folders: $tGlobal(
+        'sources.folder_count',
+        { count: folderCount },
+        folderCount,
+      ),
+    }),
+    life: 7000,
+  });
 }
 
 function getSourceConfig(source: MiningSource, key: string): boolean {
@@ -579,6 +593,10 @@ function isSourceMiningNow(source: MiningSource): boolean {
     (g) => g?.task?.miningSource?.source === source.email,
   );
 }
+
+// Keep in sync with the passive-cron-job migration
+// (supabase/migrations/*_passive_mining_cron_job.sql).
+const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
 
 function passiveMiningErrors(source: MiningSource): string[] {
   return deriveSourceState(source).lastError ?? [];
@@ -755,6 +773,9 @@ onMounted(async () => {
     "google_contacts_sync": "Google Contacts",
     "config_update_failed": "Unable to update source settings",
     "passive_mining_update_failed": "Unable to update continuous mining",
+    "passive_mining_enabled": "Continuous mining enabled",
+    "passive_mining_disabled": "Continuous mining disabled",
+    "passive_mining_disabled_detail": "No automatic email checks will run for this source.",
     "reconnect_failed": "Unable to reconnect source",
     "reconnect_unavailable": "Reconnect URL is unavailable",
     "reconnect_not_supported": "Reconnect not supported",
@@ -821,6 +842,9 @@ onMounted(async () => {
     "google_contacts_sync": "Contacts Google",
     "config_update_failed": "Impossible de mettre à jour les paramètres",
     "passive_mining_update_failed": "Impossible de mettre à jour l'extraction continue",
+    "passive_mining_enabled": "Extraction continue activée",
+    "passive_mining_disabled": "Extraction continue désactivée",
+    "passive_mining_disabled_detail": "Aucune vérification automatique des e-mails ne sera effectuée pour cette source.",
     "reconnect_failed": "Impossible de reconnecter la source",
     "reconnect_unavailable": "URL de reconnexion indisponible",
     "reconnect_not_supported": "Reconnexion non prise en charge",
