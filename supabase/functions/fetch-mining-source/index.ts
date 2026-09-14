@@ -11,6 +11,7 @@ import { z } from "zod";
 import { timingSafeEqual } from "node:crypto";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
@@ -21,6 +22,7 @@ import {
   MiningSource,
   OAuthMiningSourceCredentials,
   refreshAccessToken,
+  refreshedExpiresAtMs,
 } from "./oauth-handler/index.ts";
 
 const logger = createLogger("fetch-mining-source");
@@ -103,17 +105,16 @@ class FetchMiningSourceHandler {
       sources = FetchMiningSourceHandler.filterById(sources, body.id);
 
       const { refreshedEmails, deauthorizedEmails } =
-        await this.refreshTokensIfNeeded(
-          sources,
-          userId,
-          body.refresh_email,
-        );
+        await this.refreshTokensIfNeeded(sources, userId, body.refresh_email);
 
       // If the specifically requested source (by email or id) was permanently
       // deauthorized (revoked / invalid_grant), return a clear 401 so callers
       // like getImapBoxes can surface a "reconnect needed" state instead of
       // attempting to connect with dead credentials.
-      if (sources.length > 0 && sources.every((s) => deauthorizedEmails.includes(s.email))) {
+      if (
+        sources.length > 0 &&
+        sources.every((s) => deauthorizedEmails.includes(s.email))
+      ) {
         return FetchMiningSourceHandler.buildUnauthorizedResponse(
           deauthorizedEmails,
         );
@@ -257,18 +258,19 @@ class FetchMiningSourceHandler {
       try {
         const refreshed = await refreshAccessToken(credentials);
 
-        if (!refreshed.access_token || !refreshed.expires_at) {
+        if (!refreshed.access_token) {
           logger.warn("Token refresh returned incomplete data", {
             email: source.email,
           });
           continue;
         }
 
+        // Canonical storage unit: epoch milliseconds (see isTokenExpired).
         const updatedCredentials = {
           ...credentials,
           accessToken: refreshed.access_token,
           refreshToken: refreshed.refresh_token ?? credentials.refreshToken,
-          expiresAt: refreshed.expires_at,
+          expiresAt: refreshedExpiresAtMs(refreshed),
         };
 
         await this.admin.schema("private").rpc("upsert_mining_source", {
@@ -286,22 +288,27 @@ class FetchMiningSourceHandler {
 
         // A successful refresh means the connection is healthy again; clear any
         // stale needs_reauth / failed-run flag set by an earlier rejection.
-        if (source.config?.needs_reauth || source.config?.status) {
-          const config = {
-            ...(source.config ?? {}),
-            needs_reauth: false,
-            status: "idle",
-            errors: [],
-          };
-          const { error: configError } = await this.admin
-            .schema("private")
-            .from("mining_sources")
-            .update({ config })
-            .eq("id", source.id);
-          if (configError) {
+        const priorHealth =
+          typeof source.config?.health === "object" &&
+          source.config?.health !== null
+            ? (source.config.health as Record<string, unknown>)
+            : {};
+        if (
+          source.config?.needs_reauth ||
+          source.config?.status ||
+          priorHealth.state
+        ) {
+          try {
+            await this.patchConfig(source.id as string, {
+              health: { state: SourceHealthState.Active, last_error: null },
+            });
+          } catch (configError) {
             logger.error("Failed to clear needs_reauth flag", {
               email: source.email,
-              error: configError.message,
+              error:
+                configError instanceof Error
+                  ? configError.message
+                  : String(configError),
             });
           }
         }
@@ -333,28 +340,38 @@ class FetchMiningSourceHandler {
     return { refreshedEmails, deauthorizedEmails };
   }
 
+  private async patchConfig(
+    sourceId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    // Single writer: mining-sources owns config persistence.
+    const { error } = await this.admin.functions.invoke(
+      `mining-sources/${encodeURIComponent(sourceId)}/config`,
+      { method: "PATCH", body: patch },
+    );
+    if (error) {
+      throw new Error(
+        `Failed to update mining source config: ${error.message}`,
+      );
+    }
+  }
+
   private async handlePermanentRejection(
     source: MiningSource,
     userId: string,
   ): Promise<void> {
     if (!source.id) {
-      logger.error(
-        "Cannot flag source for re-auth: missing source id",
-        { email: source.email },
-      );
+      logger.error("Cannot flag source for re-auth: missing source id", {
+        email: source.email,
+      });
       return;
     }
     try {
-      const config = { ...(source.config ?? {}), needs_reauth: true };
-      // Preserve the user's passive_mining intent: do NOT flip it to false here.
-      // If this source was enabled for continuous mining, it stays enabled and will
-      // resume on the next schedule cycle once the token is refreshed/re-authorized.
-      // The needs_reauth flag surfaces the reconnect state in the UI instead.
-      await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .update({ config })
-        .eq("id", source.id);
+      // Preserve the user's passive_mining intent and all sibling config keys:
+      // the row-locked canonical writer performs the merge atomically.
+      await this.patchConfig(source.id, {
+        health: { state: SourceHealthState.NeedsReauth },
+      });
       logger.info("Flagged permanently rejected source for re-auth", {
         email: source.email,
         userId,
@@ -362,7 +379,10 @@ class FetchMiningSourceHandler {
     } catch (configError) {
       logger.error("Failed to flag source for re-auth", {
         email: source.email,
-        error: configError instanceof Error ? configError.message : String(configError),
+        error:
+          configError instanceof Error
+            ? configError.message
+            : String(configError),
       });
     }
   }
@@ -379,27 +399,20 @@ class FetchMiningSourceHandler {
       return;
     }
     try {
-      const existing = await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .select("config")
-        .eq("id", sourceId)
-        .single();
-      const config = {
-        ...((existing.data?.config as Record<string, unknown>) ?? {}),
-        status: "failed",
-        last_run: new Date().toISOString(),
-        errors: [error instanceof Error ? error.message : String(error)],
-      };
-      await this.admin
-        .schema("private")
-        .from("mining_sources")
-        .update({ config })
-        .eq("id", sourceId);
+      await this.patchConfig(sourceId, {
+        health: {
+          state: SourceHealthState.Error,
+          last_run_at: new Date().toISOString(),
+          last_error: [error instanceof Error ? error.message : String(error)],
+        },
+      });
     } catch (configError) {
       logger.error("Failed to record transient refresh error", {
         email,
-        error: configError instanceof Error ? configError.message : String(configError),
+        error:
+          configError instanceof Error
+            ? configError.message
+            : String(configError),
       });
     }
   }
@@ -415,6 +428,7 @@ class FetchMiningSourceHandler {
         email: s.email,
         type: s.type,
         credentials: s.credentials,
+        config: s.config,
       })),
       refreshed: refreshedEmails,
       deauthorized: deauthorizedEmails,

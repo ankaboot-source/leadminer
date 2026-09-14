@@ -5,6 +5,7 @@ import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
+import { extractFolderWatermarks } from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './imap.helpers';
 
@@ -32,8 +33,8 @@ export default function initializeImapController(
           email
         );
 
-        const data =
-          sources?.find((e) => e.email === email)?.credentials ?? null;
+        const source = sources?.find((e) => e.email === email);
+        const data = source?.credentials ?? null;
 
         if (!data) {
           res.status(400);
@@ -70,7 +71,11 @@ export default function initializeImapController(
         );
 
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnection, logger);
-        const tree: any = await imapBoxesFetcher.getTree(email);
+        // getImapBoxes already resolved the source, so it can join the IMAP
+        // cursor with the persisted watermark and hand the frontend a ready
+        // status per folder.
+        const watermarks = extractFolderWatermarks(source?.config);
+        const tree = await imapBoxesFetcher.getTree(email, watermarks);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {

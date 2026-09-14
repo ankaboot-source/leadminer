@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { stringField, positiveNumber } from './index';
+import { MiningRunMode } from '../db/types';
 
 export const createImapMiningSourceSchema = z.object({
   body: z.object({
@@ -30,6 +31,7 @@ export const startMiningSchema = z.object({
         .default([]),
       extractSignatures: z.boolean(),
       cleaningEnabled: z.boolean(),
+      miningMode: z.nativeEnum(MiningRunMode).default(MiningRunMode.Full),
       since: z.string().nullable().optional(),
       passive_mining: z.boolean().optional(),
       googleContactsSync: z.boolean().optional()
@@ -38,6 +40,15 @@ export const startMiningSchema = z.object({
       message: 'boxes must be non-empty when Google Contacts sync is disabled',
       path: ['boxes']
     })
+    .refine(
+      (data) =>
+        data.miningMode === MiningRunMode.Incremental ||
+        data.since === undefined,
+      {
+        message: 'full mining cannot include since',
+        path: ['miningMode']
+      }
+    )
 });
 
 export const startMiningFileSchema = z.object({

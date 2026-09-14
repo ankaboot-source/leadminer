@@ -147,11 +147,14 @@
                   @click="openDeleteDialog(source)"
                 />
 
-                <div v-if="!source.isValid" class="flex gap-2 items-center">
+                <div
+                  v-if="sourceStatus(source).showReconnect"
+                  class="flex gap-2 items-center"
+                >
                   <Tag
-                    :value="t(getSourceStatusBadge(source).labelKey)"
-                    :severity="getSourceStatusBadge(source).severity"
-                    :icon="getSourceStatusBadge(source).icon"
+                    :value="t(sourceStatus(source).badge.labelKey)"
+                    :severity="sourceStatus(source).badge.severity"
+                    :icon="sourceStatus(source).badge.icon"
                   />
                   <Button
                     :label="t('reconnect')"
@@ -162,8 +165,8 @@
                 </div>
                 <Tag
                   v-else
-                  :value="t(getSourceStatusBadge(source).labelKey)"
-                  :severity="getSourceStatusBadge(source).severity"
+                  :value="t(sourceStatus(source).badge.labelKey)"
+                  :severity="sourceStatus(source).badge.severity"
                 />
               </div>
             </div>
@@ -238,20 +241,22 @@
                 <div class="text-surface-500">{{ t('last_passive_run') }}</div>
                 <div class="font-semibold mt-1">
                   {{
-                    source.config?.['last_run']
-                      ? formatDate(source.config['last_run'] as string)
+                    deriveSourceState(source).lastRunAt
+                      ? formatDate(
+                          deriveSourceState(source).lastRunAt as string,
+                        )
                       : '-'
                   }}
                 </div>
               </div>
 
               <div
-                v-if="(source.config?.['folders_mined'] as string[])?.length"
+                v-if="deriveSourceState(source).minableFolders.length"
                 class="p-2 rounded bg-surface-50"
               >
                 <div class="text-surface-500">{{ t('folders_mined') }}</div>
                 <div class="font-semibold mt-1">
-                  {{ (source.config?.['folders_mined'] as string[]).length }}
+                  {{ deriveSourceState(source).minableFolders.length }}
                 </div>
               </div>
 
@@ -355,8 +360,10 @@ import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceIm
 import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource, MiningTaskGroup } from '~/types/mining';
-import { resolveSourceStatusBadge } from '@/utils/sourceStatusBadge';
+import { deriveSourceStatus } from '@/utils/sourceStatus';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
+import { deriveSourceState } from '@/utils/miningSourceConfig';
+import { MiningRunMode, SourceHealthState } from '~/types/enums';
 
 const $leadminer = useLeadminerStore();
 const { t } = useI18n({
@@ -494,12 +501,13 @@ async function confirmDelete() {
 
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
-    await updatePassiveMining(
+    const config = await updatePassiveMining(
       source.email,
       source.type,
       value,
-      source.config ?? {},
+      {},
     );
+    source.config = config;
   } catch (error) {
     source.passive_mining = !value;
     $toast.add({
@@ -531,7 +539,7 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   try {
     $leadminer.activeMiningSource = source;
     await $leadminer.fetchInbox();
-    await $leadminer.startMining('email');
+    await $leadminer.startMining('email', undefined, MiningRunMode.Incremental);
     await $leadminer.getCurrentRunningMining();
   } catch (error) {
     $toast.add({
@@ -544,32 +552,40 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
 }
 
 function getSourceConfig(source: MiningSource, key: string): boolean {
-  return (source.config?.[key] as boolean) ?? false;
+  const flags = (source.config?.flags ?? {}) as Record<string, unknown>;
+  return flags[key] === true;
 }
 
 function passiveMiningStatus(source: MiningSource) {
-  const status = (source.config?.['status'] as string) ?? '';
-  const label =
-    status === 'running'
-      ? 'mining_status_running'
-      : status === 'completed'
-        ? 'mining_status_done'
-        : status === 'failed'
-          ? 'mining_status_failed'
-          : status === 'retrying'
-            ? 'passive_mining_retrying'
-            : status === 'idle'
-              ? 'passive_mining_idle'
-              : '';
+  const { state, lastRunAt } = deriveSourceState(source);
+  // Running derives from live task rows (passiveMinings); here we map the
+  // durable source health to UI labels.
+  const status = state;
+  let label = '';
+  if (isSourceMiningNow(source)) {
+    label = 'mining_status_running';
+  } else if (status === SourceHealthState.Error) {
+    label = 'mining_status_failed';
+  } else if (status === SourceHealthState.NeedsReauth) {
+    label = 'source_needs_reauth';
+  } else if (status === SourceHealthState.Active) {
+    label = lastRunAt ? 'mining_status_done' : 'passive_mining_idle';
+  }
   return { status, label };
 }
 
+function isSourceMiningNow(source: MiningSource): boolean {
+  return $leadminer.passiveMinings?.some(
+    (g) => g?.task?.miningSource?.source === source.email,
+  );
+}
+
 function passiveMiningErrors(source: MiningSource): string[] {
-  return (source.config?.['errors'] as string[]) ?? [];
+  return deriveSourceState(source).lastError ?? [];
 }
 
 function needsReauth(source: MiningSource): boolean {
-  return source.config?.['needs_reauth'] === true;
+  return deriveSourceState(source).state === SourceHealthState.NeedsReauth;
 }
 
 async function toggleSourceConfig(
@@ -577,14 +593,14 @@ async function toggleSourceConfig(
   key: string,
   value: boolean,
 ) {
-  const updatedConfig = {
-    ...(source.config as Record<string, unknown>),
-    [key]: value,
-  };
-
   try {
-    await updateMiningSourceConfig(source.email, source.type, updatedConfig);
-    source.config = updatedConfig;
+    // Send params only; mining-sources merges them (unknown keys preserved).
+    const patch = { mining_flags: { [key]: value } };
+    source.config = await updateMiningSourceConfig(
+      source.email,
+      source.type,
+      patch,
+    );
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -595,16 +611,15 @@ async function toggleSourceConfig(
   }
 }
 
-function getSourceStatusBadge(source: MiningSource) {
-  return resolveSourceStatusBadge({
-    isValid: source.isValid !== false,
-    isActiveMiningSource: isActiveMiningSource(source),
-    miningStatus: $leadminer.miningTask?.status,
+function sourceStatus(source: MiningSource) {
+  return deriveSourceStatus(source, {
+    email: isActiveMiningSource(source) ? source.email : undefined,
+    status: $leadminer.miningTask?.status,
   });
 }
 
 async function reconnectExpiredSource(source: MiningSource) {
-  if (source.isValid) {
+  if (!sourceStatus(source).showReconnect) {
     return;
   }
 
@@ -650,7 +665,7 @@ onMounted(async () => {
 
     const clearReconnectQuery = () => $router.replace({ query: {} });
 
-    if (source && !source.isValid) {
+    if (source && sourceStatus(source).showReconnect) {
       clearReconnectQuery();
 
       if (source.type === 'imap') {

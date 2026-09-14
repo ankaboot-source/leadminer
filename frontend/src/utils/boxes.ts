@@ -1,11 +1,22 @@
 // @ts-expect-error missing types definition file
 import objectScan from 'object-scan';
 import type { TreeSelectionKeys } from 'primevue/tree';
+import type { ImapFolderCursor } from '~/types/mining';
+import type { FolderStatus } from '~/types/enums';
+
+export type { ImapFolderCursor } from '~/types/mining';
 
 export interface BoxNode {
   key: string;
   label: string;
   total: number;
+  cursor?: ImapFolderCursor;
+  /** Persisted watermark, returned by getImapBoxes. */
+  watermark?: { uidvalidity: string; last_uid: number };
+  /** Sync status computed server-side by getImapBoxes. */
+  status?: FolderStatus;
+  has_new_messages?: boolean;
+  latest_uid?: number | null;
   children?: BoxNode[];
   attribs?: string[];
 }

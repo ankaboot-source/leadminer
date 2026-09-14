@@ -2,6 +2,15 @@ import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
 import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
+import {
+  parseConfig,
+  type MiningSourceConfigV1,
+} from "../_shared/mining-source-config.ts";
+import {
+  MiningRunMode,
+  SourceHealthState,
+  TaskStatus,
+} from "../_shared/enums.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
@@ -16,57 +25,51 @@ type MiningSource = {
   user_id: string;
   type?: string;
   config?: Record<string, unknown>;
+  parsedConfig?: MiningSourceConfigV1;
 };
 
-function mergeConfig(
-  current: MiningSource["config"],
-  patch: Record<string, unknown>,
-): Record<string, unknown> {
-  return { ...(current ?? {}), ...patch };
-}
-
-async function updateConfig(
+/**
+ * Centralized config writer: invoke the mining-sources edge function so ALL
+ * mining_sources.config mutations flow through one atomic, row-locked merge.
+ * Uses the Supabase client (service-role) rather than a hand-rolled fetch.
+ */
+async function patchSourceConfig(
   sourceId: string,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  const source = await supabase
-    .schema("private")
-    .from("mining_sources")
-    .select("config")
-    .eq("id", sourceId)
-    .single();
-  if (source.error) {
-    console.error(
-      `Failed to fetch config for ${sourceId}: ${source.error.message}`,
-    );
-    return;
-  }
-  const merged = mergeConfig(
-    source.data?.config as MiningSource["config"],
-    patch,
+  const { error } = await supabase.functions.invoke(
+    `mining-sources/${encodeURIComponent(sourceId)}/config`,
+    { method: "PATCH", body: patch },
   );
-  const { error } = await supabase
-    .schema("private")
-    .from("mining_sources")
-    .update({ config: merged })
-    .eq("id", sourceId);
+
   if (error) {
     console.error(`Failed to persist config for ${sourceId}: ${error.message}`);
   }
 }
 
-async function recordRun(
-  sourceId: string,
-  patch: Record<string, unknown>,
-): Promise<void> {
-  await updateConfig(sourceId, {
-    last_run: new Date().toISOString(),
-    ...patch,
+async function recordRunStart(sourceId: string): Promise<void> {
+  await patchSourceConfig(sourceId, {
+    health: {
+      state: SourceHealthState.Active,
+      last_run_at: new Date().toISOString(),
+    },
   });
 }
 
-async function markNeedsReauth(sourceId: string): Promise<void> {
-  await updateConfig(sourceId, { needs_reauth: true });
+async function recordRunFailure(
+  sourceId: string,
+  message: string,
+  permanent: boolean,
+): Promise<void> {
+  await patchSourceConfig(sourceId, {
+    health: {
+      state: permanent
+        ? SourceHealthState.NeedsReauth
+        : SourceHealthState.Error,
+      last_run_at: new Date().toISOString(),
+      last_error: [message],
+    },
+  });
 }
 
 function isOAuthType(type?: string): boolean {
@@ -87,10 +90,10 @@ async function backendError(
   })() as Record<string, unknown>;
   const detail =
     (payload?.data as Record<string, unknown> | undefined)?.message ??
-      payload?.message ??
-      payload?.error ??
-      errText ??
-      res.statusText;
+    payload?.message ??
+    payload?.error ??
+    errText ??
+    res.statusText;
   const error = new Error(message(res.status, String(detail))) as Error & {
     status: number;
   };
@@ -104,19 +107,9 @@ app.post("/", async (c: Context) => {
     console.log(`Found ${miningSources.length} mining sources:`, miningSources);
     for (const miningSource of miningSources) {
       try {
-        await recordRun(miningSource.id, { status: "running" });
-        const { task, folders } = await startMiningEmail(miningSource);
-        await recordRun(miningSource.id, {
-          status: "completed",
-          mining_id: (task as { miningId?: string } | undefined)?.miningId ??
-            null,
-          folders_mined: folders,
-          errors: [],
-        });
-        console.log(
-          `Started mining task for source ${miningSource.email}:`,
-          task,
-        );
+        await recordRunStart(miningSource.id);
+        await startMiningEmail(miningSource);
+        console.log(`Started mining task for source ${miningSource.email}:`);
       } catch (error) {
         console.error(
           `Error starting mining for source ${miningSource.email}:`,
@@ -126,18 +119,16 @@ app.post("/", async (c: Context) => {
         // invalid_grant on refresh or the access token rejected at the IMAP
         // layer). Treat as permanent so the user is asked to reconnect instead
         // of retrying every cycle. Plain IMAP 401s (bad password) stay retrying.
+        // (#2880 classification, ported onto the V1 config-write path.)
         const status = (error as { status?: number } | undefined)?.status;
-        const permanent = isPermanentOAuthError(error) ||
+        const permanent =
+          isPermanentOAuthError(error) ||
           (status === 401 && isOAuthType(miningSource.type));
-        await recordRun(miningSource.id, {
-          status: permanent ? "failed" : "retrying",
-          errors: [error instanceof Error ? error.message : String(error)],
-          ...(permanent ? { needs_reauth: true } : {}),
-        });
-
-        if (permanent) {
-          await markNeedsReauth(miningSource.id);
-        }
+        await recordRunFailure(
+          miningSource.id,
+          error instanceof Error ? error.message : String(error),
+          permanent,
+        );
       }
     }
 
@@ -152,21 +143,40 @@ Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
   // Sources enabled for continuous mining that aren't awaiting re-auth.
-  // Match the jsonb key explicitly (is.null / neq.true) since `not.eq` on an
-  // absent key evaluates to NULL and would drop valid sources.
+  //
+  // We fetch broadly (any passive source) and do the re-auth filter in code:
+  // PostgREST jsonb filters are fragile here while config migrates from the
+  // legacy `needs_reauth` shape to `health.state` (a `not.eq` on an absent
+  // key evaluates to NULL and drops valid rows). The in-code filter below
+  // covers both shapes. `type` is needed for the OAuth-401 classification
+  // (#2880) in the error path.
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
     .select("id, email, user_id, type, config")
-    .match({ passive_mining: true })
-    .or("config->>needs_reauth.is.null,config->>needs_reauth.neq.true");
+    .match({ passive_mining: true });
 
   if (error) {
     console.error("Error fetching mining sources:", error.message);
     throw error;
   }
 
-  return data;
+  return (data ?? [])
+    .filter((source) => {
+      const config = parseConfig(source.config);
+      const healthState = config.health?.state;
+      // Legacy fallback: an explicit needs_reauth:true (old shape) also skips.
+      const legacyNeedsReauth =
+        (source.config as Record<string, unknown> | undefined)?.needs_reauth ===
+        true;
+      return (
+        healthState !== SourceHealthState.NeedsReauth && !legacyNeedsReauth
+      );
+    })
+    .map((source) => ({
+      ...source,
+      parsedConfig: parseConfig(source.config),
+    }));
 }
 
 async function getLatestPassiveMiningDate(
@@ -178,7 +188,7 @@ async function getLatestPassiveMiningDate(
     .select("started_at")
     .eq("user_id", userId)
     .eq("type", "fetch")
-    .eq("status", "done")
+    .eq("status", TaskStatus.Done)
     .contains("details", { passive_mining: true })
     .order("started_at", { ascending: false })
     .limit(1);
@@ -224,25 +234,43 @@ async function getBoxes(miningSource: MiningSource) {
 }
 
 async function startMiningEmail(miningSource: MiningSource) {
-  // Get default folders
-  // we should save checked boxes from the frontend in miningSource later on
-  const boxes = await getBoxes(miningSource);
-  console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
-  const folders = getFolders(boxes);
-  console.log(`Extracted folders for ${miningSource.email}:`, folders);
+  // Get default folders (saved checked boxes come from config.folders going
+  // forward; getBoxes falls back to the server default set).
+  const sourceConfig =
+    miningSource.parsedConfig ?? parseConfig(miningSource.config);
+  const savedFolders = sourceConfig.folders;
 
-  const since = await getLatestPassiveMiningDate(miningSource.user_id);
+  let folders: string[];
+  if (savedFolders && savedFolders.length > 0) {
+    folders = savedFolders;
+  } else {
+    const boxes = await getBoxes(miningSource);
+    console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
+    folders = getFolders(boxes);
+    console.log(`Extracted folders for ${miningSource.email}:`, folders);
+  }
 
-  const sourceConfig = miningSource.config ?? {};
-  const googleContactsSync = sourceConfig.google_contacts_sync ?? false;
+  // The backend builds `resumeFrom` from the persisted watermark. The edge only
+  // decides the date fallback, used when no watermark exists yet.
+  const hasWatermark = Boolean(
+    sourceConfig.mining?.last?.folders &&
+      Object.keys(sourceConfig.mining.last.folders).length > 0,
+  );
+  const since = hasWatermark
+    ? undefined
+    : await getLatestPassiveMiningDate(miningSource.user_id);
+
+  const flags = sourceConfig.flags ?? {};
+  const googleContactsSync = sourceConfig.flags?.google_contacts_sync ?? false;
 
   const body: Record<string, unknown> = {
     miningSource: { id: miningSource.id },
     boxes: folders,
-    cleaningEnabled: sourceConfig.cleaning_enabled ?? true,
-    extractSignatures: sourceConfig.extract_signatures ?? false,
+    cleaningEnabled: flags.cleaning_enabled ?? true,
+    extractSignatures: flags.extract_signatures ?? false,
     passive_mining: true,
     googleContactsSync,
+    miningMode: MiningRunMode.Incremental,
   };
   if (since) {
     body.since = since;
@@ -270,5 +298,5 @@ async function startMiningEmail(miningSource: MiningSource) {
   }
 
   const json = await res.json();
-  return { task: json?.data ?? json, folders };
+  return json?.data ?? json;
 }

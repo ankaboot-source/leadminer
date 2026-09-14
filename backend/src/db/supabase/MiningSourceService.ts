@@ -17,6 +17,7 @@ export interface MiningSourcesResponse {
     email: string;
     type: ExtendedMiningSourceType;
     credentials: OAuthMiningSourceCredentials | ImapMiningSourceCredentials;
+    config?: Record<string, unknown>;
   }[];
   refreshed: string[];
 }
@@ -73,18 +74,22 @@ export class MiningSourceService implements MiningSources {
       if (source.type === 'imap') {
         return {
           userId,
+          id: source.id,
           email: source.email,
           type: source.type,
-          credentials: source.credentials as ImapMiningSourceCredentials
+          credentials: source.credentials as ImapMiningSourceCredentials,
+          config: source.config
         };
       }
 
       if (isOAuthSourceType(source.type)) {
         return {
           userId,
+          id: source.id,
           email: source.email,
           type: source.type,
-          credentials: source.credentials as OAuthMiningSourceCredentials
+          credentials: source.credentials as OAuthMiningSourceCredentials,
+          config: source.config
         };
       }
 
@@ -125,7 +130,8 @@ export class MiningSourceService implements MiningSources {
         email: source.email,
         type: source.type,
         id: sourceId,
-        credentials: source.credentials as ImapMiningSourceCredentials
+        credentials: source.credentials as ImapMiningSourceCredentials,
+        config: source.config
       };
     }
 
@@ -135,7 +141,8 @@ export class MiningSourceService implements MiningSources {
         email: source.email,
         type: source.type,
         id: sourceId,
-        credentials: source.credentials as OAuthMiningSourceCredentials
+        credentials: source.credentials as OAuthMiningSourceCredentials,
+        config: source.config
       };
     }
 

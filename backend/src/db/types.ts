@@ -191,6 +191,30 @@ export enum TaskStatus {
   Done = 'done'
 }
 
+/**
+ * Cross-runtime enum mirrors for mining concepts. Mirrored in
+ * `supabase/functions/_shared/enums.ts` and `frontend/src/types/enums.ts`;
+ * `test/unit/mining-enums.test.ts` locks the values.
+ */
+export enum MiningRunMode {
+  Full = 'full',
+  Incremental = 'incremental'
+}
+
+export enum SourceHealthState {
+  Active = 'active',
+  NeedsReauth = 'needs_reauth',
+  Error = 'error'
+}
+
+export enum FolderStatus {
+  Unmined = 'unmined',
+  UpToDate = 'up_to_date',
+  NewMessages = 'new_messages',
+  UidvalidityChanged = 'uidvalidity_changed',
+  MetadataUnavailable = 'metadata_unavailable'
+}
+
 export interface SupabaseTask {
   id?: string;
   user_id: string;

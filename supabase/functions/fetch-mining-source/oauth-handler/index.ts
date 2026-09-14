@@ -1,6 +1,6 @@
 import { Token } from "simple-oauth2";
-import googleOAuth2Client from "./google.ts";
-import azureOAuth2Client from "./azure.ts";
+import getGoogleOAuth2Client from "./google.ts";
+import getAzureOAuth2Client from "./azure.ts";
 import { createLogger } from "../../_shared/logger.ts";
 
 export type TokenType = {
@@ -41,25 +41,55 @@ export interface MiningSource {
 export function getAuthClient(provider: OAuthMiningSourceProvider) {
   switch (provider) {
     case "google":
-      return googleOAuth2Client;
+      return getGoogleOAuth2Client();
     case "azure":
-      return azureOAuth2Client;
+      return getAzureOAuth2Client();
     default:
       throw new Error("Not a valid OAuth provider");
   }
 }
 
-export function isTokenExpired(
-  credentials: OAuthMiningSourceCredentials,
-): boolean {
-  const client = getAuthClient(credentials.provider);
+/**
+ * Expiry window applied when deciding whether a token still works, in
+ * milliseconds. Matches the previous simple-oauth2 `expired(300)` behavior
+ * (300s headroom).
+ */
+const EXPIRY_WINDOW_MS = 300_000;
 
-  const token = client.createToken({
-    access_token: credentials.accessToken,
-    refresh_token: credentials.refreshToken,
-    expires_at: credentials.expiresAt,
-  });
-  return token.expired(300);
+/**
+ * Normalizes a stored `expiresAt` to epoch milliseconds.
+ *
+ * Historical storage units varied by write path: epoch ms (credentials saved
+ * via POST /), an ISO string (older refresh write-backs), or seconds implied
+ * by simple-oauth2's parser. Accepting all of them here (and writing back a
+ * single canonical unit) is what makes the ms↔s ambiguity detectable instead
+ * of silently never-expiring.
+ */
+export function normalizeExpiresAtMs(expiresAt: unknown): number | null {
+  if (typeof expiresAt === "string") {
+    const parsed = Date.parse(expiresAt);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (typeof expiresAt !== "number" || !Number.isFinite(expiresAt)) {
+    return null;
+  }
+  // Values below ~10^11 (Sat Mar 03 5138) cannot be ms — they are seconds.
+  // 10^11 ms ≈ 3170 AD; 10^11 s ≈ 5138 AD. All plausibly-current timestamps
+  // in ms exceed 10^12, so this threshold cleanly separates the units.
+  return expiresAt < 1e11 ? expiresAt * 1000 : expiresAt;
+}
+
+/**
+ * True when the stored OAuth credentials are expired (or missing an expiry),
+ * with the same 5-minute headroom the previous simple-oauth2-based check had.
+ */
+export function isTokenExpired(credentials: OAuthMiningSourceCredentials): boolean {
+  const expiresAtMs = normalizeExpiresAtMs(credentials.expiresAt);
+  if (expiresAtMs === null) {
+    // No usable expiry info: force a refresh rather than trusting the token.
+    return true;
+  }
+  return expiresAtMs - (Date.now() + EXPIRY_WINDOW_MS) <= 0;
 }
 
 /**
@@ -199,4 +229,24 @@ export async function refreshAccessToken(
     createLogger("refreshAccessToken").error("Failed to refresh access token");
     throw error;
   }
+}
+
+/**
+ * Canonical epoch-ms expiry for the refresh write-back, derived from the
+ * refreshed token. simple-oauth2 hands back `expires_in` (seconds) alongside
+ * a `Date`-typed `expires_at`; computing from `expires_in` avoids relying on
+ * the parser's unit choice.
+ */
+export function refreshedExpiresAtMs(
+  refreshedToken: Token,
+): number {
+  const expiresIn = refreshedToken["expires_in"];
+  if (typeof expiresIn === "number" && Number.isFinite(expiresIn)) {
+    return Date.now() + expiresIn * 1000;
+  }
+  const rawExpiresAt = refreshedToken["expires_at"];
+  const parsed = rawExpiresAt instanceof Date
+    ? rawExpiresAt.getTime()
+    : normalizeExpiresAtMs(rawExpiresAt);
+  return parsed ?? Date.now() + 3600_000;
 }

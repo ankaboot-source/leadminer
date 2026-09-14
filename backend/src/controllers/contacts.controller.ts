@@ -28,6 +28,8 @@ async function validateRequest(
   );
 
   if (!validExportType) {
+    // Mark it before throwing so the error handler responds 400, not 500.
+    res.status(400);
     throw new Error(`Invalid export type: ${exportType}`);
   }
 
@@ -210,21 +212,22 @@ export default function initializeContactsController(
 ) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
-      const {
-        userId,
-        contactsToExport,
-        partialExport,
-        exportType,
-        exportOptions
-      } = await validateRequest(req, res, miningSources);
-      if (contactsToExport === null) {
-        return res.status(400).json({
-          message: 'Parameter "ids" must be a non-empty list of person ids'
-        });
-      }
-
-      let statusCode = 200;
       try {
+        const {
+          userId,
+          contactsToExport,
+          partialExport,
+          exportType,
+          exportOptions
+        } = await validateRequest(req, res, miningSources);
+        if (contactsToExport === null) {
+          return res.status(400).json({
+            message: 'Parameter "ids" must be a non-empty list of person ids'
+          });
+        }
+
+        let statusCode = 200;
+
         if (!Billing) {
           // No need to Verify Credits, Export.
           return await respondWithContacts(

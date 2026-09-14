@@ -14,6 +14,12 @@ import {
   findPlainTextNode,
   groupMessagesByTextPart
 } from './parsing';
+import {
+  planFolderFetch,
+  type WatermarkPolicy
+} from './folderPlan';
+import { buildWatermarkCursor } from './watermark';
+import type { ImapResumeCursor, ImapWatermarkCursor } from './types';
 
 const redisClient = redis.getClient();
 
@@ -76,19 +82,22 @@ interface EmailToStream {
  * Publishes the fetching progress for a mining task to redis PubSub.
  * @param miningId - The ID of the mining job.
  * @param fetchedMessagesCount - The number of messages fetched so far.
+ * @param watermark - Optional per-folder UID watermark emitted on the final message.
  */
 async function publishFetchingProgress(
   miningId: string,
   fetchedMessagesCount: number,
   isCanceled: boolean,
-  isCompleted: boolean
+  isCompleted: boolean,
+  watermark?: ImapWatermarkCursor
 ) {
   const progress = {
     miningId,
     count: fetchedMessagesCount,
     progressType: 'fetched',
     isCompleted,
-    isCanceled
+    isCanceled,
+    ...(watermark ? { watermark } : {})
   };
 
   // Publish a progress with how many messages we fetched.
@@ -112,29 +121,6 @@ async function publishToStream(stream: string, data: EmailToStream) {
     logger.error('Error when publishing to streams');
     throw err;
   }
-}
-
-/**
- * Builds sequence ranges for IMAP fetching based on total messages.
- * @param total - Total number of messages
- * @param chunkSize - Size of each chunk (default: 10000)
- * @returns Array of IMAP sequence range strings
- */
-function buildSequenceRanges(total: number, chunkSize = 10000): string[] {
-  const ranges: string[] = [];
-
-  if (total <= chunkSize) {
-    return ['1:*'];
-  }
-
-  let start = 1;
-  while (start <= total) {
-    const end = Math.min(start + chunkSize - 1, total);
-    ranges.push(`${start}:${end}`);
-    start = end + 1;
-  }
-
-  return ranges;
 }
 
 export default class ImapEmailsFetcher {
@@ -162,6 +148,19 @@ export default class ImapEmailsFetcher {
 
   private readonly fetchedIds: Set<string>;
 
+  /** Highest UID streamed per folder this run; used to build the next watermark. */
+  private readonly maxUidPerFolder: Map<string, number>;
+
+  /** Current mailbox uidvalidity per folder; folded into the emitted watermark. */
+  private readonly uidValidityPerFolder: Map<string, string>;
+
+  /**
+   * Per-folder watermark policy chosen by the fetch planner. Only `advance`
+   * folders (full/uid-resume scans) may move the persisted cursor; date-filtered
+   * `since` scans are `preserve-or-omit`.
+   */
+  private readonly watermarkPolicyPerFolder: Map<string, WatermarkPolicy>;
+
   /**
    * Constructor for ImapEmailsFetcher.
    * @param imapConnectionProvider - An instance of a configured IMAP connection provider.
@@ -185,6 +184,7 @@ export default class ImapEmailsFetcher {
     private readonly batchSize: number,
     private readonly maxBodyTextSize: number | undefined,
     private readonly since: string | undefined,
+    private readonly resumeFrom: ImapResumeCursor | undefined,
     private readonly maxConcurrentConnections = ENV.FETCHING_MAX_CONNECTIONS_PER_FOLDER
   ) {
     // Generate a unique identifier for the user.
@@ -206,6 +206,9 @@ export default class ImapEmailsFetcher {
     this.totalSignaturesPublished = 0;
 
     this.fetchedIds = new Set<string>();
+    this.maxUidPerFolder = new Map<string, number>();
+    this.uidValidityPerFolder = new Map<string, string>();
+    this.watermarkPolicyPerFolder = new Map<string, WatermarkPolicy>();
     this.emailsQueue = new PQueue({
       concurrency: this.maxConcurrentConnections,
       intervalCap: 1, // only 1 job starts per interval
@@ -470,6 +473,15 @@ export default class ImapEmailsFetcher {
       this.totalFetched += 1;
       publishedEmails += 1;
 
+      // Track the highest UID streamed for this folder so the completion
+      // watermark can advance per-folder (only meaningful for uidRange jobs).
+      if (typeof msg.uid === 'number') {
+        const currentMax = this.maxUidPerFolder.get(folder) ?? 0;
+        if (msg.uid > currentMax) {
+          this.maxUidPerFolder.set(folder, msg.uid);
+        }
+      }
+
       if (publishedEmails >= batchSize) {
         await publishFetchingProgress(
           this.miningId,
@@ -505,25 +517,43 @@ export default class ImapEmailsFetcher {
     }
   }
 
-  async fetchWithBody({ connection, folder, totalInFolder, seqRange }: Fetch) {
+  async fetchWithBody({
+    connection,
+    folder,
+    totalInFolder,
+    seqRange,
+    uidRange
+  }: Fetch) {
     assert(connection, 'fetchWithBody: IMAP connection must be provided.');
     assert(folder, 'fetchWithBody: folder name must be specified.');
-    assert(seqRange, 'fetchWithBody: sequence range (seqRange) is required.');
     assert(
       typeof totalInFolder === 'number' && totalInFolder >= 0,
       'fetchWithBody: totalInFolder must be a valid non-negative number.'
     );
 
-    logger.debug(
-      `[${this.miningId}:${folder}:${seqRange}] Starting bodyStructure fetch for ${totalInFolder} emails`
+    const range = (seqRange ?? uidRange) as string;
+    assert(
+      range,
+      'fetchWithBody: sequence range (seqRange) or UID range (uidRange) is required.'
     );
 
-    const stream = await connection.fetchAll(seqRange, {
-      bodyStructure: true,
-      uid: true,
-      source: false,
-      headers: false
-    });
+    logger.debug(
+      `[${this.miningId}:${folder}:${range}] Starting bodyStructure fetch for ${totalInFolder} emails`
+    );
+
+    // Imapflow's fetchAll(range, query, options) interprets `range` as UID
+    // numbers only when `options.uid` (3rd arg) is set — putting `uid` in the
+    // query would run the range as sequence numbers and fetch the wrong
+    // messages on the incremental (resume) path.
+    const stream = await connection.fetchAll(
+      range,
+      {
+        bodyStructure: true,
+        source: false,
+        headers: false
+      },
+      { uid: Boolean(uidRange) }
+    );
 
     const filteredMessages = groupMessagesByTextPart(
       stream,
@@ -569,64 +599,74 @@ export default class ImapEmailsFetcher {
           });
           const totalInFolder = mailbox.exists;
 
+          // Capture mailbox identity + next predicted UID for the watermark.
+          if (mailbox.uidValidity !== undefined) {
+            this.uidValidityPerFolder.set(folder, String(mailbox.uidValidity));
+          }
+
+          const resume = this.resumeFrom?.folders?.[folder];
+
+          // Plan while the mailbox is still open: the injected SEARCH SINCE
+          // must run against a selected mailbox (imapflow returns undefined on
+          // a closed one), otherwise the fallback silently fetches nothing.
+          const plan = await planFolderFetch({
+            folder,
+            exists: totalInFolder,
+            uidValidity: mailbox.uidValidity,
+            uidNext: mailbox.uidNext,
+            resume,
+            since: this.since,
+            chunkSize: ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION,
+            searchUids: async (since) =>
+              (await connection.search({ since }, { uid: true })) || []
+          });
+
+          // Empty folders still contribute a valid mailbox identity. They may
+          // persist last_uid: 0 after a successful run so they are
+          // distinguishable from folders that have never been mined.
           await connection.mailboxClose();
 
-          if (totalInFolder === 0) return;
+          this.watermarkPolicyPerFolder.set(folder, plan.watermarkPolicy);
 
-          let ranges: string[];
-
-          if (this.since) {
-            const searchDate = new Date(this.since);
-            searchDate.setHours(0, 0, 0, 0);
-
-            const searchResult = await connection.search(
-              { since: searchDate },
-              { uid: true }
-            );
-
-            if (!searchResult || searchResult.length === 0) {
-              logger.info(
-                `No new emails since ${this.since} in folder ${folder}`
-              );
-              return;
-            }
-
-            const uids = searchResult as number[];
-            const uidList = Array.from(uids);
-            ranges = buildSequenceRanges(
-              uidList.length,
-              ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
-            );
-
-            ranges = ranges.map((_range, idx) => {
-              const startIdx = idx * ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION;
-              const endIdx = Math.min(
-                startIdx + ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION - 1,
-                uidList.length - 1
-              );
-              const startUid = uidList[startIdx];
-              const endUid = uidList[endIdx];
-              return `${startUid}:${endUid}`;
-            });
-
-            logger.info(
-              `Found ${uidList.length} emails since ${this.since} in folder ${folder}`
-            );
-          } else {
-            ranges = buildSequenceRanges(
-              totalInFolder,
-              ENV.FETCHING_CHUNK_SIZE_PER_CONNECTION
+          if (
+            resume &&
+            plan.kind !== 'uid-resume' &&
+            String(resume.uidvalidity) !== String(mailbox.uidValidity)
+          ) {
+            logger.warn(
+              `[${this.miningId}:${folder}] Resume cursor uidvalidity mismatch (resumed=${resume.uidvalidity}, live=${String(mailbox.uidValidity)}); falling back to legacy fetch and rebuilding watermark`
             );
           }
 
+          if (plan.kind === 'uid-resume') {
+            logger.info(
+              `[${this.miningId}:${folder}] Resuming UID ranges (${plan.ranges.length} range(s)): ${plan.ranges[0] ?? 'none'}${
+                plan.ranges.length > 1
+                  ? ` .. ${plan.ranges[plan.ranges.length - 1]}`
+                  : ''
+              }`
+            );
+          } else if (plan.kind === 'since') {
+            logger.info(
+              `[${this.miningId}:${folder}] Found ${plan.ranges.length} UID range(s) since ${this.since}`
+            );
+          } else if (plan.kind === 'skip') {
+            if (plan.reason === 'no-matches') {
+              logger.info(
+                `No new emails since ${this.since} in folder ${folder}`
+              );
+            }
+            return;
+          }
+
           logger.debug(
-            `Preparing ${ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
+            `Preparing ${plan.ranges.length} ranges for total folder emails ${totalInFolder} to pushed to queue`
           );
-          ranges.forEach((range) => {
+          plan.ranges.forEach((range) => {
             emailJobs.push({
               folder,
-              uidRange: this.since ? range : undefined,
-              seqRange: this.since ? undefined : range,
+              uidRange: plan.useUid ? range : undefined,
+              seqRange: plan.useUid ? undefined : range,
               totalInFolder
             });
           });
@@ -777,7 +817,26 @@ export default class ImapEmailsFetcher {
     return this.fetchEmailMessages();
   }
 
+  /**
+   * Builds the next watermark from this run's observed per-folder UIDs.
+   * Emitted once on completion/cancel so callers can persist it centrally.
+   */
+  private buildWatermark(): ImapWatermarkCursor | undefined {
+    return buildWatermarkCursor({
+      uidValidityPerFolder: this.uidValidityPerFolder,
+      maxUidPerFolder: this.maxUidPerFolder,
+      watermarkPolicyPerFolder: this.watermarkPolicyPerFolder,
+      resumeFrom: this.resumeFrom
+    });
+  }
+
   private async notifyCompleted() {
+    const watermark = this.buildWatermark();
+
+    logger.info(
+      `[${this.miningId}] Built ${watermark ? Object.keys(watermark.folders).length : 0} folder watermark(s)`
+    );
+
     // Notify signature worker fetching is ended
     await redisClient.xadd(
       this.signatureStream,
@@ -808,7 +867,8 @@ export default class ImapEmailsFetcher {
       this.miningId,
       0,
       this.isCanceled,
-      this.isCompleted
+      this.isCompleted,
+      watermark
     );
 
     logger.info(

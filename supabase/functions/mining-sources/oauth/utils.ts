@@ -1,5 +1,5 @@
-import googleOAuth2Client from "./google.ts";
-import azureOAuth2Client from "./azure.ts";
+import getGoogleOAuth2Client from "./google.ts";
+import getAzureOAuth2Client from "./azure.ts";
 
 export type OAuthMiningSourceProvider = "azure" | "google";
 
@@ -46,9 +46,9 @@ export const providerScopes = {
 export function getAuthClient(provider: OAuthMiningSourceProvider) {
   switch (provider) {
     case "google":
-      return googleOAuth2Client;
+      return getGoogleOAuth2Client();
     case "azure":
-      return azureOAuth2Client;
+      return getAzureOAuth2Client();
     default:
       throw new Error("Not a valid OAuth provider");
   }
@@ -191,9 +191,13 @@ export async function exchangeForToken(
     throw new Error("Missing email in id_token");
   }
 
+  // simple-oauth2 returns `expires_at` as a Date (from expires_in, seconds);
+  // canonical storage unit for credentials is epoch milliseconds.
   const expiresAt = tokenResponse.expires_at;
   const expiresAtNum = expiresAt instanceof Date
     ? expiresAt.getTime()
+    : typeof expiresAt === "number" && expiresAt < 1e11
+    ? expiresAt * 1000 // seconds -> ms
     : Number(expiresAt);
 
   return {

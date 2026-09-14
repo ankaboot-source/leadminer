@@ -22,6 +22,7 @@ import {
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
+import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
 
@@ -333,27 +334,34 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     serverEndpoint: string,
     token: string | null,
   ) {
+    // Stale SSE callbacks are ignored by comparing the run's miningId (unique
+    // per run) with the active task — no separate run-token counter needed.
+    const isCurrentRun = () => miningTask.value?.miningId === miningId;
+
     sse.initConnection(type, miningId, serverEndpoint, token, {
       onExtractedUpdate: (count) => {
-        extractedEmails.value = count;
+        if (isCurrentRun()) extractedEmails.value = count;
       },
       onFetchedUpdate: (count) => {
-        scannedEmails.value = count;
+        if (isCurrentRun()) scannedEmails.value = count;
       },
       onTotalImportedUpdate: (total) => {
-        totalImported.value = total;
+        if (isCurrentRun()) totalImported.value = total;
       },
       onClose: () => {
-        sse.closeConnection();
+        if (isCurrentRun()) sse.closeConnection();
       },
       onError: () => {
+        if (!isCurrentRun()) return;
         miningInterrupted.value = true;
         setTimeout(async () => {
+          if (!isCurrentRun()) return;
           try {
             await stopMiningApi(true, []);
           } catch (err) {
             console.error('[SSE] error: ', (err as Error).message);
           }
+          if (!isCurrentRun()) return;
           $resetMining();
           $toast.add({
             severity: 'warn',
@@ -366,37 +374,43 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
 
       onFetchingDone: (totalFetched) => {
+        if (!isCurrentRun()) return;
         scannedEmails.value = totalFetched;
         fetchingFinished.value = true;
       },
       onExtractionDone: (totalExtracted) => {
+        if (!isCurrentRun()) return;
         extractedEmails.value = totalExtracted;
         extractionFinished.value = true;
       },
       onCleaningDone: (totalCleaned) => {
+        if (!isCurrentRun()) return;
         verifiedContacts.value = totalCleaned;
         cleaningFinished.value = true;
       },
       onSignatureExtractionDone: () => {
-        signatureExtractionFinished.value = true;
+        if (isCurrentRun()) signatureExtractionFinished.value = true;
       },
       onVerifiedContacts: (totalVerified) => {
-        verifiedContacts.value = totalVerified;
+        if (isCurrentRun()) verifiedContacts.value = totalVerified;
       },
       onCreatedContacts: (totalCreated) => {
-        createdContacts.value = totalCreated;
+        if (isCurrentRun()) createdContacts.value = totalCreated;
       },
       onMiningCompleted: () => {
+        if (!isCurrentRun()) return;
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
         maybeOpenPassiveMiningDialog();
         setTimeout(async () => {
+          if (!isCurrentRun()) return;
           miningTask.value = undefined;
           await fetchMiningSources();
         }, 100);
       },
       onGoogleContactsFetched: () => {
+        if (!isCurrentRun()) return;
         googleContactsFetched.value = true;
         maybeOpenPassiveMiningDialog();
       },
@@ -407,9 +421,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     userId: string,
     folders: string[],
     miningSource: MiningSource,
+    runMode: MiningRunMode,
   ) {
     miningType.value = 'email';
 
+    // The server derives the resume cursor from the source's persisted
+    // watermark; the client only sends intent (folders + run mode).
     const { data: task } = await $api<{ data: MiningTask }>(
       `/imap/mine/${miningType.value}/${userId}`,
       {
@@ -422,6 +439,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           extractSignatures: sourceConfig.value.extract_signatures,
           cleaningEnabled: sourceConfig.value.cleaning_enabled,
           googleContactsSync: sourceConfig.value.google_contacts_sync,
+          miningMode: runMode,
         },
       },
     );
@@ -522,7 +540,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * Starts the mining process.
    * @throws {Error} Throws an error if there is an issue while starting the mining process.
    */
-  async function startMining(source: MiningType, storagePath?: string) {
+  async function startMining(
+    source: MiningType,
+    storagePath?: string,
+    runMode: MiningRunMode = MiningRunMode.Full,
+  ) {
     await supabase.auth.refreshSession(); // Refresh session on mining start
 
     const userId = getCurrentUserId();
@@ -550,6 +572,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     try {
       isLoadingStartMining.value = true;
+      miningCompleted.value = false;
+      googleContactsFetched.value = false;
+      miningInterrupted.value = false;
+      passiveMiningDialog.value = false;
 
       let task;
       switch (source) {
@@ -565,6 +591,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
                 key !== '',
             ),
             activeMiningSource.value,
+            runMode,
           );
           break;
         case 'file':
@@ -591,16 +618,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       }
 
       totalMessages.value = task.progress?.totalMessages ?? 0;
-      totalImported.value = task.progress?.totalImported ?? 0;
+      totalImported.value = 0;
       sse.closeConnection();
+      miningTask.value = task;
       startProgressListener(
         miningType.value,
         task.miningId,
         config.public.SERVER_ENDPOINT,
         token,
       );
-
-      miningTask.value = task;
       miningStartedAt.value = performance.now();
       $contactsStore.setSkipOrgLookup(true);
       startMiningNotification($toast, t, config.public.DATA_PRIVACY_URL);
@@ -742,7 +768,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       updateMiningProgress(task, fetch, extract, clean);
 
-      startProgressListener(miningType.value, task.miningId);
+      const resumedToken = (await supabase.auth.getSession()).data.session
+        ?.access_token;
+      startProgressListener(
+        miningType.value,
+        task.miningId,
+        config.public.SERVER_ENDPOINT,
+        resumedToken ?? null,
+      );
 
       return extractionFinished.value ? 3 : 2;
     } catch (err) {

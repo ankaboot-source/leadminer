@@ -69,6 +69,12 @@
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
   />
+
+  <ResumeMiningDialog
+    v-model:visible="resumeDialogVisible"
+    @continue="runEmailMining(MiningRunMode.Incremental)"
+    @rescan="runEmailMining(MiningRunMode.Full)"
+  />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -80,7 +86,10 @@ import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource } from '~/types/mining';
+import type { BoxNode } from '~/utils/boxes';
+import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
+import ResumeMiningDialog from './ResumeMiningDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -192,6 +201,7 @@ function getMiningErrorDetail(error: unknown, sourceTypeVal?: string) {
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
+const resumeDialogVisible = ref(false);
 const miningSettingsDialogRef =
   ref<InstanceType<typeof MiningSettingsDialog>>();
 
@@ -418,8 +428,46 @@ async function startMiningBoxes() {
   const activeSource = $leadminerStore.activeMiningSource;
   if (!activeSource) return;
 
+  // The choice is per-run and transient: if a selected folder was already
+  // mined and has new messages, ask; otherwise resume when a watermark exists
+  // and full-scan when it doesn't.
+  const selectedKeys = new Set(
+    Object.keys(selectedBoxes.value).filter(
+      (key) => selectedBoxes.value[key].checked && key !== '',
+    ),
+  );
+  const selectedNodes = flattenBoxes(boxes.value).filter((node) =>
+    selectedKeys.has(node.key),
+  );
+  const hasNewMessages = selectedNodes.some(
+    (node) => node.status === FolderStatus.NewMessages,
+  );
+  const hasWatermark = selectedNodes.some((node) => node.watermark);
+
+  if (hasNewMessages) {
+    resumeDialogVisible.value = true;
+    return;
+  }
+
+  await runEmailMining(
+    hasWatermark ? MiningRunMode.Incremental : MiningRunMode.Full,
+  );
+}
+
+function flattenBoxes(nodes: BoxNode[]): BoxNode[] {
+  return nodes.flatMap((node) => [
+    node,
+    ...(node.children ? flattenBoxes(node.children) : []),
+  ]);
+}
+
+async function runEmailMining(runMode: MiningRunMode) {
+  resumeDialogVisible.value = false;
+  const activeSource = $leadminerStore.activeMiningSource;
+  if (!activeSource) return;
+
   await handleAuthErrorAndRetry(
-    () => $leadminerStore.startMining(sourceType.value),
+    () => $leadminerStore.startMining(sourceType.value, undefined, runMode),
     activeSource.email,
     activeSource.type,
   );

@@ -42,6 +42,7 @@ export interface SmtpSenderUpdate {
   smtpUser?: string;
   smtpPassword?: string;
   active?: boolean;
+  miningSourceId?: string;
 }
 
 export interface SmtpSenders {

@@ -10,6 +10,7 @@ import { CleanTask } from './tasks/CleanTask';
 import { SignatureTask } from './tasks/SignatureTask';
 import { TaskId } from './types';
 import ENV from '../../config';
+import { MiningRunMode } from '../../db/types';
 import { hasEmailVerificationConfigured } from '../email-status/EmailStatusVerifierFactory';
 
 export interface CreateImapMiningParams {
@@ -19,7 +20,12 @@ export interface CreateImapMiningParams {
   boxes: string[];
   fetchEmailBody: boolean;
   passiveMining?: boolean;
+  miningMode?: MiningRunMode;
   since?: string;
+  sourceId?: string;
+  resumeFrom?: {
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  };
   cleaningEnabled: boolean;
   fetcherClient: FetcherClient;
   googleContactsSync?: boolean;
@@ -56,9 +62,17 @@ export function createImapMining(
         fetchParams: {
           email: params.email,
           folders: params.boxes,
-          since: params.since
+          ...(params.miningMode === MiningRunMode.Incremental
+            ? {
+                ...(params.since !== undefined ? { since: params.since } : {}),
+                ...(params.resumeFrom !== undefined
+                  ? { resumeFrom: params.resumeFrom }
+                  : {})
+              }
+            : {})
         },
-        passive_mining: params.passiveMining
+        passive_mining: params.passiveMining,
+        sourceId: params.sourceId
       })
     );
   }

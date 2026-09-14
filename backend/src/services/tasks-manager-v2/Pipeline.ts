@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 import { Request, Response } from 'express';
 import { Task } from './tasks/Task';
+import { TaskStatus, TaskType } from './types';
 import type {
   TaskProgress,
   MiningSource,
@@ -13,6 +14,7 @@ import SupabaseTasks from '../../db/supabase/tasks';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
+import { recordMiningCompletion } from '../../db/completion';
 import logger from '../../utils/logger';
 
 export interface PipelineConfig {
@@ -45,6 +47,15 @@ export class Pipeline {
   onComplete?: () => Promise<void>;
 
   public failed = false;
+
+  private completionStarted = false;
+
+  /**
+   * Guards the one-shot completion callback. It fires when the Extract task
+   * succeeds, which can happen before optional enriching tasks (signature) or
+   * the optional cleaning step, so it must never run twice.
+   */
+  private completionRecorded = false;
 
   private progressLinks: Map<string, ProgressLink> = new Map();
 
@@ -176,6 +187,8 @@ export class Pipeline {
   }
 
   private async checkCompletion(): Promise<void> {
+    if (this.completionStarted) return;
+
     const tasksToStop: Task[] = [];
     for (const task of this.tasks.values()) {
       if (!task.stoppedAt && task.isComplete()) {
@@ -198,8 +211,14 @@ export class Pipeline {
         }
       }
 
-      if (this.isAllCompleted()) {
-        this.complete();
+      // The Extract task succeeding is the durable signal that messages were
+      // actually processed (clean and signature are optional). Record the run
+      // on the mining source via the completion edge function.
+      await this.maybeRecordMiningCompletion();
+
+      if (this.isAllCompleted() && !this.completionStarted) {
+        this.completionStarted = true;
+        await this.complete();
       }
     }
   }
@@ -220,6 +239,9 @@ export class Pipeline {
     try {
       await this.cleanupStreams();
       if (!this.failed) {
+        // Notification/refinement are best-effort and independent of the
+        // watermark, which the completion edge function already persisted when
+        // extraction succeeded.
         await refineContacts(this.userId);
         await mailMiningComplete(this.miningId);
       }
@@ -274,6 +296,35 @@ export class Pipeline {
           }
         })
     );
+  }
+
+  /**
+   * Triggers the completion edge function once the Extract task has succeeded.
+   *
+   * The watermark itself lives in the Fetch task's DB row (FetchTask.toDetails)
+   * and the edge function reads it from there, so this only has to fire the
+   * command. Cleaning and signature extraction are optional post-processing and
+   * must not influence whether the run is recorded. A canceled extraction (or
+   * fetch) leaves the status at Canceled, so nothing is recorded and the next
+   * cycle re-fetches — at-least-once.
+   */
+  private async maybeRecordMiningCompletion(): Promise<void> {
+    if (this.completionRecorded || this.failed) return;
+
+    const extractTask = [...this.tasks.values()].find(
+      (t) => t.type === TaskType.Extract
+    );
+    if (!extractTask || extractTask.status !== TaskStatus.Done) return;
+
+    this.completionRecorded = true;
+    try {
+      await recordMiningCompletion(this.miningId);
+    } catch (err) {
+      logger.error(
+        `[mining-completion] Failed to record completion for ${this.miningId}`,
+        { error: err }
+      );
+    }
   }
 
   private broadcastTaskFinished(task: Task): void {
@@ -367,7 +418,8 @@ export class Pipeline {
       }
     }
 
-    if (this.isAllCompleted()) {
+    if (this.isAllCompleted() && !this.completionStarted) {
+      this.completionStarted = true;
       await this.complete();
     }
 

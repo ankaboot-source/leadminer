@@ -12,6 +12,9 @@ export interface FetchStartPayload {
   contactStream: string;
   signatureStream: string;
   since?: string;
+  resumeFrom?: {
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  };
 }
 
 export interface FetchStopPayload {
@@ -65,7 +68,10 @@ class EmailFetcherClient implements FetcherClient {
         extractSignatures: opts.extractSignatures ?? false,
         email: opts.fetchParams?.email as string,
         boxes: opts.fetchParams?.folders as string[],
-        since: opts.fetchParams?.since as string | undefined
+        since: opts.fetchParams?.since as string | undefined,
+        resumeFrom: opts.fetchParams?.resumeFrom as
+          | FetchStartPayload['resumeFrom']
+          | undefined
       };
       const { data } = await this.client.post('api/imap/fetch/start', payload);
       return data;

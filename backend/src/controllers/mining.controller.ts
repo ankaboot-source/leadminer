@@ -5,8 +5,9 @@ import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import { SupabaseTask as DBTask, TaskType } from '../db/types';
+import { SupabaseTask as DBTask, MiningRunMode, TaskType } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
+import { buildResumeFromConfig } from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
 import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
@@ -46,6 +47,56 @@ interface MiningTaskGroup {
   extract: { status: string; started_at: string | undefined } | null;
   clean: { status: string; started_at: string | undefined } | null;
   signature: { status: string; started_at: string | undefined } | null;
+}
+
+/**
+ * Resolves the credentials, owned source id and config for a mine request,
+ * scoped to the requesting user. Extracted from startMining to keep that
+ * handler readable (and to keep the security reasoning in one place).
+ */
+async function resolveMiningSourceAccess(
+  user: User,
+  {
+    email,
+    miningSourceId,
+    sanitizedEmail
+  }: { email?: string; miningSourceId?: string; sanitizedEmail: string }
+) {
+  let credentials;
+  let sourceId: string | undefined;
+  let config: Record<string, unknown> | undefined;
+
+  if (miningSourceId) {
+    // Ownership is enforced by passing user.id: a body id belonging to another
+    // user yields null and is never used as the (service-role) write target.
+    const source = await miningSourceService.getSourceById(
+      miningSourceId,
+      user.id
+    );
+    credentials = source?.credentials;
+    if (source) {
+      sourceId = source.id ?? miningSourceId;
+      config = source.config;
+    } else {
+      logger.warn('getSourceById returned no source for miningSourceId', {
+        miningSourceId,
+        userId: user.id
+      });
+    }
+  }
+
+  if (!credentials && email) {
+    const sources = await miningSourceService.getSourcesForUser(
+      user.id,
+      sanitizedEmail
+    );
+    const matchedSource = sources?.pop();
+    credentials = matchedSource?.credentials;
+    if (!sourceId && matchedSource?.id) sourceId = matchedSource.id;
+    if (matchedSource?.config) config = matchedSource.config;
+  }
+
+  return { credentials, sourceId, config };
 }
 
 async function publishPreviouslyUnverifiedEmailsToCleaning(
@@ -260,6 +311,7 @@ export default function initializeMiningController(
         cleaningEnabled,
         miningSource: { email, id: miningSourceId },
         boxes: folders,
+        miningMode,
         since,
         passive_mining: passiveMining,
         googleContactsSync
@@ -271,6 +323,7 @@ export default function initializeMiningController(
         boxes: string[];
         extractSignatures: boolean;
         cleaningEnabled: boolean;
+        miningMode?: MiningRunMode;
         since?: string;
         passive_mining?: boolean;
         googleContactsSync?: boolean;
@@ -282,29 +335,15 @@ export default function initializeMiningController(
         sanitizeImapInput(folder)
       );
       const sanitizedEmail = email ? sanitizeImapInput(email) : '';
-      let miningSourceCredentials;
-
-      if (miningSourceId) {
-        const source = await miningSourceService.getSourceById(
-          miningSourceId,
-          user.id
-        );
-        miningSourceCredentials = source?.credentials;
-        if (!source) {
-          logger.warn('getSourceById returned no source for miningSourceId', {
-            miningSourceId,
-            userId: user.id
-          });
-        }
-      }
-
-      if (!miningSourceCredentials && email) {
-        const sources = await miningSourceService.getSourcesForUser(
-          user.id,
-          sanitizedEmail
-        );
-        miningSourceCredentials = sources?.pop()?.credentials;
-      }
+      const {
+        credentials: miningSourceCredentials,
+        sourceId: resolvedSourceId,
+        config: resolvedSourceConfig
+      } = await resolveMiningSourceAccess(user, {
+        email,
+        miningSourceId,
+        sanitizedEmail
+      });
 
       if (!miningSourceCredentials || !('email' in miningSourceCredentials)) {
         return res.status(401).json({
@@ -314,6 +353,13 @@ export default function initializeMiningController(
 
       const effectiveCleaningEnabled =
         cleaningEnabled && hasEmailVerificationConfigured(ENV);
+
+      // The client sends intent; the server builds the resume cursor from the
+      // persisted watermark. The emails-fetcher owns all IMAP logic from here.
+      const resumeFrom =
+        miningMode === MiningRunMode.Incremental
+          ? buildResumeFromConfig(resolvedSourceConfig)
+          : undefined;
 
       try {
         const miningId = await deps.idGenerator();
@@ -326,7 +372,10 @@ export default function initializeMiningController(
             boxes: sanitizedFolders,
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
-            since,
+            miningMode: miningMode ?? MiningRunMode.Full,
+            since: miningMode === MiningRunMode.Incremental ? since : undefined,
+            resumeFrom,
+            sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,
             fetcherClient: deps.emailFetcherClient,
             googleContactsSync

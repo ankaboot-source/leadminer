@@ -1,4 +1,4 @@
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, MiningSourceConfig } from '~/types/mining';
 
 interface MiningSourceOverview {
   source_email: string;
@@ -46,8 +46,7 @@ export async function getMiningSources(): Promise<MiningSource[]> {
 
   const userId = user.value.id || (user.value as { sub?: string } | null)?.sub;
 
-  const { data: miningSources, error } = await supabase
-    // @ts-expect-error: Issue with nuxt/supabase
+  const { data: rawSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
     .select('*');
@@ -56,6 +55,8 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     console.error('Error fetching mining sources:', error.message);
     throw error;
   }
+
+  const miningSources = (rawSources ?? []) as MiningSource[];
 
   let overviewData: MiningSourceOverview[] | null = null;
   let overviewError: Error | null = null;
@@ -98,57 +99,67 @@ export async function getMiningSources(): Promise<MiningSource[]> {
   return sourcesWithStats;
 }
 
+/**
+ * Applies a namespace-scoped patch through the authenticated, row-locked
+ * mining-sources writer. The endpoint returns the canonical persisted config.
+ */
 export async function updateMiningSourceConfig(
   email: string,
   type: string,
-  config: Record<string, unknown>,
-): Promise<void> {
-  const { error } = await useSupabaseClient()
-    // @ts-expect-error: Issue with nuxt/supabase
+  patch: MiningSourceConfig | Record<string, unknown>,
+): Promise<MiningSourceConfig> {
+  const { $saasEdgeFunctions } = useNuxtApp();
+  const source = await findSourceByEmail(email, type);
+  if (!source?.id) {
+    throw new Error('Mining source not found');
+  }
+
+  const response = await $saasEdgeFunctions<{ config: MiningSourceConfig }>(
+    `mining-sources/${encodeURIComponent(source.id)}/config`,
+    {
+      method: 'PATCH',
+      body: patch,
+    },
+  );
+
+  return response.config;
+}
+
+async function findSourceByEmail(email: string, type: string) {
+  const supabase = useSupabaseClient();
+  const { data, error } = await supabase
     .schema('private')
     .from('mining_sources')
-    .update({ config })
+    .select('id, email, type')
     .eq('email', email)
-    .eq('type', type);
-
-  if (error) {
-    console.error('Error updating mining source config:', error.message);
-    throw error;
-  }
+    .eq('type', type)
+    .maybeSingle();
+  if (error) throw error;
+  return data as { id?: string; email: string; type: string } | null;
 }
 
 export async function updatePassiveMining(
   email: string,
   type: string,
   value: boolean,
-  existingConfig: Record<string, unknown> = {},
-): Promise<void> {
-  const update: Record<string, unknown> = { passive_mining: value };
+  patch: MiningSourceConfig | Record<string, unknown> = {},
+): Promise<MiningSourceConfig> {
+  const source = await findSourceByEmail(email, type);
+  if (!source?.id) throw new Error('Mining source not found');
 
-  // When enabling continuous extraction, clear a stale needs_reauth flag,
-  // preserve any existing config keys (errors/status/last_run) and seed the
-  // passive mining state so the /sources UI shows a status immediately —
-  // otherwise the config stays as a bare { needs_reauth:false } with no
-  // passive-mining tracking fields.
-  if (value) {
-    update.config = {
-      ...existingConfig,
-      needs_reauth: false,
-      status: existingConfig.status ?? 'idle',
-      last_run: existingConfig.last_run ?? null,
-    };
-  }
+  // Send params only; mining-sources merges them and owns the column update.
+  const params: Record<string, unknown> = { passive_mining: value };
+  if (patch.folders !== undefined) params.folders = patch.folders;
+  if (patch.flags !== undefined) params.mining_flags = patch.flags;
 
-  const { error } = await useSupabaseClient()
-    // @ts-expect-error: Issue with nuxt/supabase
-    .schema('private')
-    .from('mining_sources')
-    .update(update)
-    .eq('email', email)
-    .eq('type', type);
+  const { $saasEdgeFunctions } = useNuxtApp();
+  const response = await $saasEdgeFunctions<{ config: MiningSourceConfig }>(
+    `mining-sources/${encodeURIComponent(source.id)}/config`,
+    {
+      method: 'PATCH',
+      body: params,
+    },
+  );
 
-  if (error) {
-    console.error('Error updating passive mining status:', error.message);
-    throw error;
-  }
+  return response.config;
 }

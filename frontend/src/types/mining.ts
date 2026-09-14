@@ -1,4 +1,4 @@
-export type OAuthMiningSource = 'azure' | 'google';
+export type OAuthMiningSource = 'azure' | 'google' | 'microsoft';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
 export type MiningType = 'file' | 'email' | 'pst' | 'postgresql';
@@ -10,6 +10,58 @@ export enum MiningTypes {
   POSTGRESQL = 'postgresql',
 }
 
+export interface MiningFolderWatermark {
+  uidvalidity: string;
+  last_uid: number;
+  updated_at: string;
+}
+
+export type MiningFolderResumeWatermark = Pick<
+  MiningFolderWatermark,
+  'uidvalidity' | 'last_uid'
+>;
+
+export interface ImapFolderCursor {
+  uidvalidity: string | null;
+  uidnext: number | null;
+  high_water_uid: number | null;
+}
+
+export interface MiningCompletion {
+  mining_id?: string | null;
+  mined_count?: number;
+  folders_mined?: string[];
+  updated_at?: string;
+  folders?: Record<string, MiningFolderWatermark>;
+}
+
+export interface SourceHealth {
+  state?: import('./enums').SourceHealthState;
+  last_error?: string[] | null;
+  last_run_at?: string | null;
+}
+
+export interface MiningSourceFlags {
+  cleaning_enabled?: boolean;
+  extract_signatures?: boolean;
+  google_contacts_sync?: boolean;
+}
+
+/** Typed V1 mining_sources.config (mirrors backend/src/services/mining-source-config). */
+export { MiningRunMode } from './enums';
+
+export interface MiningSourceConfig {
+  version?: 1;
+  flags?: MiningSourceFlags;
+  folders?: string[];
+  health?: SourceHealth;
+  mining?: {
+    last?: MiningCompletion | null;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface MiningSource {
   id?: string;
   type: MiningSourceType;
@@ -19,7 +71,7 @@ export interface MiningSource {
   totalContacts?: number;
   totalFromLastMining?: number;
   lastMiningDate?: string;
-  config?: Record<string, unknown>;
+  config?: MiningSourceConfig;
 }
 
 export interface MiningProgress {
