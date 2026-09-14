@@ -116,6 +116,23 @@ export default class PgContacts implements Contacts {
     telephone = EXCLUDED.telephone,
     alternate_name = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name)),
     alternate_email = ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
+  WHERE
+    private.persons.name IS DISTINCT FROM EXCLUDED.name
+    OR private.persons.url IS DISTINCT FROM EXCLUDED.url
+    OR private.persons.image IS DISTINCT FROM EXCLUDED.image
+    OR private.persons.location IS DISTINCT FROM EXCLUDED.location
+    OR private.persons.same_as IS DISTINCT FROM EXCLUDED.same_as
+    OR private.persons.given_name IS DISTINCT FROM EXCLUDED.given_name
+    OR private.persons.family_name IS DISTINCT FROM EXCLUDED.family_name
+    OR private.persons.job_title IS DISTINCT FROM EXCLUDED.job_title
+    OR private.persons.identifiers IS DISTINCT FROM EXCLUDED.identifiers
+    OR private.persons.works_for IS DISTINCT FROM EXCLUDED.works_for
+    OR private.persons.mining_id IS DISTINCT FROM EXCLUDED.mining_id
+    OR private.persons.telephone IS DISTINCT FROM EXCLUDED.telephone
+    OR private.persons.alternate_name IS DISTINCT FROM
+        ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_name, '{}') || EXCLUDED.alternate_name))
+    OR private.persons.alternate_email IS DISTINCT FROM
+        ARRAY(SELECT DISTINCT UNNEST(COALESCE(private.persons.alternate_email, '{}') || EXCLUDED.alternate_email))
   RETURNING persons.id, persons.email
 )
 SELECT p.id, p.email FROM upserted p
@@ -186,7 +203,8 @@ LIMIT 1;
 
   private static readonly INSERT_POC_BULK_SQL = `
     INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_id","plus_address", "user_id")
-    VALUES %L;`;
+    VALUES %L
+    ON CONFLICT (user_id, message_id, person_id) DO NOTHING;`;
 
   private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
     SELECT *
