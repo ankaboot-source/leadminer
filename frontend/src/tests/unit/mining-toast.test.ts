@@ -16,11 +16,11 @@ describe('createStartMiningToastPayload', () => {
       'En savoir plus sur les droits de vos contacts',
   };
 
-  const t = (key: string) => translations[key] ?? key;
+  const translate = (key: string) => translations[key] ?? key;
 
   it('creates a has-links toast payload with message and link', () => {
     const payload = createStartMiningToastPayload({
-      t,
+      t: translate,
       dataPrivacyUrl: 'https://leadminer.io/privacy',
     });
 
@@ -42,7 +42,7 @@ describe('createStartMiningToastPayload', () => {
 
   it('always keeps a detail message even when privacy url is missing', () => {
     const payload = createStartMiningToastPayload({
-      t,
+      t: translate,
       dataPrivacyUrl: undefined,
     });
 
@@ -94,8 +94,8 @@ describe('toast has-links detail helpers', () => {
   });
 
   it('returns empty string for unsupported detail values', () => {
-    expect(getToastHasLinksDetailMessage(undefined)).toBe('');
     expect(getToastHasLinksDetailMessage(null)).toBe('');
+    expect(getToastHasLinksDetailMessage(42)).toBe('');
   });
 
   it('detects object link and button action safely', () => {

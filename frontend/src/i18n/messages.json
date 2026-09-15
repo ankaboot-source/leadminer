@@ -30,7 +30,9 @@
       "email_required": "Email is required",
       "password_required": "Password is required",
       "close": "Close",
-      "remove": "Remove"
+      "remove": "Remove",
+      "passive_cron_generic": "on schedule ({expression})",
+      "passive_cron_daily": "every day"
     },
     "auth": {
       "sign_in": "Sign in",
@@ -144,7 +146,7 @@
       "same_as": "Same As",
       "image": "Avatar",
       "tags": "Tags",
-      "tags_placeholder": "Add a tag and press Enter",
+      "tags_placeholder": "Enter tags separated by commas",
       "updated_at": "Update date",
       "created_at": "Creation date",
       "given_name_definition": "The given name of this contact",
@@ -179,7 +181,6 @@
       },
       "phone_copied": "Phone number copied",
       "contact_phone_copied": "Phone number has been copied to your clipboard",
-      "tags_placeholder": "Enter tags separated by commas",
       "undefined_consent": "Undefined",
       "categorize_contacts": "Categorize your contacts"
     },
@@ -216,7 +217,16 @@
       "failure_message": "We couldn't find your subscription. Please contact support.",
       "go_home": "Go to home"
     },
-    "send_campaign": "Send campaign"
+    "send_campaign": "Send campaign",
+    "sources": {
+      "today": "today",
+      "tomorrow": "tomorrow",
+      "folder_count": "no folders | one folder | {count} folders",
+      "passive_mining_enabled_detail": "Emails are checked {schedule}. Next check: {nextRunDay} at {nextRunTime} — on {folders}.",
+      "passive_mining_disabled_detail": "No automatic email checks will run for this source.",
+      "folder_inbox": "Inbox",
+      "passive_mining_folders_default": "your default folders"
+    }
   },
   "fr": {
     "common": {
@@ -249,7 +259,9 @@
       "email_required": "Email est obligatoire",
       "password_required": "Mot de passe est obligatoire",
       "close": "Fermer",
-      "remove": "Supprimer"
+      "remove": "Supprimer",
+      "passive_cron_generic": "selon la planification ({expression})",
+      "passive_cron_daily": "chaque jour"
     },
     "auth": {
       "sign_in": "Se connecter",
@@ -329,7 +341,7 @@
       "same_as": "Réseaux sociaux",
       "image": "Avatar",
       "tags": "Étiquettes",
-      "tags_placeholder": "Ajoutez une étiquette et appuyez sur Entrée",
+      "tags_placeholder": "Entrez des étiquettes séparées par des virgules",
       "updated_at": "Date de modification",
       "created_at": "Date de création",
       "given_name_definition": "Le prénom de ce contact",
@@ -364,7 +376,6 @@
       },
       "phone_copied": "Numéro de téléphone copié",
       "contact_phone_copied": "Numéro de téléphone a été copié dans votre presse-papiers",
-      "tags_placeholder": "Entrez des étiquettes séparées par des virgules",
       "undefined_consent": "Non défini",
       "categorize_contacts": "Catégoriser vos contacts"
     },
@@ -401,6 +412,15 @@
       "failure_message": "Nous n'avons pas trouvé votre abonnement. Veuillez contacter le support.",
       "go_home": "Aller à l'accueil"
     },
-    "send_campaign": "Envoyer la campagne"
+    "send_campaign": "Envoyer la campagne",
+    "sources": {
+      "today": "aujourd'hui",
+      "tomorrow": "demain",
+      "folder_count": "aucun dossier | un dossier | {count} dossiers",
+      "passive_mining_enabled_detail": "Les e-mails sont vérifiés {schedule}. Prochaine vérification : {nextRunDay} à {nextRunTime} — sur {folders}.",
+      "passive_mining_disabled_detail": "Aucune vérification automatique des e-mails ne sera effectuée pour cette source.",
+      "folder_inbox": "Boîte de réception",
+      "passive_mining_folders_default": "vos dossiers par défaut"
+    }
   }
 }

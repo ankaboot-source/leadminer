@@ -103,13 +103,14 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource | undefined;
 }>();
 
-const sourceType = computed(() => $leadminerStore.miningType);
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
 const $supabase = useSupabaseClient();
+
+const sourceType = computed(() => $leadminerStore.miningType);
 
 async function handleAuthErrorAndRetry(
   retryFn: () => Promise<void>,

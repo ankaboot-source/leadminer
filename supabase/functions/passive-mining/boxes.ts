@@ -2,22 +2,22 @@
 import objectScan from "npm:object-scan";
 
 export interface BoxNode {
-	key: string;
-	label: string;
-	total: number;
-	children?: BoxNode[];
-	attribs?: string[];
+  key: string;
+  label: string;
+  total: number;
+  children?: BoxNode[];
+  attribs?: string[];
 }
 
 const EXCLUDED_FOLDERS_FROM_DEFAULT = [
-	"mailspring",
-	"outbox",
-	"drafts",
-	"junk",
-	"trash",
-	"\\drafts",
-	"\\junk",
-	"\\trash",
+  "mailspring",
+  "outbox",
+  "drafts",
+  "junk",
+  "trash",
+  "\\drafts",
+  "\\junk",
+  "\\trash",
 ];
 
 const EXCLUDED_ATTRIBS_FROM_SELECTION = ["\\Noselect"];
@@ -28,89 +28,84 @@ const EXCLUDED_ATTRIBS_FROM_SELECTION = ["\\Noselect"];
  * @returns The filtered array of boxes and a set of excluded boxes keys
  */
 function getDefaultAndExcludedFolders(boxes: BoxNode[]) {
-	const defaultFolders: any = {};
-	let foundAllMailKey: string | null = null;
-	const excludedKeys = new Set<string>();
+  const defaultFolders = new Map<
+    string,
+    { checked: boolean; partialChecked: boolean; isNoSelect?: boolean }
+  >();
+  let foundAllMailKey: string | null = null;
+  const excludedKeys = new Set<string>();
 
-	objectScan(["**.key"], {
-		joined: true,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		filterFn: ({ parent }: any) => {
-			const { key, attribs } = parent;
-			const folder = key.split("/");
-			const folderName = folder.pop();
-			const folderParent = folder.pop();
-			const isAllMail = attribs?.includes("\\All");
+  objectScan(["**.key"], {
+    joined: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filterFn: ({ parent }: any) => {
+      const { key, attribs } = parent;
+      const folder = key.split("/");
+      const folderName = folder.pop();
+      const folderParent = folder.pop();
+      const isAllMail = attribs?.includes("\\All");
 
-			if (
-				attribs &&
-				EXCLUDED_ATTRIBS_FROM_SELECTION.some((attrib) =>
-					attribs.includes(attrib)
-				)
-			) {
-				excludedKeys.add(key);
-			}
+      if (
+        attribs &&
+        EXCLUDED_ATTRIBS_FROM_SELECTION.some((attrib) =>
+          attribs.includes(attrib),
+        )
+      ) {
+        excludedKeys.add(key);
+      }
 
-			if (foundAllMailKey && !isAllMail) return;
+      if (foundAllMailKey && !isAllMail) return;
 
-			const isExcluded = [...(attribs ?? []), folderName, folderParent]
-				.filter(Boolean)
-				.map((name) => name.toLowerCase())
-				.some((name) => EXCLUDED_FOLDERS_FROM_DEFAULT.includes(name));
+      const isExcluded = [...(attribs ?? []), folderName, folderParent]
+        .filter(Boolean)
+        .map((name) => name.toLowerCase())
+        .some((name) => EXCLUDED_FOLDERS_FROM_DEFAULT.includes(name));
 
-			if (isExcluded) return;
+      if (isExcluded) return;
+      const checked = attribs && !attribs.includes("\\HasChildren");
+      const partialChecked = !checked;
+      const isNoSelect = Boolean(attribs?.includes("\\Noselect")) || undefined;
 
-			const checked = attribs && !attribs.includes("\\HasChildren");
-			const partialChecked = !checked;
-			const isNoSelect = Boolean(attribs?.includes("\\Noselect")) ||
-				undefined;
+      if (isAllMail && !isNoSelect) {
+        // Clear previous selections
+        defaultFolders.clear();
+        // Add All Mail as checked
+        defaultFolders.set(key, {
+          checked: true,
+          partialChecked: false,
+          isNoSelect,
+        });
+        foundAllMailKey = key;
 
-			if (isAllMail && !isNoSelect) {
-				// Clear previous selections
-				// skipcq: JS-0320
-				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-				Object.keys(defaultFolders).forEach((k) =>
-					delete defaultFolders[k]
-				);
-				// Add All Mail as checked
-				defaultFolders[key] = {
-					checked: true,
-					partialChecked: false,
-					isNoSelect,
-				};
-				foundAllMailKey = key;
+        // Also mark parent folders as partially checked
+        const pathParts = key.split("/");
+        while (pathParts.length > 0) {
+          pathParts.pop(); // remove current
+          const parentKey = pathParts.join("/");
+          if (defaultFolders.has(parentKey)) continue;
+          defaultFolders.set(parentKey, {
+            checked: false,
+            partialChecked: true,
+          });
+        }
+      } else {
+        defaultFolders.set(key, {
+          checked,
+          partialChecked,
+        });
+      }
+    },
+  })(boxes);
 
-				// Also mark parent folders as partially checked
-				const pathParts = key.split("/");
-				while (pathParts.length > 0) {
-					pathParts.pop(); // remove current
-					const parentKey = pathParts.join("/");
-					if (parentKey in defaultFolders) continue;
-					defaultFolders[parentKey] = {
-						checked: false,
-						partialChecked: true,
-					};
-				}
-			} else {
-				defaultFolders[key] = {
-					checked,
-					partialChecked,
-				};
-			}
-		},
-	})(boxes);
-
-	return { defaultFolders, excludedKeys };
+  return { defaultFolders, excludedKeys };
 }
 
 export function getFolders(boxes: BoxNode[]) {
-	const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(
-		boxes,
-	);
-	return Object.keys(defaultFolders).filter(
-		(key) =>
-			defaultFolders[key].checked &&
-			!excludedKeys.has(key) &&
-			key !== "",
-	);
+  const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(boxes);
+  return [...defaultFolders.entries()]
+    .filter(
+      ([key, selection]) =>
+        selection.checked && !excludedKeys.has(key) && key !== "",
+    )
+    .map(([key]) => key);
 }
