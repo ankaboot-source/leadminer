@@ -597,6 +597,7 @@ function isSourceMiningNow(source: MiningSource): boolean {
 // Keep in sync with the passive-cron-job migration
 // (supabase/migrations/*_passive_mining_cron_job.sql).
 const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
+const PASSIVE_STATUS_POLL_MS = 60_000;
 
 function passiveMiningErrors(source: MiningSource): string[] {
   return deriveSourceState(source).lastError ?? [];
@@ -662,6 +663,23 @@ async function reconnectExpiredSource(source: MiningSource) {
     });
   }
 }
+
+// Passive mining runs on a server-side cron, so its status only changes
+// through fetches — without polling, the status row goes stale for anyone
+// who leaves this page open (the exact case: "did last night's run fire?").
+// Silent: no spinner churn, no sender-options refetch. Stopped on unmount.
+const passiveStatusPoll = setInterval(async () => {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    await Promise.all([
+      $leadminer.fetchMiningSources({ silent: true }),
+      $leadminer.getCurrentRunningMining(),
+    ]);
+  } catch {
+    // keep the last known state on transient failures
+  }
+}, PASSIVE_STATUS_POLL_MS);
+onUnmounted(() => clearInterval(passiveStatusPoll));
 
 onMounted(async () => {
   await $leadminer.ensureMiningSourcesLoaded();
