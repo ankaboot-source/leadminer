@@ -540,7 +540,26 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   // Explain what enabling actually does: when it will run and on which
   // folders (saved folders if any, otherwise the server defaults).
   const schedule = describeCronSchedule(PASSIVE_CRON_SCHEDULE);
-  const folderCount = deriveSourceState(source).minableFolders.length;
+  const savedFolders = Array.isArray(source.config?.folders)
+    ? source.config.folders.filter((f): f is string => typeof f === 'string')
+    : [];
+  let foldersLabel: string;
+  if (savedFolders.length === 1) {
+    const [name] = savedFolders;
+    // INBOX is a protocol-reserved name, not a real mailbox label.
+    foldersLabel =
+      name?.toUpperCase() === 'INBOX'
+        ? $tGlobal('sources.folder_inbox')
+        : name?.split('/').pop() || name || '';
+  } else if (savedFolders.length > 1) {
+    foldersLabel = $tGlobal(
+      'sources.folder_count',
+      { count: savedFolders.length },
+      savedFolders.length,
+    );
+  } else {
+    foldersLabel = $tGlobal('sources.passive_mining_folders_default');
+  }
   const nextRun = schedule.nextRunAt;
   $toast.add({
     severity: 'success',
@@ -555,11 +574,7 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
           )
         : '',
       nextRunTime: schedule.time ?? '',
-      folders: $tGlobal(
-        'sources.folder_count',
-        { count: folderCount },
-        folderCount,
-      ),
+      folders: foldersLabel,
     }),
     life: 7000,
   });

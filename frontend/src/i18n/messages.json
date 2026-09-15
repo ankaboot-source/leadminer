@@ -223,7 +223,9 @@
       "tomorrow": "tomorrow",
       "folder_count": "no folders | one folder | {count} folders",
       "passive_mining_enabled_detail": "Emails are checked {schedule}. Next check: {nextRunDay} at {nextRunTime} — on {folders}.",
-      "passive_mining_disabled_detail": "No automatic email checks will run for this source."
+      "passive_mining_disabled_detail": "No automatic email checks will run for this source.",
+      "folder_inbox": "Inbox",
+      "passive_mining_folders_default": "your default folders"
     }
   },
   "fr": {
@@ -416,7 +418,9 @@
       "tomorrow": "demain",
       "folder_count": "aucun dossier | un dossier | {count} dossiers",
       "passive_mining_enabled_detail": "Les e-mails sont vérifiés {schedule}. Prochaine vérification : {nextRunDay} à {nextRunTime} — sur {folders}.",
-      "passive_mining_disabled_detail": "Aucune vérification automatique des e-mails ne sera effectuée pour cette source."
+      "passive_mining_disabled_detail": "Aucune vérification automatique des e-mails ne sera effectuée pour cette source.",
+      "folder_inbox": "Boîte de réception",
+      "passive_mining_folders_default": "vos dossiers par défaut"
     }
   }
 }
