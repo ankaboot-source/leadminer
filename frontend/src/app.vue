@@ -190,6 +190,17 @@ if ($user.value) {
 // renders blank (stepper index stays -1) until a full page reload.
 watch($user, (user) => {
   if (!user) return;
+
+  // After an in-app sign-in the user is still on an /auth route, and nothing
+  // else drives the router away from it: global middleware only runs during
+  // navigations, and auth-state events are not navigations. Without this,
+  // the layout's post-login loader would show forever. `/` resolves through
+  // the middleware to /contacts or /mine.
+  const { path } = router.currentRoute.value;
+  if (path.startsWith('/auth') && !path.startsWith('/callback')) {
+    void router.replace('/');
+  }
+
   nextTick(() => {
     void resumeMiningState();
   });
