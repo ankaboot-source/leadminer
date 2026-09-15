@@ -503,6 +503,10 @@ async function confirmDelete() {
   }
 }
 
+// Keep in sync with the passive-cron-job migration
+// (supabase/migrations/*_passive_mining_cron_job.sql).
+const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
+
 /**
  * Continuous (passive) mining is scheduled server-side by a daily cron job —
  * toggling it must only PATCH the source preference, never start a mining run.
@@ -609,9 +613,6 @@ function isSourceMiningNow(source: MiningSource): boolean {
   );
 }
 
-// Keep in sync with the passive-cron-job migration
-// (supabase/migrations/*_passive_mining_cron_job.sql).
-const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
 const PASSIVE_STATUS_POLL_MS = 60_000;
 
 function passiveMiningErrors(source: MiningSource): string[] {

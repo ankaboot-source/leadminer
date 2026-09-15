@@ -156,8 +156,8 @@ watch(activeTask, () => {
   reset();
 });
 
-function resumeMiningState() {
-  if ($stepper.isInitializing) return;
+function resumeMiningState(): Promise<void> {
+  if ($stepper.isInitializing) return Promise.resolve();
   $stepper.isInitializing = true;
   return (async () => {
     try {
@@ -180,7 +180,7 @@ function resumeMiningState() {
 // trip (the layout would otherwise stay stuck on the "Loading..." loader).
 if ($user.value) {
   onMounted(() => {
-    void resumeMiningState();
+    resumeMiningState();
   });
 }
 
@@ -198,11 +198,11 @@ watch($user, (user) => {
   // the middleware to /contacts or /mine.
   const { path } = router.currentRoute.value;
   if (path.startsWith('/auth') && !path.startsWith('/callback')) {
-    void router.replace('/');
+    router.replace('/');
   }
 
   nextTick(() => {
-    void resumeMiningState();
+    resumeMiningState();
   });
 });
 </script>
