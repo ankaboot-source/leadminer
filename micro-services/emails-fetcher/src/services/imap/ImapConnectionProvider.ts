@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
-import { checkServerIdentity, type PeerCertificate } from 'tls';
 import util from 'util';
 import ENV from '../../config';
 import {
@@ -11,6 +10,10 @@ import {
 } from '../../db/interfaces/MiningSources';
 import { miningSourceService } from '../../db/supabase';
 import logger from '../../utils/logger';
+import {
+  isTransientImapHandshakeError,
+  safeCheckServerIdentity
+} from '../../utils/tls';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 type CurrentOAuthSource = {
@@ -60,13 +63,7 @@ class ImapConnectionProvider {
         // default checkServerIdentity throw before the (already
         // rejectUnauthorized:false) connection is usable. Keep the hostname
         // check for well-formed certs and only skip it for that crash case.
-        checkServerIdentity: (host: string, cert: PeerCertificate) => {
-          try {
-            return checkServerIdentity(host, cert);
-          } catch {
-            return undefined;
-          }
-        }
+        checkServerIdentity: safeCheckServerIdentity
       }
     };
 
@@ -191,18 +188,13 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       disableAutoIdle: true,
-      tls: options?.tls
-        ? {
-            rejectUnauthorized: false,
-            checkServerIdentity: (host: string, cert: PeerCertificate) => {
-              try {
-                return checkServerIdentity(host, cert);
-              } catch {
-                return undefined;
-              }
-            }
-          }
-        : undefined
+      tls: {
+        rejectUnauthorized: false,
+        // Always install the safe identity check: `secure` may be resolved
+        // later from the OAuth provider config, and Node can call the default
+        // check with a null certificate during socket teardown races.
+        checkServerIdentity: safeCheckServerIdentity
+      }
     };
 
     if (!options?.host || !options?.port) {
@@ -227,10 +219,40 @@ class ImapConnectionProvider {
         'ImapFlow connection error during getSingleConnection:',
         err
       );
-      if (connection) {
-        connection.close();
+      connection.close();
+
+      if (!isTransientImapHandshakeError(err)) {
+        throw err;
       }
-      throw err;
+
+      // One retry: a transient null-certificate handshake race happens when a
+      // just-finished fetch is still tearing down its IMAP pool while the next
+      // start opens its connections (Node autoSelectFamily timeout path). A
+      // fresh connection succeeds.
+      logger.warn(
+        'Retrying getSingleConnection after transient IMAP handshake error:',
+        err
+      );
+      await new Promise((resolve) => {
+        setTimeout(resolve, 250);
+      });
+
+      const retryConnection = new Connection(imapConfig as ImapFlowOptions);
+      retryConnection.on('error', (retryErr) => {
+        logger.error('ImapFlow connection error:', retryErr);
+      });
+
+      try {
+        await retryConnection.connect();
+        return retryConnection;
+      } catch (retryErr) {
+        logger.error(
+          'ImapFlow connection error during getSingleConnection retry:',
+          retryErr
+        );
+        retryConnection.close();
+        throw retryErr;
+      }
     }
   }
 
