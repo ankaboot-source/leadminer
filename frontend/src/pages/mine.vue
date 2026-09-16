@@ -27,7 +27,10 @@
 const $leadminer = useLeadminerStore();
 const $stepper = useMiningStepper();
 const showTable = computed(
-  () => $leadminer.activeMiningTask || $stepper.index > 2,
+  () =>
+    $leadminer.activeMiningTask ||
+    $stepper.index > 2 ||
+    $leadminer.miningCompleted,
 );
 
 onMounted(() => {
