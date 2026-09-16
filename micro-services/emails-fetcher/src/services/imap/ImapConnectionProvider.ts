@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
+import { checkServerIdentity, type PeerCertificate } from 'tls';
 import util from 'util';
 import ENV from '../../config';
 import {
@@ -10,10 +11,6 @@ import {
 } from '../../db/interfaces/MiningSources';
 import { miningSourceService } from '../../db/supabase';
 import logger from '../../utils/logger';
-import {
-  isTransientImapHandshakeError,
-  safeCheckServerIdentity
-} from '../../utils/tls';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 type CurrentOAuthSource = {
@@ -63,7 +60,13 @@ class ImapConnectionProvider {
         // default checkServerIdentity throw before the (already
         // rejectUnauthorized:false) connection is usable. Keep the hostname
         // check for well-formed certs and only skip it for that crash case.
-        checkServerIdentity: safeCheckServerIdentity
+        checkServerIdentity: (host: string, cert: PeerCertificate) => {
+          try {
+            return checkServerIdentity(host, cert);
+          } catch {
+            return undefined;
+          }
+        }
       }
     };
 
@@ -188,12 +191,23 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       disableAutoIdle: true,
+      // Always install the null-safe identity check: OAuth sources pass only
+      // `oauthToken` here and host/port/secure are resolved afterwards from
+      // the provider config, so `options?.tls` cannot gate this. Node's
+      // default checkServerIdentity destructures `cert.subject` and throws a
+      // TypeError when the certificate is null during a socket-teardown race
+      // (previous fetch pool still closing), surfacing as a 500 on the next
+      // mining start. rejectUnauthorized is false anyway, so only the
+      // malformed-cert crash case is skipped.
       tls: {
         rejectUnauthorized: false,
-        // Always install the safe identity check: `secure` may be resolved
-        // later from the OAuth provider config, and Node can call the default
-        // check with a null certificate during socket teardown races.
-        checkServerIdentity: safeCheckServerIdentity
+        checkServerIdentity: (host: string, cert: PeerCertificate) => {
+          try {
+            return checkServerIdentity(host, cert);
+          } catch {
+            return undefined;
+          }
+        }
       }
     };
 
@@ -219,40 +233,10 @@ class ImapConnectionProvider {
         'ImapFlow connection error during getSingleConnection:',
         err
       );
-      connection.close();
-
-      if (!isTransientImapHandshakeError(err)) {
-        throw err;
+      if (connection) {
+        connection.close();
       }
-
-      // One retry: a transient null-certificate handshake race happens when a
-      // just-finished fetch is still tearing down its IMAP pool while the next
-      // start opens its connections (Node autoSelectFamily timeout path). A
-      // fresh connection succeeds.
-      logger.warn(
-        'Retrying getSingleConnection after transient IMAP handshake error:',
-        err
-      );
-      await new Promise((resolve) => {
-        setTimeout(resolve, 250);
-      });
-
-      const retryConnection = new Connection(imapConfig as ImapFlowOptions);
-      retryConnection.on('error', (retryErr) => {
-        logger.error('ImapFlow connection error:', retryErr);
-      });
-
-      try {
-        await retryConnection.connect();
-        return retryConnection;
-      } catch (retryErr) {
-        logger.error(
-          'ImapFlow connection error during getSingleConnection retry:',
-          retryErr
-        );
-        retryConnection.close();
-        throw retryErr;
-      }
+      throw err;
     }
   }
 
