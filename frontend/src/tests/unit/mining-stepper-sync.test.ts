@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  shouldApplyResumeStep,
-  shouldResumeOnUserChange,
-} from '@/utils/stepperResume';
+  shouldApplyRunningStep,
+  shouldInitStepperOnSignIn,
+} from '@/utils/miningStepperSync';
 
-describe('shouldResumeOnUserChange', () => {
-  it('resumes on a genuine sign-in (null -> user)', () => {
+describe('shouldInitStepperOnSignIn', () => {
+  it('initializes on a genuine sign-in (null -> user)', () => {
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: { id: 'u1' },
         previousUser: null,
         isBusy: false,
@@ -16,9 +16,9 @@ describe('shouldResumeOnUserChange', () => {
     ).toBe(true);
   });
 
-  it('resumes on first emission (undefined -> user)', () => {
+  it('initializes on first emission (undefined -> user)', () => {
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: { id: 'u1' },
         previousUser: undefined,
         isBusy: false,
@@ -29,7 +29,7 @@ describe('shouldResumeOnUserChange', () => {
   it('ignores same-session re-emissions (token refresh swaps user identity)', () => {
     const user = { id: 'u1' };
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: { ...user },
         previousUser: user,
         isBusy: false,
@@ -37,9 +37,9 @@ describe('shouldResumeOnUserChange', () => {
     ).toBe(false);
   });
 
-  it('never fights an in-flight start-mining / resume flow', () => {
+  it('never fights an in-flight start-mining / state restore', () => {
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: { id: 'u1' },
         previousUser: null,
         isBusy: true,
@@ -49,14 +49,14 @@ describe('shouldResumeOnUserChange', () => {
 
   it('ignores sign-out and anonymous emissions', () => {
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: null,
         previousUser: { id: 'u1' },
         isBusy: false,
       }),
     ).toBe(false);
     expect(
-      shouldResumeOnUserChange({
+      shouldInitStepperOnSignIn({
         currentUser: undefined,
         previousUser: undefined,
         isBusy: false,
@@ -65,31 +65,31 @@ describe('shouldResumeOnUserChange', () => {
   });
 });
 
-describe('shouldApplyResumeStep', () => {
-  it('applies a resume into the uninitialized stepper', () => {
-    expect(shouldApplyResumeStep(-1, 1)).toBe(true);
-    expect(shouldApplyResumeStep(-1, 3)).toBe(true);
+describe('shouldApplyRunningStep', () => {
+  it('sets the stepper from the uninitialized state', () => {
+    expect(shouldApplyRunningStep(-1, 1)).toBe(true);
+    expect(shouldApplyRunningStep(-1, 3)).toBe(true);
   });
 
   it('applies only forward moves on an initialized stepper', () => {
-    expect(shouldApplyResumeStep(1, 3)).toBe(true);
-    expect(shouldApplyResumeStep(2, 3)).toBe(true);
+    expect(shouldApplyRunningStep(1, 3)).toBe(true);
+    expect(shouldApplyRunningStep(2, 3)).toBe(true);
   });
 
   it('never moves the stepper backward (stale active-run snapshot)', () => {
-    expect(shouldApplyResumeStep(2, 1)).toBe(false);
-    expect(shouldApplyResumeStep(3, 2)).toBe(false);
-    expect(shouldApplyResumeStep(3, 1)).toBe(false);
+    expect(shouldApplyRunningStep(2, 1)).toBe(false);
+    expect(shouldApplyRunningStep(3, 2)).toBe(false);
+    expect(shouldApplyRunningStep(3, 1)).toBe(false);
   });
 
   it('rejects re-setting the same step', () => {
-    expect(shouldApplyResumeStep(2, 2)).toBe(false);
+    expect(shouldApplyRunningStep(2, 2)).toBe(false);
   });
 
   it('rejects out-of-range or non-integer steps', () => {
-    expect(shouldApplyResumeStep(1, 0)).toBe(false);
-    expect(shouldApplyResumeStep(1, 4)).toBe(false);
-    expect(shouldApplyResumeStep(Number.NaN, 2)).toBe(false);
-    expect(shouldApplyResumeStep(1, Number.NaN)).toBe(false);
+    expect(shouldApplyRunningStep(1, 0)).toBe(false);
+    expect(shouldApplyRunningStep(1, 4)).toBe(false);
+    expect(shouldApplyRunningStep(Number.NaN, 2)).toBe(false);
+    expect(shouldApplyRunningStep(1, Number.NaN)).toBe(false);
   });
 });
