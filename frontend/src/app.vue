@@ -105,6 +105,10 @@ import {
 import { useIdle } from '@vueuse/core';
 import { reloadNuxtApp } from 'nuxt/app';
 import Normalizer from '~/utils/normalizer';
+import {
+  shouldApplyResumeStep,
+  shouldResumeOnUserChange,
+} from '~/utils/stepperResume';
 import { signOutManually } from './utils/auth';
 
 const $user = useSupabaseUser();
@@ -156,30 +160,33 @@ watch(activeTask, () => {
   reset();
 });
 
-function resumeMiningState(): Promise<void> {
-  if ($stepper.isInitializing) return Promise.resolve();
+async function resumeMiningState(): Promise<void> {
+  if ($stepper.isInitializing) return;
   $stepper.isInitializing = true;
-  return (async () => {
-    try {
-      await $leadminerStore.ensureMiningSourcesLoaded();
-      const step = await $leadminerStore.getCurrentRunningMining();
-      if (step !== undefined) {
-        $stepper.index = step;
-      }
-    } catch (error) {
-      console.error('[app] failed to resume mining state', error);
-    } finally {
-      $stepper.isInitializing = false;
+  try {
+    await $leadminerStore.ensureMiningSourcesLoaded();
+    const step = await $leadminerStore.getCurrentRunningMining();
+    // An active run can only progress: never move the stepper backward over a
+    // stale snapshot taken while a just-started run is still registering.
+    if (step !== undefined && shouldApplyResumeStep($stepper.index, step)) {
+      $stepper.index = step;
     }
-  })();
+  } catch (error) {
+    console.error('[app] failed to resume mining state', error);
+  } finally {
+    $stepper.isInitializing = false;
+  }
 }
 
 // Resume an in-progress mining run / restore the stepper after the app has
 // mounted. Keeping this out of the root component's async setup prevents a
 // post-login SPA navigation from freezing the whole app on the network round
 // trip (the layout would otherwise stay stuck on the "Loading..." loader).
+const lastSeenUser = ref<unknown>(undefined);
+
 if ($user.value) {
   onMounted(() => {
+    lastSeenUser.value = $user.value;
     resumeMiningState();
   });
 }
@@ -188,8 +195,25 @@ if ($user.value) {
 // mounted, so the block above never ran. Once the session flips from null to
 // a user, initialize the mining stepper on the next paint — otherwise /mine
 // renders blank (stepper index stays -1) until a full page reload.
+//
+// Only a signed-out → signed-in transition may (re)initialize. supabase-js
+// swaps the user object identity on every token refresh — including the
+// forced refreshSession() inside startMining() — and re-running the resume
+// then races the just-POSTed run (no tasks registered yet → "no run" → step 1),
+// kicking the user out of the progress screen.
 watch($user, (user) => {
-  if (!user) return;
+  const previousUser = lastSeenUser.value;
+  lastSeenUser.value = user;
+
+  if (
+    !shouldResumeOnUserChange({
+      currentUser: user,
+      previousUser,
+      isBusy: $stepper.isInitializing,
+    })
+  ) {
+    return;
+  }
 
   // After an in-app sign-in the user is still on an /auth route, and nothing
   // else drives the router away from it: global middleware only runs during
