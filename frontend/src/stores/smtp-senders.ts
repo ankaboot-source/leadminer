@@ -27,6 +27,7 @@ export const useSmtpSendersStore = defineStore('smtp-senders', () => {
       }
 
       senders.value = response.senders;
+      return true;
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to delete sender';

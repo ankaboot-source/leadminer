@@ -156,13 +156,10 @@ watch(activeTask, () => {
   reset();
 });
 
-// Resume an in-progress mining run / restore the stepper after the app has
-// mounted. Keeping this out of the root component's async setup prevents a
-// post-login SPA navigation from freezing the whole app on the network round
-// trip (the layout would otherwise stay stuck on the "Loading..." loader).
-if ($user.value) {
-  onMounted(async () => {
-    $stepper.isInitializing = true;
+function resumeMiningState(): Promise<void> {
+  if ($stepper.isInitializing) return Promise.resolve();
+  $stepper.isInitializing = true;
+  return (async () => {
     try {
       await $leadminerStore.ensureMiningSourcesLoaded();
       const step = await $leadminerStore.getCurrentRunningMining();
@@ -174,6 +171,38 @@ if ($user.value) {
     } finally {
       $stepper.isInitializing = false;
     }
+  })();
+}
+
+// Resume an in-progress mining run / restore the stepper after the app has
+// mounted. Keeping this out of the root component's async setup prevents a
+// post-login SPA navigation from freezing the whole app on the network round
+// trip (the layout would otherwise stay stuck on the "Loading..." loader).
+if ($user.value) {
+  onMounted(() => {
+    resumeMiningState();
   });
 }
+
+// SPA logins (password or OAuth) resolve *after* this root component has
+// mounted, so the block above never ran. Once the session flips from null to
+// a user, initialize the mining stepper on the next paint — otherwise /mine
+// renders blank (stepper index stays -1) until a full page reload.
+watch($user, (user) => {
+  if (!user) return;
+
+  // After an in-app sign-in the user is still on an /auth route, and nothing
+  // else drives the router away from it: global middleware only runs during
+  // navigations, and auth-state events are not navigations. Without this,
+  // the layout's post-login loader would show forever. `/` resolves through
+  // the middleware to /contacts or /mine.
+  const { path } = router.currentRoute.value;
+  if (path.startsWith('/auth') && !path.startsWith('/callback')) {
+    router.replace('/');
+  }
+
+  nextTick(() => {
+    resumeMiningState();
+  });
+});
 </script>

@@ -2,7 +2,7 @@ export interface Notification {
   user_id: string;
   row_id: string;
   type: 'enrich' | 'clean' | 'extract' | 'signature';
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

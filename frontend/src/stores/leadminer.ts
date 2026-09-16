@@ -179,8 +179,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * Retrieves mining sources.
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
-  async function fetchMiningSources() {
-    isLoadingMiningSources.value = true;
+  async function fetchMiningSources(options: { silent?: boolean } = {}) {
+    const { silent = false } = options;
+
+    // Silent mode is for background refreshes (e.g. passive-status polling):
+    // no loading flag (watchers react to it) and no sender-options fetch.
+    if (!silent) {
+      isLoadingMiningSources.value = true;
+    }
 
     try {
       const sources = await getMiningSources();
@@ -194,9 +200,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
       }));
 
-      fetchSenderOptionsInBackground();
+      if (!silent) {
+        fetchSenderOptionsInBackground();
+      }
     } finally {
-      isLoadingMiningSources.value = false;
+      if (!silent) {
+        isLoadingMiningSources.value = false;
+      }
     }
   }
 
