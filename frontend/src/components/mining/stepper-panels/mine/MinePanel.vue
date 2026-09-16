@@ -84,6 +84,7 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 
 import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
+import { computeExtractionProgress } from '@/utils/mining-progress';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource } from '~/types/mining';
 import type { BoxNode } from '~/utils/boxes';
@@ -278,9 +279,16 @@ const canStartMining = computed(() => {
 });
 
 const extractionProgress = computed(() =>
-  $leadminerStore.fetchingFinished && !canceled.value
-    ? extractedEmails.value / $leadminerStore.scannedEmails || 0
-    : extractedEmails.value / totalEmails.value || 0,
+  computeExtractionProgress({
+    extractedEmails: extractedEmails.value,
+    scannedEmails: $leadminerStore.scannedEmails,
+    totalEmails: totalEmails.value,
+    fetchingFinished: $leadminerStore.fetchingFinished,
+    canceled: canceled.value,
+    googleContactsSync: $leadminerStore.sourceConfig.google_contacts_sync,
+    googleContactsFetchedCount: $leadminerStore.googleContactsFetchedCount,
+    googleContactsTotal: $leadminerStore.googleContactsTotal,
+  }),
 );
 
 const progressTooltip = computed(() =>
