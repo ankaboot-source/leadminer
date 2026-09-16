@@ -121,10 +121,11 @@ async function handleFirstTimeSignIn() {
     // existing-source dropdown.
     try {
       await useLeadminerStore().fetchMiningSources({ silent: true });
-    } catch (error) {
+    } catch (refreshError) {
+      // eslint-disable-next-line no-console
       console.warn(
         '[auth] Failed to refresh mining sources after sign-in',
-        error,
+        refreshError,
       );
     }
   }
