@@ -4,6 +4,7 @@ import type {
   SupabaseClient,
 } from '@supabase/supabase-js';
 import { useSupabaseUserProfile } from '~/composables/useSupabaseUserProfile';
+import { useLeadminerStore } from '~/stores/leadminer';
 import type { Profile } from '~/types/profile';
 
 /**
@@ -112,6 +113,20 @@ async function handleFirstTimeSignIn() {
       providerToken,
       providerRefreshToken,
     );
+
+    // The source row was just created. Some views (e.g. /mine) may have
+    // already fetched an empty source list before this POST resolved, and
+    // the store latches that result for the session. Refresh it so panels
+    // showing the "choose a mining source" empty state switch to the
+    // existing-source dropdown.
+    try {
+      await useLeadminerStore().fetchMiningSources({ silent: true });
+    } catch (error) {
+      console.warn(
+        '[auth] Failed to refresh mining sources after sign-in',
+        error,
+      );
+    }
   }
 
   if (language && (!emailTemplate || emailTemplate.language !== language)) {
