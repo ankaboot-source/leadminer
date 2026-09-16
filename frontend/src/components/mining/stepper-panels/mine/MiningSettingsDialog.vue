@@ -125,7 +125,14 @@ const googleContactsProgressValue = computed(() => {
   if ($leadminerStore.googleContactsFetched) {
     return 100;
   }
-  return 50;
+  const total = $leadminerStore.googleContactsTotal;
+  if (!total || total <= 0) {
+    return 50;
+  }
+  return Math.min(
+    100,
+    Math.round(($leadminerStore.googleContactsFetchedCount / total) * 100),
+  );
 });
 
 async function onRefreshImapTree() {
