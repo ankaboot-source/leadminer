@@ -91,6 +91,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   );
 
   const passiveMiningDialog = ref(false);
+  const passiveMiningDialogShown = ref(false);
   // resolveSenderOptions does per-source verifyTransport (SMTP/OAuth + token
   // refresh) plus a DB call. With several sources it can easily take 5-10s,
   // and a previous 3s cap caused false "preserving previous validity" warnings.
@@ -108,11 +109,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * mining run, unless the source is already on continuous (passive) mining or
    * the run was interrupted. Owned by the store so it survives component
    * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
+   *
+   * Shown at most once per run: extraction-related events fire several times
+   * (extraction finished, google contacts fetched, mining completed) and the
+   * prompt must not reappear after the user answered it.
    */
   function maybeOpenPassiveMiningDialog() {
+    if (passiveMiningDialogShown.value) return;
     if (miningInterrupted.value) return;
     const source = activeMiningSource.value;
     if (!source || source.passive_mining) return;
+    passiveMiningDialogShown.value = true;
     passiveMiningDialog.value = true;
   }
 
@@ -161,6 +168,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningType.value = 'email';
 
     passiveMiningDialog.value = false;
+    passiveMiningDialogShown.value = false;
 
     errors.value = {};
   }
@@ -416,7 +424,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
-        maybeOpenPassiveMiningDialog();
+        // The continuous-extraction prompt is owned by the extraction
+        // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
+        // it when the whole pipeline completes.
         setTimeout(async () => {
           if (!isCurrentRun()) return;
           miningTask.value = undefined;
@@ -598,6 +608,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       googleContactsFetched.value = false;
       miningInterrupted.value = false;
       passiveMiningDialog.value = false;
+      passiveMiningDialogShown.value = false;
 
       let task;
       switch (source) {
