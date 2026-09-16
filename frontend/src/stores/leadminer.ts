@@ -70,6 +70,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const scannedEmails = ref(0);
   const verifiedContacts = ref(0);
   const createdContacts = ref(0);
+  const googleContactsTotal = ref(0);
+  const googleContactsFetchedCount = ref(0);
 
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
@@ -149,6 +151,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     miningCompleted.value = false;
     googleContactsFetched.value = false;
+    googleContactsTotal.value = 0;
+    googleContactsFetchedCount.value = 0;
 
     activeEnrichment.value = false;
 
@@ -424,6 +428,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         googleContactsFetched.value = true;
         maybeOpenPassiveMiningDialog();
       },
+      onGoogleContactsTotalUpdate: (total) => {
+        if (isCurrentRun()) googleContactsTotal.value = total;
+      },
+      onGoogleContactsFetchedCountUpdate: (count) => {
+        if (isCurrentRun()) googleContactsFetchedCount.value = count;
+      },
     });
   }
 
@@ -574,6 +584,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     extractedEmails.value = 0;
     createdContacts.value = 0;
     verifiedContacts.value = 0;
+    googleContactsTotal.value = 0;
+    googleContactsFetchedCount.value = 0;
 
     fetchingFinished.value = false;
     extractionFinished.value = false;
@@ -704,6 +716,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     extractedEmails.value = progress.extracted ?? 0;
     createdContacts.value = progress.createdContacts ?? 0;
     verifiedContacts.value = progress.verifiedContacts ?? 0;
+    googleContactsTotal.value = progress.googleContactsTotal ?? 0;
+    googleContactsFetchedCount.value =
+      progress.googleContactsFetchedCount ?? 0;
 
     fetchingFinished.value =
       miningType.value === MiningTypes.EMAIL
@@ -839,6 +854,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     scannedEmails,
     createdContacts,
     verifiedContacts,
+    googleContactsTotal,
+    googleContactsFetchedCount,
     fetchingFinished,
     extractionFinished,
     cleaningFinished,
