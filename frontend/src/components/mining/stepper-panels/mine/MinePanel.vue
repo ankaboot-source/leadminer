@@ -95,14 +95,14 @@ import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { computeExtractionProgress } from '@/utils/mining-progress';
 import { flattenBoxNodes } from '~/utils/box-tree';
+import { resolveMiningIntent, resolveRunMode } from '@/utils/mining-intent';
 import {
   getSelectedFolderKeys,
   hasSelectedFolders,
 } from '~/utils/selected-folders';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
-import type { BoxNode } from '~/utils/boxes';
-import { FolderStatus, MiningRunMode } from '~/types/enums';
+import { MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
 // skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
@@ -470,43 +470,25 @@ async function startMiningBoxes() {
   const selectedNodes = flattenBoxNodes(boxes.value).filter((node) =>
     selectedKeys.has(node.key),
   );
-  const hasNewMessages = selectedNodes.some(
-    (node) => node.status === FolderStatus.NewMessages,
-  );
-  const allAlreadyMined =
-    selectedNodes.length > 0 &&
-    selectedNodes.every((node) => node.status === FolderStatus.UpToDate);
 
-  if (hasNewMessages) {
-    resumeDialogVisible.value = true;
-    return;
+  const intent = resolveMiningIntent(selectedNodes);
+  switch (intent.kind) {
+    case 'resume':
+      resumeDialogVisible.value = true;
+      return;
+    case 'mixed':
+      alreadyMinedDialogMode.value = 'mixed';
+      alreadyMinedDialogFolders.value = intent.folders;
+      alreadyMinedDialogVisible.value = true;
+      return;
+    case 'all-mined':
+      alreadyMinedDialogMode.value = 'all-mined';
+      alreadyMinedDialogFolders.value = [];
+      alreadyMinedDialogVisible.value = true;
+      return;
+    default:
+      await runEmailMining(intent.mode);
   }
-
-  const upToDateCount = selectedNodes.filter(
-    (node) => node.status === FolderStatus.UpToDate,
-  ).length;
-  if (upToDateCount > 0 && upToDateCount < selectedNodes.length) {
-    alreadyMinedDialogMode.value = 'mixed';
-    alreadyMinedDialogFolders.value = selectedNodes.map((node) => ({
-      key: node.key,
-      label: node.label,
-      status:
-        node.status === FolderStatus.UpToDate
-          ? ('up_to_date' as const)
-          : ('new' as const),
-    }));
-    alreadyMinedDialogVisible.value = true;
-    return;
-  }
-
-  if (allAlreadyMined) {
-    alreadyMinedDialogMode.value = 'all-mined';
-    alreadyMinedDialogFolders.value = [];
-    alreadyMinedDialogVisible.value = true;
-    return;
-  }
-
-  await runEmailMining(resolveRunMode(selectedNodes));
 }
 
 async function mineNewFoldersOnly() {
@@ -521,12 +503,6 @@ async function mineNewFoldersOnly() {
     newKeySet.has(node.key),
   );
   await runEmailMining(resolveRunMode(newNodes), newKeys);
-}
-
-function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
-  return nodes.some((node) => node.watermark)
-    ? MiningRunMode.Incremental
-    : MiningRunMode.Full;
 }
 
 async function runEmailMining(runMode: MiningRunMode, folders?: string[]) {
