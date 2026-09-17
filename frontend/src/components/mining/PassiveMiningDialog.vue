@@ -11,6 +11,37 @@
         {{ t('paragraph_2') }}
       </p>
 
+      <div class="flex flex-col gap-2 pt-2 border-t border-surface-200">
+        <div class="font-medium">{{ t('folders_title') }}</div>
+        <div class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+          <div
+            v-for="row in folderRows"
+            :key="row.key"
+            class="flex items-center gap-2"
+          >
+            <Checkbox
+              v-model="folderSelection"
+              :input-id="`passive-folder-${row.key}`"
+              :value="row.key"
+            />
+            <label
+              :for="`passive-folder-${row.key}`"
+              class="cursor-pointer flex-1"
+              >{{ row.label }}</label
+            >
+            <Badge v-if="row.isNew" severity="info">{{
+              t('folders_new')
+            }}</Badge>
+            <Badge v-if="row.unavailable" severity="secondary">{{
+              t('folders_unavailable')
+            }}</Badge>
+          </div>
+        </div>
+        <small v-if="folderSelection.length === 0" class="text-red-500">{{
+          t('folders_required')
+        }}</small>
+      </div>
+
       <div class="flex flex-col gap-3 pt-2 border-t border-surface-200">
         <div v-if="isGoogleSource" class="flex items-center gap-2">
           <ToggleSwitch
@@ -65,7 +96,9 @@
 <script setup lang="ts">
 import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
+import type { BoxNode } from '~/utils/boxes';
 import { deriveSourceConfig } from '~/utils/miningSourceConfig';
+import { buildPassiveFolderList } from '~/utils/passive-mining-folders';
 import { updatePassiveMining } from '~/utils/sources';
 
 const $leadminerStore = useLeadminerStore();
@@ -84,6 +117,39 @@ const { t } = useI18n({
 
 const isGoogleSource = computed(() => miningSource.value?.type === 'google');
 
+const folderSelection = ref<string[]>([]);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- wired to header/confirm copy in Task 5
+const dialogMode = computed(() => $leadminerStore.passiveMiningDialogMode);
+const folderRows = computed(() => {
+  const registered = Array.isArray(miningSource.value?.config?.folders)
+    ? miningSource.value.config.folders.filter(
+        (f): f is string => typeof f === 'string',
+      )
+    : [];
+  const mined = $leadminerStore.selectedBoxes
+    ? Object.keys($leadminerStore.selectedBoxes).filter(
+        (key) =>
+          key !== '' &&
+          $leadminerStore.selectedBoxes[key]?.checked &&
+          !$leadminerStore.excludedBoxes?.has(key),
+      )
+    : [];
+  const flat = (nodes: BoxNode[]): string[] =>
+    nodes.flatMap((n) => [n.key, ...flat(n.children ?? [])]);
+  const available = $leadminerStore.boxes?.length
+    ? flat($leadminerStore.boxes)
+    : [...new Set([...mined, ...registered])];
+  return buildPassiveFolderList({
+    mined,
+    registered,
+    available,
+    labelFor: (key: string) =>
+      key.toUpperCase() === 'INBOX'
+        ? t('folder_inbox')
+        : (key.split('/').pop() ?? key),
+  });
+});
+
 watch(
   () => $leadminerStore.passiveMiningDialog,
   (newVal, oldVal) => {
@@ -93,6 +159,9 @@ watch(
         $leadminerStore.activeMiningSource?.config,
       );
       draftConfig.value = { ...flags };
+      folderSelection.value = folderRows.value
+        .filter((row) => row.checked)
+        .map((row) => row.key);
     }
   },
 );
@@ -155,7 +224,12 @@ async function enablePassiveMining() {
     "sync_google_contacts": "Sync Google Contacts",
     "clean_contacts": "Clean contacts (email verification)",
     "extract_signatures": "Extract signatures",
-    "yes_enable": "Yes, enable"
+    "yes_enable": "Yes, enable",
+    "folders_title": "Folders for continuous extraction",
+    "folders_new": "New",
+    "folders_unavailable": "Unavailable",
+    "folders_required": "Select at least one folder",
+    "folder_inbox": "Inbox"
   },
   "fr": {
     "header": "Extraction continue des contacts",
@@ -164,7 +238,12 @@ async function enablePassiveMining() {
     "sync_google_contacts": "Synchroniser les contacts Google",
     "clean_contacts": "Nettoyer les contacts (vérification e-mail)",
     "extract_signatures": "Extraire les signatures",
-    "yes_enable": "Oui, activer"
+    "yes_enable": "Oui, activer",
+    "folders_title": "Dossiers pour l'extraction continue",
+    "folders_new": "Nouveau",
+    "folders_unavailable": "Indisponible",
+    "folders_required": "Sélectionnez au moins un dossier",
+    "folder_inbox": "Boîte de réception"
   }
 }
 </i18n>
