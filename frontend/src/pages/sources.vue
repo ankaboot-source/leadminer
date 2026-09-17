@@ -112,6 +112,7 @@
                   <span>{{ t('continuous_mining') }}</span>
                   <ToggleSwitch
                     v-model="source.passive_mining"
+                    :disabled="isActiveMiningSource(source)"
                     @update:model-value="
                       (val: boolean) => togglePassiveMining(source, val)
                     "
