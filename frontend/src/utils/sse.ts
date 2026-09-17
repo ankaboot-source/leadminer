@@ -65,6 +65,8 @@ class SSE {
       onCreatedContacts,
       onMiningCompleted,
       onGoogleContactsFetched,
+      onGoogleContactsTotalUpdate,
+      onGoogleContactsFetchedCountUpdate,
       onSignatureExtractionDone,
     }: {
       onFetchedUpdate: (count: number) => void;
@@ -79,6 +81,8 @@ class SSE {
       onVerifiedContacts: (totalVerified: number) => void;
       onMiningCompleted: () => void;
       onGoogleContactsFetched?: () => void;
+      onGoogleContactsTotalUpdate: (total: number) => void;
+      onGoogleContactsFetchedCountUpdate: (count: number) => void;
       onSignatureExtractionDone: () => void;
     },
   ) {
@@ -183,6 +187,18 @@ class SSE {
             onCleaningDone(parseInt(data));
           } else if (event === `google-contacts-fetch-finished-${miningId}`) {
             onGoogleContactsFetched?.();
+          } else if (event === `googleContactsTotal-${miningId}`) {
+            console.debug(
+              '[SSE] Updating googleContactsTotal:',
+              parseInt(data),
+            );
+            onGoogleContactsTotalUpdate(parseInt(data));
+          } else if (event === `googleContactsFetchedCount-${miningId}`) {
+            console.debug(
+              '[SSE] Updating googleContactsFetchedCount:',
+              parseInt(data),
+            );
+            onGoogleContactsFetchedCountUpdate(parseInt(data));
           } else if (event === `signature-finished-${miningId}`) {
             onSignatureExtractionDone();
           } else if (event === `verifiedContacts-${miningId}`) {

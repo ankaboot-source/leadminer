@@ -70,7 +70,7 @@ export class GoogleContactsFetchTask extends Task {
       });
 
       this.progress.total = result.data.totalContacts;
-      this.emitProgress('totalMessages', this.progress.total);
+      this.emitProgress('googleContactsTotal', this.progress.total);
     } catch (error) {
       this.status = TaskStatus.Canceled;
       this.stoppedAt = new Date().toUTCString();
@@ -104,6 +104,7 @@ export class GoogleContactsFetchTask extends Task {
   onMessage(msg: ProgressMessage): void {
     if (msg.progressType === 'google-contacts-fetched') {
       this.progress.processed = msg.count;
+      this.emitProgress('googleContactsFetchedCount', this.progress.processed);
 
       if (msg.isCompleted || msg.isCanceled) {
         this.status = msg.isCanceled ? TaskStatus.Canceled : TaskStatus.Done;
@@ -117,7 +118,9 @@ export class GoogleContactsFetchTask extends Task {
 
   getProgressMap(): Record<string, number> {
     return {
-      'google-contacts-fetched': this.progress.processed
+      'google-contacts-fetched': this.progress.processed,
+      googleContactsFetchedCount: this.progress.processed,
+      googleContactsTotal: this.progress.total
     };
   }
 }

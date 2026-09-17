@@ -191,18 +191,24 @@ class ImapConnectionProvider {
       connectionTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
       greetingTimeout: ENV.IMAP_AUTH_TIMEOUT,
       disableAutoIdle: true,
-      tls: options?.tls
-        ? {
-            rejectUnauthorized: false,
-            checkServerIdentity: (host: string, cert: PeerCertificate) => {
-              try {
-                return checkServerIdentity(host, cert);
-              } catch {
-                return undefined;
-              }
-            }
+      // Always install the null-safe identity check: OAuth sources pass only
+      // `oauthToken` here and host/port/secure are resolved afterwards from
+      // the provider config, so `options?.tls` cannot gate this. Node's
+      // default checkServerIdentity destructures `cert.subject` and throws a
+      // TypeError when the certificate is null during a socket-teardown race
+      // (previous fetch pool still closing), surfacing as a 500 on the next
+      // mining start. rejectUnauthorized is false anyway, so only the
+      // malformed-cert crash case is skipped.
+      tls: {
+        rejectUnauthorized: false,
+        checkServerIdentity: (host: string, cert: PeerCertificate) => {
+          try {
+            return checkServerIdentity(host, cert);
+          } catch {
+            return undefined;
           }
-        : undefined
+        }
+      }
     };
 
     if (!options?.host || !options?.port) {

@@ -186,7 +186,8 @@ LIMIT 1;
 
   private static readonly INSERT_POC_BULK_SQL = `
     INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_id","plus_address", "user_id")
-    VALUES %L;`;
+    VALUES %L
+    ON CONFLICT (user_id, message_id, person_id) DO NOTHING;`;
 
   private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
     SELECT *

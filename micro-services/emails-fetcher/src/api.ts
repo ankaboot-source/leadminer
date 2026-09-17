@@ -101,8 +101,8 @@ async function getAvailableConnections(
   // Sequential connections to prevent IMAP server rate limiting/throttling
   // eslint-disable-next-line no-plusplus
   for (let i = 0; i < limit; i++) {
-    // eslint-disable-next-line no-await-in-loop
     try {
+      // eslint-disable-next-line no-await-in-loop
       const conn = await ImapConnectionProvider.getSingleConnection(
         email,
         credentials
@@ -203,6 +203,7 @@ apiRoutes.post(
         email,
         credentials
       );
+
       await connection.logout();
 
       const totalApprovedImapConnections = await getAvailableConnections(
@@ -211,9 +212,10 @@ apiRoutes.post(
       );
 
       if (totalApprovedImapConnections <= 0) {
-        throw new Error(
-          'Inconsistent connection state: available IMAP connections below zero'
-        );
+        return res.status(503).json({
+          message:
+            'Could not connect to your mailbox. Please start the mining again.'
+        });
       }
 
       const provider = new ImapConnectionProvider(

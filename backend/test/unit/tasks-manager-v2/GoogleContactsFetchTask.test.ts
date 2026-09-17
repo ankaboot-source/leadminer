@@ -115,7 +115,7 @@ describe('GoogleContactsFetchTask', () => {
     await task.start(mockTasksResolver as unknown as SupabaseTasks);
 
     expect(task.progress.total).toBe(42);
-    expect(emitSpy).toHaveBeenCalledWith('totalMessages', 42);
+    expect(emitSpy).toHaveBeenCalledWith('googleContactsTotal', 42);
   });
 
   it('start() handles 403 error', async () => {
@@ -196,6 +196,11 @@ describe('GoogleContactsFetchTask', () => {
       fetcherClient: mockFetcher
     });
 
+    const emitSpy = jest.spyOn(
+      task as unknown as { emitProgress: (key: string, value: number) => void },
+      'emitProgress'
+    );
+
     task.onMessage({
       miningId: 'test-mining-id',
       progressType: 'google-contacts-fetched',
@@ -205,6 +210,7 @@ describe('GoogleContactsFetchTask', () => {
     });
     expect(task.progress.processed).toBe(10);
     expect(task.status).toBe(TaskStatus.Running);
+    expect(emitSpy).toHaveBeenCalledWith('googleContactsFetchedCount', 10);
 
     task.onMessage({
       miningId: 'test-mining-id',
@@ -215,6 +221,68 @@ describe('GoogleContactsFetchTask', () => {
     });
     expect(task.progress.processed).toBe(20);
     expect(task.status).toBe(TaskStatus.Done);
+    expect(emitSpy).toHaveBeenCalledWith('googleContactsFetchedCount', 20);
+  });
+
+  it('exposes google contacts totals in getProgressMap', async () => {
+    const mockFetcher = {
+      startGoogleContactsSync: jest
+        .fn<
+          (opts: {
+            miningId: string;
+            contactStream: string;
+            userId: string;
+            userEmail: string;
+          }) => Promise<{ data: { totalContacts: number } }>
+        >()
+        .mockResolvedValue({ data: { totalContacts: 42 } }),
+      stopGoogleContactsSync: jest
+        .fn<(opts: { miningId: string; canceled: boolean }) => Promise<void>>()
+        .mockResolvedValue()
+    } as unknown as GoogleContactsFetcherClient;
+
+    const task = new GoogleContactsFetchTask({
+      miningId: 'test-mining-id',
+      userId: 'test-user',
+      userEmail: 'test@example.com',
+      outputStream: 'contacts_stream-test',
+      fetcherClient: mockFetcher
+    });
+
+    const mockTasksResolver = {
+      create: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {},
+        startedAt: new Date().toISOString()
+      }),
+      update: jest.fn<(task: DbTask) => Promise<DbTask>>().mockResolvedValue({
+        id: 'task-id',
+        userId: 'test-user',
+        type: TaskType.GoogleContactsFetch,
+        category: TaskCategory.Mining,
+        status: TaskStatus.Running,
+        details: {}
+      })
+    };
+
+    await task.start(mockTasksResolver as unknown as SupabaseTasks);
+    task.onMessage({
+      miningId: 'test-mining-id',
+      progressType: 'google-contacts-fetched',
+      count: 20,
+      isCompleted: true,
+      isCanceled: false
+    });
+
+    expect(task.getProgressMap()).toEqual({
+      'google-contacts-fetched': 20,
+      googleContactsFetchedCount: 20,
+      googleContactsTotal: 42
+    });
   });
 
   it('onMessage handles cancel', () => {

@@ -206,8 +206,11 @@ function isMiningControllerError(
   if (err.message.includes('Request failed with status code 503')) {
     return {
       status: 503,
-      body: 'Failed to start fetching: Connection not available, please try again later 503',
-      isJson: false
+      body: {
+        message:
+          'Could not connect to your mailbox. Please start the mining again.'
+      },
+      isJson: true
     };
   }
   return null;

@@ -75,6 +75,12 @@
     @continue="runEmailMining(MiningRunMode.Incremental)"
     @rescan="runEmailMining(MiningRunMode.Full)"
   />
+
+  <AlreadyMinedDialog
+    v-model:visible="alreadyMinedDialogVisible"
+    @remine="runEmailMining(MiningRunMode.Full)"
+    @skip="alreadyMinedDialogVisible = false"
+  />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -84,12 +90,14 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 
 import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
+import { computeExtractionProgress } from '@/utils/mining-progress';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource } from '~/types/mining';
 import type { BoxNode } from '~/utils/boxes';
 import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
+import AlreadyMinedDialog from './AlreadyMinedDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -203,6 +211,7 @@ const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
 const resumeDialogVisible = ref(false);
+const alreadyMinedDialogVisible = ref(false);
 const miningSettingsDialogRef =
   ref<InstanceType<typeof MiningSettingsDialog>>();
 
@@ -278,9 +287,16 @@ const canStartMining = computed(() => {
 });
 
 const extractionProgress = computed(() =>
-  $leadminerStore.fetchingFinished && !canceled.value
-    ? extractedEmails.value / $leadminerStore.scannedEmails || 0
-    : extractedEmails.value / totalEmails.value || 0,
+  computeExtractionProgress({
+    extractedEmails: extractedEmails.value,
+    scannedEmails: $leadminerStore.scannedEmails,
+    totalEmails: totalEmails.value,
+    fetchingFinished: $leadminerStore.fetchingFinished,
+    canceled: canceled.value,
+    googleContactsSync: $leadminerStore.sourceConfig.google_contacts_sync,
+    googleContactsFetchedCount: $leadminerStore.googleContactsFetchedCount,
+    googleContactsTotal: $leadminerStore.googleContactsTotal,
+  }),
 );
 
 const progressTooltip = computed(() =>
@@ -352,8 +368,28 @@ const { isSupported, permissionGranted, show } = useWebNotification({
   icon: '/icons/pickaxe-192-192.png',
 });
 
+const completedTransitionDone = ref(false);
+
+async function finishMiningFlow() {
+  if (completedTransitionDone.value) return;
+  completedTransitionDone.value = true;
+  $leadminerStore.maybeOpenPassiveMiningDialog();
+  $toast.add({
+    severity: 'info',
+    summary: t('mining_done'),
+    detail: totalExtractedNotificationMessage.value,
+    group: 'achievement',
+    life: 8000,
+  });
+  $stepper.next();
+  if (isSupported.value && permissionGranted.value) show();
+  await reloadContacts();
+}
+
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
+    if (completedTransitionDone.value) return;
+    completedTransitionDone.value = true;
     $toast.add({
       severity: 'info',
       summary: t('mining_stopped'),
@@ -361,37 +397,27 @@ watch(extractionFinished, async (finished) => {
       life: 3000,
     });
     $stepper.next();
-  } else if (finished) {
-    $leadminerStore.maybeOpenPassiveMiningDialog();
-    $toast.add({
-      severity: 'info',
-      summary: t('mining_done'),
-      detail: totalExtractedNotificationMessage.value,
-      group: 'achievement',
-      life: 8000,
-    });
-    $stepper.next();
-    if (isSupported.value && permissionGranted.value) show();
-    await reloadContacts();
+    return;
   }
+  if (finished) await finishMiningFlow();
 });
 
 watch(
   () => $leadminerStore.googleContactsFetched,
   async (fetched) => {
     if (fetched && !canceled.value && !hasSelectedBoxes.value) {
-      $leadminerStore.maybeOpenPassiveMiningDialog();
-      $toast.add({
-        severity: 'info',
-        summary: t('mining_done'),
-        detail: totalExtractedNotificationMessage.value,
-        group: 'achievement',
-        life: 8000,
-      });
-      $stepper.next();
-      if (isSupported.value && permissionGranted.value) show();
-      await reloadContacts();
+      await finishMiningFlow();
     }
+  },
+);
+
+// Fallback for fast runs: if 'mining-completed' arrives after the earlier
+// finish events were missed (SSE attach race), leave step 2 instead of
+// showing a stale "start a new mining" state with no table.
+watch(
+  () => $leadminerStore.miningCompleted,
+  async (completed) => {
+    if (completed && !canceled.value) await finishMiningFlow();
   },
 );
 
@@ -444,9 +470,17 @@ async function startMiningBoxes() {
     (node) => node.status === FolderStatus.NewMessages,
   );
   const hasWatermark = selectedNodes.some((node) => node.watermark);
+  const allAlreadyMined =
+    selectedNodes.length > 0 &&
+    selectedNodes.every((node) => node.status === FolderStatus.UpToDate);
 
   if (hasNewMessages) {
     resumeDialogVisible.value = true;
+    return;
+  }
+
+  if (allAlreadyMined) {
+    alreadyMinedDialogVisible.value = true;
     return;
   }
 
@@ -464,6 +498,8 @@ function flattenBoxes(nodes: BoxNode[]): BoxNode[] {
 
 async function runEmailMining(runMode: MiningRunMode) {
   resumeDialogVisible.value = false;
+  alreadyMinedDialogVisible.value = false;
+  completedTransitionDone.value = false;
   const activeSource = $leadminerStore.activeMiningSource;
   if (!activeSource) return;
 

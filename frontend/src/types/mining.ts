@@ -81,6 +81,8 @@ export interface MiningProgress {
   verifiedContacts: number;
   createdContacts: number;
   signatures: number;
+  googleContactsTotal?: number;
+  googleContactsFetchedCount?: number;
 }
 
 export interface FetcherStatus {
