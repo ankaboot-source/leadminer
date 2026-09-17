@@ -14,7 +14,7 @@ function node(overrides: Partial<BoxNode> = {}): BoxNode {
 
 describe('extractFolderWatermarks', () => {
   it('returns empty for missing or legacy configs', () => {
-    expect(extractFolderWatermarks(undefined)).toEqual({});
+    expect(extractFolderWatermarks()).toEqual({});
     expect(extractFolderWatermarks(null)).toEqual({});
     expect(extractFolderWatermarks({})).toEqual({});
     expect(extractFolderWatermarks({ folders_mined: ['INBOX'] })).toEqual({});

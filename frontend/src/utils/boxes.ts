@@ -125,7 +125,7 @@ export interface FolderWatermark {
  * Mirrors `backend/src/utils/helpers/imapTreeHelpers.ts`.
  */
 export function extractFolderWatermarks(
-  rawConfig: unknown,
+  rawConfig?: unknown,
 ): Record<string, FolderWatermark> {
   const folders = (
     rawConfig as

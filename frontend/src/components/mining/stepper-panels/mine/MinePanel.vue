@@ -95,14 +95,12 @@ import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { computeExtractionProgress } from '@/utils/mining-progress';
 import { useWebNotification } from '@vueuse/core';
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
 import type { BoxNode } from '~/utils/boxes';
 import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
-import AlreadyMinedDialog, {
-  type AlreadyMinedFolder,
-} from './AlreadyMinedDialog.vue';
+import AlreadyMinedDialog from './AlreadyMinedDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',

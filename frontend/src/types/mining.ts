@@ -126,3 +126,10 @@ export interface GoogleContactsProgress {
   totalContacts: number;
   synced: number;
 }
+
+/** A selected folder row shown by the already-mined / mixed-selection dialog. */
+export interface AlreadyMinedFolder {
+  key: string;
+  label: string;
+  status: 'up_to_date' | 'new';
+}

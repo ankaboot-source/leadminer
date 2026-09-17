@@ -44,11 +44,7 @@
 </template>
 
 <script setup lang="ts">
-export interface AlreadyMinedFolder {
-  key: string;
-  label: string;
-  status: 'up_to_date' | 'new';
-}
+import type { AlreadyMinedFolder } from '~/types/mining';
 
 withDefaults(
   defineProps<{
