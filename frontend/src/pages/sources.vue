@@ -364,6 +364,7 @@ import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { deriveSourceStatus } from '@/utils/sourceStatus';
 import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
 import { deriveSourceState } from '@/utils/miningSourceConfig';
+import { folderDisplayName } from '@/utils/selected-folders';
 import { SourceHealthState } from '~/types/enums';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
@@ -576,10 +577,8 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
 function describeFolderList(folders: string[]): string | null {
   if (folders.length === 1) {
     const [name] = folders;
-    // INBOX is a protocol-reserved name, not a real mailbox label.
-    return name?.toUpperCase() === 'INBOX'
-      ? $tGlobal('sources.folder_inbox')
-      : name?.split('/').pop() || name || '';
+    if (!name) return '';
+    return folderDisplayName(name, $tGlobal('sources.folder_inbox'));
   }
   if (folders.length > 1) {
     return $tGlobal(

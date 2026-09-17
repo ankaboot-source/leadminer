@@ -94,6 +94,11 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { computeExtractionProgress } from '@/utils/mining-progress';
+import { flattenBoxNodes } from '~/utils/box-tree';
+import {
+  getSelectedFolderKeys,
+  hasSelectedFolders,
+} from '~/utils/selected-folders';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
 import type { BoxNode } from '~/utils/boxes';
@@ -228,11 +233,8 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
-const hasSelectedBoxes = computed(
-  () =>
-    Object.keys(selectedBoxes.value).filter(
-      (key) => selectedBoxes.value[key].checked && key !== '',
-    ).length > 0,
+const hasSelectedBoxes = computed(() =>
+  hasSelectedFolders(selectedBoxes.value, $leadminerStore.excludedBoxes),
 );
 
 const sourceTypeIsEmail = computed(
@@ -436,9 +438,7 @@ function openMiningSettings() {
 async function startMiningBoxes() {
   if (
     !$leadminerStore.sourceConfig.google_contacts_sync &&
-    Object.keys(selectedBoxes.value).filter(
-      (key) => selectedBoxes.value[key].checked && key !== '',
-    ).length === 0
+    !hasSelectedFolders(selectedBoxes.value, $leadminerStore.excludedBoxes)
   ) {
     openMiningSettings();
     $toast.add({
@@ -465,11 +465,9 @@ async function startMiningBoxes() {
   // mined and has new messages, ask; otherwise resume when a watermark exists
   // and full-scan when it doesn't.
   const selectedKeys = new Set(
-    Object.keys(selectedBoxes.value).filter(
-      (key) => selectedBoxes.value[key].checked && key !== '',
-    ),
+    getSelectedFolderKeys(selectedBoxes.value, $leadminerStore.excludedBoxes),
   );
-  const selectedNodes = flattenBoxes(boxes.value).filter((node) =>
+  const selectedNodes = flattenBoxNodes(boxes.value).filter((node) =>
     selectedKeys.has(node.key),
   );
   const hasNewMessages = selectedNodes.some(
@@ -535,9 +533,14 @@ async function mineNewFoldersOnly() {
     }
   }
   try {
-    const remainingNodes = flattenBoxes(boxes.value).filter(
-      (node) =>
-        node.key !== '' && $leadminerStore.selectedBoxes[node.key]?.checked,
+    const remainingKeys = new Set(
+      getSelectedFolderKeys(
+        $leadminerStore.selectedBoxes,
+        $leadminerStore.excludedBoxes,
+      ),
+    );
+    const remainingNodes = flattenBoxNodes(boxes.value).filter((node) =>
+      remainingKeys.has(node.key),
     );
     await runEmailMining(resolveRunMode(remainingNodes));
   } finally {
@@ -553,13 +556,6 @@ function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
   return nodes.some((node) => node.watermark)
     ? MiningRunMode.Incremental
     : MiningRunMode.Full;
-}
-
-function flattenBoxes(nodes: BoxNode[]): BoxNode[] {
-  return nodes.flatMap((node) => [
-    node,
-    ...(node.children ? flattenBoxes(node.children) : []),
-  ]);
 }
 
 async function runEmailMining(runMode: MiningRunMode) {

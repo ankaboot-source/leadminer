@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import type { AlreadyMinedFolder } from '~/types/mining';
+import { folderDisplayName } from '~/utils/selected-folders';
 
 withDefaults(
   defineProps<{
@@ -61,10 +62,14 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'local' });
+const { t: $tGlobal } = useI18n({ useScope: 'global' });
 
-// INBOX is a protocol-reserved name, not a real mailbox label.
 function displayName(folder: AlreadyMinedFolder): string {
-  return folder.key.toUpperCase() === 'INBOX' ? t('inbox') : folder.label;
+  return folderDisplayName(
+    folder.key,
+    $tGlobal('sources.folder_inbox'),
+    folder.label,
+  );
 }
 </script>
 
@@ -79,8 +84,7 @@ function displayName(folder: AlreadyMinedFolder): string {
     "mixed_description": "Some selected folders were already mined and have no new messages. Mine only the new folders, or skip and keep your existing contacts.",
     "mine_new_only": "Mine new folders only",
     "badge_up_to_date": "Up to date",
-    "badge_new": "New",
-    "inbox": "Inbox"
+    "badge_new": "New"
   },
   "fr": {
     "title": "Déjà traité",
@@ -91,8 +95,7 @@ function displayName(folder: AlreadyMinedFolder): string {
     "mixed_description": "Certains dossiers sélectionnés ont déjà été traités et ne contiennent aucun nouveau message. Extrayez uniquement les nouveaux dossiers, ou ignorez et conservez vos contacts existants.",
     "mine_new_only": "Extraire les nouveaux dossiers",
     "badge_up_to_date": "À jour",
-    "badge_new": "Nouveau",
-    "inbox": "Boîte de réception"
+    "badge_new": "Nouveau"
   }
 }
 </i18n>

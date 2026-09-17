@@ -13,6 +13,7 @@ import {
   deriveSourceConfig,
 } from '@/utils/miningSourceConfig';
 import { diffUnregisteredFolders } from '@/utils/passive-mining-folders';
+import { getSelectedFolderKeys } from '@/utils/selected-folders';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -136,11 +137,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             (f): f is string => typeof f === 'string',
           )
         : [];
-      const mined = Object.keys(selectedBoxes.value ?? {}).filter(
-        (key) =>
-          key !== '' &&
-          selectedBoxes.value[key]?.checked &&
-          !excludedBoxes.value?.has(key),
+      const mined = getSelectedFolderKeys(
+        selectedBoxes.value,
+        excludedBoxes.value,
       );
       if (diffUnregisteredFolders(mined, registered).length === 0) return;
       passiveMiningDialogMode.value = 'update';
@@ -665,12 +664,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             throw new Error('activeMiningSource is required for mining EMAIL');
           task = await startMiningEmail(
             userId,
-            Object.keys(selectedBoxes.value).filter(
-              (key) =>
-                selectedBoxes.value[key].checked &&
-                !excludedBoxes.value.has(key) &&
-                key !== '',
-            ),
+            getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value),
             activeMiningSource.value,
             runMode,
           );
