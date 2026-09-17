@@ -1,6 +1,6 @@
 -- DISABLE EXTENSION
 -- https://supabase.com/docs/guides/database/hardening-data-api
-DROP EXTENSION pg_graphql;
+DROP EXTENSION IF EXISTS pg_graphql;
 
 -- CREATE SCHEMA PRIVATE
 CREATE SCHEMA if NOT EXISTS PRIVATE;
