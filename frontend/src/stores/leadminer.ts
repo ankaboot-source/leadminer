@@ -728,8 +728,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     createdContacts.value = progress.createdContacts ?? 0;
     verifiedContacts.value = progress.verifiedContacts ?? 0;
     googleContactsTotal.value = progress.googleContactsTotal ?? 0;
-    googleContactsFetchedCount.value =
-      progress.googleContactsFetchedCount ?? 0;
+    googleContactsFetchedCount.value = progress.googleContactsFetchedCount ?? 0;
 
     fetchingFinished.value =
       miningType.value === MiningTypes.EMAIL

@@ -188,7 +188,10 @@ class SSE {
           } else if (event === `google-contacts-fetch-finished-${miningId}`) {
             onGoogleContactsFetched?.();
           } else if (event === `googleContactsTotal-${miningId}`) {
-            console.debug('[SSE] Updating googleContactsTotal:', parseInt(data));
+            console.debug(
+              '[SSE] Updating googleContactsTotal:',
+              parseInt(data),
+            );
             onGoogleContactsTotalUpdate(parseInt(data));
           } else if (event === `googleContactsFetchedCount-${miningId}`) {
             console.debug(
