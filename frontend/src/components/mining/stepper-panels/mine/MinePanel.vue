@@ -476,7 +476,6 @@ async function startMiningBoxes() {
   const hasNewMessages = selectedNodes.some(
     (node) => node.status === FolderStatus.NewMessages,
   );
-  const hasWatermark = selectedNodes.some((node) => node.watermark);
   const allAlreadyMined =
     selectedNodes.length > 0 &&
     selectedNodes.every((node) => node.status === FolderStatus.UpToDate);
@@ -510,9 +509,7 @@ async function startMiningBoxes() {
     return;
   }
 
-  await runEmailMining(
-    hasWatermark ? MiningRunMode.Incremental : MiningRunMode.Full,
-  );
+  await runEmailMining(resolveRunMode(selectedNodes));
 }
 
 async function mineNewFoldersOnly() {
@@ -521,6 +518,12 @@ async function mineNewFoldersOnly() {
     alreadyMinedDialogFolders.value
       .filter((folder) => folder.status === 'up_to_date')
       .map((folder) => folder.key),
+  );
+  // Snapshot the previous entries: startMining snapshots the selection into a
+  // plain key list during the start request, so the narrowed selection only
+  // needs to stay in place until runEmailMining resolves.
+  const previousEntries = new Map(
+    [...upToDateKeys].map((key) => [key, $leadminerStore.selectedBoxes[key]]),
   );
   for (const key of upToDateKeys) {
     const entry = $leadminerStore.selectedBoxes[key];
@@ -532,14 +535,25 @@ async function mineNewFoldersOnly() {
       };
     }
   }
-  const remainingNodes = flattenBoxes(boxes.value).filter(
-    (node) => node.key !== '' && $leadminerStore.selectedBoxes[node.key]?.checked,
-  );
-  await runEmailMining(
-    remainingNodes.some((node) => node.watermark)
-      ? MiningRunMode.Incremental
-      : MiningRunMode.Full,
-  );
+  try {
+    const remainingNodes = flattenBoxes(boxes.value).filter(
+      (node) =>
+        node.key !== '' && $leadminerStore.selectedBoxes[node.key]?.checked,
+    );
+    await runEmailMining(resolveRunMode(remainingNodes));
+  } finally {
+    for (const [key, entry] of previousEntries) {
+      if (entry) {
+        $leadminerStore.selectedBoxes[key] = entry;
+      }
+    }
+  }
+}
+
+function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
+  return nodes.some((node) => node.watermark)
+    ? MiningRunMode.Incremental
+    : MiningRunMode.Full;
 }
 
 function flattenBoxes(nodes: BoxNode[]): BoxNode[] {
