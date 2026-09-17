@@ -100,6 +100,7 @@ import type { BoxNode } from '~/utils/boxes';
 import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
+// skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
 import AlreadyMinedDialog from './AlreadyMinedDialog.vue';
 
 const { t } = useI18n({
