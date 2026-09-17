@@ -108,13 +108,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   /**
    * Offers the "Enable continuous contact extraction?" dialog at the end of a
-   * mining run, unless the source is already on continuous (passive) mining or
-   * the run was interrupted. Owned by the store so it survives component
-   * unmount (e.g. google-contacts-only runs, resumed/reloaded runs).
+<<<<<<< HEAD
+   * mining run — first-time enable prompt when the source is not on
+   * continuous mining, or an update prompt when the run mined folders not
+   * yet registered — unless the run was interrupted. Owned by the store so
+   * it survives component unmount (e.g. google-contacts-only runs,
+   * resumed/reloaded runs).
    *
    * Shown at most once per run: extraction-related events fire several times
    * (extraction finished, google contacts fetched, mining completed) and the
    * prompt must not reappear after the user answered it.
+>>>>>>> bdf73310 (chore(passive): refresh dialog trigger docs)
    */
   function maybeOpenPassiveMiningDialog() {
     if (passiveMiningDialogShown.value) return;
