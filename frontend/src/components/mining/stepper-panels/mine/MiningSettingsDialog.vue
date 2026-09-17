@@ -83,7 +83,12 @@
     />
 
     <template #footer>
-      <Button :label="$t('common.save')" @click="close" />
+      <Button
+        :label="$t('common.save')"
+        :loading="isSaving"
+        :disabled="isSaving"
+        @click="close"
+      />
     </template>
   </Dialog>
 </template>
@@ -105,6 +110,7 @@ const props = defineProps({
 
 const $leadminerStore = useLeadminerStore();
 const isVisible = ref(false);
+const isSaving = ref(false);
 const $screenStore = useScreenStore();
 
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
@@ -151,6 +157,7 @@ async function close() {
     return;
   }
   try {
+    isSaving.value = true;
     const config = await updateMiningSourceConfig(src.email, src.type, {
       mining_flags: { ...$leadminerStore.sourceConfig },
       folders: Object.keys($leadminerStore.selectedBoxes).filter(
@@ -169,6 +176,8 @@ async function close() {
       life: 4500,
     });
     return;
+  } finally {
+    isSaving.value = false;
   }
   isVisible.value = false;
 }
