@@ -24,7 +24,10 @@ import {
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
-import { extractFolderWatermarks, refreshBoxWatermarks } from '../utils/boxes';
+import {
+  extractFolderWatermarks,
+  refreshBoxWatermarks,
+} from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
