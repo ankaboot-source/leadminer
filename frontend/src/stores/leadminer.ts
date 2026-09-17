@@ -23,6 +23,7 @@ import {
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
+import { extractFolderWatermarks, refreshBoxWatermarks } from '../utils/boxes';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
@@ -301,6 +302,27 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  /**
+   * Re-derives watermark flags on the EXISTING boxes tree from the freshly
+   * fetched source config, without refetching IMAP boxes (slow, resets
+   * scroll/expand state). Only `watermark`/`status` fields are touched, so
+   * selection, expansion, and counts are preserved. No-op when there is no
+   * active source config or no fresh watermark.
+   */
+  function refreshTreeWatermarks() {
+    if (boxes.value.length === 0) return;
+    const activeEmail = activeMiningSource.value?.email?.toLowerCase();
+    if (!activeEmail) return;
+    const freshSource =
+      miningSources.value.find((s) => s.email.toLowerCase() === activeEmail) ??
+      activeMiningSource.value;
+    const rawConfig = freshSource?.config;
+    if (!rawConfig) return;
+    const watermarks = extractFolderWatermarks(rawConfig);
+    if (Object.keys(watermarks).length === 0) return;
+    refreshBoxWatermarks(boxes.value, watermarks);
+  }
+
   async function fetchInbox() {
     try {
       if (!activeMiningSource.value) {
@@ -456,6 +478,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           if (!isCurrentRun()) return;
           miningTask.value = undefined;
           await fetchMiningSources();
+          refreshTreeWatermarks();
         }, 100);
       },
       onGoogleContactsFetched: () => {
@@ -723,6 +746,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       signatureExtractionFinished.value = true;
       isLoadingStopMining.value = false;
       await fetchMiningSources();
+      refreshTreeWatermarks();
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
@@ -730,6 +754,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       signatureExtractionFinished.value = true;
       isLoadingStopMining.value = false;
       await fetchMiningSources();
+      refreshTreeWatermarks();
       throw err;
     }
   }
@@ -863,6 +888,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     startMining,
     stopMining,
     maybeOpenPassiveMiningDialog,
+    refreshTreeWatermarks,
 
     $reset,
     $resetMining,
