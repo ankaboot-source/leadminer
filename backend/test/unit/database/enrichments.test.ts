@@ -246,4 +246,65 @@ describe('Enrichments Class', () => {
       ]);
     });
   });
+
+  describe('updateContacts null/empty hardening (bulk-enrich crash)', () => {
+    // The 'enrich' suite above leaks a spyOn(updateContacts) stub (never
+    // restored); restore real implementation so these tests hit real code.
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      (mockClient.schema as jest.Mock).mockReturnThis();
+    });
+
+    const baseTask = {
+      userId: 'user-id',
+      status: TaskStatus.Running,
+      type: TaskType.Enrich,
+      category: TaskCategory.Enriching,
+      details: {
+        result: [],
+        total_enriched: 0,
+        total_to_enrich: 4,
+        update_empty_fields_only: true
+      }
+    };
+
+    it('returns [] when enrich_contacts RPC yields null data', async () => {
+      (mockTasks.create as jest.Mock).mockReturnValue({ ...baseTask });
+      await enrichments.create('user-id', 4, true);
+
+      const rpcMock = jest.fn().mockReturnValue({ error: null, data: null });
+      (mockClient.schema as jest.Mock).mockReturnValue({ rpc: rpcMock });
+
+      await expect(
+        enrichments.updateContacts([
+          { id: 'person-id-1', email: 'a@example.com' }
+        ])
+      ).resolves.toEqual([]);
+    });
+
+    it('skips the RPC when there is nothing to persist', async () => {
+      (mockTasks.create as jest.Mock).mockReturnValue({ ...baseTask });
+      await enrichments.create('user-id', 4, true);
+
+      const rpcMock = jest.fn().mockReturnValue({ error: null, data: [] });
+      (mockClient.schema as jest.Mock).mockReturnValue({ rpc: rpcMock });
+
+      await expect(enrichments.updateContacts([])).resolves.toEqual([]);
+      expect(rpcMock).not.toHaveBeenCalled();
+    });
+
+    it('does not touch the database for empty enrichment payloads', async () => {
+      (mockTasks.create as jest.Mock).mockReturnValue({ ...baseTask });
+      await enrichments.create('user-id', 4, true);
+
+      const updateContactsSpy = jest
+        .spyOn(enrichments, 'updateContacts')
+        .mockResolvedValue([]);
+
+      await enrichments.enrich([{ engine: 'test', data: [], raw_data: [] }]);
+
+      expect(updateContactsSpy).not.toHaveBeenCalled();
+      updateContactsSpy.mockRestore();
+    });
+  });
 });

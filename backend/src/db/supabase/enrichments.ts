@@ -143,6 +143,7 @@ export default class Enrichments {
         user_id: task.userId
       }))
       .filter((c) => Boolean(c.id));
+    if (contactsDB.length === 0) return [];
     const { data, error } = await this.client
       .schema('private')
       .rpc('enrich_contacts', {
@@ -153,6 +154,7 @@ export default class Enrichments {
 
     if (error) throw error;
 
+    if (!data) return [];
     const rows = data as { id: string }[];
     return rows.map((row) => row.id);
   }
@@ -172,6 +174,7 @@ export default class Enrichments {
 
       if (enriched.length) {
         const flatData = enriched.map(({ data }) => data).flat();
+        if (flatData.length === 0) return;
         const updatedPersonIds = await this.updateContacts(flatData);
 
         if (updatedPersonIds.length) {

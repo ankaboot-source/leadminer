@@ -103,8 +103,30 @@
             class="border border-surface-200 rounded-md p-4"
           >
             <div class="flex items-start justify-between gap-3 flex-wrap">
-              <div>
+              <div class="min-w-0">
                 <div class="font-medium">{{ source.email }}</div>
+                <div
+                  v-if="sourceStatus(source).showReconnect"
+                  class="flex gap-2 items-center mt-2"
+                >
+                  <Tag
+                    :value="t(sourceStatus(source).badge.labelKey)"
+                    :severity="sourceStatus(source).badge.severity"
+                    :icon="sourceStatus(source).badge.icon"
+                  />
+                  <Button
+                    :label="t('reconnect')"
+                    size="small"
+                    severity="primary"
+                    @click="reconnectExpiredSource(source)"
+                  />
+                </div>
+                <Tag
+                  v-else
+                  :value="t(sourceStatus(source).badge.labelKey)"
+                  :severity="sourceStatus(source).badge.severity"
+                  class="mt-2"
+                />
               </div>
 
               <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -146,28 +168,6 @@
                     isDeleting && deletingSource?.email === source.email
                   "
                   @click="openDeleteDialog(source)"
-                />
-
-                <div
-                  v-if="sourceStatus(source).showReconnect"
-                  class="flex gap-2 items-center"
-                >
-                  <Tag
-                    :value="t(sourceStatus(source).badge.labelKey)"
-                    :severity="sourceStatus(source).badge.severity"
-                    :icon="sourceStatus(source).badge.icon"
-                  />
-                  <Button
-                    :label="t('reconnect')"
-                    size="small"
-                    severity="primary"
-                    @click="reconnectExpiredSource(source)"
-                  />
-                </div>
-                <Tag
-                  v-else
-                  :value="t(sourceStatus(source).badge.labelKey)"
-                  :severity="sourceStatus(source).badge.severity"
                 />
               </div>
             </div>
@@ -543,28 +543,16 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
   }
 
   // Explain what enabling actually does: when it will run and on which
-  // folders (saved folders if any, otherwise the server defaults).
+  // folders (saved folders if any, otherwise the folders mined by the last
+  // run from the persisted watermark, otherwise the server defaults).
   const schedule = describeCronSchedule(PASSIVE_CRON_SCHEDULE);
   const savedFolders = Array.isArray(source.config?.folders)
     ? source.config.folders.filter((f): f is string => typeof f === 'string')
     : [];
-  let foldersLabel: string;
-  if (savedFolders.length === 1) {
-    const [name] = savedFolders;
-    // INBOX is a protocol-reserved name, not a real mailbox label.
-    foldersLabel =
-      name?.toUpperCase() === 'INBOX'
-        ? $tGlobal('sources.folder_inbox')
-        : name?.split('/').pop() || name || '';
-  } else if (savedFolders.length > 1) {
-    foldersLabel = $tGlobal(
-      'sources.folder_count',
-      { count: savedFolders.length },
-      savedFolders.length,
-    );
-  } else {
-    foldersLabel = $tGlobal('sources.passive_mining_folders_default');
-  }
+  const foldersLabel =
+    describeFolderList(savedFolders) ??
+    describeFolderList(deriveSourceState(source).minableFolders) ??
+    $tGlobal('sources.passive_mining_folders_default');
   const nextRun = schedule.nextRunAt;
   $toast.add({
     severity: 'success',
@@ -583,6 +571,24 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
     }),
     life: 7000,
   });
+}
+
+function describeFolderList(folders: string[]): string | null {
+  if (folders.length === 1) {
+    const [name] = folders;
+    // INBOX is a protocol-reserved name, not a real mailbox label.
+    return name?.toUpperCase() === 'INBOX'
+      ? $tGlobal('sources.folder_inbox')
+      : name?.split('/').pop() || name || '';
+  }
+  if (folders.length > 1) {
+    return $tGlobal(
+      'sources.folder_count',
+      { count: folders.length },
+      folders.length,
+    );
+  }
+  return null;
 }
 
 function getSourceConfig(source: MiningSource, key: string): boolean {
@@ -768,8 +774,8 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Provider",
     "last_extraction": "Last extraction",
-    "passive_mining_status": "Passive mining status",
-    "last_passive_run": "Last passive run",
+    "passive_mining_status": "Continuous mining status",
+    "last_passive_run": "Last continuous run",
     "folders_mined": "Folders mined",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
@@ -782,7 +788,7 @@ onMounted(async () => {
     "remove_source_confirm": "Remove this mining source permanently? This action cannot be undone.",
     "remove_source_failed": "Unable to remove source",
     "type": "Type",
-    "passive_mining": "Passive mining",
+    "passive_mining": "Continuous mining",
     "credentials": "Credentials",
     "status": "Status",
     "connected": "Connected",
@@ -797,7 +803,7 @@ onMounted(async () => {
     "delete_source_failed": "Unable to delete source",
     "stop_mining": "Stop mining",
     "view_mining": "View mining",
-    "passive": "Passive",
+    "passive": "Continuous",
     "mining_in_progress": "Mining in progress",
     "mining_status_running": "Mining in progress",
     "mining_status_done": "Mining completed",
@@ -837,8 +843,8 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
-    "passive_mining_status": "Statut de l'extraction passive",
-    "last_passive_run": "Dernière exécution passive",
+    "passive_mining_status": "Statut de l'extraction continue",
+    "last_passive_run": "Dernière extraction continue",
     "folders_mined": "Dossiers traités",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",
@@ -851,7 +857,7 @@ onMounted(async () => {
     "remove_source_confirm": "Supprimer définitivement cette source de minage ? Cette action est irréversible.",
     "remove_source_failed": "Impossible de supprimer la source",
     "type": "Type",
-    "passive_mining": "Extraction passive",
+    "passive_mining": "Extraction continue",
     "credentials": "Identifiants",
     "status": "Statut",
     "connected": "Connecté",
@@ -866,7 +872,7 @@ onMounted(async () => {
     "delete_source_failed": "Impossible de supprimer la source",
     "stop_mining": "Arrêter le minage",
     "view_mining": "Voir le minage",
-    "passive": "Passif",
+    "passive": "Continu",
     "mining_in_progress": "Extraction en cours",
     "mining_status_running": "Extraction en cours",
     "mining_status_done": "Extraction terminée",
