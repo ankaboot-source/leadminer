@@ -78,8 +78,11 @@
 
   <AlreadyMinedDialog
     v-model:visible="alreadyMinedDialogVisible"
+    :mode="alreadyMinedDialogMode"
+    :folders="alreadyMinedDialogFolders"
     @remine="runEmailMining(MiningRunMode.Full)"
     @skip="alreadyMinedDialogVisible = false"
+    @mine-new-only="mineNewFoldersOnly"
   />
 </template>
 <script setup lang="ts">
@@ -97,7 +100,9 @@ import type { BoxNode } from '~/utils/boxes';
 import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
-import AlreadyMinedDialog from './AlreadyMinedDialog.vue';
+import AlreadyMinedDialog, {
+  type AlreadyMinedFolder,
+} from './AlreadyMinedDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -212,6 +217,8 @@ const AVERAGE_EXTRACTION_RATE =
 const canceled = ref<boolean>(false);
 const resumeDialogVisible = ref(false);
 const alreadyMinedDialogVisible = ref(false);
+const alreadyMinedDialogMode = ref<'all-mined' | 'mixed'>('all-mined');
+const alreadyMinedDialogFolders = ref<AlreadyMinedFolder[]>([]);
 const miningSettingsDialogRef =
   ref<InstanceType<typeof MiningSettingsDialog>>();
 
@@ -479,13 +486,59 @@ async function startMiningBoxes() {
     return;
   }
 
+  const upToDateCount = selectedNodes.filter(
+    (node) => node.status === FolderStatus.UpToDate,
+  ).length;
+  if (upToDateCount > 0 && upToDateCount < selectedNodes.length) {
+    alreadyMinedDialogMode.value = 'mixed';
+    alreadyMinedDialogFolders.value = selectedNodes.map((node) => ({
+      key: node.key,
+      label: node.label,
+      status:
+        node.status === FolderStatus.UpToDate
+          ? ('up_to_date' as const)
+          : ('new' as const),
+    }));
+    alreadyMinedDialogVisible.value = true;
+    return;
+  }
+
   if (allAlreadyMined) {
+    alreadyMinedDialogMode.value = 'all-mined';
+    alreadyMinedDialogFolders.value = [];
     alreadyMinedDialogVisible.value = true;
     return;
   }
 
   await runEmailMining(
     hasWatermark ? MiningRunMode.Incremental : MiningRunMode.Full,
+  );
+}
+
+async function mineNewFoldersOnly() {
+  alreadyMinedDialogVisible.value = false;
+  const upToDateKeys = new Set(
+    alreadyMinedDialogFolders.value
+      .filter((folder) => folder.status === 'up_to_date')
+      .map((folder) => folder.key),
+  );
+  for (const key of upToDateKeys) {
+    const entry = $leadminerStore.selectedBoxes[key];
+    if (entry) {
+      $leadminerStore.selectedBoxes[key] = {
+        ...entry,
+        checked: false,
+        partialChecked: false,
+      };
+    }
+  }
+  const remainingNodes = flattenBoxes(boxes.value).filter(
+    (node) => node.key !== '' && $leadminerStore.selectedBoxes[node.key]?.checked,
+  );
+  await runEmailMining(
+    remainingNodes.some((node) => node.watermark)
+      ? MiningRunMode.Incremental
+      : MiningRunMode.Full,
   );
 }
 
