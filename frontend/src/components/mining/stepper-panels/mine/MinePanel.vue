@@ -78,8 +78,11 @@
 
   <AlreadyMinedDialog
     v-model:visible="alreadyMinedDialogVisible"
+    :mode="alreadyMinedDialogMode"
+    :folders="alreadyMinedDialogFolders"
     @remine="runEmailMining(MiningRunMode.Full)"
     @skip="alreadyMinedDialogVisible = false"
+    @mine-new-only="mineNewFoldersOnly"
   />
 </template>
 <script setup lang="ts">
@@ -92,11 +95,12 @@ import ProgressCard from '@/components/mining/ProgressCard.vue';
 import { requiresActiveMiningSource } from '@/utils/mining-source-guards';
 import { computeExtractionProgress } from '@/utils/mining-progress';
 import { useWebNotification } from '@vueuse/core';
-import type { MiningSource } from '~/types/mining';
+import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
 import type { BoxNode } from '~/utils/boxes';
 import { FolderStatus, MiningRunMode } from '~/types/enums';
 import MiningSettingsDialog from './MiningSettingsDialog.vue';
 import ResumeMiningDialog from './ResumeMiningDialog.vue';
+// skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
 import AlreadyMinedDialog from './AlreadyMinedDialog.vue';
 
 const { t } = useI18n({
@@ -212,6 +216,8 @@ const AVERAGE_EXTRACTION_RATE =
 const canceled = ref<boolean>(false);
 const resumeDialogVisible = ref(false);
 const alreadyMinedDialogVisible = ref(false);
+const alreadyMinedDialogMode = ref<'all-mined' | 'mixed'>('all-mined');
+const alreadyMinedDialogFolders = ref<AlreadyMinedFolder[]>([]);
 const miningSettingsDialogRef =
   ref<InstanceType<typeof MiningSettingsDialog>>();
 
@@ -469,7 +475,6 @@ async function startMiningBoxes() {
   const hasNewMessages = selectedNodes.some(
     (node) => node.status === FolderStatus.NewMessages,
   );
-  const hasWatermark = selectedNodes.some((node) => node.watermark);
   const allAlreadyMined =
     selectedNodes.length > 0 &&
     selectedNodes.every((node) => node.status === FolderStatus.UpToDate);
@@ -479,14 +484,75 @@ async function startMiningBoxes() {
     return;
   }
 
-  if (allAlreadyMined) {
+  const upToDateCount = selectedNodes.filter(
+    (node) => node.status === FolderStatus.UpToDate,
+  ).length;
+  if (upToDateCount > 0 && upToDateCount < selectedNodes.length) {
+    alreadyMinedDialogMode.value = 'mixed';
+    alreadyMinedDialogFolders.value = selectedNodes.map((node) => ({
+      key: node.key,
+      label: node.label,
+      status:
+        node.status === FolderStatus.UpToDate
+          ? ('up_to_date' as const)
+          : ('new' as const),
+    }));
     alreadyMinedDialogVisible.value = true;
     return;
   }
 
-  await runEmailMining(
-    hasWatermark ? MiningRunMode.Incremental : MiningRunMode.Full,
+  if (allAlreadyMined) {
+    alreadyMinedDialogMode.value = 'all-mined';
+    alreadyMinedDialogFolders.value = [];
+    alreadyMinedDialogVisible.value = true;
+    return;
+  }
+
+  await runEmailMining(resolveRunMode(selectedNodes));
+}
+
+async function mineNewFoldersOnly() {
+  alreadyMinedDialogVisible.value = false;
+  const upToDateKeys = new Set(
+    alreadyMinedDialogFolders.value
+      .filter((folder) => folder.status === 'up_to_date')
+      .map((folder) => folder.key),
   );
+  // Snapshot the previous entries: startMining snapshots the selection into a
+  // plain key list during the start request, so the narrowed selection only
+  // needs to stay in place until runEmailMining resolves.
+  const previousEntries = new Map(
+    [...upToDateKeys].map((key) => [key, $leadminerStore.selectedBoxes[key]]),
+  );
+  for (const key of upToDateKeys) {
+    const entry = $leadminerStore.selectedBoxes[key];
+    if (entry) {
+      $leadminerStore.selectedBoxes[key] = {
+        ...entry,
+        checked: false,
+        partialChecked: false,
+      };
+    }
+  }
+  try {
+    const remainingNodes = flattenBoxes(boxes.value).filter(
+      (node) =>
+        node.key !== '' && $leadminerStore.selectedBoxes[node.key]?.checked,
+    );
+    await runEmailMining(resolveRunMode(remainingNodes));
+  } finally {
+    for (const [key, entry] of previousEntries) {
+      if (entry) {
+        $leadminerStore.selectedBoxes[key] = entry;
+      }
+    }
+  }
+}
+
+function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
+  return nodes.some((node) => node.watermark)
+    ? MiningRunMode.Incremental
+    : MiningRunMode.Full;
 }
 
 function flattenBoxes(nodes: BoxNode[]): BoxNode[] {

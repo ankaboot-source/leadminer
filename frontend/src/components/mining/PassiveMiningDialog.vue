@@ -178,7 +178,7 @@ async function enablePassiveMining() {
   if (!miningSource.value || folderSelection.value.length === 0) return;
   isSaving.value = true;
   try {
-    await updatePassiveMining(
+    const mergedConfig = await updatePassiveMining(
       miningSource.value.email,
       miningSource.value.type,
       true,
@@ -191,6 +191,19 @@ async function enablePassiveMining() {
       ...($leadminerStore.activeMiningSource?.config ?? {}),
       flags: { ...(draftConfig.value as Record<string, boolean>) },
     });
+    // /sources binds its switch to the miningSources list, which would still
+    // show passive_mining off: sync the entry from the merged response.
+    const listEntry = $leadminerStore.miningSources.find(
+      (source) =>
+        source.email === miningSource.value?.email &&
+        source.type === miningSource.value?.type,
+    );
+    if (listEntry) {
+      listEntry.passive_mining = true;
+      listEntry.config = mergedConfig;
+    } else {
+      await $leadminerStore.fetchMiningSources();
+    }
     closePassiveMiningDialog();
   } catch (error) {
     const message =
