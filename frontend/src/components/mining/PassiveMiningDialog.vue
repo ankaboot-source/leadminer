@@ -122,7 +122,6 @@ const $toast = useToast();
 const { t } = useI18n({
   useScope: 'local',
 });
-const { t: $tGlobal } = useI18n({ useScope: 'global' });
 
 const isGoogleSource = computed(() => miningSource.value?.type === 'google');
 
@@ -146,8 +145,7 @@ const folderRows = computed(() => {
     mined,
     registered,
     available,
-    labelFor: (key: string) =>
-      folderDisplayName(key, $tGlobal('sources.folder_inbox')),
+    labelFor: (key: string) => folderDisplayName(key, t('folder_inbox')),
   });
 });
 
@@ -232,7 +230,8 @@ async function enablePassiveMining() {
     "folders_title": "Folders for continuous extraction",
     "folders_new": "New",
     "folders_unavailable": "Unavailable",
-    "folders_required": "Select at least one folder"
+    "folders_required": "Select at least one folder",
+    "folder_inbox": "Inbox"
   },
   "fr": {
     "header": "Extraction continue des contacts",
@@ -246,7 +245,8 @@ async function enablePassiveMining() {
     "folders_title": "Dossiers pour l'extraction continue",
     "folders_new": "Nouveau",
     "folders_unavailable": "Indisponible",
-    "folders_required": "Sélectionnez au moins un dossier"
+    "folders_required": "Sélectionnez au moins un dossier",
+    "folder_inbox": "Boîte de réception"
   }
 }
 </i18n>
