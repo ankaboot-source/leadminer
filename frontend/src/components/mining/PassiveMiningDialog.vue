@@ -84,8 +84,12 @@
           @click="closePassiveMiningDialog()"
         />
         <Button
-          :label="t('yes_enable')"
+          :label="
+            dialogMode === 'update' ? t('update_folders') : t('yes_enable')
+          "
           class="w-full sm:w-auto"
+          :loading="isSaving"
+          :disabled="isSaving || folderSelection.length === 0"
           @click="enablePassiveMining()"
         />
       </div>
@@ -118,7 +122,7 @@ const { t } = useI18n({
 const isGoogleSource = computed(() => miningSource.value?.type === 'google');
 
 const folderSelection = ref<string[]>([]);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- wired to header/confirm copy in Task 5
+const isSaving = ref(false);
 const dialogMode = computed(() => $leadminerStore.passiveMiningDialogMode);
 const folderRows = computed(() => {
   const registered = Array.isArray(miningSource.value?.config?.folders)
@@ -171,31 +175,18 @@ function closePassiveMiningDialog() {
 }
 
 async function enablePassiveMining() {
-  if (!miningSource.value) return;
+  if (!miningSource.value || folderSelection.value.length === 0) return;
+  isSaving.value = true;
   try {
-    // Persist the chosen flags + the currently selected folders under the typed
-    // config shape (read-merge-write so unrelated keys/watermarks survive), and
-    // flip the toggle. The new health.state 'active' clears any stale
-    // needs_reauth/error from a previous run.
     await updatePassiveMining(
       miningSource.value.email,
       miningSource.value.type,
       true,
       {
         flags: { ...draftConfig.value },
-        folders: $leadminerStore.selectedBoxes
-          ? Object.keys($leadminerStore.selectedBoxes).filter(
-              (key) =>
-                $leadminerStore.selectedBoxes[key]?.checked &&
-                !$leadminerStore.excludedBoxes?.has(key) &&
-                key !== '',
-            )
-          : undefined,
+        folders: [...folderSelection.value],
       },
     );
-
-    // reflect the new config in the store immediately, using the draft the
-    // user actually chose (the active source object wasn't re-fetched).
     $leadminerStore.sourceConfig = deriveSourceConfig({
       ...($leadminerStore.activeMiningSource?.config ?? {}),
       flags: { ...(draftConfig.value as Record<string, boolean>) },
@@ -211,6 +202,8 @@ async function enablePassiveMining() {
       detail: message,
       life: 5000,
     });
+  } finally {
+    isSaving.value = false;
   }
 }
 </script>
@@ -225,6 +218,7 @@ async function enablePassiveMining() {
     "clean_contacts": "Clean contacts (email verification)",
     "extract_signatures": "Extract signatures",
     "yes_enable": "Yes, enable",
+    "update_folders": "Update folders",
     "folders_title": "Folders for continuous extraction",
     "folders_new": "New",
     "folders_unavailable": "Unavailable",
@@ -239,6 +233,7 @@ async function enablePassiveMining() {
     "clean_contacts": "Nettoyer les contacts (vérification e-mail)",
     "extract_signatures": "Extraire les signatures",
     "yes_enable": "Oui, activer",
+    "update_folders": "Mettre à jour les dossiers",
     "folders_title": "Dossiers pour l'extraction continue",
     "folders_new": "Nouveau",
     "folders_unavailable": "Indisponible",
