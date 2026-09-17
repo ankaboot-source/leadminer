@@ -27,6 +27,7 @@ import { extractFolderWatermarks, refreshBoxWatermarks } from '../utils/boxes';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
+import { useEnrichmentStore } from './enrichment';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api, $saasEdgeFunctions, $i18n } = useNuxtApp();
@@ -37,8 +38,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const supabase = useSupabaseClient();
   const config = useRuntimeConfig();
   const $contactsStore = useContactsStore();
+  const $enrichmentStore = useEnrichmentStore();
 
-  const activeEnrichment = ref(false);
   const activeMiningSource = ref<MiningSource | undefined>();
 
   const miningType = ref<MiningType>('email');
@@ -89,7 +90,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const activeTask = computed(
     () =>
-      activeMiningTask.value || isLoadingBoxes.value || activeEnrichment.value,
+      activeMiningTask.value ||
+      isLoadingBoxes.value ||
+      $enrichmentStore.isActive,
   );
 
   const passiveMiningDialog = ref(false);
@@ -186,8 +189,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     googleContactsFetched.value = false;
     googleContactsTotal.value = 0;
     googleContactsFetchedCount.value = 0;
-
-    activeEnrichment.value = false;
 
     miningInterrupted.value = false;
 
@@ -893,7 +894,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     $reset,
     $resetMining,
 
-    activeEnrichment,
     miningTask,
     miningType,
     miningStartedAt,
