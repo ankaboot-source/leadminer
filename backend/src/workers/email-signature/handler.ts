@@ -454,8 +454,22 @@ export class EmailSignatureHandler {
    */
   private async upsertContact(contact: Partial<Contact>): Promise<void> {
     assert(contact.user_id, "upsertContact: 'user_id' is required");
+    assert(contact.email, "upsertContact: 'email' is required");
 
-    const payload = {
+    // enrich_contacts matches persons by id (UUID PK), not email: resolve
+    // the person ids first. enrich_contacts only UPDATEs existing rows, so
+    // when no person row exists there is nothing to enrich and we skip.
+    const { data: persons, error: lookupError } = await this.supabase
+      .schema('private')
+      .from('persons')
+      .select('id')
+      .eq('user_id', contact.user_id)
+      .eq('email', contact.email);
+
+    if (lookupError) throw lookupError;
+    if (!persons || persons.length === 0) return;
+
+    const base = {
       name: contact.name ?? null,
       image: contact.image ?? null,
       email: contact.email,
@@ -475,7 +489,10 @@ export class EmailSignatureHandler {
     const { error } = await this.supabase
       .schema('private')
       .rpc('enrich_contacts', {
-        p_contacts_data: [payload],
+        p_contacts_data: persons.map((person) => ({
+          ...base,
+          id: person.id
+        })),
         p_update_empty_fields_only: false
       });
 
