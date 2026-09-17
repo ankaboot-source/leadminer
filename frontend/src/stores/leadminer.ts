@@ -131,7 +131,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       // Passive already on: re-prompt only when this run mined folders that
       // are not registered yet.
       const registered = Array.isArray(source.config?.folders)
-        ? source.config.folders.filter((f): f is string => typeof f === 'string')
+        ? source.config.folders.filter(
+            (f): f is string => typeof f === 'string',
+          )
         : [];
       const mined = Object.keys(selectedBoxes.value ?? {}).filter(
         (key) =>
