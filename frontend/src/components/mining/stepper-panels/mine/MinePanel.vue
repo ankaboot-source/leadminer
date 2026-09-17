@@ -511,45 +511,16 @@ async function startMiningBoxes() {
 
 async function mineNewFoldersOnly() {
   alreadyMinedDialogVisible.value = false;
-  const upToDateKeys = new Set(
-    alreadyMinedDialogFolders.value
-      .filter((folder) => folder.status === 'up_to_date')
-      .map((folder) => folder.key),
+  // "New" = selected folders that are not UpToDate. Pass them explicitly so
+  // the run never depends on mutating the shared selection state.
+  const newKeys = alreadyMinedDialogFolders.value
+    .filter((folder) => folder.status === 'new')
+    .map((folder) => folder.key);
+  const newKeySet = new Set(newKeys);
+  const newNodes = flattenBoxNodes(boxes.value).filter((node) =>
+    newKeySet.has(node.key),
   );
-  // Snapshot the previous entries: startMining snapshots the selection into a
-  // plain key list during the start request, so the narrowed selection only
-  // needs to stay in place until runEmailMining resolves.
-  const previousEntries = new Map(
-    [...upToDateKeys].map((key) => [key, $leadminerStore.selectedBoxes[key]]),
-  );
-  for (const key of upToDateKeys) {
-    const entry = $leadminerStore.selectedBoxes[key];
-    if (entry) {
-      $leadminerStore.selectedBoxes[key] = {
-        ...entry,
-        checked: false,
-        partialChecked: false,
-      };
-    }
-  }
-  try {
-    const remainingKeys = new Set(
-      getSelectedFolderKeys(
-        $leadminerStore.selectedBoxes,
-        $leadminerStore.excludedBoxes,
-      ),
-    );
-    const remainingNodes = flattenBoxNodes(boxes.value).filter((node) =>
-      remainingKeys.has(node.key),
-    );
-    await runEmailMining(resolveRunMode(remainingNodes));
-  } finally {
-    for (const [key, entry] of previousEntries) {
-      if (entry) {
-        $leadminerStore.selectedBoxes[key] = entry;
-      }
-    }
-  }
+  await runEmailMining(resolveRunMode(newNodes), newKeys);
 }
 
 function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
@@ -558,7 +529,7 @@ function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
     : MiningRunMode.Full;
 }
 
-async function runEmailMining(runMode: MiningRunMode) {
+async function runEmailMining(runMode: MiningRunMode, folders?: string[]) {
   resumeDialogVisible.value = false;
   alreadyMinedDialogVisible.value = false;
   completedTransitionDone.value = false;
@@ -566,7 +537,13 @@ async function runEmailMining(runMode: MiningRunMode) {
   if (!activeSource) return;
 
   await handleAuthErrorAndRetry(
-    () => $leadminerStore.startMining(sourceType.value, undefined, runMode),
+    () =>
+      $leadminerStore.startMining(
+        sourceType.value,
+        undefined,
+        runMode,
+        folders,
+      ),
     activeSource.email,
     activeSource.type,
   );

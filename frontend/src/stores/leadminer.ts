@@ -621,6 +621,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     source: MiningType,
     storagePath?: string,
     runMode: MiningRunMode = MiningRunMode.Full,
+    foldersOverride?: string[],
   ) {
     await supabase.auth.refreshSession(); // Refresh session on mining start
 
@@ -664,7 +665,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             throw new Error('activeMiningSource is required for mining EMAIL');
           task = await startMiningEmail(
             userId,
-            getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value),
+            foldersOverride ??
+              getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value),
             activeMiningSource.value,
             runMode,
           );
