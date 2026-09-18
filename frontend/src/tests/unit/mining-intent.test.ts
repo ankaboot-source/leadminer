@@ -34,19 +34,7 @@ describe('resolveRunMode', () => {
 });
 
 describe('resolveMiningIntent', () => {
-  it('resumes only folders with new messages', () => {
-    expect(
-      resolveMiningIntent([
-        node('INBOX', FolderStatus.NewMessages, {
-          uidvalidity: '1',
-          last_uid: 2,
-        }),
-        node('Sent', FolderStatus.UpToDate, { uidvalidity: '1', last_uid: 5 }),
-      ]),
-    ).toEqual({ kind: 'resume', folders: ['INBOX'] });
-  });
-
-  it('includes every new-message folder and preserves Gmail path keys', () => {
+  it('resumes when any folder has new messages', () => {
     expect(
       resolveMiningIntent([
         node('[Gmail]/Starred', FolderStatus.NewMessages, {
@@ -57,24 +45,8 @@ describe('resolveMiningIntent', () => {
           uidvalidity: '38',
           last_uid: 4,
         }),
-        node('email with signature', FolderStatus.NewMessages, {
-          uidvalidity: '39',
-          last_uid: 12,
-        }),
-        node('Drafts', FolderStatus.Unmined),
-        node('Archive', FolderStatus.UidvalidityChanged, {
-          uidvalidity: '7',
-          last_uid: 1,
-        }),
-        node('INBOX/Metadata', FolderStatus.MetadataUnavailable, {
-          uidvalidity: '8',
-          last_uid: 9,
-        }),
       ]),
-    ).toEqual({
-      kind: 'resume',
-      folders: ['[Gmail]/Starred', 'email with signature'],
-    });
+    ).toEqual({ kind: 'resume' });
   });
 
   it('is mixed when some but not all folders are up to date', () => {

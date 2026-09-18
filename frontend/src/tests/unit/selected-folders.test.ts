@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { BoxNode } from '@/utils/boxes';
+import { FolderStatus } from '~/types/enums';
 import {
   folderDisplayName,
   getSelectedFolderKeys,
   hasSelectedFolders,
+  uncheckUpToDateFolders,
 } from '@/utils/selected-folders';
 
 describe('getSelectedFolderKeys', () => {
@@ -47,6 +50,44 @@ describe('hasSelectedFolders', () => {
       hasSelectedFolders({ Sent: { checked: true } }, new Set(['Sent'])),
     ).toBe(false);
     expect(hasSelectedFolders()).toBe(false);
+  });
+});
+
+describe('uncheckUpToDateFolders', () => {
+  it('keeps new-message selections and removes checked up-to-date folders', () => {
+    const selected = {
+      '[Gmail]/Starred': { checked: true },
+      'test-alternateEmail': { checked: true },
+      'email with signature': { checked: true },
+      Drafts: { checked: false },
+    };
+    const nodes: BoxNode[] = [
+      {
+        key: '[Gmail]/Starred',
+        label: 'Starred',
+        total: 29,
+        status: FolderStatus.NewMessages,
+      },
+      {
+        key: 'test-alternateEmail',
+        label: 'test-alternateEmail',
+        total: 4,
+        status: FolderStatus.UpToDate,
+        children: [
+          {
+            key: 'email with signature',
+            label: 'email with signature',
+            total: 12,
+            status: FolderStatus.UpToDate,
+          },
+        ],
+      },
+    ];
+
+    expect(uncheckUpToDateFolders(selected, nodes)).toEqual({
+      '[Gmail]/Starred': { checked: true },
+      Drafts: { checked: false },
+    });
   });
 });
 

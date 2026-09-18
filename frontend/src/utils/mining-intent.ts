@@ -7,7 +7,7 @@ import type { BoxNode } from '~/utils/boxes';
  * resume / mixed / all-mined / run decision so the panel is a thin switch.
  */
 export type MiningIntent =
-  | { kind: 'resume'; folders: string[] }
+  | { kind: 'resume' }
   | { kind: 'mixed'; folders: AlreadyMinedFolder[] }
   | { kind: 'all-mined' }
   | { kind: 'run'; mode: MiningRunMode };
@@ -21,18 +21,14 @@ export function resolveRunMode(nodes: BoxNode[]): MiningRunMode {
 
 /**
  * Precedence mirrors the historical behavior:
- *   1. folders with new messages -> confirm a resume scoped to those folders
+ *   1. any folder with new messages -> confirm resume
  *   2. some (not all) already up to date -> mixed choice
  *   3. all already up to date -> all-mined choice
  *   4. otherwise -> run directly with the resolved mode
  */
 export function resolveMiningIntent(nodes: BoxNode[]): MiningIntent {
-  const newMessageFolders = nodes
-    .filter((node) => node.status === FolderStatus.NewMessages)
-    .map((node) => node.key);
-
-  if (newMessageFolders.length > 0) {
-    return { kind: 'resume', folders: newMessageFolders };
+  if (nodes.some((node) => node.status === FolderStatus.NewMessages)) {
+    return { kind: 'resume' };
   }
 
   const upToDateCount = nodes.filter(

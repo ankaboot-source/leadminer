@@ -72,7 +72,7 @@
 
   <ResumeMiningDialog
     v-model:visible="resumeDialogVisible"
-    @continue="resumeNewFoldersOnly"
+    @continue="resumeSelectedNewFolders"
     @rescan="runEmailMining(MiningRunMode.Full)"
   />
 
@@ -99,6 +99,7 @@ import { resolveMiningIntent, resolveRunMode } from '@/utils/mining-intent';
 import {
   getSelectedFolderKeys,
   hasSelectedFolders,
+  uncheckUpToDateFolders,
 } from '~/utils/selected-folders';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
@@ -220,7 +221,6 @@ const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
 const resumeDialogVisible = ref(false);
-const resumeFolderKeys = ref<string[]>([]);
 const alreadyMinedDialogVisible = ref(false);
 const alreadyMinedDialogMode = ref<'all-mined' | 'mixed'>('all-mined');
 const alreadyMinedDialogFolders = ref<AlreadyMinedFolder[]>([]);
@@ -252,7 +252,6 @@ watch(
   selectedBoxes,
   () => {
     runFolders.value = null;
-    resumeFolderKeys.value = [];
   },
   { deep: true },
 );
@@ -477,9 +476,9 @@ async function startMiningBoxes() {
   const activeSource = $leadminerStore.activeMiningSource;
   if (!activeSource) return;
 
-  // The choice is per-run and transient: if selected folders have new
-  // messages, confirm a resume scoped to those folders; otherwise resume
-  // when a watermark exists and full-scan when it doesn't.
+  // The choice is per-run and transient: if a selected folder was already
+  // mined and has new messages, ask; otherwise resume when a watermark exists
+  // and full-scan when it doesn't.
   const selectedKeys = new Set(
     getSelectedFolderKeys(selectedBoxes.value, $leadminerStore.excludedBoxes),
   );
@@ -490,7 +489,6 @@ async function startMiningBoxes() {
   const intent = resolveMiningIntent(selectedNodes);
   switch (intent.kind) {
     case 'resume':
-      resumeFolderKeys.value = intent.folders;
       resumeDialogVisible.value = true;
       return;
     case 'mixed':
@@ -508,19 +506,15 @@ async function startMiningBoxes() {
   }
 }
 
-async function resumeNewFoldersOnly() {
+async function resumeSelectedNewFolders() {
   resumeDialogVisible.value = false;
-  // Resume only the folders flagged as having new messages. Up-to-date
-  // selections stay checked, but they are not sent to this run.
-  const resumeKeys = new Set(resumeFolderKeys.value);
-  const resumeNodes = flattenBoxNodes(boxes.value).filter((node) =>
-    resumeKeys.has(node.key),
+  // “Mine new messages only” simply unchecks already-mined folders. The
+  // remaining selection is then mined through the normal selection path.
+  $leadminerStore.selectedBoxes = uncheckUpToDateFolders(
+    $leadminerStore.selectedBoxes,
+    boxes.value,
   );
-  if (resumeNodes.length === 0) return;
-  await runEmailMining(
-    resolveRunMode(resumeNodes),
-    resumeNodes.map((node) => node.key),
-  );
+  await runEmailMining(MiningRunMode.Incremental);
 }
 
 async function mineNewFoldersOnly() {
