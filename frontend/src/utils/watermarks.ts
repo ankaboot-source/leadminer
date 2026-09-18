@@ -1,4 +1,7 @@
-import type { MiningFolderResumeWatermark } from '~/types/mining';
+import type {
+  MiningCompletion,
+  MiningFolderResumeWatermark,
+} from '~/types/mining';
 import { FolderStatus } from '~/types/enums';
 import type { BoxNode } from '~/utils/boxes';
 
@@ -38,6 +41,90 @@ export function extractFolderWatermarks(
     }
   }
   return watermarks;
+}
+
+export interface MiningCompletionSummary {
+  miningId: string;
+  foldersMined: string[];
+}
+
+/**
+ * Extracts the authoritative list of folders written by one completed mining
+ * run. The mining ID guard prevents a newer tree refresh from applying an
+ * older completion record.
+ */
+export function extractCompletedMining(
+  rawConfig?: unknown,
+): MiningCompletionSummary | undefined {
+  const last = (
+    rawConfig as
+      | {
+          mining?: {
+            last?: Pick<MiningCompletion, 'mining_id' | 'folders_mined'>;
+          };
+        }
+      | undefined
+  )?.mining?.last;
+
+  if (!last || typeof last !== 'object') return undefined;
+  if (typeof last.mining_id !== 'string' || last.mining_id.length === 0) {
+    return undefined;
+  }
+  const foldersMined = Array.isArray(last.folders_mined)
+    ? last.folders_mined.filter(
+        (folder): folder is string =>
+          typeof folder === 'string' && folder.length > 0,
+      )
+    : [];
+
+  if (foldersMined.length === 0) return undefined;
+  return { miningId: last.mining_id, foldersMined };
+}
+
+/**
+ * Marks folders from a verified completed run as up to date.
+ *
+ * A completed run is authoritative for the folders it names, even when the
+ * older tree cursor still contains a predictive UIDNEXT value above the stored
+ * watermark. UID allocation can leave gaps—for example, UIDNEXT 125 while both
+ * the highest existing UID and watermark are 121—so the predictive cursor alone
+ * can falsely report new messages.
+ *
+ * @returns the number of nodes marked as completed.
+ */
+export function markCompletedFolderStatuses(
+  nodes: BoxNode[],
+  watermarks: Record<string, FolderWatermark>,
+  completedFolders: Iterable<string>,
+): number {
+  if (!nodes || nodes.length === 0) return 0;
+
+  const completedKeys = new Set(completedFolders);
+  if (completedKeys.size === 0) return 0;
+
+  let marked = 0;
+  const visit = (list: BoxNode[]) => {
+    for (const node of list) {
+      const watermark = node.key !== '' ? watermarks[node.key] : undefined;
+      if (
+        watermark &&
+        completedKeys.has(node.key) &&
+        node.cursor?.uidvalidity === watermark.uidvalidity
+      ) {
+        node.watermark = {
+          uidvalidity: watermark.uidvalidity,
+          last_uid: watermark.last_uid,
+        };
+        node.status = FolderStatus.UpToDate;
+        node.has_new_messages = false;
+        node.latest_uid = watermark.last_uid;
+        marked += 1;
+      }
+      if (node.children?.length) visit(node.children);
+    }
+  };
+  visit(nodes);
+  return marked;
 }
 
 /**

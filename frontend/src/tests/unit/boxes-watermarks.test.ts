@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { BoxNode } from '@/utils/boxes';
 import {
   buildFolderStatus,
+  extractCompletedMining,
   extractFolderWatermarks,
+  markCompletedFolderStatuses,
   refreshBoxWatermarks,
 } from '@/utils/watermarks';
 import { FolderStatus } from '~/types/enums';
@@ -96,6 +98,39 @@ describe('buildFolderStatus', () => {
   });
 });
 
+describe('extractCompletedMining', () => {
+  it('returns the completed mining ID and mined folders', () => {
+    expect(
+      extractCompletedMining({
+        mining: {
+          last: {
+            mining_id: 'aBg98d',
+            folders_mined: ['[Gmail]/Starred', '', 42],
+          },
+        },
+      }),
+    ).toEqual({ miningId: 'aBg98d', foldersMined: ['[Gmail]/Starred'] });
+  });
+
+  it('returns undefined for missing, invalid, or empty completion records', () => {
+    expect(extractCompletedMining()).toBeUndefined();
+    expect(extractCompletedMining({})).toBeUndefined();
+    expect(
+      extractCompletedMining({ mining: { last: { folders_mined: [] } } }),
+    ).toBeUndefined();
+    expect(
+      extractCompletedMining({
+        mining: { last: { mining_id: 'aBg98d', folders_mined: [] } },
+      }),
+    ).toBeUndefined();
+    expect(
+      extractCompletedMining({
+        mining: { last: { mining_id: '', folders_mined: ['INBOX'] } },
+      }),
+    ).toBeUndefined();
+  });
+});
+
 describe('refreshBoxWatermarks', () => {
   it('is a no-op for empty trees or watermarks', () => {
     expect(
@@ -172,5 +207,89 @@ describe('refreshBoxWatermarks', () => {
     });
     expect(updated).toBe(1);
     expect(boxes[0]?.watermark).toBeUndefined();
+  });
+});
+
+describe('markCompletedFolderStatuses', () => {
+  it('corrects a UIDNEXT gap while preserving an already-correct sibling', () => {
+    const starred = node({
+      key: '[Gmail]/Starred',
+      label: 'Starred',
+      total: 29,
+      cursor: { uidvalidity: '4', uidnext: 125, high_water_uid: 124 },
+    });
+    const sibling = node({
+      key: 'test-alternateEmail',
+      label: 'test-alternateEmail',
+      total: 4,
+      cursor: { uidvalidity: '38', uidnext: 5, high_water_uid: 4 },
+    });
+    const boxes = [starred, sibling];
+    const watermarks = {
+      '[Gmail]/Starred': { uidvalidity: '4', last_uid: 121 },
+      'test-alternateEmail': { uidvalidity: '38', last_uid: 4 },
+    };
+
+    // The sibling’s predictive UIDNEXT value already equals its watermark, so
+    // it refreshes directly to “already mined.” The Starred prediction is a
+    // UID-allocation gap above its watermark.
+    expect(refreshBoxWatermarks(boxes, watermarks)).toBe(2);
+    expect(starred.status).toBe(FolderStatus.NewMessages);
+    expect(sibling.status).toBe(FolderStatus.UpToDate);
+
+    expect(
+      markCompletedFolderStatuses(boxes, watermarks, ['[Gmail]/Starred']),
+    ).toBe(1);
+    expect(starred.watermark).toEqual({ uidvalidity: '4', last_uid: 121 });
+    expect(starred.status).toBe(FolderStatus.UpToDate);
+    expect(starred.has_new_messages).toBe(false);
+    expect(starred.latest_uid).toBe(121);
+    expect(sibling.status).toBe(FolderStatus.UpToDate);
+    expect(sibling.latest_uid).toBeUndefined();
+  });
+
+  it('does not mark folders missing from the completed run', () => {
+    const boxes = [
+      node({
+        cursor: { uidvalidity: '12', uidnext: 11, high_water_uid: 10 },
+        status: FolderStatus.NewMessages,
+      }),
+    ];
+    const watermarks = { INBOX: { uidvalidity: '12', last_uid: 7 } };
+
+    expect(markCompletedFolderStatuses(boxes, watermarks, ['Sent'])).toBe(0);
+    expect(boxes[0]?.status).toBe(FolderStatus.NewMessages);
+  });
+
+  it('requires a matching UIDVALIDITY before marking completion', () => {
+    const boxes = [
+      node({
+        cursor: { uidvalidity: '99', uidnext: 11, high_water_uid: 10 },
+        status: FolderStatus.UidvalidityChanged,
+      }),
+    ];
+    const watermarks = { INBOX: { uidvalidity: '12', last_uid: 7 } };
+
+    expect(markCompletedFolderStatuses(boxes, watermarks, ['INBOX'])).toBe(0);
+    expect(boxes[0]?.status).toBe(FolderStatus.UidvalidityChanged);
+  });
+
+  it('skips the synthetic root key', () => {
+    const child = node({
+      cursor: { uidvalidity: '12', uidnext: 8, high_water_uid: 7 },
+    });
+    const boxes: BoxNode[] = [
+      { key: '', label: 'user@example.com', total: 10, children: [child] },
+    ];
+    const watermarks = {
+      '': { uidvalidity: '1', last_uid: 1 },
+      INBOX: { uidvalidity: '12', last_uid: 7 },
+    };
+
+    expect(markCompletedFolderStatuses(boxes, watermarks, ['', 'INBOX'])).toBe(
+      1,
+    );
+    expect(boxes[0]?.watermark).toBeUndefined();
+    expect(child.status).toBe(FolderStatus.UpToDate);
   });
 });

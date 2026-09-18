@@ -72,7 +72,7 @@
 
   <ResumeMiningDialog
     v-model:visible="resumeDialogVisible"
-    @continue="runEmailMining(MiningRunMode.Incremental)"
+    @continue="resumeNewFoldersOnly"
     @rescan="runEmailMining(MiningRunMode.Full)"
   />
 
@@ -220,6 +220,7 @@ const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
 const resumeDialogVisible = ref(false);
+const resumeFolderKeys = ref<string[]>([]);
 const alreadyMinedDialogVisible = ref(false);
 const alreadyMinedDialogMode = ref<'all-mined' | 'mixed'>('all-mined');
 const alreadyMinedDialogFolders = ref<AlreadyMinedFolder[]>([]);
@@ -251,6 +252,7 @@ watch(
   selectedBoxes,
   () => {
     runFolders.value = null;
+    resumeFolderKeys.value = [];
   },
   { deep: true },
 );
@@ -475,9 +477,9 @@ async function startMiningBoxes() {
   const activeSource = $leadminerStore.activeMiningSource;
   if (!activeSource) return;
 
-  // The choice is per-run and transient: if a selected folder was already
-  // mined and has new messages, ask; otherwise resume when a watermark exists
-  // and full-scan when it doesn't.
+  // The choice is per-run and transient: if selected folders have new
+  // messages, confirm a resume scoped to those folders; otherwise resume
+  // when a watermark exists and full-scan when it doesn't.
   const selectedKeys = new Set(
     getSelectedFolderKeys(selectedBoxes.value, $leadminerStore.excludedBoxes),
   );
@@ -488,6 +490,7 @@ async function startMiningBoxes() {
   const intent = resolveMiningIntent(selectedNodes);
   switch (intent.kind) {
     case 'resume':
+      resumeFolderKeys.value = intent.folders;
       resumeDialogVisible.value = true;
       return;
     case 'mixed':
@@ -503,6 +506,18 @@ async function startMiningBoxes() {
     default:
       await runEmailMining(intent.mode);
   }
+}
+
+async function resumeNewFoldersOnly() {
+  resumeDialogVisible.value = false;
+  // Resume only the folders flagged as having new messages. Up-to-date
+  // selections stay checked, but they are not sent to this run.
+  const resumeKeySet = new Set(resumeFolderKeys.value);
+  const resumeNodes = flattenBoxNodes(boxes.value).filter((node) =>
+    resumeKeySet.has(node.key),
+  );
+  if (resumeNodes.length === 0) return;
+  await runEmailMining(resolveRunMode(resumeNodes), [...resumeKeySet]);
 }
 
 async function mineNewFoldersOnly() {

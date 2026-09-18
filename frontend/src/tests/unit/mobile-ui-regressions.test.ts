@@ -75,4 +75,16 @@ describe('mobile ui regressions', () => {
     expect(campaignsPage).toContain('flex-wrap sm:flex-nowrap');
     expect(campaignsPage).toContain('min-w-0');
   });
+
+  it('stacks resume-mining actions without wrapping on mobile', () => {
+    const resumeDialog = readSource(
+      'src/components/mining/stepper-panels/mine/ResumeMiningDialog.vue',
+    );
+
+    expect(resumeDialog).toContain("maxWidth: '95vw'");
+    expect(resumeDialog).toContain('flex-col-reverse sm:flex-row');
+    expect(resumeDialog).toContain('w-full whitespace-nowrap sm:w-auto');
+    expect(resumeDialog).toContain('whitespace-nowrap');
+    expect(resumeDialog).toContain("t('resume')");
+  });
 });

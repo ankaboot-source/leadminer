@@ -25,7 +25,9 @@ import {
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
 import {
+  extractCompletedMining,
   extractFolderWatermarks,
+  markCompletedFolderStatuses,
   refreshBoxWatermarks,
 } from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
@@ -311,8 +313,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * scroll/expand state). Only `watermark`/`status` fields are touched, so
    * selection, expansion, and counts are preserved. No-op when there is no
    * active source config or no fresh watermark.
+   *
+   * When `expectedCompletedMiningId` matches the freshly fetched completion
+   * record, the completed run overrides the older predictive cursor for the
+   * folders it names. This corrects cases such as a Gmail UIDNEXT gap, where
+   * allocation has moved beyond the highest UID actually present.
    */
-  function refreshTreeWatermarks() {
+  function refreshTreeWatermarks(expectedCompletedMiningId?: string | null) {
     if (boxes.value.length === 0) return;
     const activeEmail = activeMiningSource.value?.email?.toLowerCase();
     if (!activeEmail) return;
@@ -324,6 +331,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const watermarks = extractFolderWatermarks(rawConfig);
     if (Object.keys(watermarks).length === 0) return;
     refreshBoxWatermarks(boxes.value, watermarks);
+
+    if (!expectedCompletedMiningId) return;
+    const completed = extractCompletedMining(rawConfig);
+    if (!completed || completed.miningId !== expectedCompletedMiningId) return;
+    markCompletedFolderStatuses(
+      boxes.value,
+      watermarks,
+      completed.foldersMined,
+    );
   }
 
   async function fetchInbox() {
@@ -474,6 +490,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
+        // Capture the completed run before clearing the active task so the
+        // completion record can be matched after mining sources refresh.
+        const completedMiningId = miningTask.value?.miningId;
         // The continuous-extraction prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
@@ -481,7 +500,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           if (!isCurrentRun()) return;
           miningTask.value = undefined;
           await fetchMiningSources();
-          refreshTreeWatermarks();
+          refreshTreeWatermarks(completedMiningId);
         }, 100);
       },
       onGoogleContactsFetched: () => {
