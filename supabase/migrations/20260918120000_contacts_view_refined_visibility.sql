@@ -18,9 +18,10 @@
 -- Visibility is therefore decided per merged group:
 --   * keep if ANY member has a refinedpersons row (mined valid + Google Contacts +
 --     file/PostgreSQL imports, which insert refined rows directly), OR
---   * keep if NO member has a `refined#email_address` tag (the group was never
---     evaluated by the mining tag rule, e.g. phone-only contacts).
--- Rejected mined contacts have `refined#email_address` tags but no refined row -> hidden.
+--   * keep if the group has no email (phone-only imports, which have no refined row).
+-- Rejected mined contacts have an email but no refined row -> hidden. This mirrors the
+-- pre-rework `INNER JOIN refinedpersons` semantics and depends only on the materialized
+-- outcome, not on the tag rule itself.
 --
 -- The refine_persons() HAVING rule remains the single source of truth; this view only
 -- mirrors its outcome and does not duplicate the rule.
@@ -185,14 +186,7 @@ WHERE
           AND rp.person_id = ANY (m.person_ids)
     )
     OR
-    -- Keep contacts never evaluated by the mining tag rule (e.g. phone-only imports:
-    -- they only carry a refined#phone_only tag, never a refined#email_address one).
-    NOT EXISTS (
-        SELECT 1
-        FROM private.tags t
-        WHERE t.user_id = m.user_id
-          AND t.person_id = ANY (m.person_ids)
-          AND t.source = 'refined#email_address'
-    );
+    -- Keep phone-only contacts: they have no email and never get a refined row.
+    m.email IS NULL;
 
 GRANT SELECT ON private.contacts_view TO authenticated;
