@@ -97,6 +97,7 @@
 // skipcq: JS-W1028 - Pre-existing: Nuxt auto-imports components with script setup, no default export needed
 import EmailFoldersTree from './EmailFoldersTree.vue';
 import { updateMiningSourceConfig } from '@/utils/sources';
+import { getSelectedFolderKeys } from '@/utils/selected-folders';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -167,11 +168,9 @@ async function close() {
     isSaving.value = true;
     const config = await updateMiningSourceConfig(src.email, src.type, {
       mining_flags: { ...$leadminerStore.sourceConfig },
-      folders: Object.keys($leadminerStore.selectedBoxes).filter(
-        (key) =>
-          key !== '' &&
-          $leadminerStore.selectedBoxes[key]?.checked &&
-          !$leadminerStore.excludedBoxes.has(key),
+      folders: getSelectedFolderKeys(
+        $leadminerStore.selectedBoxes,
+        $leadminerStore.excludedBoxes,
       ),
     });
     src.config = config;

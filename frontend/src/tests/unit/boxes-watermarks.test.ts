@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import type { BoxNode } from '@/utils/boxes';
 import {
   buildFolderStatus,
   extractFolderWatermarks,
   refreshBoxWatermarks,
-  type BoxNode,
-} from '@/utils/boxes';
+} from '@/utils/watermarks';
 import { FolderStatus } from '~/types/enums';
 
 function node(overrides: Partial<BoxNode> = {}): BoxNode {

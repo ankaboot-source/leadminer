@@ -100,9 +100,13 @@
 <script setup lang="ts">
 import { useToast } from 'primevue/usetoast';
 import type { MiningSource } from '~/types/mining';
-import type { BoxNode } from '~/utils/boxes';
+import { flattenBoxNodes } from '~/utils/box-tree';
 import { deriveSourceConfig } from '~/utils/miningSourceConfig';
 import { buildPassiveFolderList } from '~/utils/passive-mining-folders';
+import {
+  folderDisplayName,
+  getSelectedFolderKeys,
+} from '~/utils/selected-folders';
 import { updatePassiveMining } from '~/utils/sources';
 
 const $leadminerStore = useLeadminerStore();
@@ -130,27 +134,18 @@ const folderRows = computed(() => {
         (f): f is string => typeof f === 'string',
       )
     : [];
-  const mined = $leadminerStore.selectedBoxes
-    ? Object.keys($leadminerStore.selectedBoxes).filter(
-        (key) =>
-          key !== '' &&
-          $leadminerStore.selectedBoxes[key]?.checked &&
-          !$leadminerStore.excludedBoxes?.has(key),
-      )
-    : [];
-  const flat = (nodes: BoxNode[]): string[] =>
-    nodes.flatMap((n) => [n.key, ...flat(n.children ?? [])]);
+  const mined = getSelectedFolderKeys(
+    $leadminerStore.selectedBoxes,
+    $leadminerStore.excludedBoxes,
+  );
   const available = $leadminerStore.boxes?.length
-    ? flat($leadminerStore.boxes)
+    ? flattenBoxNodes($leadminerStore.boxes).map((node) => node.key)
     : [...new Set([...mined, ...registered])];
   return buildPassiveFolderList({
     mined,
     registered,
     available,
-    labelFor: (key: string) =>
-      key.toUpperCase() === 'INBOX'
-        ? t('folder_inbox')
-        : (key.split('/').pop() ?? key),
+    labelFor: (key: string) => folderDisplayName(key, t('folder_inbox')),
   });
 });
 

@@ -13,6 +13,7 @@ import {
   deriveSourceConfig,
 } from '@/utils/miningSourceConfig';
 import { diffUnregisteredFolders } from '@/utils/passive-mining-folders';
+import { getSelectedFolderKeys } from '@/utils/selected-folders';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -23,7 +24,10 @@ import {
   MiningTypes,
 } from '../types/mining';
 import type { BoxNode } from '../utils/boxes';
-import { extractFolderWatermarks, refreshBoxWatermarks } from '../utils/boxes';
+import {
+  extractFolderWatermarks,
+  refreshBoxWatermarks,
+} from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
@@ -139,11 +143,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             (f): f is string => typeof f === 'string',
           )
         : [];
-      const mined = Object.keys(selectedBoxes.value ?? {}).filter(
-        (key) =>
-          key !== '' &&
-          selectedBoxes.value[key]?.checked &&
-          !excludedBoxes.value?.has(key),
+      const mined = getSelectedFolderKeys(
+        selectedBoxes.value,
+        excludedBoxes.value,
       );
       if (diffUnregisteredFolders(mined, registered).length === 0) return;
       passiveMiningDialogMode.value = 'update';
@@ -623,6 +625,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     source: MiningType,
     storagePath?: string,
     runMode: MiningRunMode = MiningRunMode.Full,
+    foldersOverride?: string[],
   ) {
     await supabase.auth.refreshSession(); // Refresh session on mining start
 
@@ -666,12 +669,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             throw new Error('activeMiningSource is required for mining EMAIL');
           task = await startMiningEmail(
             userId,
-            Object.keys(selectedBoxes.value).filter(
-              (key) =>
-                selectedBoxes.value[key].checked &&
-                !excludedBoxes.value.has(key) &&
-                key !== '',
-            ),
+            foldersOverride ??
+              getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value),
             activeMiningSource.value,
             runMode,
           );

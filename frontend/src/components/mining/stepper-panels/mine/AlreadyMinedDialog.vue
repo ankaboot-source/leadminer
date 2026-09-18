@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import type { AlreadyMinedFolder } from '~/types/mining';
+import { folderDisplayName } from '~/utils/selected-folders';
 
 withDefaults(
   defineProps<{
@@ -62,9 +63,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'local' });
 
-// INBOX is a protocol-reserved name, not a real mailbox label.
 function displayName(folder: AlreadyMinedFolder): string {
-  return folder.key.toUpperCase() === 'INBOX' ? t('inbox') : folder.label;
+  return folderDisplayName(folder.key, t('inbox'), folder.label);
 }
 </script>
 
