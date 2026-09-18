@@ -299,8 +299,6 @@
           />
           <EnrichButton
             source="contact"
-            :enrichment-realtime-callback="enrichmentRealtimeCallback"
-            :enrichment-request-response-callback="() => {}"
             :contacts-to-enrich="[contact]"
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
@@ -543,9 +541,6 @@ const isValidAvatar = computed(() => {
 });
 
 let personsSubscription: RealtimeChannel;
-
-// skipcq: JS-0321
-const enrichmentRealtimeCallback = () => {};
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',

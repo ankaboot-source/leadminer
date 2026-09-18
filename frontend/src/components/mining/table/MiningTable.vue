@@ -77,8 +77,6 @@
         <div>
           <EnrichButton
             source="datatable"
-            :enrichment-realtime-callback="emptyFunction"
-            :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="implicitlySelectedContacts"
             :enrich-all-contacts="$contactsStore.selectedIds === undefined"
           />
@@ -1037,9 +1035,6 @@ const { t: $t } = useI18n({
 });
 
 const MINING_ID_PARAM = 'mining_id';
-
-// skipcq: JS-0321
-const emptyFunction = () => {};
 
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
