@@ -25,7 +25,7 @@ describe('getSelectedFolderKeys', () => {
   });
 
   it('handles null/undefined selectedBoxes', () => {
-    expect(getSelectedFolderKeys(undefined)).toEqual([]);
+    expect(getSelectedFolderKeys()).toEqual([]);
     expect(getSelectedFolderKeys(null, new Set())).toEqual([]);
   });
 
@@ -46,7 +46,7 @@ describe('hasSelectedFolders', () => {
     expect(
       hasSelectedFolders({ Sent: { checked: true } }, new Set(['Sent'])),
     ).toBe(false);
-    expect(hasSelectedFolders(undefined)).toBe(false);
+    expect(hasSelectedFolders()).toBe(false);
   });
 });
 

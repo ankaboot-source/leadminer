@@ -6,7 +6,7 @@ import type { TreeSelectionKeys } from 'primevue/tree';
  * Every "selected folders" read in the app must go through this.
  */
 export function getSelectedFolderKeys(
-  selectedBoxes: TreeSelectionKeys | null | undefined,
+  selectedBoxes?: TreeSelectionKeys | null,
   excludedBoxes?: Set<string> | null,
 ): string[] {
   if (!selectedBoxes) return [];
@@ -19,7 +19,7 @@ export function getSelectedFolderKeys(
 }
 
 export function hasSelectedFolders(
-  selectedBoxes: TreeSelectionKeys | null | undefined,
+  selectedBoxes?: TreeSelectionKeys | null,
   excludedBoxes?: Set<string> | null,
 ): boolean {
   return getSelectedFolderKeys(selectedBoxes, excludedBoxes).length > 0;
