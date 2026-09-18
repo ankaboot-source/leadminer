@@ -52,9 +52,7 @@ export function isTaskRunning(
   return task?.status === 'running';
 }
 
-export function isTerminalStatus(
-  status: EnrichmentTask['status'] | undefined,
-): boolean {
+export function isTerminalStatus(status?: EnrichmentTask['status']): boolean {
   return Boolean(status) && status !== 'running';
 }
 

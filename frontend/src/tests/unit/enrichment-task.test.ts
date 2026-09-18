@@ -95,7 +95,7 @@ describe('status helpers', () => {
     expect(isTerminalStatus('done')).toBe(true);
     expect(isTerminalStatus('canceled')).toBe(true);
     expect(isTerminalStatus('running')).toBe(false);
-    expect(isTerminalStatus(undefined)).toBe(false);
+    expect(isTerminalStatus()).toBe(false);
   });
 });
 

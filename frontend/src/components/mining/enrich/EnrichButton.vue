@@ -180,7 +180,7 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
 onMounted(async () => {
   // Hydrate an in-flight task so a reload/navigation back to the page keeps
   // showing the loader instead of silently losing the running enrichment.
-  void $enrichmentStore.init();
+  await $enrichmentStore.init();
 
   if (startOnMounted) {
     await startEnrichment(true);

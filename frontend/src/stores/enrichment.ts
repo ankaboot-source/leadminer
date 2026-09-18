@@ -89,14 +89,16 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
     }
   }
 
-  function handleTaskUpdate(payload: RealtimePostgresChangesPayload<TaskRow>) {
+  async function handleTaskUpdate(
+    payload: RealtimePostgresChangesPayload<TaskRow>,
+  ) {
     const incoming = normalizeTask(payload.new as TaskRow);
     if (!incoming || incoming.id !== task.value?.id) return;
 
     task.value = incoming;
     if (isTerminalStatus(incoming.status)) {
       notifyTaskEnded(incoming);
-      void unsubscribe();
+      await unsubscribe();
     }
   }
 
@@ -109,12 +111,12 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
   }
 
   /** Idempotent: one channel per user, reused across components. */
-  function subscribe() {
+  async function subscribe() {
     const userId = getCurrentUserId();
     if (!userId) return;
     if (channel && channelUserId === userId) return;
     if (channel && channelUserId !== userId) {
-      void $supabase.removeChannel(channel);
+      await $supabase.removeChannel(channel);
       channel = null;
       channelUserId = null;
     }
@@ -131,9 +133,7 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
         },
         handleTaskUpdate,
       )
-      .on('system', { event: 'reconnected' }, () => {
-        void init();
-      });
+      .on('system', { event: 'reconnected' }, () => init());
     channelUserId = userId;
     channel.subscribe();
   }
@@ -157,13 +157,13 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
 
     const active = pickRunningTask(data as TaskRow[] | null);
     task.value = active;
-    if (active) subscribe();
+    if (active) await subscribe();
   }
 
   /** Fetch the running task (if any) and start observing it. */
-  async function init() {
+  function init(): Promise<void> {
     const userId = getCurrentUserId();
-    if (!userId) return;
+    if (!userId) return Promise.resolve();
     if (initInFlight) return initInFlight;
 
     initInFlight = loadActive(userId).finally(() => {
@@ -173,9 +173,9 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
   }
 
   /** Adopt a task returned by a start request or a realtime payload. */
-  function track(next: EnrichmentTask | null) {
+  async function track(next: EnrichmentTask | null) {
     task.value = next;
-    if (isTaskRunning(next)) subscribe();
+    if (isTaskRunning(next)) await subscribe();
   }
 
   async function start(
@@ -202,7 +202,7 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
 
       const started = normalizeTask(data?.task as TaskRow | undefined);
       if (response.status === 200 && started) {
-        track(started);
+        await track(started);
         if (isTerminalStatus(started.status)) {
           // Sync-only run already finished within the request.
           notifyTaskEnded(started);
