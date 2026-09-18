@@ -512,12 +512,15 @@ async function resumeNewFoldersOnly() {
   resumeDialogVisible.value = false;
   // Resume only the folders flagged as having new messages. Up-to-date
   // selections stay checked, but they are not sent to this run.
-  const resumeKeySet = new Set(resumeFolderKeys.value);
+  const resumeKeys = new Set(resumeFolderKeys.value);
   const resumeNodes = flattenBoxNodes(boxes.value).filter((node) =>
-    resumeKeySet.has(node.key),
+    resumeKeys.has(node.key),
   );
   if (resumeNodes.length === 0) return;
-  await runEmailMining(resolveRunMode(resumeNodes), [...resumeKeySet]);
+  await runEmailMining(
+    resolveRunMode(resumeNodes),
+    resumeNodes.map((node) => node.key),
+  );
 }
 
 async function mineNewFoldersOnly() {

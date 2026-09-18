@@ -1,7 +1,4 @@
-import type {
-  MiningCompletion,
-  MiningFolderResumeWatermark,
-} from '~/types/mining';
+import type { MiningFolderResumeWatermark } from '~/types/mining';
 import { FolderStatus } from '~/types/enums';
 import type { BoxNode } from '~/utils/boxes';
 
@@ -43,48 +40,10 @@ export function extractFolderWatermarks(
   return watermarks;
 }
 
-export interface MiningCompletionSummary {
-  miningId: string;
-  foldersMined: string[];
-}
-
 /**
- * Extracts the authoritative list of folders written by one completed mining
- * run. The mining ID guard prevents a newer tree refresh from applying an
- * older completion record.
- */
-export function extractCompletedMining(
-  rawConfig?: unknown,
-): MiningCompletionSummary | undefined {
-  const last = (
-    rawConfig as
-      | {
-          mining?: {
-            last?: Pick<MiningCompletion, 'mining_id' | 'folders_mined'>;
-          };
-        }
-      | undefined
-  )?.mining?.last;
-
-  if (!last || typeof last !== 'object') return undefined;
-  if (typeof last.mining_id !== 'string' || last.mining_id.length === 0) {
-    return undefined;
-  }
-  const foldersMined = Array.isArray(last.folders_mined)
-    ? last.folders_mined.filter(
-        (folder): folder is string =>
-          typeof folder === 'string' && folder.length > 0,
-      )
-    : [];
-
-  if (foldersMined.length === 0) return undefined;
-  return { miningId: last.mining_id, foldersMined };
-}
-
-/**
- * Marks folders from a verified completed run as up to date.
+ * Marks the folders included in a completed run as up to date.
  *
- * A completed run is authoritative for the folders it names, even when the
+ * A completed run is authoritative for the folders it requested, even when the
  * older tree cursor still contains a predictive UIDNEXT value above the stored
  * watermark. UID allocation can leave gaps—for example, UIDNEXT 125 while both
  * the highest existing UID and watermark are 121—so the predictive cursor alone
@@ -92,15 +51,15 @@ export function extractCompletedMining(
  *
  * @returns the number of nodes marked as completed.
  */
-export function markCompletedFolderStatuses(
+export function markRunFoldersUpToDate(
   nodes: BoxNode[],
   watermarks: Record<string, FolderWatermark>,
-  completedFolders: Iterable<string>,
+  runFolders: Iterable<string>,
 ): number {
   if (!nodes || nodes.length === 0) return 0;
 
-  const completedKeys = new Set(completedFolders);
-  if (completedKeys.size === 0) return 0;
+  const runKeys = new Set(runFolders);
+  if (runKeys.size === 0) return 0;
 
   let marked = 0;
   const visit = (list: BoxNode[]) => {
@@ -108,7 +67,7 @@ export function markCompletedFolderStatuses(
       const watermark = node.key !== '' ? watermarks[node.key] : undefined;
       if (
         watermark &&
-        completedKeys.has(node.key) &&
+        runKeys.has(node.key) &&
         node.cursor?.uidvalidity === watermark.uidvalidity
       ) {
         node.watermark = {
