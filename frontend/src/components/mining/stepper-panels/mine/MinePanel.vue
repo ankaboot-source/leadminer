@@ -241,6 +241,20 @@ const sourceTypeIsEmail = computed(
   () => sourceType.value === 'email' || sourceType.value === 'pst',
 );
 
+// Folders actually sent for the current/last run. Set when a run narrows the
+// selection (e.g. "Mine new folders only"); null means "use the selection".
+// Keeps the displayed email count in sync with what is really mined.
+const runFolders = ref<string[] | null>(null);
+
+// Any change to the folder selection invalidates a previously narrowed scope.
+watch(
+  selectedBoxes,
+  () => {
+    runFolders.value = null;
+  },
+  { deep: true },
+);
+
 const totalEmails = computed<number>(() => {
   if (sourceType.value === 'file') {
     return $leadminerStore.selectedFile?.contacts.length || 0;
@@ -253,12 +267,12 @@ const totalEmails = computed<number>(() => {
           joined: true,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           filterFn: ({ parent, property, value, context }: any) => {
-            if (
-              property === 'total' &&
-              parent.key &&
-              parent.key in selectedBoxes.value &&
-              selectedBoxes.value[parent.key].checked
-            ) {
+            if (property !== 'total' || !parent.key) return;
+            const inScope = runFolders.value?.length
+              ? runFolders.value.includes(parent.key)
+              : parent.key in selectedBoxes.value &&
+                selectedBoxes.value[parent.key].checked;
+            if (inScope) {
               context.sum += value;
             }
           },
@@ -506,6 +520,8 @@ async function mineNewFoldersOnly() {
 }
 
 async function runEmailMining(runMode: MiningRunMode, folders?: string[]) {
+  // Narrow the displayed scope to the folders actually mined (if any).
+  runFolders.value = folders ?? null;
   resumeDialogVisible.value = false;
   alreadyMinedDialogVisible.value = false;
   completedTransitionDone.value = false;

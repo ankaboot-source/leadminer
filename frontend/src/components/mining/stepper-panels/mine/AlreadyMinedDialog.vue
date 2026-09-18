@@ -33,11 +33,14 @@
         outlined
         @click="emit('skip')"
       />
-      <Button
-        v-if="mode === 'mixed'"
-        :label="t('mine_new_only')"
-        @click="emit('mine-new-only')"
-      />
+      <template v-if="mode === 'mixed'">
+        <Button
+          :label="t('remine_all')"
+          severity="secondary"
+          @click="emit('remine')"
+        />
+        <Button :label="t('mine_new_only')" @click="emit('mine-new-only')" />
+      </template>
       <Button v-else :label="t('remine')" @click="emit('remine')" />
     </div>
   </Dialog>
@@ -76,8 +79,9 @@ function displayName(folder: AlreadyMinedFolder): string {
     "remine": "Re-mine",
     "skip": "Skip",
     "mixed_title": "Some folders already mined",
-    "mixed_description": "Some selected folders were already mined and have no new messages. Mine only the new folders, or skip and keep your existing contacts.",
+    "mixed_description": "Some selected folders were already mined. Mine only the new folders, re-mine everything (to recover contacts you deleted), or skip and keep your existing contacts.",
     "mine_new_only": "Mine new folders only",
+    "remine_all": "Re-mine everything",
     "badge_up_to_date": "Up to date",
     "badge_new": "New",
     "inbox": "Inbox"
@@ -88,8 +92,9 @@ function displayName(folder: AlreadyMinedFolder): string {
     "remine": "Re-traiter",
     "skip": "Ignorer",
     "mixed_title": "Certains dossiers déjà traités",
-    "mixed_description": "Certains dossiers sélectionnés ont déjà été traités et ne contiennent aucun nouveau message. Extrayez uniquement les nouveaux dossiers, ou ignorez et conservez vos contacts existants.",
+    "mixed_description": "Certains dossiers sélectionnés ont déjà été traités. Extrayez uniquement les nouveaux dossiers, re-traitez tout (pour récupérer des contacts supprimés), ou ignorez et conservez vos contacts existants.",
     "mine_new_only": "Extraire les nouveaux dossiers",
+    "remine_all": "Tout re-traiter",
     "badge_up_to_date": "À jour",
     "badge_new": "Nouveau",
     "inbox": "Boîte de réception"
