@@ -371,6 +371,7 @@ import {
   getTagLabel,
   isValidURL,
   removeContactsFromDatabase,
+  shouldSkipEnrichDialog,
   tags as predefinedTags,
 } from '@/utils/contacts';
 import type {
@@ -511,21 +512,7 @@ watch(contact, (newContact) => {
 
 const isExportDisabled = computed(() => $leadminerStore.loadingStatusDns);
 
-const skipDialog = computed(
-  () =>
-    !contact.value ||
-    Boolean(
-      contact.value.given_name ||
-      contact.value.family_name ||
-      contact.value.alternate_name?.length ||
-      contact.value.telephone?.length ||
-      contact.value.location ||
-      contact.value.works_for ||
-      contact.value.job_title ||
-      contact.value.same_as?.length ||
-      contact.value.image,
-    ),
-);
+const skipDialog = computed(() => shouldSkipEnrichDialog(contact.value));
 
 const isValidSameAs = computed(() => {
   if (!contactEdit.value?.same_as) return true;
