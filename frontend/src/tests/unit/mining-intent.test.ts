@@ -37,14 +37,11 @@ describe('resolveMiningIntent', () => {
   it('resumes when any folder has new messages', () => {
     expect(
       resolveMiningIntent([
-        node('[Gmail]/Starred', FolderStatus.NewMessages, {
-          uidvalidity: '4',
-          last_uid: 121,
+        node('INBOX', FolderStatus.NewMessages, {
+          uidvalidity: '1',
+          last_uid: 2,
         }),
-        node('test-alternateEmail', FolderStatus.UpToDate, {
-          uidvalidity: '38',
-          last_uid: 4,
-        }),
+        node('Sent', FolderStatus.UpToDate, { uidvalidity: '1', last_uid: 5 }),
       ]),
     ).toEqual({ kind: 'resume' });
   });

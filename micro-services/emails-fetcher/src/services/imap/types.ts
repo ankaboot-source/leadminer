@@ -56,6 +56,12 @@ export interface ImapEmailsFetcherOptions {
 export interface FolderWatermark {
   uidvalidity: string;
   last_uid: number;
+  /**
+   * Mailbox EXISTS observed when the watermark was written. The backend uses it
+   * to detect new mail by comparing counts, since `uidNext - 1` is only a
+   * prediction and can sit above the highest UID that actually exists.
+   */
+  total_messages?: number;
   updated_at: string;
 }
 

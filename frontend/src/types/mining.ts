@@ -13,18 +13,20 @@ export enum MiningTypes {
 export interface MiningFolderWatermark {
   uidvalidity: string;
   last_uid: number;
+  total_messages?: number;
   updated_at: string;
 }
 
 export type MiningFolderResumeWatermark = Pick<
   MiningFolderWatermark,
-  'uidvalidity' | 'last_uid'
+  'uidvalidity' | 'last_uid' | 'total_messages'
 >;
 
 export interface ImapFolderCursor {
   uidvalidity: string | null;
   uidnext: number | null;
   high_water_uid: number | null;
+  messages?: number | null;
 }
 
 export interface MiningCompletion {

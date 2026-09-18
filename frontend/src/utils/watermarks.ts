@@ -24,7 +24,7 @@ export function extractFolderWatermarks(
   const watermarks: Record<string, FolderWatermark> = {};
   for (const [folder, value] of Object.entries(folders)) {
     const candidate = value as
-      | { uidvalidity?: unknown; last_uid?: unknown }
+      | { uidvalidity?: unknown; last_uid?: unknown; total_messages?: unknown }
       | undefined;
     if (
       typeof candidate?.uidvalidity === 'string' &&
@@ -34,56 +34,14 @@ export function extractFolderWatermarks(
       watermarks[folder] = {
         uidvalidity: candidate.uidvalidity,
         last_uid: candidate.last_uid as number,
+        ...(Number.isInteger(candidate.total_messages) &&
+        (candidate.total_messages as number) >= 0
+          ? { total_messages: candidate.total_messages as number }
+          : {}),
       };
     }
   }
   return watermarks;
-}
-
-/**
- * Marks the folders included in a completed run as up to date.
- *
- * A completed run is authoritative for the folders it requested, even when the
- * older tree cursor still contains a predictive UIDNEXT value above the stored
- * watermark. UID allocation can leave gaps—for example, UIDNEXT 125 while both
- * the highest existing UID and watermark are 121—so the predictive cursor alone
- * can falsely report new messages.
- *
- * @returns the number of nodes marked as completed.
- */
-export function markRunFoldersUpToDate(
-  nodes: BoxNode[],
-  watermarks: Record<string, FolderWatermark>,
-  runFolders: Iterable<string>,
-): number {
-  if (!nodes || nodes.length === 0) return 0;
-
-  const runKeys = new Set(runFolders);
-  if (runKeys.size === 0) return 0;
-
-  let marked = 0;
-  const visit = (list: BoxNode[]) => {
-    for (const node of list) {
-      const watermark = node.key !== '' ? watermarks[node.key] : undefined;
-      if (
-        watermark &&
-        runKeys.has(node.key) &&
-        node.cursor?.uidvalidity === watermark.uidvalidity
-      ) {
-        node.watermark = {
-          uidvalidity: watermark.uidvalidity,
-          last_uid: watermark.last_uid,
-        };
-        node.status = FolderStatus.UpToDate;
-        node.has_new_messages = false;
-        node.latest_uid = watermark.last_uid;
-        marked += 1;
-      }
-      if (node.children?.length) visit(node.children);
-    }
-  };
-  visit(nodes);
-  return marked;
 }
 
 /**
@@ -124,7 +82,20 @@ export function buildFolderStatus({
     return { status: FolderStatus.UidvalidityChanged, hasNewMessages: false };
   }
 
-  const hasNewMessages = cursor.high_water_uid > watermark.last_uid;
+  // Prefer the observed message count: `uidnext - 1` is a prediction and can
+  // sit above the highest UID that actually exists, reporting permanent false
+  // "new messages" on folders with UID gaps (e.g. Gmail/Starred).
+  const countAvailable =
+    typeof cursor.messages === 'number' &&
+    Number.isInteger(cursor.messages) &&
+    cursor.messages >= 0 &&
+    typeof watermark.total_messages === 'number' &&
+    Number.isInteger(watermark.total_messages) &&
+    watermark.total_messages >= 0;
+
+  const hasNewMessages = countAvailable
+    ? cursor.messages! > watermark.total_messages!
+    : cursor.high_water_uid > watermark.last_uid;
   return {
     status: hasNewMessages ? FolderStatus.NewMessages : FolderStatus.UpToDate,
     hasNewMessages,
@@ -157,6 +128,9 @@ export function refreshBoxWatermarks(
         node.watermark = {
           uidvalidity: watermark.uidvalidity,
           last_uid: watermark.last_uid,
+          ...(watermark.total_messages === undefined
+            ? {}
+            : { total_messages: watermark.total_messages }),
         };
         const { status, hasNewMessages } = buildFolderStatus({
           cursor: node.cursor,

@@ -26,7 +26,6 @@ import {
 import type { BoxNode } from '../utils/boxes';
 import {
   extractFolderWatermarks,
-  markRunFoldersUpToDate,
   refreshBoxWatermarks,
 } from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
@@ -50,10 +49,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningType = ref<MiningType>('email');
 
   const miningTask = ref<MiningTask | undefined>();
-
-  // Folders requested by the current email run. Used only to correct stale
-  // tree statuses after that same run completes.
-  const lastRunEmailFolders = ref<string[] | null>(null);
 
   const passiveMinings = ref<MiningTaskGroup[]>([]);
 
@@ -166,7 +161,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   function $resetMining() {
     miningTask.value = undefined;
-    lastRunEmailFolders.value = null;
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
     passiveMinings.value = [];
@@ -317,13 +311,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * scroll/expand state). Only `watermark`/`status` fields are touched, so
    * selection, expansion, and counts are preserved. No-op when there is no
    * active source config or no fresh watermark.
-   *
-   * When `completedFolders` is provided, the completed run overrides the older
-   * predictive cursor for the folders it requested. This corrects cases such
-   * as a Gmail UIDNEXT gap, where allocation has moved beyond the highest UID
-   * actually present.
    */
-  function refreshTreeWatermarks(completedFolders?: string[] | null) {
+  function refreshTreeWatermarks() {
     if (boxes.value.length === 0) return;
     const activeEmail = activeMiningSource.value?.email?.toLowerCase();
     if (!activeEmail) return;
@@ -335,10 +324,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     const watermarks = extractFolderWatermarks(rawConfig);
     if (Object.keys(watermarks).length === 0) return;
     refreshBoxWatermarks(boxes.value, watermarks);
-
-    if (completedFolders?.length) {
-      markRunFoldersUpToDate(boxes.value, watermarks, completedFolders);
-    }
   }
 
   async function fetchInbox() {
@@ -489,10 +474,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
-        // Remember the folders requested by this run before clearing the
-        // active task so the tree can be corrected after sources refresh.
-        const completedFolders = lastRunEmailFolders.value;
-        lastRunEmailFolders.value = null;
         // The continuous-extraction prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
@@ -500,7 +481,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           if (!isCurrentRun()) return;
           miningTask.value = undefined;
           await fetchMiningSources();
-          refreshTreeWatermarks(completedFolders);
+          refreshTreeWatermarks();
         }, 100);
       },
       onGoogleContactsFetched: () => {
@@ -544,7 +525,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       },
     );
 
-    lastRunEmailFolders.value = folders;
     return task;
   }
 
@@ -661,7 +641,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatusDns.value = true;
 
     totalMessages.value = 0;
-    lastRunEmailFolders.value = null;
     totalImported.value = 0;
     scannedEmails.value = 0;
     extractedEmails.value = 0;
@@ -752,7 +731,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   ) {
     try {
       isLoadingStopMining.value = true;
-      lastRunEmailFolders.value = null;
 
       await stopMiningApi(endEntireTask, processes);
 

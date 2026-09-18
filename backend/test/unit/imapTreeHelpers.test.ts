@@ -12,7 +12,8 @@ import { FolderStatus } from '../../src/db/types';
 const CURSOR = {
   uidvalidity: '12',
   uidnext: 20,
-  high_water_uid: 19
+  high_water_uid: 19,
+  messages: 5
 };
 
 describe('buildFolderStatus', () => {
@@ -67,6 +68,55 @@ describe('buildFolderStatus', () => {
       }).status
     ).toBe(FolderStatus.MetadataUnavailable);
   });
+
+  describe('message-count comparison', () => {
+    it('is new_messages when the live count is above the watermark count', () => {
+      const result = buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '12', last_uid: 19, total_messages: 4 }
+      });
+      expect(result.status).toBe(FolderStatus.NewMessages);
+    });
+
+    it('is up_to_date when the live count is below the watermark count', () => {
+      const result = buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '12', last_uid: 19, total_messages: 8 }
+      });
+      expect(result.status).toBe(FolderStatus.UpToDate);
+    });
+
+    it('is up_to_date on a UID gap when the count is unchanged', () => {
+      // Gmail/Starred: uidnext 125 -> high_water 124, last_uid 121, count 29.
+      const result = buildFolderStatus({
+        cursor: {
+          uidvalidity: '4',
+          uidnext: 125,
+          high_water_uid: 124,
+          messages: 29
+        },
+        watermark: { uidvalidity: '4', last_uid: 121, total_messages: 29 }
+      });
+      expect(result.status).toBe(FolderStatus.UpToDate);
+      expect(result.hasNewMessages).toBe(false);
+    });
+
+    it('falls back to UID comparison when the watermark count is absent', () => {
+      const result = buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '12', last_uid: 10 }
+      });
+      expect(result.status).toBe(FolderStatus.NewMessages);
+    });
+
+    it('prefers uidvalidity_changed over the count', () => {
+      const result = buildFolderStatus({
+        cursor: CURSOR,
+        watermark: { uidvalidity: '99', last_uid: 19, total_messages: 5 }
+      });
+      expect(result.status).toBe(FolderStatus.UidvalidityChanged);
+    });
+  });
 });
 
 describe('extractFolderWatermarks', () => {
@@ -91,6 +141,27 @@ describe('extractFolderWatermarks', () => {
         mining: { last: { folders: { INBOX: { last_uid: 'nope' } } } }
       })
     ).toEqual({});
+  });
+
+  it('reads the optional total_messages count when present', () => {
+    expect(
+      extractFolderWatermarks({
+        mining: {
+          last: {
+            folders: {
+              INBOX: {
+                uidvalidity: '42',
+                last_uid: 100,
+                total_messages: 29,
+                updated_at: 'x'
+              }
+            }
+          }
+        }
+      })
+    ).toEqual({
+      INBOX: { uidvalidity: '42', last_uid: 100, total_messages: 29 }
+    });
   });
 });
 

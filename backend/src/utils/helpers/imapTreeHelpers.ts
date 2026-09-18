@@ -19,11 +19,18 @@ function normalizeCursor(status: ListResponse['status']): ImapFolderCursor {
     typeof uidNext === 'number' && Number.isInteger(uidNext) && uidNext > 0
       ? uidNext
       : null;
+  const messages =
+    typeof status?.messages === 'number' &&
+    Number.isInteger(status.messages) &&
+    status.messages >= 0
+      ? status.messages
+      : null;
 
   return {
     uidvalidity,
     uidnext,
-    high_water_uid: uidnext === null ? null : Math.max(0, uidnext - 1)
+    high_water_uid: uidnext === null ? null : Math.max(0, uidnext - 1),
+    messages
   };
 }
 
@@ -46,7 +53,7 @@ export function extractFolderWatermarks(
   const watermarks: Record<string, FolderWatermark> = {};
   for (const [folder, value] of Object.entries(folders)) {
     const candidate = value as
-      | { uidvalidity?: unknown; last_uid?: unknown }
+      | { uidvalidity?: unknown; last_uid?: unknown; total_messages?: unknown }
       | undefined;
     if (
       typeof candidate?.uidvalidity === 'string' &&
@@ -55,7 +62,11 @@ export function extractFolderWatermarks(
     ) {
       watermarks[folder] = {
         uidvalidity: candidate.uidvalidity,
-        last_uid: candidate.last_uid as number
+        last_uid: candidate.last_uid as number,
+        ...(Number.isInteger(candidate.total_messages) &&
+        (candidate.total_messages as number) >= 0
+          ? { total_messages: candidate.total_messages as number }
+          : {})
       };
     }
   }
@@ -117,7 +128,20 @@ export function buildFolderStatus({
     };
   }
 
-  const hasNewMessages = cursor.high_water_uid > watermark.last_uid;
+  // Prefer the observed message count: `uidnext - 1` is a prediction and can
+  // sit above the highest UID that actually exists (UID gaps never close), so
+  // it reports permanent false "new messages" on folders like Gmail/Starred.
+  const countAvailable =
+    cursor.messages !== null &&
+    Number.isInteger(cursor.messages) &&
+    cursor.messages >= 0 &&
+    typeof watermark.total_messages === 'number' &&
+    Number.isInteger(watermark.total_messages) &&
+    watermark.total_messages >= 0;
+
+  const hasNewMessages = countAvailable
+    ? cursor.messages! > watermark.total_messages!
+    : cursor.high_water_uid > watermark.last_uid;
   return {
     status: hasNewMessages ? FolderStatus.NewMessages : FolderStatus.UpToDate,
     hasNewMessages,
