@@ -53,7 +53,7 @@ export default class GoogleContactsExport
       };
     } catch (err) {
       if (err instanceof GaxiosError) {
-        logger.error(`Export error: ${err.message}`, err);
+        logger.error(`Export error: ${err.message}`);
         if (
           err.response?.status === 401 ||
           err.response?.data.error === 'invalid_grant'
@@ -61,7 +61,7 @@ export default class GoogleContactsExport
           throw new Error('Invalid credentials.');
         }
       } else {
-        logger.error(`Export error: ${(err as Error).message}`, err);
+        logger.error(`Export error: ${(err as Error).message}`);
       }
       throw err;
     }

@@ -223,9 +223,8 @@ app.post("/webhook", async (c: Context) => {
         const body = eventData.body as string | undefined;
 
         logger.info("Received incoming message", {
-          from,
-          bodyPreview: body?.substring(0, 50),
           sessionName,
+          bodyLength: body?.length ?? 0,
         });
 
         break;

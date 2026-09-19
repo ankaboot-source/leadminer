@@ -56,7 +56,9 @@ export default class PgMiningSources implements MiningSources {
       ]);
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed upserting credentials', error);
+        this.logger.error('Failed upserting credentials', {
+          error: (error as Error).message
+        });
       }
       throw error;
     }
@@ -83,7 +85,9 @@ export default class PgMiningSources implements MiningSources {
       }[];
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error('Failed retrieving credentials', error);
+        this.logger.error('Failed retrieving credentials', {
+          error: (error as Error).message
+        });
       }
       return [];
     }
@@ -109,7 +113,9 @@ export default class PgMiningSources implements MiningSources {
         return undefined;
       } catch (error) {
         if (error instanceof Error) {
-          this.logger.error('Failed retrieving credentials', error);
+          this.logger.error('Failed retrieving credentials', {
+          error: (error as Error).message
+        });
         }
         return undefined;
       }

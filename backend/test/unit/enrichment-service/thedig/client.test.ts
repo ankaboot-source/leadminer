@@ -129,8 +129,7 @@ describe('ThedigApi', () => {
         'Network Error'
       );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ThedigApi:enrich]'),
-        error
+        expect.stringContaining('[ThedigApi:enrich]')
       );
     });
   });
@@ -198,8 +197,7 @@ describe('ThedigApi', () => {
         theDigClient.enrichBulk(persons, webhookUrl)
       ).rejects.toThrow('Bulk request error');
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ThedigApi:enrichBulk]'),
-        error
+        expect.stringContaining('[ThedigApi:enrichBulk]')
       );
     });
   });

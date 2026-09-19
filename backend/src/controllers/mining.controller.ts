@@ -171,7 +171,7 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
     logger.error('Failed to re-publish unverified contacts', {
       userId,
       miningId,
-      error
+      error: (error as Error).message
     });
     throw error; // Re-throw to handle failure at the caller level
   }
@@ -286,7 +286,6 @@ export default function initializeMiningController(
           } catch (twinError) {
             logger.warn('Failed to create SMTP twin for IMAP source', {
               userId: user.id,
-              email: sanitizedEmail,
               error: twinError instanceof Error ? twinError.message : twinError
             });
           }
@@ -414,8 +413,7 @@ export default function initializeMiningController(
             err.message.includes('Request failed with status code 403')
           ) {
             logger.warn('Google Contacts API returned 403', {
-              userId: user.id,
-              email: sanitizedEmail
+              userId: user.id
             });
           }
 

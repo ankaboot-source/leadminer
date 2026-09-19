@@ -317,7 +317,10 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex items-center justify-between gap-2 w-full min-w-0">
+        <div
+          class="flex items-center justify-between gap-2 w-full min-w-0"
+          data-ph-mask
+        >
           <div class="flex items-center gap-2 min-w-0">
             <Image
               v-if="data.image && columnVisibility.image"

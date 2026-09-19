@@ -179,7 +179,10 @@ export async function enrichFromCache(
       }
     }
     await enrichmentsDB.enrich(cached);
-    logger.debug('Enriched from cache.', Array.from(enrichedEmails.values()));
+    logger.debug(
+      'Enriched from cache.',
+      Array.from(enrichedEmails).length
+    );
   }
 
   return contacts.filter(

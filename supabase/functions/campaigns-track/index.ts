@@ -78,7 +78,7 @@ app.get("/click/:token", async (c: Context) => {
   }
 
   // No match found
-  logger.warn("Click token not found", { token });
+  logger.warn("Click token not found");
   return c.redirect("/", 302);
 });
 
@@ -176,7 +176,6 @@ app.get("/unsubscribe/:token", async (c: Context) => {
     } else {
       logger.error("Failed to record SMS unsubscribe", {
         userId,
-        phone,
         error: upsertError.message,
       });
     }

@@ -17,7 +17,7 @@ export async function sendEmail(
   replyTo?: string,
 ) {
   if (!isSmtpConfigured()) {
-    console.warn("SMTP not configured, skipping email send", { to, subject });
+    console.warn("SMTP not configured, skipping email send", { subject });
     return;
   }
 
@@ -38,6 +38,6 @@ export async function sendEmail(
     replyTo,
   });
 
-  console.log("Email sent:", { to, messageId: info.messageId });
+  console.log("Email sent:", { messageId: info.messageId });
   // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info)); // For local testing only
 }

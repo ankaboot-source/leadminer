@@ -7,7 +7,7 @@ export default function errorLogger(
   _res: Response,
   next: NextFunction
 ) {
-  logger.error('[middleware.errorLogger]:', err);
+  logger.error(`[middleware.errorLogger]: ${err.message}`, { stack: err.stack });
 
   next(err);
 }

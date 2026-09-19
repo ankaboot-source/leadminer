@@ -250,7 +250,7 @@ class FetchMiningSourceHandler {
       }
 
       logger.info("Token expired or forced refresh, attempting refresh", {
-        email: source.email,
+        sourceId: source.id,
         userId,
         forced: !!forceRefreshSet?.has(source.email.toLowerCase()),
       });
@@ -260,7 +260,7 @@ class FetchMiningSourceHandler {
 
         if (!refreshed.access_token) {
           logger.warn("Token refresh returned incomplete data", {
-            email: source.email,
+            sourceId: source.id,
           });
           continue;
         }
@@ -284,7 +284,7 @@ class FetchMiningSourceHandler {
         source.credentials = updatedCredentials;
         refreshedEmails.push(source.email);
 
-        logger.info("Token refreshed successfully", { email: source.email });
+        logger.info("Token refreshed successfully", { sourceId: source.id });
 
         // A successful refresh means the connection is healthy again; clear any
         // stale needs_reauth / failed-run flag set by an earlier rejection.
@@ -304,7 +304,7 @@ class FetchMiningSourceHandler {
             });
           } catch (configError) {
             logger.error("Failed to clear needs_reauth flag", {
-              email: source.email,
+              sourceId: source.id,
               error:
                 configError instanceof Error
                   ? configError.message
@@ -315,7 +315,7 @@ class FetchMiningSourceHandler {
       } catch (error) {
         const permanent = isPermanentOAuthError(error);
         logger.error("Failed to refresh token", {
-          email: source.email,
+          sourceId: source.id,
           userId,
           permanent,
           error: error instanceof Error ? error.message : String(error),
@@ -362,7 +362,7 @@ class FetchMiningSourceHandler {
   ): Promise<void> {
     if (!source.id) {
       logger.error("Cannot flag source for re-auth: missing source id", {
-        email: source.email,
+        sourceId: source.id,
       });
       return;
     }
@@ -373,12 +373,12 @@ class FetchMiningSourceHandler {
         health: { state: SourceHealthState.NeedsReauth },
       });
       logger.info("Flagged permanently rejected source for re-auth", {
-        email: source.email,
+        sourceId: source.id,
         userId,
       });
     } catch (configError) {
       logger.error("Failed to flag source for re-auth", {
-        email: source.email,
+        sourceId: source.id,
         error:
           configError instanceof Error
             ? configError.message
@@ -394,7 +394,7 @@ class FetchMiningSourceHandler {
   ): Promise<void> {
     if (!sourceId) {
       logger.error("Cannot record transient refresh error: missing source id", {
-        email,
+        sourceId,
       });
       return;
     }
@@ -408,7 +408,7 @@ class FetchMiningSourceHandler {
       });
     } catch (configError) {
       logger.error("Failed to record transient refresh error", {
-        email,
+        sourceId,
         error:
           configError instanceof Error
             ? configError.message

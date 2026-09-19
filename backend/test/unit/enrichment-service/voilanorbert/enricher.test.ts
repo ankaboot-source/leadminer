@@ -63,8 +63,7 @@ describe('Voilanorbert', () => {
         token: mockResponse.token
       });
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Got Voilanorbert.enrichAsync request',
-        persons
+        'Got Voilanorbert.enrichAsync request for 2 persons'
       );
     });
 
@@ -83,8 +82,7 @@ describe('Voilanorbert', () => {
       );
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Got Voilanorbert.enrichAsync request',
-        persons
+        'Got Voilanorbert.enrichAsync request for 1 persons'
       );
     });
   });
@@ -180,8 +178,7 @@ describe('Voilanorbert', () => {
 
       expect(result).toEqual(expectedMappedData);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        '[Voilanorbert]-[parseResult]: Parsing enrichment results',
-        [mockWebhookResult]
+        '[Voilanorbert]-[parseResult]: Parsing enrichment results for 1 items'
       );
     });
   });

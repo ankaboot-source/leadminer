@@ -131,7 +131,7 @@ onMounted(async () => {
         :key="sender.id"
         class="flex items-center justify-between p-4 border border-surface-200 rounded-md"
       >
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3" data-ph-mask>
           <i class="pi pi-envelope text-lg text-surface-400" />
           <div class="flex flex-col">
             <span class="font-medium">{{ sender.name }}</span>

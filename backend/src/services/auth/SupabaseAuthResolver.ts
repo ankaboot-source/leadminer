@@ -25,7 +25,9 @@ export default class SupabaseAuthResolver implements AuthResolver {
 
       return data.user;
     } catch (e) {
-      this.logger.error('Failed to get authenticated user', e);
+      this.logger.error('Failed to get authenticated user', {
+        error: (e as Error).message
+      });
       return undefined;
     }
   }

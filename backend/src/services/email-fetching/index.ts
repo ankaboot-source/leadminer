@@ -76,7 +76,11 @@ class EmailFetcherClient implements FetcherClient {
       const { data } = await this.client.post('api/imap/fetch/start', payload);
       return data;
     } catch (error) {
-      this.logger.error('Start fetching request failed', { error, opts });
+      this.logger.error('Start fetching request failed', {
+        error,
+        miningId: opts.miningId,
+        userId: opts.userId
+      });
       throw error;
     }
   }
@@ -97,7 +101,7 @@ class EmailFetcherClient implements FetcherClient {
     } catch (error) {
       this.logger.error('Stop fetching request failed', {
         error,
-        opts
+        miningId: opts.miningId
       });
       throw error;
     }
@@ -127,7 +131,8 @@ class EmailFetcherClient implements FetcherClient {
     } catch (error) {
       this.logger.error('Start Google contacts sync request failed', {
         error,
-        opts
+        miningId: opts.miningId,
+        userId: opts.userId
       });
       const axiosError = error as { response?: { status?: number } };
       if (axiosError.response?.status === 401) {
@@ -156,7 +161,7 @@ class EmailFetcherClient implements FetcherClient {
     } catch (error) {
       this.logger.error('Stop Google contacts sync request failed', {
         error,
-        opts
+        miningId: opts.miningId
       });
       throw error;
     }

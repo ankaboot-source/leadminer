@@ -112,7 +112,9 @@ async function getAvailableConnections(
       );
       clients.push(conn);
     } catch (err) {
-      logger.error(`Error getting test connection #${i + 1}`, err);
+      logger.error(`Error getting test connection #${i + 1}`, {
+        error: (err as Error).message
+      });
       break;
     }
   }
@@ -124,7 +126,9 @@ async function getAvailableConnections(
       try {
         await c.logout();
       } catch (err) {
-        logger.error(`Error closing test connection with id: ${c?.id}`, err);
+        logger.error(`Error closing test connection with id: ${c?.id}`, {
+          error: (err as Error).message
+        });
         c.close();
       }
     })
@@ -258,7 +262,7 @@ apiRoutes.post(
         error: null
       });
     } catch (err) {
-      logger.error('Failed to start fetching', err);
+      logger.error('Failed to start fetching', (err as Error).message);
 
       if (
         typeof err === 'object' &&
@@ -371,7 +375,7 @@ apiRoutes.post(
         error: null
       });
     } catch (err) {
-      logger.error('Failed to start fetching', err);
+      logger.error('Failed to start fetching', (err as Error).message);
       if (
         err instanceof Error &&
         err.stack?.includes('Failed to parse PST file')
@@ -484,7 +488,7 @@ apiRoutes.post(
         !googleSource?.credentials ||
         !('accessToken' in googleSource.credentials)
       ) {
-        logger.warn('Google source missing accessToken', { userId, email });
+        logger.warn('Google source missing accessToken', { userId });
         return res.status(403).json({
           message:
             'Google Contacts: OAuth permissions not granted. Please re-authenticate with Contacts permission.'
@@ -512,7 +516,9 @@ apiRoutes.post(
         error: null
       });
     } catch (err) {
-      logger.error('Failed to start Google contacts fetching', err);
+      logger.error('Failed to start Google contacts fetching', {
+        error: (err as Error).message
+      });
 
       if (
         err instanceof Error &&

@@ -7,6 +7,8 @@ export function logError(error: unknown, context: string, logger: Logger) {
     const { stack, code, name, message } = error;
     logger.error(`${context}: ${message}`, { code, name, stack });
   } else {
-    logger.error(`${context}: Something went wrong`, error);
+    logger.error(
+      `${context}: ${(error as Error)?.message || 'Something went wrong'}`
+    );
   }
 }
