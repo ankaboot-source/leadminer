@@ -65,7 +65,7 @@ async function verifyWebhookSignature(
 }
 
 // ==========================================
-// Event Handlers
+// Event handlers
 // ==========================================
 
 interface WebhookEvent {
@@ -74,42 +74,42 @@ interface WebhookEvent {
   data?: Record<string, unknown>;
 }
 
-function mapAckStatus(ackStatus: number | undefined): {
-  status: string | null;
-  updates: Record<string, unknown>;
-} {
-  const updates: Record<string, unknown> = {};
-
-  if (ackStatus === 2) {
-    updates.ack_status = "delivered";
-    updates.delivered_at = new Date().toISOString();
-  } else if (ackStatus === 3) {
-    updates.ack_status = "read";
-    updates.read_at = new Date().toISOString();
-    updates.delivered_at = new Date().toISOString();
-  } else if (ackStatus === 1) {
-    updates.ack_status = "sent";
-  }
-
-  return { status: (updates.ack_status as string) ?? null, updates };
-}
-
+/**
+ * Delivery/read receipt. Maps ack status: 1=sent, 2=delivered, 3=read.
+ */
 async function handleMessageAck(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   sessionName: string,
   eventData: Record<string, unknown>,
-): Promise<void> {
-  // Delivery/read receipt
+): Promise<{ error?: string } | void> {
   const messageId = eventData.id as string | undefined;
   const ackStatus = eventData.ack as number | undefined;
 
   if (!messageId) {
-    logger.warn("message.ack event missing message ID", { sessionName });
-    return;
+    return { error: "Missing message ID" };
   }
 
-  const { status, updates } = mapAckStatus(ackStatus);
+  let status: string | null = null;
+  let deliveredAt: string | null = null;
+  let readAt: string | null = null;
+
+  if (ackStatus === 2) {
+    status = "delivered";
+    deliveredAt = new Date().toISOString();
+  } else if (ackStatus === 3) {
+    status = "read";
+    readAt = new Date().toISOString();
+    // Also set delivered if not already set
+    deliveredAt = deliveredAt || new Date().toISOString();
+  } else if (ackStatus === 1) {
+    status = "sent";
+  }
+
   if (!status) return;
+
+  const updates: Record<string, unknown> = { ack_status: status };
+  if (deliveredAt) updates.delivered_at = deliveredAt;
+  if (readAt) updates.read_at = readAt;
 
   const { error } = await supabaseAdmin
     .schema("private")
@@ -132,12 +132,14 @@ async function handleMessageAck(
   }
 }
 
+/**
+ * QR code ready for a session.
+ */
 async function handleQr(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   sessionName: string,
   eventData: Record<string, unknown>,
 ): Promise<void> {
-  // QR code ready
   const qrCode = eventData.qr as string | undefined;
 
   if (!sessionName || !qrCode) return;
@@ -162,11 +164,13 @@ async function handleQr(
   }
 }
 
+/**
+ * Session disconnected.
+ */
 async function handleDisconnected(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   sessionName: string,
 ): Promise<void> {
-  // Session disconnected
   if (!sessionName) return;
 
   const { error } = await supabaseAdmin
@@ -188,11 +192,13 @@ async function handleDisconnected(
   }
 }
 
+/**
+ * Incoming message (not typically needed for campaigns).
+ */
 function handleIncomingMessage(
   sessionName: string,
   eventData: Record<string, unknown>,
 ): void {
-  // Incoming message (not typically needed for campaigns)
   const body = eventData.body as string | undefined;
 
   logger.info("Received incoming message", {
@@ -204,39 +210,6 @@ function handleIncomingMessage(
 // ==========================================
 // Webhook Handler
 // ==========================================
-
-async function dispatchWebhookEvent(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
-  event: WebhookEvent,
-): Promise<void> {
-  const eventType = event.event || "";
-  const sessionName = event.session || "";
-  const eventData = event.data || {};
-
-  switch (eventType) {
-    case "message.ack":
-      await handleMessageAck(supabaseAdmin, sessionName, eventData);
-      break;
-
-    case "qr":
-      await handleQr(supabaseAdmin, sessionName, eventData);
-      break;
-
-    case "disconnected":
-      await handleDisconnected(supabaseAdmin, sessionName);
-      break;
-
-    case "message":
-      handleIncomingMessage(sessionName, eventData);
-      break;
-
-    default:
-      logger.debug("Unhandled webhook event type", {
-        eventType,
-        sessionName,
-      });
-  }
-}
 
 app.post("/webhook", async (c: Context) => {
   const payload = await c.req.text();
@@ -262,21 +235,56 @@ app.post("/webhook", async (c: Context) => {
     return c.json({ error: "Invalid JSON payload" }, 400);
   }
 
+  const eventType = event.event || "";
+  const sessionName = event.session || "";
+  const eventData = event.data || {};
+
   logger.info("Received WhatsApp webhook", {
-    eventType: event.event || "",
-    sessionName: event.session || "",
+    eventType,
+    sessionName,
   });
 
   const supabaseAdmin = createSupabaseAdmin();
 
   try {
-    await dispatchWebhookEvent(supabaseAdmin, event);
+    switch (eventType) {
+      case "message.ack": {
+        const result = await handleMessageAck(
+          supabaseAdmin,
+          sessionName,
+          eventData,
+        );
+        if (result?.error) {
+          return c.json({ error: result.error }, 400);
+        }
+        break;
+      }
+
+      case "qr":
+        await handleQr(supabaseAdmin, sessionName, eventData);
+        break;
+
+      case "disconnected":
+        await handleDisconnected(supabaseAdmin, sessionName);
+        break;
+
+      case "message":
+        handleIncomingMessage(sessionName, eventData);
+        break;
+
+      default:
+        logger.debug("Unhandled webhook event type", {
+          eventType,
+          sessionName,
+        });
+    }
+
     return c.json({ success: true });
   } catch (err) {
     logger.error("Webhook processing error", {
       error: extractErrorMessage(err),
-      eventType: event.event || "",
-      sessionName: event.session || "",
+      eventType,
+      sessionName,
     });
     return c.json({ error: "Processing failed" }, 500);
   }
