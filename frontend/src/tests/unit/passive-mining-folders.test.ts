@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPassiveFolderList,
   diffUnregisteredFolders,
+  resolvePassiveMiningPrompt,
 } from '@/utils/passive-mining-folders';
 
 describe('diffUnregisteredFolders', () => {
@@ -71,5 +72,92 @@ describe('buildPassiveFolderList', () => {
         unavailable: true,
       },
     ]);
+  });
+
+  it('can build rows from mined folders only', () => {
+    expect(
+      buildPassiveFolderList({
+        mined: ['INBOX', 'Sent'],
+        registered: ['INBOX', 'Archive'],
+        available: ['INBOX', 'Sent', 'Archive'],
+        labelFor,
+        keysFrom: 'mined',
+      }),
+    ).toEqual([
+      {
+        key: 'INBOX',
+        label: 'Inbox',
+        checked: true,
+        isNew: false,
+        unavailable: false,
+      },
+      {
+        key: 'Sent',
+        label: 'Sent',
+        checked: true,
+        isNew: true,
+        unavailable: false,
+      },
+    ]);
+  });
+
+  it('honours an explicit pre-checked set', () => {
+    expect(
+      buildPassiveFolderList({
+        mined: ['INBOX', 'Sent'],
+        registered: [],
+        available: ['INBOX', 'Sent'],
+        labelFor,
+        keysFrom: 'mined',
+        checked: ['Sent'],
+      }),
+    ).toEqual([
+      {
+        key: 'INBOX',
+        label: 'Inbox',
+        checked: false,
+        isNew: true,
+        unavailable: false,
+      },
+      {
+        key: 'Sent',
+        label: 'Sent',
+        checked: true,
+        isNew: true,
+        unavailable: false,
+      },
+    ]);
+  });
+});
+
+describe('resolvePassiveMiningPrompt', () => {
+  it('prompts first-time when passive is off', () => {
+    expect(
+      resolvePassiveMiningPrompt({
+        passiveEnabled: false,
+        minedFolders: ['INBOX'],
+        registeredFolders: [],
+      }),
+    ).toBe('first-time');
+  });
+
+  it('prompts update when a mined folder is not registered', () => {
+    expect(
+      resolvePassiveMiningPrompt({
+        passiveEnabled: true,
+        minedFolders: ['INBOX', 'New'],
+        registeredFolders: ['INBOX'],
+      }),
+    ).toBe('update');
+  });
+
+  it('stays quiet when every mined folder is registered', () => {
+    expect(
+      resolvePassiveMiningPrompt({
+        passiveEnabled: true,
+        minedFolders: ['INBOX'],
+        registeredFolders: ['INBOX'],
+      }),
+    ).toBeNull();
   });
 });

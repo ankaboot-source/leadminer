@@ -1,4 +1,5 @@
 import type { MiningSource, MiningSourceConfig } from '~/types/mining';
+import type { BoxNode } from '~/utils/boxes';
 
 interface MiningSourceOverview {
   source_email: string;
@@ -162,4 +163,21 @@ export async function updatePassiveMining(
   );
 
   return response.config;
+}
+
+/**
+ * Fetches the IMAP folder tree for a specific source. Used when a source has
+ * no recently-mined folders yet, so the passive-mining dialog can still offer
+ * a folder list. Resolves credentials by email server-side, so it works for
+ * non-active sources, and never touches the active tree in the store.
+ */
+export async function fetchSourceFolders(
+  source: Pick<MiningSource, 'email' | 'type'>,
+): Promise<BoxNode[]> {
+  const { $api } = useNuxtApp();
+  const { data } = await $api<{ data: { folders: BoxNode[] } }>('/imap/boxes', {
+    method: 'POST',
+    body: { email: source.email, type: source.type },
+  });
+  return data?.folders ?? [];
 }

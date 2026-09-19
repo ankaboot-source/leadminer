@@ -81,7 +81,6 @@
     :mode="alreadyMinedDialogMode"
     :folders="alreadyMinedDialogFolders"
     @remine="runEmailMining(MiningRunMode.Full)"
-    @skip="alreadyMinedDialogVisible = false"
     @mine-new-only="mineNewFoldersOnly"
   />
 </template>
