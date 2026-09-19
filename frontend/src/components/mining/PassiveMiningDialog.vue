@@ -20,6 +20,7 @@ import {
   getSelectedFolderKeys,
 } from '~/utils/selected-folders';
 import type { MiningSourceConfigFlags } from '~/utils/miningSourceConfig';
+// skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
 import PassiveMiningFolderDialog from './PassiveMiningFolderDialog.vue';
 
 const $leadminerStore = useLeadminerStore();
@@ -27,12 +28,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { isSaving, enablePassiveMining } = useEnablePassiveMining();
 
 const folderRows = computed(() => {
-  const registered = Array.isArray(
-    $leadminerStore.activeMiningSource?.config?.folders,
-  )
-    ? ($leadminerStore.activeMiningSource?.config?.folders as string[]).filter(
-        (folder): folder is string => typeof folder === 'string',
-      )
+  const folders = $leadminerStore.activeMiningSource?.config?.folders;
+  const registered = Array.isArray(folders)
+    ? folders.filter((folder): folder is string => typeof folder === 'string')
     : [];
   const mined = getSelectedFolderKeys(
     $leadminerStore.selectedBoxes,

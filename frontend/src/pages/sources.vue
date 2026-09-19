@@ -557,14 +557,13 @@ function passiveFolderLabel(key: string): string {
  * Turning it on must first be confirmed against a folder list; turning it off
  * only PATCHes the source preference. Neither path starts a mining run.
  */
-function togglePassiveMining(source: MiningSource, value: boolean) {
+async function togglePassiveMining(source: MiningSource, value: boolean) {
   if (value) {
-    void promptEnablePassiveMining(source);
+    await promptEnablePassiveMining(source);
   } else {
-    void disablePassiveMining(source);
+    await disablePassiveMining(source);
   }
 }
-
 async function disablePassiveMining(source: MiningSource) {
   try {
     source.config = await updatePassiveMining(
