@@ -87,4 +87,16 @@ describe('mobile ui regressions', () => {
     expect(resumeDialog).toContain('whitespace-nowrap');
     expect(resumeDialog).toContain("t('resume')");
   });
+
+  it('stacks already-mined actions without wrapping on mobile', () => {
+    const alreadyMinedDialog = readSource(
+      'src/components/mining/stepper-panels/mine/AlreadyMinedDialog.vue',
+    );
+
+    expect(alreadyMinedDialog).toContain("maxWidth: '95vw'");
+    expect(alreadyMinedDialog).toContain('flex-col-reverse sm:flex-row');
+    expect(alreadyMinedDialog).toContain('w-full whitespace-nowrap sm:w-auto');
+    expect(alreadyMinedDialog).not.toContain("t('skip')");
+    expect(alreadyMinedDialog).not.toContain('@click="emit(\'skip\')"');
+  });
 });
