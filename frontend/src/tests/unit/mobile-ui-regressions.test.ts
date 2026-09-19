@@ -99,4 +99,13 @@ describe('mobile ui regressions', () => {
     expect(alreadyMinedDialog).not.toContain("t('skip')");
     expect(alreadyMinedDialog).not.toContain('@click="emit(\'skip\')"');
   });
+
+  it('stacks passive-mining dialog actions on mobile', () => {
+    const passiveDialog = readSource(
+      'src/components/mining/PassiveMiningFolderDialog.vue',
+    );
+
+    expect(passiveDialog).toContain('flex-col sm:flex-row');
+    expect(passiveDialog).toContain('w-full sm:w-auto');
+  });
 });
