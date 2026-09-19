@@ -219,7 +219,6 @@ app.post("/webhook", async (c: Context) => {
 
       case "message": {
         // Incoming message (not typically needed for campaigns)
-        const from = eventData.from as string | undefined;
         const body = eventData.body as string | undefined;
 
         logger.info("Received incoming message", {
