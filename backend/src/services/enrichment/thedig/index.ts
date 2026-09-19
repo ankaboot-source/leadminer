@@ -37,7 +37,7 @@ export default class Thedig implements Engine {
       }
       return enrichResponse;
     } catch (err) {
-      throw new Error((err as Error).message);
+      throw new Error((err as Error)?.message);
     }
   }
 
@@ -62,7 +62,7 @@ export default class Thedig implements Engine {
         raw_data: []
       };
     } catch (err) {
-      throw new Error((err as Error).message);
+      throw new Error((err as Error)?.message);
     }
   }
 

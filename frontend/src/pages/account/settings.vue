@@ -308,7 +308,7 @@ async function updateUserDetailsButton() {
     $toast.add({
       severity: 'error',
       summary: 'Oops!',
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 3000,
     });
   } finally {

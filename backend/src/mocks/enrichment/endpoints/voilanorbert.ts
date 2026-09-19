@@ -68,7 +68,7 @@ router.post(
       // eslint-disable-next-line no-console
       console.error(
         'Error when enriching using voilanorbert',
-        (err as Error).message
+        (err as Error)?.message
       );
       return err;
     }

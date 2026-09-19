@@ -498,7 +498,7 @@ async function confirmDelete() {
     $toast.add({
       severity: 'error',
       summary: t('remove_source_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   } finally {
@@ -528,7 +528,7 @@ async function togglePassiveMining(source: MiningSource, value: boolean) {
     $toast.add({
       severity: 'error',
       summary: t('passive_mining_update_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
     return;
@@ -647,7 +647,7 @@ async function toggleSourceConfig(
     $toast.add({
       severity: 'error',
       summary: t('config_update_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }
@@ -681,7 +681,7 @@ async function reconnectExpiredSource(source: MiningSource) {
     $toast.add({
       severity: 'error',
       summary: t('reconnect_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }

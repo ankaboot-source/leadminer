@@ -61,7 +61,7 @@ export default class GoogleContactsExport
           throw new Error('Invalid credentials.');
         }
       } else {
-        logger.error(`Export error: ${(err as Error).message}`);
+        logger.error(`Export error: ${(err as Error)?.message}`);
       }
       throw err;
     }

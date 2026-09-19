@@ -239,7 +239,7 @@ LIMIT 1;
       return null;
     } catch (error) {
       this.logger.error(`[${this.constructor.name}:getPersonStatus]`, {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return null; // Return null in case of an error
     }
@@ -292,7 +292,7 @@ LIMIT 1;
       this.logger.error(`[${this.constructor.name}:upsertEmailStatus]`, {
         userId,
         status,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return false;
     }
@@ -312,7 +312,7 @@ LIMIT 1;
       return true;
     } catch (error) {
       this.logger.error('updateManyPersonsStatus', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return false;
     }
@@ -330,7 +330,7 @@ LIMIT 1;
       return rows[0]?.id ?? null;
     } catch (error) {
       this.logger.error('getPersonIdByEmail', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return null;
     }
@@ -524,7 +524,7 @@ LIMIT 1;
             userId,
             miningId,
             source: person.source,
-            error: (error as Error).message
+            error: (error as Error)?.message
           }
         );
       }
@@ -652,7 +652,7 @@ LIMIT 1;
     } catch (error) {
       this.logger.error(
         'Failed processing email extraction batch execution',
-        (error as Error).message
+        (error as Error)?.message
       );
       throw error;
     }
@@ -664,7 +664,7 @@ LIMIT 1;
       return true;
     } catch (error) {
       this.logger.error('[PgContacts.refine]', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return false;
     }
@@ -681,7 +681,7 @@ LIMIT 1;
       return rows;
     } catch (error) {
       this.logger.error('getContacts', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return [];
     }
@@ -701,7 +701,7 @@ LIMIT 1;
       return rows;
     } catch (error) {
       this.logger.error('getUnverifiedContacts', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return [];
     }
@@ -721,7 +721,7 @@ LIMIT 1;
       return rows;
     } catch (error) {
       this.logger.error('getExportedContacts', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return [];
     }
@@ -744,7 +744,7 @@ LIMIT 1;
       return rows;
     } catch (error) {
       this.logger.error('getNonExportedContacts', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       return [];
     }
@@ -760,7 +760,7 @@ LIMIT 1;
       await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
     } catch (error) {
       this.logger.error('registerExportedContacts', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -824,7 +824,7 @@ LIMIT 1;
         this.logger.error('Failed to upsert Google contact', {
           userId,
           source,
-          error: (error as Error).message
+          error: (error as Error)?.message
         });
       }
     }

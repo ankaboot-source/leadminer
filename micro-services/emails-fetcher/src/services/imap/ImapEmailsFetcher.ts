@@ -283,7 +283,7 @@ export default class ImapEmailsFetcher {
           return status?.messages ?? 0;
         } catch (err) {
           logger.warn(`Could not STATUS ${folder}`, {
-            error: (err as Error).message
+            error: (err as Error)?.message
           });
           return 0;
         }
@@ -301,7 +301,7 @@ export default class ImapEmailsFetcher {
       logger.error('Failed fetching total messages', {
         miningId: this.miningId,
         folders: this.folders,
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
       throw err;
     } finally {
@@ -674,7 +674,7 @@ export default class ImapEmailsFetcher {
           });
         } catch (err) {
           logger.warn(
-            `Failed to process folder ${folder}: ${(err as Error).message}`
+            `Failed to process folder ${folder}: ${(err as Error)?.message}`
           );
         } finally {
           if (connection) {
@@ -756,7 +756,7 @@ export default class ImapEmailsFetcher {
       }
     } catch (error) {
       logger.error(
-        `[${this.miningId}:${folder}:${connection?.id}]: ${(error as Error).message}`
+        `[${this.miningId}:${folder}:${connection?.id}]: ${(error as Error)?.message}`
       );
 
       if (connection)
@@ -906,7 +906,7 @@ export default class ImapEmailsFetcher {
       return this.isCompleted;
     } catch (error) {
       logger.error(`[${this.miningId}] Error during stop process:`, {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       await this.cleanup();
       await this.notifyCompleted();

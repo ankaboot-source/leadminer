@@ -24,7 +24,7 @@ export default class Engagements {
         .upsert(enriched);
       if (error) throw error;
     } catch (err) {
-      const message = (err as Error).message || 'Unexpected error.';
+      const message = (err as Error)?.message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
       throw err;
     }

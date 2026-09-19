@@ -171,7 +171,7 @@ async function publishPreviouslyUnverifiedEmailsToCleaning(
     logger.error('Failed to re-publish unverified contacts', {
       userId,
       miningId,
-      error: (error as Error).message
+      error: (error as Error)?.message
     });
     throw error; // Re-throw to handle failure at the caller level
   }

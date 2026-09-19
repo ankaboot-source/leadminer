@@ -222,7 +222,7 @@ class ImapConnectionProvider {
     // Optional logging
     connection.on('error', (err) => {
       logger.error('ImapFlow connection error:', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
     });
 
@@ -334,7 +334,7 @@ class ImapConnectionProvider {
 
     connection.on('error', (err) => {
       logger.error('ImapFlow connection error:', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
     });
 
@@ -343,7 +343,7 @@ class ImapConnectionProvider {
       return connection;
     } catch (err) {
       logger.error('ImapFlow connection error', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
       throw err;
     }
@@ -393,7 +393,7 @@ class ImapConnectionProvider {
       await this.connectionsPool.release(imapConnection);
     } catch (err) {
       logger.error('[ImapConnectionProvider]: Error releasing connection', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
     }
   }
@@ -417,7 +417,7 @@ class ImapConnectionProvider {
           return await this.connect();
         } catch (err) {
           logger.error('Failed to create pool resources', {
-            error: (err as Error).message
+            error: (err as Error)?.message
           });
           throw err;
         }
@@ -430,7 +430,7 @@ class ImapConnectionProvider {
           logger.error(
             '[ImapConnectionProvider]: Error destroying connection',
             {
-              error: (err as Error).message
+              error: (err as Error)?.message
             }
           );
         }
@@ -447,7 +447,7 @@ class ImapConnectionProvider {
     // Set up an event listener for factory create errors
     this.connectionsPool.on('factoryCreateError', (err) => {
       logger.error('Error creating IMAP connection pool resource', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
     });
   }

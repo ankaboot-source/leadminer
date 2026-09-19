@@ -137,9 +137,10 @@ export default class EnrichLayerAPI {
       const response = await fn(attempt);
       return response;
     } catch (error) {
-      if ((error as AxiosError).response?.status !== 429) {
+      if ((error as AxiosError | undefined)?.response?.status !== 429) {
         throw new Error(
-          (error as AxiosError).message || 'Request failed with unknown error.'
+          (error as Error | undefined)?.message ||
+            'Request failed with unknown error.'
         );
       }
       if (attempt >= this.maxRetries) {

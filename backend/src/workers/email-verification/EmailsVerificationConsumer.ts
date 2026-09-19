@@ -100,7 +100,7 @@ export default class EmailVerificationConsumer {
             return processed;
           } catch (err) {
             this.logger.error('Extraction error', err);
-            return Promise.reject(new Error((err as Error).message));
+            return Promise.reject(new Error((err as Error)?.message));
           }
         })
       );
@@ -127,7 +127,7 @@ export default class EmailVerificationConsumer {
       } catch (error) {
         this.logger.error(
           'An error occurred while consuming streams:',
-          error as Error
+          error instanceof Error ? error : new Error(String(error))
         );
       }
     }

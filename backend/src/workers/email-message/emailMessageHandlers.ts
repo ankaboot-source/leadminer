@@ -141,7 +141,7 @@ async function emailMessageHandler(
     }
   } catch (error) {
     logger.error('Failed when processing message from the stream', {
-      error: (error as Error).message,
+      error: (error as Error)?.message,
       userIdentifier
     });
   }

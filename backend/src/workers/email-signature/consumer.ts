@@ -111,7 +111,7 @@ export default class EmailSignatureConsumer {
     } catch (error) {
       this.logger.error(
         'An error occurred while consuming streams:',
-        error as Error
+        error instanceof Error ? error : new Error(String(error))
       );
     }
 

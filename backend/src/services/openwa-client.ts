@@ -75,9 +75,7 @@ export class OpenWAClient {
     sessionName: string,
     message: OpenWAMessage
   ): Promise<{ id: string; status: string }> {
-    logger.info(
-      `Sending WhatsApp message via session ${sessionName}`
-    );
+    logger.info(`Sending WhatsApp message via session ${sessionName}`);
     const response = await this.client().post(`/api/sendText`, {
       session: sessionName,
       to: message.to,
@@ -91,9 +89,7 @@ export class OpenWAClient {
     sessionName: string,
     message: OpenWAMessage
   ): Promise<{ id: string; status: string }> {
-    logger.info(
-      `Sending WhatsApp media via session ${sessionName}`
-    );
+    logger.info(`Sending WhatsApp media via session ${sessionName}`);
 
     if (!message.url) {
       throw new Error('URL is required for media messages');

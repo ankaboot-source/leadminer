@@ -205,7 +205,7 @@ export default class GoogleContactsSession {
       return { labelId };
     } catch (err) {
       logger.error(
-        `GoogleContactsSession.run(): Error during sync: ${(err as Error).message}`
+        `GoogleContactsSession.run(): Error during sync: ${(err as Error)?.message}`
       );
       throw err;
     }

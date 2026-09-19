@@ -241,7 +241,7 @@ class SSE {
           }
           console.warn(
             `[SSE] Temporary error: ${
-              (err as Error).message
+              (err as Error)?.message
             }. Connection will retry automatically.`,
           );
 

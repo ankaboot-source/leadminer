@@ -101,7 +101,7 @@ export default class PgSmtpSenders implements SmtpSenders {
     } catch (error) {
       this.logger.error('Failed fetching SMTP senders', {
         userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -118,7 +118,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed fetching SMTP sender', {
         id,
         userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -145,7 +145,7 @@ export default class PgSmtpSenders implements SmtpSenders {
     } catch (error) {
       this.logger.error('Failed creating SMTP sender', {
         userId: sender.userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -175,7 +175,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed updating SMTP sender', {
         id,
         userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -192,7 +192,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed deleting SMTP sender', {
         id,
         userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -212,7 +212,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed deleting SMTP sender by mining source', {
         userId,
         miningSourceId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -230,7 +230,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed fetching SMTP password', {
         id,
         userId,
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }

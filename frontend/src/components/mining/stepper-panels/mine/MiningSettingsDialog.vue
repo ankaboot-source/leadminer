@@ -178,7 +178,7 @@ async function close() {
     $toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: (err as Error).message,
+      detail: (err as Error)?.message,
       life: 4500,
     });
     return;

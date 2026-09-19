@@ -113,7 +113,7 @@ async function getAvailableConnections(
       clients.push(conn);
     } catch (err) {
       logger.error(`Error getting test connection #${i + 1}`, {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
       break;
     }
@@ -127,7 +127,7 @@ async function getAvailableConnections(
         await c.logout();
       } catch (err) {
         logger.error(`Error closing test connection with id: ${c?.id}`, {
-          error: (err as Error).message
+          error: (err as Error)?.message
         });
         c.close();
       }
@@ -262,7 +262,7 @@ apiRoutes.post(
         error: null
       });
     } catch (err) {
-      logger.error('Failed to start fetching', (err as Error).message);
+      logger.error('Failed to start fetching', (err as Error)?.message);
 
       if (
         typeof err === 'object' &&
@@ -375,7 +375,7 @@ apiRoutes.post(
         error: null
       });
     } catch (err) {
-      logger.error('Failed to start fetching', (err as Error).message);
+      logger.error('Failed to start fetching', (err as Error)?.message);
       if (
         err instanceof Error &&
         err.stack?.includes('Failed to parse PST file')
@@ -517,7 +517,7 @@ apiRoutes.post(
       });
     } catch (err) {
       logger.error('Failed to start Google contacts fetching', {
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
 
       if (

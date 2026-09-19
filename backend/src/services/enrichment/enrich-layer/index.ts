@@ -47,9 +47,7 @@ export default class EnrichLayer implements Engine {
 
   async enrichSync(person: Partial<Person>) {
     try {
-      this.logger.debug(
-        `${this.constructor.name}.enrichSync request`
-      );
+      this.logger.debug(`${this.constructor.name}.enrichSync request`);
       const response = await this.client.reverseEmailLookup({
         lookup_depth: 'superficial',
         enrich_profile: 'enrich',
@@ -57,7 +55,7 @@ export default class EnrichLayer implements Engine {
       });
       return this.parseResult([response]);
     } catch (err) {
-      throw new Error((err as Error).message);
+      throw new Error((err as Error)?.message);
     }
   }
 

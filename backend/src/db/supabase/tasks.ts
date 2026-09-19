@@ -51,7 +51,7 @@ export default class SupabaseTasks implements Tasks {
       if (error) throw new Error(error.message);
       return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
-      const message = (err as Error).message || 'Unexpected error.';
+      const message = (err as Error)?.message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
       throw err;
     }
@@ -75,7 +75,7 @@ export default class SupabaseTasks implements Tasks {
       if (error) throw new Error(error.message);
       return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
-      const message = (err as Error).message || 'Unexpected error.';
+      const message = (err as Error)?.message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
       throw err;
     }
@@ -94,7 +94,7 @@ export default class SupabaseTasks implements Tasks {
       if (error) throw new Error(error.message);
       return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
-      const message = (err as Error).message || 'Unexpected error.';
+      const message = (err as Error)?.message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
       throw err;
     }

@@ -63,7 +63,7 @@ class RedisManager {
       );
     } catch (error) {
       logger.error('Failed flushing Redis selectively.', {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
     }
   }

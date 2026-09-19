@@ -267,7 +267,7 @@ export default class GoogleContactsFetcher {
       );
     } catch (error) {
       logger.error(`[${this.miningId}] Error during stop process:`, {
-        error: (error as Error).message
+        error: (error as Error)?.message
       });
       throw error;
     }

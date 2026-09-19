@@ -95,7 +95,9 @@ export default function initializeApp(
   app.use(errorHandler);
 
   process.on('uncaughtException', (error) => {
-    logger.error(`[UNCAUGHT EXCEPTION]: ${error.message}`, { stack: error.stack });
+    logger.error(`[UNCAUGHT EXCEPTION]: ${error.message}`, {
+      stack: error.stack
+    });
 
     if (ENV.SENTRY_DSN_BACKEND) {
       Sentry.captureException(error);

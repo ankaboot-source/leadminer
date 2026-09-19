@@ -920,7 +920,7 @@ async function reconnectSenderSource(email: string) {
     $toast.add({
       severity: 'error',
       summary: t('reconnect_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }

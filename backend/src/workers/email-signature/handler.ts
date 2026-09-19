@@ -411,7 +411,7 @@ export class EmailSignatureHandler {
     } catch (err) {
       this.logger.error('Signature job failed', {
         miningId,
-        error: (err as Error).message
+        error: (err as Error)?.message
       });
     }
   }

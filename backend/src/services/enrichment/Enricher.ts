@@ -9,7 +9,7 @@ export default class Enricher {
   ) {}
 
   private logError(context: string, error: unknown): void {
-    const message = (error as Error).message || 'Unexpected error';
+    const message = (error as Error)?.message || 'Unexpected error';
     this.logger.error(`[${context}]: ${message}`);
   }
 

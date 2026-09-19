@@ -239,7 +239,8 @@ export class SignatureLLM implements ExtractSignature {
       const { data } = response;
       return (data as OpenRouterResponse).choices?.[0]?.message?.content;
     } catch (err) {
-      let error: Error | OpenRouterError['error'] = err as Error;
+      let error: { message?: string; code?: number } =
+        err instanceof Error ? err : { message: String(err) };
       let openRouterErrorData: OpenRouterError['error'] | null = null;
 
       if (
@@ -251,9 +252,12 @@ export class SignatureLLM implements ExtractSignature {
         error = openRouterErrorData;
       }
 
-      this.logger.error(`SignaturePromptLLM error: ${error.message}`, {
-        error: error.message
-      });
+      this.logger.error(
+        `SignaturePromptLLM error: ${error.message ?? 'Unexpected error'}`,
+        {
+          error: error.message
+        }
+      );
 
       if (openRouterErrorData) {
         this.handleResponseError(openRouterErrorData);
@@ -303,7 +307,7 @@ export class SignatureLLM implements ExtractSignature {
       return this.cleanOutput(signature, person);
     } catch (err) {
       this.logger.error(
-        `SignatureExtractionLLM error: ${(err as Error).message}`
+        `SignatureExtractionLLM error: ${(err as Error)?.message}`
       );
       return null;
     }

@@ -431,7 +431,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           try {
             await stopMiningApi(true, []);
           } catch (err) {
-            console.error('[SSE] error: ', (err as Error).message);
+            console.error('[SSE] error: ', (err as Error)?.message);
           }
           if (!isCurrentRun()) return;
           $resetMining();
