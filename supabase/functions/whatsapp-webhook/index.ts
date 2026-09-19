@@ -81,14 +81,13 @@ async function handleMessageAck(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   sessionName: string,
   eventData: Record<string, unknown>,
-): Promise<{ error?: string } | void> {
+): Promise<{ error: string } | null> {
   const messageId = eventData.id as string | undefined;
   const ackStatus = eventData.ack as number | undefined;
 
   if (!messageId) {
     return { error: "Missing message ID" };
   }
-
   let status: string | null = null;
   let deliveredAt: string | null = null;
   let readAt: string | null = null;
@@ -105,7 +104,7 @@ async function handleMessageAck(
     status = "sent";
   }
 
-  if (!status) return;
+  if (!status) return null;
 
   const updates: Record<string, unknown> = { ack_status: status };
   if (deliveredAt) updates.delivered_at = deliveredAt;
@@ -130,6 +129,8 @@ async function handleMessageAck(
       ackStatus,
     });
   }
+
+  return null;
 }
 
 /**
