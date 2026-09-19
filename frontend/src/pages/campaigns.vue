@@ -137,10 +137,12 @@
                         </span>
                       </template>
                       <template v-else>
-                        {{ campaign.subject }} par
-                        {{ campaign.sender_name }} &lt;{{
-                          campaign.sender_email
-                        }}&gt;
+                        <span data-ph-mask>
+                          {{ campaign.subject }} par
+                          {{ campaign.sender_name }} &lt;{{
+                            campaign.sender_email
+                          }}&gt;
+                        </span>
                       </template>
                     </span>
                   </div>

@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
-import util from 'util';
 import ENV from '../../config';
 import {
   MiningSources,
@@ -223,12 +222,12 @@ class ImapConnectionProvider {
       } catch (error) {
         logger.warn(
           `Attempt ${attempt} failed to refresh token:`,
-          util.inspect(error, { depth: null, colors: true })
+          error instanceof Error ? error.message : error
         );
         if (attempt === retries) {
           logger.error(
             'All attempts to refresh token failed',
-            util.inspect(error, { depth: null, colors: true })
+            error instanceof Error ? error.message : error
           );
           throw error;
         }

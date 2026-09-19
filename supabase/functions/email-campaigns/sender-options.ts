@@ -16,9 +16,7 @@ export function listUniqueSenderSources(
   for (const source of sources) {
     const key = normalizeEmail(source.email);
     if (!key) {
-      logger.warn("Skipping source with invalid email", {
-        email: source.email,
-      });
+      logger.warn("Skipping source with invalid email");
       continue;
     }
     if (byEmail.has(key)) continue;
@@ -39,7 +37,7 @@ export function getSenderCredentialIssue(
   const expired = isTokenExpired(source.credentials, nowMs);
   if (expired) {
     logger.debug("Token expired detected", {
-      email: source.email,
+      type: source.type,
       expiresAt: source.credentials.expiresAt,
       now: nowMs,
     });

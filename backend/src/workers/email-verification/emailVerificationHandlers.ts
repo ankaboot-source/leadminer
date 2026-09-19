@@ -114,7 +114,7 @@ export class EmailVerificationHandler {
 
         if (emailIds.length > 1) {
           this.logger.debug(
-            `[EmailVerificationHandler.handle]: Email ${email} has ${emailIds.length} duplicates will be pushed to queue`,
+            `[EmailVerificationHandler.handle]: Email has ${emailIds.length} duplicates, will be pushed to queue`,
             { streamId }
           );
         }

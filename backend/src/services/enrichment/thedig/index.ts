@@ -27,10 +27,7 @@ export default class Thedig implements Engine {
   }
 
   async enrichSync(person: Partial<Person>) {
-    this.logger.debug(
-      `Got ${this.constructor.name}.enrichSync request`,
-      person
-    );
+    this.logger.debug(`Got ${this.constructor.name}.enrichSync request`);
     try {
       const personMapped = Thedig.mapForClientRequest(person);
       const response = await this.client.enrich(personMapped);
@@ -46,8 +43,7 @@ export default class Thedig implements Engine {
 
   async enrichAsync(persons: Partial<Person>[], webhook: string) {
     this.logger.debug(
-      `Got ${this.constructor.name}.enrichAsync request`,
-      persons
+      `Got ${this.constructor.name}.enrichAsync request for ${persons.length} persons`
     );
     try {
       const mapped = persons.map(Thedig.mapForClientRequest);
@@ -95,8 +91,7 @@ export default class Thedig implements Engine {
 
   parseResult(enrichedData: EnrichPersonResponse[]) {
     this.logger.debug(
-      `[${this.constructor.name}]-[parseResult]: Parsing enrichment results`,
-      enrichedData
+      `[${this.constructor.name}]-[parseResult]: Parsing enrichment results for ${enrichedData.length} items`
     );
     const results = enrichedData;
     const enriched: EngineResult[] = results

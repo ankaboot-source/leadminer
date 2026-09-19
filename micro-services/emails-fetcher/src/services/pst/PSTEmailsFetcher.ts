@@ -301,7 +301,9 @@ export default class PSTEmailsFetcher {
       await this.notifyCompleted();
       return this.isCompleted;
     } catch (error) {
-      logger.error(`[${this.miningId}] Error during stop process:`, error);
+      logger.error(`[${this.miningId}] Error during stop process:`, {
+        error: (error as Error).message
+      });
       await this.cleanup();
       await this.notifyCompleted();
       throw error;
@@ -491,8 +493,7 @@ export default class PSTEmailsFetcher {
     } catch (err) {
       logger.error('Failed during PST pre-scan for total messages', {
         miningId: this.miningId,
-        source: this.source,
-        error: err
+        error: (err as Error).message
       });
       this.removeFile();
       throw err;

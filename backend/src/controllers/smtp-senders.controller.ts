@@ -328,7 +328,6 @@ export default function initializeSmtpSendersController(
         for (const source of sources) {
           if (existingEmails.has(source.email)) {
             logger.debug('Source already has sender, skipping', {
-              email: source.email,
               type: source.type
             });
             continue;
@@ -340,9 +339,7 @@ export default function initializeSmtpSendersController(
             if (!oauthCreds.refreshToken) {
               logger.warn('OAuth source missing refresh token, skipping', {
                 userId: user.id,
-                email: source.email,
-                type: source.type,
-                credentialsKeys: Object.keys(oauthCreds)
+                type: source.type
               });
               continue;
             }
@@ -366,7 +363,6 @@ export default function initializeSmtpSendersController(
             const imapCreds = source.credentials as ImapMiningSourceCredentials;
             const smtpSettings = guessSmtpSettings(source.email);
             logger.debug('Processing IMAP source for sender', {
-              email: source.email,
               smtpHost: smtpSettings.host,
               imapHost: imapCreds.host
             });
@@ -383,7 +379,6 @@ export default function initializeSmtpSendersController(
             });
           } else {
             logger.debug('Unsupported source type, skipping', {
-              email: source.email,
               type: source.type
             });
           }
@@ -393,11 +388,10 @@ export default function initializeSmtpSendersController(
           candidateSenders.map((sender) => smtpSenders.create(sender))
         );
         const created = results.filter((r) => r.status === 'fulfilled').length;
-        results.forEach((r, i) => {
+        results.forEach((r) => {
           if (r.status === 'rejected') {
             logger.warn('Failed to create SMTP sender from source', {
               userId: user.id,
-              email: candidateSenders[i].email,
               error: r.reason?.message ?? r.reason
             });
           }

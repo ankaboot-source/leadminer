@@ -101,6 +101,7 @@
             v-for="source in slotProps.items"
             :key="source.email"
             class="border border-surface-200 rounded-md p-4"
+            data-ph-mask
           >
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div class="min-w-0">

@@ -214,8 +214,7 @@ describe('GoogleContactsExport', () => {
     );
 
     expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Export error: Unauthorized'),
-      expect.anything()
+      expect.stringContaining('Export error: Unauthorized')
     );
   });
 
@@ -270,13 +269,11 @@ describe('GoogleContactsExport', () => {
     expect(logger.error).toHaveBeenCalledTimes(2);
     expect(logger.error).toHaveBeenNthCalledWith(
       1,
-      expect.stringContaining('Error during sync:'),
-      expect.any(Error)
+      expect.stringContaining('Error during sync:')
     );
     expect(logger.error).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('Export error:'),
-      expect.any(Error)
+      expect.stringContaining('Export error:')
     );
   });
 

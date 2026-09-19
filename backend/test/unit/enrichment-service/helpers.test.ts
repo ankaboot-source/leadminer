@@ -109,10 +109,10 @@ describe('enrichFromCache', () => {
     const result = await enrichFromCache(getCache, enrichmentsDB, contacts);
     expect(getCache).toHaveBeenCalledWith(contacts, EnrichmentService);
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith(cached);
-    expect(logger.debug).toHaveBeenCalledWith('Enriched from cache.', [
-      contacts[0].email,
-      contacts[1].email
-    ]);
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Enriched from cache.',
+      2
+    );
     expect(result).toEqual([contacts[2]]);
   });
 
@@ -165,9 +165,10 @@ describe('enrichFromCache', () => {
 
     expect(getCache).toHaveBeenCalledWith(contacts, expect.anything());
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith(cached);
-    expect(logger.debug).toHaveBeenCalledWith('Enriched from cache.', [
-      contacts[0].email
-    ]);
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Enriched from cache.',
+      1
+    );
     expect(result).toEqual([]);
   });
 });

@@ -5,6 +5,7 @@
     class="w-full md:w-1/2 xl:w-1/3"
     pt:header:class="flex-col-reverse"
     pt:pc-close-button:root:class="self-end"
+    data-ph-mask
     @hide="() => onHide()"
   >
     <template #header>

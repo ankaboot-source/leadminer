@@ -609,7 +609,7 @@ async function getUserMiningSources(
 
   if (result.refreshed.length > 0) {
     logger.info("Tokens refreshed via central function", {
-      emails: result.refreshed,
+      count: result.refreshed.length,
     });
   }
 
@@ -750,21 +750,17 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
     const nowMs = Date.now();
     const expired = isTokenExpired(source.credentials, nowMs);
     logger.debug("Checking sender source", {
-      email: source.email,
       type: source.type,
       isExpired: expired,
     });
 
     const credentialIssue = getSenderCredentialIssue(source);
     logger.debug("Credential check result", {
-      email: source.email,
       credentialIssue,
     });
 
     if (credentialIssue) {
-      logger.info("Token expired, will attempt refresh", {
-        email: source.email,
-      });
+      logger.info("Token expired, will attempt refresh");
       options.push({
         email: source.email,
         available: false,
@@ -793,7 +789,6 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
         (source.type === "google" || source.type === "azure")
       ) {
         logger.info("OAuth error, attempting forced token refresh", {
-          email: source.email,
           type: source.type,
         });
 
@@ -813,16 +808,13 @@ async function resolveSenderOptions(authorization: string, userEmail: string) {
               refreshedSource.credentials,
             );
             await verifyTransport(retryTransport);
-            logger.info("Token refresh succeeded after OAuth failure", {
-              email: source.email,
-            });
+            logger.info("Token refresh succeeded after OAuth failure");
             options.push({ email: source.email, available: true });
             transportBySender[normalizeEmail(source.email)] = retryTransport;
             continue;
           }
         } catch (refreshError) {
           logger.warn("Token refresh failed after OAuth error", {
-            email: source.email,
             error:
               refreshError instanceof Error
                 ? refreshError.message
@@ -2015,7 +2007,6 @@ app.post(
         if (!sourceAsCredential) {
           logger.warn("No matching mining source found for campaign sender", {
             campaignId: campaign.id,
-            senderEmail: campaign.sender_email,
           });
           await setCampaignStatus(supabaseAdmin, campaign.id, "failed");
           continue;
@@ -2023,13 +2014,13 @@ app.post(
 
         const credentialIssue = getSenderCredentialIssue(sourceAsCredential);
         logger.debug("Checking sender credentials", {
-          senderEmail: campaign.sender_email,
+          campaignId: campaign.id,
           credentialIssue,
         });
 
         if (credentialIssue?.includes("expired")) {
           logger.info("OAuth token expired", {
-            senderEmail: campaign.sender_email,
+            campaignId: campaign.id,
           });
 
           await sendOAuthFailureNotification(
@@ -2040,7 +2031,7 @@ app.post(
           );
         } else {
           logger.debug("OAuth token is valid, no refresh needed", {
-            senderEmail: campaign.sender_email,
+            campaignId: campaign.id,
           });
         }
 

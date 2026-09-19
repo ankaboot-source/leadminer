@@ -238,7 +238,9 @@ LIMIT 1;
 
       return null;
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}:getPersonStatus]`, error);
+      this.logger.error(`[${this.constructor.name}:getPersonStatus]`, {
+        error: (error as Error).message
+      });
       return null; // Return null in case of an error
     }
   }
@@ -288,7 +290,7 @@ LIMIT 1;
       return true;
     } catch (error) {
       this.logger.error(`[${this.constructor.name}:upsertEmailStatus]`, {
-        email,
+        userId,
         status,
         error: (error as Error).message
       });
@@ -309,7 +311,9 @@ LIMIT 1;
 
       return true;
     } catch (error) {
-      this.logger.error('updateManyPersonsStatus', error);
+      this.logger.error('updateManyPersonsStatus', {
+        error: (error as Error).message
+      });
       return false;
     }
   }
@@ -325,7 +329,9 @@ LIMIT 1;
       );
       return rows[0]?.id ?? null;
     } catch (error) {
-      this.logger.error('getPersonIdByEmail', error);
+      this.logger.error('getPersonIdByEmail', {
+        error: (error as Error).message
+      });
       return null;
     }
   }
@@ -515,16 +521,10 @@ LIMIT 1;
         this.logger.error(
           '[PgContacts.createFromGoogleContacts] Failed to upsert Google contact',
           {
-            email: person.email,
-            source: person.source,
-            worksFor: person.worksFor,
-            sameAs: person.sameAs,
-            telephone: person.telephone,
-            organizationName: organizationsDB.get(person.worksFor ?? ''),
             userId,
             miningId,
-            error: (error as Error).message,
-            stack: (error as Error).stack
+            source: person.source,
+            error: (error as Error).message
           }
         );
       }
@@ -585,7 +585,6 @@ LIMIT 1;
           this.logger.error(
             '[PgContacts.createContactsFromEmail] Critical: UPSERT failed to resolve ID',
             {
-              email: person.email,
               source: person.source,
               userId
             }
@@ -653,7 +652,7 @@ LIMIT 1;
     } catch (error) {
       this.logger.error(
         'Failed processing email extraction batch execution',
-        error
+        (error as Error).message
       );
       throw error;
     }
@@ -664,7 +663,9 @@ LIMIT 1;
       await this.pool.query(PgContacts.REFINE_CONTACTS_SQL, [userId]);
       return true;
     } catch (error) {
-      this.logger.error('[PgContacts.refine]', error);
+      this.logger.error('[PgContacts.refine]', {
+        error: (error as Error).message
+      });
       return false;
     }
   }
@@ -679,7 +680,9 @@ LIMIT 1;
         : await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [userId]);
       return rows;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('getContacts', {
+        error: (error as Error).message
+      });
       return [];
     }
   }
@@ -697,7 +700,9 @@ LIMIT 1;
       );
       return rows;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('getUnverifiedContacts', {
+        error: (error as Error).message
+      });
       return [];
     }
   }
@@ -715,7 +720,9 @@ LIMIT 1;
         : await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS, [userId]);
       return rows;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('getExportedContacts', {
+        error: (error as Error).message
+      });
       return [];
     }
   }
@@ -736,7 +743,9 @@ LIMIT 1;
 
       return rows;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('getNonExportedContacts', {
+        error: (error as Error).message
+      });
       return [];
     }
   }
@@ -750,7 +759,9 @@ LIMIT 1;
       const values = personIds.map((id) => [userId, id, 'EXPORT', service]);
       await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('registerExportedContacts', {
+        error: (error as Error).message
+      });
       throw error;
     }
   }
@@ -811,9 +822,9 @@ LIMIT 1;
         }
       } catch (error) {
         this.logger.error('Failed to upsert Google contact', {
-          email: person.email,
+          userId,
           source,
-          error
+          error: (error as Error).message
         });
       }
     }

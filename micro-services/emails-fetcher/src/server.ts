@@ -39,7 +39,9 @@ app.use(errorLogger);
 app.use(errorHandler);
 
 process.on('uncaughtException', (err) => {
-  logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, err.stack || err);
+  logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, {
+    stack: err.stack
+  });
   if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.captureException(err);
   }

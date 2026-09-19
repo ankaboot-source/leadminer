@@ -252,7 +252,7 @@ export class SignatureLLM implements ExtractSignature {
       }
 
       this.logger.error(`SignaturePromptLLM error: ${error.message}`, {
-        error
+        error: error.message
       });
 
       if (openRouterErrorData) {
@@ -303,8 +303,7 @@ export class SignatureLLM implements ExtractSignature {
       return this.cleanOutput(signature, person);
     } catch (err) {
       this.logger.error(
-        `SignatureExtractionLLM error: ${(err as Error).message}`,
-        err
+        `SignatureExtractionLLM error: ${(err as Error).message}`
       );
       return null;
     }

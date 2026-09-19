@@ -104,16 +104,18 @@ async function backendError(
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
-    console.log(`Found ${miningSources.length} mining sources:`, miningSources);
+    console.log(`Found ${miningSources.length} mining sources`);
     for (const miningSource of miningSources) {
       try {
         await recordRunStart(miningSource.id);
         await startMiningEmail(miningSource);
-        console.log(`Started mining task for source ${miningSource.email}:`);
+        console.log(
+          `Started mining task for source ${miningSource.id} (${miningSource.type})`,
+        );
       } catch (error) {
         console.error(
-          `Error starting mining for source ${miningSource.email}:`,
-          error,
+          `Error starting mining for source ${miningSource.id}:`,
+          error instanceof Error ? error.message : error,
         );
         // OAuth sources 401 on these endpoints when the grant is dead (either
         // invalid_grant on refresh or the access token rejected at the IMAP
@@ -134,7 +136,10 @@ app.post("/", async (c: Context) => {
 
     return c.json({ msg: "Started passive-mining" });
   } catch (error) {
-    console.error("Error in passive-mining:", error);
+    console.error(
+      "Error in passive-mining:",
+      error instanceof Error ? error.message : error,
+    );
     return c.json({ error: "Failed to start passive-mining" }, 500);
   }
 });
@@ -207,7 +212,7 @@ async function getLatestPassiveMiningDate(
 
 async function getBoxes(miningSource: MiningSource) {
   console.log(
-    `Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+    `Fetching IMAP boxes for source ${miningSource.id} (${miningSource.type})`,
   );
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
@@ -221,7 +226,7 @@ async function getBoxes(miningSource: MiningSource) {
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
-  console.log(`Received response for boxes of ${miningSource.email}:`, res);
+  console.log(`Received response for boxes of source ${miningSource.id}`);
 
   if (!res.ok) {
     throw await backendError(
@@ -245,9 +250,9 @@ async function startMiningEmail(miningSource: MiningSource) {
     folders = savedFolders;
   } else {
     const boxes = await getBoxes(miningSource);
-    console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
+    console.log(`Fetched boxes for source ${miningSource.id}:`, boxes);
     folders = getFolders(boxes);
-    console.log(`Extracted folders for ${miningSource.email}:`, folders);
+    console.log(`Extracted folders for source ${miningSource.id}:`, folders);
   }
 
   // The backend builds `resumeFrom` from the persisted watermark. The edge only

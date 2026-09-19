@@ -275,7 +275,6 @@ export class EmailSignatureHandler {
 
     if (!signature || !isUsefulSignatureContent(signature)) {
       this.logger.debug('No useful signature found; skipping cache', {
-        email,
         miningId
       });
       return;
@@ -292,14 +291,13 @@ export class EmailSignatureHandler {
 
     if (!wasSet) {
       this.logger.debug('Signature not newer than cached; skipping', {
-        email,
+        miningId,
         messageDate
       });
       return;
     }
 
     this.logger.debug('Cached new signature', {
-      email,
       miningId,
       messageDate
     });
@@ -413,7 +411,6 @@ export class EmailSignatureHandler {
     } catch (err) {
       this.logger.error('Signature job failed', {
         miningId,
-        email: sig.email,
         error: (err as Error).message
       });
     }

@@ -53,6 +53,7 @@
         <Button
           class="text-lowercase"
           text
+          data-ph-mask
           @click="navigateTo('/account/settings')"
         >
           {{ $user?.email }}
@@ -136,7 +137,12 @@
               <component :is="CreditsCounter" />
             </div>
             <div class="mt-auto w-full">
-              <Button class="w-full justify-center" text @click="closeCallback">
+              <Button
+                class="w-full justify-center"
+                text
+                data-ph-mask
+                @click="closeCallback"
+              >
                 <NuxtLink to="/account/settings">
                   {{ $user?.email }}
                 </NuxtLink>

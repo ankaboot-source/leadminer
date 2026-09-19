@@ -74,6 +74,6 @@ export async function sendEmail(
     attachments,
   });
 
-  console.log("Email sent:", { to, messageId: info.messageId });
+  console.log("Email sent:", { messageId: info.messageId });
   // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info)); // For local testing only
 }

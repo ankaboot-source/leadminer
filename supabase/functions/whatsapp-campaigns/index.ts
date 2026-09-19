@@ -988,7 +988,6 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     } catch (err) {
       logger.error("Failed to send WhatsApp preview", {
         error: extractErrorMessage(err),
-        phone: normalizedTestPhone,
       });
       return c.json(
         {

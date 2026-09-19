@@ -126,7 +126,6 @@ export class PostgreSQLContactEngine {
             return mapRowToContact(row, this.format.mapping);
           } catch (error) {
             this.logger.warn('Failed to map row to contact', {
-              row,
               error: (error as Error).message
             });
             return null;

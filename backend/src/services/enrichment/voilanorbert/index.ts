@@ -23,11 +23,9 @@ export default class Voilanorbert implements Engine {
     return Boolean(contact.email);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enrichSync(person: Partial<Person>): Promise<EngineResponse> {
-    this.logger.debug(
-      `Got ${this.constructor.name}.enrichSync request`,
-      person
-    );
+    this.logger.debug(`Got ${this.constructor.name}.enrichSync request`);
     throw new Error(
       `[${this.constructor.name}]: method enrichSync not implemented.`
     );
@@ -35,8 +33,7 @@ export default class Voilanorbert implements Engine {
 
   async enrichAsync(persons: Partial<Person>[], webhook: string) {
     this.logger.debug(
-      `Got ${this.constructor.name}.enrichAsync request`,
-      persons
+      `Got ${this.constructor.name}.enrichAsync request for ${persons.length} persons`
     );
     try {
       const response = await this.client.enrich(
@@ -61,8 +58,7 @@ export default class Voilanorbert implements Engine {
 
   parseResult(enrichedData: unknown[]) {
     this.logger.debug(
-      `[${this.constructor.name}]-[parseResult]: Parsing enrichment results`,
-      enrichedData
+      `[${this.constructor.name}]-[parseResult]: Parsing enrichment results for ${enrichedData.length} items`
     );
     const results =
       (enrichedData[0] as ResponseWebhook).results ??
