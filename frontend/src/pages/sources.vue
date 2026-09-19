@@ -105,28 +105,6 @@
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div class="min-w-0">
                 <div class="font-medium">{{ source.email }}</div>
-                <div
-                  v-if="sourceStatus(source).showReconnect"
-                  class="flex gap-2 items-center mt-2"
-                >
-                  <Tag
-                    :value="t(sourceStatus(source).badge.labelKey)"
-                    :severity="sourceStatus(source).badge.severity"
-                    :icon="sourceStatus(source).badge.icon"
-                  />
-                  <Button
-                    :label="t('reconnect')"
-                    size="small"
-                    severity="primary"
-                    @click="reconnectExpiredSource(source)"
-                  />
-                </div>
-                <Tag
-                  v-else
-                  :value="t(sourceStatus(source).badge.labelKey)"
-                  :severity="sourceStatus(source).badge.severity"
-                  class="mt-2"
-                />
               </div>
 
               <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -168,6 +146,28 @@
                     isDeleting && deletingSource?.email === source.email
                   "
                   @click="openDeleteDialog(source)"
+                />
+
+                <div
+                  v-if="sourceStatus(source).showReconnect"
+                  class="flex gap-2 items-center"
+                >
+                  <Tag
+                    :value="t(sourceStatus(source).badge.labelKey)"
+                    :severity="sourceStatus(source).badge.severity"
+                    :icon="sourceStatus(source).badge.icon"
+                  />
+                  <Button
+                    :label="t('reconnect')"
+                    size="small"
+                    severity="primary"
+                    @click="reconnectExpiredSource(source)"
+                  />
+                </div>
+                <Tag
+                  v-else
+                  :value="t(sourceStatus(source).badge.labelKey)"
+                  :severity="sourceStatus(source).badge.severity"
                 />
               </div>
             </div>

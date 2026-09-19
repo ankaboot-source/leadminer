@@ -8,6 +8,7 @@ import { SourceHealthState } from "./enums.ts";
 export const FOLDER_WATERMARK_SCHEMA = z.object({
   uidvalidity: z.string(),
   last_uid: z.number().int().nonnegative(),
+  total_messages: z.number().int().nonnegative().optional(),
   updated_at: z.string(),
 });
 export type FolderWatermark = z.infer<typeof FOLDER_WATERMARK_SCHEMA>;

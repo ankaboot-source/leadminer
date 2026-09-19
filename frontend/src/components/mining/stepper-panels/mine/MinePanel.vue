@@ -72,7 +72,7 @@
 
   <ResumeMiningDialog
     v-model:visible="resumeDialogVisible"
-    @continue="runEmailMining(MiningRunMode.Incremental)"
+    @continue="resumeSelectedNewFolders"
     @rescan="runEmailMining(MiningRunMode.Full)"
   />
 
@@ -99,6 +99,7 @@ import { resolveMiningIntent, resolveRunMode } from '@/utils/mining-intent';
 import {
   getSelectedFolderKeys,
   hasSelectedFolders,
+  uncheckUpToDateFolders,
 } from '~/utils/selected-folders';
 import { useWebNotification } from '@vueuse/core';
 import type { MiningSource, AlreadyMinedFolder } from '~/types/mining';
@@ -503,6 +504,17 @@ async function startMiningBoxes() {
     default:
       await runEmailMining(intent.mode);
   }
+}
+
+async function resumeSelectedNewFolders() {
+  resumeDialogVisible.value = false;
+  // “Mine new messages only” simply unchecks already-mined folders. The
+  // remaining selection is then mined through the normal selection path.
+  $leadminerStore.selectedBoxes = uncheckUpToDateFolders(
+    $leadminerStore.selectedBoxes,
+    boxes.value,
+  );
+  await runEmailMining(MiningRunMode.Incremental);
 }
 
 async function mineNewFoldersOnly() {

@@ -10,6 +10,8 @@ export interface WatermarkBuildInput {
   uidValidityPerFolder: ReadonlyMap<string, string>;
   /** Highest UID streamed per folder during this run. */
   maxUidPerFolder: ReadonlyMap<string, number>;
+  /** Mailbox EXISTS observed at open time, per folder. */
+  messageCountPerFolder: ReadonlyMap<string, number>;
   /** Planner decision per folder (see WatermarkPolicy). */
   watermarkPolicyPerFolder: ReadonlyMap<string, WatermarkPolicy>;
   resumeFrom?: ImapResumeCursor;
@@ -33,6 +35,7 @@ export function buildWatermarkCursor(
   const {
     uidValidityPerFolder,
     maxUidPerFolder,
+    messageCountPerFolder,
     watermarkPolicyPerFolder,
     resumeFrom
   } = input;
@@ -44,8 +47,7 @@ export function buildWatermarkCursor(
     const sameNamespace =
       resume !== undefined && String(resume.uidvalidity) === uidValidity;
     const previous = sameNamespace ? Math.max(0, resume.last_uid) : 0;
-    const policy =
-      watermarkPolicyPerFolder.get(folder) ?? 'preserve-or-omit';
+    const policy = watermarkPolicyPerFolder.get(folder) ?? 'preserve-or-omit';
 
     if (policy === 'preserve-or-omit') {
       if (sameNamespace) {
@@ -62,6 +64,7 @@ export function buildWatermarkCursor(
     folders[folder] = {
       uidvalidity: uidValidity,
       last_uid: Math.max(previous, lastUid ?? 0),
+      total_messages: messageCountPerFolder.get(folder) ?? 0,
       updated_at: updatedAt
     };
   }

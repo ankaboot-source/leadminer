@@ -7,12 +7,16 @@ export interface ImapFolderCursor {
   uidnext: number | null;
   /** uidnext - 1, used only as a high-water bound because UIDs may have gaps. */
   high_water_uid: number | null;
+  /** Live mailbox EXISTS; compared against the watermark's message count. */
+  messages: number | null;
 }
 
 /** Persisted per-folder watermark from the mining source config. */
 export interface FolderWatermark {
   uidvalidity: string;
   last_uid: number;
+  /** Mailbox EXISTS when the watermark was written. */
+  total_messages?: number;
 }
 
 export interface FolderStatusInfo {

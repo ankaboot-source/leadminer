@@ -51,6 +51,7 @@ export interface ConfigureSourceParams {
 interface FolderWatermark {
   uidvalidity: string;
   last_uid: number;
+  total_messages?: number;
   updated_at: string;
 }
 

@@ -53,6 +53,22 @@ describe('extractFolderWatermarks', () => {
       }),
     ).toEqual({ INBOX: { uidvalidity: '12', last_uid: 7 } });
   });
+
+  it('carries the optional total_messages count through', () => {
+    expect(
+      extractFolderWatermarks({
+        mining: {
+          last: {
+            folders: {
+              INBOX: { uidvalidity: '12', last_uid: 7, total_messages: 29 },
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      INBOX: { uidvalidity: '12', last_uid: 7, total_messages: 29 },
+    });
+  });
 });
 
 describe('buildFolderStatus', () => {
@@ -93,6 +109,62 @@ describe('buildFolderStatus', () => {
         watermark: { uidvalidity: '12', last_uid: 7 },
       }).status,
     ).toBe(FolderStatus.MetadataUnavailable);
+  });
+
+  describe('message-count comparison', () => {
+    it('is new messages when the live count grows', () => {
+      expect(
+        buildFolderStatus({
+          cursor: {
+            uidvalidity: '12',
+            uidnext: 11,
+            high_water_uid: 10,
+            messages: 8,
+          },
+          watermark: { uidvalidity: '12', last_uid: 7, total_messages: 7 },
+        }),
+      ).toEqual({ status: FolderStatus.NewMessages, hasNewMessages: true });
+    });
+
+    it('is up to date when the live count shrinks', () => {
+      expect(
+        buildFolderStatus({
+          cursor: {
+            uidvalidity: '12',
+            uidnext: 11,
+            high_water_uid: 10,
+            messages: 6,
+          },
+          watermark: { uidvalidity: '12', last_uid: 7, total_messages: 7 },
+        }).status,
+      ).toBe(FolderStatus.UpToDate);
+    });
+
+    it('is up to date on a UID gap when the count is unchanged', () => {
+      // Gmail/Starred: uidnext 125 -> high_water 124, last_uid 121, count 29.
+      const result = buildFolderStatus({
+        cursor: {
+          uidvalidity: '4',
+          uidnext: 125,
+          high_water_uid: 124,
+          messages: 29,
+        },
+        watermark: { uidvalidity: '4', last_uid: 121, total_messages: 29 },
+      });
+      expect(result).toEqual({
+        status: FolderStatus.UpToDate,
+        hasNewMessages: false,
+      });
+    });
+
+    it('falls back to the UID comparison without a stored count', () => {
+      expect(
+        buildFolderStatus({
+          cursor: { uidvalidity: '12', uidnext: 11, high_water_uid: 10 },
+          watermark: { uidvalidity: '12', last_uid: 7 },
+        }).status,
+      ).toBe(FolderStatus.NewMessages);
+    });
   });
 });
 
@@ -172,5 +244,81 @@ describe('refreshBoxWatermarks', () => {
     });
     expect(updated).toBe(1);
     expect(boxes[0]?.watermark).toBeUndefined();
+  });
+});
+
+describe('refreshBoxWatermarks with message counts', () => {
+  it('clears the amber dot on a Gmail UID gap after a fresh count is stored', () => {
+    const starred = node({
+      key: '[Gmail]/Starred',
+      label: 'Starred',
+      total: 29,
+      cursor: {
+        uidvalidity: '4',
+        uidnext: 125,
+        high_water_uid: 124,
+        messages: 29,
+      },
+    });
+    const sibling = node({
+      key: 'test-alternateEmail',
+      label: 'test-alternateEmail',
+      total: 4,
+      cursor: {
+        uidvalidity: '38',
+        uidnext: 5,
+        high_water_uid: 4,
+        messages: 4,
+      },
+    });
+    const boxes: BoxNode[] = [starred, sibling];
+    const watermarks = {
+      '[Gmail]/Starred': {
+        uidvalidity: '4',
+        last_uid: 121,
+        total_messages: 29,
+      },
+      'test-alternateEmail': {
+        uidvalidity: '38',
+        last_uid: 4,
+        total_messages: 4,
+      },
+    };
+
+    expect(refreshBoxWatermarks(boxes, watermarks)).toBe(2);
+    expect(starred.watermark).toEqual({
+      uidvalidity: '4',
+      last_uid: 121,
+      total_messages: 29,
+    });
+    expect(starred.status).toBe(FolderStatus.UpToDate);
+    expect(starred.has_new_messages).toBe(false);
+    expect(sibling.status).toBe(FolderStatus.UpToDate);
+  });
+
+  it('keeps the amber dot when the live count is above the stored count', () => {
+    const boxes = [
+      node({
+        key: '[Gmail]/Starred',
+        cursor: {
+          uidvalidity: '4',
+          uidnext: 126,
+          high_water_uid: 125,
+          messages: 30,
+        },
+      }),
+    ];
+
+    expect(
+      refreshBoxWatermarks(boxes, {
+        '[Gmail]/Starred': {
+          uidvalidity: '4',
+          last_uid: 121,
+          total_messages: 29,
+        },
+      }),
+    ).toBe(1);
+    expect(boxes[0]?.status).toBe(FolderStatus.NewMessages);
+    expect(boxes[0]?.has_new_messages).toBe(true);
   });
 });

@@ -7,12 +7,16 @@ const AT = '2026-09-11T00:00:00.000Z';
 function input(overrides: {
   validities?: [string, string][];
   maxUids?: [string, number][];
+  messageCounts?: [string, number][];
   policies?: [string, WatermarkPolicy][];
-  resumeFrom?: { folders: Record<string, { uidvalidity: string; last_uid: number }> };
+  resumeFrom?: {
+    folders: Record<string, { uidvalidity: string; last_uid: number }>;
+  };
 }) {
   return {
     uidValidityPerFolder: new Map(overrides.validities ?? []),
     maxUidPerFolder: new Map(overrides.maxUids ?? []),
+    messageCountPerFolder: new Map(overrides.messageCounts ?? []),
     watermarkPolicyPerFolder: new Map(overrides.policies ?? []),
     resumeFrom: overrides.resumeFrom,
     updatedAt: AT
@@ -25,12 +29,45 @@ describe('buildWatermarkCursor', () => {
       input({
         validities: [['INBOX', '42']],
         maxUids: [['INBOX', 100]],
+        messageCounts: [['INBOX', 100]],
         policies: [['INBOX', 'advance']]
       })
     );
     expect(wm).toEqual({
-      folders: { INBOX: { uidvalidity: '42', last_uid: 100, updated_at: AT } }
+      folders: {
+        INBOX: {
+          uidvalidity: '42',
+          last_uid: 100,
+          total_messages: 100,
+          updated_at: AT
+        }
+      }
     });
+  });
+
+  it('records the observed message count for an advancing scan', () => {
+    const wm = buildWatermarkCursor(
+      input({
+        validities: [['INBOX', '42']],
+        maxUids: [['INBOX', 3]],
+        messageCounts: [['INBOX', 29]],
+        policies: [['INBOX', 'advance']]
+      })
+    );
+    expect(wm?.folders.INBOX.total_messages).toBe(29);
+  });
+
+  it('omits the message count on a since scan', () => {
+    const wm = buildWatermarkCursor(
+      input({
+        validities: [['INBOX', '42']],
+        maxUids: [['INBOX', 100]],
+        messageCounts: [['INBOX', 100]],
+        policies: [['INBOX', 'preserve-or-omit']],
+        resumeFrom: { folders: { INBOX: { uidvalidity: '42', last_uid: 90 } } }
+      })
+    );
+    expect(wm?.folders.INBOX.total_messages).toBeUndefined();
   });
 
   it('preserves a matching resume cursor when nothing new was fetched', () => {
@@ -100,6 +137,10 @@ describe('buildWatermarkCursor', () => {
           ['INBOX', 100],
           ['Archive', 7]
         ],
+        messageCounts: [
+          ['INBOX', 100],
+          ['Archive', 7]
+        ],
         policies: [
           ['INBOX', 'advance'],
           ['Archive', 'preserve-or-omit']
@@ -107,7 +148,12 @@ describe('buildWatermarkCursor', () => {
       })
     );
     expect(wm?.folders).toEqual({
-      INBOX: { uidvalidity: '42', last_uid: 100, updated_at: AT }
+      INBOX: {
+        uidvalidity: '42',
+        last_uid: 100,
+        total_messages: 100,
+        updated_at: AT
+      }
     });
   });
 

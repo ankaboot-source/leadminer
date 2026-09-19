@@ -24,7 +24,7 @@ export function extractFolderWatermarks(
   const watermarks: Record<string, FolderWatermark> = {};
   for (const [folder, value] of Object.entries(folders)) {
     const candidate = value as
-      | { uidvalidity?: unknown; last_uid?: unknown }
+      | { uidvalidity?: unknown; last_uid?: unknown; total_messages?: unknown }
       | undefined;
     if (
       typeof candidate?.uidvalidity === 'string' &&
@@ -34,6 +34,10 @@ export function extractFolderWatermarks(
       watermarks[folder] = {
         uidvalidity: candidate.uidvalidity,
         last_uid: candidate.last_uid as number,
+        ...(Number.isInteger(candidate.total_messages) &&
+        (candidate.total_messages as number) >= 0
+          ? { total_messages: candidate.total_messages as number }
+          : {}),
       };
     }
   }
@@ -78,7 +82,20 @@ export function buildFolderStatus({
     return { status: FolderStatus.UidvalidityChanged, hasNewMessages: false };
   }
 
-  const hasNewMessages = cursor.high_water_uid > watermark.last_uid;
+  // Prefer the observed message count: `uidnext - 1` is a prediction and can
+  // sit above the highest UID that actually exists, reporting permanent false
+  // "new messages" on folders with UID gaps (e.g. Gmail/Starred).
+  const liveCount = cursor.messages;
+  const storedCount = watermark.total_messages;
+  const hasNewMessages =
+    typeof liveCount === 'number' &&
+    Number.isInteger(liveCount) &&
+    liveCount >= 0 &&
+    typeof storedCount === 'number' &&
+    Number.isInteger(storedCount) &&
+    storedCount >= 0
+      ? liveCount > storedCount
+      : cursor.high_water_uid > watermark.last_uid;
   return {
     status: hasNewMessages ? FolderStatus.NewMessages : FolderStatus.UpToDate,
     hasNewMessages,
@@ -111,6 +128,9 @@ export function refreshBoxWatermarks(
         node.watermark = {
           uidvalidity: watermark.uidvalidity,
           last_uid: watermark.last_uid,
+          ...(watermark.total_messages === undefined
+            ? {}
+            : { total_messages: watermark.total_messages }),
         };
         const { status, hasNewMessages } = buildFolderStatus({
           cursor: node.cursor,

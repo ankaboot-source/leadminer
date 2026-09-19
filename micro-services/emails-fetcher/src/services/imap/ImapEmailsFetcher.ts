@@ -14,10 +14,7 @@ import {
   findPlainTextNode,
   groupMessagesByTextPart
 } from './parsing';
-import {
-  planFolderFetch,
-  type WatermarkPolicy
-} from './folderPlan';
+import { planFolderFetch, type WatermarkPolicy } from './folderPlan';
 import { buildWatermarkCursor } from './watermark';
 import type { ImapResumeCursor, ImapWatermarkCursor } from './types';
 
@@ -154,6 +151,9 @@ export default class ImapEmailsFetcher {
   /** Current mailbox uidvalidity per folder; folded into the emitted watermark. */
   private readonly uidValidityPerFolder: Map<string, string>;
 
+  /** Mailbox EXISTS per folder at open time; folded into the emitted watermark. */
+  private readonly messageCountPerFolder: Map<string, number>;
+
   /**
    * Per-folder watermark policy chosen by the fetch planner. Only `advance`
    * folders (full/uid-resume scans) may move the persisted cursor; date-filtered
@@ -208,6 +208,7 @@ export default class ImapEmailsFetcher {
     this.fetchedIds = new Set<string>();
     this.maxUidPerFolder = new Map<string, number>();
     this.uidValidityPerFolder = new Map<string, string>();
+    this.messageCountPerFolder = new Map<string, number>();
     this.watermarkPolicyPerFolder = new Map<string, WatermarkPolicy>();
     this.emailsQueue = new PQueue({
       concurrency: this.maxConcurrentConnections,
@@ -603,6 +604,7 @@ export default class ImapEmailsFetcher {
           if (mailbox.uidValidity !== undefined) {
             this.uidValidityPerFolder.set(folder, String(mailbox.uidValidity));
           }
+          this.messageCountPerFolder.set(folder, totalInFolder);
 
           const resume = this.resumeFrom?.folders?.[folder];
 
@@ -825,6 +827,7 @@ export default class ImapEmailsFetcher {
     return buildWatermarkCursor({
       uidValidityPerFolder: this.uidValidityPerFolder,
       maxUidPerFolder: this.maxUidPerFolder,
+      messageCountPerFolder: this.messageCountPerFolder,
       watermarkPolicyPerFolder: this.watermarkPolicyPerFolder,
       resumeFrom: this.resumeFrom
     });

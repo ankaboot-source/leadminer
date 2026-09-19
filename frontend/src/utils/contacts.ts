@@ -23,6 +23,26 @@ export function convertDates(data: Contact[]) {
 }
 
 /**
+ * Whether the enrichment confirmation dialog can be skipped for a contact.
+ * The dialog warns that enrichment may overwrite existing details, so it is
+ * only skipped when the contact has no enrichable details yet.
+ */
+export function shouldSkipEnrichDialog(contact?: Contact | null): boolean {
+  if (!contact) return true;
+  return !(
+    contact.given_name ||
+    contact.family_name ||
+    contact.alternate_name?.length ||
+    contact.telephone?.length ||
+    contact.location ||
+    contact.works_for ||
+    contact.job_title ||
+    contact.same_as?.length ||
+    contact.image
+  );
+}
+
+/**
  * Retrieves an organization by its name from the `organizations` table.
  *
  * @param organizationName - The name of the organization to retrieve.
