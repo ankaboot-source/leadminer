@@ -131,17 +131,17 @@ export function buildFolderStatus({
   // Prefer the observed message count: `uidnext - 1` is a prediction and can
   // sit above the highest UID that actually exists (UID gaps never close), so
   // it reports permanent false "new messages" on folders like Gmail/Starred.
-  const countAvailable =
-    cursor.messages !== null &&
-    Number.isInteger(cursor.messages) &&
-    cursor.messages >= 0 &&
-    typeof watermark.total_messages === 'number' &&
-    Number.isInteger(watermark.total_messages) &&
-    watermark.total_messages >= 0;
-
-  const hasNewMessages = countAvailable
-    ? cursor.messages! > watermark.total_messages!
-    : cursor.high_water_uid > watermark.last_uid;
+  const liveCount = cursor.messages;
+  const storedCount = watermark.total_messages;
+  const hasNewMessages =
+    typeof liveCount === 'number' &&
+    Number.isInteger(liveCount) &&
+    liveCount >= 0 &&
+    typeof storedCount === 'number' &&
+    Number.isInteger(storedCount) &&
+    storedCount >= 0
+      ? liveCount > storedCount
+      : cursor.high_water_uid > watermark.last_uid;
   return {
     status: hasNewMessages ? FolderStatus.NewMessages : FolderStatus.UpToDate,
     hasNewMessages,
