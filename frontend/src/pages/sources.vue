@@ -112,7 +112,7 @@
                 <div class="flex items-center gap-2 text-sm text-surface-600">
                   <span>{{ t('continuous_mining') }}</span>
                   <ToggleSwitch
-                    v-model="source.passive_mining"
+                    :model-value="source.passive_mining"
                     :disabled="isActiveMiningSource(source)"
                     @update:model-value="
                       (val: boolean) => togglePassiveMining(source, val)
@@ -354,18 +354,43 @@
         </div>
       </template>
     </Dialog>
+
+    <PassiveMiningFolderDialog
+      v-model:visible="passiveDialogVisible"
+      :source="passiveDialogSource"
+      :mode="passiveDialogMode"
+      :rows="passiveDialogRows"
+      :saving="passiveDialogSaving"
+      :loading="passiveDialogLoading"
+      @confirm="onPassiveDialogConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import AddSourceImap from '@/components/mining/stepper-panels/source/AddSourceImap.vue';
+import PassiveMiningFolderDialog from '@/components/mining/PassiveMiningFolderDialog.vue';
 import { addOAuthAccount } from '@/utils/oauth';
 import { resolveReconnectFallbackAction } from '@/utils/reconnectFallback';
 import type { MiningSource, MiningTaskGroup } from '~/types/mining';
 import { deriveSourceStatus } from '@/utils/sourceStatus';
-import { updateMiningSourceConfig, updatePassiveMining } from '@/utils/sources';
+import {
+  fetchSourceFolders,
+  updateMiningSourceConfig,
+  updatePassiveMining,
+} from '@/utils/sources';
 import { deriveSourceState } from '@/utils/miningSourceConfig';
-import { folderDisplayName } from '@/utils/selected-folders';
+import type { MiningSourceConfigFlags } from '@/utils/miningSourceConfig';
+import {
+  folderDisplayName,
+  getSelectedFolderKeys,
+} from '@/utils/selected-folders';
+import {
+  buildPassiveFolderList,
+  type PassiveFolderRow,
+} from '@/utils/passive-mining-folders';
+import { flattenBoxNodes } from '~/utils/box-tree';
+import { getDefaultAndExcludedFolders } from '~/utils/boxes';
 import { SourceHealthState } from '~/types/enums';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
@@ -510,50 +535,131 @@ async function confirmDelete() {
 // (supabase/migrations/*_passive_mining_cron_job.sql).
 const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
 
+const passiveDialogVisible = ref(false);
+const passiveDialogSource = ref<MiningSource>();
+const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
+const passiveDialogRows = ref<PassiveFolderRow[]>([]);
+const passiveDialogLoading = ref(false);
+const { isSaving: passiveDialogSaving, enablePassiveMining } =
+  useEnablePassiveMining();
+
+function registeredPassiveFolders(source: MiningSource): string[] {
+  return Array.isArray(source.config?.folders)
+    ? source.config.folders.filter((f): f is string => typeof f === 'string')
+    : [];
+}
+
+function passiveFolderLabel(key: string): string {
+  return folderDisplayName(key, $tGlobal('sources.folder_inbox'));
+}
+
 /**
- * Continuous (passive) mining is scheduled server-side by a daily cron job —
- * toggling it must only PATCH the source preference, never start a mining run.
+ * Continuous (passive) mining is scheduled server-side by a daily cron job.
+ * Turning it on must first be confirmed against a folder list; turning it off
+ * only PATCHes the source preference. Neither path starts a mining run.
  */
 async function togglePassiveMining(source: MiningSource, value: boolean) {
+  if (value) {
+    await promptEnablePassiveMining(source);
+  } else {
+    await disablePassiveMining(source);
+  }
+}
+async function disablePassiveMining(source: MiningSource) {
   try {
-    const config = await updatePassiveMining(
+    source.config = await updatePassiveMining(
       source.email,
       source.type,
-      value,
+      false,
       {},
     );
-    source.config = config;
-  } catch (error) {
-    source.passive_mining = !value;
-    $toast.add({
-      severity: 'error',
-      summary: t('passive_mining_update_failed'),
-      detail: (error as Error)?.message,
-      life: 4500,
-    });
-    return;
-  }
-
-  if (!value) {
+    source.passive_mining = false;
     $toast.add({
       severity: 'info',
       summary: t('passive_mining_disabled'),
       detail: t('passive_mining_disabled_detail'),
       life: 4500,
     });
+  } catch (error) {
+    $toast.add({
+      severity: 'error',
+      summary: t('passive_mining_update_failed'),
+      detail: (error as Error)?.message,
+      life: 4500,
+    });
+  }
+}
+
+async function promptEnablePassiveMining(source: MiningSource) {
+  passiveDialogSource.value = source;
+  const registered = registeredPassiveFolders(source);
+  passiveDialogMode.value = registered.length > 0 ? 'update' : 'first-time';
+  passiveDialogRows.value = [];
+
+  // The folders the user mined most recently are the natural passive set.
+  const recent = deriveSourceState(source).minableFolders;
+  if (recent.length > 0) {
+    passiveDialogRows.value = buildPassiveFolderList({
+      mined: recent,
+      registered,
+      available: recent,
+      labelFor: passiveFolderLabel,
+      keysFrom: 'mined',
+    });
+    passiveDialogVisible.value = true;
     return;
   }
 
-  // Explain what enabling actually does: when it will run and on which
-  // folders (saved folders if any, otherwise the folders mined by the last
-  // run from the persisted watermark, otherwise the server defaults).
+  // Never-mined source: ask the server for its folders so the user can pick.
+  passiveDialogVisible.value = true;
+  passiveDialogLoading.value = true;
+  try {
+    const folders = await fetchSourceFolders(source);
+    const keys = flattenBoxNodes(folders).map((node) => node.key);
+    const { defaultFolders, excludedKeys } =
+      getDefaultAndExcludedFolders(folders);
+    passiveDialogRows.value = buildPassiveFolderList({
+      mined: keys,
+      registered,
+      available: keys,
+      checked: getSelectedFolderKeys(defaultFolders, excludedKeys),
+      labelFor: passiveFolderLabel,
+      keysFrom: 'mined',
+    });
+  } catch (error) {
+    passiveDialogVisible.value = false;
+    $toast.add({
+      severity: 'error',
+      summary: t('passive_mining_update_failed'),
+      detail: (error as Error).message,
+      life: 4500,
+    });
+  } finally {
+    passiveDialogLoading.value = false;
+  }
+}
+
+async function onPassiveDialogConfirm(payload: {
+  folders: string[];
+  flags: MiningSourceConfigFlags;
+}) {
+  const source = passiveDialogSource.value;
+  if (!source) return;
+  const enabled = await enablePassiveMining(
+    source,
+    payload.folders,
+    payload.flags,
+  );
+  if (!enabled) return;
+  passiveDialogVisible.value = false;
+  showPassiveMiningEnabledToast(payload.folders);
+}
+
+function showPassiveMiningEnabledToast(folders: string[]) {
+  // Explain what enabling actually does: when it will run and on which folders.
   const schedule = describeCronSchedule(PASSIVE_CRON_SCHEDULE);
-  const savedFolders = Array.isArray(source.config?.folders)
-    ? source.config.folders.filter((f): f is string => typeof f === 'string')
-    : [];
   const foldersLabel =
-    describeFolderList(savedFolders) ??
-    describeFolderList(deriveSourceState(source).minableFolders) ??
+    describeFolderList(folders) ??
     $tGlobal('sources.passive_mining_folders_default');
   const nextRun = schedule.nextRunAt;
   $toast.add({

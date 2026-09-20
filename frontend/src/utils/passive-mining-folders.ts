@@ -24,38 +24,79 @@ export interface PassiveFolderRow {
   unavailable: boolean;
 }
 
-/**
- * Union list for the dialog: registered folders plus folders mined in this
- * run. Pre-checked = registered or newly mined. Registered-but-unavailable
- * rows come back unchecked so confirming prunes them.
- */
-export function buildPassiveFolderList(options: {
+export interface PassiveFolderListOptions {
+  /** Folders mined by the run/source that are candidates for passive mining. */
   mined: string[];
+  /** Folders already registered for passive mining (drives the "New" badge). */
   registered: string[];
+  /** Folders that still exist and can be mined (drives availability/pruning). */
   available: string[] | Set<string>;
   labelFor: (key: string) => string;
-}): PassiveFolderRow[] {
-  const { mined, registered, available, labelFor } = options;
-  const availableSet =
-    available instanceof Set ? available : new Set(available);
+  /**
+   * Which keys become rows. `union` (default) keeps registered + mined;
+   * `mined` shows only the recently-mined folders.
+   */
+  keysFrom?: 'union' | 'mined';
+  /** Pre-checked keys. Defaults to every available row. */
+  checked?: string[] | Set<string>;
+}
+
+const toSet = (value: string[] | Set<string>): Set<string> =>
+  value instanceof Set ? value : new Set(value);
+
+/**
+ * Builds the folder rows shown by the passive-mining confirmation dialog.
+ * Unavailable rows come back unchecked so confirming prunes them.
+ */
+export function buildPassiveFolderList(
+  options: PassiveFolderListOptions,
+): PassiveFolderRow[] {
+  const {
+    mined,
+    registered,
+    available,
+    labelFor,
+    keysFrom = 'union',
+    checked,
+  } = options;
+  const availableSet = toSet(available);
   const registeredSet = new Set(registered.filter((key) => key !== ''));
+  const checkedSet = checked ? toSet(checked) : null;
   const keys: string[] = [];
   const seen = new Set<string>();
-  for (const key of [...registered, ...mined]) {
+  for (const key of keysFrom === 'mined' ? mined : [...registered, ...mined]) {
     if (key === '' || seen.has(key)) continue;
     seen.add(key);
     keys.push(key);
   }
   return keys.map((key) => {
-    const isRegistered = registeredSet.has(key);
     const isAvailable = availableSet.has(key);
     return {
       key,
       label: labelFor(key),
-      // Available rows stay/go checked; registered-but-unavailable rows come back unchecked so confirming prunes them.
-      checked: isAvailable,
-      isNew: !isRegistered,
+      // Unavailable rows always come back unchecked so confirming prunes them.
+      checked: isAvailable && (checkedSet ? checkedSet.has(key) : true),
+      isNew: !registeredSet.has(key),
       unavailable: !isAvailable,
     };
   });
+}
+
+/**
+ * Decides whether the post-run passive-mining prompt should open:
+ * `first-time` when passive is off, `update` when the run mined folders that
+ * are not registered yet, `null` when there is nothing to ask.
+ */
+export function resolvePassiveMiningPrompt(options: {
+  passiveEnabled: boolean;
+  minedFolders: string[];
+  registeredFolders: string[];
+}): 'first-time' | 'update' | null {
+  if (!options.passiveEnabled) return 'first-time';
+  return diffUnregisteredFolders(
+    options.minedFolders,
+    options.registeredFolders,
+  ).length > 0
+    ? 'update'
+    : null;
 }

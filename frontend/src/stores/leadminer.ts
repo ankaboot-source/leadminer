@@ -12,7 +12,7 @@ import {
   type MiningSourceConfigFlags,
   deriveSourceConfig,
 } from '@/utils/miningSourceConfig';
-import { diffUnregisteredFolders } from '@/utils/passive-mining-folders';
+import { resolvePassiveMiningPrompt } from '@/utils/passive-mining-folders';
 import { getSelectedFolderKeys } from '@/utils/selected-folders';
 import { startMiningNotification } from '~/utils/extras';
 import {
@@ -51,6 +51,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningTask = ref<MiningTask | undefined>();
 
   const passiveMinings = ref<MiningTaskGroup[]>([]);
+
+  // Folders requested by the current email run. The post-run passive prompt
+  // compares these (not the live tree selection) against the passive
+  // registration, so explicit-override runs are covered too.
+  const lastRunEmailFolders = ref<string[] | null>(null);
 
   const miningStartedAt = ref<number | undefined>(); // timestamp in performance.now() time (ms)
   const miningSources = ref<MiningSource[]>([]);
@@ -116,7 +121,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   /**
    * Offers the "Enable continuous contact extraction?" dialog at the end of a
-<<<<<<< HEAD
    * mining run — first-time enable prompt when the source is not on
    * continuous mining, or an update prompt when the run mined folders not
    * yet registered — unless the run was interrupted. Owned by the store so
@@ -126,30 +130,28 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * Shown at most once per run: extraction-related events fire several times
    * (extraction finished, google contacts fetched, mining completed) and the
    * prompt must not reappear after the user answered it.
->>>>>>> bdf73310 (chore(passive): refresh dialog trigger docs)
    */
   function maybeOpenPassiveMiningDialog() {
     if (passiveMiningDialogShown.value) return;
     if (miningInterrupted.value) return;
     const source = activeMiningSource.value;
     if (!source) return;
-    if (!source.passive_mining) {
-      passiveMiningDialogMode.value = 'first-time';
-    } else {
-      // Passive already on: re-prompt only when this run mined folders that
-      // are not registered yet.
-      const registered = Array.isArray(source.config?.folders)
-        ? source.config.folders.filter(
-            (f): f is string => typeof f === 'string',
-          )
-        : [];
-      const mined = getSelectedFolderKeys(
-        selectedBoxes.value,
-        excludedBoxes.value,
-      );
-      if (diffUnregisteredFolders(mined, registered).length === 0) return;
-      passiveMiningDialogMode.value = 'update';
-    }
+
+    const registered = Array.isArray(source.config?.folders)
+      ? source.config.folders.filter((f): f is string => typeof f === 'string')
+      : [];
+    const mined =
+      lastRunEmailFolders.value ??
+      getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value);
+
+    const mode = resolvePassiveMiningPrompt({
+      passiveEnabled: Boolean(source.passive_mining),
+      minedFolders: mined,
+      registeredFolders: registered,
+    });
+    if (!mode) return;
+
+    passiveMiningDialogMode.value = mode;
     passiveMiningDialogShown.value = true;
     passiveMiningDialog.value = true;
   }
@@ -164,6 +166,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
     passiveMinings.value = [];
+    lastRunEmailFolders.value = null;
     boxes.value = [];
     selectedBoxes.value = [];
     excludedBoxes.value = new Set();
@@ -505,6 +508,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     runMode: MiningRunMode,
   ) {
     miningType.value = 'email';
+    lastRunEmailFolders.value = folders;
 
     // The server derives the resume cursor from the source's persisted
     // watermark; the client only sends intent (folders + run mode).
@@ -661,6 +665,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       miningInterrupted.value = false;
       passiveMiningDialog.value = false;
       passiveMiningDialogShown.value = false;
+      lastRunEmailFolders.value = null;
 
       let task;
       switch (source) {
