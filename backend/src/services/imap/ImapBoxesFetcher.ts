@@ -40,7 +40,7 @@ export default class ImapBoxesFetcher {
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
-  async getTotalMessages(inboxes: string[]) {
+  getTotalMessages(inboxes: string[]) {
     let total = 0;
 
     try {

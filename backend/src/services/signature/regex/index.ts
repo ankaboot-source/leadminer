@@ -37,6 +37,8 @@ export class SignatureRE implements ExtractSignature {
     return [...matches];
   }
 
+  // skipcq: JS-0116 - async required by the ExtractSignature interface contract
+  // (extract must return Promise<PersonLD | null>); awaits live in callers.
   public async extract(
     _email: string,
     signature: string
