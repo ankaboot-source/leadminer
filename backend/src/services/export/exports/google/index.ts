@@ -13,6 +13,7 @@ import {
   ExportResult
 } from '../../types';
 import GoogleContactsSession from './contacts-api';
+import { errorMeta } from '../../../../utils/errors';
 
 export default class GoogleContactsExport
   implements ExportStrategy<ContactFrontend>
@@ -53,7 +54,9 @@ export default class GoogleContactsExport
       };
     } catch (err) {
       if (err instanceof GaxiosError) {
-        logger.error(`Export error: ${err.message}`);
+        logger.error(`Export error: ${err.message}`, {
+          error: errorMeta(err)
+        });
         if (
           err.response?.status === 401 ||
           err.response?.data.error === 'invalid_grant'
@@ -61,7 +64,9 @@ export default class GoogleContactsExport
           throw new Error('Invalid credentials.');
         }
       } else {
-        logger.error(`Export error: ${(err as Error)?.message}`);
+        logger.error(`Export error: ${(err as Error)?.message}`, {
+          error: errorMeta(err)
+        });
       }
       throw err;
     }

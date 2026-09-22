@@ -5,6 +5,7 @@ import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer
 import { EmailData, EmailSignatureHandler } from './handler';
 import { Contact } from '../../db/types';
 import { StreamCommand } from '../../services/tasks-manager-v2/types';
+import { errorMeta } from '../../utils/errors';
 
 export default class EmailSignatureConsumer {
   private isInterrupted: boolean;
@@ -92,7 +93,9 @@ export default class EmailSignatureConsumer {
       //   }
       // }
     } catch (err) {
-      this.logger.error('Error while consuming messages from stream.', err);
+      this.logger.error('Error while consuming messages from stream.', {
+        error: errorMeta(err)
+      });
       throw err;
     }
   }
@@ -109,10 +112,9 @@ export default class EmailSignatureConsumer {
     try {
       await this.consumeFromStreams([this.emailSignatureStream]);
     } catch (error) {
-      this.logger.error(
-        'An error occurred while consuming streams:',
-        error instanceof Error ? error : new Error(String(error))
-      );
+      this.logger.error('An error occurred while consuming streams:', {
+        error: errorMeta(error)
+      });
     }
 
     setTimeout(() => {

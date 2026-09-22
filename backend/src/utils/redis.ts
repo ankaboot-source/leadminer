@@ -3,6 +3,7 @@ import ENV from '../config';
 import disposable from './Disposable.json';
 import freeProviders from './FreeProviders.json';
 import logger from './logger';
+import { errorMeta } from './errors';
 
 class RedisManager {
   private readonly normalClient;
@@ -59,7 +60,9 @@ class RedisManager {
       await this.normalClient.sadd('disposable', disposable);
       logger.info('Redis initialized with disposable ✔️');
     } catch (error) {
-      logger.error('Failed initializing redis.', error);
+      logger.error('Failed initializing redis.', {
+        error: errorMeta(error)
+      });
     }
   }
 
@@ -85,7 +88,9 @@ class RedisManager {
         `Deleted ${keysToDelete.length} keys (exceptKeys: ${exceptKeys.join(', ')}, exceptPrefixes: ${exceptPrefixes.join(', ')}) ✔️`
       );
     } catch (error) {
-      logger.error('Failed flushing Redis selectively.', error);
+      logger.error('Failed flushing Redis selectively.', {
+        error: errorMeta(error)
+      });
     }
   }
 

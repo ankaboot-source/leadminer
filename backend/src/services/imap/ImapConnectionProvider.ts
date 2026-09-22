@@ -9,6 +9,7 @@ import {
 } from '../../db/interfaces/MiningSources';
 import { miningSourceService } from '../../db/supabase/MiningSourceService';
 import logger from '../../utils/logger';
+import { errorMeta } from '../../utils/errors';
 import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 type CurrentOAuthSource = {
@@ -101,7 +102,9 @@ class ImapConnectionProvider {
     const connection = new Connection(imapConfig as ImapFlowOptions);
 
     connection.on('error', (err) => {
-      logger.error('ImapFlow connection error:', err);
+      logger.error('ImapFlow connection error:', {
+        error: errorMeta(err)
+      });
     });
 
     try {
@@ -286,14 +289,18 @@ class ImapConnectionProvider {
     });
 
     connection.on('error', (err) => {
-      logger.error('ImapFlow connection error:', err);
+      logger.error('ImapFlow connection error:', {
+        error: errorMeta(err)
+      });
     });
 
     try {
       await connection.connect(); // throws on auth / network issues
       return connection;
     } catch (err) {
-      logger.error('ImapFlow connection error', err);
+      logger.error('ImapFlow connection error', {
+        error: errorMeta(err)
+      });
       throw err;
     }
   }
@@ -343,7 +350,9 @@ class ImapConnectionProvider {
       assert(this.connectionsPool, 'Connection Pool should not be undefined');
       await this.connectionsPool.release(imapConnection);
     } catch (err) {
-      logger.error('[ImapConnectionProvider]: Error releasing connection', err);
+      logger.error('[ImapConnectionProvider]: Error releasing connection', {
+        error: errorMeta(err)
+      });
     }
   }
 
@@ -356,7 +365,9 @@ class ImapConnectionProvider {
         try {
           return await this.connect();
         } catch (err) {
-          logger.error('Failed to create pool resources', err);
+          logger.error('Failed to create pool resources', {
+            error: errorMeta(err)
+          });
           throw err;
         }
       },
@@ -367,7 +378,9 @@ class ImapConnectionProvider {
         } catch (err) {
           logger.error(
             '[ImapConnectionProvider]: Error destroying connection',
-            err
+            {
+              error: errorMeta(err)
+            }
           );
         }
       }
@@ -382,7 +395,9 @@ class ImapConnectionProvider {
 
     // Set up an event listener for factory create errors
     this.connectionsPool.on('factoryCreateError', (err) => {
-      logger.error('Error creating IMAP connection pool resource', err);
+      logger.error('Error creating IMAP connection pool resource', {
+        error: errorMeta(err)
+      });
     });
   }
 

@@ -16,7 +16,9 @@ describe('SignatureRE', () => {
       warn: jest.fn(),
       debug: jest.fn()
     } as any;
-    jest.clearAllMocks();
+    // restoreAllMocks (not just clear): spyOn implementations must not leak
+    // across tests, otherwise a throw mocked in one test fires in the next.
+    jest.restoreAllMocks();
   });
 
   it('should be active', () => {
@@ -81,7 +83,11 @@ describe('SignatureRE', () => {
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       'SignatureExtractionLLM error:',
-      expect.any(Error)
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'failed to parse phone number'
+        })
+      })
     );
   });
 
@@ -94,7 +100,11 @@ describe('SignatureRE', () => {
     expect(result).toBeNull();
     expect(mockLogger.error).toHaveBeenCalledWith(
       'SignatureExtractionLLM error:',
-      expect.any(Error)
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'failed to extract social urls'
+        })
+      })
     );
   });
 

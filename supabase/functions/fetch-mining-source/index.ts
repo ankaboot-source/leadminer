@@ -325,7 +325,7 @@ class FetchMiningSourceHandler {
           // Transient failure (network blip, token server hiccup, rate limit):
           // keep passive_mining enabled and surface the last-run error. It will
           // retry on the next schedule cycle.
-          await this.recordError(source.id, source.email, error);
+          await this.recordError(source.id, error);
           continue;
         }
 
@@ -389,7 +389,6 @@ class FetchMiningSourceHandler {
 
   private async recordError(
     sourceId: string | undefined,
-    email: string,
     error: unknown,
   ): Promise<void> {
     if (!sourceId) {

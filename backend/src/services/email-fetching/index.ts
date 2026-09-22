@@ -2,6 +2,7 @@
 import { Logger } from 'winston';
 import axios, { AxiosInstance } from 'axios';
 import type { FetcherClient } from '../tasks-manager-v2/tasks/FetchTask';
+import { errorMeta } from '../../utils/errors';
 
 export interface FetchStartPayload {
   userId: string;
@@ -77,7 +78,7 @@ class EmailFetcherClient implements FetcherClient {
       return data;
     } catch (error) {
       this.logger.error('Start fetching request failed', {
-        error,
+        error: errorMeta(error),
         miningId: opts.miningId,
         userId: opts.userId
       });
@@ -100,7 +101,7 @@ class EmailFetcherClient implements FetcherClient {
       return data;
     } catch (error) {
       this.logger.error('Stop fetching request failed', {
-        error,
+        error: errorMeta(error),
         miningId: opts.miningId
       });
       throw error;
@@ -130,7 +131,7 @@ class EmailFetcherClient implements FetcherClient {
       return data;
     } catch (error) {
       this.logger.error('Start Google contacts sync request failed', {
-        error,
+        error: errorMeta(error),
         miningId: opts.miningId,
         userId: opts.userId
       });
@@ -160,7 +161,7 @@ class EmailFetcherClient implements FetcherClient {
       return data;
     } catch (error) {
       this.logger.error('Stop Google contacts sync request failed', {
-        error,
+        error: errorMeta(error),
         miningId: opts.miningId
       });
       throw error;

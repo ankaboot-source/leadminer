@@ -14,6 +14,7 @@ import { DomainStatusVerificationFunction } from '../../services/extractors/engi
 import { CleanQuotedForwardedReplies } from '../../utils/helpers/emailParsers';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
+import { errorMeta } from '../../utils/errors';
 
 export interface EmailData {
   type: 'email';
@@ -328,7 +329,9 @@ export class EmailSignatureHandler {
           .join('\n')
       );
     } catch (err) {
-      this.logger.error('Failed to parse email body for signature', err);
+      this.logger.error('Failed to parse email body for signature', {
+        error: errorMeta(err)
+      });
       return null;
     }
   }

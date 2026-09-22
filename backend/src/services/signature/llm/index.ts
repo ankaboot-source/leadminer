@@ -16,6 +16,7 @@ import {
   validateUrls
 } from './output-checkers';
 import { LLMModelType } from './types';
+import { errorMeta } from '../../../utils/errors';
 
 export const SignaturePrompt = {
   response_format: {
@@ -307,7 +308,8 @@ export class SignatureLLM implements ExtractSignature {
       return this.cleanOutput(signature, person);
     } catch (err) {
       this.logger.error(
-        `SignatureExtractionLLM error: ${(err as Error)?.message}`
+        `SignatureExtractionLLM error: ${(err as Error)?.message}`,
+        { error: errorMeta(err) }
       );
       return null;
     }

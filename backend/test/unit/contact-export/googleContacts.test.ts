@@ -214,7 +214,13 @@ describe('GoogleContactsExport', () => {
     );
 
     expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Export error: Unauthorized')
+      expect.stringContaining('Export error: Unauthorized'),
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'Unauthorized',
+          status: 401
+        })
+      })
     );
   });
 
@@ -269,11 +275,17 @@ describe('GoogleContactsExport', () => {
     expect(logger.error).toHaveBeenCalledTimes(2);
     expect(logger.error).toHaveBeenNthCalledWith(
       1,
-      expect.stringContaining('Error during sync:')
+      expect.stringContaining('Error during sync:'),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Quota Exceeded' })
+      })
     );
     expect(logger.error).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('Export error:')
+      expect.stringContaining('Export error:'),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Quota Exceeded' })
+      })
     );
   });
 

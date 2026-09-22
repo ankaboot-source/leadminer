@@ -172,7 +172,10 @@ describe('SignatureLLM', () => {
       const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('SignatureExtractionLLM error')
+        expect.stringContaining('SignatureExtractionLLM error'),
+        expect.objectContaining({
+          error: expect.objectContaining({ name: expect.any(String) })
+        })
       );
     });
   });

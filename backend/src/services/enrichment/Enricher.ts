@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
 import { Contact } from '../../db/types';
 import { Engine } from './Engine';
+import { errorMeta } from '../../utils/errors';
 
 export default class Enricher {
   constructor(
@@ -10,7 +11,9 @@ export default class Enricher {
 
   private logError(context: string, error: unknown): void {
     const message = (error as Error)?.message || 'Unexpected error';
-    this.logger.error(`[${context}]: ${message}`);
+    this.logger.error(`[${context}]: ${message}`, {
+      error: errorMeta(error)
+    });
   }
 
   private async sync(engine: Engine, contact: Partial<Contact>) {

@@ -17,6 +17,7 @@ import {
 import { planFolderFetch, type WatermarkPolicy } from './folderPlan';
 import { buildWatermarkCursor } from './watermark';
 import type { ImapResumeCursor, ImapWatermarkCursor } from './types';
+import { errorMeta } from '../../utils/errors';
 
 const redisClient = redis.getClient();
 
@@ -115,7 +116,9 @@ async function publishToStream(stream: string, data: EmailToStream) {
   try {
     await redisClient.xadd(stream, '*', 'message', JSON.stringify(data));
   } catch (err) {
-    logger.error('Error when publishing to streams');
+    logger.error('Error when publishing to streams', {
+      error: errorMeta(err)
+    });
     throw err;
   }
 }
@@ -347,7 +350,10 @@ export default class ImapEmailsFetcher {
 
       return header ?? null;
     } catch (error) {
-      logger.error('Error when publishing email header', { error });
+      logger.error('Error when publishing email header', {
+        miningId: this.miningId,
+        error: errorMeta(error)
+      });
       throw error;
     }
   }
@@ -414,7 +420,10 @@ export default class ImapEmailsFetcher {
         this.totalSignaturesPublished++;
       }
     } catch (error) {
-      logger.error('Error when publishing email body', { error });
+      logger.error('Error when publishing email body', {
+        miningId: this.miningId,
+        error: errorMeta(error)
+      });
       throw error;
     }
   }

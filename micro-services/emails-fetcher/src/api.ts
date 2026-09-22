@@ -10,6 +10,7 @@ import EmailFetcherFactory from './factory/EmailFetcherFactory';
 import PSTFetcherFactory from './factory/PSTFetcherFactory';
 import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
+import { errorMeta } from './utils/errors';
 import logger from './utils/logger';
 import validateType from './utils/validation';
 import supabaseClient from './utils/supabase';
@@ -471,8 +472,8 @@ apiRoutes.post(
       if (fetchError || !credentialsData?.sources?.length) {
         logger.error('Failed to fetch Google Contacts credentials', {
           userId,
-          email,
-          error: fetchError
+          hasCredentials: Boolean(credentialsData?.sources?.length),
+          error: errorMeta(fetchError ?? new Error('No credentials returned'))
         });
         return res.status(403).json({
           message:

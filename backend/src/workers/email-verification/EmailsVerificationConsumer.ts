@@ -7,6 +7,7 @@ import {
   EmailVerificationHandler
 } from './emailVerificationHandlers';
 import { StreamCommand } from '../../services/tasks-manager-v2/types';
+import { errorMeta } from '../../utils/errors';
 
 export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
@@ -99,13 +100,17 @@ export default class EmailVerificationConsumer {
 
             return processed;
           } catch (err) {
-            this.logger.error('Extraction error', err);
+            this.logger.error('Extraction error', {
+              error: errorMeta(err)
+            });
             return Promise.reject(new Error((err as Error)?.message));
           }
         })
       );
     } catch (err) {
-      this.logger.error('Error while consuming messages from stream.', err);
+      this.logger.error('Error while consuming messages from stream.', {
+        error: errorMeta(err)
+      });
       throw err;
     }
   }
@@ -125,10 +130,9 @@ export default class EmailVerificationConsumer {
       try {
         await this.consumeFromStreams(streams);
       } catch (error) {
-        this.logger.error(
-          'An error occurred while consuming streams:',
-          error instanceof Error ? error : new Error(String(error))
-        );
+        this.logger.error('An error occurred while consuming streams:', {
+          error: errorMeta(error)
+        });
       }
     }
 

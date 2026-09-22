@@ -181,7 +181,9 @@ describe('EmailFetcherClient', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Start fetching request failed',
-        expect.objectContaining({ error: axiosError })
+        expect.objectContaining({
+          error: expect.objectContaining({ message: 'Request failed' })
+        })
       );
     });
   });
@@ -247,7 +249,9 @@ describe('EmailFetcherClient', () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Stop fetching request failed',
-        expect.objectContaining({ error: axiosError })
+        expect.objectContaining({
+          error: expect.objectContaining({ message: 'Delete failed' })
+        })
       );
     });
   });

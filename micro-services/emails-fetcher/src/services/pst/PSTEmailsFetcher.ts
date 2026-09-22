@@ -8,6 +8,7 @@ import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
+import { errorMeta } from '../../utils/errors';
 import supabaseClient from '../../utils/supabase';
 
 const PST_FOLDER = 'pst';
@@ -80,7 +81,9 @@ async function publishToStream(stream: string, data: EmailToStream) {
   try {
     await redisClient.xadd(stream, '*', 'message', JSON.stringify(data));
   } catch (err) {
-    logger.error('Error when publishing to streams');
+    logger.error('Error when publishing to streams', {
+      error: errorMeta(err)
+    });
     throw err;
   }
 }

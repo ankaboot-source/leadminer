@@ -76,6 +76,15 @@ function isOAuthType(type?: string): boolean {
   return type === "google" || type === "azure";
 }
 
+// Bound backend error text: validation failures echo request input, so never
+// propagate unbounded response bodies into logs or stored run history.
+const MAX_ERROR_DETAIL_LENGTH = 300;
+
+export function truncateErrorDetail(detail: string): string {
+  if (detail.length <= MAX_ERROR_DETAIL_LENGTH) return detail;
+  return `${detail.slice(0, MAX_ERROR_DETAIL_LENGTH)}… (truncated)`;
+}
+
 async function backendError(
   res: Response,
   message: (status: number, detail: string) => string,
@@ -94,7 +103,9 @@ async function backendError(
     payload?.error ??
     errText ??
     res.statusText;
-  const error = new Error(message(res.status, String(detail))) as Error & {
+  const error = new Error(
+    message(res.status, truncateErrorDetail(String(detail))),
+  ) as Error & {
     status: number;
   };
   error.status = res.status;
@@ -295,7 +306,12 @@ async function startMiningEmail(miningSource: MiningSource) {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error("Mining API error:", errText);
+    // Bounded preview only: full response bodies may echo request input.
+    console.error("Mining API error", {
+      sourceId: miningSource.id,
+      status: res.status,
+      detail: truncateErrorDetail(errText),
+    });
     throw await backendError(
       res,
       (_status, detail) => `Failed to start mining email: ${detail}`,

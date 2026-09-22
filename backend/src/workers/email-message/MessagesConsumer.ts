@@ -9,6 +9,7 @@ import RedisStreamProducer from '../../utils/streams/redis/RedisStreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
 import { EmailMessageData } from './emailMessageHandlers';
 import { StreamCommand } from '../../services/tasks-manager-v2/types';
+import { errorMeta } from '../../utils/errors';
 
 interface StreamEntry {
   emailsStreamProducer: StreamProducer<EmailVerificationData> | null;
@@ -145,13 +146,17 @@ export default class MessagesConsumer {
 
             return promises;
           } catch (err) {
-            this.logger.error('Extraction error', err);
+            this.logger.error('Extraction error', {
+              error: errorMeta(err)
+            });
             return Promise.reject(err);
           }
         })
       );
     } catch (err) {
-      this.logger.error('Error while consuming messages from stream.', err);
+      this.logger.error('Error while consuming messages from stream.', {
+        error: errorMeta(err)
+      });
       throw err;
     }
   }
@@ -171,10 +176,9 @@ export default class MessagesConsumer {
       try {
         await this.consumeFromStreams(streams);
       } catch (error) {
-        this.logger.error(
-          'An error occurred while consuming streams:',
-          error instanceof Error ? error : new Error(String(error))
-        );
+        this.logger.error('An error occurred while consuming streams:', {
+          error: errorMeta(error)
+        });
       }
     }
 

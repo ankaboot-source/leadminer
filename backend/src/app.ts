@@ -95,8 +95,12 @@ export default function initializeApp(
   app.use(errorHandler);
 
   process.on('uncaughtException', (error) => {
-    logger.error(`[UNCAUGHT EXCEPTION]: ${error.message}`, {
-      stack: error.stack
+    // uncaught values are not guaranteed to be Errors (throw null, throw 'x'),
+    // so guard before reading .message (see PR #2906 review).
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    logger.error(`[UNCAUGHT EXCEPTION]: ${message}`, {
+      stack
     });
 
     if (ENV.SENTRY_DSN_BACKEND) {
