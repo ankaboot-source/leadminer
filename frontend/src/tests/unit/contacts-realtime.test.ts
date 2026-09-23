@@ -6,6 +6,7 @@ import {
   getContactKey,
   isKnownMiningSessionRow,
   resolveRealtimeAction,
+  shouldReloadOnReconnect,
 } from '@/utils/contacts-realtime';
 import type { Contact } from '@/types/contact';
 
@@ -41,8 +42,7 @@ describe('getContactKey', () => {
   });
 });
 
-describe('isKnownMiningSessionRow', () => {
-  it('accepts an UPDATE for a row already in the mining session', () => {
+describe('isKnownMiningSessionRow', () => {  it('accepts an UPDATE for a row already in the mining session', () => {
     expect(isKnownMiningSessionRow('p1', new Set(['p1']))).toBe(true);
   });
 
@@ -54,6 +54,21 @@ describe('isKnownMiningSessionRow', () => {
 
   it('rejects an UPDATE without a row id', () => {
     expect(isKnownMiningSessionRow(undefined, new Set(['p1']))).toBe(false);
+  });
+});
+
+describe('shouldReloadOnReconnect', () => {
+  it('reloads after a real drop on the contacts view', () => {
+    expect(shouldReloadOnReconnect(true, false)).toBe(true);
+  });
+
+  it('skips the connect completing our own subscribe', () => {
+    expect(shouldReloadOnReconnect(true, true)).toBe(false);
+  });
+
+  it('never reloads on the mine view', () => {
+    expect(shouldReloadOnReconnect(false, false)).toBe(false);
+    expect(shouldReloadOnReconnect(false, true)).toBe(false);
   });
 });
 

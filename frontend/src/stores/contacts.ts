@@ -17,6 +17,7 @@ import {
   getContactKey,
   isKnownMiningSessionRow,
   resolveRealtimeAction,
+  shouldReloadOnReconnect,
   type RealtimePersonRow,
 } from '~/utils/contacts-realtime';
 import Normalizer from '~/utils/normalizer';
@@ -48,6 +49,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let realtimeChannel: RealtimeChannel | null = null;
   let realtimeChannelUserId: string | null = null;
   let realtimeScope: TableOrigin = 'contacts';
+  let realtimeInitialConnectPending = false;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   let reconcileTimer: ReturnType<typeof setTimeout> | null = null;
@@ -327,9 +329,18 @@ export const useContactsStore = defineStore('contacts-store', () => {
     channel.on('system', { event: 'reconnected' }, () => {
       console.debug('Realtime reconnected — reloading contacts');
       pendingReconcilePersonIds.clear();
-      // Full-table reloads belong to the contacts view only. The mine view
-      // is session-scoped and must never pull the entire contact list.
-      if (realtimeScope !== 'contacts') return;
+      // Recovery loads have a single rule: contacts scope, and only after a
+      // real drop. The connect completing our own subscribe is skipped so a
+      // fresh mount never loads twice.
+      if (
+        !shouldReloadOnReconnect(
+          realtimeScope === 'contacts',
+          realtimeInitialConnectPending,
+        )
+      ) {
+        realtimeInitialConnectPending = false;
+        return;
+      }
       reloadContacts();
     });
 
@@ -355,6 +366,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     realtimeChannel = null;
 
     realtimeChannel = createContactsRealtimeChannel(userId);
+    realtimeInitialConnectPending = true;
     realtimeChannel.subscribe();
   }
 
@@ -376,6 +388,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     realtimeChannel = createContactsRealtimeChannel(userId);
     realtimeChannelUserId = userId;
+    realtimeInitialConnectPending = true;
     startSyncInterval();
     realtimeChannel.subscribe();
   }
@@ -386,6 +399,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function unsubscribeFromRealtimeUpdates() {
     pendingReconcilePersonIds.clear();
     clearReconcileTimer();
+    realtimeInitialConnectPending = false;
     await syncContactsList();
 
     if (realtimeChannel) {
