@@ -203,3 +203,105 @@ Deno.test("permanent on the real simple-oauth2 Boom shape (data.payload)", () =>
   });
   assert(isPermanentOAuthError(boom));
 });
+
+// -- Token-death matrix (Google documented causes) ----------------------------
+// Source: https://developers.google.com/identity/protocols/oauth2#expiration
+// Each case below is a distinct real-world way a refresh token dies; all must
+// classify as permanent (needs human re-auth), never retried forever.
+
+function googleBoom(description: string): unknown {
+  return Object.assign(new Error("Response Error: 400 Bad Request"), {
+    data: {
+      payload: { error: "invalid_grant", error_description: description },
+    },
+  });
+}
+
+Deno.test("death: user revoked access -> permanent", () => {
+  assert(
+    isPermanentOAuthError(
+      googleBoom("Token has been expired or revoked."),
+    ),
+  );
+});
+
+Deno.test("death: 6-month disuse expiry -> permanent", () => {
+  // Google kills refresh tokens unused for 6 months. Passive mining runs
+  // daily, so passive sources can never die this way while the cron is active.
+  assert(
+    isPermanentOAuthError(
+      googleBoom("Token has been expired or revoked."),
+    ),
+  );
+});
+
+Deno.test("death: password change with Gmail scopes -> permanent", () => {
+  // We request https://mail.google.com/, so a password change kills the grant.
+  assert(
+    isPermanentOAuthError(
+      googleBoom("Token has been expired or revoked."),
+    ),
+  );
+});
+
+Deno.test("death: 100-token cap evicted oldest grant -> permanent", () => {
+  // >100 refresh tokens per user+client silently invalidates the oldest.
+  // Every re-add (prompt=consent mints a NEW token) burns one slot, so
+  // repeated re-auths can kill the token currently in use.
+  assert(
+    isPermanentOAuthError(
+      googleBoom("Token has been expired or revoked."),
+    ),
+  );
+});
+
+Deno.test("death: testing-mode 7-day expiry -> permanent", () => {
+  // GCP projects with an external consent screen in "Testing" get refresh
+  // tokens that die after 7 days. Same invalid_grant surface as any death.
+  assert(
+    isPermanentOAuthError(
+      googleBoom("Token has been expired or revoked."),
+    ),
+  );
+});
+
+Deno.test("death: admin-restricted scopes -> permanent (needs admin)", () => {
+  assert(isPermanentOAuthError({ error: "admin_policy_enforced" }));
+  assert(
+    isPermanentOAuthError(
+      Object.assign(new Error("Response Error: 400 Bad Request"), {
+        data: { payload: { error: "admin_policy_enforced" } },
+      }),
+    ),
+  );
+});
+
+Deno.test("transient: invalid_client is a config bug, not a dead token", () => {
+  // Wrong client_id/secret: retrying won't fix it, but re-auth won't either.
+  // Must NOT mark the source NeedsReauth (that would mislead the user).
+  assertFalse(isPermanentOAuthError({ error: "invalid_client" }));
+});
+
+Deno.test("transient: rate limits and server errors stay retryable", () => {
+  assertFalse(isPermanentOAuthError({ error: "slow_down" }));
+  assertFalse(
+    isPermanentOAuthError(
+      Object.assign(new Error("Response Error: 500 Internal Server Error"), {
+        data: { payload: { error: "internal_failure" } },
+      }),
+    ),
+  );
+});
+
+// -- Azure lifetime matrix ----------------------------------------------------
+// Source: https://learn.microsoft.com/en-us/entra/identity-platform/refresh-tokens
+// Our Azure client is confidential (web app + secret): 90-day rolling RT
+// lifetime, old tokens stay valid on use, survives password changes.
+
+Deno.test("azure: 90-day rolling lifetime is refreshed by daily passive runs", () => {
+  // No code assertion possible on wall-clock lifetime; this pins the
+  // classifier contract instead: only documented dead-grant codes are
+  // permanent, everything else (incl. unknown future codes) stays transient.
+  assertFalse(isPermanentOAuthError({ error_codes: [90033] }));
+  assertFalse(isPermanentOAuthError({ error: "interaction_required" }));
+});
