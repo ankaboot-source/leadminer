@@ -1508,6 +1508,12 @@ function clearIdlePrefetch() {
 }
 
 async function loadContactsData() {
+  // Full-table loads belong to the contacts view only. The mine view stays
+  // session-scoped and is populated by the realtime stream.
+  if (origin === 'mine') {
+    return;
+  }
+
   if (hasLoadedContacts.value) {
     return;
   }
@@ -1534,7 +1540,7 @@ async function loadContactsData() {
       Normalizer.add(locationsToNormalize);
     }
 
-    $contactsStore.subscribeToRealtimeUpdates();
+    $contactsStore.subscribeToRealtimeUpdates(origin);
     hasLoadedContacts.value = true;
   })();
 
@@ -1599,7 +1605,7 @@ onNuxtReady(async () => {
     Normalizer.add(locationsToNormalize);
   }
 
-  $contactsStore.subscribeToRealtimeUpdates();
+  $contactsStore.subscribeToRealtimeUpdates(origin);
 
   const miningId = getParam(MINING_ID_PARAM);
   if (miningId) {
@@ -1617,6 +1623,13 @@ watch(
   () => showTable,
   (isVisible) => {
     if (!isVisible || hasLoadedContacts.value) {
+      return;
+    }
+
+    // The mine view never performs a full-table load.
+    if (origin === 'mine') {
+      clearIdlePrefetch();
+      isLoading.value = false;
       return;
     }
 

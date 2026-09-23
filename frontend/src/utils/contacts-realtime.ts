@@ -37,6 +37,20 @@ export function getContactKey(
 }
 
 /**
+ * Mining-session membership check for streamed UPDATE rows.
+ *
+ * During a foreground mining the table only contains rows already streamed
+ * for this run. An UPDATE is applied only when its person id is already in
+ * the session cache; updates for historical contacts are ignored.
+ */
+export function isKnownMiningSessionRow(
+  rowId: string | undefined,
+  cachedKeys: Set<string>,
+): boolean {
+  return Boolean(rowId && cachedKeys.has(rowId));
+}
+
+/**
  * Collect the person_id(s) a realtime payload signals changed. These are the
  * keys used to reverse-lookup the affected aggregate group(s) via
  * get_contacts_view_by_ids.

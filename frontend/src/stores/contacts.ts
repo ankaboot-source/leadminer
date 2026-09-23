@@ -15,6 +15,7 @@ import {
   buildPersonChangeFilters,
   collectRealtimePersonIds,
   getContactKey,
+  isKnownMiningSessionRow,
   resolveRealtimeAction,
   type RealtimePersonRow,
 } from '~/utils/contacts-realtime';
@@ -46,6 +47,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   let realtimeChannel: RealtimeChannel | null = null;
   let realtimeChannelUserId: string | null = null;
+  let realtimeScope: TableOrigin = 'contacts';
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   let reconcileTimer: ReturnType<typeof setTimeout> | null = null;
@@ -286,6 +288,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     switch (action.kind) {
       case 'stream':
+        if (
+          payload.eventType === 'UPDATE' &&
+          !isKnownMiningSessionRow(
+            action.row.id,
+            new Set(contactsCacheMap.keys()),
+          )
+        ) {
+          return;
+        }
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
         return;
@@ -316,6 +327,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
     channel.on('system', { event: 'reconnected' }, () => {
       console.debug('Realtime reconnected — reloading contacts');
       pendingReconcilePersonIds.clear();
+      // Full-table reloads belong to the contacts view only. The mine view
+      // is session-scoped and must never pull the entire contact list.
+      if (realtimeScope !== 'contacts') return;
       reloadContacts();
     });
 
@@ -347,7 +361,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   /**
    * Subscribes to real-time updates for contacts.
    */
-  function subscribeToRealtimeUpdates() {
+  function subscribeToRealtimeUpdates(scope: TableOrigin = 'contacts') {
+    realtimeScope = scope;
     const userId = getCurrentUserId();
     if (!userId) return;
 

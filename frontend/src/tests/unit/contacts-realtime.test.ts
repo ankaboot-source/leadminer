@@ -4,6 +4,7 @@ import {
   applyReconciledContacts,
   collectRealtimePersonIds,
   getContactKey,
+  isKnownMiningSessionRow,
   resolveRealtimeAction,
 } from '@/utils/contacts-realtime';
 import type { Contact } from '@/types/contact';
@@ -37,6 +38,22 @@ describe('getContactKey', () => {
     expect(getContactKey(contact({ id: 'a', contact_id: 'cid-a' }))).toBe(
       'cid-a',
     );
+  });
+});
+
+describe('isKnownMiningSessionRow', () => {
+  it('accepts an UPDATE for a row already in the mining session', () => {
+    expect(isKnownMiningSessionRow('p1', new Set(['p1']))).toBe(true);
+  });
+
+  it('rejects an UPDATE for a historical contact absent from the session', () => {
+    expect(isKnownMiningSessionRow('old-contact', new Set(['p1']))).toBe(
+      false,
+    );
+  });
+
+  it('rejects an UPDATE without a row id', () => {
+    expect(isKnownMiningSessionRow(undefined, new Set(['p1']))).toBe(false);
   });
 });
 
