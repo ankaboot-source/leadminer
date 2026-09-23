@@ -29,6 +29,7 @@ import {
   getSafeRedirectPath,
   type OAuthMiningSourceProvider,
 } from "./oauth/utils.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
 
 const logger = createLogger("mining-sources");
 const functionName = "mining-sources";
@@ -219,6 +220,52 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
         `${envs().frontendHost}/callback?error=oauth-permissions&provider=${provider}&referrer=${encodeURIComponent(afterCallbackRedirect)}&navigate_to=${encodeURIComponent(afterCallbackRedirect)}`,
         302,
       );
+    }
+
+    // Fresh credentials were just stored: clear any stale auth-failure flag so
+    // the UI stops showing "connection lost" for a source that now works.
+    // (The upsert RPC preserves config by design; only an auth flag set by an
+    // earlier rejection is cleared — mining Error states are left untouched.)
+    try {
+      const { data: row } = await admin
+        .schema("private")
+        .from("mining_sources")
+        .select("config")
+        .eq("user_id", userId)
+        .eq("email", token.email)
+        .single();
+      const config =
+        row && typeof row.config === "object" && row.config !== null
+          ? (row.config as Record<string, unknown>)
+          : {};
+      const health =
+        typeof config.health === "object" && config.health !== null
+          ? (config.health as Record<string, unknown>)
+          : {};
+      if (health.state === SourceHealthState.NeedsReauth) {
+        await admin
+          .schema("private")
+          .from("mining_sources")
+          .update({
+            config: {
+              ...config,
+              health: { ...health, state: SourceHealthState.Active, last_error: null },
+            },
+          })
+          .eq("user_id", userId)
+          .eq("email", token.email);
+        logger.info("Cleared stale re-auth flag after OAuth reconnect", {
+          userId,
+        });
+      }
+    } catch (healthError) {
+      // Non-fatal: the reconnect itself succeeded; the flag clears on next use.
+      logger.warn("Failed to clear re-auth flag after OAuth reconnect", {
+        error:
+          healthError instanceof Error
+            ? healthError.message
+            : String(healthError),
+      });
     }
 
     const { data: sourceData, error: sourceError } = await admin

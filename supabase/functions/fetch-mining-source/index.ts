@@ -17,6 +17,7 @@ import {
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import {
+  hasStaleReauthFlag,
   isPermanentOAuthError,
   isTokenExpired,
   MiningSource,
@@ -246,6 +247,28 @@ class FetchMiningSourceHandler {
         isTokenExpired(credentials);
 
       if (!shouldRefresh) {
+        // Fresh credentials handed out as usable: a stale auth flag from an
+        // earlier rejection (e.g. set before a reconnect wrote new creds)
+        // would lie to the UI forever, since no refresh will run to clear it.
+        if (source.id && hasStaleReauthFlag(source.config)) {
+          try {
+            await this.patchConfig(source.id, {
+              health: { state: SourceHealthState.Active, last_error: null },
+            });
+            logger.info("Cleared stale re-auth flag on fresh credentials", {
+              sourceId: source.id,
+              userId,
+            });
+          } catch (configError) {
+            logger.error("Failed to clear stale re-auth flag", {
+              sourceId: source.id,
+              error:
+                configError instanceof Error
+                  ? configError.message
+                  : String(configError),
+            });
+          }
+        }
         continue;
       }
 
