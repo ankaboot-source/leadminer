@@ -173,22 +173,6 @@
               </div>
             </div>
 
-            <div
-              v-if="needsReauth(source)"
-              class="mt-3 p-3 rounded bg-red-50 border border-red-200 flex items-center justify-between flex-wrap gap-2"
-            >
-              <div class="flex items-center gap-2 text-sm text-red-600">
-                <i class="pi pi-exclamation-triangle"></i>
-                <span class="font-medium">{{ t('source_needs_reauth') }}</span>
-              </div>
-              <Button
-                :label="t('reconnect')"
-                size="small"
-                severity="danger"
-                @click="reconnectExpiredSource(source)"
-              />
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('provider') }}</div>
@@ -730,10 +714,6 @@ const PASSIVE_STATUS_POLL_MS = 60_000;
 
 function passiveMiningErrors(source: MiningSource): string[] {
   return deriveSourceState(source).lastError ?? [];
-}
-
-function needsReauth(source: MiningSource): boolean {
-  return deriveSourceState(source).state === SourceHealthState.NeedsReauth;
 }
 
 async function toggleSourceConfig(

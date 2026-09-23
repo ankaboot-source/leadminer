@@ -29,6 +29,7 @@ import {
   getSafeRedirectPath,
   type OAuthMiningSourceProvider,
 } from "./oauth/utils.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
 
 const logger = createLogger("mining-sources");
 const functionName = "mining-sources";
@@ -234,6 +235,26 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
         error: sourceError.message,
       });
     } else {
+      // Fresh credentials were just stored: clear any stale auth-failure flag
+      // so the UI stops showing "connection lost" for a source that now works.
+      // Canonical writer (read-merge-CAS-write); unconditional and idempotent.
+      try {
+        await applySourceConfig(sourceData.id, {
+          health: { state: SourceHealthState.Active, last_error: null },
+        });
+        logger.info("Cleared stale re-auth flag after OAuth reconnect", {
+          userId,
+        });
+      } catch (healthError) {
+        // Non-fatal: the reconnect itself succeeded; the flag clears on next use.
+        logger.warn("Failed to clear re-auth flag after OAuth reconnect", {
+          error:
+            healthError instanceof Error
+              ? healthError.message
+              : String(healthError),
+        });
+      }
+
       const { error: smtpError } = await admin
         .schema("private")
         .rpc("create_smtp_sender_for_oauth", {

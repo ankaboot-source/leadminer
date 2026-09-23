@@ -80,6 +80,20 @@ export function normalizeExpiresAtMs(expiresAt: unknown): number | null {
 }
 
 /**
+ * True when the stored config carries a stale *auth* failure flag while the
+ * credentials themselves are fresh. Only NeedsReauth counts: mining Error
+ * states describe run failures, not credential validity, and must survive.
+ */
+export function hasStaleReauthFlag(config: unknown): boolean {
+  if (typeof config !== "object" || config === null) return false;
+  const rec = config as Record<string, unknown>;
+  if (rec.needs_reauth) return true;
+  const health = rec.health;
+  if (typeof health !== "object" || health === null) return false;
+  return (health as Record<string, unknown>).state === "needs_reauth";
+}
+
+/**
  * True when the stored OAuth credentials are expired (or missing an expiry),
  * with the same 5-minute headroom the previous simple-oauth2-based check had.
  */
