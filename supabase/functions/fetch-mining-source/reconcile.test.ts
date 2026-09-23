@@ -39,7 +39,10 @@ Deno.test("not stale on mining Error state (run failure, not auth)", () => {
 
 Deno.test("not stale on missing or garbage config", () => {
   assertFalse(hasStaleReauthFlag(null));
-  assertFalse(hasStaleReauthFlag(undefined));
+  // Pass through a variable: the missing-config path must handle undefined,
+  // but the linter flags the literal.
+  const missing: unknown = undefined;
+  assertFalse(hasStaleReauthFlag(missing));
   assertFalse(hasStaleReauthFlag("needs_reauth"));
   assertFalse(hasStaleReauthFlag({ health: null }));
   assertFalse(hasStaleReauthFlag({ health: { state: "bogus" } }));
