@@ -33,6 +33,8 @@ const USER_ID = "9f1d3b28-6f6b-4d9e-9d3e-0b6f1b2e2222";
 const USER_EMAIL = "handoff.test@gmail.com";
 
 let capturedUpsert: Record<string, unknown> | undefined;
+// Config writes via applySourceConfig (PATCH/PUT on mining_sources).
+let capturedConfigUpdate: Record<string, unknown> | undefined;
 
 const realFetch = globalThis.fetch;
 globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
@@ -77,6 +79,22 @@ globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
     );
   }
   if (path.endsWith("/rest/v1/mining_sources")) {
+    if (init?.method === "PATCH" || init?.method === "PUT") {
+      capturedConfigUpdate = JSON.parse(String(init?.body ?? "{}"));
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            config: (capturedConfigUpdate as Record<string, unknown>).config ??
+              {},
+            config_revision: 1,
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+      );
+    }
     // .single() object-mode response for the SMTP-twin source lookup.
     return Promise.resolve(
       new Response(
@@ -233,5 +251,42 @@ Deno.test(
       before + 3_600_000,
       60_000,
     );
+  },
+);
+
+Deno.test(
+  "OAuth callback resets a stale needs_reauth flag via applySourceConfig",
+  { sanitizeResources: false, sanitizeOps: false },
+  async () => {
+    capturedUpsert = undefined;
+    capturedConfigUpdate = undefined;
+
+    const state = await signOAuthState(
+      {
+        userId: "9f1d3b28-6f6b-4d9e-9d3e-0b6f1b2e2222",
+        afterCallbackRedirect: "/mine",
+      },
+      "test-hash-secret",
+    );
+
+    const res = await handler(
+      new Request(
+        `http://127.0.0.1:8000/mining-sources/oauth/callback/google?code=cb-code&state=${
+          encodeURIComponent(state)
+        }`,
+        { redirect: "manual" },
+      ),
+    );
+    await res.body?.cancel();
+    assertEquals(res.status, 302);
+
+    // The reconnect wrote fresh creds: the canonical writer must have reset
+    // the auth flag (merging, not replacing, sibling health keys).
+    const update = capturedConfigUpdate as Record<string, unknown> | undefined;
+    assert(update, "no config update was issued after OAuth reconnect");
+    const health = (update.config as Record<string, unknown>)
+      .health as Record<string, unknown>;
+    assertEquals(health.state, "active");
+    assertEquals(health.last_error, null);
   },
 );
