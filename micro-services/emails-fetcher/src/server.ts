@@ -39,7 +39,13 @@ app.use(errorLogger);
 app.use(errorHandler);
 
 process.on('uncaughtException', (err) => {
-  logger.error(`[UNCAUGHT EXCEPTION]: ${err.message}`, err.stack || err);
+  // uncaught values are not guaranteed to be Errors (throw null, throw 'x'),
+  // so guard before reading .message (see PR #2906 review).
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  logger.error(`[UNCAUGHT EXCEPTION]: ${message}`, {
+    stack
+  });
   if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.captureException(err);
   }

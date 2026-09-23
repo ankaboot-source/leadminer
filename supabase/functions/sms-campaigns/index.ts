@@ -1336,7 +1336,6 @@ app.post("/campaigns/preview", authMiddleware, async (c: Context) => {
     } catch (error) {
       logger.error("Failed to send preview SMS", {
         error: error instanceof Error ? error.message : String(error),
-        phone: normalizedTestPhone,
       });
       return c.json(
         {

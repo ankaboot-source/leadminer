@@ -3,6 +3,7 @@ import { ContactFrontend } from '../../../../db/types';
 import logger from '../../../../utils/logger';
 import { Distribution, TokenBucketRateLimiter } from '../../../rate-limiter';
 import ENV from '../../../../config';
+import { errorMeta } from '../../../../utils/errors';
 
 export type QuotaType = 'criticalRead' | 'criticalWrite' | 'read' | 'write';
 
@@ -205,8 +206,8 @@ export default class GoogleContactsSession {
       return { labelId };
     } catch (err) {
       logger.error(
-        `GoogleContactsSession.run(): Error during sync: ${(err as Error).message}`,
-        err
+        `GoogleContactsSession.run(): Error during sync: ${(err as Error)?.message}`,
+        { error: errorMeta(err) }
       );
       throw err;
     }

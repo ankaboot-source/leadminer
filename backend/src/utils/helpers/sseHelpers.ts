@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import SSE from 'express-sse';
 import logger from '../logger';
+import { errorMeta } from '../errors';
 
 /**
  * RealtimeSSE extends SSE class and adds an `initSSE` method
@@ -39,7 +40,9 @@ export default class RealtimeSSE extends SSE {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
-      logger.error('Something happened when sending SSE', error);
+      logger.error('Something happened when sending SSE', {
+        error: errorMeta(error)
+      });
     }
   }
 

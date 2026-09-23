@@ -130,7 +130,12 @@ describe('ThedigApi', () => {
       );
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('[ThedigApi:enrich]'),
-        error
+        expect.objectContaining({
+          error: expect.objectContaining({
+            name: 'Error',
+            message: 'Network Error'
+          })
+        })
       );
     });
   });
@@ -199,7 +204,12 @@ describe('ThedigApi', () => {
       ).rejects.toThrow('Bulk request error');
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('[ThedigApi:enrichBulk]'),
-        error
+        expect.objectContaining({
+          error: expect.objectContaining({
+            name: 'Error',
+            message: 'Bulk request error'
+          })
+        })
       );
     });
   });

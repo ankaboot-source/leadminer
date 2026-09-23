@@ -10,6 +10,7 @@ import type {
 } from '../types';
 import SupabaseTasks from '../../../db/supabase/tasks';
 import logger from '../../../utils/logger';
+import { errorMeta } from '../../../utils/errors';
 import ENV from '../../../config';
 
 export interface TaskConfig {
@@ -147,7 +148,7 @@ export class Task extends EventEmitter {
           );
         } catch (err) {
           logger.error(`Failed to publish DELETE command for task ${this.id}`, {
-            error: err
+            error: errorMeta(err)
           });
         }
       }
@@ -168,7 +169,7 @@ export class Task extends EventEmitter {
         });
       } catch (error) {
         logger.error(`Failed to update task ${this.id} in database`, {
-          error
+          error: errorMeta(error)
         });
       }
     }

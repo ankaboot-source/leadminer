@@ -47,7 +47,7 @@ export default class EnrichLayer implements Engine {
 
   async enrichSync(person: Partial<Person>) {
     try {
-      this.logger.debug(`${this.constructor.name}.enrichSync request`, person);
+      this.logger.debug(`${this.constructor.name}.enrichSync request`);
       const response = await this.client.reverseEmailLookup({
         lookup_depth: 'superficial',
         enrich_profile: 'enrich',
@@ -55,12 +55,13 @@ export default class EnrichLayer implements Engine {
       });
       return this.parseResult([response]);
     } catch (err) {
-      throw new Error((err as Error).message);
+      throw new Error((err as Error)?.message);
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   enrichAsync(_: Partial<Person>[], __: string): Promise<EngineResponse> {
-    this.logger.debug(`${this.constructor.name}.enrichSync request`, _, __);
+    this.logger.debug(`${this.constructor.name}.enrichSync request`);
     throw new Error('Method not implemented.');
   }
 
@@ -107,8 +108,7 @@ export default class EnrichLayer implements Engine {
       .pop();
 
     this.logger.debug(
-      `[${this.constructor.name}]-[parseResult]: Parsing results`,
-      mapped
+      `[${this.constructor.name}]-[parseResult]: Parsing results (${mapped ? 1 : 0} mapped)`
     );
 
     return {

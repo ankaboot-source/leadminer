@@ -7,7 +7,13 @@ export default function errorLogger(
   _res: Response,
   next: NextFunction
 ) {
-  logger.error('[middleware.errorLogger]:', err);
+  // err can be a non-Error value at runtime (e.g. next('boom'), throw null),
+  // so guard before reading .message (see PR #2906 review).
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  logger.error(`[middleware.errorLogger]: ${message}`, {
+    stack
+  });
 
   next(err);
 }

@@ -232,7 +232,6 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
     if (sourceError) {
       logger.warn("Failed to get mining source ID for SMTP twin", {
         error: sourceError.message,
-        email: token.email,
       });
     } else {
       const { error: smtpError } = await admin
@@ -249,7 +248,6 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       if (smtpError) {
         logger.warn("Failed to create SMTP sender twin for OAuth source", {
           error: smtpError.message,
-          email: token.email,
         });
       }
     }

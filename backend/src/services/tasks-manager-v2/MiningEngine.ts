@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 import { Pipeline } from './Pipeline';
 import logger from '../../utils/logger';
+import { errorMeta } from '../../utils/errors';
 import type { RedactedTask } from './types';
 
 export interface MiningEngineDeps {
@@ -17,7 +18,7 @@ export class MiningEngine {
         pipeline.onMessage(data);
       } catch (error) {
         logger.error(`Error processing message for mining ${channel}`, {
-          error
+          error: errorMeta(error)
         });
       }
     }
@@ -33,7 +34,9 @@ export class MiningEngine {
 
   private remove(miningId: string): void {
     this.deps.redisSubscriber.unsubscribe(miningId).catch((err) => {
-      logger.error(`Failed to unsubscribe from channel ${miningId}`, err);
+      logger.error(`Failed to unsubscribe from channel ${miningId}`, {
+        error: errorMeta(err)
+      });
     });
     this.pipelines.delete(miningId);
   }

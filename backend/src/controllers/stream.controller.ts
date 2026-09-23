@@ -25,7 +25,7 @@ export default function initializeStreamController(miningEngine: MiningEngine) {
         res.status(404);
         res.write('id: 404-not-found\n');
         res.write('event: close\n');
-        res.write(`data: ${JSON.stringify((error as Error).message)}\n\n`);
+        res.write(`data: ${JSON.stringify((error as Error)?.message)}\n\n`);
         res.flushHeaders();
         res.end();
       }

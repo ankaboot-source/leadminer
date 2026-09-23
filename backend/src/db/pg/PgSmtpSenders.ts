@@ -99,7 +99,10 @@ export default class PgSmtpSenders implements SmtpSenders {
       ]);
       return rows.map(toSmtpSender);
     } catch (error) {
-      this.logger.error('Failed fetching SMTP senders', { userId, error });
+      this.logger.error('Failed fetching SMTP senders', {
+        userId,
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }
@@ -112,7 +115,11 @@ export default class PgSmtpSenders implements SmtpSenders {
       ]);
       return rows[0] ? toSmtpSender(rows[0]) : null;
     } catch (error) {
-      this.logger.error('Failed fetching SMTP sender', { id, userId, error });
+      this.logger.error('Failed fetching SMTP sender', {
+        id,
+        userId,
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }
@@ -138,8 +145,7 @@ export default class PgSmtpSenders implements SmtpSenders {
     } catch (error) {
       this.logger.error('Failed creating SMTP sender', {
         userId: sender.userId,
-        email: sender.email,
-        error
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -166,7 +172,11 @@ export default class PgSmtpSenders implements SmtpSenders {
       ]);
       return rows[0] ? toSmtpSender(rows[0]) : null;
     } catch (error) {
-      this.logger.error('Failed updating SMTP sender', { id, userId, error });
+      this.logger.error('Failed updating SMTP sender', {
+        id,
+        userId,
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }
@@ -179,7 +189,11 @@ export default class PgSmtpSenders implements SmtpSenders {
       ]);
       return (result.rowCount ?? 0) > 0;
     } catch (error) {
-      this.logger.error('Failed deleting SMTP sender', { id, userId, error });
+      this.logger.error('Failed deleting SMTP sender', {
+        id,
+        userId,
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }
@@ -198,7 +212,7 @@ export default class PgSmtpSenders implements SmtpSenders {
       this.logger.error('Failed deleting SMTP sender by mining source', {
         userId,
         miningSourceId,
-        error
+        error: (error as Error)?.message
       });
       throw error;
     }
@@ -213,7 +227,11 @@ export default class PgSmtpSenders implements SmtpSenders {
       ]);
       return rows[0]?.password ?? null;
     } catch (error) {
-      this.logger.error('Failed fetching SMTP password', { id, userId, error });
+      this.logger.error('Failed fetching SMTP password', {
+        id,
+        userId,
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }

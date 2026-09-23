@@ -395,7 +395,7 @@ async function exportTable(
   } catch (err) {
     activeExport.value = false;
 
-    if ((err as FetchError).response?.status === 401) {
+    if ((err as FetchError | null)?.response?.status === 401) {
       $consentSidebar.show(
         'google',
         selectedGoogleAccount.value || $profile.value?.email,

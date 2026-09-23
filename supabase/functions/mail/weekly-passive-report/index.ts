@@ -52,7 +52,7 @@ async function aggregateMiningStats(miningIds: string[]): Promise<MiningTaskStat
       stats.totalWithCompany += miningStats.total_with_company || 0;
       stats.totalWithLocation += miningStats.total_with_location || 0;
     } catch (error) {
-      console.error(`[aggregateMiningStats] Failed to get stats for mining ${miningId}:`, error);
+      console.error(`[aggregateMiningStats] Failed to get stats for mining ${miningId}:`, error instanceof Error ? error.message : error);
     }
   }
   
@@ -72,7 +72,7 @@ async function getPassiveMiningIds(weekStart: Date, weekEnd: Date): Promise<Pass
     });
 
   if (error) {
-    console.error('[getPassiveMiningIds] Failed to fetch passive mining IDs:', error);
+    console.error('[getPassiveMiningIds] Failed to fetch passive mining IDs:', error instanceof Error ? error.message : error);
     throw error;
   }
 

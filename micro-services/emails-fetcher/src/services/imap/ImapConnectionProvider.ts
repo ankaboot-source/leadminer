@@ -2,7 +2,6 @@ import assert from 'assert';
 import { createPool, Factory, Pool } from 'generic-pool';
 import { ImapFlow as Connection, ImapFlowOptions } from 'imapflow';
 import { checkServerIdentity, type PeerCertificate } from 'tls';
-import util from 'util';
 import ENV from '../../config';
 import {
   MiningSources,
@@ -142,12 +141,12 @@ class ImapConnectionProvider {
       } catch (error) {
         logger.warn(
           `Attempt ${attempt} failed to refresh token:`,
-          util.inspect(error, { depth: null, colors: true })
+          error instanceof Error ? error.message : error
         );
         if (attempt === retries) {
           logger.error(
             'All attempts to refresh token failed',
-            util.inspect(error, { depth: null, colors: true })
+            error instanceof Error ? error.message : error
           );
           throw error;
         }
@@ -222,7 +221,9 @@ class ImapConnectionProvider {
 
     // Optional logging
     connection.on('error', (err) => {
-      logger.error('ImapFlow connection error:', err);
+      logger.error('ImapFlow connection error:', {
+        error: (err as Error)?.message
+      });
     });
 
     try {
@@ -332,14 +333,18 @@ class ImapConnectionProvider {
     });
 
     connection.on('error', (err) => {
-      logger.error('ImapFlow connection error:', err);
+      logger.error('ImapFlow connection error:', {
+        error: (err as Error)?.message
+      });
     });
 
     try {
       await connection.connect(); // throws on auth / network issues
       return connection;
     } catch (err) {
-      logger.error('ImapFlow connection error', err);
+      logger.error('ImapFlow connection error', {
+        error: (err as Error)?.message
+      });
       throw err;
     }
   }
@@ -387,7 +392,9 @@ class ImapConnectionProvider {
       assert(this.connectionsPool, 'Connection Pool should not be undefined');
       await this.connectionsPool.release(imapConnection);
     } catch (err) {
-      logger.error('[ImapConnectionProvider]: Error releasing connection', err);
+      logger.error('[ImapConnectionProvider]: Error releasing connection', {
+        error: (err as Error)?.message
+      });
     }
   }
 
@@ -409,7 +416,9 @@ class ImapConnectionProvider {
         try {
           return await this.connect();
         } catch (err) {
-          logger.error('Failed to create pool resources', err);
+          logger.error('Failed to create pool resources', {
+            error: (err as Error)?.message
+          });
           throw err;
         }
       },
@@ -420,7 +429,9 @@ class ImapConnectionProvider {
         } catch (err) {
           logger.error(
             '[ImapConnectionProvider]: Error destroying connection',
-            err
+            {
+              error: (err as Error)?.message
+            }
           );
         }
       }
@@ -435,7 +446,9 @@ class ImapConnectionProvider {
 
     // Set up an event listener for factory create errors
     this.connectionsPool.on('factoryCreateError', (err) => {
-      logger.error('Error creating IMAP connection pool resource', err);
+      logger.error('Error creating IMAP connection pool resource', {
+        error: (err as Error)?.message
+      });
     });
   }
 }

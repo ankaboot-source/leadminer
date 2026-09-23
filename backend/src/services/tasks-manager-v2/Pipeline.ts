@@ -16,6 +16,7 @@ import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import { mailMiningComplete, refineContacts } from '../../db/mail';
 import { recordMiningCompletion } from '../../db/completion';
 import logger from '../../utils/logger';
+import { errorMeta } from '../../utils/errors';
 
 export interface PipelineConfig {
   miningId: string;
@@ -146,7 +147,11 @@ export class Pipeline {
     try {
       msg = JSON.parse(data);
     } catch {
-      logger.warn('Malformed Redis message', { data });
+      // Log shape only: the raw payload may carry customer data.
+      logger.warn('Malformed Redis message', {
+        miningId: this.miningId,
+        length: data.length
+      });
       return;
     }
 
@@ -207,7 +212,9 @@ export class Pipeline {
           );
           this.broadcastTaskFinished(t);
         } catch (err) {
-          logger.error('Error stopping completed tasks', err);
+          logger.error('Error stopping completed tasks', {
+            error: errorMeta(err)
+          });
         }
       }
 
@@ -233,7 +240,9 @@ export class Pipeline {
         await this.onComplete();
       }
     } catch (err) {
-      logger.error('Error in onComplete callback', err);
+      logger.error('Error in onComplete callback', {
+        error: errorMeta(err)
+      });
     }
 
     try {
@@ -291,7 +300,7 @@ export class Pipeline {
           } catch (err) {
             logger.error('Failed to cleanup stream', {
               streamName: s.streamName,
-              error: err
+              error: errorMeta(err)
             });
           }
         })
@@ -413,7 +422,9 @@ export class Pipeline {
           this.propagateProgress();
           this.broadcastTaskFinished(t);
         } catch (err) {
-          logger.error(`Failed to stop task ${t.id ?? 'unknown'}`, err);
+          logger.error(`Failed to stop task ${t.id ?? 'unknown'}`, {
+            error: errorMeta(err)
+          });
         }
       }
     }

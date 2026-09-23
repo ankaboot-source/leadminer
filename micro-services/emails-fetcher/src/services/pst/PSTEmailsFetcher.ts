@@ -8,6 +8,7 @@ import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
+import { errorMeta } from '../../utils/errors';
 import supabaseClient from '../../utils/supabase';
 
 const PST_FOLDER = 'pst';
@@ -80,7 +81,9 @@ async function publishToStream(stream: string, data: EmailToStream) {
   try {
     await redisClient.xadd(stream, '*', 'message', JSON.stringify(data));
   } catch (err) {
-    logger.error('Error when publishing to streams');
+    logger.error('Error when publishing to streams', {
+      error: errorMeta(err)
+    });
     throw err;
   }
 }
@@ -301,7 +304,9 @@ export default class PSTEmailsFetcher {
       await this.notifyCompleted();
       return this.isCompleted;
     } catch (error) {
-      logger.error(`[${this.miningId}] Error during stop process:`, error);
+      logger.error(`[${this.miningId}] Error during stop process:`, {
+        error: (error as Error)?.message
+      });
       await this.cleanup();
       await this.notifyCompleted();
       throw error;
@@ -491,8 +496,7 @@ export default class PSTEmailsFetcher {
     } catch (err) {
       logger.error('Failed during PST pre-scan for total messages', {
         miningId: this.miningId,
-        source: this.source,
-        error: err
+        error: (err as Error)?.message
       });
       this.removeFile();
       throw err;

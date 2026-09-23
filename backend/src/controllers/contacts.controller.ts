@@ -112,7 +112,7 @@ async function respondWithContacts(
 
     return res.header('Content-Type', contentType).status(200).send(content);
   } catch (err) {
-    if ((err as Error).message === 'Invalid credentials.') {
+    if ((err as Error)?.message === 'Invalid credentials.') {
       return res.sendStatus(401);
     }
     throw err;
@@ -199,7 +199,7 @@ async function respondWithConfirmedContacts(
       .status(statusCode)
       .send(content);
   } catch (err) {
-    if ((err as Error).message === 'Invalid credentials.') {
+    if ((err as Error)?.message === 'Invalid credentials.') {
       return res.sendStatus(401);
     }
     throw err;

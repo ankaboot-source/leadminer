@@ -6,6 +6,7 @@ import {
 } from '../../utils/helpers/imapTreeHelpers';
 import { FolderWatermark } from './types';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
+import { errorMeta } from '../../utils/errors';
 
 export default class ImapBoxesFetcher {
   constructor(
@@ -39,7 +40,7 @@ export default class ImapBoxesFetcher {
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
-  async getTotalMessages(inboxes: string[]) {
+  getTotalMessages(inboxes: string[]) {
     let total = 0;
 
     try {
@@ -55,14 +56,16 @@ export default class ImapBoxesFetcher {
           });
           total += status?.messages ?? 0;
         } catch (err) {
-          this.logger.warn(`Could not STATUS ${folder}`, err);
+          this.logger.warn(`Could not STATUS ${folder}`, {
+            error: errorMeta(err)
+          });
         }
       });
       return total;
     } catch (err) {
       this.logger.error('Failed fetching total messages', {
         folders: inboxes,
-        error: err
+        error: errorMeta(err)
       });
       throw err;
     }

@@ -2,6 +2,7 @@ import './env';
 
 import ENV from './config';
 import logger from './utils/logger';
+import { errorMeta } from './utils/errors';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
@@ -106,7 +107,9 @@ const emailsStreamConsumer = new EmailSignatureConsumer(
     if ((err as Error)?.message?.includes('BUSYGROUP')) {
       logger.info('Consumer group already created');
     } else {
-      logger.error('Failed to start consumer:', err);
+      logger.error('Failed to start consumer:', {
+        error: errorMeta(err)
+      });
       // skipcq: JS-0263 - Intentional: worker must terminate on startup failure, cannot recover
       process.exit(1);
     }

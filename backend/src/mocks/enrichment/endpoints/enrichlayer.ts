@@ -71,7 +71,7 @@ router.get('/api/v2/profile/resolve/email', (req: Request, res: Response) => {
     });
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`[EnrichLayer Mock] Error: ${(error as Error).message}`);
+    console.error(`[EnrichLayer Mock] Error: ${(error as Error)?.message}`);
     return res.status(500).json({
       code: '500',
       error: 'Internal Server Error'

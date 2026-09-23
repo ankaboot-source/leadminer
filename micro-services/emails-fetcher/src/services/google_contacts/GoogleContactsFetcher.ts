@@ -266,7 +266,9 @@ export default class GoogleContactsFetcher {
         `[${this.miningId}] Stopped Google contacts fetch: canceled=${cancel}, total=${this.fetchedCount}`
       );
     } catch (error) {
-      logger.error(`[${this.miningId}] Error during stop process:`, error);
+      logger.error(`[${this.miningId}] Error during stop process:`, {
+        error: (error as Error)?.message
+      });
       throw error;
     }
   }

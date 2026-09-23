@@ -173,7 +173,9 @@ describe('SignatureLLM', () => {
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('SignatureExtractionLLM error'),
-        expect.anything()
+        expect.objectContaining({
+          error: expect.objectContaining({ name: expect.any(String) })
+        })
       );
     });
   });

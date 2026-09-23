@@ -62,7 +62,9 @@ class RedisManager {
         `Deleted ${keysToDelete.length} keys except '${exceptStreams}' ✔️`
       );
     } catch (error) {
-      logger.error('Failed flushing Redis selectively.', error);
+      logger.error('Failed flushing Redis selectively.', {
+        error: (error as Error)?.message
+      });
     }
   }
 

@@ -3,7 +3,6 @@ import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
 import hpp from 'hpp';
 
-import util from 'util';
 import { Logger } from 'winston';
 import ENV from './config';
 import { Contacts } from './db/interfaces/Contacts';
@@ -96,12 +95,13 @@ export default function initializeApp(
   app.use(errorHandler);
 
   process.on('uncaughtException', (error) => {
-    logger.error(
-      '[UNCAUGHT EXCEPTION]:',
-      util.inspect(error, { depth: null, colors: true })
-    );
-    // eslint-disable-next-line no-console
-    console.error(error);
+    // uncaught values are not guaranteed to be Errors (throw null, throw 'x'),
+    // so guard before reading .message (see PR #2906 review).
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    logger.error(`[UNCAUGHT EXCEPTION]: ${message}`, {
+      stack
+    });
 
     if (ENV.SENTRY_DSN_BACKEND) {
       Sentry.captureException(error);

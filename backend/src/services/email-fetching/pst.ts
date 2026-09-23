@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
+import { errorMeta } from '../../utils/errors';
 
 export interface FetchStartPayload {
   userId: string;
@@ -50,7 +51,11 @@ class PSTFetcherClient {
       );
       return data;
     } catch (error) {
-      this.logger.error('Start fetching request failed', { error, payload });
+      this.logger.error('Start fetching request failed', {
+        error: errorMeta(error),
+        miningId: payload.miningId,
+        userId: payload.userId
+      });
       if (
         axios.isAxiosError(error) &&
         error.response &&
@@ -74,9 +79,9 @@ class PSTFetcherClient {
       });
       return data;
     } catch (error) {
-      this.logger.error('Stop fetching request with failed', {
-        error,
-        payload
+      this.logger.error('Stop fetching request failed', {
+        error: errorMeta(error),
+        miningId: payload.miningId
       });
       throw error;
     }

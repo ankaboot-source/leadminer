@@ -76,6 +76,15 @@ function isOAuthType(type?: string): boolean {
   return type === "google" || type === "azure";
 }
 
+// Bound backend error text: validation failures echo request input, so never
+// propagate unbounded response bodies into logs or stored run history.
+const MAX_ERROR_DETAIL_LENGTH = 300;
+
+export function truncateErrorDetail(detail: string): string {
+  if (detail.length <= MAX_ERROR_DETAIL_LENGTH) return detail;
+  return `${detail.slice(0, MAX_ERROR_DETAIL_LENGTH)}… (truncated)`;
+}
+
 async function backendError(
   res: Response,
   message: (status: number, detail: string) => string,
@@ -94,7 +103,9 @@ async function backendError(
     payload?.error ??
     errText ??
     res.statusText;
-  const error = new Error(message(res.status, String(detail))) as Error & {
+  const error = new Error(
+    message(res.status, truncateErrorDetail(String(detail))),
+  ) as Error & {
     status: number;
   };
   error.status = res.status;
@@ -104,16 +115,18 @@ async function backendError(
 app.post("/", async (c: Context) => {
   try {
     const miningSources = await getMiningSources();
-    console.log(`Found ${miningSources.length} mining sources:`, miningSources);
+    console.log(`Found ${miningSources.length} mining sources`);
     for (const miningSource of miningSources) {
       try {
         await recordRunStart(miningSource.id);
         await startMiningEmail(miningSource);
-        console.log(`Started mining task for source ${miningSource.email}:`);
+        console.log(
+          `Started mining task for source ${miningSource.id} (${miningSource.type})`,
+        );
       } catch (error) {
         console.error(
-          `Error starting mining for source ${miningSource.email}:`,
-          error,
+          `Error starting mining for source ${miningSource.id}:`,
+          error instanceof Error ? error.message : error,
         );
         // OAuth sources 401 on these endpoints when the grant is dead (either
         // invalid_grant on refresh or the access token rejected at the IMAP
@@ -134,7 +147,10 @@ app.post("/", async (c: Context) => {
 
     return c.json({ msg: "Started passive-mining" });
   } catch (error) {
-    console.error("Error in passive-mining:", error);
+    console.error(
+      "Error in passive-mining:",
+      error instanceof Error ? error.message : error,
+    );
     return c.json({ error: "Failed to start passive-mining" }, 500);
   }
 });
@@ -207,7 +223,7 @@ async function getLatestPassiveMiningDate(
 
 async function getBoxes(miningSource: MiningSource) {
   console.log(
-    `Fetching IMAP boxes for ${miningSource.email}at ${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
+    `Fetching IMAP boxes for source ${miningSource.id} (${miningSource.type})`,
   );
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
@@ -221,7 +237,7 @@ async function getBoxes(miningSource: MiningSource) {
       body: JSON.stringify({ email: miningSource.email }),
     },
   );
-  console.log(`Received response for boxes of ${miningSource.email}:`, res);
+  console.log(`Received response for boxes of source ${miningSource.id}`);
 
   if (!res.ok) {
     throw await backendError(
@@ -245,9 +261,9 @@ async function startMiningEmail(miningSource: MiningSource) {
     folders = savedFolders;
   } else {
     const boxes = await getBoxes(miningSource);
-    console.log(`Fetched boxes for ${miningSource.email}:`, boxes);
+    console.log(`Fetched boxes for source ${miningSource.id}:`, boxes);
     folders = getFolders(boxes);
-    console.log(`Extracted folders for ${miningSource.email}:`, folders);
+    console.log(`Extracted folders for source ${miningSource.id}:`, folders);
   }
 
   // The backend builds `resumeFrom` from the persisted watermark. The edge only
@@ -290,7 +306,12 @@ async function startMiningEmail(miningSource: MiningSource) {
 
   if (!res.ok) {
     const errText = await res.text();
-    console.error("Mining API error:", errText);
+    // Bounded preview only: full response bodies may echo request input.
+    console.error("Mining API error", {
+      sourceId: miningSource.id,
+      status: res.status,
+      detail: truncateErrorDetail(errText),
+    });
     throw await backendError(
       res,
       (_status, detail) => `Failed to start mining email: ${detail}`,

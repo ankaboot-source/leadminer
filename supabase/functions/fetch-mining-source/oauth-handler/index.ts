@@ -198,6 +198,12 @@ export function isPermanentOAuthError(error: unknown): boolean {
     return true;
   }
 
+  // Google admin-restricted scopes: the grant can never succeed again without
+  // an admin allowlisting the app. Like a revocation, only a human fixes this.
+  if (payload.error === "admin_policy_enforced") {
+    return true;
+  }
+
   // Documented signal #2: Microsoft Entra STS error_codes for a dead grant.
   if (payload.codes.some((code) => PERMANENT_AZURE_ERROR_CODES.has(code))) {
     return true;

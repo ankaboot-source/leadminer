@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis';
 import { Logger } from 'winston';
+import { errorMeta } from '../../errors';
 import Subscriber from '../Subscriber';
 
 export default class RedisSubscriber<T> implements Subscriber<T> {
@@ -16,7 +17,9 @@ export default class RedisSubscriber<T> implements Subscriber<T> {
     try {
       this.redisClient.subscribe(this.channel, (err) => {
         if (err) {
-          this.logger.error('Failed subscribing to Redis.', err);
+          this.logger.error('Failed subscribing to Redis.', {
+            error: errorMeta(err)
+          });
           return;
         }
         this.logger.info(`Subscribed to redis channel ${this.channel}`);
@@ -27,15 +30,14 @@ export default class RedisSubscriber<T> implements Subscriber<T> {
         } catch (error) {
           this.logger.warn(
             `Ignoring malformed Redis message on channel ${this.channel}`,
-            error
+            { error: errorMeta(error) }
           );
         }
       });
     } catch (error) {
-      this.logger.error(
-        `Failed subscribing to redis channel ${this.channel}`,
-        error
-      );
+      this.logger.error(`Failed subscribing to redis channel ${this.channel}`, {
+        error: errorMeta(error)
+      });
     }
   }
 

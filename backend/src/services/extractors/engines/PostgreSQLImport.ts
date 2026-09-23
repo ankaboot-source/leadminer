@@ -126,8 +126,7 @@ export class PostgreSQLContactEngine {
             return mapRowToContact(row, this.format.mapping);
           } catch (error) {
             this.logger.warn('Failed to map row to contact', {
-              row,
-              error: (error as Error).message
+              error: (error as Error)?.message
             });
             return null;
           }
@@ -228,7 +227,7 @@ export class PostgreSQLContactEngine {
     } catch (error) {
       this.logger.error('PostgreSQL connection error during extraction', {
         sourceName: this.format.sourceName,
-        error: (error as Error).message,
+        error: (error as Error)?.message,
         processedSoFar: persons.length
       });
       throw error;

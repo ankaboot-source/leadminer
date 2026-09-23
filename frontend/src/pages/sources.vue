@@ -101,6 +101,7 @@
             v-for="source in slotProps.items"
             :key="source.email"
             class="border border-surface-200 rounded-md p-4"
+            data-ph-mask
           >
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div class="min-w-0">
@@ -522,7 +523,7 @@ async function confirmDelete() {
     $toast.add({
       severity: 'error',
       summary: t('remove_source_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   } finally {
@@ -583,7 +584,7 @@ async function disablePassiveMining(source: MiningSource) {
     $toast.add({
       severity: 'error',
       summary: t('passive_mining_update_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }
@@ -752,7 +753,7 @@ async function toggleSourceConfig(
     $toast.add({
       severity: 'error',
       summary: t('config_update_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }
@@ -786,7 +787,7 @@ async function reconnectExpiredSource(source: MiningSource) {
     $toast.add({
       severity: 'error',
       summary: t('reconnect_failed'),
-      detail: (error as Error).message,
+      detail: (error as Error)?.message,
       life: 4500,
     });
   }

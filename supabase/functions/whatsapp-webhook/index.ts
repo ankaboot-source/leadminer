@@ -65,6 +65,150 @@ async function verifyWebhookSignature(
 }
 
 // ==========================================
+// Event handlers
+// ==========================================
+
+interface WebhookEvent {
+  event?: string;
+  session?: string;
+  data?: Record<string, unknown>;
+}
+
+/**
+ * Delivery/read receipt. Maps ack status: 1=sent, 2=delivered, 3=read.
+ */
+async function handleMessageAck(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  sessionName: string,
+  eventData: Record<string, unknown>,
+): Promise<{ error: string } | null> {
+  const messageId = eventData.id as string | undefined;
+  const ackStatus = eventData.ack as number | undefined;
+
+  if (!messageId) {
+    return { error: "Missing message ID" };
+  }
+  let status: string | null = null;
+  let deliveredAt: string | null = null;
+  let readAt: string | null = null;
+
+  if (ackStatus === 2) {
+    status = "delivered";
+    deliveredAt = new Date().toISOString();
+  } else if (ackStatus === 3) {
+    status = "read";
+    readAt = new Date().toISOString();
+    // Also set delivered if not already set
+    deliveredAt = deliveredAt || new Date().toISOString();
+  } else if (ackStatus === 1) {
+    status = "sent";
+  }
+
+  if (!status) return null;
+
+  const updates: Record<string, unknown> = { ack_status: status };
+  if (deliveredAt) updates.delivered_at = deliveredAt;
+  if (readAt) updates.read_at = readAt;
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("sms_campaign_recipients")
+    .update(updates)
+    .eq("provider_message_id", messageId)
+    .eq("provider_used", "openwa");
+
+  if (error) {
+    logger.error("Failed to update ack status", {
+      messageId,
+      error: extractErrorMessage(error),
+    });
+  } else {
+    logger.info("Updated message ack status", {
+      messageId,
+      status,
+      ackStatus,
+    });
+  }
+
+  return null;
+}
+
+/**
+ * QR code ready for a session.
+ */
+async function handleQr(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  sessionName: string,
+  eventData: Record<string, unknown>,
+): Promise<void> {
+  const qrCode = eventData.qr as string | undefined;
+
+  if (!sessionName || !qrCode) return;
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("whatsapp_sessions")
+    .update({
+      status: "QR_READY",
+      qr_code: qrCode,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("session_name", sessionName);
+
+  if (error) {
+    logger.error("Failed to update QR status", {
+      sessionName,
+      error: extractErrorMessage(error),
+    });
+  } else {
+    logger.info("Updated session QR code", { sessionName });
+  }
+}
+
+/**
+ * Session disconnected.
+ */
+async function handleDisconnected(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  sessionName: string,
+): Promise<void> {
+  if (!sessionName) return;
+
+  const { error } = await supabaseAdmin
+    .schema("private")
+    .from("whatsapp_sessions")
+    .update({
+      status: "DISCONNECTED",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("session_name", sessionName);
+
+  if (error) {
+    logger.error("Failed to update disconnected status", {
+      sessionName,
+      error: extractErrorMessage(error),
+    });
+  } else {
+    logger.info("Session disconnected", { sessionName });
+  }
+}
+
+/**
+ * Incoming message (not typically needed for campaigns).
+ */
+function handleIncomingMessage(
+  sessionName: string,
+  eventData: Record<string, unknown>,
+): void {
+  const body = eventData.body as string | undefined;
+
+  logger.info("Received incoming message", {
+    sessionName,
+    bodyLength: body?.length ?? 0,
+  });
+}
+
+// ==========================================
 // Webhook Handler
 // ==========================================
 
@@ -84,11 +228,7 @@ app.post("/webhook", async (c: Context) => {
     }
   }
 
-  let event: {
-    event?: string;
-    session?: string;
-    data?: Record<string, unknown>;
-  };
+  let event: WebhookEvent;
 
   try {
     event = JSON.parse(payload);
@@ -110,133 +250,34 @@ app.post("/webhook", async (c: Context) => {
   try {
     switch (eventType) {
       case "message.ack": {
-        // Delivery/read receipt
-        const messageId = eventData.id as string | undefined;
-        const ackStatus = eventData.ack as number | undefined;
-
-        if (!messageId) {
-          return c.json({ error: "Missing message ID" }, 400);
-        }
-
-        // Map ack status: 1=sent, 2=delivered, 3=read
-        let status: string | null = null;
-        let deliveredAt: string | null = null;
-        let readAt: string | null = null;
-
-        if (ackStatus === 2) {
-          status = "delivered";
-          deliveredAt = new Date().toISOString();
-        } else if (ackStatus === 3) {
-          status = "read";
-          readAt = new Date().toISOString();
-          // Also set delivered if not already set
-          deliveredAt = deliveredAt || new Date().toISOString();
-        } else if (ackStatus === 1) {
-          status = "sent";
-        }
-
-        if (status) {
-          const updates: Record<string, unknown> = { ack_status: status };
-          if (deliveredAt) updates.delivered_at = deliveredAt;
-          if (readAt) updates.read_at = readAt;
-
-          const { error } = await supabaseAdmin
-            .schema("private")
-            .from("sms_campaign_recipients")
-            .update(updates)
-            .eq("provider_message_id", messageId)
-            .eq("provider_used", "openwa");
-
-          if (error) {
-            logger.error("Failed to update ack status", {
-              messageId,
-              error: extractErrorMessage(error),
-            });
-          } else {
-            logger.info("Updated message ack status", {
-              messageId,
-              status,
-              ackStatus,
-            });
-          }
-        }
-
-        break;
-      }
-
-      case "qr": {
-        // QR code ready
-        const qrCode = eventData.qr as string | undefined;
-
-        if (sessionName && qrCode) {
-          const { error } = await supabaseAdmin
-            .schema("private")
-            .from("whatsapp_sessions")
-            .update({
-              status: "QR_READY",
-              qr_code: qrCode,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("session_name", sessionName);
-
-          if (error) {
-            logger.error("Failed to update QR status", {
-              sessionName,
-              error: extractErrorMessage(error),
-            });
-          } else {
-            logger.info("Updated session QR code", { sessionName });
-          }
-        }
-
-        break;
-      }
-
-      case "disconnected": {
-        // Session disconnected
-        if (sessionName) {
-          const { error } = await supabaseAdmin
-            .schema("private")
-            .from("whatsapp_sessions")
-            .update({
-              status: "DISCONNECTED",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("session_name", sessionName);
-
-          if (error) {
-            logger.error("Failed to update disconnected status", {
-              sessionName,
-              error: extractErrorMessage(error),
-            });
-          } else {
-            logger.info("Session disconnected", { sessionName });
-          }
-        }
-
-        break;
-      }
-
-      case "message": {
-        // Incoming message (not typically needed for campaigns)
-        const from = eventData.from as string | undefined;
-        const body = eventData.body as string | undefined;
-
-        logger.info("Received incoming message", {
-          from,
-          bodyPreview: body?.substring(0, 50),
+        const result = await handleMessageAck(
+          supabaseAdmin,
           sessionName,
-        });
-
+          eventData,
+        );
+        if (result?.error) {
+          return c.json({ error: result.error }, 400);
+        }
         break;
       }
 
-      default: {
+      case "qr":
+        await handleQr(supabaseAdmin, sessionName, eventData);
+        break;
+
+      case "disconnected":
+        await handleDisconnected(supabaseAdmin, sessionName);
+        break;
+
+      case "message":
+        handleIncomingMessage(sessionName, eventData);
+        break;
+
+      default:
         logger.debug("Unhandled webhook event type", {
           eventType,
           sessionName,
         });
-      }
     }
 
     return c.json({ success: true });

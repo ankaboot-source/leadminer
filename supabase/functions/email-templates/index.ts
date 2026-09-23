@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    Logger.error((error as Error).message || "Failed to process the request");
+    Logger.error((error as Error)?.message || "Failed to process the request");
     return new Response(
       JSON.stringify({ error: "Failed to process the request" }),
       {

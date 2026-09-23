@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
 import { findPhoneNumbersInText } from 'libphonenumber-js';
 import { ExtractSignature, PersonLD } from '../types';
+import { errorMeta } from '../../../utils/errors';
 
 export const URL_X_REGEX =
   /(?:https?:)?\/\/(?:[A-Za-z]+\.)?(twitter|x)\.com\/@?(?!home|share|privacy|tos)(?<handle>[A-Za-z0-9_]+)\/?/g;
@@ -36,6 +37,8 @@ export class SignatureRE implements ExtractSignature {
     return [...matches];
   }
 
+  // skipcq: JS-0116 - async required by the ExtractSignature interface contract
+  // (extract must return Promise<PersonLD | null>); awaits live in callers.
   public async extract(
     _email: string,
     signature: string
@@ -51,7 +54,9 @@ export class SignatureRE implements ExtractSignature {
         address: undefined
       };
     } catch (err) {
-      this.logger.error('SignatureExtractionLLM error:', err);
+      this.logger.error('SignatureExtractionLLM error:', {
+        error: errorMeta(err)
+      });
       return null;
     }
   }
