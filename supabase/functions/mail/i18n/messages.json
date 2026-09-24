@@ -28,6 +28,14 @@
       "detail_1": "You'll need your contacts consent or a legitimate interest to reach them.",
       "detail_2": "Learn more about your contacts rights."
     },
+    "passiveMiningFailure": {
+      "subject": "Action required: reconnect your Leadminer source",
+      "title": "Reconnect your source to resume contact mining",
+      "greeting": "Hi there,",
+      "intro": "Your scheduled contact mining could not start because the connection for {sourceEmail} needs to be refreshed.",
+      "description": "Reconnect the account to resume automatic contact mining on its next scheduled cycle. Your existing contacts and mining data are safe.",
+      "button": "Reconnect source"
+    },
     "weeklyReport": {
       "subject": "Your weekly contact extraction report",
       "headerTitle": "📊 Weekly Report",
@@ -83,8 +91,16 @@
       "detail_1": "Vous aurez besoin du consentement de vos contacts ou d'un intérêt légitime pour les contacter.",
       "detail_2": "En savoir plus sur les droits de vos contacts."
     },
+    "passiveMiningFailure": {
+      "subject": "Action requise : reconnectez votre source Leadminer",
+      "title": "Reconnectez votre source pour reprendre l’extraction des contacts",
+      "greeting": "Bonjour,",
+      "intro": "Votre extraction de contacts programmée n’a pas pu démarrer, car la connexion pour {sourceEmail} doit être actualisée.",
+      "description": "Reconnectez le compte pour relancer l’extraction automatique lors du prochain cycle. Vos contacts et vos données d’extraction sont conservés.",
+      "button": "Reconnecter la source"
+    },
     "weeklyReport": {
-      "subject": "Votre rapport hebdomadaire d'extraction de contacts",
+      "subject": "Votre rapport hebdomadaire d’extraction de contacts",
       "headerTitle": "📊 Rapport Hebdomadaire",
       "headerSubtitle": "Voici ce que nous avons extrait cette semaine",
       "greeting": "Bonjour,",

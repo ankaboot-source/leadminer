@@ -1,10 +1,13 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
-import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
 import {
-  parseConfig,
+  isCredentialFailure,
+  shouldNotifyCredentialFailure,
+} from "./credential-failure.ts";
+import {
   type MiningSourceConfigV1,
+  parseConfig,
 } from "../_shared/mining-source-config.ts";
 import {
   MiningRunMode,
@@ -28,6 +31,10 @@ type MiningSource = {
   parsedConfig?: MiningSourceConfigV1;
 };
 
+type SourceConfigTransition = {
+  previousHealthState?: SourceHealthState;
+};
+
 /**
  * Centralized config writer: invoke the mining-sources edge function so ALL
  * mining_sources.config mutations flow through one atomic, row-locked merge.
@@ -36,15 +43,18 @@ type MiningSource = {
 async function patchSourceConfig(
   sourceId: string,
   patch: Record<string, unknown>,
-): Promise<void> {
-  const { error } = await supabase.functions.invoke(
+): Promise<SourceConfigTransition | null> {
+  const { data, error } = await supabase.functions.invoke(
     `mining-sources/${encodeURIComponent(sourceId)}/config`,
     { method: "PATCH", body: patch },
   );
 
   if (error) {
     console.error(`Failed to persist config for ${sourceId}: ${error.message}`);
+    return null;
   }
+
+  return data as SourceConfigTransition | null;
 }
 
 async function recordRunStart(sourceId: string): Promise<void> {
@@ -59,11 +69,11 @@ async function recordRunStart(sourceId: string): Promise<void> {
 async function recordRunFailure(
   sourceId: string,
   message: string,
-  permanent: boolean,
-): Promise<void> {
-  await patchSourceConfig(sourceId, {
+  needsReauth: boolean,
+): Promise<SourceConfigTransition | null> {
+  return patchSourceConfig(sourceId, {
     health: {
-      state: permanent
+      state: needsReauth
         ? SourceHealthState.NeedsReauth
         : SourceHealthState.Error,
       last_run_at: new Date().toISOString(),
@@ -72,8 +82,23 @@ async function recordRunFailure(
   });
 }
 
-function isOAuthType(type?: string): boolean {
-  return type === "google" || type === "azure";
+async function notifyCredentialFailure(
+  userId: string,
+  sourceEmail: string,
+): Promise<void> {
+  const { error } = await supabase.functions.invoke(
+    "mail/passive-mining-failed",
+    {
+      method: "POST",
+      body: { userId, sourceEmail },
+    },
+  );
+
+  if (error) {
+    console.error(
+      `Failed to send passive mining failure email: ${error.message}`,
+    );
+  }
 }
 
 // Bound backend error text: validation failures echo request input, so never
@@ -99,10 +124,10 @@ async function backendError(
   })() as Record<string, unknown>;
   const detail =
     (payload?.data as Record<string, unknown> | undefined)?.message ??
-    payload?.message ??
-    payload?.error ??
-    errText ??
-    res.statusText;
+      payload?.message ??
+      payload?.error ??
+      errText ??
+      res.statusText;
   const error = new Error(
     message(res.status, truncateErrorDetail(String(detail))),
   ) as Error & {
@@ -124,24 +149,34 @@ app.post("/", async (c: Context) => {
           `Started mining task for source ${miningSource.id} (${miningSource.type})`,
         );
       } catch (error) {
+        const errorMessage = truncateErrorDetail(
+          error instanceof Error ? error.message : String(error),
+        );
         console.error(
           `Error starting mining for source ${miningSource.id}:`,
-          error instanceof Error ? error.message : error,
+          errorMessage,
         );
-        // OAuth sources 401 on these endpoints when the grant is dead (either
-        // invalid_grant on refresh or the access token rejected at the IMAP
-        // layer). Treat as permanent so the user is asked to reconnect instead
-        // of retrying every cycle. Plain IMAP 401s (bad password) stay retrying.
-        // (#2880 classification, ported onto the V1 config-write path.)
-        const status = (error as { status?: number } | undefined)?.status;
-        const permanent =
-          isPermanentOAuthError(error) ||
-          (status === 401 && isOAuthType(miningSource.type));
-        await recordRunFailure(
+        const credentialFailure = isCredentialFailure(
+          error,
+          miningSource.type,
+        );
+        const healthTransition = await recordRunFailure(
           miningSource.id,
-          error instanceof Error ? error.message : String(error),
-          permanent,
+          errorMessage,
+          credentialFailure,
         );
+        if (
+          shouldNotifyCredentialFailure({
+            previousState: healthTransition?.previousHealthState,
+            credentialFailure,
+            healthPersisted: healthTransition !== null,
+          })
+        ) {
+          await notifyCredentialFailure(
+            miningSource.user_id,
+            miningSource.email,
+          );
+        }
       }
     }
 
@@ -184,7 +219,7 @@ async function getMiningSources() {
       // Legacy fallback: an explicit needs_reauth:true (old shape) also skips.
       const legacyNeedsReauth =
         (source.config as Record<string, unknown> | undefined)?.needs_reauth ===
-        true;
+          true;
       return (
         healthState !== SourceHealthState.NeedsReauth && !legacyNeedsReauth
       );
@@ -252,8 +287,8 @@ async function getBoxes(miningSource: MiningSource) {
 async function startMiningEmail(miningSource: MiningSource) {
   // Get default folders (saved checked boxes come from config.folders going
   // forward; getBoxes falls back to the server default set).
-  const sourceConfig =
-    miningSource.parsedConfig ?? parseConfig(miningSource.config);
+  const sourceConfig = miningSource.parsedConfig ??
+    parseConfig(miningSource.config);
   const savedFolders = sourceConfig.folders;
 
   let folders: string[];

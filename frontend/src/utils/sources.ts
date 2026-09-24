@@ -108,9 +108,12 @@ export async function updateMiningSourceConfig(
   email: string,
   type: string,
   patch: MiningSourceConfig | Record<string, unknown>,
+  sourceId?: string,
 ): Promise<MiningSourceConfig> {
   const { $saasEdgeFunctions } = useNuxtApp();
-  const source = await findSourceByEmail(email, type);
+  const source = sourceId
+    ? { id: sourceId }
+    : await findSourceByEmail(email, type);
   if (!source?.id) {
     throw new Error('Mining source not found');
   }

@@ -84,7 +84,7 @@
 
   <AddSourceImap
     v-model:show="$imapDialogStore.showImapDialog"
-    v-model:source="imapReconnectSource"
+    :source="imapReconnectSource"
     dialog-only
   />
 
@@ -118,7 +118,15 @@ const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $stepper = useMiningStepper();
 const activeTask = computed(() => $leadminerStore.activeTask);
-const imapReconnectSource = ref<MiningSource>();
+const imapReconnectSource = computed<MiningSource | undefined>(() => {
+  const imapEmail = $imapDialogStore.imapEmail.toLowerCase();
+  if (!imapEmail) return undefined;
+
+  return $leadminerStore.miningSources.find(
+    (source) =>
+      source.type === 'imap' && source.email.toLowerCase() === imapEmail,
+  );
+});
 const $supabaseClient = useSupabaseClient();
 const { idle, reset } = useIdle(60 * 60 * 1000); // 1 hour timeout
 $supabaseClient.auth.onAuthStateChange((event) => {

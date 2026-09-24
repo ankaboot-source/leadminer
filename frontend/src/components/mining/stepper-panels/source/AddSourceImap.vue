@@ -91,6 +91,8 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
 import type { MiningSource } from '~/types/mining';
+import { SourceHealthState } from '~/types/enums';
+import { updateMiningSourceConfig } from '~/utils/sources';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -220,6 +222,7 @@ async function getImapConfigsForEmail(
 
 async function onSubmitImapCredentials() {
   loadingSave.value = true;
+  const existingSource = imapSource.value;
   try {
     resetFormErrors();
     const configs = await getImapConfigsForEmail(imapEmail.value);
@@ -244,6 +247,23 @@ async function onSubmitImapCredentials() {
           ...configs,
         },
       });
+
+      if (
+        existingSource?.id &&
+        existingSource.email.toLowerCase() === imapEmail.value.toLowerCase()
+      ) {
+        await updateMiningSourceConfig(
+          existingSource.email,
+          'imap',
+          {
+            health: {
+              state: SourceHealthState.Active,
+              last_error: null,
+            },
+          },
+          existingSource.id,
+        );
+      }
 
       imapSource.value = {
         type: 'imap',
