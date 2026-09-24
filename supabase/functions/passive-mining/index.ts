@@ -66,7 +66,7 @@ async function recordRunStart(sourceId: string): Promise<void> {
   });
 }
 
-async function recordRunFailure(
+function recordRunFailure(
   sourceId: string,
   message: string,
   needsReauth: boolean,
