@@ -10,7 +10,7 @@ Deno.test("renders the English notification with an encoded reconnect CTA", () =
 
   assertEquals(
     result.subject,
-    "Action required: reconnect your Leadminer source",
+    "Action required: reconnect your source",
   );
   assertStringIncludes(result.html, "user+test@example.com");
   assertStringIncludes(
@@ -18,6 +18,8 @@ Deno.test("renders the English notification with an encoded reconnect CTA", () =
     "/sources?reconnect=user%2Btest%40example.com",
   );
   assertStringIncludes(result.html, "Reconnect source");
+  assert(!result.html.toLowerCase().includes("leadminer"));
+  assert(!result.html.includes("LOGO_URL"));
   assert(!result.html.includes("invalid_grant"));
 });
 
@@ -26,7 +28,7 @@ Deno.test("renders the French notification with the same CTA", () => {
 
   assertEquals(
     result.subject,
-    "Action requise : reconnectez votre source Leadminer",
+    "Action requise : reconnectez votre source",
   );
   assertStringIncludes(result.html, "Bonjour");
   assertStringIncludes(result.html, "Reconnecter la source");

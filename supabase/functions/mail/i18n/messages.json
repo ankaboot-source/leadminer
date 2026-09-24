@@ -29,12 +29,13 @@
       "detail_2": "Learn more about your contacts rights."
     },
     "passiveMiningFailure": {
-      "subject": "Action required: reconnect your Leadminer source",
+      "subject": "Action required: reconnect your source",
       "title": "Reconnect your source to resume contact mining",
-      "greeting": "Hi there,",
+      "greeting": "Hello,",
       "intro": "Your scheduled contact mining could not start because the connection for {sourceEmail} needs to be refreshed.",
       "description": "Reconnect the account to resume automatic contact mining on its next scheduled cycle. Your existing contacts and mining data are safe.",
-      "button": "Reconnect source"
+      "button": "Reconnect source",
+      "footer": "This is an automated notification about your scheduled contact mining."
     },
     "weeklyReport": {
       "subject": "Your weekly contact extraction report",
@@ -92,12 +93,13 @@
       "detail_2": "En savoir plus sur les droits de vos contacts."
     },
     "passiveMiningFailure": {
-      "subject": "Action requise : reconnectez votre source Leadminer",
+      "subject": "Action requise : reconnectez votre source",
       "title": "Reconnectez votre source pour reprendre l’extraction des contacts",
       "greeting": "Bonjour,",
       "intro": "Votre extraction de contacts programmée n’a pas pu démarrer, car la connexion pour {sourceEmail} doit être actualisée.",
       "description": "Reconnectez le compte pour relancer l’extraction automatique lors du prochain cycle. Vos contacts et vos données d’extraction sont conservés.",
-      "button": "Reconnecter la source"
+      "button": "Reconnecter la source",
+      "footer": "Ceci est une notification automatique concernant votre extraction de contacts programmée."
     },
     "weeklyReport": {
       "subject": "Votre rapport hebdomadaire d’extraction de contacts",
