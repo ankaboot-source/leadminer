@@ -290,17 +290,21 @@ export default function initializeMiningController(
           );
 
           if (healthError) {
-            logger.warn('Failed to clear IMAP source health after registration', {
-              userId: user.id,
-              sourceId: miningSourceId,
-              error: healthError.message
-            });
+            logger.warn(
+              'Failed to clear IMAP source health after registration',
+              {
+                userId: user.id,
+                sourceId: miningSourceId,
+                error: healthError.message
+              }
+            );
           }
         } catch (healthError) {
           logger.warn('Failed to clear IMAP source health after registration', {
             userId: user.id,
             sourceId: miningSourceId,
-            error: healthError instanceof Error ? healthError.message : healthError
+            error:
+              healthError instanceof Error ? healthError.message : healthError
           });
         }
 
