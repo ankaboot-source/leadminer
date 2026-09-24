@@ -6,10 +6,6 @@ type ResolveMiningTableRowsInput = {
   jobDetailsContacts: Contact[];
 };
 
-type ResolveContactsLoadingStrategyInput = {
-  showTable: boolean;
-};
-
 export function resolveMiningTableRows({
   hardFilter,
   contacts,
@@ -20,10 +16,4 @@ export function resolveMiningTableRows({
   }
 
   return contacts ?? [];
-}
-
-export function resolveContactsLoadingStrategy({
-  showTable,
-}: ResolveContactsLoadingStrategyInput) {
-  return showTable ? 'immediate' : 'idle';
 }

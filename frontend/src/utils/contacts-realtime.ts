@@ -106,8 +106,8 @@ export function applyReconciledContacts(
  * Decide how the contacts store should react to a realtime person event.
  *
  * - During active mining: stream raw person rows (keyed by person id) so newly
- *   mined people appear live. The post-mining reloadContacts() performs a full
- *   contacts_view load that migrates the cache to the merged logic.
+ *   mined people and updates appear live. The mine lifecycle stops this stream
+ *   when mining completes; /contacts owns the subsequent full load.
  * - Outside mining: buffer person ids for the debounced merged reconcile.
  *
  * Returns a discriminated action the store dispatches.

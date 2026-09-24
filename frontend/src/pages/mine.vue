@@ -19,13 +19,22 @@
         </template>
       </ClientOnly>
     </div>
-    <MiningTable :show-table="showTable" origin="mine" />
+    <MiningTable
+      :show-table="showTable"
+      origin="mine"
+      :contacts="$contactsStore.contactsList"
+      :loading="false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useMiningTableData } from '~/composables/useMiningTableData';
+
 const $leadminer = useLeadminerStore();
+const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
+useMiningTableData();
 const showTable = computed(
   () =>
     $leadminer.activeMiningTask ||

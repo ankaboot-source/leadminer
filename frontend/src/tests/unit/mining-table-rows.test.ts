@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Contact } from '@/types/contact';
-import {
-  resolveContactsLoadingStrategy,
-  resolveMiningTableRows,
-} from '@/utils/mining-table';
+import { resolveMiningTableRows } from '@/utils/mining-table';
 
 describe('resolveMiningTableRows', () => {
   it('returns an empty array when contacts are undefined', () => {
@@ -28,19 +25,5 @@ describe('resolveMiningTableRows', () => {
     });
 
     expect(result).toEqual(jobDetailsContacts);
-  });
-});
-
-describe('resolveContactsLoadingStrategy', () => {
-  it('loads immediately when table is already visible', () => {
-    const result = resolveContactsLoadingStrategy({ showTable: true });
-
-    expect(result).toBe('immediate');
-  });
-
-  it('defers to idle prefetch when table is hidden', () => {
-    const result = resolveContactsLoadingStrategy({ showTable: false });
-
-    expect(result).toBe('idle');
   });
 });

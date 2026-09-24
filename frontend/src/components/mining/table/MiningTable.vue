@@ -990,15 +990,11 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
-import {
-  resolveContactsLoadingStrategy,
-  resolveMiningTableRows,
-} from '~/utils/mining-table';
+import { resolveMiningTableRows } from '~/utils/mining-table';
 import {
   buildColumnVisibility,
   toStateClass,
 } from '~/utils/mining-table-performance';
-import Normalizer from '~/utils/normalizer';
 import { useContactVerification } from '~/composables/useContactVerification';
 
 const SocialLinksAndPhones = defineAsyncComponent(
@@ -1025,10 +1021,16 @@ const RemoveContactButton = defineAsyncComponent(
   () => import('~/components/mining/buttons/RemoveContactButton.vue'),
 );
 
-const { showTable, origin } = defineProps<{
+const props = defineProps<{
   showTable: boolean;
   origin: 'contacts' | 'mine';
+  contacts: Contact[] | undefined;
+  loading: boolean;
 }>();
+
+const { showTable, origin } = props;
+const contacts = computed(() => props.contacts);
+const isLoading = computed(() => props.loading);
 
 const { t } = useI18n({
   useScope: 'local',
@@ -1037,15 +1039,12 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
-const MINING_ID_PARAM = 'mining_id';
-
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $toast = useToast();
 const { verifyEmailStatus } = useContactVerification();
 
-const isLoading = ref(true);
 const loadingLabel = ref('');
 const refreshingEmails = ref(new Set<string>());
 
@@ -1073,8 +1072,7 @@ async function refreshStatus(email: string, event: Event) {
   }
 }
 
-const contacts = computed(() => $contactsStore.contactsList);
-const contactsLength = computed(() => $contactsStore.contactCount);
+const contactsLength = computed(() => contacts.value?.length);
 const visibleColumns = computed({
   get: () => $contactsStore.visibleColumns,
   set: (value: string[]) => {
@@ -1152,10 +1150,6 @@ const tableRows = computed(() =>
     contacts: contacts.value,
     jobDetailsContacts: jobDetailsContacts.value,
   }),
-);
-
-const contactsLoadingStrategy = computed(() =>
-  resolveContactsLoadingStrategy({ showTable }),
 );
 
 /* *** Settings *** */
@@ -1417,10 +1411,6 @@ function onSelectColumnsChange() {
   }
 }
 
-function getDefaultVisibleColumns() {
-  return ['contacts', 'name', 'location', 'works_for', 'job_title'];
-}
-
 /* Table dynamic Height */
 const TableRef = ref();
 const tablePosTop = ref(0);
@@ -1461,9 +1451,6 @@ const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
     if (contactsLength.value !== undefined) {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
       if (contactsLength.value > 0) {
         observeTop();
         watchEffect(() => {
@@ -1485,164 +1472,13 @@ const stopShowTableFirstTimeWatcher = watch(
   { deep: true, immediate: true },
 );
 const _scrollHeightObserver = ref<ResizeObserver | null>(null);
-let idlePrefetchTimeoutId: ReturnType<typeof setTimeout> | null = null;
-let idlePrefetchCallbackId: number | null = null;
-let contactsLoadPromise: Promise<void> | null = null;
-const hasLoadedContacts = ref(false);
 
-function clearIdlePrefetch() {
-  if (idlePrefetchTimeoutId) {
-    clearTimeout(idlePrefetchTimeoutId);
-    idlePrefetchTimeoutId = null;
-  }
-
-  if (typeof window === 'undefined' || idlePrefetchCallbackId === null) {
-    return;
-  }
-
-  if ('cancelIdleCallback' in window) {
-    window.cancelIdleCallback(idlePrefetchCallbackId);
-  }
-
-  idlePrefetchCallbackId = null;
-}
-
-async function loadContactsData() {
-  // Full-table loads belong to the contacts view only. The mine view stays
-  // session-scoped and is populated by the realtime stream.
-  if (origin === 'mine') {
-    return;
-  }
-
-  if (hasLoadedContacts.value) {
-    return;
-  }
-
-  if (contactsLoadPromise) {
-    await contactsLoadPromise;
-    return;
-  }
-
-  contactsLoadPromise = (async () => {
-    await $contactsStore.reloadContacts();
-
-    if (!$contactsStore.contactCount && (await $contactsStore.hasPersons())) {
-      console.log(
-        'Data in persons table but not in refinedpersons, refining contacts...',
-      );
-      await $contactsStore.refineContacts();
-      await $contactsStore.reloadContacts();
-    }
-
-    const locationsToNormalize = $contactsStore.getLocationsToNormalize();
-
-    if (locationsToNormalize.length > 0) {
-      Normalizer.add(locationsToNormalize);
-    }
-
-    $contactsStore.subscribeToRealtimeUpdates(origin);
-    hasLoadedContacts.value = true;
-  })();
-
-  try {
-    await contactsLoadPromise;
-  } finally {
-    contactsLoadPromise = null;
-    isLoading.value = false;
-  }
-}
-
-function scheduleIdleContactsPrefetch() {
-  clearIdlePrefetch();
-
-  const runPrefetch = () => {
-    idlePrefetchTimeoutId = null;
-    idlePrefetchCallbackId = null;
-    loadContactsData();
-  };
-
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-    idlePrefetchCallbackId = window.requestIdleCallback(runPrefetch, {
-      timeout: 1500,
-    });
-    return;
-  }
-
-  idlePrefetchTimeoutId = setTimeout(runPrefetch, 350);
-}
-
-onBeforeMount(() => {
-  isLoading.value = true;
-});
-onNuxtReady(() => {
+onMounted(() => {
   $screenStore.init();
-  $contactsStore.visibleColumns = getDefaultVisibleColumns();
 });
-
-onBeforeMount(() => {
-  isLoading.value = true;
-});
-onNuxtReady(async () => {
-  $screenStore.init();
-  $filtersStore.initializeTableFilters(origin);
-
-  if (contactsLoadingStrategy.value === 'immediate') {
-    await loadContactsData();
-  } else {
-    isLoading.value = false;
-    scheduleIdleContactsPrefetch();
-  }
-
-  $contactsStore.initializeVisibleColumns(
-    getDefaultVisibleColumns(),
-    origin,
-    $contactsStore.contactsList,
-  );
-
-  const locationsToNormalize = $contactsStore.getLocationsToNormalize();
-
-  if (origin === 'mine' && locationsToNormalize.length > 0) {
-    Normalizer.add(locationsToNormalize);
-  }
-
-  $contactsStore.subscribeToRealtimeUpdates(origin);
-
-  const miningId = getParam(MINING_ID_PARAM);
-  if (miningId) {
-    $filtersStore.filterByMiningId(miningId as string);
-    visibleColumns.value.push(MINING_ID_PARAM);
-    removeQueryParam(MINING_ID_PARAM);
-  }
-
-  if (contactsLoadingStrategy.value === 'immediate') {
-    isLoading.value = false;
-  }
-});
-
-watch(
-  () => showTable,
-  (isVisible) => {
-    if (!isVisible || hasLoadedContacts.value) {
-      return;
-    }
-
-    // The mine view never performs a full-table load.
-    if (origin === 'mine') {
-      clearIdlePrefetch();
-      isLoading.value = false;
-      return;
-    }
-
-    clearIdlePrefetch();
-    isLoading.value = true;
-    loadContactsData();
-  },
-);
 
 onUnmounted(() => {
-  clearIdlePrefetch();
   $screenStore.destroy();
-  $contactsStore.$reset();
 });
 
 function getTemperatureStyle(temp: number | null) {
