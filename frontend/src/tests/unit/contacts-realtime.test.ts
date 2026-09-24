@@ -4,7 +4,6 @@ import {
   applyReconciledContacts,
   collectRealtimePersonIds,
   getContactKey,
-  isKnownMiningSessionRow,
   resolveRealtimeAction,
   shouldReloadOnReconnect,
 } from '@/utils/contacts-realtime';
@@ -41,22 +40,6 @@ describe('getContactKey', () => {
     );
   });
 });
-
-describe('isKnownMiningSessionRow', () => {  it('accepts an UPDATE for a row already in the mining session', () => {
-    expect(isKnownMiningSessionRow('p1', new Set(['p1']))).toBe(true);
-  });
-
-  it('rejects an UPDATE for a historical contact absent from the session', () => {
-    expect(isKnownMiningSessionRow('old-contact', new Set(['p1']))).toBe(
-      false,
-    );
-  });
-
-  it('rejects an UPDATE without a row id', () => {
-    expect(isKnownMiningSessionRow(undefined, new Set(['p1']))).toBe(false);
-  });
-});
-
 describe('shouldReloadOnReconnect', () => {
   it('reloads after a real drop on the contacts view', () => {
     expect(shouldReloadOnReconnect(true, false)).toBe(true);

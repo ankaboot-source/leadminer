@@ -15,7 +15,6 @@ import {
   buildPersonChangeFilters,
   collectRealtimePersonIds,
   getContactKey,
-  isKnownMiningSessionRow,
   resolveRealtimeAction,
   shouldReloadOnReconnect,
   type RealtimePersonRow,
@@ -290,15 +289,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     switch (action.kind) {
       case 'stream':
-        if (
-          payload.eventType === 'UPDATE' &&
-          !isKnownMiningSessionRow(
-            action.row.id,
-            new Set(contactsCacheMap.keys()),
-          )
-        ) {
-          return;
-        }
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
         return;

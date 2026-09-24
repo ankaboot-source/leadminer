@@ -37,20 +37,6 @@ export function getContactKey(
 }
 
 /**
- * Mining-session membership check for streamed UPDATE rows.
- *
- * During a foreground mining the table only contains rows already streamed
- * for this run. An UPDATE is applied only when its person id is already in
- * the session cache; updates for historical contacts are ignored.
- */
-export function isKnownMiningSessionRow(
-  rowId: string | undefined,
-  cachedKeys: Set<string>,
-): boolean {
-  return Boolean(rowId && cachedKeys.has(rowId));
-}
-
-/**
  * Decides whether a realtime reconnect justifies a full-table recovery load.
  *
  * There is exactly one legitimate trigger: a real drop-and-reconnect on the
