@@ -1027,7 +1027,8 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-const { showTable, origin } = props;
+const { origin } = props;
+const showTable = computed(() => props.showTable);
 const contacts = computed(() => props.contacts);
 const isLoading = computed(() => props.loading);
 
