@@ -37,20 +37,6 @@ export function getContactKey(
 }
 
 /**
- * Decides whether a realtime reconnect justifies a full-table recovery load.
- *
- * There is exactly one legitimate trigger: a real drop-and-reconnect on the
- * contacts view. The (re)connect that completes our own subscribe is skipped
- * so a fresh mount never loads twice, and the mine view never full-loads.
- */
-export function shouldReloadOnReconnect(
-  isContactsScope: boolean,
-  initialConnectPending: boolean,
-): boolean {
-  return isContactsScope && !initialConnectPending;
-}
-
-/**
  * Collect the person_id(s) a realtime payload signals changed. These are the
  * keys used to reverse-lookup the affected aggregate group(s) via
  * get_contacts_view_by_ids.

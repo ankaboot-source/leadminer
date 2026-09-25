@@ -52,12 +52,6 @@ export function buildTableStorageKey(
   return `${STORAGE_PREFIX}:${kind}:${userId}:${origin}`;
 }
 
-export function getDefaultVisibleColumns(origin: TableOrigin): string[] {
-  return origin === 'mine'
-    ? ['contacts', 'name', 'location', 'job_title']
-    : ['contacts', 'name', 'location', 'works_for', 'job_title'];
-}
-
 export function sanitizeVisibleColumns(columns: unknown): string[] {
   if (!Array.isArray(columns)) {
     return [];

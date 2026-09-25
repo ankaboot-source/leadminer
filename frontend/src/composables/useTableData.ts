@@ -3,9 +3,18 @@ import { useContactsStore } from '~/stores/contacts';
 import { useFiltersStore } from '~/stores/filters';
 import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';
-import { getDefaultVisibleColumns } from '~/utils/table-preferences';
+import type { TableOrigin } from '~/utils/table-preferences';
 
 const MINING_ID_PARAM = 'mining_id';
+
+const DEFAULT_VISIBLE_COLUMNS: Record<TableOrigin, string[]> = {
+  contacts: ['contacts', 'name', 'location', 'works_for', 'job_title'],
+  mine: ['contacts', 'name', 'location', 'job_title'],
+};
+
+export function getDefaultVisibleColumns(origin: TableOrigin): string[] {
+  return DEFAULT_VISIBLE_COLUMNS[origin];
+}
 
 function getMiningIdParam() {
   if (typeof window === 'undefined') return null;
@@ -53,7 +62,7 @@ export function useContactsTableData() {
       const locations = contactsStore.getLocationsToNormalize();
       if (locations.length) Normalizer.add(locations);
 
-      contactsStore.subscribeToRealtimeUpdates('contacts');
+      contactsStore.subscribeToRealtimeUpdates();
     } catch (error) {
       console.error('Failed to load contacts table', error);
     } finally {
@@ -125,7 +134,7 @@ export function useMiningTableData() {
         if (subscribed) return;
         subscribed = true;
         try {
-          contactsStore.subscribeToRealtimeUpdates('mine');
+          contactsStore.subscribeToRealtimeUpdates();
         } catch (error) {
           subscribed = false;
           console.error('Failed to subscribe to mining realtime', error);

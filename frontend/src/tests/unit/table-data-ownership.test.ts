@@ -39,10 +39,10 @@ vi.mock('~/stores/leadminer', () => ({
 }));
 
 import {
+  getDefaultVisibleColumns,
   useContactsTableData,
   useMiningTableData,
 } from '@/composables/useTableData';
-import { getDefaultVisibleColumns } from '@/utils/table-preferences';
 
 describe('getDefaultVisibleColumns', () => {
   it('keeps the works-for column in the contacts view', () => {
@@ -81,9 +81,7 @@ describe('useContactsTableData', () => {
     expect(filtersStore.initializeTableFilters).toHaveBeenCalledWith(
       'contacts',
     );
-    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledWith(
-      'contacts',
-    );
+    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledTimes(1);
     wrapper.unmount();
     expect(contactsStore.$reset).toHaveBeenCalled();
   });
@@ -100,9 +98,7 @@ describe('useMiningTableData', () => {
     mount(MiningHarness);
     await nextTick();
 
-    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledWith(
-      'mine',
-    );
+    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledTimes(1);
     expect(contactsStore.reloadContacts).not.toHaveBeenCalled();
     expect(contactsStore.refineContacts).not.toHaveBeenCalled();
     expect(contactsStore.hasPersons).not.toHaveBeenCalled();

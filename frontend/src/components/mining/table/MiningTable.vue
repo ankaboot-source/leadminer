@@ -990,7 +990,6 @@ import {
   tags,
 } from '~/utils/contacts';
 import { getImageViaProxy } from '~/utils/images';
-import { resolveMiningTableRows } from '~/utils/mining-table';
 import {
   buildColumnVisibility,
   toStateClass,
@@ -1145,11 +1144,7 @@ const columnVisibility = computed(() =>
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
 const tableRows = computed(() =>
-  resolveMiningTableRows({
-    hardFilter: hardFilter.value,
-    contacts: contacts.value,
-    jobDetailsContacts: jobDetailsContacts.value,
-  }),
+  hardFilter.value ? jobDetailsContacts.value : (contacts.value ?? []),
 );
 
 /* *** Settings *** */
