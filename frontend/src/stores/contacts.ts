@@ -278,7 +278,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function handlePersonRealtimeEvent(
     payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
   ) {
-    if (!getCurrentUserId()) return;
+    const userId = getCurrentUserId();
+    if (!userId) return;
 
     const action = resolveRealtimeAction(payload, {
       activeMining: $leadminerStore.activeMiningTask,
@@ -286,6 +287,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     switch (action.kind) {
       case 'stream':
+        if (action.row.user_id && action.row.user_id !== userId) return;
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
         return;
@@ -314,7 +316,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const channel = $supabase.channel(`contacts-table-${userId}`);
 
     for (const filter of buildPersonChangeFilters(
-      userId,
       $leadminerStore.activeMiningTask,
     )) {
       channel.on('postgres_changes', filter, handlePersonRealtimeEvent);

@@ -2,6 +2,7 @@ import type { Contact } from '@/types/contact';
 
 export type RealtimePersonRow = {
   id?: string;
+  user_id?: string | null;
   email?: string | null;
   name?: string | null;
   source?: string | null;
@@ -108,22 +109,23 @@ export type PersonChangeFilter = {
   event: 'INSERT' | 'UPDATE' | 'DELETE';
   schema: 'private';
   table: 'persons';
-  filter: string;
 };
 
 /**
  * Filters for the contacts realtime channel. UPDATE + DELETE are always
  * subscribed; INSERT only while a foreground mining is streaming new contacts,
  * so background mining never floods the client (new rows appear on reload).
+ *
+ * Rows are scoped by the table's RLS policy, so no server-side `user_id`
+ * filter is set (Realtime's postgres_changes filters drop all rows when
+ * combined with RLS on the private schema).
  */
 export function buildPersonChangeFilters(
-  userId: string,
   includeInsert: boolean,
 ): PersonChangeFilter[] {
   const base = {
     schema: 'private' as const,
     table: 'persons' as const,
-    filter: `user_id=eq.${userId}`,
   };
   const filters: PersonChangeFilter[] = [
     { ...base, event: 'UPDATE' },

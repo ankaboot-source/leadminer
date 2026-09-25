@@ -176,14 +176,14 @@ describe('resolveRealtimeAction', () => {
 
 describe('buildPersonChangeFilters', () => {
   it('always includes UPDATE + DELETE and excludes INSERT when not mining', () => {
-    const filters = buildPersonChangeFilters('u1', false);
+    const filters = buildPersonChangeFilters(false);
     expect(filters).toHaveLength(2);
     expect(filters.map((f) => f.event).sort()).toEqual(['DELETE', 'UPDATE']);
-    expect(filters.every((f) => f.filter === 'user_id=eq.u1')).toBe(true);
+    expect(filters.every((f) => f.schema === 'private')).toBe(true);
   });
 
   it('adds the INSERT filter while a foreground mining is active', () => {
-    const filters = buildPersonChangeFilters('u1', true);
+    const filters = buildPersonChangeFilters(true);
     expect(filters.map((f) => f.event).sort()).toEqual([
       'DELETE',
       'INSERT',
