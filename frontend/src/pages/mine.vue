@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { useMiningTableData } from '~/composables/useMiningTableData';
+import { useMiningTableData } from '~/composables/useTableData';
 
 const $leadminer = useLeadminerStore();
 const $contactsStore = useContactsStore();

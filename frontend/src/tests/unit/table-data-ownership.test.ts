@@ -38,8 +38,21 @@ vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => leadminerStore,
 }));
 
-import { useContactsTableData } from '@/composables/useContactsTableData';
-import { useMiningTableData } from '@/composables/useMiningTableData';
+import {
+  useContactsTableData,
+  useMiningTableData,
+} from '@/composables/useTableData';
+import { getDefaultVisibleColumns } from '@/utils/table-preferences';
+
+describe('getDefaultVisibleColumns', () => {
+  it('keeps the works-for column in the contacts view', () => {
+    expect(getDefaultVisibleColumns('contacts')).toContain('works_for');
+  });
+
+  it('does not expose works-for as a mine column', () => {
+    expect(getDefaultVisibleColumns('mine')).not.toContain('works_for');
+  });
+});
 
 const ContactsHarness = defineComponent({
   setup() {
@@ -96,8 +109,6 @@ describe('useMiningTableData', () => {
 
     leadminerStore.miningCompleted = true;
     await nextTick();
-    expect(
-      contactsStore.unsubscribeFromRealtimeUpdates,
-    ).toHaveBeenCalled();
+    expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
   });
 });

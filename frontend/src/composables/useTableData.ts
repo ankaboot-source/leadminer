@@ -1,6 +1,7 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useContactsStore } from '~/stores/contacts';
 import { useFiltersStore } from '~/stores/filters';
+import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';
 import { getDefaultVisibleColumns } from '~/utils/table-preferences';
 
@@ -22,6 +23,10 @@ function removeMiningIdParam() {
   );
 }
 
+/**
+ * Owns the /contacts page lifecycle: full table load, refine fallback,
+ * normalization, visible columns, mining-id deep link and realtime.
+ */
 export function useContactsTableData() {
   const contactsStore = useContactsStore();
   const filtersStore = useFiltersStore();
@@ -83,4 +88,55 @@ export function useContactsTableData() {
   });
 
   return { loading };
+}
+
+/**
+ * Owns the /mine page lifecycle: subscribes to the realtime stream only while
+ * a mining task is active and stops it as soon as mining completes. It never
+ * triggers a full contacts load.
+ */
+export function useMiningTableData() {
+  const contactsStore = useContactsStore();
+  const filtersStore = useFiltersStore();
+  const leadminerStore = useLeadminerStore();
+  let subscribed = false;
+  let stopStateWatch: (() => void) | undefined;
+
+  onMounted(() => {
+    filtersStore.initializeTableFilters('mine');
+    contactsStore.initializeVisibleColumns(
+      getDefaultVisibleColumns('mine'),
+      'mine',
+      contactsStore.contactsList,
+    );
+    stopStateWatch = watch(
+      [
+        () => Boolean(leadminerStore.activeMiningTask),
+        () => leadminerStore.miningCompleted,
+      ],
+      ([active, completed]) => {
+        if (completed || !active) {
+          if (!subscribed) return;
+          subscribed = false;
+          void contactsStore.unsubscribeFromRealtimeUpdates();
+          return;
+        }
+
+        if (subscribed) return;
+        subscribed = true;
+        try {
+          contactsStore.subscribeToRealtimeUpdates('mine');
+        } catch (error) {
+          subscribed = false;
+          console.error('Failed to subscribe to mining realtime', error);
+        }
+      },
+      { immediate: true },
+    );
+  });
+
+  onBeforeUnmount(() => {
+    stopStateWatch?.();
+    contactsStore.$reset();
+  });
 }

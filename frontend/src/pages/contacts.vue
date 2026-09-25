@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { useContactsTableData } from '~/composables/useContactsTableData';
+import { useContactsTableData } from '~/composables/useTableData';
 
 const $contactsStore = useContactsStore();
 const { loading } = useContactsTableData();
