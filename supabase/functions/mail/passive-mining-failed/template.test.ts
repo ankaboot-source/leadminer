@@ -10,7 +10,11 @@ Deno.test("renders the English notification with an encoded reconnect CTA", () =
 
   assertEquals(
     result.subject,
-    "Action required: reconnect your source",
+    "Action required: refresh credentials to continue mining",
+  );
+  assertStringIncludes(
+    result.html,
+    "Reconnect to keep continuous mining running.",
   );
   assertStringIncludes(result.html, "user+test@example.com");
   assertStringIncludes(
@@ -28,7 +32,11 @@ Deno.test("renders the French notification with the same CTA", () => {
 
   assertEquals(
     result.subject,
-    "Action requise : reconnectez votre source",
+    "Action requise : actualisez vos identifiants pour continuer l’extraction",
+  );
+  assertStringIncludes(
+    result.html,
+    "Reconnectez la source pour poursuivre l’extraction continue.",
   );
   assertStringIncludes(result.html, "Bonjour");
   assertStringIncludes(result.html, "Reconnecter la source");
