@@ -341,12 +341,13 @@
     </Dialog>
 
     <PassiveMiningFolderDialog
-      v-model:visible="passiveDialogVisible"
+      :visible="passiveDialogVisible"
       :source="passiveDialogSource"
       :mode="passiveDialogMode"
       :rows="passiveDialogRows"
       :saving="passiveDialogSaving"
       :loading="passiveDialogLoading"
+      @update:visible="onPassiveDialogVisibleChange"
       @confirm="onPassiveDialogConfirm"
     />
   </div>
@@ -525,6 +526,7 @@ const passiveDialogSource = ref<MiningSource>();
 const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
 const passiveDialogRows = ref<PassiveFolderRow[]>([]);
 const passiveDialogLoading = ref(false);
+const passiveDialogPreviousPassive = ref(false);
 const { isSaving: passiveDialogSaving, enablePassiveMining } =
   useEnablePassiveMining();
 
@@ -545,10 +547,25 @@ function passiveFolderLabel(key: string): string {
  */
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   if (value) {
+    // The ToggleSwitch is one-way bound. Flip it optimistically so it reflects
+    // the confirmation dialog, and restore the previous state on Cancel.
+    passiveDialogPreviousPassive.value = source.passive_mining;
+    source.passive_mining = true;
     await promptEnablePassiveMining(source);
   } else {
     await disablePassiveMining(source);
   }
+}
+
+// Any close that is not a confirmation (Cancel, X, overlay) must restore the
+// previous toggle state, otherwise the native checkbox stays toggled while the
+// source remains disabled.
+function onPassiveDialogVisibleChange(visible: boolean) {
+  if (!visible && passiveDialogSource.value) {
+    passiveDialogSource.value.passive_mining =
+      passiveDialogPreviousPassive.value;
+  }
+  passiveDialogVisible.value = visible;
 }
 async function disablePassiveMining(source: MiningSource) {
   try {
@@ -636,6 +653,8 @@ async function onPassiveDialogConfirm(payload: {
     payload.flags,
   );
   if (!enabled) return;
+  // Confirmed: keep the toggle on even if the dialog emits a close event.
+  passiveDialogPreviousPassive.value = true;
   passiveDialogVisible.value = false;
   showPassiveMiningEnabledToast(payload.folders);
 }
