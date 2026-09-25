@@ -382,16 +382,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
     if (!userId) return false;
 
-    const { count, error } = await $supabase
+    const { data, error } = await $supabase
       .schema('private')
       .from('persons')
-      .select('id', { count: 'exact', head: true })
+      .select('id')
       .eq('user_id', userId)
       .limit(1);
 
     if (error) throw error;
 
-    return (count ?? 0) > 0;
+    return (data?.length ?? 0) > 0;
   }
 
   /**
