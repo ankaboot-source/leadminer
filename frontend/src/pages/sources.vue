@@ -218,21 +218,22 @@
                 <div class="text-surface-500">
                   {{ t('passive_mining_status') }}
                 </div>
-                <div class="font-semibold mt-1 capitalize">
-                  {{ t(passiveMiningStatus(source).label) }}
-                </div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('last_passive_run') }}</div>
-                <div class="font-semibold mt-1">
-                  {{
-                    deriveSourceState(source).lastRunAt
-                      ? formatDate(
-                          deriveSourceState(source).lastRunAt as string,
-                        )
-                      : '-'
-                  }}
+                <div
+                  class="font-semibold mt-1 flex flex-wrap items-center gap-x-2"
+                >
+                  <span class="capitalize">
+                    {{ t(passiveMiningStatus(source).label) }}
+                  </span>
+                  <span class="text-surface-400">·</span>
+                  <span class="font-normal">
+                    {{
+                      deriveSourceState(source).lastRunAt
+                        ? formatDate(
+                            deriveSourceState(source).lastRunAt as string,
+                          )
+                        : '-'
+                    }}
+                  </span>
                 </div>
               </div>
 
@@ -861,7 +862,6 @@ onMounted(async () => {
     "provider": "Provider",
     "last_extraction": "Last extraction",
     "passive_mining_status": "Continuous mining status",
-    "last_passive_run": "Last continuous run",
     "folders_mined": "Folders mined",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
@@ -930,7 +930,6 @@ onMounted(async () => {
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
     "passive_mining_status": "Statut de l'extraction continue",
-    "last_passive_run": "Dernière extraction continue",
     "folders_mined": "Dossiers traités",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",

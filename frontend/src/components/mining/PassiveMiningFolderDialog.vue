@@ -150,10 +150,21 @@ function syncSelection() {
     .map((row) => row.key);
 }
 
+// Discards any local edits (switches + folder selection) so a cancelled or
+// closed dialog reopens from the persisted source configuration.
+function resetDraft() {
+  draftConfig.value = deriveSourceConfig(props.source?.config);
+  folderSelection.value = [];
+  awaitingRows.value = false;
+}
+
 watch(
   () => props.visible,
   (visible) => {
-    if (!visible) return;
+    if (!visible) {
+      resetDraft();
+      return;
+    }
     draftConfig.value = deriveSourceConfig(props.source?.config);
     syncSelection();
     awaitingRows.value = props.loading || props.rows.length === 0;
