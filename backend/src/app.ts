@@ -13,7 +13,6 @@ import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
 import notFound from './middleware/notFound';
-import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
 import initializeEnrichmentRoutes from './routes/enrichment.routes';
@@ -39,13 +38,9 @@ export default function initializeApp(
 ) {
   const app = express();
 
-  if (ENV.SENTRY_DSN_BACKEND) {
-    initializeSentry(
-      app,
-      ENV.SENTRY_DSN_BACKEND,
-      ENV.SENTRY_ENVIRONMENT_BACKEND
-    );
-  }
+  // Trust the reverse proxy so req.ip reflects the real client for rate
+  // limiting and logging when X-Forwarded-For is present.
+  app.set('trust proxy', ENV.TRUST_PROXY);
 
   if (Billing) {
     app.use('/api', Billing.expressRouter(logger));

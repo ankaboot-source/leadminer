@@ -218,21 +218,22 @@
                 <div class="text-surface-500">
                   {{ t('passive_mining_status') }}
                 </div>
-                <div class="font-semibold mt-1 capitalize">
-                  {{ t(passiveMiningStatus(source).label) }}
-                </div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">{{ t('last_passive_run') }}</div>
-                <div class="font-semibold mt-1">
-                  {{
-                    deriveSourceState(source).lastRunAt
-                      ? formatDate(
-                          deriveSourceState(source).lastRunAt as string,
-                        )
-                      : '-'
-                  }}
+                <div
+                  class="font-semibold mt-1 flex flex-wrap items-center gap-x-2"
+                >
+                  <span class="capitalize">
+                    {{ t(passiveMiningStatus(source).label) }}
+                  </span>
+                  <span class="text-surface-400">·</span>
+                  <span class="font-normal">
+                    {{
+                      deriveSourceState(source).lastRunAt
+                        ? formatDate(
+                            deriveSourceState(source).lastRunAt as string,
+                          )
+                        : '-'
+                    }}
+                  </span>
                 </div>
               </div>
 
@@ -340,12 +341,13 @@
     </Dialog>
 
     <PassiveMiningFolderDialog
-      v-model:visible="passiveDialogVisible"
+      :visible="passiveDialogVisible"
       :source="passiveDialogSource"
       :mode="passiveDialogMode"
       :rows="passiveDialogRows"
       :saving="passiveDialogSaving"
       :loading="passiveDialogLoading"
+      @update:visible="onPassiveDialogVisibleChange"
       @confirm="onPassiveDialogConfirm"
     />
   </div>
@@ -524,6 +526,7 @@ const passiveDialogSource = ref<MiningSource>();
 const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
 const passiveDialogRows = ref<PassiveFolderRow[]>([]);
 const passiveDialogLoading = ref(false);
+const passiveDialogPreviousPassive = ref(false);
 const { isSaving: passiveDialogSaving, enablePassiveMining } =
   useEnablePassiveMining();
 
@@ -544,10 +547,25 @@ function passiveFolderLabel(key: string): string {
  */
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   if (value) {
+    // The ToggleSwitch is one-way bound. Flip it optimistically so it reflects
+    // the confirmation dialog, and restore the previous state on Cancel.
+    passiveDialogPreviousPassive.value = source.passive_mining;
+    source.passive_mining = true;
     await promptEnablePassiveMining(source);
   } else {
     await disablePassiveMining(source);
   }
+}
+
+// Any close that is not a confirmation (Cancel, X, overlay) must restore the
+// previous toggle state, otherwise the native checkbox stays toggled while the
+// source remains disabled.
+function onPassiveDialogVisibleChange(visible: boolean) {
+  if (!visible && passiveDialogSource.value) {
+    passiveDialogSource.value.passive_mining =
+      passiveDialogPreviousPassive.value;
+  }
+  passiveDialogVisible.value = visible;
 }
 async function disablePassiveMining(source: MiningSource) {
   try {
@@ -635,6 +653,8 @@ async function onPassiveDialogConfirm(payload: {
     payload.flags,
   );
   if (!enabled) return;
+  // Confirmed: keep the toggle on even if the dialog emits a close event.
+  passiveDialogPreviousPassive.value = true;
   passiveDialogVisible.value = false;
   showPassiveMiningEnabledToast(payload.folders);
 }
@@ -861,7 +881,6 @@ onMounted(async () => {
     "provider": "Provider",
     "last_extraction": "Last extraction",
     "passive_mining_status": "Continuous mining status",
-    "last_passive_run": "Last continuous run",
     "folders_mined": "Folders mined",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
@@ -930,7 +949,6 @@ onMounted(async () => {
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
     "passive_mining_status": "Statut de l'extraction continue",
-    "last_passive_run": "Dernière extraction continue",
     "folders_mined": "Dossiers traités",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",
