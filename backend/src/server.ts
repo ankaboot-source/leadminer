@@ -1,4 +1,5 @@
 import './env';
+import './instrument';
 
 import initializeApp from './app';
 import ENV from './config';
