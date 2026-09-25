@@ -1,33 +1,27 @@
 import { Context, Hono } from "hono";
 import corsHeaders from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
-import {
-  getOptionalEnv,
-  getRequiredEnv,
-} from "../_shared/env-helpers.ts";
+import { getOptionalEnv, getRequiredEnv } from "../_shared/env-helpers.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
 } from "../_shared/supabase.ts";
 import { validationErrorResponse } from "../_shared/validation.ts";
 import {
-  createSchema,
   authorizeSchema,
   callbackQuerySchema,
   configureSourceSchema,
+  createSchema,
 } from "./schemas.ts";
+import { applySourceConfig, type ConfigureSourceParams } from "./config.ts";
 import {
-  applySourceConfig,
-  type ConfigureSourceParams,
-} from "./config.ts";
-import {
-  getAuthClient,
-  getTokenConfig,
   exchangeForToken,
-  signOAuthState,
-  parseOAuthState,
+  getAuthClient,
   getSafeRedirectPath,
+  getTokenConfig,
   type OAuthMiningSourceProvider,
+  parseOAuthState,
+  signOAuthState,
 } from "./oauth/utils.ts";
 import { SourceHealthState } from "../_shared/enums.ts";
 
@@ -153,7 +147,8 @@ app.post("/oauth/authorize", authMiddleware, async (c: Context) => {
     { userId: user.id, afterCallbackRedirect },
     envs().hashSecret,
   );
-  const callbackUrl = `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
+  const callbackUrl =
+    `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
   const client = getAuthClient(provider);
   const authorizationUri = client.authorizeURL({
@@ -173,7 +168,9 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
     });
     if (!parsed.success) {
       return c.redirect(
-        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
+        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${
+          c.req.param("provider")
+        }&referrer=&navigate_to=/`,
         302,
       );
     }
@@ -185,7 +182,8 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       envs().hashSecret,
     );
 
-    const callbackUrl = `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
+    const callbackUrl =
+      `${envs().oauthCallbackBaseUrl}/functions/v1/${functionName}/oauth/callback/${provider}`;
 
     const token = await exchangeForToken(
       code,
@@ -217,7 +215,9 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
         error: rpcError.message,
       });
       return c.redirect(
-        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${provider}&referrer=${encodeURIComponent(afterCallbackRedirect)}&navigate_to=${encodeURIComponent(afterCallbackRedirect)}`,
+        `${envs().frontendHost}/callback?error=oauth-permissions&provider=${provider}&referrer=${
+          encodeURIComponent(afterCallbackRedirect)
+        }&navigate_to=${encodeURIComponent(afterCallbackRedirect)}`,
         302,
       );
     }
@@ -248,10 +248,9 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       } catch (healthError) {
         // Non-fatal: the reconnect itself succeeded; the flag clears on next use.
         logger.warn("Failed to clear re-auth flag after OAuth reconnect", {
-          error:
-            healthError instanceof Error
-              ? healthError.message
-              : String(healthError),
+          error: healthError instanceof Error
+            ? healthError.message
+            : String(healthError),
         });
       }
 
@@ -275,7 +274,9 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
 
     let redirectUrl = afterCallbackRedirect;
     if (afterCallbackRedirect.startsWith("/mine")) {
-      redirectUrl = `${afterCallbackRedirect}?source=${encodeURIComponent(token.email)}`;
+      redirectUrl = `${afterCallbackRedirect}?source=${
+        encodeURIComponent(token.email)
+      }`;
     }
 
     return c.redirect(`${envs().frontendHost}${redirectUrl}`, 302);
@@ -284,7 +285,9 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
       error: error instanceof Error ? error.message : String(error),
     });
     return c.redirect(
-      `${envs().frontendHost}/callback?error=oauth-permissions&provider=${c.req.param("provider")}&referrer=&navigate_to=/`,
+      `${envs().frontendHost}/callback?error=oauth-permissions&provider=${
+        c.req.param("provider")
+      }&referrer=&navigate_to=/`,
       302,
     );
   }
@@ -325,7 +328,10 @@ app.patch("/:id/config", authMiddleware, async (c: Context) => {
     if (!result) {
       return c.json({ error: "Mining source not found" }, 404);
     }
-    return c.json({ config: result.config });
+    return c.json({
+      config: result.config,
+      previousHealthState: result.previousHealthState ?? null,
+    });
   } catch (error) {
     logger.error("Failed to patch mining source config", {
       sourceId,

@@ -5,7 +5,12 @@ import { Contacts } from '../db/interfaces/Contacts';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import RedisQueuedEmailsCache from '../services/cache/redis/RedisQueuedEmailsCache';
 import { ContactFormat } from '../services/extractors/engines/FileImport';
-import { SupabaseTask as DBTask, MiningRunMode, TaskType } from '../db/types';
+import {
+  SupabaseTask as DBTask,
+  MiningRunMode,
+  SourceHealthState,
+  TaskType
+} from '../db/types';
 import { ImapAuthError } from '../utils/errors';
 import { buildResumeFromConfig } from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
@@ -269,6 +274,39 @@ export default function initializeMiningController(
             password: sanitizedPassword
           }
         });
+
+        try {
+          const { error: healthError } = await supabaseClient.functions.invoke(
+            `mining-sources/${encodeURIComponent(miningSourceId)}/config`,
+            {
+              method: 'PATCH',
+              body: {
+                health: {
+                  state: SourceHealthState.Active,
+                  last_error: null
+                }
+              }
+            }
+          );
+
+          if (healthError) {
+            logger.warn(
+              'Failed to clear IMAP source health after registration',
+              {
+                userId: user.id,
+                sourceId: miningSourceId,
+                error: healthError.message
+              }
+            );
+          }
+        } catch (healthError) {
+          logger.warn('Failed to clear IMAP source health after registration', {
+            userId: user.id,
+            sourceId: miningSourceId,
+            error:
+              healthError instanceof Error ? healthError.message : healthError
+          });
+        }
 
         if (deps.smtpSenders) {
           try {
