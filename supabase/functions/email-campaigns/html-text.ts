@@ -37,7 +37,8 @@ export function decodeHtmlEntities(value: string): string {
       // Single pass over named entities, including `amp`, so that a
       // double-encoded string such as `&amp;nbsp;` is only decoded once.
       .replace(/&([a-z][a-z0-9]*);/gi, (match, name: string) => {
-        return NAMED_ENTITIES[name.toLowerCase()] ?? match;
+        const key = name.toLowerCase();
+        return Object.hasOwn(NAMED_ENTITIES, key) ? NAMED_ENTITIES[key] : match;
       })
   );
 }
@@ -49,7 +50,7 @@ export function htmlToPlainText(html: string): string {
     .replace(/<\/p>/gi, "\n\n")
     .replace(/<\/div>/gi, "\n\n")
     .replace(/<\/li>/gi, "\n")
-    .replace(/<[^>]*>/g, " ");
+    .replace(/<[^<>]*>/g, " ");
 
   return decodeHtmlEntities(withBreaks)
     .replace(/\u00a0/g, " ")

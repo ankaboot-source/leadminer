@@ -49,3 +49,15 @@ Deno.test("regression: preheader text contains no literal &nbsp;", () => {
   assertEquals(text.includes("&nbsp;"), false);
   assertStringIncludes(text, "Les amis, la famille, chers amis,");
 });
+
+Deno.test("decodeHtmlEntities does not resolve Object.prototype members", () => {
+  assertEquals(decodeHtmlEntities("&constructor;"), "&constructor;");
+  assertEquals(decodeHtmlEntities("&toString;"), "&toString;");
+});
+
+Deno.test("htmlToPlainText preserves stray '<' text and does not hang", () => {
+  assertEquals(htmlToPlainText("<p>a < b</p>"), "a < b");
+  // Malformed input with many '<' must not blow up (linear-time tag strip).
+  const malformed = "<a".repeat(20000);
+  assertEquals(typeof htmlToPlainText(malformed), "string");
+});
