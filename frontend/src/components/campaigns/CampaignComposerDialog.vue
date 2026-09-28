@@ -367,6 +367,7 @@ import {
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import { addOAuthAccount } from '@/utils/oauth';
+import { htmlToPlainText } from '@/utils/htmlText';
 import Editor from 'primevue/editor';
 import GenericComplianceDialog, {
   type ModalData,
@@ -993,9 +994,7 @@ function normalizeBodyText() {
   if (form.plainTextOnly) {
     return form.bodyTextTemplate;
   }
-  return (
-    form.bodyTextTemplate || form.bodyHtmlTemplate.replace(/<[^>]*>/g, ' ')
-  );
+  return form.bodyTextTemplate || htmlToPlainText(form.bodyHtmlTemplate);
 }
 
 async function loadSenderOptions() {
