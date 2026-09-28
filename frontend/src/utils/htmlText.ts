@@ -43,7 +43,9 @@ export function decodeHtmlEntities(value: string): string {
       // Object.prototype.
       .replace(/&([a-z][a-z0-9]*);/gi, (match, name: string) => {
         const key = name.toLowerCase();
-        return Object.hasOwn(NAMED_ENTITIES, key) ? NAMED_ENTITIES[key] : match;
+        return Object.hasOwn(NAMED_ENTITIES, key)
+          ? (NAMED_ENTITIES[key] ?? match)
+          : match;
       })
   );
 }

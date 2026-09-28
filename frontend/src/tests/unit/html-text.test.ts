@@ -51,4 +51,8 @@ describe('htmlToPlainText', () => {
     expect(text.includes('&nbsp;')).toBe(false);
     expect(text).toContain('Les amis, la famille, chers amis,');
   });
+
+  it('does not hang on malformed tag soup', () => {
+    expect(typeof htmlToPlainText('<a'.repeat(20000))).toBe('string');
+  });
 });
