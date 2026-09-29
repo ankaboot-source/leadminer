@@ -379,7 +379,7 @@ const { isSupported, permissionGranted, show } = useWebNotification({
 
 const completedTransitionDone = ref(false);
 
-async function finishMiningFlow() {
+function finishMiningFlow() {
   if (completedTransitionDone.value) return;
   completedTransitionDone.value = true;
   $leadminerStore.maybeOpenPassiveMiningDialog();

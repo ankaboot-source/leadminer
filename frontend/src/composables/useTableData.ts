@@ -90,7 +90,7 @@ export function useContactsTableData() {
     }
   }
 
-  onMounted(() => void initialize());
+  onMounted(initialize);
   onBeforeUnmount(() => {
     disposed = true;
     contactsStore.$reset();
@@ -123,11 +123,11 @@ export function useMiningTableData() {
         () => Boolean(leadminerStore.activeMiningTask),
         () => leadminerStore.miningCompleted,
       ],
-      ([active, completed]) => {
+      async ([active, completed]) => {
         if (completed || !active) {
           if (!subscribed) return;
           subscribed = false;
-          void contactsStore.unsubscribeFromRealtimeUpdates();
+          await contactsStore.unsubscribeFromRealtimeUpdates();
           return;
         }
 
