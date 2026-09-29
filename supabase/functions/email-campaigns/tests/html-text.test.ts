@@ -47,6 +47,13 @@ Deno.test("htmlToPlainText decodes the broader HTML5 entity set", () => {
   );
 });
 
+Deno.test("htmlToPlainText does not partially decode legacy no-semicolon prefixes", () => {
+  assertEquals(
+    htmlToPlainText("<p>&notit; &notation</p>"),
+    "&notit; &notation",
+  );
+});
+
 Deno.test("decodeHtmlEntities handles &nbsp; and &amp;", () => {
   assertEquals(decodeHtmlEntities("a&nbsp;b&amp;c"), "a b&c");
 });

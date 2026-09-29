@@ -42,6 +42,12 @@ describe('htmlToPlainText', () => {
     );
   });
 
+  it('does not partially decode legacy no-semicolon prefixes', () => {
+    expect(htmlToPlainText('<p>&notit; &notation</p>')).toBe(
+      '&notit; &notation',
+    );
+  });
+
   it('does not resolve Object.prototype members', () => {
     expect(decodeHtmlEntities('&constructor;')).toBe('&constructor;');
     expect(decodeHtmlEntities('&toString;')).toBe('&toString;');

@@ -17,7 +17,7 @@ import { decode } from 'html-entities';
 
 export function decodeHtmlEntities(value: string): string {
   // Non-breaking spaces are normalized to regular spaces for plain text.
-  return decode(value).replace(/\u00a0/gu, ' ');
+  return decode(value, { scope: 'attribute' }).replace(/\u00a0/gu, ' ');
 }
 
 export function htmlToPlainText(html: string): string {
