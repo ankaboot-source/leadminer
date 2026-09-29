@@ -30,8 +30,16 @@ describe('htmlToPlainText', () => {
     expect(htmlToPlainText('<p>&amp;nbsp;</p>')).toBe('&nbsp;');
   });
 
-  it('leaves unknown named entities untouched', () => {
-    expect(htmlToPlainText('<p>&copy; 2026</p>')).toBe('&copy; 2026');
+  it('leaves unknown entities untouched', () => {
+    expect(htmlToPlainText('<p>&nonexistententity; 2026</p>')).toBe(
+      '&nonexistententity; 2026',
+    );
+  });
+
+  it('decodes the broader HTML5 entity set', () => {
+    expect(htmlToPlainText('<p>&copy; 2026 &mdash; caf&eacute;</p>')).toBe(
+      '© 2026 — café',
+    );
   });
 
   it('does not resolve Object.prototype members', () => {

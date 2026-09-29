@@ -33,8 +33,18 @@ Deno.test("htmlToPlainText decodes entities only once (double-encoded stays esca
   assertEquals(htmlToPlainText("<p>&amp;nbsp;</p>"), "&nbsp;");
 });
 
-Deno.test("htmlToPlainText leaves unknown named entities untouched", () => {
-  assertEquals(htmlToPlainText("<p>&copy; 2026</p>"), "&copy; 2026");
+Deno.test("htmlToPlainText leaves unknown entities untouched", () => {
+  assertEquals(
+    htmlToPlainText("<p>&nonexistententity; 2026</p>"),
+    "&nonexistententity; 2026",
+  );
+});
+
+Deno.test("htmlToPlainText decodes the broader HTML5 entity set", () => {
+  assertEquals(
+    htmlToPlainText("<p>&copy; 2026 &mdash; caf&eacute;</p>"),
+    "© 2026 — café",
+  );
 });
 
 Deno.test("decodeHtmlEntities handles &nbsp; and &amp;", () => {
