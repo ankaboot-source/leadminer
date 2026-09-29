@@ -173,7 +173,9 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm"
+            >
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('provider') }}</div>
                 <div class="flex items-center gap-2 font-semibold mt-1">
@@ -208,55 +210,35 @@
                   {{ source.totalFromLastMining }} {{ t('contacts') }}
                 </div>
               </div>
+
+              <div
+                v-if="
+                  source.passive_mining || deriveSourceState(source).lastRunAt
+                "
+                class="p-2 rounded bg-surface-50"
+              >
+                <div class="text-surface-500">{{ t('last_passive_run') }}</div>
+                <div class="font-semibold mt-1">
+                  {{
+                    deriveSourceState(source).lastRunAt
+                      ? formatDate(
+                          deriveSourceState(source).lastRunAt as string,
+                        )
+                      : '-'
+                  }}
+                </div>
+              </div>
             </div>
 
             <div
-              v-if="source.passive_mining && passiveMiningStatus(source).status"
-              class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-sm"
+              v-if="passiveMiningErrors(source).length"
+              class="mt-3 p-2 rounded bg-surface-50 text-sm"
             >
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">
-                  {{ t('passive_mining_status') }}
-                </div>
-                <div
-                  class="font-semibold mt-1 flex flex-wrap items-center gap-x-2"
-                >
-                  <span class="capitalize">
-                    {{ t(passiveMiningStatus(source).label) }}
-                  </span>
-                  <span class="text-surface-400">·</span>
-                  <span class="font-normal">
-                    {{
-                      deriveSourceState(source).lastRunAt
-                        ? formatDate(
-                            deriveSourceState(source).lastRunAt as string,
-                          )
-                        : '-'
-                    }}
-                  </span>
-                </div>
+              <div class="text-surface-500">
+                {{ t('passive_mining_errors') }}
               </div>
-
-              <div
-                v-if="deriveSourceState(source).minableFolders.length"
-                class="p-2 rounded bg-surface-50"
-              >
-                <div class="text-surface-500">{{ t('folders_mined') }}</div>
-                <div class="font-semibold mt-1">
-                  {{ deriveSourceState(source).minableFolders.length }}
-                </div>
-              </div>
-
-              <div
-                v-if="passiveMiningErrors(source).length"
-                class="p-2 rounded bg-surface-50 md:col-span-2"
-              >
-                <div class="text-surface-500">
-                  {{ t('passive_mining_errors') }}
-                </div>
-                <div class="text-xs text-red-500 mt-1">
-                  {{ passiveMiningErrors(source).join('; ') }}
-                </div>
+              <div class="text-xs text-red-500 mt-1">
+                {{ passiveMiningErrors(source).join('; ') }}
               </div>
             </div>
 
@@ -377,7 +359,6 @@ import {
 } from '@/utils/passive-mining-folders';
 import { flattenBoxNodes } from '~/utils/box-tree';
 import { getDefaultAndExcludedFolders } from '~/utils/boxes';
-import { SourceHealthState } from '~/types/enums';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
 const $leadminer = useLeadminerStore();
@@ -706,30 +687,6 @@ function getSourceConfig(source: MiningSource, key: string): boolean {
   return flags[key] === true;
 }
 
-function passiveMiningStatus(source: MiningSource) {
-  const { state, lastRunAt } = deriveSourceState(source);
-  // Running derives from live task rows (passiveMinings); here we map the
-  // durable source health to UI labels.
-  const status = state;
-  let label = '';
-  if (isSourceMiningNow(source)) {
-    label = 'mining_status_running';
-  } else if (status === SourceHealthState.Error) {
-    label = 'mining_status_failed';
-  } else if (status === SourceHealthState.NeedsReauth) {
-    label = 'source_needs_reauth';
-  } else if (status === SourceHealthState.Active) {
-    label = lastRunAt ? 'mining_status_done' : 'passive_mining_idle';
-  }
-  return { status, label };
-}
-
-function isSourceMiningNow(source: MiningSource): boolean {
-  return $leadminer.passiveMinings?.some(
-    (g) => g?.task?.miningSource?.source === source.email,
-  );
-}
-
 const PASSIVE_STATUS_POLL_MS = 60_000;
 
 function passiveMiningErrors(source: MiningSource): string[] {
@@ -880,8 +837,7 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Provider",
     "last_extraction": "Last extraction",
-    "passive_mining_status": "Continuous mining status",
-    "folders_mined": "Folders mined",
+    "last_passive_run": "Last continuous mining",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
     "passive_mining_idle": "Idle",
@@ -948,8 +904,7 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
-    "passive_mining_status": "Statut de l'extraction continue",
-    "folders_mined": "Dossiers traités",
+    "last_passive_run": "Dernière extraction continue",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",
     "passive_mining_idle": "En attente",
