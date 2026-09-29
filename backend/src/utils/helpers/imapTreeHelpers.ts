@@ -1,5 +1,5 @@
 import { ListResponse } from 'imapflow';
-import { FolderStatus } from '../../db/types';
+import { FolderStatus, MiningRunMode } from '../../db/types';
 import {
   FlatTree,
   FolderStatusInfo,
@@ -169,6 +169,28 @@ export function buildResumeFromConfig(
     };
   }
   return Object.keys(folders).length > 0 ? { folders } : undefined;
+}
+
+export type ResumeFromConfig =
+  | { folders: Record<string, { uidvalidity: string; last_uid: number }> }
+  | undefined;
+
+/**
+ * A date-only incremental scan cannot establish a UID cursor, so a source
+ * without one would repeat the same scan forever. When an incremental request
+ * resolves to no cursor, fall back to a full scan that can bootstrap it.
+ */
+export function resolveMiningRunMode(
+  requested: MiningRunMode,
+  resumeFrom: ResumeFromConfig
+): MiningRunMode {
+  const hasCursor = Boolean(
+    resumeFrom && Object.keys(resumeFrom.folders).length > 0
+  );
+  if (requested === MiningRunMode.Incremental && !hasCursor) {
+    return MiningRunMode.Full;
+  }
+  return requested;
 }
 
 export function createFlatTreeFromImap(
