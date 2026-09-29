@@ -216,3 +216,11 @@ export function buildResumeFrom(
   }
   return { folders };
 }
+
+/** True when the persisted config carries at least one per-folder UID cursor. */
+export function hasFolderWatermark(
+  config: MiningSourceConfigV1 | undefined,
+): boolean {
+  const folders = config?.mining?.last?.folders;
+  return Boolean(folders && Object.keys(folders).length > 0);
+}

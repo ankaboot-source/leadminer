@@ -9,11 +9,8 @@ import {
   type MiningSourceConfigV1,
   parseConfig,
 } from "../_shared/mining-source-config.ts";
-import {
-  MiningRunMode,
-  SourceHealthState,
-  TaskStatus,
-} from "../_shared/enums.ts";
+import { SourceHealthState } from "../_shared/enums.ts";
+import { resolvePassiveRunMode } from "./run-mode.ts";
 const supabase = createSupabaseAdmin();
 
 const SERVER_ENDPOINT = Deno.env.get("SERVER_ENDPOINT");
@@ -230,32 +227,6 @@ async function getMiningSources() {
     }));
 }
 
-async function getLatestPassiveMiningDate(
-  userId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .schema("private")
-    .from("tasks")
-    .select("started_at")
-    .eq("user_id", userId)
-    .eq("type", "fetch")
-    .eq("status", TaskStatus.Done)
-    .contains("details", { passive_mining: true })
-    .order("started_at", { ascending: false })
-    .limit(1);
-
-  if (error) {
-    console.error("Error fetching latest passive mining date:", error.message);
-    return null;
-  }
-
-  if (!data || data.length === 0) {
-    return null;
-  }
-
-  return data[0].started_at;
-}
-
 async function getBoxes(miningSource: MiningSource) {
   console.log(
     `Fetching IMAP boxes for source ${miningSource.id} (${miningSource.type})`,
@@ -301,15 +272,11 @@ async function startMiningEmail(miningSource: MiningSource) {
     console.log(`Extracted folders for source ${miningSource.id}:`, folders);
   }
 
-  // The backend builds `resumeFrom` from the persisted watermark. The edge only
-  // decides the date fallback, used when no watermark exists yet.
-  const hasWatermark = Boolean(
-    sourceConfig.mining?.last?.folders &&
-      Object.keys(sourceConfig.mining.last.folders).length > 0,
-  );
-  const since = hasWatermark
-    ? undefined
-    : await getLatestPassiveMiningDate(miningSource.user_id);
+  // Mirror the manual UI: no persisted watermark -> full scan (the only safe way
+  // to establish a cursor); a watermark -> incremental resume, using the
+  // backend-built `resumeFrom`. Never use a date-only fallback: it cannot
+  // advance the cursor, so an unmined source would never acquire a watermark.
+  const runMode = resolvePassiveRunMode(sourceConfig);
 
   const flags = sourceConfig.flags ?? {};
   const googleContactsSync = sourceConfig.flags?.google_contacts_sync ?? false;
@@ -321,11 +288,8 @@ async function startMiningEmail(miningSource: MiningSource) {
     extractSignatures: flags.extract_signatures ?? false,
     passive_mining: true,
     googleContactsSync,
-    miningMode: MiningRunMode.Incremental,
+    miningMode: runMode,
   };
-  if (since) {
-    body.since = since;
-  }
 
   const res = await fetch(
     `${SERVER_ENDPOINT}/api/imap/mine/email/${miningSource.user_id}`,
