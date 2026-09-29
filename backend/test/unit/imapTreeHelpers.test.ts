@@ -302,27 +302,37 @@ describe('IMAP Tree Utilities', () => {
 describe('resolveMiningRunMode', () => {
   it('downgrades an incremental run with no cursor to a full scan', () => {
     expect(
-      resolveMiningRunMode(MiningRunMode.Incremental, undefined)
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], undefined)
     ).toBe(MiningRunMode.Full);
   });
 
   it('downgrades an incremental run with an empty cursor map', () => {
     expect(
-      resolveMiningRunMode(MiningRunMode.Incremental, { folders: {} })
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], {
+        folders: {}
+      })
     ).toBe(MiningRunMode.Full);
   });
 
-  it('keeps incremental when at least one folder cursor exists', () => {
+  it('downgrades when a selected folder has no cursor (mixed watermarks)', () => {
     expect(
-      resolveMiningRunMode(MiningRunMode.Incremental, {
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX', 'Archive'], {
+        folders: { INBOX: { uidvalidity: '12', last_uid: 42 } }
+      })
+    ).toBe(MiningRunMode.Full);
+  });
+
+  it('keeps incremental when every selected folder has a cursor', () => {
+    expect(
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], {
         folders: { INBOX: { uidvalidity: '12', last_uid: 42 } }
       })
     ).toBe(MiningRunMode.Incremental);
   });
 
   it('leaves a full request untouched', () => {
-    expect(resolveMiningRunMode(MiningRunMode.Full, undefined)).toBe(
-      MiningRunMode.Full
-    );
+    expect(
+      resolveMiningRunMode(MiningRunMode.Full, ['INBOX'], undefined)
+    ).toBe(MiningRunMode.Full);
   });
 });

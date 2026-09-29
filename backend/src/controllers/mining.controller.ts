@@ -406,7 +406,11 @@ export default function initializeMiningController(
           : undefined;
       // A date-only incremental scan cannot establish a cursor; without one the
       // run would repeat forever. Bootstrap with a full scan instead.
-      const effectiveMode = resolveMiningRunMode(requestedMode, resumeFrom);
+      const effectiveMode = resolveMiningRunMode(
+        requestedMode,
+        sanitizedFolders,
+        resumeFrom
+      );
 
       try {
         const miningId = await deps.idGenerator();

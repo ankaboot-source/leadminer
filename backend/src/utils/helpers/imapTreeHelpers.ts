@@ -171,23 +171,23 @@ export function buildResumeFromConfig(
   return Object.keys(folders).length > 0 ? { folders } : undefined;
 }
 
-export type ResumeFromConfig =
-  | { folders: Record<string, { uidvalidity: string; last_uid: number }> }
-  | undefined;
+export type ResumeFromConfig = ReturnType<typeof buildResumeFromConfig>;
 
 /**
- * A date-only incremental scan cannot establish a UID cursor, so a source
- * without one would repeat the same scan forever. When an incremental request
- * resolves to no cursor, fall back to a full scan that can bootstrap it.
+ * A date-only incremental scan cannot establish a UID cursor, so any selected
+ * folder without one would repeat the same scan forever. When an incremental
+ * request does not carry a cursor for every selected folder, fall back to a
+ * full scan that can bootstrap the missing cursors.
  */
 export function resolveMiningRunMode(
   requested: MiningRunMode,
+  selectedFolders: string[],
   resumeFrom: ResumeFromConfig
 ): MiningRunMode {
-  const hasCursor = Boolean(
-    resumeFrom && Object.keys(resumeFrom.folders).length > 0
+  const everyFolderHasCursor = selectedFolders.every(
+    (folder) => resumeFrom?.folders?.[folder] !== undefined
   );
-  if (requested === MiningRunMode.Incremental && !hasCursor) {
+  if (requested === MiningRunMode.Incremental && !everyFolderHasCursor) {
     return MiningRunMode.Full;
   }
   return requested;
