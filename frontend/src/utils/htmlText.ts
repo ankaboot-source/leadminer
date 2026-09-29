@@ -60,7 +60,7 @@ export function htmlToPlainText(html: string): string {
     .replace(/<[^<>]*>/g, ' ');
 
   return decodeHtmlEntities(withBreaks)
-    .replace(/\u00a0/g, ' ')
+    .replace(/\u00a0/gu, ' ')
     .replace(/[ \t]+/g, ' ')
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
