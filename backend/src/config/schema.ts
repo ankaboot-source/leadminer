@@ -65,6 +65,9 @@ const schema = z.object({
   SENTRY_DSN_BACKEND: z.string().url().optional(),
   SENTRY_ENVIRONMENT_BACKEND: z.string().min(1).optional(),
 
+  /* PROXY */
+  TRUST_PROXY: z.coerce.number().int().min(0).optional().default(1),
+
   /* LOGGING */
   GRAFANA_LOKI_HOST: z.string().url().optional(),
   LEADMINER_API_LOG_LEVEL: z

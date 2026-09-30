@@ -173,7 +173,9 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-sm"
+            >
               <div class="p-2 rounded bg-surface-50">
                 <div class="text-surface-500">{{ t('provider') }}</div>
                 <div class="flex items-center gap-2 font-semibold mt-1">
@@ -208,22 +210,13 @@
                   {{ source.totalFromLastMining }} {{ t('contacts') }}
                 </div>
               </div>
-            </div>
 
-            <div
-              v-if="source.passive_mining && passiveMiningStatus(source).status"
-              class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-sm"
-            >
-              <div class="p-2 rounded bg-surface-50">
-                <div class="text-surface-500">
-                  {{ t('passive_mining_status') }}
-                </div>
-                <div class="font-semibold mt-1 capitalize">
-                  {{ t(passiveMiningStatus(source).label) }}
-                </div>
-              </div>
-
-              <div class="p-2 rounded bg-surface-50">
+              <div
+                v-if="
+                  source.passive_mining || deriveSourceState(source).lastRunAt
+                "
+                class="p-2 rounded bg-surface-50"
+              >
                 <div class="text-surface-500">{{ t('last_passive_run') }}</div>
                 <div class="font-semibold mt-1">
                   {{
@@ -235,27 +228,17 @@
                   }}
                 </div>
               </div>
+            </div>
 
-              <div
-                v-if="deriveSourceState(source).minableFolders.length"
-                class="p-2 rounded bg-surface-50"
-              >
-                <div class="text-surface-500">{{ t('folders_mined') }}</div>
-                <div class="font-semibold mt-1">
-                  {{ deriveSourceState(source).minableFolders.length }}
-                </div>
+            <div
+              v-if="passiveMiningErrors(source).length"
+              class="mt-3 p-2 rounded bg-surface-50 text-sm"
+            >
+              <div class="text-surface-500">
+                {{ t('passive_mining_errors') }}
               </div>
-
-              <div
-                v-if="passiveMiningErrors(source).length"
-                class="p-2 rounded bg-surface-50 md:col-span-2"
-              >
-                <div class="text-surface-500">
-                  {{ t('passive_mining_errors') }}
-                </div>
-                <div class="text-xs text-red-500 mt-1">
-                  {{ passiveMiningErrors(source).join('; ') }}
-                </div>
+              <div class="text-xs text-red-500 mt-1">
+                {{ passiveMiningErrors(source).join('; ') }}
               </div>
             </div>
 
@@ -340,12 +323,13 @@
     </Dialog>
 
     <PassiveMiningFolderDialog
-      v-model:visible="passiveDialogVisible"
+      :visible="passiveDialogVisible"
       :source="passiveDialogSource"
       :mode="passiveDialogMode"
       :rows="passiveDialogRows"
       :saving="passiveDialogSaving"
       :loading="passiveDialogLoading"
+      @update:visible="onPassiveDialogVisibleChange"
       @confirm="onPassiveDialogConfirm"
     />
   </div>
@@ -375,7 +359,6 @@ import {
 } from '@/utils/passive-mining-folders';
 import { flattenBoxNodes } from '~/utils/box-tree';
 import { getDefaultAndExcludedFolders } from '~/utils/boxes';
-import { SourceHealthState } from '~/types/enums';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
 const $leadminer = useLeadminerStore();
@@ -524,6 +507,7 @@ const passiveDialogSource = ref<MiningSource>();
 const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
 const passiveDialogRows = ref<PassiveFolderRow[]>([]);
 const passiveDialogLoading = ref(false);
+const passiveDialogPreviousPassive = ref(false);
 const { isSaving: passiveDialogSaving, enablePassiveMining } =
   useEnablePassiveMining();
 
@@ -544,10 +528,25 @@ function passiveFolderLabel(key: string): string {
  */
 async function togglePassiveMining(source: MiningSource, value: boolean) {
   if (value) {
+    // The ToggleSwitch is one-way bound. Flip it optimistically so it reflects
+    // the confirmation dialog, and restore the previous state on Cancel.
+    passiveDialogPreviousPassive.value = source.passive_mining;
+    source.passive_mining = true;
     await promptEnablePassiveMining(source);
   } else {
     await disablePassiveMining(source);
   }
+}
+
+// Any close that is not a confirmation (Cancel, X, overlay) must restore the
+// previous toggle state, otherwise the native checkbox stays toggled while the
+// source remains disabled.
+function onPassiveDialogVisibleChange(visible: boolean) {
+  if (!visible && passiveDialogSource.value) {
+    passiveDialogSource.value.passive_mining =
+      passiveDialogPreviousPassive.value;
+  }
+  passiveDialogVisible.value = visible;
 }
 async function disablePassiveMining(source: MiningSource) {
   try {
@@ -635,6 +634,8 @@ async function onPassiveDialogConfirm(payload: {
     payload.flags,
   );
   if (!enabled) return;
+  // Confirmed: keep the toggle on even if the dialog emits a close event.
+  passiveDialogPreviousPassive.value = true;
   passiveDialogVisible.value = false;
   showPassiveMiningEnabledToast(payload.folders);
 }
@@ -684,30 +685,6 @@ function describeFolderList(folders: string[]): string | null {
 function getSourceConfig(source: MiningSource, key: string): boolean {
   const flags = (source.config?.flags ?? {}) as Record<string, unknown>;
   return flags[key] === true;
-}
-
-function passiveMiningStatus(source: MiningSource) {
-  const { state, lastRunAt } = deriveSourceState(source);
-  // Running derives from live task rows (passiveMinings); here we map the
-  // durable source health to UI labels.
-  const status = state;
-  let label = '';
-  if (isSourceMiningNow(source)) {
-    label = 'mining_status_running';
-  } else if (status === SourceHealthState.Error) {
-    label = 'mining_status_failed';
-  } else if (status === SourceHealthState.NeedsReauth) {
-    label = 'source_needs_reauth';
-  } else if (status === SourceHealthState.Active) {
-    label = lastRunAt ? 'mining_status_done' : 'passive_mining_idle';
-  }
-  return { status, label };
-}
-
-function isSourceMiningNow(source: MiningSource): boolean {
-  return $leadminer.passiveMinings?.some(
-    (g) => g?.task?.miningSource?.source === source.email,
-  );
 }
 
 const PASSIVE_STATUS_POLL_MS = 60_000;
@@ -860,9 +837,7 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Provider",
     "last_extraction": "Last extraction",
-    "passive_mining_status": "Continuous mining status",
-    "last_passive_run": "Last continuous run",
-    "folders_mined": "Folders mined",
+    "last_passive_run": "Last continuous mining",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
     "passive_mining_idle": "Idle",
@@ -929,9 +904,7 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
-    "passive_mining_status": "Statut de l'extraction continue",
     "last_passive_run": "Dernière extraction continue",
-    "folders_mined": "Dossiers traités",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",
     "passive_mining_idle": "En attente",
