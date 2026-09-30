@@ -55,7 +55,7 @@ export function useEnablePassiveMining() {
         severity: 'error',
         summary: 'Error',
         detail:
-          (error as Error).message || 'Failed to enable continuous mining',
+          (error as Error).message || 'Failed to enable passive mining',
         life: 5000,
       });
       return false;

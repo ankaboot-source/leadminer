@@ -119,9 +119,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const errors = ref({});
 
   /**
-   * Offers the "Enable continuous contact extraction?" dialog at the end of a
+   * Offers the "Enable passive mining?" dialog at the end of a
    * mining run — first-time enable prompt when the source is not on
-   * continuous mining, or an update prompt when the run mined folders not
+   * passive mining, or an update prompt when the run mined folders not
    * yet registered — unless the run was interrupted. Owned by the store so
    * it survives component unmount (e.g. google-contacts-only runs,
    * resumed/reloaded runs).
@@ -475,7 +475,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
-        // The continuous-extraction prompt is owned by the extraction
+        // The passive-mining prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
         setTimeout(async () => {
