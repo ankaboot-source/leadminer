@@ -11,7 +11,7 @@ import {
  * that used one would never acquire a watermark.
  */
 export function resolvePassiveRunMode(
-  config: MiningSourceConfigV1 | undefined,
+  config?: MiningSourceConfigV1,
 ): MiningRunMode {
   return hasFolderWatermark(config)
     ? MiningRunMode.Incremental

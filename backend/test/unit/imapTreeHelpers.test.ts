@@ -301,9 +301,9 @@ describe('IMAP Tree Utilities', () => {
 
 describe('resolveMiningRunMode', () => {
   it('downgrades an incremental run with no cursor to a full scan', () => {
-    expect(
-      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], undefined)
-    ).toBe(MiningRunMode.Full);
+    expect(resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'])).toBe(
+      MiningRunMode.Full
+    );
   });
 
   it('downgrades an incremental run with an empty cursor map', () => {
@@ -331,7 +331,7 @@ describe('resolveMiningRunMode', () => {
   });
 
   it('leaves a full request untouched', () => {
-    expect(resolveMiningRunMode(MiningRunMode.Full, ['INBOX'], undefined)).toBe(
+    expect(resolveMiningRunMode(MiningRunMode.Full, ['INBOX'])).toBe(
       MiningRunMode.Full
     );
   });

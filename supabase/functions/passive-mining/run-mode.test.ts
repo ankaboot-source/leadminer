@@ -42,7 +42,7 @@ Deno.test("legacy folders_mined is not a watermark", () => {
 });
 
 Deno.test("empty config -> Full", () => {
-  assertEquals(resolvePassiveRunMode(undefined), MiningRunMode.Full);
+  assertEquals(resolvePassiveRunMode(), MiningRunMode.Full);
   assertEquals(resolvePassiveRunMode({}), MiningRunMode.Full);
 });
 

@@ -182,7 +182,7 @@ export type ResumeFromConfig = ReturnType<typeof buildResumeFromConfig>;
 export function resolveMiningRunMode(
   requested: MiningRunMode,
   selectedFolders: string[],
-  resumeFrom: ResumeFromConfig
+  resumeFrom?: ResumeFromConfig
 ): MiningRunMode {
   const everyFolderHasCursor = selectedFolders.every(
     (folder) => resumeFrom?.folders?.[folder] !== undefined
