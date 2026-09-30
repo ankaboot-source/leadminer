@@ -331,8 +331,8 @@ describe('resolveMiningRunMode', () => {
   });
 
   it('leaves a full request untouched', () => {
-    expect(
-      resolveMiningRunMode(MiningRunMode.Full, ['INBOX'], undefined)
-    ).toBe(MiningRunMode.Full);
+    expect(resolveMiningRunMode(MiningRunMode.Full, ['INBOX'], undefined)).toBe(
+      MiningRunMode.Full
+    );
   });
 });
