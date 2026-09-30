@@ -137,7 +137,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     if (!source) return;
 
     const registered = Array.isArray(source.config?.folders)
-      ? source.config.folders.filter((f): f is string => typeof f === 'string')
+      ? source.config.folders.filter(
+          (f): f is string => typeof f === 'string' && f !== '',
+        )
       : [];
     const mined =
       lastRunEmailFolders.value ??

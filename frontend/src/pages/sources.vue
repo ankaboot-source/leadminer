@@ -508,7 +508,9 @@ const { isSaving: passiveDialogSaving, enablePassiveMining } =
 
 function registeredPassiveFolders(source: MiningSource): string[] {
   return Array.isArray(source.config?.folders)
-    ? source.config.folders.filter((f): f is string => typeof f === 'string')
+    ? source.config.folders.filter(
+        (f): f is string => typeof f === 'string' && f !== '',
+      )
     : [];
 }
 

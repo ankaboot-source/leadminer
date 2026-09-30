@@ -30,7 +30,8 @@ const seedKeys = computed(() => {
   const configFolders = $leadminerStore.activeMiningSource?.config?.folders;
   const registered = Array.isArray(configFolders)
     ? configFolders.filter(
-        (folder): folder is string => typeof folder === 'string',
+        (folder): folder is string =>
+          typeof folder === 'string' && folder !== '',
       )
     : [];
   const mined = getSelectedFolderKeys(
