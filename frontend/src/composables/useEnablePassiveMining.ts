@@ -54,8 +54,7 @@ export function useEnablePassiveMining() {
       $toast.add({
         severity: 'error',
         summary: 'Error',
-        detail:
-          (error as Error).message || 'Failed to enable passive mining',
+        detail: (error as Error).message || 'Failed to enable passive mining',
         life: 5000,
       });
       return false;
