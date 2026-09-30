@@ -13,6 +13,7 @@ import { generateShortToken } from "../_shared/short-token.ts";
 import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { fillTemplate } from "../_shared/mailing/template.ts";
 import { sendEmail, verifyTransport } from "./email.ts";
+import { htmlToPlainText } from "./html-text.ts";
 import { buildRedirectResponse } from "../_shared/http.ts";
 import {
   getSenderCredentialIssue,
@@ -354,25 +355,13 @@ function getUserFriendlyError(error: unknown): string {
   return message.length > 100 ? message.substring(0, 100) + "..." : message;
 }
 
-function toTextFromHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<\/div>/gi, "\n\n")
-    .replace(/<\/li>/gi, "\n")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-}
-
 function normalizeBodyText(
   bodyText: string,
   bodyHtml: string,
   plainTextOnly: boolean,
 ): string {
   if (plainTextOnly) {
-    return bodyText.trim().length ? bodyText : toTextFromHtml(bodyHtml);
+    return bodyText.trim().length ? bodyText : htmlToPlainText(bodyHtml);
   }
   return bodyText;
 }
