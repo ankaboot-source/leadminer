@@ -236,12 +236,34 @@ describe('PgContacts phone-only contacts', () => {
     expect(query).toHaveBeenCalledTimes(1);
 
     const sql = String(query.mock.calls[0][0]);
+    const params = query.mock.calls[0][1];
 
     expect(sql).toContain('UPDATE private.persons');
-    expect(sql).toContain('persons.id = update.id');
-    expect(sql).toContain('persons.user_id =');
-    expect(sql).toContain(PHONE_ID);
-    expect(sql).toContain(EMAIL_ID);
+    expect(sql).toContain('unnest($1::uuid[], $2::text[])');
+    expect(sql).toContain('p.user_id = $3::uuid');
+    expect(sql).not.toContain('%L');
+    expect(sql).not.toContain(PHONE_ID);
+    expect(sql).not.toContain(EMAIL_ID);
     expect(sql).not.toMatch(/persons\.email\s*=\s*update\.email/);
+    expect(params).toEqual([
+      [PHONE_ID, EMAIL_ID],
+      ['VALID', 'INVALID'],
+      'user-1'
+    ]);
+  });
+
+  it('updateManyPersonsStatus returns false instead of throwing when the query fails', async () => {
+    const query = jest
+      .fn<Pool['query']>()
+      .mockRejectedValue(new Error('operator does not exist: uuid = text'));
+
+    const pool = { query } as unknown as Pool;
+    const contacts = new PgContacts(pool, createMockLogger());
+
+    const result = await contacts.updateManyPersonsStatus('user-1', [
+      { id: '33333333-3333-3333-3333-333333333333', status: 'VALID' as never }
+    ]);
+
+    expect(result).toBe(false);
   });
 });
