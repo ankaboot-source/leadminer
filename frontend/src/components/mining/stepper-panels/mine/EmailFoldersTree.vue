@@ -67,9 +67,8 @@ const props = defineProps<{
   selectionKeys: TreeSelectionKeys;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:selectionKeys', value: TreeSelectionKeys): void;
-}>();
+const emit =
+  defineEmits<(e: 'update:selectionKeys', value: TreeSelectionKeys) => void>();
 
 const selectionKeysModel = computed({
   get: () => props.selectionKeys,
