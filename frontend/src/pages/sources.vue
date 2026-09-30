@@ -325,8 +325,8 @@
     <PassiveMiningFolderDialog
       :visible="passiveDialogVisible"
       :source="passiveDialogSource"
-      :mode="passiveDialogMode"
-      :rows="passiveDialogRows"
+      :boxes="passiveDialogBoxes"
+      :checked="passiveDialogChecked"
       :saving="passiveDialogSaving"
       :loading="passiveDialogLoading"
       @update:visible="onPassiveDialogVisibleChange"
@@ -353,12 +353,7 @@ import {
   folderDisplayName,
   getSelectedFolderKeys,
 } from '@/utils/selected-folders';
-import {
-  buildPassiveFolderList,
-  type PassiveFolderRow,
-} from '@/utils/passive-mining-folders';
-import { flattenBoxNodes } from '~/utils/box-tree';
-import { getDefaultAndExcludedFolders } from '~/utils/boxes';
+import { getDefaultAndExcludedFolders, type BoxNode } from '~/utils/boxes';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
 const $leadminer = useLeadminerStore();
@@ -504,8 +499,8 @@ const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
 
 const passiveDialogVisible = ref(false);
 const passiveDialogSource = ref<MiningSource>();
-const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
-const passiveDialogRows = ref<PassiveFolderRow[]>([]);
+const passiveDialogBoxes = ref<BoxNode[]>([]);
+const passiveDialogChecked = ref<string[]>([]);
 const passiveDialogLoading = ref(false);
 const passiveDialogPreviousPassive = ref(false);
 const { isSaving: passiveDialogSaving, enablePassiveMining } =
@@ -515,10 +510,6 @@ function registeredPassiveFolders(source: MiningSource): string[] {
   return Array.isArray(source.config?.folders)
     ? source.config.folders.filter((f): f is string => typeof f === 'string')
     : [];
-}
-
-function passiveFolderLabel(key: string): string {
-  return folderDisplayName(key, $tGlobal('sources.folder_inbox'));
 }
 
 /**
@@ -573,42 +564,48 @@ async function disablePassiveMining(source: MiningSource) {
   }
 }
 
+// Reuses the active source's in-memory tree when available; otherwise fetches
+// the folder tree server-side so a never-mined source still shows all folders.
+function activeSourceFolderTree(source: MiningSource): BoxNode[] | null {
+  const active = $leadminer.activeMiningSource;
+  const isSameSource =
+    active?.email === source.email && active?.type === source.type;
+  return isSameSource && $leadminer.boxes.length > 0 ? $leadminer.boxes : null;
+}
+
+function applyDefaultFolderSelection(boxes: BoxNode[]) {
+  const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(boxes);
+  passiveDialogChecked.value = getSelectedFolderKeys(
+    defaultFolders,
+    excludedKeys,
+  );
+}
+
 async function promptEnablePassiveMining(source: MiningSource) {
   passiveDialogSource.value = source;
   const registered = registeredPassiveFolders(source);
-  passiveDialogMode.value = registered.length > 0 ? 'update' : 'first-time';
-  passiveDialogRows.value = [];
-
-  // The folders the user mined most recently are the natural passive set.
   const recent = deriveSourceState(source).minableFolders;
-  if (recent.length > 0) {
-    passiveDialogRows.value = buildPassiveFolderList({
-      mined: recent,
-      registered,
-      available: recent,
-      labelFor: passiveFolderLabel,
-      keysFrom: 'mined',
-    });
+  passiveDialogChecked.value = registered.length > 0 ? registered : recent;
+  passiveDialogBoxes.value = [];
+
+  const loadedBoxes = activeSourceFolderTree(source);
+  if (loadedBoxes) {
+    passiveDialogBoxes.value = loadedBoxes;
+    if (passiveDialogChecked.value.length === 0) {
+      applyDefaultFolderSelection(loadedBoxes);
+    }
     passiveDialogVisible.value = true;
     return;
   }
 
-  // Never-mined source: ask the server for its folders so the user can pick.
   passiveDialogVisible.value = true;
   passiveDialogLoading.value = true;
   try {
-    const folders = await fetchSourceFolders(source);
-    const keys = flattenBoxNodes(folders).map((node) => node.key);
-    const { defaultFolders, excludedKeys } =
-      getDefaultAndExcludedFolders(folders);
-    passiveDialogRows.value = buildPassiveFolderList({
-      mined: keys,
-      registered,
-      available: keys,
-      checked: getSelectedFolderKeys(defaultFolders, excludedKeys),
-      labelFor: passiveFolderLabel,
-      keysFrom: 'mined',
-    });
+    const boxes = await fetchSourceFolders(source);
+    passiveDialogBoxes.value = boxes;
+    if (passiveDialogChecked.value.length === 0) {
+      applyDefaultFolderSelection(boxes);
+    }
   } catch (error) {
     passiveDialogVisible.value = false;
     $toast.add({

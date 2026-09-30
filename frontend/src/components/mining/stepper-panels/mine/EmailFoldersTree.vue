@@ -46,7 +46,10 @@
         {{ node.label }}
         <Badge>
           {{
-            (node.total ? node.total : node.cumulativeTotal).toLocaleString()
+            (node.total
+              ? node.total
+              : (node.cumulativeTotal ?? 0)
+            ).toLocaleString()
           }}
         </Badge>
       </template>

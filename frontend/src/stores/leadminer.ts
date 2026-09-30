@@ -106,7 +106,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const passiveMiningDialog = ref(false);
   const passiveMiningDialogShown = ref(false);
-  const passiveMiningDialogMode = ref<'first-time' | 'update'>('first-time');
   // resolveSenderOptions does per-source verifyTransport (SMTP/OAuth + token
   // refresh) plus a DB call. With several sources it can easily take 5-10s,
   // and a previous 3s cap caused false "preserving previous validity" warnings.
@@ -144,14 +143,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       lastRunEmailFolders.value ??
       getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value);
 
-    const mode = resolvePassiveMiningPrompt({
+    const shouldPrompt = resolvePassiveMiningPrompt({
       passiveEnabled: Boolean(source.passive_mining),
       minedFolders: mined,
       registeredFolders: registered,
     });
-    if (!mode) return;
+    if (!shouldPrompt) return;
 
-    passiveMiningDialogMode.value = mode;
     passiveMiningDialogShown.value = true;
     passiveMiningDialog.value = true;
   }
@@ -931,7 +929,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     passiveMiningDialog,
-    passiveMiningDialogMode,
     passiveMinings,
     miningStartedAndFinished,
     miningInterrupted,
