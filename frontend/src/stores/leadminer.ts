@@ -106,7 +106,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const passiveMiningDialog = ref(false);
   const passiveMiningDialogShown = ref(false);
-  const passiveMiningDialogMode = ref<'first-time' | 'update'>('first-time');
   // resolveSenderOptions does per-source verifyTransport (SMTP/OAuth + token
   // refresh) plus a DB call. With several sources it can easily take 5-10s,
   // and a previous 3s cap caused false "preserving previous validity" warnings.
@@ -120,9 +119,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const errors = ref({});
 
   /**
-   * Offers the "Enable continuous contact extraction?" dialog at the end of a
+   * Offers the "Enable passive mining?" dialog at the end of a
    * mining run — first-time enable prompt when the source is not on
-   * continuous mining, or an update prompt when the run mined folders not
+   * passive mining, or an update prompt when the run mined folders not
    * yet registered — unless the run was interrupted. Owned by the store so
    * it survives component unmount (e.g. google-contacts-only runs,
    * resumed/reloaded runs).
@@ -138,20 +137,21 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     if (!source) return;
 
     const registered = Array.isArray(source.config?.folders)
-      ? source.config.folders.filter((f): f is string => typeof f === 'string')
+      ? source.config.folders.filter(
+          (f): f is string => typeof f === 'string' && f !== '',
+        )
       : [];
     const mined =
       lastRunEmailFolders.value ??
       getSelectedFolderKeys(selectedBoxes.value, excludedBoxes.value);
 
-    const mode = resolvePassiveMiningPrompt({
+    const shouldPrompt = resolvePassiveMiningPrompt({
       passiveEnabled: Boolean(source.passive_mining),
       minedFolders: mined,
       registeredFolders: registered,
     });
-    if (!mode) return;
+    if (!shouldPrompt) return;
 
-    passiveMiningDialogMode.value = mode;
     passiveMiningDialogShown.value = true;
     passiveMiningDialog.value = true;
   }
@@ -477,7 +477,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
         $contactsStore.setSkipOrgLookup(false);
-        // The continuous-extraction prompt is owned by the extraction
+        // The passive-mining prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
         setTimeout(async () => {
@@ -931,7 +931,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningTask,
     activeTask,
     passiveMiningDialog,
-    passiveMiningDialogMode,
     passiveMinings,
     miningStartedAndFinished,
     miningInterrupted,

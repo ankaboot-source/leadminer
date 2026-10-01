@@ -325,8 +325,8 @@
     <PassiveMiningFolderDialog
       :visible="passiveDialogVisible"
       :source="passiveDialogSource"
-      :mode="passiveDialogMode"
-      :rows="passiveDialogRows"
+      :boxes="passiveDialogBoxes"
+      :checked="passiveDialogChecked"
       :saving="passiveDialogSaving"
       :loading="passiveDialogLoading"
       @update:visible="onPassiveDialogVisibleChange"
@@ -353,12 +353,7 @@ import {
   folderDisplayName,
   getSelectedFolderKeys,
 } from '@/utils/selected-folders';
-import {
-  buildPassiveFolderList,
-  type PassiveFolderRow,
-} from '@/utils/passive-mining-folders';
-import { flattenBoxNodes } from '~/utils/box-tree';
-import { getDefaultAndExcludedFolders } from '~/utils/boxes';
+import { getDefaultAndExcludedFolders, type BoxNode } from '~/utils/boxes';
 import { describeCronSchedule, isSameUtcDay } from '@/utils/cronSchedule';
 
 const $leadminer = useLeadminerStore();
@@ -504,8 +499,8 @@ const PASSIVE_CRON_SCHEDULE = '0 2 * * *';
 
 const passiveDialogVisible = ref(false);
 const passiveDialogSource = ref<MiningSource>();
-const passiveDialogMode = ref<'first-time' | 'update'>('first-time');
-const passiveDialogRows = ref<PassiveFolderRow[]>([]);
+const passiveDialogBoxes = ref<BoxNode[]>([]);
+const passiveDialogChecked = ref<string[]>([]);
 const passiveDialogLoading = ref(false);
 const passiveDialogPreviousPassive = ref(false);
 const { isSaving: passiveDialogSaving, enablePassiveMining } =
@@ -513,16 +508,14 @@ const { isSaving: passiveDialogSaving, enablePassiveMining } =
 
 function registeredPassiveFolders(source: MiningSource): string[] {
   return Array.isArray(source.config?.folders)
-    ? source.config.folders.filter((f): f is string => typeof f === 'string')
+    ? source.config.folders.filter(
+        (f): f is string => typeof f === 'string' && f !== '',
+      )
     : [];
 }
 
-function passiveFolderLabel(key: string): string {
-  return folderDisplayName(key, $tGlobal('sources.folder_inbox'));
-}
-
 /**
- * Continuous (passive) mining is scheduled server-side by a daily cron job.
+ * Passive mining is scheduled server-side by a daily cron job.
  * Turning it on must first be confirmed against a folder list; turning it off
  * only PATCHes the source preference. Neither path starts a mining run.
  */
@@ -573,42 +566,48 @@ async function disablePassiveMining(source: MiningSource) {
   }
 }
 
+// Reuses the active source's in-memory tree when available; otherwise fetches
+// the folder tree server-side so a never-mined source still shows all folders.
+function activeSourceFolderTree(source: MiningSource): BoxNode[] | null {
+  const active = $leadminer.activeMiningSource;
+  const isSameSource =
+    active?.email === source.email && active?.type === source.type;
+  return isSameSource && $leadminer.boxes.length > 0 ? $leadminer.boxes : null;
+}
+
+function applyDefaultFolderSelection(boxes: BoxNode[]) {
+  const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(boxes);
+  passiveDialogChecked.value = getSelectedFolderKeys(
+    defaultFolders,
+    excludedKeys,
+  );
+}
+
 async function promptEnablePassiveMining(source: MiningSource) {
   passiveDialogSource.value = source;
   const registered = registeredPassiveFolders(source);
-  passiveDialogMode.value = registered.length > 0 ? 'update' : 'first-time';
-  passiveDialogRows.value = [];
-
-  // The folders the user mined most recently are the natural passive set.
   const recent = deriveSourceState(source).minableFolders;
-  if (recent.length > 0) {
-    passiveDialogRows.value = buildPassiveFolderList({
-      mined: recent,
-      registered,
-      available: recent,
-      labelFor: passiveFolderLabel,
-      keysFrom: 'mined',
-    });
+  passiveDialogChecked.value = registered.length > 0 ? registered : recent;
+  passiveDialogBoxes.value = [];
+
+  const loadedBoxes = activeSourceFolderTree(source);
+  if (loadedBoxes) {
+    passiveDialogBoxes.value = loadedBoxes;
+    if (passiveDialogChecked.value.length === 0) {
+      applyDefaultFolderSelection(loadedBoxes);
+    }
     passiveDialogVisible.value = true;
     return;
   }
 
-  // Never-mined source: ask the server for its folders so the user can pick.
   passiveDialogVisible.value = true;
   passiveDialogLoading.value = true;
   try {
-    const folders = await fetchSourceFolders(source);
-    const keys = flattenBoxNodes(folders).map((node) => node.key);
-    const { defaultFolders, excludedKeys } =
-      getDefaultAndExcludedFolders(folders);
-    passiveDialogRows.value = buildPassiveFolderList({
-      mined: keys,
-      registered,
-      available: keys,
-      checked: getSelectedFolderKeys(defaultFolders, excludedKeys),
-      labelFor: passiveFolderLabel,
-      keysFrom: 'mined',
-    });
+    const boxes = await fetchSourceFolders(source);
+    passiveDialogBoxes.value = boxes;
+    if (passiveDialogChecked.value.length === 0) {
+      applyDefaultFolderSelection(boxes);
+    }
   } catch (error) {
     passiveDialogVisible.value = false;
     $toast.add({
@@ -837,19 +836,19 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Provider",
     "last_extraction": "Last extraction",
-    "last_passive_run": "Last continuous mining",
+    "last_passive_run": "Last passive run",
     "passive_mining_errors": "Errors",
     "passive_mining_retrying": "Retrying",
     "passive_mining_idle": "Idle",
     "mining_status_failed": "Failed",
     "source_needs_reauth": "Connection lost — please reconnect to continue",
-    "continuous_mining": "Continuous mining",
+    "continuous_mining": "Passive mining",
     "remove": "Remove",
     "remove_source": "Remove source",
     "remove_source_confirm": "Remove this mining source permanently? This action cannot be undone.",
     "remove_source_failed": "Unable to remove source",
     "type": "Type",
-    "passive_mining": "Continuous mining",
+    "passive_mining": "Passive mining",
     "credentials": "Credentials",
     "status": "Status",
     "connected": "Connected",
@@ -864,7 +863,7 @@ onMounted(async () => {
     "delete_source_failed": "Unable to delete source",
     "stop_mining": "Stop mining",
     "view_mining": "View mining",
-    "passive": "Continuous",
+    "passive": "Passive",
     "mining_in_progress": "Mining in progress",
     "mining_status_running": "Mining in progress",
     "mining_status_done": "Mining completed",
@@ -874,9 +873,9 @@ onMounted(async () => {
     "mining_already_running_detail": "Another source is currently being mined.",
     "google_contacts_sync": "Google Contacts",
     "config_update_failed": "Unable to update source settings",
-    "passive_mining_update_failed": "Unable to update continuous mining",
-    "passive_mining_enabled": "Continuous mining enabled",
-    "passive_mining_disabled": "Continuous mining disabled",
+    "passive_mining_update_failed": "Unable to update passive mining",
+    "passive_mining_enabled": "Passive mining enabled",
+    "passive_mining_disabled": "Passive mining disabled",
     "passive_mining_disabled_detail": "No automatic email checks will run for this source.",
     "reconnect_failed": "Unable to reconnect source",
     "reconnect_unavailable": "Reconnect URL is unavailable",
@@ -904,19 +903,19 @@ onMounted(async () => {
     "email": "Email",
     "provider": "Fournisseur",
     "last_extraction": "Dernière extraction",
-    "last_passive_run": "Dernière extraction continue",
+    "last_passive_run": "Dernière extraction passive",
     "passive_mining_errors": "Erreurs",
     "passive_mining_retrying": "Nouvel essai",
     "passive_mining_idle": "En attente",
     "mining_status_failed": "Échec",
     "source_needs_reauth": "Connexion perdue — veuillez vous reconnecter pour continuer",
-    "continuous_mining": "Extraction continue",
+    "continuous_mining": "Extraction passive",
     "remove": "Supprimer",
     "remove_source": "Supprimer la source",
     "remove_source_confirm": "Supprimer définitivement cette source de minage ? Cette action est irréversible.",
     "remove_source_failed": "Impossible de supprimer la source",
     "type": "Type",
-    "passive_mining": "Extraction continue",
+    "passive_mining": "Extraction passive",
     "credentials": "Identifiants",
     "status": "Statut",
     "connected": "Connecté",
@@ -931,7 +930,7 @@ onMounted(async () => {
     "delete_source_failed": "Impossible de supprimer la source",
     "stop_mining": "Arrêter le minage",
     "view_mining": "Voir le minage",
-    "passive": "Continu",
+    "passive": "Passive",
     "mining_in_progress": "Extraction en cours",
     "mining_status_running": "Extraction en cours",
     "mining_status_done": "Extraction terminée",
@@ -941,9 +940,9 @@ onMounted(async () => {
     "mining_already_running_detail": "Une autre source est en cours d'extraction.",
     "google_contacts_sync": "Contacts Google",
     "config_update_failed": "Impossible de mettre à jour les paramètres",
-    "passive_mining_update_failed": "Impossible de mettre à jour l'extraction continue",
-    "passive_mining_enabled": "Extraction continue activée",
-    "passive_mining_disabled": "Extraction continue désactivée",
+    "passive_mining_update_failed": "Impossible de mettre à jour l'extraction passive",
+    "passive_mining_enabled": "Extraction passive activée",
+    "passive_mining_disabled": "Extraction passive désactivée",
     "passive_mining_disabled_detail": "Aucune vérification automatique des e-mails ne sera effectuée pour cette source.",
     "reconnect_failed": "Impossible de reconnecter la source",
     "reconnect_unavailable": "URL de reconnexion indisponible",

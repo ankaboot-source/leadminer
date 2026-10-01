@@ -107,7 +107,14 @@ async function handleFirstTimeSignIn() {
     await updateFirstTimeSignIn();
   }
 
-  if (provider && providerToken && providerRefreshToken) {
+  // Supabase reports password accounts as provider "email", which is not an
+  // OAuth mining provider. Only auto-create a source for real OAuth
+  // providers; anything else is rejected by mining-sources validation.
+  if (
+    (provider === 'google' || provider === 'azure') &&
+    providerToken &&
+    providerRefreshToken
+  ) {
     await addMiningSourceFromProviderToken(
       provider,
       providerToken,

@@ -18,9 +18,9 @@
       </span>
     </div>
     <Tree
-      v-model:value="leadminerStore.boxes"
-      v-model:selection-keys="leadminerStore.selectedBoxes"
+      v-model:selection-keys="selectionKeysModel"
       v-model:expanded-keys="expandedKeys"
+      :value="boxes"
       selection-mode="checkbox"
       class="px-0"
     >
@@ -46,7 +46,10 @@
         {{ node.label }}
         <Badge>
           {{
-            (node.total ? node.total : node.cumulativeTotal).toLocaleString()
+            (node.total
+              ? node.total
+              : (node.cumulativeTotal ?? 0)
+            ).toLocaleString()
           }}
         </Badge>
       </template>
@@ -55,12 +58,24 @@
 </template>
 
 <script setup lang="ts">
-import { useLeadminerStore } from '@/stores/leadminer';
+import type { TreeSelectionKeys } from 'primevue/tree';
 import { FolderStatus } from '~/types/enums';
 import type { BoxNode } from '~/utils/boxes';
 
+const props = defineProps<{
+  boxes: BoxNode[];
+  selectionKeys: TreeSelectionKeys;
+}>();
+
+const emit =
+  defineEmits<(e: 'update:selectionKeys', value: TreeSelectionKeys) => void>();
+
+const selectionKeysModel = computed({
+  get: () => props.selectionKeys,
+  set: (value: TreeSelectionKeys) => emit('update:selectionKeys', value),
+});
+
 const { t } = useI18n({ useScope: 'local' });
-const leadminerStore = useLeadminerStore();
 const expandedKeys = ref({ '': true });
 
 /**
@@ -74,7 +89,7 @@ const hasMinedFolders = computed(() => {
         (node.status && node.status !== FolderStatus.Unmined) ||
         hasStatus(node.children ?? []),
     );
-  return hasStatus(leadminerStore.boxes as BoxNode[]);
+  return hasStatus(props.boxes);
 });
 </script>
 
