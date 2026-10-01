@@ -70,6 +70,43 @@ describe('SignatureLLM', () => {
     });
   });
 
+  describe('request body', () => {
+    const bodyOf = (instance: SignatureLLM) =>
+      JSON.parse(
+        (instance as unknown as { body(e: string, s: string): string }).body(
+          'test@leadminer.io',
+          'sig'
+        )
+      );
+
+    it('should disable reasoning so thinking cannot exhaust max_tokens', () => {
+      // Regression guard: with reasoning on, reasoning models burn the whole
+      // 1000-token budget and return empty content, which extract() drops.
+      expect(bodyOf(createInstance()).reasoning).toEqual({ enabled: false });
+    });
+
+    it('should send at most the first three models as the fallback chain', () => {
+      const instance = new SignatureLLM(
+        mockRateLimiter,
+        mockLogger,
+        LLMModelsList as never,
+        apiKey
+      );
+      const body = bodyOf(instance);
+      expect(body.models).toEqual(LLMModelsList.slice(0, 3));
+      expect(body.models).toHaveLength(3);
+    });
+
+    it('should keep the strict json_schema response format', () => {
+      const body = bodyOf(createInstance());
+      expect(body.response_format.type).toBe('json_schema');
+      expect(body.response_format.json_schema.strict).toBe(true);
+      expect(body.response_format.json_schema.schema.required).toContain(
+        '@type'
+      );
+    });
+  });
+
   describe('sendPrompt', () => {
     it('should return content on successful LLM call', async () => {
       const mockResponse = {
