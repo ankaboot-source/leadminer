@@ -97,6 +97,21 @@ describe('SignatureLLM', () => {
       expect(body.models).toHaveLength(3);
     });
 
+    it('should not request Zero Data Retention routing by default', () => {
+      expect(bodyOf(createInstance()).provider).toBeUndefined();
+    });
+
+    it('should request Zero Data Retention routing when enabled', () => {
+      const instance = new SignatureLLM(
+        mockRateLimiter,
+        mockLogger,
+        LLMModelsList as never,
+        apiKey,
+        true
+      );
+      expect(bodyOf(instance).provider).toEqual({ zdr: true });
+    });
+
     it('should keep the strict json_schema response format', () => {
       const body = bodyOf(createInstance());
       expect(body.response_format.type).toBe('json_schema');

@@ -181,7 +181,14 @@ export class SignatureLLM implements ExtractSignature {
     private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
     private readonly models: LLMModelType[],
-    private readonly apiKey: string
+    private readonly apiKey: string,
+    /**
+     * Restrict routing to Zero Data Retention endpoints, so prompts are not
+     * retained by the inference provider. Signature blocks are personal data.
+     * Off by default: ZDR endpoints are a minority and are often slower and
+     * dearer than the default pool.
+     */
+    private readonly requireZdr = false
   ) {
     assert(
       apiKey && apiKey.trim() !== '',
@@ -225,7 +232,8 @@ export class SignatureLLM implements ExtractSignature {
       // every model in `models`. A provider that rejects the field with
       // HTTP 400 ("Reasoning is mandatory for this endpoint") cannot be used
       // in this list.
-      reasoning: { enabled: false }
+      reasoning: { enabled: false },
+      ...(this.requireZdr ? { provider: { zdr: true } } : {})
     });
   }
 
