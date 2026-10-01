@@ -12,7 +12,10 @@ import {
   TaskType
 } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
-import { buildResumeFromConfig } from '../utils/helpers/imapTreeHelpers';
+import {
+  buildResumeFromConfig,
+  resolveMiningRunMode
+} from '../utils/helpers/imapTreeHelpers';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
 import RedisStreamProducer from '../utils/streams/redis/RedisStreamProducer';
@@ -396,10 +399,18 @@ export default function initializeMiningController(
 
       // The client sends intent; the server builds the resume cursor from the
       // persisted watermark. The emails-fetcher owns all IMAP logic from here.
+      const requestedMode = miningMode ?? MiningRunMode.Full;
       const resumeFrom =
-        miningMode === MiningRunMode.Incremental
+        requestedMode === MiningRunMode.Incremental
           ? buildResumeFromConfig(resolvedSourceConfig)
           : undefined;
+      // A date-only incremental scan cannot establish a cursor; without one the
+      // run would repeat forever. Bootstrap with a full scan instead.
+      const effectiveMode = resolveMiningRunMode(
+        requestedMode,
+        sanitizedFolders,
+        resumeFrom
+      );
 
       try {
         const miningId = await deps.idGenerator();
@@ -412,8 +423,9 @@ export default function initializeMiningController(
             boxes: sanitizedFolders,
             fetchEmailBody: extractSignatures,
             cleaningEnabled: effectiveCleaningEnabled,
-            miningMode: miningMode ?? MiningRunMode.Full,
-            since: miningMode === MiningRunMode.Incremental ? since : undefined,
+            miningMode: effectiveMode,
+            since:
+              effectiveMode === MiningRunMode.Incremental ? since : undefined,
             resumeFrom,
             sourceId: resolvedSourceId,
             passiveMining: passiveMining ?? false,
