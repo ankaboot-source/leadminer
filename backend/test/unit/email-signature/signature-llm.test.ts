@@ -172,7 +172,7 @@ describe('SignatureLLM', () => {
   describe('extract', () => {
     it('should return null if LLM response is null', async () => {
       const instance = createInstance();
-      jest.spyOn(instance, 'sendPrompt' as any).mockResolvedValue('null');
+      jest.spyOn(instance, 'sendPrompt').mockResolvedValue('null');
       const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
     });
@@ -180,7 +180,7 @@ describe('SignatureLLM', () => {
     it('should return null if parsed content is not a Person', async () => {
       const instance = createInstance();
       jest
-        .spyOn(instance, 'sendPrompt' as any)
+        .spyOn(instance, 'sendPrompt')
         .mockResolvedValue('{"@type":"Organization"}');
       const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
@@ -217,9 +217,7 @@ describe('SignatureLLM', () => {
 
     it('should log error and return null on invalid JSON', async () => {
       const instance = createInstance();
-      jest
-        .spyOn(instance, 'sendPrompt' as any)
-        .mockResolvedValue('INVALID_JSON');
+      jest.spyOn(instance, 'sendPrompt').mockResolvedValue('INVALID_JSON');
 
       const result = await instance.extract('test@leadminer.io', 'sig');
       expect(result).toBeNull();
