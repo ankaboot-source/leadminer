@@ -42,6 +42,22 @@ const schema = z.object({
   SIGNATURE_USE_LLM: boolean(),
   SIGNATURE_OPENROUTER_API_KEY: z.string().min(1).optional(),
   SIGNATURE_LLM_CACHE_TTL_SECONDS: number().optional().default(86400),
+  /**
+   * Only route signature extraction to Zero Data Retention endpoints
+   * (`provider: { zdr: true }`), so prompts and completions are not kept by the
+   * inference provider at all.
+   *
+   * Signature blocks are personal data (name, work email, phone, address).
+   * Off by default because ZDR endpoints are a minority and are often slower
+   * and more expensive than the default pool.
+   *
+   * The default must be the STRING 'false', not the boolean false: this
+   * schema's `boolean()` helper is `z.enum(['true','false']).transform(...)`,
+   * and zod feeds the default value back through the inner schema. A boolean
+   * default therefore fails validation for every deployment that leaves the
+   * variable unset.
+   */
+  SIGNATURE_LLM_REQUIRE_ZDR: boolean().default('false'),
 
   /* LLM Configuration */
   LLM_ENDPOINT: z
