@@ -214,7 +214,18 @@ export class SignatureLLM implements ExtractSignature {
         }
       ],
       response_format: SignaturePrompt.response_format,
-      max_tokens: this.MAX_OUTPUT_TOKENS
+      max_tokens: this.MAX_OUTPUT_TOKENS,
+      // Signature extraction is a constrained, schema-bound copy task with no
+      // reasoning to do. Reasoning models spend 500-1100 of MAX_OUTPUT_TOKENS
+      // thinking before emitting any JSON, then return finish_reason 'length'
+      // with empty or truncated content, which extract() discards as a parse
+      // failure — indistinguishable from an email that has no signature.
+      //
+      // This applies to the whole fallback chain: OpenRouter sends one body to
+      // every model in `models`. A provider that rejects the field with
+      // HTTP 400 ("Reasoning is mandatory for this endpoint") cannot be used
+      // in this list.
+      reasoning: { enabled: false }
     });
   }
 
