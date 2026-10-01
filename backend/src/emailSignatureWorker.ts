@@ -45,7 +45,7 @@ if (ENV.SIGNATURE_OPENROUTER_API_KEY) {
     logger,
     LLMModelsList,
     ENV.SIGNATURE_OPENROUTER_API_KEY ?? '',
-    ENV.SIGNATURE_LLM_REQUIRE_ZDR ?? false
+    ENV.SIGNATURE_LLM_REQUIRE_ZDR
   );
 
   const signatureExtractorCache = new SignatureExtractorCache(

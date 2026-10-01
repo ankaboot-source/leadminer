@@ -47,8 +47,7 @@ const schema = z.object({
    * (`provider: { zdr: true }`), so prompts and completions are not kept by the
    * inference provider at all.
    *
-   * Signature blocks are personal data (name, work email, phone, address), so
-   * commercial deployments handling EU customers should set this to true.
+   * Signature blocks are personal data (name, work email, phone, address).
    * Off by default because ZDR endpoints are a minority and are often slower
    * and more expensive than the default pool.
    *
