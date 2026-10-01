@@ -52,6 +52,15 @@
             ).toLocaleString()
           }}
         </Badge>
+        <Badge
+          v-if="isMarked(node.key)"
+          severity="info"
+          class="ml-2"
+          :title="markedLabel"
+          :aria-label="markedLabel"
+        >
+          {{ markedLabel }}
+        </Badge>
       </template>
     </Tree>
   </div>
@@ -62,10 +71,17 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import { FolderStatus } from '~/types/enums';
 import type { BoxNode } from '~/utils/boxes';
 
-const props = defineProps<{
-  boxes: BoxNode[];
-  selectionKeys: TreeSelectionKeys;
-}>();
+const props = withDefaults(
+  defineProps<{
+    boxes: BoxNode[];
+    selectionKeys: TreeSelectionKeys;
+    /** Folder keys that should carry the `markedLabel` badge. */
+    markedKeys?: string[];
+    /** Badge copy, resolved by the caller so it stays localizable. */
+    markedLabel?: string;
+  }>(),
+  { markedKeys: () => [], markedLabel: '' },
+);
 
 const emit =
   defineEmits<(e: 'update:selectionKeys', value: TreeSelectionKeys) => void>();
@@ -91,6 +107,12 @@ const hasMinedFolders = computed(() => {
     );
   return hasStatus(props.boxes);
 });
+
+const markedKeys = computed(() => new Set(props.markedKeys));
+
+function isMarked(key: string): boolean {
+  return Boolean(props.markedLabel) && markedKeys.value.has(key);
+}
 </script>
 
 <i18n lang="json">

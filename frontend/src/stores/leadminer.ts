@@ -907,6 +907,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     boxes,
     selectedBoxes,
     excludedBoxes,
+    lastRunEmailFolders,
     selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,

@@ -23,6 +23,8 @@
             <EmailFoldersTree
               v-model:selection-keys="selectionKeys"
               :boxes="boxes"
+              :marked-keys="newFolders"
+              :marked-label="t('folder_new_this_mining')"
             />
           </div>
           <small v-if="selectedFolders.length === 0" class="text-red-500">{{
@@ -102,12 +104,18 @@ const props = withDefaults(
     source?: MiningSource;
     boxes?: BoxNode[];
     checked?: string[];
+    /**
+     * Folders that were not registered for passive mining before this prompt.
+     * Badged so the user can tell them apart from folders already mined.
+     */
+    newFolders?: string[];
     saving?: boolean;
     loading?: boolean;
   }>(),
   {
     boxes: () => [],
     checked: () => [],
+    newFolders: () => [],
     saving: false,
     loading: false,
     source: undefined,
@@ -198,6 +206,7 @@ function confirm() {
     "extract_signatures": "Extract signatures",
     "enable": "Enable passive mining",
     "folders_title": "Select folders to mine",
+    "folder_new_this_mining": "New folder from this mining",
     "folders_required": "Select at least one folder"
   },
   "fr": {
@@ -209,6 +218,7 @@ function confirm() {
     "extract_signatures": "Extraire les signatures",
     "enable": "Activer l'extraction passive",
     "folders_title": "Sélectionnez les dossiers à extraire",
+    "folder_new_this_mining": "Nouveau dossier de cette extraction",
     "folders_required": "Sélectionnez au moins un dossier"
   }
 }

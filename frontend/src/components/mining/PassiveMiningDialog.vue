@@ -3,7 +3,8 @@
     :visible="$leadminerStore.passiveMiningDialog"
     :source="$leadminerStore.activeMiningSource"
     :boxes="boxes"
-    :checked="checkedFolders"
+    :checked="runFolders"
+    :new-folders="newFolders"
     :saving="isSaving"
     @update:visible="
       (value: boolean) => ($leadminerStore.passiveMiningDialog = value)
@@ -17,7 +18,7 @@ import {
   folderDisplayName,
   getSelectedFolderKeys,
 } from '~/utils/selected-folders';
-import { getDefaultAndExcludedFolders, type BoxNode } from '~/utils/boxes';
+import type { BoxNode } from '~/utils/boxes';
 import type { MiningSourceConfigFlags } from '~/utils/miningSourceConfig';
 // skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
 import PassiveMiningFolderDialog from './PassiveMiningFolderDialog.vue';
@@ -26,42 +27,42 @@ const $leadminerStore = useLeadminerStore();
 const { t: $t } = useI18n({ useScope: 'global' });
 const { isSaving, enablePassiveMining } = useEnablePassiveMining();
 
-const seedKeys = computed(() => {
-  const configFolders = $leadminerStore.activeMiningSource?.config?.folders;
-  const registered = Array.isArray(configFolders)
-    ? configFolders.filter(
-        (folder): folder is string =>
-          typeof folder === 'string' && folder !== '',
-      )
-    : [];
-  const mined = getSelectedFolderKeys(
+/**
+ * Folders the just-finished run mined. Mirrors the resolution used by
+ * `maybeOpenPassiveMiningDialog`, so the prompt always offers exactly the
+ * folders that triggered it.
+ */
+const runFolders = computed(() => {
+  const lastRun = $leadminerStore.lastRunEmailFolders;
+  if (lastRun && lastRun.length > 0) return lastRun;
+  return getSelectedFolderKeys(
     $leadminerStore.selectedBoxes,
     $leadminerStore.excludedBoxes,
   );
-  const union = [...registered];
-  for (const key of mined) {
-    if (!union.includes(key)) union.push(key);
-  }
-  return union;
 });
 
-// Prefer the live store tree; fall back to flat nodes for the known keys so the
-// post-run prompt stays usable when the tree was never loaded into the store.
-const boxes = computed<BoxNode[]>(() => {
-  if ($leadminerStore.boxes.length > 0) return $leadminerStore.boxes;
-  return seedKeys.value.map((key) => ({
+// A flat list, never the mailbox tree: after a run the user only has to confirm
+// the folders they just mined, not re-pick them out of the whole account.
+const boxes = computed<BoxNode[]>(() =>
+  runFolders.value.map((key) => ({
     key,
     label: folderDisplayName(key, $t('sources.folder_inbox')),
     total: 0,
-  }));
-});
+  })),
+);
 
-const checkedFolders = computed(() => {
-  if (seedKeys.value.length > 0) return seedKeys.value;
-  const { defaultFolders, excludedKeys } = getDefaultAndExcludedFolders(
-    $leadminerStore.boxes,
+// Folders in this run that passive mining does not watch yet.
+const newFolders = computed(() => {
+  const configFolders = $leadminerStore.activeMiningSource?.config?.folders;
+  const registered = new Set(
+    Array.isArray(configFolders)
+      ? configFolders.filter(
+          (folder): folder is string =>
+            typeof folder === 'string' && folder !== '',
+        )
+      : [],
   );
-  return getSelectedFolderKeys(defaultFolders, excludedKeys);
+  return runFolders.value.filter((key) => !registered.has(key));
 });
 
 async function onConfirm(payload: {
