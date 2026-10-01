@@ -1,10 +1,10 @@
 <template>
   <Dialog
+    ref="composerDialogRef"
     v-model:visible="isVisible"
     modal
     :header="dialogHeader"
     :maximizable="$screenStore?.size?.md"
-    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
     :style="{ width: '52rem', maxWidth: '95vw' }"
     @show="onDialogShow"
     @hide="onDialogHide"
@@ -375,6 +375,11 @@ import GenericComplianceDialog, {
 
 const isVisible = defineModel<boolean>('visible', { required: true });
 
+// PrimeVue's Dialog keeps `maximized` in internal state (no `maximized` prop) and
+// exposes `maximize()` on the instance. Calling it on show is what opens the
+// composer full screen while keeping the maximize/restore button in sync.
+const composerDialogRef = ref<{ maximize?: () => void }>();
+
 const props = defineProps<{
   selectedContacts: Contact[];
 }>();
@@ -712,6 +717,7 @@ function onEditorInput() {
 }
 
 async function onDialogShow() {
+  composerDialogRef.value?.maximize?.();
   editorReady.value = false;
   imageResizeAvailable.value = await ensureQuillImageResizeModule();
   editorReady.value = true;
