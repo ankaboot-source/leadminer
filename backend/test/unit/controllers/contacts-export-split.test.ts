@@ -63,7 +63,7 @@ type FakeContactSets = {
 
 /**
  * The controller reads three things from the contacts store: the activated set
- * (already engaged, free), the not-activated set (no engagement row, charged)
+ * (already engaged) and the not-activated set (no engagement row).
  * and the selected contacts for the file.
  */
 function createContacts(
@@ -123,7 +123,7 @@ describe('contact export split on engagement presence', () => {
     };
   }
 
-  it('charges only the contacts with no engagement row', async () => {
+  it('counts only the contacts with no engagement row as units', async () => {
     const activated = [makeContact('a')];
     const notActivated = [makeContact('b'), makeContact('c')];
 
@@ -134,14 +134,14 @@ describe('contact export split on engagement presence', () => {
     expect(deductCustomerCredits).toHaveBeenCalledWith(USER_ID, 2);
   });
 
-  it('treats an activated contact as costing nothing', async () => {
+  it('adds no unit for an activated contact', async () => {
     const activated = [makeContact('a'), makeContact('b')];
     const notActivated = [makeContact('c')];
 
     const { result } = exportWith({ activated, notActivated }, 1);
     await result;
 
-    // Only 'c' is counted, the two activated contacts add nothing.
+    // Only 'c' is a unit; the two activated contacts add nothing.
     expect(validateCustomerCredits).toHaveBeenCalledWith(USER_ID, 1);
   });
 
@@ -178,7 +178,7 @@ describe('contact export split on engagement presence', () => {
     ]);
   });
 
-  it('keeps activated contacts under partial credit and trims unpaid ones', async () => {
+  it('keeps activated contacts when units run out and trims the rest', async () => {
     const activated = [makeContact('a')];
     const notActivated = [makeContact('b'), makeContact('c')];
 
