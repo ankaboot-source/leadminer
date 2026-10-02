@@ -40,13 +40,28 @@ export default class PgContacts implements Contacts {
         AND e.engagement_type = 'EXPORT'
     `;
 
+  /**
+   * A contact is activated as soon as it has any engagement row, whatever
+   * produced it. EXISTS keeps the result at one row per contact even when a
+   * person has several engagement rows.
+   */
+  private static readonly SELECT_ACTIVATED_CONTACTS = `
+    SELECT contacts.*
+    FROM private.get_contacts_table($1) contacts
+    WHERE EXISTS (
+      SELECT 1
+      FROM private.engagement e
+      WHERE e.person_id = contacts.id
+        AND e.user_id = $1
+    );
+    `;
+
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
     SELECT contacts.*
     FROM private.get_contacts_table($1) contacts
       LEFT JOIN private.engagement e
         ON e.person_id = contacts.id
         AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
     WHERE e.person_id IS NULL;
     `;
 
@@ -68,13 +83,23 @@ export default class PgContacts implements Contacts {
         AND e.engagement_type = 'EXPORT'
     `;
 
+  private static readonly SELECT_ACTIVATED_CONTACTS_BY_IDS = `
+    SELECT contacts.*
+    FROM private.get_contacts_table_by_ids($1,$2) contacts
+    WHERE EXISTS (
+      SELECT 1
+      FROM private.engagement e
+      WHERE e.person_id = contacts.id
+        AND e.user_id = $1
+    );
+    `;
+
   private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_IDS = `
     SELECT contacts.*
     FROM private.get_contacts_table_by_ids($1,$2) contacts
       LEFT JOIN private.engagement e
         ON e.person_id = contacts.id
         AND e.user_id = $1
-        AND e.engagement_type = 'EXPORT'
     WHERE e.person_id IS NULL;
     `;
 
@@ -724,6 +749,27 @@ LIMIT 1;
       return rows;
     } catch (error) {
       this.logger.error('getExportedContacts', {
+        error: (error as Error)?.message
+      });
+      return [];
+    }
+  }
+
+  async getActivatedContacts(
+    userId: string,
+    ids?: string[]
+  ): Promise<Contact[]> {
+    try {
+      const { rows } = ids
+        ? await this.pool.query(PgContacts.SELECT_ACTIVATED_CONTACTS_BY_IDS, [
+            userId,
+            ids
+          ])
+        : await this.pool.query(PgContacts.SELECT_ACTIVATED_CONTACTS, [userId]);
+
+      return rows;
+    } catch (error) {
+      this.logger.error('getActivatedContacts', {
         error: (error as Error)?.message
       });
       return [];

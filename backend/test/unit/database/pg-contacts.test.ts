@@ -267,3 +267,97 @@ describe('PgContacts phone-only contacts', () => {
     expect(result).toBe(false);
   });
 });
+
+describe('PgContacts activated and not-activated contact lookups', () => {
+  function createContacts(query: jest.Mock<Pool['query']>) {
+    return new PgContacts({ query } as unknown as Pool, createMockLogger());
+  }
+
+  async function runSql(
+    call: (contacts: PgContacts) => Promise<unknown>
+  ): Promise<string> {
+    const query = jest
+      .fn<Pool['query']>()
+      .mockResolvedValue({ rowCount: 0, rows: [] } as never);
+
+    await call(createContacts(query));
+
+    expect(query).toHaveBeenCalledTimes(1);
+    return String(query.mock.calls[0][0]);
+  }
+
+  it('treats any engagement row as activated, without filtering on the type', async () => {
+    const activated = await runSql((contacts) =>
+      contacts.getActivatedContacts('user-1')
+    );
+    const activatedByIds = await runSql((contacts) =>
+      contacts.getActivatedContacts('user-1', ['person-1'])
+    );
+
+    for (const sql of [activated, activatedByIds]) {
+      expect(sql).toContain('private.engagement');
+      expect(sql).toContain('EXISTS');
+      expect(sql).toContain('e.person_id = contacts.id');
+      expect(sql).toContain('e.user_id = $1');
+      expect(sql).not.toContain('engagement_type');
+    }
+  });
+
+  it('returns one row per contact even with several engagement rows', async () => {
+    const sql = await runSql((contacts) =>
+      contacts.getActivatedContacts('user-1')
+    );
+
+    // EXISTS rather than a join: a person with several engagement rows
+    // must not appear more than once.
+    expect(sql).not.toMatch(/JOIN\s+private\.engagement/);
+  });
+
+  it('passes the ids filter to the by-ids table function', async () => {
+    const query = jest
+      .fn<Pool['query']>()
+      .mockResolvedValue({ rowCount: 0, rows: [] } as never);
+
+    await createContacts(query).getActivatedContacts('user-1', [
+      'person-1',
+      'person-2'
+    ]);
+
+    const sql = String(query.mock.calls[0][0]);
+    expect(sql).toContain('get_contacts_table_by_ids($1,$2)');
+    expect(query.mock.calls[0][1]).toEqual([
+      'user-1',
+      ['person-1', 'person-2']
+    ]);
+  });
+
+  it('treats a contact with no engagement row at all as not activated', async () => {
+    const notActivated = await runSql((contacts) =>
+      contacts.getNonExportedContacts('user-1')
+    );
+    const notActivatedByIds = await runSql((contacts) =>
+      contacts.getNonExportedContacts('user-1', ['person-1'])
+    );
+
+    for (const sql of [notActivated, notActivatedByIds]) {
+      expect(sql).toContain('LEFT JOIN private.engagement');
+      expect(sql).toContain('e.person_id = contacts.id');
+      expect(sql).toContain('e.user_id = $1');
+      expect(sql).toContain('e.person_id IS NULL');
+      expect(sql).not.toContain('engagement_type');
+    }
+  });
+
+  it('leaves the exported lookup on EXPORT rows only', async () => {
+    const exported = await runSql((contacts) =>
+      contacts.getExportedContacts('user-1')
+    );
+    const exportedByIds = await runSql((contacts) =>
+      contacts.getExportedContacts('user-1', ['person-1'])
+    );
+
+    for (const sql of [exported, exportedByIds]) {
+      expect(sql).toContain("e.engagement_type = 'EXPORT'");
+    }
+  });
+});
