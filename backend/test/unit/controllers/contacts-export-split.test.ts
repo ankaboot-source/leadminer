@@ -71,10 +71,12 @@ function createContacts(
   registerExportedContacts: jest.Mock
 ): Contacts {
   return {
-    getActivatedContacts: jest.fn(async () => activated),
-    getNonExportedContacts: jest.fn(async () => notActivated),
-    getExportedContacts: jest.fn(async () => []),
-    getContacts: jest.fn(async () => [...activated, ...notActivated]),
+    getActivatedContacts: jest.fn(() => Promise.resolve(activated)),
+    getNonExportedContacts: jest.fn(() => Promise.resolve(notActivated)),
+    getExportedContacts: jest.fn(() => Promise.resolve([])),
+    getContacts: jest.fn(() =>
+      Promise.resolve([...activated, ...notActivated])
+    ),
     registerExportedContacts
   } as unknown as Contacts;
 }
@@ -98,7 +100,7 @@ describe('contact export split on engagement presence', () => {
     availableUnits: number,
     partialExport = true
   ) {
-    const registerExportedContacts = jest.fn(async () => undefined);
+    const registerExportedContacts = jest.fn(() => Promise.resolve());
     const controller = initializeContactsController(
       createContacts(sets, registerExportedContacts),
       noSources
