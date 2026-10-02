@@ -15,7 +15,7 @@ const extrasPath = path.resolve(
 
 function collectMessages(value: unknown, trail: string[] = []): string[] {
   if (typeof value === 'string') {
-    return [[...trail, value].join('.') + ' => ' + value];
+    return [`${[...trail, value].join('.')} => ${value}`];
   }
   if (value && typeof value === 'object') {
     return Object.entries(value).flatMap(([key, child]) =>
