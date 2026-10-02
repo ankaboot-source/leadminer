@@ -278,7 +278,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function handlePersonRealtimeEvent(
     payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
   ) {
-    if (!getCurrentUserId()) return;
+    const userId = getCurrentUserId();
+    if (!userId) return;
 
     const action = resolveRealtimeAction(payload, {
       activeMining: $leadminerStore.activeMiningTask,
@@ -286,6 +287,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     switch (action.kind) {
       case 'stream':
+        if (action.row.user_id && action.row.user_id !== userId) return;
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
         return;
@@ -313,14 +315,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function createContactsRealtimeChannel(userId: string) {
     const channel = $supabase.channel(`contacts-table-${userId}`);
 
-    channel.on('system', { event: 'reconnected' }, () => {
-      console.debug('Realtime reconnected — reloading contacts');
-      pendingReconcilePersonIds.clear();
-      reloadContacts();
-    });
-
     for (const filter of buildPersonChangeFilters(
-      userId,
       $leadminerStore.activeMiningTask,
     )) {
       channel.on('postgres_changes', filter, handlePersonRealtimeEvent);
@@ -388,16 +383,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
   async function hasPersons(userId = getCurrentUserId()): Promise<boolean> {
     if (!userId) return false;
 
-    const { count, error } = await $supabase
+    const { data, error } = await $supabase
       .schema('private')
       .from('persons')
-      .select('id', { count: 'exact', head: true })
+      .select('id')
       .eq('user_id', userId)
       .limit(1);
 
     if (error) throw error;
 
-    return (count ?? 0) > 0;
+    return (data?.length ?? 0) > 0;
   }
 
   /**
@@ -451,7 +446,20 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const key = buildTableStorageKey('columns', userId, origin);
     const storedColumns = localStorage.getItem(key);
 
-    if (!storedColumns) {
+    let stored: string[] | null = null;
+    if (storedColumns) {
+      try {
+        const parsed = sanitizeVisibleColumns(JSON.parse(storedColumns));
+        // An empty stored selection carries no preference (e.g. saved while
+        // all columns were deselected): fall through to auto/default columns
+        // instead of rendering an empty table.
+        if (parsed.length > 0) stored = parsed;
+      } catch {
+        stored = null;
+      }
+    }
+
+    if (!stored) {
       if (contacts && contacts.length > 0) {
         visibleColumns.value = ensureNameColumn(
           sanitizeVisibleColumns(getAutoVisibleColumns(contacts)),
@@ -464,15 +472,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       return;
     }
 
-    try {
-      visibleColumns.value = ensureNameColumn(
-        sanitizeVisibleColumns(JSON.parse(storedColumns)),
-      );
-    } catch {
-      visibleColumns.value = ensureNameColumn(
-        sanitizeVisibleColumns(defaultColumns),
-      );
-    }
+    visibleColumns.value = ensureNameColumn(stored);
   }
 
   function persistVisibleColumns() {

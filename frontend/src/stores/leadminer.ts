@@ -13,6 +13,10 @@ import {
   deriveSourceConfig,
 } from '@/utils/miningSourceConfig';
 import { resolvePassiveMiningPrompt } from '@/utils/passive-mining-folders';
+import {
+  createPassiveProgressStream,
+  type PassiveProgress,
+} from '~/utils/passiveProgress';
 import { getSelectedFolderKeys } from '@/utils/selected-folders';
 import { startMiningNotification } from '~/utils/extras';
 import {
@@ -51,6 +55,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningTask = ref<MiningTask | undefined>();
 
   const passiveMinings = ref<MiningTaskGroup[]>([]);
+
+  /**
+   * Live counters per passive miningId. A passive run executes server-side, so
+   * the browser never opens the foreground stream for it and the shared
+   * scanned/extracted/cleaned refs would stay at 0 for the whole run.
+   */
+  const passiveProgress = ref<Record<string, PassiveProgress>>({});
+  const passiveProgressDisposers = new Map<string, () => void>();
 
   // Folders requested by the current email run. The post-run passive prompt
   // compares these (not the live tree selection) against the passive
@@ -166,6 +178,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
     passiveMinings.value = [];
+    stopAllPassiveProgressStreams();
     lastRunEmailFolders.value = null;
     boxes.value = [];
     selectedBoxes.value = [];
@@ -259,11 +272,29 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * source call this instead of fetchMiningSources() directly, which keeps
    * source fetching lazy (only where a source is shown) and avoids duplicate
    * fetches (auth screen, every protected-route navigation).
+   *
+   * `refresh: true` re-fetches even when the list was already loaded, so
+   * pages that show server-side state (e.g. passive-mining health) always show
+   * the latest value on mount instead of a stale session snapshot.
    */
-  async function ensureMiningSourcesLoaded() {
-    if (hasLoadedMiningSources.value || isLoadingMiningSources.value) {
+  async function ensureMiningSourcesLoaded({
+    refresh = false,
+  }: { refresh?: boolean } = {}) {
+    if (isLoadingMiningSources.value) {
       return;
     }
+
+    if (hasLoadedMiningSources.value) {
+      if (!refresh) return;
+
+      try {
+        await fetchMiningSources({ silent: true });
+      } catch (error) {
+        console.warn('[mining] failed to refresh mining sources', error);
+      }
+      return;
+    }
+
     try {
       await fetchMiningSources();
       hasLoadedMiningSources.value = true;
@@ -874,6 +905,71 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  /**
+   * Reconciles one independent progress stream per in-progress passive run.
+   * Idempotent: existing subscriptions are kept, finished runs are dropped, so
+   * it is safe to call from a polling loop.
+   */
+  async function syncPassiveProgressStreams() {
+    const live = new Set<string>();
+
+    for (const group of passiveMinings.value) {
+      const miningId = group?.task?.miningId;
+      const sourceType = group?.task?.miningSource?.type;
+      if (!miningId || !sourceType) continue;
+
+      live.add(miningId);
+      if (passiveProgressDisposers.has(miningId)) continue;
+
+      const passiveMiningType =
+        sourceType === MiningTypes.FILE ? MiningTypes.FILE : MiningTypes.EMAIL;
+      const token = (await supabase.auth.getSession()).data.session
+        ?.access_token;
+
+      const dispose = createPassiveProgressStream({
+        miningType: passiveMiningType,
+        miningId,
+        serverEndpoint: config.public.SERVER_ENDPOINT,
+        token: token ?? null,
+        onProgress: (progress) => {
+          passiveProgress.value = {
+            ...passiveProgress.value,
+            [miningId]: progress,
+          };
+        },
+        onClosed: () => stopPassiveProgressStream(miningId),
+      });
+
+      passiveProgressDisposers.set(miningId, dispose);
+    }
+
+    for (const miningId of [...passiveProgressDisposers.keys()]) {
+      if (live.has(miningId)) continue;
+      stopPassiveProgressStream(miningId);
+    }
+  }
+
+  function stopPassiveProgressStream(miningId: string) {
+    passiveProgressDisposers.get(miningId)?.();
+    passiveProgressDisposers.delete(miningId);
+
+    if (!passiveProgress.value[miningId]) return;
+    passiveProgress.value = Object.fromEntries(
+      Object.entries(passiveProgress.value).filter(([id]) => id !== miningId),
+    );
+  }
+
+  function stopAllPassiveProgressStreams() {
+    for (const miningId of [...passiveProgressDisposers.keys()]) {
+      stopPassiveProgressStream(miningId);
+    }
+  }
+
+  function passiveProgressFor(miningId?: string): PassiveProgress | undefined {
+    if (!miningId) return undefined;
+    return passiveProgress.value[miningId];
+  }
+
   watch(
     activeMiningSource,
     () => {
@@ -932,6 +1028,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeTask,
     passiveMiningDialog,
     passiveMinings,
+    passiveProgress,
+    passiveProgressFor,
+    syncPassiveProgressStreams,
+    stopAllPassiveProgressStreams,
     miningStartedAndFinished,
     miningInterrupted,
     errors,

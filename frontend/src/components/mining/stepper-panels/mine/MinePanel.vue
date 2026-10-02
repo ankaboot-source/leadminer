@@ -123,7 +123,6 @@ const { miningSource } = defineProps<{
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
 const $supabase = useSupabaseClient();
 
@@ -363,18 +362,6 @@ onMounted(async () => {
   }
 });
 
-async function reloadContacts() {
-  /**
-   * Disable realtime; protects table from rendering multiple times
-   */
-  await $contactsStore.unsubscribeFromRealtimeUpdates();
-  await $contactsStore.reloadContacts();
-  /**
-   * Subscribe again after the table is rendered
-   */
-  $contactsStore.subscribeToRealtimeUpdates();
-}
-
 const totalExtractedNotificationMessage = computed(() =>
   sourceTypeIsEmail.value
     ? t('contacts_extracted', {
@@ -392,7 +379,7 @@ const { isSupported, permissionGranted, show } = useWebNotification({
 
 const completedTransitionDone = ref(false);
 
-async function finishMiningFlow() {
+function finishMiningFlow() {
   if (completedTransitionDone.value) return;
   completedTransitionDone.value = true;
   $leadminerStore.maybeOpenPassiveMiningDialog();
@@ -405,7 +392,8 @@ async function finishMiningFlow() {
   });
   $stepper.next();
   if (isSupported.value && permissionGranted.value) show();
-  await reloadContacts();
+  // No full reload here: the full contact list is loaded by /contacts after
+  // the post-mining redirect.
 }
 
 watch(extractionFinished, async (finished) => {
