@@ -4,7 +4,16 @@ import { ref } from 'vue';
 
 const supabaseUser = ref<{ id: string } | null>({ id: 'user-1' });
 
-// The contacts store relies on Nuxt auto-import globals.
+// The contacts store relies on Nuxt auto-imports that resolve to these
+// @nuxtjs/supabase runtime composables (the package only exports ".").
+vi.mock('/node_modules/@nuxtjs/supabase/dist/runtime/composables/useSupabaseUser.js', () => ({
+  useSupabaseUser: () => supabaseUser,
+}));
+
+vi.mock('/node_modules/@nuxtjs/supabase/dist/runtime/composables/useSupabaseClient.js', () => ({
+  useSupabaseClient: () => ({}),
+}));
+
 vi.stubGlobal('useSupabaseUser', () => supabaseUser);
 vi.stubGlobal('useSupabaseClient', () => ({}));
 
