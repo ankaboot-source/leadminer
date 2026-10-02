@@ -76,11 +76,12 @@ export function createPassiveProgressStream({
 }): () => void {
   let progress: PassiveProgress = EMPTY_PASSIVE_PROGRESS;
   const ctrl = new AbortController();
+  const noop = () => undefined;
 
   const publish = () => onProgress({ ...progress });
 
   if (!token) {
-    return () => {};
+    return noop;
   }
 
   fetchEventSource(
@@ -91,10 +92,13 @@ export function createPassiveProgressStream({
           ...init,
           headers: { ...(init?.headers || {}), 'x-sb-jwt': token },
         }),
-      onopen: async (response) => {
+      onopen: (response) => {
         if (response.status !== 200) {
-          throw new Error(`[passive-sse] HTTP ${response.status}`);
+          return Promise.reject(
+            new Error(`[passive-sse] HTTP ${response.status}`),
+          );
         }
+        return Promise.resolve();
       },
       onmessage: (msg: EventSourceMessage) => {
         const { event, data } = msg;

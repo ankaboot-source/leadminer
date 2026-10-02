@@ -124,7 +124,7 @@ describe('useMiningTableData', () => {
     expect(contactsStore.initializeVisibleColumns).toHaveBeenCalledWith(
       getDefaultVisibleColumns('mine'),
       'mine',
-      undefined,
+      contactsStore.contactsList,
     );
   });
 });
