@@ -46,6 +46,11 @@ export function useContactsTableData() {
   async function initialize() {
     if (initialized) return;
     initialized = true;
+    // Show the default columns immediately (main parity): until the async
+    // full load below resolves, the store would otherwise sit at its
+    // checkbox-only init value. Stored/auto columns replace these in `finally`.
+    // Spread: DEFAULT_VISIBLE_COLUMNS entries are shared constants.
+    contactsStore.visibleColumns = [...getDefaultVisibleColumns('contacts')];
     filtersStore.initializeTableFilters('contacts');
 
     try {

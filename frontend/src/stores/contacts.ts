@@ -446,7 +446,20 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const key = buildTableStorageKey('columns', userId, origin);
     const storedColumns = localStorage.getItem(key);
 
-    if (!storedColumns) {
+    let stored: string[] | null = null;
+    if (storedColumns) {
+      try {
+        const parsed = sanitizeVisibleColumns(JSON.parse(storedColumns));
+        // An empty stored selection carries no preference (e.g. saved while
+        // all columns were deselected): fall through to auto/default columns
+        // instead of rendering an empty table.
+        if (parsed.length > 0) stored = parsed;
+      } catch {
+        stored = null;
+      }
+    }
+
+    if (!stored) {
       if (contacts && contacts.length > 0) {
         visibleColumns.value = ensureNameColumn(
           sanitizeVisibleColumns(getAutoVisibleColumns(contacts)),
@@ -459,15 +472,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       return;
     }
 
-    try {
-      visibleColumns.value = ensureNameColumn(
-        sanitizeVisibleColumns(JSON.parse(storedColumns)),
-      );
-    } catch {
-      visibleColumns.value = ensureNameColumn(
-        sanitizeVisibleColumns(defaultColumns),
-      );
-    }
+    visibleColumns.value = ensureNameColumn(stored);
   }
 
   function persistVisibleColumns() {

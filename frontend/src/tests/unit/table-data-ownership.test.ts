@@ -85,6 +85,15 @@ describe('useContactsTableData', () => {
     wrapper.unmount();
     expect(contactsStore.$reset).toHaveBeenCalled();
   });
+
+  it('applies default columns synchronously at mount, before the load', () => {
+    contactsStore.visibleColumns = [];
+    mount(ContactsHarness);
+
+    expect(contactsStore.visibleColumns).toEqual(
+      getDefaultVisibleColumns('contacts'),
+    );
+  });
 });
 
 describe('useMiningTableData', () => {
@@ -106,5 +115,16 @@ describe('useMiningTableData', () => {
     leadminerStore.miningCompleted = true;
     await nextTick();
     expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
+  });
+
+  it('initializes mine columns at mount without loading contacts', async () => {
+    mount(MiningHarness);
+    await nextTick();
+
+    expect(contactsStore.initializeVisibleColumns).toHaveBeenCalledWith(
+      getDefaultVisibleColumns('mine'),
+      'mine',
+      undefined,
+    );
   });
 });
