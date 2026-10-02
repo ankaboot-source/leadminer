@@ -104,12 +104,7 @@ export function createPassiveProgressStream({
           return;
         }
 
-        const next = applyPassiveProgressEvent(
-          event,
-          data,
-          miningId,
-          progress,
-        );
+        const next = applyPassiveProgressEvent(event, data, miningId, progress);
         if (!next) return;
 
         progress = next;

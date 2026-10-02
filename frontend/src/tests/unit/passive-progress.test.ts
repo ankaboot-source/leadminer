@@ -45,8 +45,9 @@ describe('applyPassiveProgressEvent', () => {
   });
 
   it('ignores non-numeric payloads', () => {
-    expect(applyPassiveProgressEvent(`fetched-${MINING_ID}`, 'x', MINING_ID))
-      .toBeNull();
+    expect(
+      applyPassiveProgressEvent(`fetched-${MINING_ID}`, 'x', MINING_ID),
+    ).toBeNull();
   });
 
   it('does not mutate the previous state', () => {
