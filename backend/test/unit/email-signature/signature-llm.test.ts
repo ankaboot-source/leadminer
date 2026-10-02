@@ -154,6 +154,115 @@ describe('SignatureLLM', () => {
       expect(instance.isActive()).toBe(false);
     });
 
+    describe('no ZDR endpoint available', () => {
+      // Captured from a live OpenRouter response for a ':free' model sent with
+      // provider.zdr — note it is a 404 from the routing funnel, not a 4xx
+      // transport failure, so the 402/502/503 branch never sees it.
+      const zdrRoutingFailure = {
+        code: 404,
+        message:
+          'No endpoints found matching your data policy (Zero data retention). Configure: https://openrouter.ai/settings/privacy',
+        metadata: {
+          routing_funnel: [{ step: 'Initial Endpoints', endpoint_count: 1 }],
+          failed_routing_step: 'Filter by Data Policy'
+        }
+      };
+
+      const createZdrInstance = () =>
+        new SignatureLLM(
+          mockRateLimiter,
+          mockLogger,
+          LLMModelsList as never,
+          apiKey,
+          true
+        );
+
+      const replyWithZdrFailure = (payload: unknown) =>
+        mockAxios
+          .onPost('https://openrouter.ai/api/v1/chat/completions')
+          .reply(404, { error: payload });
+
+      it('should deactivate the engine instead of failing every signature forever', async () => {
+        // Regression guard: while the engine stayed active every signature
+        // returned null and paid for another doomed request, indefinitely.
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        const instance = createZdrInstance();
+        await expect(
+          instance.sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow('No endpoints found matching your data policy');
+        expect(instance.isActive()).toBe(false);
+      });
+
+      it('should warn with an actionable cause and remedy', async () => {
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        await expect(
+          createZdrInstance().sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+
+        const warning = mockLogger.warn.mock.calls.flat().join(' ');
+        expect(warning).toContain('Zero Data Retention');
+        expect(warning).toContain('SIGNATURE_LLM_REQUIRE_ZDR=false');
+      });
+
+      it('should fall back on the message when metadata is absent', async () => {
+        replyWithZdrFailure({
+          code: 404,
+          message: 'No endpoints found matching your data policy (ZDR)'
+        });
+
+        const instance = createZdrInstance();
+        await expect(
+          instance.sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+        expect(instance.isActive()).toBe(false);
+      });
+
+      it('should not disable the engine for a 404 that is unrelated to ZDR', async () => {
+        // "model not found" also 404s. Misreading it as a data-policy problem
+        // would silently drop the LLM engine for an unrelated reason.
+        replyWithZdrFailure({
+          code: 404,
+          message: 'No endpoints found for model',
+          metadata: { failed_routing_step: 'Resolve Model' }
+        });
+
+        const instance = createZdrInstance();
+        await expect(
+          instance.sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+        expect(instance.isActive()).toBe(true);
+      });
+
+      it('should not treat a data-policy failure as ZDR when the flag is off', async () => {
+        // Without the flag no data policy was requested, so this response
+        // cannot be the cause of a ZDR rejection.
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        const instance = createInstance();
+        await expect(
+          instance.sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+        expect(instance.isActive()).toBe(true);
+      });
+
+      it('should never retry the request without ZDR', async () => {
+        // Silently dropping provider.zdr would send personal data to a
+        // retaining endpoint — the one outcome the flag exists to prevent.
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        const instance = createZdrInstance();
+        await expect(
+          instance.sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+
+        expect(mockAxios.history.post).toHaveLength(1);
+        const sent = JSON.parse(mockAxios.history.post[0].data);
+        expect(sent.provider).toEqual({ zdr: true });
+      });
+    });
+
     it('should log and return null on unexpected exception', async () => {
       mockRateLimiter.throttleRequests.mockImplementation(() => {
         throw new Error('Throttle failed');
