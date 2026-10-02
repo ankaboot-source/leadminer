@@ -936,8 +936,9 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     passiveProgressDisposers.delete(miningId);
 
     if (!passiveProgress.value[miningId]) return;
-    const { [miningId]: _removed, ...rest } = passiveProgress.value;
-    passiveProgress.value = rest;
+    passiveProgress.value = Object.fromEntries(
+      Object.entries(passiveProgress.value).filter(([id]) => id !== miningId),
+    );
   }
 
   function stopAllPassiveProgressStreams() {
