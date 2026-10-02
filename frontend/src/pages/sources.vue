@@ -456,8 +456,7 @@ function isStrictlyPassive(source: MiningSource): boolean {
 function miningCounters(source: MiningSource) {
   if (isStrictlyPassive(source)) {
     const group = $leadminer.passiveMinings?.find(
-      (g: MiningTaskGroup) =>
-        g.task?.miningSource?.source === source.email,
+      (g: MiningTaskGroup) => g.task?.miningSource?.source === source.email,
     );
     const progress = $leadminer.passiveProgressFor(group?.task?.miningId);
     return {
