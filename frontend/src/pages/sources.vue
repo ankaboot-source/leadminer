@@ -271,17 +271,18 @@
                 </div>
                 <div class="flex items-center gap-2 text-sm text-surface-600">
                   <span
-                    >{{ t('emails_scanned') }}: {{ $leadminer.scannedEmails }}
+                    >{{ t('emails_scanned') }}:
+                    {{ miningCounters(source).scanned }}
                   </span>
                   <span class="text-surface-400">|</span>
                   <span
                     >{{ t('emails_extracted') }}:
-                    {{ $leadminer.extractedEmails }}</span
+                    {{ miningCounters(source).extracted }}</span
                   >
                   <span class="text-surface-400">|</span>
                   <span
                     >{{ t('emails_cleaned') }}:
-                    {{ $leadminer.verifiedContacts }}</span
+                    {{ miningCounters(source).cleaned }}</span
                   >
                   <Button
                     v-if="!isStrictlyPassive(source)"
@@ -445,6 +446,32 @@ function isStrictlyPassive(source: MiningSource): boolean {
       $leadminer.activeMiningSource?.email === source.email
     ),
   );
+}
+
+/**
+ * Counters for the row. A passive run reports through its own progress
+ * stream, because the shared scanned/extracted/cleaned refs are only fed by
+ * the foreground mining the user started themselves.
+ */
+function miningCounters(source: MiningSource) {
+  if (isStrictlyPassive(source)) {
+    const group = $leadminer.passiveMinings?.find(
+      (g: MiningTaskGroup) =>
+        g.task?.miningSource?.source === source.email,
+    );
+    const progress = $leadminer.passiveProgressFor(group?.task?.miningId);
+    return {
+      scanned: progress?.fetched ?? 0,
+      extracted: progress?.extracted ?? 0,
+      cleaned: progress?.cleaned ?? 0,
+    };
+  }
+
+  return {
+    scanned: $leadminer.scannedEmails,
+    extracted: $leadminer.extractedEmails,
+    cleaned: $leadminer.verifiedContacts,
+  };
 }
 
 function formatDate(dateString: string) {
@@ -760,11 +787,17 @@ const passiveStatusPoll = setInterval(async () => {
       $leadminer.fetchMiningSources({ silent: true }),
       $leadminer.getCurrentRunningMining(),
     ]);
+    // Keep one progress stream per in-progress passive run so the counters
+    // move without a reload; finished runs are detached here.
+    await $leadminer.syncPassiveProgressStreams();
   } catch {
     // keep the last known state on transient failures
   }
 }, PASSIVE_STATUS_POLL_MS);
-onUnmounted(() => clearInterval(passiveStatusPoll));
+onUnmounted(() => {
+  clearInterval(passiveStatusPoll);
+  $leadminer.stopAllPassiveProgressStreams();
+});
 
 onMounted(async () => {
   // Always re-fetch on mount: passive-mining health only changes server-side,
@@ -775,6 +808,7 @@ onMounted(async () => {
   // source even when the app bootstrap ran before this mining started.
   try {
     await $leadminer.getCurrentRunningMining();
+    await $leadminer.syncPassiveProgressStreams();
   } catch {
     // non-blocking: sources list still renders without mining state
   }

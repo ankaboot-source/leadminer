@@ -13,6 +13,10 @@ import {
   deriveSourceConfig,
 } from '@/utils/miningSourceConfig';
 import { resolvePassiveMiningPrompt } from '@/utils/passive-mining-folders';
+import {
+  createPassiveProgressStream,
+  type PassiveProgress,
+} from '~/utils/passiveProgress';
 import { getSelectedFolderKeys } from '@/utils/selected-folders';
 import { startMiningNotification } from '~/utils/extras';
 import {
@@ -51,6 +55,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningTask = ref<MiningTask | undefined>();
 
   const passiveMinings = ref<MiningTaskGroup[]>([]);
+
+  /**
+   * Live counters per passive miningId. A passive run executes server-side, so
+   * the browser never opens the foreground stream for it and the shared
+   * scanned/extracted/cleaned refs would stay at 0 for the whole run.
+   */
+  const passiveProgress = ref<Record<string, PassiveProgress>>({});
+  const passiveProgressDisposers = new Map<string, () => void>();
 
   // Folders requested by the current email run. The post-run passive prompt
   // compares these (not the live tree selection) against the passive
@@ -166,6 +178,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
     passiveMinings.value = [];
+    stopAllPassiveProgressStreams();
     lastRunEmailFolders.value = null;
     boxes.value = [];
     selectedBoxes.value = [];
@@ -892,6 +905,70 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  /**
+   * Reconciles one independent progress stream per in-progress passive run.
+   * Idempotent: existing subscriptions are kept, finished runs are dropped, so
+   * it is safe to call from a polling loop.
+   */
+  async function syncPassiveProgressStreams() {
+    const live = new Set<string>();
+
+    for (const group of passiveMinings.value) {
+      const miningId = group?.task?.miningId;
+      const sourceType = group?.task?.miningSource?.type;
+      if (!miningId || !sourceType) continue;
+
+      live.add(miningId);
+      if (passiveProgressDisposers.has(miningId)) continue;
+
+      const passiveMiningType =
+        sourceType === MiningTypes.FILE ? MiningTypes.FILE : MiningTypes.EMAIL;
+      const token = (await supabase.auth.getSession()).data.session
+        ?.access_token;
+
+      const dispose = createPassiveProgressStream({
+        miningType: passiveMiningType,
+        miningId,
+        serverEndpoint: config.public.SERVER_ENDPOINT,
+        token: token ?? null,
+        onProgress: (progress) => {
+          passiveProgress.value = {
+            ...passiveProgress.value,
+            [miningId]: progress,
+          };
+        },
+        onClosed: () => stopPassiveProgressStream(miningId),
+      });
+
+      passiveProgressDisposers.set(miningId, dispose);
+    }
+
+    for (const miningId of [...passiveProgressDisposers.keys()]) {
+      if (live.has(miningId)) continue;
+      stopPassiveProgressStream(miningId);
+    }
+  }
+
+  function stopPassiveProgressStream(miningId: string) {
+    passiveProgressDisposers.get(miningId)?.();
+    passiveProgressDisposers.delete(miningId);
+
+    if (!passiveProgress.value[miningId]) return;
+    const { [miningId]: _removed, ...rest } = passiveProgress.value;
+    passiveProgress.value = rest;
+  }
+
+  function stopAllPassiveProgressStreams() {
+    for (const miningId of [...passiveProgressDisposers.keys()]) {
+      stopPassiveProgressStream(miningId);
+    }
+  }
+
+  function passiveProgressFor(miningId?: string): PassiveProgress | undefined {
+    if (!miningId) return undefined;
+    return passiveProgress.value[miningId];
+  }
+
   watch(
     activeMiningSource,
     () => {
@@ -950,6 +1027,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeTask,
     passiveMiningDialog,
     passiveMinings,
+    passiveProgress,
+    passiveProgressFor,
+    syncPassiveProgressStreams,
+    stopAllPassiveProgressStreams,
     miningStartedAndFinished,
     miningInterrupted,
     errors,
