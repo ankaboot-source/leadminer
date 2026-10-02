@@ -28,6 +28,15 @@
       "detail_1": "You'll need your contacts consent or a legitimate interest to reach them.",
       "detail_2": "Learn more about your contacts rights."
     },
+    "passiveMiningFailure": {
+      "subject": "Action required: refresh credentials to continue mining",
+      "title": "Credentials expired for your mining source",
+      "greeting": "Hi there,",
+      "intro": "Credentials for {sourceEmail} have expired.",
+      "description": "Reconnect to keep continuous mining running.",
+      "button": "Reconnect source",
+      "footer": "This is an automated notification about continuous mining for your source."
+    },
     "weeklyReport": {
       "subject": "Your weekly contact extraction report",
       "headerTitle": "📊 Weekly Report",
@@ -83,8 +92,17 @@
       "detail_1": "Vous aurez besoin du consentement de vos contacts ou d'un intérêt légitime pour les contacter.",
       "detail_2": "En savoir plus sur les droits de vos contacts."
     },
+    "passiveMiningFailure": {
+      "subject": "Action requise : actualisez vos identifiants pour continuer l’extraction",
+      "title": "Identifiants expirés pour votre source",
+      "greeting": "Bonjour,",
+      "intro": "Les identifiants de {sourceEmail} ont expiré.",
+      "description": "Reconnectez la source pour poursuivre l’extraction continue.",
+      "button": "Reconnecter la source",
+      "footer": "Ceci est une notification automatique concernant l’extraction continue de votre source."
+    },
     "weeklyReport": {
-      "subject": "Votre rapport hebdomadaire d'extraction de contacts",
+      "subject": "Votre rapport hebdomadaire d’extraction de contacts",
       "headerTitle": "📊 Rapport Hebdomadaire",
       "headerSubtitle": "Voici ce que nous avons extrait cette semaine",
       "greeting": "Bonjour,",

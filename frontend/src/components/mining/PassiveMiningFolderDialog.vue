@@ -19,31 +19,13 @@
       <template v-else>
         <div class="flex flex-col gap-2 pt-2 border-t border-surface-200">
           <div class="font-medium">{{ t('folders_title') }}</div>
-          <div class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-            <div
-              v-for="row in rows"
-              :key="row.key"
-              class="flex items-center gap-2"
-            >
-              <Checkbox
-                v-model="folderSelection"
-                :input-id="`passive-folder-${row.key}`"
-                :value="row.key"
-              />
-              <label
-                :for="`passive-folder-${row.key}`"
-                class="cursor-pointer flex-1"
-                >{{ row.label }}</label
-              >
-              <Badge v-if="row.isNew" severity="info">{{
-                t('folders_new')
-              }}</Badge>
-              <Badge v-if="row.unavailable" severity="secondary">{{
-                t('folders_unavailable')
-              }}</Badge>
-            </div>
+          <div class="max-h-64 overflow-y-auto pr-1">
+            <EmailFoldersTree
+              v-model:selection-keys="selectionKeys"
+              :boxes="boxes"
+            />
           </div>
-          <small v-if="folderSelection.length === 0" class="text-red-500">{{
+          <small v-if="selectedFolders.length === 0" class="text-red-500">{{
             t('folders_required')
           }}</small>
         </div>
@@ -92,10 +74,10 @@
           @click="emit('update:visible', false)"
         />
         <Button
-          :label="mode === 'update' ? t('update_folders') : t('yes_enable')"
+          :label="t('enable')"
           class="w-full sm:w-auto"
           :loading="saving"
-          :disabled="saving || loading || folderSelection.length === 0"
+          :disabled="saving || loading || selectedFolders.length === 0"
           @click="confirm"
         />
       </div>
@@ -104,23 +86,28 @@
 </template>
 
 <script setup lang="ts">
+import type { TreeSelectionKeys } from 'primevue/tree';
 import type { MiningSource } from '~/types/mining';
-import type { PassiveFolderRow } from '~/utils/passive-mining-folders';
+import { getDefaultAndExcludedFolders, type BoxNode } from '~/utils/boxes';
 import type { MiningSourceConfigFlags } from '~/utils/miningSourceConfig';
 import { deriveSourceConfig } from '~/utils/miningSourceConfig';
+import { buildTreeSelectionKeys } from '~/utils/box-tree';
+import { getSelectedFolderKeys } from '~/utils/selected-folders';
+// skipcq: JS-W1028 - Nuxt SFCs are default imports; DeepSource cannot detect script-setup default exports
+import EmailFoldersTree from './stepper-panels/mine/EmailFoldersTree.vue';
 
 const props = withDefaults(
   defineProps<{
     visible: boolean;
     source?: MiningSource;
-    mode?: 'first-time' | 'update';
-    rows?: PassiveFolderRow[];
+    boxes?: BoxNode[];
+    checked?: string[];
     saving?: boolean;
     loading?: boolean;
   }>(),
   {
-    mode: 'first-time',
-    rows: () => [],
+    boxes: () => [],
+    checked: () => [],
     saving: false,
     loading: false,
     source: undefined,
@@ -138,44 +125,63 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'local' });
 
 const isGoogleSource = computed(() => props.source?.type === 'google');
-const folderSelection = ref<string[]>([]);
+const selectionKeys = ref<TreeSelectionKeys>({});
 const draftConfig = ref<MiningSourceConfigFlags>(deriveSourceConfig());
-// True while the dialog is open but its rows have not arrived yet (IMAP fetch
+// True while the dialog is open but its tree has not arrived yet (IMAP fetch
 // for a never-mined source). Guards against clobbering user edits later.
-const awaitingRows = ref(false);
+const awaitingBoxes = ref(false);
 
-function syncSelection() {
-  folderSelection.value = props.rows
-    .filter((row) => row.checked)
-    .map((row) => row.key);
+// `\Noselect` folders are returned by the tree but must never be submitted.
+// Reuse the same exclusion set every other "selected folders" read uses.
+const excludedKeys = computed(
+  () => getDefaultAndExcludedFolders(props.boxes).excludedKeys,
+);
+
+const selectedFolders = computed(() =>
+  getSelectedFolderKeys(selectionKeys.value, excludedKeys.value),
+);
+
+function seedSelection() {
+  selectionKeys.value = buildTreeSelectionKeys(props.boxes, props.checked);
+}
+
+// Discards any local edits (switches + folder selection) so a cancelled or
+// closed dialog reopens from the persisted source configuration.
+function resetDraft() {
+  draftConfig.value = deriveSourceConfig(props.source?.config);
+  selectionKeys.value = {};
+  awaitingBoxes.value = false;
 }
 
 watch(
   () => props.visible,
   (visible) => {
-    if (!visible) return;
+    if (!visible) {
+      resetDraft();
+      return;
+    }
     draftConfig.value = deriveSourceConfig(props.source?.config);
-    syncSelection();
-    awaitingRows.value = props.loading || props.rows.length === 0;
+    seedSelection();
+    awaitingBoxes.value = props.loading || props.boxes.length === 0;
   },
   { immediate: true },
 );
 
 watch(
-  () => props.rows,
+  () => props.boxes,
   () => {
-    if (!props.visible || !awaitingRows.value || props.rows.length === 0) {
+    if (!props.visible || !awaitingBoxes.value || props.boxes.length === 0) {
       return;
     }
-    syncSelection();
-    awaitingRows.value = false;
+    seedSelection();
+    awaitingBoxes.value = false;
   },
 );
 
 function confirm() {
-  if (folderSelection.value.length === 0) return;
+  if (selectedFolders.value.length === 0) return;
   emit('confirm', {
-    folders: [...folderSelection.value],
+    folders: [...selectedFolders.value],
     flags: { ...draftConfig.value },
   });
 }
@@ -184,31 +190,25 @@ function confirm() {
 <i18n lang="json">
 {
   "en": {
-    "header": "Continuous Contact Extraction",
+    "header": "Passive mining",
     "paragraph_1": "New contacts found in incoming emails will be automatically saved.",
-    "paragraph_2": "Enable continuous contact extraction from future emails?",
+    "paragraph_2": "Enable passive mining for future incoming emails?",
     "sync_google_contacts": "Sync Google Contacts",
     "clean_contacts": "Clean contacts (email verification)",
     "extract_signatures": "Extract signatures",
-    "yes_enable": "Yes, enable",
-    "update_folders": "Update folders",
-    "folders_title": "Folders for continuous extraction",
-    "folders_new": "New",
-    "folders_unavailable": "Unavailable",
+    "enable": "Enable passive mining",
+    "folders_title": "Select folders to mine",
     "folders_required": "Select at least one folder"
   },
   "fr": {
-    "header": "Extraction continue des contacts",
+    "header": "Extraction passive",
     "paragraph_1": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
-    "paragraph_2": "Activer l'extraction continue des contacts à partir des futurs e-mails ?",
+    "paragraph_2": "Activer l'extraction passive pour les futurs e-mails entrants ?",
     "sync_google_contacts": "Synchroniser les contacts Google",
     "clean_contacts": "Nettoyer les contacts (vérification e-mail)",
     "extract_signatures": "Extraire les signatures",
-    "yes_enable": "Oui, activer",
-    "update_folders": "Mettre à jour les dossiers",
-    "folders_title": "Dossiers pour l'extraction continue",
-    "folders_new": "Nouveau",
-    "folders_unavailable": "Indisponible",
+    "enable": "Activer l'extraction passive",
+    "folders_title": "Sélectionnez les dossiers à extraire",
     "folders_required": "Sélectionnez au moins un dossier"
   }
 }

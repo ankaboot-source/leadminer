@@ -1,8 +1,8 @@
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { createLogger } from "../_shared/logger.ts";
 import {
-  parseConfig,
   type MiningSourceConfigV1,
+  parseConfig,
 } from "../_shared/mining-source-config.ts";
 import type { SourceHealthState } from "../_shared/enums.ts";
 
@@ -38,12 +38,12 @@ export interface ConfigureSourceParams {
   mining?: {
     last?:
       | {
-          mining_id?: string | null;
-          mined_count?: number;
-          folders_mined?: string[];
-          updated_at?: string;
-          folders?: Record<string, FolderWatermark>;
-        }
+        mining_id?: string | null;
+        mined_count?: number;
+        folders_mined?: string[];
+        updated_at?: string;
+        folders?: Record<string, FolderWatermark>;
+      }
       | null;
   };
 }
@@ -63,10 +63,9 @@ function mergeCompletionFolders(
   const merged: Record<string, FolderWatermark> = { ...(currentFolders ?? {}) };
   for (const [folder, patch] of Object.entries(patchFolders ?? {})) {
     const current = merged[folder];
-    const sameNamespace =
-      current !== undefined && current.uidvalidity === patch.uidvalidity;
-    const wouldGoBackwards =
-      sameNamespace &&
+    const sameNamespace = current !== undefined &&
+      current.uidvalidity === patch.uidvalidity;
+    const wouldGoBackwards = sameNamespace &&
       Number.isInteger(current.last_uid) &&
       Number.isInteger(patch.last_uid) &&
       patch.last_uid < current.last_uid;
@@ -134,6 +133,7 @@ export function mergeConfig(
 
 export interface AppliedConfig {
   config: MiningSourceConfigV1;
+  previousHealthState?: SourceHealthState;
   revision: number;
 }
 
@@ -160,7 +160,9 @@ export async function applySourceConfig(
     if (!data) return null;
 
     const revision = Number(data.config_revision ?? 0);
-    const config = mergeConfig(data.config, params);
+    const current = parseConfig(data.config);
+    const previousHealthState = current.health?.state;
+    const config = mergeConfig(current, params);
 
     const update: PlainObject = {
       config,
@@ -184,6 +186,7 @@ export async function applySourceConfig(
     if (updated) {
       return {
         config: updated.config as MiningSourceConfigV1,
+        previousHealthState,
         revision: Number(updated.config_revision ?? revision + 1),
       };
     }

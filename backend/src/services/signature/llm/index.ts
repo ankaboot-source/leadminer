@@ -181,7 +181,14 @@ export class SignatureLLM implements ExtractSignature {
     private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger,
     private readonly models: LLMModelType[],
-    private readonly apiKey: string
+    private readonly apiKey: string,
+    /**
+     * Restrict routing to Zero Data Retention endpoints, so prompts are not
+     * retained by the inference provider. Signature blocks are personal data.
+     * Off by default: ZDR endpoints are a minority and are often slower and
+     * dearer than the default pool.
+     */
+    private readonly requireZdr = false
   ) {
     assert(
       apiKey && apiKey.trim() !== '',
@@ -205,8 +212,10 @@ export class SignatureLLM implements ExtractSignature {
   }
 
   private body(email: string, signature: string) {
-    return JSON.stringify({
-      models: this.models.slice(0, 3),
+    const models = this.models.slice(0, 3);
+
+    const body: Record<string, unknown> = {
+      models,
       messages: [
         {
           role: 'user',
@@ -214,11 +223,66 @@ export class SignatureLLM implements ExtractSignature {
         }
       ],
       response_format: SignaturePrompt.response_format,
-      max_tokens: this.MAX_OUTPUT_TOKENS
-    });
+      max_tokens: this.MAX_OUTPUT_TOKENS,
+      // Signature extraction is a constrained, schema-bound copy task with no
+      // reasoning to do. Reasoning models spend 500-1100 of MAX_OUTPUT_TOKENS
+      // thinking before emitting any JSON, then return finish_reason 'length'
+      // with empty or truncated content, which extract() discards as a parse
+      // failure — indistinguishable from an email that has no signature.
+      //
+      // This applies to the whole fallback chain: OpenRouter sends one body to
+      // every model in `models`. A provider that rejects the field with
+      // HTTP 400 ("Reasoning is mandatory for this endpoint") cannot be used
+      // in this list.
+      reasoning: { enabled: false }
+    };
+
+    if (this.requireZdr) {
+      // Only route to endpoints that keep no copy of the prompt or completion.
+      body.provider = { zdr: true };
+    }
+
+    return JSON.stringify(body);
+  }
+
+  /**
+   * OpenRouter reports "no endpoint matches your data policy" from the routing
+   * funnel as a 404, not as a transport failure, so it never reaches the
+   * 402/502/503 branch below. Left unhandled that is worse than a crash: the
+   * engine stays active, so every signature returns null and each one costs
+   * another doomed round-trip.
+   *
+   * Keyed on `failed_routing_step` because it is a documented field, with the
+   * message text as a fallback for responses that omit metadata.
+   */
+  private isZdrUnavailable(error: OpenRouterError['error']) {
+    if (!this.requireZdr) return false;
+
+    const failedStep = error.metadata?.failed_routing_step;
+    if (typeof failedStep === 'string') {
+      return failedStep.toLowerCase().includes('data policy');
+    }
+
+    const message = error.message?.toLowerCase() ?? '';
+    return (
+      message.includes('data policy') || message.includes('zero data retention')
+    );
   }
 
   private handleResponseError(error: OpenRouterError['error']) {
+    // Deliberately does not retry without ZDR: a retaining endpoint is exactly
+    // what this flag exists to avoid. Disabling the engine hands the work to
+    // the regex engine instead, which runs locally and sends nothing.
+    if (this.isZdrUnavailable(error)) {
+      this.active = false;
+      this.logger.warn(
+        'LLM engine disabled — no Zero Data Retention endpoints available for the configured models. ' +
+          'Signature extraction continues on the regex engine. ' +
+          'Fix by choosing models with ZDR support, or set SIGNATURE_LLM_REQUIRE_ZDR=false to accept retaining endpoints.'
+      );
+      throw new Error(error.message);
+    }
+
     if ([402, 502, 503].includes(error.code)) {
       this.active = false;
       this.logger.warn(

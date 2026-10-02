@@ -79,6 +79,8 @@
     </div>
     <EmailFoldersTree
       v-if="shouldShowEmailFoldersTree"
+      v-model:selection-keys="$leadminerStore.selectedBoxes"
+      :boxes="boxes"
       :class="{ disabled: $leadminerStore.activeMiningTask }"
     />
 

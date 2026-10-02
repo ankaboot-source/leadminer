@@ -4,10 +4,11 @@ import {
   buildFolderStatus,
   createFlatTreeFromImap,
   buildFinalTree,
-  extractFolderWatermarks
+  extractFolderWatermarks,
+  resolveMiningRunMode
 } from '../../src/utils/helpers/imapTreeHelpers';
 import { FlatTree } from '../../src/services/imap/types';
-import { FolderStatus } from '../../src/db/types';
+import { FolderStatus, MiningRunMode } from '../../src/db/types';
 
 const CURSOR = {
   uidvalidity: '12',
@@ -295,5 +296,43 @@ describe('IMAP Tree Utilities', () => {
     };
 
     tree.forEach(recursivelyCheckNoParent);
+  });
+});
+
+describe('resolveMiningRunMode', () => {
+  it('downgrades an incremental run with no cursor to a full scan', () => {
+    expect(resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'])).toBe(
+      MiningRunMode.Full
+    );
+  });
+
+  it('downgrades an incremental run with an empty cursor map', () => {
+    expect(
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], {
+        folders: {}
+      })
+    ).toBe(MiningRunMode.Full);
+  });
+
+  it('downgrades when a selected folder has no cursor (mixed watermarks)', () => {
+    expect(
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX', 'Archive'], {
+        folders: { INBOX: { uidvalidity: '12', last_uid: 42 } }
+      })
+    ).toBe(MiningRunMode.Full);
+  });
+
+  it('keeps incremental when every selected folder has a cursor', () => {
+    expect(
+      resolveMiningRunMode(MiningRunMode.Incremental, ['INBOX'], {
+        folders: { INBOX: { uidvalidity: '12', last_uid: 42 } }
+      })
+    ).toBe(MiningRunMode.Incremental);
+  });
+
+  it('leaves a full request untouched', () => {
+    expect(resolveMiningRunMode(MiningRunMode.Full, ['INBOX'])).toBe(
+      MiningRunMode.Full
+    );
   });
 });

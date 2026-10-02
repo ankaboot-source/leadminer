@@ -79,10 +79,10 @@ export default class PgContacts implements Contacts {
     `;
 
   private static readonly UPDATE_PERSON_STATUS_BULK = `
-    UPDATE private.persons
-    SET status = update.status
-    FROM (VALUES %L) AS update(id, status)
-    WHERE persons.id = update.id AND persons.user_id = %L AND persons.status IS NULL`;
+    UPDATE private.persons AS p
+    SET status = u.status
+    FROM unnest($1::uuid[], $2::text[]) AS u(id, status)
+    WHERE p.id = u.id AND p.user_id = $3::uuid AND p.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
     'INSERT INTO private.engagement (user_id, person_id, engagement_type, service) VALUES %L ON  CONFLICT (person_id, user_id, engagement_type, service) DO NOTHING;';
@@ -303,11 +303,14 @@ LIMIT 1;
     statusUpdates: { status: Status; id: string }[]
   ): Promise<boolean> {
     try {
-      const updates = statusUpdates.map((update) => [update.id, update.status]);
+      const ids = statusUpdates.map((update) => update.id);
+      const statuses = statusUpdates.map((update) => update.status);
 
-      await this.pool.query(
-        format(PgContacts.UPDATE_PERSON_STATUS_BULK, updates, userId)
-      );
+      await this.pool.query(PgContacts.UPDATE_PERSON_STATUS_BULK, [
+        ids,
+        statuses,
+        userId
+      ]);
 
       return true;
     } catch (error) {

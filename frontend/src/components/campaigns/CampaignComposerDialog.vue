@@ -1,10 +1,10 @@
 <template>
   <Dialog
+    ref="composerDialogRef"
     v-model:visible="isVisible"
     modal
     :header="dialogHeader"
     :maximizable="$screenStore?.size?.md"
-    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
     :style="{ width: '52rem', maxWidth: '95vw' }"
     @show="onDialogShow"
     @hide="onDialogHide"
@@ -367,12 +367,18 @@ import {
 } from '@/utils/senderOptions';
 import { updateMiningSourcesValidityFromUnavailable } from '@/utils/sources';
 import { addOAuthAccount } from '@/utils/oauth';
+import { htmlToPlainText } from '@/utils/htmlText';
 import Editor from 'primevue/editor';
 import GenericComplianceDialog, {
   type ModalData,
 } from '@/components/GenericComplianceDialog.vue';
 
 const isVisible = defineModel<boolean>('visible', { required: true });
+
+// PrimeVue's Dialog keeps `maximized` in internal state (no `maximized` prop) and
+// exposes `maximize()` on the instance. Calling it on show is what opens the
+// composer full screen while keeping the maximize/restore button in sync.
+const composerDialogRef = ref<{ maximize?: () => void }>();
 
 const props = defineProps<{
   selectedContacts: Contact[];
@@ -711,6 +717,7 @@ function onEditorInput() {
 }
 
 async function onDialogShow() {
+  composerDialogRef.value?.maximize?.();
   editorReady.value = false;
   imageResizeAvailable.value = await ensureQuillImageResizeModule();
   editorReady.value = true;
@@ -993,9 +1000,7 @@ function normalizeBodyText() {
   if (form.plainTextOnly) {
     return form.bodyTextTemplate;
   }
-  return (
-    form.bodyTextTemplate || form.bodyHtmlTemplate.replace(/<[^>]*>/g, ' ')
-  );
+  return form.bodyTextTemplate || htmlToPlainText(form.bodyHtmlTemplate);
 }
 
 async function loadSenderOptions() {
