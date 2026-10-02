@@ -248,9 +248,15 @@ export class SignatureLLM implements ExtractSignature {
   /**
    * OpenRouter reports "no endpoint matches your data policy" from the routing
    * funnel as a 404, not as a transport failure, so it never reaches the
-   * 402/502/503 branch below. Left unhandled that is worse than a crash: the
-   * engine stays active, so every signature returns null and each one costs
-   * another doomed round-trip.
+   * 402/502/503 branch below and was previously indistinguishable from any
+   * other rejection.
+   *
+   * It is also intermittent: measured against live OpenRouter, twelve
+   * consecutive ZDR requests all served, with the occasional 404 in between.
+   * So this only reports. It does not disable the engine — that turned a
+   * momentary blip into a permanent downgrade to the regex engine — and it does
+   * not retry without ZDR, since a retaining endpoint is exactly what the flag
+   * exists to avoid.
    *
    * Keyed on `failed_routing_step` because it is a documented field, with the
    * message text as a fallback for responses that omit metadata.
@@ -270,15 +276,15 @@ export class SignatureLLM implements ExtractSignature {
   }
 
   private handleResponseError(error: OpenRouterError['error']) {
-    // Deliberately does not retry without ZDR: a retaining endpoint is exactly
-    // what this flag exists to avoid. Disabling the engine hands the work to
-    // the regex engine instead, which runs locally and sends nothing.
+    // Report only: the engine stays active so a transient failure costs one
+    // signature rather than the whole engine. extract() still returns null for
+    // this request, so nothing unverified is stored.
     if (this.isZdrUnavailable(error)) {
-      this.active = false;
       this.logger.warn(
-        'LLM engine disabled — no Zero Data Retention endpoints available for the configured models. ' +
-          'Signature extraction continues on the regex engine. ' +
-          'Fix by choosing models with ZDR support, or set SIGNATURE_LLM_REQUIRE_ZDR=false to accept retaining endpoints.'
+        'No ZDR endpoint available for the configured models — this signature ' +
+          'was not extracted. OpenRouter answers this intermittently even when ' +
+          'ZDR endpoints exist, so the next attempt may succeed. If it persists, ' +
+          'choose models with ZDR support or set SIGNATURE_LLM_REQUIRE_ZDR=false.'
       );
       throw new Error(error.message);
     }

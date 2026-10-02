@@ -182,19 +182,37 @@ describe('SignatureLLM', () => {
           .onPost('https://openrouter.ai/api/v1/chat/completions')
           .reply(404, { error: payload });
 
-      it('should deactivate the engine instead of failing every signature forever', async () => {
-        // Regression guard: while the engine stayed active every signature
-        // returned null and paid for another doomed request, indefinitely.
+      it('should keep the engine active, since OpenRouter answers intermittently', async () => {
+        // Measured against live OpenRouter: 12/12 ZDR requests served, with the
+        // occasional 404. Disabling here would permanently downgrade extraction
+        // quality over a momentary blip.
         replyWithZdrFailure(zdrRoutingFailure);
 
         const instance = createZdrInstance();
         await expect(
           instance.sendPrompt('test@leadminer.io', 'sig')
         ).rejects.toThrow('No endpoints found matching your data policy');
-        expect(instance.isActive()).toBe(false);
+        expect(instance.isActive()).toBe(true);
       });
 
-      it('should warn with an actionable cause and remedy', async () => {
+      it('should still stay active across repeated failures', async () => {
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        const instance = createZdrInstance();
+        const attempts = [1, 2, 3, 4, 5].reduce(
+          (chain) =>
+            chain.then(() =>
+              expect(
+                instance.sendPrompt('test@leadminer.io', 'sig')
+              ).rejects.toThrow()
+            ),
+          Promise.resolve()
+        );
+        await attempts;
+        expect(instance.isActive()).toBe(true);
+      });
+
+      it('should warn that the signature was not extracted', async () => {
         replyWithZdrFailure(zdrRoutingFailure);
 
         await expect(
@@ -202,49 +220,63 @@ describe('SignatureLLM', () => {
         ).rejects.toThrow();
 
         const warning = mockLogger.warn.mock.calls.flat().join(' ');
-        expect(warning).toContain('Zero Data Retention');
-        expect(warning).toContain('SIGNATURE_LLM_REQUIRE_ZDR=false');
+        expect(warning).toContain('No ZDR endpoint available');
+        expect(warning).toContain('was not extracted');
       });
 
-      it('should fall back on the message when metadata is absent', async () => {
+      it('should warn with the cause and both remedies', async () => {
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        await expect(
+          createZdrInstance().sendPrompt('test@leadminer.io', 'sig')
+        ).rejects.toThrow();
+
+        const warning = mockLogger.warn.mock.calls.flat().join(' ');
+        expect(warning).toContain('SIGNATURE_LLM_REQUIRE_ZDR=false');
+        expect(warning).toContain('ZDR support');
+      });
+
+      it('should detect it from the message when metadata is absent', async () => {
         replyWithZdrFailure({
           code: 404,
           message: 'No endpoints found matching your data policy (ZDR)'
         });
 
-        const instance = createZdrInstance();
         await expect(
-          instance.sendPrompt('test@leadminer.io', 'sig')
+          createZdrInstance().sendPrompt('test@leadminer.io', 'sig')
         ).rejects.toThrow();
-        expect(instance.isActive()).toBe(false);
+
+        expect(mockLogger.warn.mock.calls.flat().join(' ')).toContain(
+          'No ZDR endpoint available'
+        );
       });
 
-      it('should not disable the engine for a 404 that is unrelated to ZDR', async () => {
+      it('should not warn for a 404 that is unrelated to ZDR', async () => {
         // "model not found" also 404s. Misreading it as a data-policy problem
-        // would silently drop the LLM engine for an unrelated reason.
+        // would cry wolf on an unrelated failure.
         replyWithZdrFailure({
           code: 404,
           message: 'No endpoints found for model',
           metadata: { failed_routing_step: 'Resolve Model' }
         });
 
-        const instance = createZdrInstance();
         await expect(
-          instance.sendPrompt('test@leadminer.io', 'sig')
+          createZdrInstance().sendPrompt('test@leadminer.io', 'sig')
         ).rejects.toThrow();
-        expect(instance.isActive()).toBe(true);
+
+        expect(mockLogger.warn).not.toHaveBeenCalled();
       });
 
-      it('should not treat a data-policy failure as ZDR when the flag is off', async () => {
+      it('should not warn when the flag is off', async () => {
         // Without the flag no data policy was requested, so this response
         // cannot be the cause of a ZDR rejection.
         replyWithZdrFailure(zdrRoutingFailure);
 
-        const instance = createInstance();
         await expect(
-          instance.sendPrompt('test@leadminer.io', 'sig')
+          createInstance().sendPrompt('test@leadminer.io', 'sig')
         ).rejects.toThrow();
-        expect(instance.isActive()).toBe(true);
+
+        expect(mockLogger.warn).not.toHaveBeenCalled();
       });
 
       it('should never retry the request without ZDR', async () => {
@@ -252,14 +284,25 @@ describe('SignatureLLM', () => {
         // retaining endpoint — the one outcome the flag exists to prevent.
         replyWithZdrFailure(zdrRoutingFailure);
 
-        const instance = createZdrInstance();
         await expect(
-          instance.sendPrompt('test@leadminer.io', 'sig')
+          createZdrInstance().sendPrompt('test@leadminer.io', 'sig')
         ).rejects.toThrow();
 
         expect(mockAxios.history.post).toHaveLength(1);
         const sent = JSON.parse(mockAxios.history.post[0].data);
         expect(sent.provider).toEqual({ zdr: true });
+      });
+
+      it('should let extract() return null for an unextracted signature', async () => {
+        // Nothing unverified may reach the contact record.
+        replyWithZdrFailure(zdrRoutingFailure);
+
+        const result = await createZdrInstance().extract(
+          'test@leadminer.io',
+          'Jane Doe\nHead of Widgets'
+        );
+        expect(result).toBeNull();
+        expect(mockLogger.error).toHaveBeenCalled();
       });
     });
 
