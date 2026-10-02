@@ -25,6 +25,7 @@ export interface Contacts {
   getContacts(userId: string, ids?: string[]): Promise<Contact[]>;
   getUnverifiedContacts(userId: string, ids: string[]): Promise<Contact[]>;
   getExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
+  getActivatedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
   getNonExportedContacts(userId: string, ids?: string[]): Promise<Contact[]>;
   registerExportedContacts(
     personIds: string[],

@@ -128,7 +128,7 @@ async function verifyCredits(
     userId,
     contactsToExport
   );
-  const previousExportedContacts = await contacts.getExportedContacts(
+  const previousExportedContacts = await contacts.getActivatedContacts(
     userId,
     contactsToExport
   );
