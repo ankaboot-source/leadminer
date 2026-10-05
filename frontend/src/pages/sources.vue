@@ -799,7 +799,9 @@ onUnmounted(() => {
 });
 
 onMounted(async () => {
-  await $leadminer.ensureMiningSourcesLoaded();
+  // Always re-fetch on mount: passive-mining health only changes server-side,
+  // so a missed realtime/poll update must not survive a navigation here.
+  await $leadminer.ensureMiningSourcesLoaded({ refresh: true });
 
   // Refresh the active-mining state so an in-progress run shows under its
   // source even when the app bootstrap ran before this mining started.

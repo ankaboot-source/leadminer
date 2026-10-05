@@ -272,11 +272,29 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * source call this instead of fetchMiningSources() directly, which keeps
    * source fetching lazy (only where a source is shown) and avoids duplicate
    * fetches (auth screen, every protected-route navigation).
+   *
+   * `refresh: true` re-fetches even when the list was already loaded, so
+   * pages that show server-side state (e.g. passive-mining health) always show
+   * the latest value on mount instead of a stale session snapshot.
    */
-  async function ensureMiningSourcesLoaded() {
-    if (hasLoadedMiningSources.value || isLoadingMiningSources.value) {
+  async function ensureMiningSourcesLoaded({
+    refresh = false,
+  }: { refresh?: boolean } = {}) {
+    if (isLoadingMiningSources.value) {
       return;
     }
+
+    if (hasLoadedMiningSources.value) {
+      if (!refresh) return;
+
+      try {
+        await fetchMiningSources({ silent: true });
+      } catch (error) {
+        console.warn('[mining] failed to refresh mining sources', error);
+      }
+      return;
+    }
+
     try {
       await fetchMiningSources();
       hasLoadedMiningSources.value = true;
