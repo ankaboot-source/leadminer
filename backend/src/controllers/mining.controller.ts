@@ -12,6 +12,7 @@ import {
   TaskType
 } from '../db/types';
 import { ImapAuthError } from '../utils/errors';
+import { formatEdgeFunctionError } from '../utils/edgeFunctionError';
 import {
   buildResumeFromConfig,
   resolveMiningRunMode
@@ -298,7 +299,10 @@ export default function initializeMiningController(
               {
                 userId: user.id,
                 sourceId: miningSourceId,
-                error: healthError.message
+                error: formatEdgeFunctionError(
+                  'mining-sources/:id/config',
+                  healthError
+                )
               }
             );
           }

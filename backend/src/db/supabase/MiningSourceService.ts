@@ -10,6 +10,10 @@ import {
 } from '../interfaces/MiningSources';
 import supabaseClient from '../../utils/supabase';
 import loggerUtil from '../../utils/logger';
+import {
+  edgeFunctionError,
+  formatEdgeFunctionError
+} from '../../utils/edgeFunctionError';
 
 export interface MiningSourcesResponse {
   sources: {
@@ -48,9 +52,10 @@ export class MiningSourceService implements MiningSources {
 
     if (error) {
       this.logger.error('Failed to fetch mining sources', {
-        error,
+        functionName: 'fetch-mining-source',
         status: error.context?.status,
-        code: (error as { context?: { code?: string } }).context?.code
+        code: (error as { context?: { code?: string } }).context?.code,
+        detail: formatEdgeFunctionError('fetch-mining-source', error)
       });
       const status = error.context?.status as number | undefined;
       const code = (error as { context?: { code?: string } }).context?.code;
@@ -65,7 +70,7 @@ export class MiningSourceService implements MiningSources {
         (reauthError as { status?: number }).status = 401;
         throw reauthError;
       }
-      throw new Error(`Failed to fetch mining sources: ${error.message}`);
+      throw edgeFunctionError('fetch-mining-source', error);
     }
 
     const result = data as MiningSourcesResponse;
@@ -115,8 +120,12 @@ export class MiningSourceService implements MiningSources {
     const { data, error } = response;
 
     if (error) {
-      this.logger.error('Failed to fetch mining source by id', { error });
-      throw new Error(`Failed to fetch mining source: ${error.message}`);
+      this.logger.error('Failed to fetch mining source by id', {
+        functionName: 'fetch-mining-source',
+        status: error.context?.status,
+        detail: formatEdgeFunctionError('fetch-mining-source', error)
+      });
+      throw edgeFunctionError('fetch-mining-source', error);
     }
 
     const result = data as MiningSourcesResponse;
