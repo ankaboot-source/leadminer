@@ -67,7 +67,8 @@
       </div>
     </template>
     <template #loading>
-      <div class="text-center">
+      <TableSkeleton v-if="tablePosTop === 0" />
+      <div v-else class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
       </div>
@@ -996,6 +997,7 @@ import {
 } from '~/utils/mining-table-performance';
 import { useContactVerification } from '~/composables/useContactVerification';
 
+const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinksAndPhones = defineAsyncComponent(
   () => import('@/components/icons/SocialLinksAndPhones.vue'),
 );
