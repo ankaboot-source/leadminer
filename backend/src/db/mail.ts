@@ -1,4 +1,5 @@
 import supabaseClient from '../utils/supabase';
+import { edgeFunctionError } from '../utils/edgeFunctionError';
 
 export async function mailMiningComplete(miningId: string) {
   const { error } = await supabaseClient.functions.invoke(
@@ -12,7 +13,7 @@ export async function mailMiningComplete(miningId: string) {
   );
 
   if (error) {
-    throw error;
+    throw edgeFunctionError('mail/mining-complete', error);
   }
 }
 

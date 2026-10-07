@@ -1,5 +1,6 @@
 import supabaseClient from '../utils/supabase';
 import logger from '../utils/logger';
+import { formatEdgeFunctionError } from '../utils/edgeFunctionError';
 
 /**
  * Triggers the mining-completion edge function after extraction succeeds.
@@ -18,7 +19,7 @@ export async function recordMiningCompletion(miningId: string): Promise<void> {
   if (error) {
     logger.error('[mining-completion] Failed to record mining completion', {
       miningId,
-      error: error.message
+      error: formatEdgeFunctionError('mining-completion', error)
     });
     return;
   }

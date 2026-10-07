@@ -1,4 +1,5 @@
 import supabaseClient from '../../utils/supabase';
+import { edgeFunctionError } from '../../utils/edgeFunctionError';
 
 const GOOGLE_DOMAINS = ['gmail', 'googlemail', 'google'];
 const AZURE_DOMAINS = [
@@ -65,7 +66,10 @@ export async function getOAuthImapConfigByEmail(email: string) {
     }
   );
 
-  if (error || !data) {
+  if (error) {
+    throw edgeFunctionError('imap', error);
+  }
+  if (!data) {
     throw new Error(`Could not detect IMAP configuration for email: ${email}`);
   }
 

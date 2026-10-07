@@ -58,7 +58,7 @@ describe('getOAuthImapConfigByEmail', () => {
     });
 
     await expect(getOAuthImapConfigByEmail('test@invalid.com')).rejects.toThrow(
-      'Could not detect IMAP configuration for email: test@invalid.com'
+      "Edge Function 'imap' failed"
     );
   });
 });
