@@ -11,6 +11,7 @@ import PSTFetcherFactory from './factory/PSTFetcherFactory';
 import ImapConnectionProvider from './services/imap/ImapConnectionProvider';
 import { generateErrorObjectFromImapError } from './utils/imap';
 import { errorMeta } from './utils/errors';
+import { formatEdgeFunctionError } from './utils/edgeFunctionError';
 import logger from './utils/logger';
 import validateType from './utils/validation';
 import supabaseClient from './utils/supabase';
@@ -472,8 +473,12 @@ apiRoutes.post(
       if (fetchError || !credentialsData?.sources?.length) {
         logger.error('Failed to fetch Google Contacts credentials', {
           userId,
+          functionName: 'fetch-mining-source',
           hasCredentials: Boolean(credentialsData?.sources?.length),
-          error: errorMeta(fetchError ?? new Error('No credentials returned'))
+          error: errorMeta(fetchError ?? new Error('No credentials returned')),
+          detail: fetchError
+            ? formatEdgeFunctionError('fetch-mining-source', fetchError)
+            : 'No credentials returned'
         });
         return res.status(403).json({
           message:

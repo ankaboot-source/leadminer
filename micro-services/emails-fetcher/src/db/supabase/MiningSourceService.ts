@@ -8,6 +8,10 @@ import {
 } from '../interfaces/MiningSources';
 import supabaseClient from '../../utils/supabase';
 import loggerUtil from '../../utils/logger';
+import {
+  edgeFunctionError,
+  formatEdgeFunctionError
+} from '../../utils/edgeFunctionError';
 
 export interface MiningSourcesResponse {
   sources: {
@@ -40,8 +44,12 @@ export class MiningSourceService implements MiningSources {
     const { data, error } = response;
 
     if (error) {
-      this.logger.error('Failed to fetch mining sources', { error });
-      throw new Error(`Failed to fetch mining sources: ${error.message}`);
+      this.logger.error('Failed to fetch mining sources', {
+        functionName: 'fetch-mining-source',
+        status: error.context?.status,
+        detail: formatEdgeFunctionError('fetch-mining-source', error)
+      });
+      throw edgeFunctionError('fetch-mining-source', error);
     }
 
     const result = data as MiningSourcesResponse;
