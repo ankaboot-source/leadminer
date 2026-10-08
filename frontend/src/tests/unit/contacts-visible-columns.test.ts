@@ -39,51 +39,44 @@ const CONTACTS_DEFAULTS = [
 
 const columnsKey = 'leadminer:v1:table:columns:user-1:contacts';
 
-const emailOnlyContact = {
-  id: 'c1',
-  email: 'a@example.com',
-} as never;
-
 beforeEach(() => {
   localStorage.clear();
   setActivePinia(createPinia());
 });
 
-describe('initializeVisibleColumns stored-empty fallback', () => {
-  it('falls back to defaults when the stored selection is empty', () => {
-    localStorage.setItem(columnsKey, '[]');
-
+describe('initializeVisibleColumns', () => {
+  it('shows the declared defaults when nothing is stored', () => {
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts', []);
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
 
     expect(store.visibleColumns).toEqual(CONTACTS_DEFAULTS);
   });
 
-  it('falls back to data-driven columns when stored is empty and contacts exist', () => {
+  it('falls back to defaults when the stored selection is empty', () => {
     localStorage.setItem(columnsKey, '[]');
 
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts', [
-      emailOnlyContact,
-    ]);
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
 
-    // Email-only contact: checkbox + rescued name column, never an empty table.
-    expect(store.visibleColumns).toEqual(['contacts', 'name']);
+    expect(store.visibleColumns).toEqual(CONTACTS_DEFAULTS);
   });
 
   it('honors a stored non-empty selection', () => {
     localStorage.setItem(columnsKey, JSON.stringify(['contacts', 'telephone']));
 
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts', []);
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
 
     expect(store.visibleColumns).toEqual(['contacts', 'telephone', 'name']);
   });
 
-  it('falls back to defaults when nothing is stored and no contacts exist', () => {
-    const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts', []);
+  it('does not widen the defaults from stored data', () => {
+    localStorage.setItem(columnsKey, JSON.stringify(['contacts']));
 
-    expect(store.visibleColumns).toEqual(CONTACTS_DEFAULTS);
+    const store = useContactsStore();
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
+
+    // Only the user picks extra fields; the store never adds them on its own.
+    expect(store.visibleColumns).toEqual(['contacts', 'name']);
   });
 });

@@ -75,7 +75,6 @@ export function useContactsTableData() {
         contactsStore.initializeVisibleColumns(
           getDefaultVisibleColumns('contacts'),
           'contacts',
-          contactsStore.contactsList,
         );
 
         const miningId = getMiningIdParam();
@@ -121,7 +120,6 @@ export function useMiningTableData() {
     contactsStore.initializeVisibleColumns(
       getDefaultVisibleColumns('mine'),
       'mine',
-      contactsStore.contactsList,
     );
     stopStateWatch = watch(
       [

@@ -15,6 +15,7 @@ import {
 import { resolvePassiveMiningPrompt } from '@/utils/passive-mining-folders';
 import {
   createPassiveProgressStream,
+  seedPassiveProgress,
   type PassiveProgress,
 } from '~/utils/passiveProgress';
 import { getSelectedFolderKeys } from '@/utils/selected-folders';
@@ -926,11 +927,19 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const token = (await supabase.auth.getSession()).data.session
         ?.access_token;
 
+      // Baseline for phases that already finished before we attached.
+      const seeded = seedPassiveProgress(group?.task?.progress);
+      passiveProgress.value = {
+        ...passiveProgress.value,
+        [miningId]: seeded,
+      };
+
       const dispose = createPassiveProgressStream({
         miningType: passiveMiningType,
         miningId,
         serverEndpoint: config.public.SERVER_ENDPOINT,
         token: token ?? null,
+        initial: seeded,
         onProgress: (progress) => {
           passiveProgress.value = {
             ...passiveProgress.value,

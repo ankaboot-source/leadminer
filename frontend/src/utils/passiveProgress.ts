@@ -2,7 +2,7 @@ import {
   type EventSourceMessage,
   fetchEventSource,
 } from '@microsoft/fetch-event-source';
-import type { MiningType } from '~/types/mining';
+import type { MiningProgress, MiningType } from '~/types/mining';
 
 export type PassiveProgress = {
   fetched: number;
@@ -15,6 +15,25 @@ export const EMPTY_PASSIVE_PROGRESS: PassiveProgress = {
   extracted: 0,
   cleaned: 0,
 };
+
+// Card labels: scanned/extracted/cleaned. createdContacts is intentionally
+// excluded — it is a contact count, not one of these message counts.
+function toPassiveProgress(progress: Partial<MiningProgress>): PassiveProgress {
+  return {
+    fetched: progress.fetched ?? progress.googleContactsFetchedCount ?? 0,
+    extracted: progress.extracted ?? 0,
+    cleaned: progress.verifiedContacts ?? 0,
+  };
+}
+
+// Baseline from the task snapshot: SSE only reports changes, so a run already
+// past fetch/extract has nothing left to replay.
+export function seedPassiveProgress(
+  progress?: Partial<MiningProgress>,
+): PassiveProgress {
+  if (!progress) return EMPTY_PASSIVE_PROGRESS;
+  return toPassiveProgress(progress);
+}
 
 /**
  * Applies one SSE frame to the passive counters.
@@ -32,15 +51,19 @@ export function applyPassiveProgressEvent(
   const count = Number.parseInt(data, 10);
   if (Number.isNaN(count)) return null;
 
-  if (event === `fetched-${miningId}`) {
+  if (
+    event === `fetched-${miningId}` ||
+    event === `googleContactsFetchedCount-${miningId}`
+  ) {
     return { ...current, fetched: count };
   }
+  // createdContacts is a contact count; mixing it into this message count would
+  // make the seeded and streamed values disagree.
   if (event === `extracted-${miningId}`) {
     return { ...current, extracted: count };
   }
   if (
     event === `verifiedContacts-${miningId}` ||
-    event === `createdContacts-${miningId}` ||
     event === `clean-finished-${miningId}` ||
     event === 'cleaning-finished'
   ) {
@@ -64,6 +87,7 @@ export function createPassiveProgressStream({
   miningId,
   serverEndpoint,
   token,
+  initial,
   onProgress,
   onClosed,
 }: {
@@ -71,10 +95,13 @@ export function createPassiveProgressStream({
   miningId: string;
   serverEndpoint: string;
   token: string | null;
+  initial?: PassiveProgress;
   onProgress: (progress: PassiveProgress) => void;
   onClosed?: () => void;
 }): () => void {
-  let progress: PassiveProgress = EMPTY_PASSIVE_PROGRESS;
+  // Each frame publishes the whole object, so a zero baseline would let one
+  // phase's first frame reset another's counters for good.
+  let progress: PassiveProgress = initial ?? EMPTY_PASSIVE_PROGRESS;
   const ctrl = new AbortController();
   const noop = () => undefined;
 
