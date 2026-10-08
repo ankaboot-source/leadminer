@@ -31,33 +31,36 @@
         </div>
 
         <div class="flex flex-col gap-3 pt-2 border-t border-surface-200">
-          <div v-if="isGoogleSource" class="flex items-center gap-2">
+          <div v-if="isGoogleSource" class="flex flex-row items-center gap-2">
             <ToggleSwitch
               v-model="draftConfig.google_contacts_sync"
               input-id="googleContactsSync"
             />
-            <label for="googleContactsSync" class="cursor-pointer">
-              {{ t('sync_google_contacts') }}
+            <label for="googleContactsSync" class="cursor-pointer flex-1">
+              {{ $t('mining.sync_google_contacts') }}
+              <span>{{ $t('mining.sync_google_contacts_sub') }}</span>
             </label>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex flex-row items-center gap-2">
             <ToggleSwitch
               v-model="draftConfig.cleaning_enabled"
               input-id="cleaningEnabled"
             />
-            <label for="cleaningEnabled" class="cursor-pointer">
-              {{ t('clean_contacts') }}
+            <label for="cleaningEnabled" class="cursor-pointer flex-1">
+              {{ $t('mining.cleaning_enabled_option') }}
+              <span>{{ $t('mining.cleaning_enabled_sub') }}</span>
             </label>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex flex-row items-center gap-2">
             <ToggleSwitch
               v-model="draftConfig.extract_signatures"
               input-id="extractSignatures"
             />
-            <label for="extractSignatures" class="cursor-pointer">
-              {{ t('extract_signatures') }}
+            <label for="extractSignatures" class="cursor-pointer flex-1">
+              {{ $t('mining.extract_signatures_option') }}
+              <span>{{ $t('mining.extract_signatures_sub') }}</span>
             </label>
           </div>
         </div>
@@ -193,9 +196,6 @@ function confirm() {
     "header": "Passive mining",
     "paragraph_1": "New contacts found in incoming emails will be automatically saved.",
     "paragraph_2": "Enable passive mining for future incoming emails?",
-    "sync_google_contacts": "Sync Google Contacts",
-    "clean_contacts": "Clean contacts (email verification)",
-    "extract_signatures": "Extract signatures",
     "enable": "Enable passive mining",
     "folders_title": "Select folders to mine",
     "folders_required": "Select at least one folder"
@@ -204,9 +204,6 @@ function confirm() {
     "header": "Extraction passive",
     "paragraph_1": "Les nouveaux contacts trouvés dans les e-mails entrants seront automatiquement enregistrés.",
     "paragraph_2": "Activer l'extraction passive pour les futurs e-mails entrants ?",
-    "sync_google_contacts": "Synchroniser les contacts Google",
-    "clean_contacts": "Nettoyer les contacts (vérification e-mail)",
-    "extract_signatures": "Extraire les signatures",
     "enable": "Activer l'extraction passive",
     "folders_title": "Sélectionnez les dossiers à extraire",
     "folders_required": "Sélectionnez au moins un dossier"
