@@ -17,14 +17,15 @@ describe('seedPassiveProgress', () => {
         createdContacts: 64,
         verifiedContacts: 40,
       }),
-    ).toEqual({ fetched: 120, extracted: 90, cleaned: 40 });
+      // extracted tracks contacts, so the message count 90 is not used.
+    ).toEqual({ fetched: 120, extracted: 64, cleaned: 40 });
   });
 
   it('falls back to google contacts count when no FetchTask ran', () => {
     expect(
       seedPassiveProgress({
         googleContactsFetchedCount: 75,
-        extracted: 10,
+        createdContacts: 10,
         verifiedContacts: 0,
       }),
     ).toEqual({ fetched: 75, extracted: 10, cleaned: 0 });
@@ -45,31 +46,31 @@ describe('applyPassiveProgressEvent', () => {
 
     let progress = EMPTY_PASSIVE_PROGRESS;
     progress = applied(`fetched-${MINING_ID}`, '12', progress);
-    progress = applied(`extracted-${MINING_ID}`, '7', progress);
+    progress = applied(`createdContacts-${MINING_ID}`, '7', progress);
     progress = applied(`verifiedContacts-${MINING_ID}`, '4', progress);
 
     expect(progress).toEqual({ fetched: 12, extracted: 7, cleaned: 4 });
   });
 
-  it('never reports the created-contact count as cleaned', () => {
-    let progress = EMPTY_PASSIVE_PROGRESS;
-    progress = applyPassiveProgressEvent(
-      `extracted-${MINING_ID}`,
-      '742',
-      MINING_ID,
-      progress,
-    ) as PassiveProgress;
-
-    const afterCreated = applyPassiveProgressEvent(
+  it('reports created contacts as extracted contacts, never as cleaned', () => {
+    const next = applyPassiveProgressEvent(
       `createdContacts-${MINING_ID}`,
       '4600',
       MINING_ID,
-      progress,
     );
 
-    // Regression: createdContacts belongs to extract, not cleaning.
-    expect(afterCreated).toBeNull();
-    expect(progress).toEqual({ fetched: 0, extracted: 742, cleaned: 0 });
+    // Regression: createdContacts is the extract-phase contact count. It was
+    // once mapped onto cleaned, so an in-flight run reported its contact count
+    // under "Nettoyés" while it was still extracting.
+    expect(next).toEqual({ fetched: 0, extracted: 4600, cleaned: 0 });
+  });
+
+  it('ignores the message-count extracted event', () => {
+    // A message count and a contact count are different units; feeding this
+    // into the same field would disagree with the seeded snapshot.
+    expect(
+      applyPassiveProgressEvent(`extracted-${MINING_ID}`, '742', MINING_ID),
+    ).toBeNull();
   });
 
   it('reports verified contacts as cleaned', () => {
@@ -117,10 +118,11 @@ describe('applyPassiveProgressEvent', () => {
   });
 
   it('keeps a seeded phase when the next phase reports first', () => {
-    // Regression: a zero baseline let the first extracted frame reset fetched.
+    // Regression: a zero baseline let the first frame of one phase reset
+    // another phase's counters for good.
     const seeded: PassiveProgress = { fetched: 6415, extracted: 0, cleaned: 0 };
     const next = applyPassiveProgressEvent(
-      `extracted-${MINING_ID}`,
+      `createdContacts-${MINING_ID}`,
       '452',
       MINING_ID,
       seeded,
