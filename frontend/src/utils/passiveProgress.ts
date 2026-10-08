@@ -16,12 +16,13 @@ export const EMPTY_PASSIVE_PROGRESS: PassiveProgress = {
   cleaned: 0,
 };
 
-// Card labels: scanned/extracted/cleaned. createdContacts is intentionally
-// excluded — it is a contact count, not one of these message counts.
+// Card labels: scanned / extracted contacts / cleaned. createdContacts is the
+// contact count, which is what this slot shows, so the message-count
+// `extracted` event is deliberately not mixed in here.
 function toPassiveProgress(progress: Partial<MiningProgress>): PassiveProgress {
   return {
     fetched: progress.fetched ?? progress.googleContactsFetchedCount ?? 0,
-    extracted: progress.extracted ?? 0,
+    extracted: progress.createdContacts ?? 0,
     cleaned: progress.verifiedContacts ?? 0,
   };
 }
@@ -57,9 +58,9 @@ export function applyPassiveProgressEvent(
   ) {
     return { ...current, fetched: count };
   }
-  // createdContacts is a contact count; mixing it into this message count would
-  // make the seeded and streamed values disagree.
-  if (event === `extracted-${miningId}`) {
+  // createdContacts is the contact count this slot shows. The message-count
+  // `extracted` event is a different unit and would disagree with the seed.
+  if (event === `createdContacts-${miningId}`) {
     return { ...current, extracted: count };
   }
   if (
