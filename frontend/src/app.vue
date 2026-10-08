@@ -108,6 +108,7 @@ import Normalizer from '~/utils/normalizer';
 import {
   shouldApplyRunningStep,
   shouldInitStepperOnSignIn,
+  shouldRestoreMiningState,
 } from '~/utils/miningStepperSync';
 import { signOutManually } from './utils/auth';
 
@@ -160,8 +161,30 @@ watch(activeTask, () => {
   reset();
 });
 
+/**
+ * Restores an in-progress run once per session.
+ *
+ * Both triggers below can fire for the same session — `onMounted` when the
+ * user is already present, and the `$user` watcher when the session resolves
+ * afterwards — so the `isInitializing` flag alone is not enough: it only
+ * serialises concurrent calls and is cleared again in `finally`. Without this
+ * latch `GET /imap/mine/:userId/` is issued twice on every page load.
+ *
+ * Reset on sign-out so a later sign-in restores again.
+ */
+let miningStateRestored = false;
+
 async function restoreMiningState(): Promise<void> {
-  if ($stepper.isInitializing) return;
+  if (
+    !shouldRestoreMiningState({
+      hasRestored: miningStateRestored,
+      isBusy: $stepper.isInitializing,
+    })
+  ) {
+    return;
+  }
+
+  miningStateRestored = true;
   $stepper.isInitializing = true;
   try {
     await $leadminerStore.ensureMiningSourcesLoaded();
@@ -172,6 +195,8 @@ async function restoreMiningState(): Promise<void> {
       $stepper.index = step;
     }
   } catch (error) {
+    // Allow a later trigger to retry rather than latching a failure.
+    miningStateRestored = false;
     console.error('[app] failed to restore mining state', error);
   } finally {
     $stepper.isInitializing = false;
@@ -204,6 +229,13 @@ if ($user.value) {
 watch($user, (user) => {
   const previousUser = lastSeenUser.value;
   lastSeenUser.value = user;
+
+  // Signing out arms the latch again, so the next sign-in restores the state
+  // for the new session instead of inheriting this one's.
+  if (!user) {
+    miningStateRestored = false;
+    return;
+  }
 
   if (
     !shouldInitStepperOnSignIn({

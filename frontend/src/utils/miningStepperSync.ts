@@ -40,6 +40,29 @@ export function shouldInitStepperOnSignIn({
 }
 
 /**
+ * True when the mining state still needs restoring.
+ *
+ * app.vue can reach `restoreMiningState()` from two triggers for the same
+ * session — `onMounted` when the user is already present, and the `$user`
+ * watcher when the session resolves afterwards. `isBusy` only serialises
+ * concurrent calls, so without this latch `GET /imap/mine/:userId/` fires
+ * twice on every page load.
+ *
+ * Deliberately not keyed on a user id: `useSupabaseUser()` can still be null
+ * at this point, so an id-based check would suppress the restore entirely.
+ */
+export function shouldRestoreMiningState({
+  hasRestored,
+  isBusy,
+}: {
+  hasRestored: boolean;
+  isBusy: boolean;
+}): boolean {
+  if (isBusy) return false;
+  return !hasRestored;
+}
+
+/**
  * True when a backend mining state may move the stepper. It may only move the
  * stepper **forward** (or set it from the uninitialized state): an active run
  * can only progress (1 → 2 → 3), never regress. Guards against a stale

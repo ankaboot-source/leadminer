@@ -3,7 +3,31 @@ import { describe, expect, it } from 'vitest';
 import {
   shouldApplyRunningStep,
   shouldInitStepperOnSignIn,
+  shouldRestoreMiningState,
 } from '@/utils/miningStepperSync';
+
+describe('shouldRestoreMiningState', () => {
+  it('restores when nothing has been restored yet', () => {
+    expect(
+      shouldRestoreMiningState({ hasRestored: false, isBusy: false }),
+    ).toBe(true);
+  });
+
+  it('skips a second restore in the same session', () => {
+    // Regression: app.vue reaches restoreMiningState from both onMounted and
+    // the $user watcher for the same session, so GET /imap/mine/:userId/ used
+    // to be issued twice on every page load.
+    expect(shouldRestoreMiningState({ hasRestored: true, isBusy: false })).toBe(
+      false,
+    );
+  });
+
+  it('defers while another restore is already running', () => {
+    expect(shouldRestoreMiningState({ hasRestored: false, isBusy: true })).toBe(
+      false,
+    );
+  });
+});
 
 describe('shouldInitStepperOnSignIn', () => {
   it('initializes on a genuine sign-in (null -> user)', () => {
