@@ -196,16 +196,12 @@ defineExpose({
     "fine_tune_mining": "Fine-tune your mining",
     "select_folders_to_mine": "Select folders to mine",
     "email_messages_selected": "Email messages selected",
-    "sync_google_contacts": "Sync Google Contacts",
-    "sync_google_contacts_sub": "(syncs contacts from your Google account)",
     "syncing_google_contacts": "Syncing Google Contacts..."
   },
   "fr": {
     "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
     "email_messages_selected": "E-mails sélectionnés",
-    "sync_google_contacts": "Synchroniser les contacts Google",
-    "sync_google_contacts_sub": "(synchronise les contacts de votre compte Google)",
     "syncing_google_contacts": "Synchronisation des contacts Google..."
   }
 }
