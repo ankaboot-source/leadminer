@@ -67,7 +67,7 @@
       </div>
     </template>
     <template #loading>
-      <TableSkeleton v-if="tablePosTop === 0" />
+      <TableSkeleton v-if="!isTablePositioned" />
       <div v-else class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
@@ -1410,73 +1410,70 @@ function onSelectColumnsChange() {
 }
 
 /* Table dynamic Height */
+// Chrome reserved below the scrollable body (paginator + page padding).
+const TABLE_CHROME_HEIGHT = 120;
+// Below this the body stops being usable; fall back to the flex layout and let
+// the page scroll rather than collapsing rows into nothing.
+const MIN_TABLE_BODY_HEIGHT = 160;
+
 const TableRef = ref();
-const tablePosTop = ref(0);
+// Absolute offset of the table root. Measured from the live layout instead of a
+// snapshot taken at setup: the old snapshot-based check only produced a pixel
+// height when the viewport happened to change between setup and mount, so on a
+// normal visit it stayed 'flex' and the table grew to full row height, turning
+// the inner scroll into a page scroll.
+const tableTop = ref(0);
+let tableResizeObserver: ResizeObserver | null = null;
 
-const tableHeight = ref('flex');
-const scrollHeightTable = computed(() =>
-  !isFullscreen.value ? tableHeight.value : '',
-);
-const scrollHeight = ref($screenStore.height);
-
-function observeTop() {
-  const stopWatch = watch(
-    () => TableRef.value,
-    (newValue) => {
-      if (newValue) {
-        const resizeObserver = new ResizeObserver(() => {
-          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
-        });
-        resizeObserver.observe(newValue.$el);
-        try {
-          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    },
-    { immediate: true },
-  );
+function measureTableTop() {
+  const element = TableRef.value?.$el;
+  if (!element) return;
+  // Adding scrollY keeps the measurement stable if the document itself scrolls.
+  tableTop.value = element.getBoundingClientRect().top + window.scrollY;
 }
 
-const isExceedingScreenHeight = computed(
-  () => scrollHeight.value !== $screenStore.height,
-);
+// The header and paginator only settle once rows exist, so the skeleton stays
+// up until then.
+const isTablePositioned = ref(false);
+
+const scrollHeightTable = computed(() => {
+  if (isFullscreen.value) return '';
+  const available = $screenStore.height - tableTop.value - TABLE_CHROME_HEIGHT;
+  return available > MIN_TABLE_BODY_HEIGHT ? `${available}px` : 'flex';
+});
+
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
-    if (contactsLength.value !== undefined) {
-      if (contactsLength.value > 0) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = isExceedingScreenHeight.value
-            ? `${$screenStore.height - tablePosTop.value - 120}px`
-            : 'flex';
-        });
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
+    if (contactsLength.value !== undefined && contactsLength.value > 0) {
+      isTablePositioned.value = true;
+      measureTableTop();
+      try {
+        stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+      } catch (error) {
+        if (!(error instanceof ReferenceError)) {
+          throw error;
         }
+        /* empty */
       }
     }
   },
   { deep: true, immediate: true },
 );
-const _scrollHeightObserver = ref<ResizeObserver | null>(null);
 
 onMounted(() => {
   $screenStore.init();
+  measureTableTop();
+  tableResizeObserver = new ResizeObserver(measureTableTop);
+  if (TableRef.value?.$el) {
+    tableResizeObserver.observe(TableRef.value.$el);
+  }
 });
 
 onUnmounted(() => {
   $screenStore.destroy();
+  tableResizeObserver?.disconnect();
+  tableResizeObserver = null;
 });
 
 function getTemperatureStyle(temp: number | null) {
