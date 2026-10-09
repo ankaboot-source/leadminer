@@ -53,6 +53,9 @@ export function useContactsTableData() {
     // Spread: DEFAULT_VISIBLE_COLUMNS entries are shared constants.
     contactsStore.visibleColumns = [...getDefaultVisibleColumns('contacts')];
     filtersStore.initializeTableFilters('contacts');
+    // Before the channel is built below: it decides whether this table
+    // subscribes to in-flight mining rows.
+    contactsStore.setTableOrigin('contacts');
 
     try {
       await contactsStore.reloadContacts();
@@ -113,6 +116,7 @@ export function useMiningTableData() {
   const contactsStore = useContactsStore();
   const filtersStore = useFiltersStore();
   const leadminerStore = useLeadminerStore();
+  const loading = ref(false);
   let subscribed = false;
   let stopStateWatch: (() => void) | undefined;
 
@@ -124,15 +128,21 @@ export function useMiningTableData() {
    */
   async function backfillMiningContacts(miningId: string) {
     if (contactsStore.contactCount) return;
+    loading.value = true;
     try {
       await contactsStore.loadMinedPersons(miningId);
     } catch (error) {
       console.error('Failed to backfill mining contacts', error);
+    } finally {
+      loading.value = false;
     }
   }
 
   onMounted(() => {
     filtersStore.initializeTableFilters('mine');
+    // Before the channel is built below: it decides whether this table
+    // subscribes to in-flight mining rows.
+    contactsStore.setTableOrigin('mine');
     contactsStore.initializeVisibleColumns(
       getDefaultVisibleColumns('mine'),
       'mine',
@@ -147,10 +157,9 @@ export function useMiningTableData() {
           if (!subscribed) return;
           subscribed = false;
           await contactsStore.unsubscribeFromRealtimeUpdates();
-          // The run is over: streamed rows are now stale and /contacts does a
-          // full reload, so drop them. Guarded on `subscribed` so mounting
-          // /mine without a run never wipes a list loaded from /contacts.
-          contactsStore.$reset();
+          // Deliberately no $reset() here: the list stays on screen until the
+          // redirect to /contacts unmounts this page, so the table does not
+          // blank out between completion and navigation.
           return;
         }
 
@@ -183,4 +192,6 @@ export function useMiningTableData() {
     }
     contactsStore.$reset();
   });
+
+  return { loading };
 }
