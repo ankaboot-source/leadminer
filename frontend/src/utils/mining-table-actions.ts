@@ -28,17 +28,3 @@ export function resolveMiningActionsDisabled({
   if (miningActive || connecting) return true;
   return contactsCount === 0 || selectedCount === 0;
 }
-
-/**
- * Whether the store's contact list must survive a table unmount.
- *
- * `/mine` tears down and rebuilds the table on every navigation. Resetting the
- * store mid-run discards the list streamed in so far, and `useMiningTableData`
- * intentionally performs no full reload, so returning to the page shows an
- * empty table. The cache is only safe to drop once the run is over.
- */
-export function shouldPreserveContactsOnUnmount(
-  miningActive: boolean,
-): boolean {
-  return miningActive;
-}
