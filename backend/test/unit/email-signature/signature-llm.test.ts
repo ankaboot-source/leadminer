@@ -10,6 +10,7 @@ import {
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {
+  SIGNATURE_JSON_SCHEMA,
   SignatureLLM,
   SignaturePrompt
 } from '../../../src/services/signature/llm';
@@ -115,13 +116,22 @@ describe('SignatureLLM', () => {
       expect(bodyOf(instance).provider).toEqual({ zdr: true });
     });
 
-    it('should keep the strict json_schema response format', () => {
+    it('should request json_object, not json_schema', () => {
+      // Structured outputs are not honoured by the ZDR-routed endpoints
+      // OpenRouter selects: measured live, `json_schema` returned `{}` for
+      // every request against ministral-14b-2512, `null` against
+      // gemini-2.5-flash, and a provider error against claude-sonnet-4.5 and
+      // gpt-4o-mini. `json_object` returns a complete object on all four.
       const body = bodyOf(createInstance());
-      expect(body.response_format.type).toBe('json_schema');
-      expect(body.response_format.json_schema.strict).toBe(true);
-      expect(body.response_format.json_schema.schema.required).toContain(
-        '@type'
-      );
+      expect(body.response_format.type).toBe('json_object');
+      expect(body.response_format.json_schema).toBeUndefined();
+    });
+
+    it('should keep every field of the documented schema nullable', () => {
+      // The schema is no longer transmitted, but it stays the contract the
+      // model is asked to satisfy and the thing `removeFalsePositives` trims.
+      expect(SIGNATURE_JSON_SCHEMA.required).toContain('@type');
+      expect(SIGNATURE_JSON_SCHEMA.additionalProperties).toBe(false);
     });
 
     it('should make every field nullable so declining is expressible', () => {
@@ -130,8 +140,7 @@ describe('SignatureLLM', () => {
       // Measured on 80 real signatures: 0.681 accuracy non-nullable, 0.776
       // nullable. Telling it to return null WITHOUT this change was worse than
       // the baseline (0.655), because the instruction contradicted the schema.
-      const props =
-        bodyOf(createInstance()).response_format.json_schema.schema.properties;
+      const props = SIGNATURE_JSON_SCHEMA.properties;
       for (const field of [
         'name',
         'jobTitle',
