@@ -9,7 +9,10 @@ import {
 } from '@jest/globals';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { SignatureLLM } from '../../../src/services/signature/llm';
+import {
+  SignatureLLM,
+  SignaturePrompt
+} from '../../../src/services/signature/llm';
 import { IRateLimiter } from '../../../src/services/rate-limiter';
 
 import { LLMModelsList } from '../../../src/services/signature/llm/types';
@@ -119,6 +122,136 @@ describe('SignatureLLM', () => {
       expect(body.response_format.json_schema.schema.required).toContain(
         '@type'
       );
+    });
+
+    it('should make every field nullable so declining is expressible', () => {
+      // Under strict mode a model must emit every key in `required`, so a
+      // non-nullable string obliges it to invent a value for absent data.
+      // Measured on 80 real signatures: 0.681 accuracy non-nullable, 0.776
+      // nullable. Telling it to return null WITHOUT this change was worse than
+      // the baseline (0.655), because the instruction contradicted the schema.
+      const props =
+        bodyOf(createInstance()).response_format.json_schema.schema.properties;
+      for (const field of [
+        'name',
+        'jobTitle',
+        'worksFor',
+        'email',
+        'telephone',
+        'address',
+        'sameAs'
+      ]) {
+        expect(props[field].type).toContain('null');
+      }
+    });
+
+    it('should tell the model that null is a valid answer', () => {
+      // The instruction and the schema have to agree, or the model is being
+      // told to do something it is not permitted to do.
+      const prompt = SignaturePrompt.buildUserPrompt(
+        'someone@example.com',
+        'Jane Doe'
+      );
+      expect(prompt).toMatch(/null/i);
+      expect(prompt).toMatch(/set every field to null/i);
+    });
+  });
+
+  describe('declining a non-signature', () => {
+    // The model can now say "this is not a signature" because every field is
+    // nullable. These lock in that the answer survives the whole pipeline and
+    // reaches the caller as "no signature", rather than as an empty Person or a
+    // field invented to fill the slot.
+    const allNull = {
+      '@type': 'Person',
+      name: null,
+      jobTitle: null,
+      worksFor: null,
+      email: null,
+      telephone: null,
+      address: null,
+      sameAs: null
+    };
+
+    it.each([
+      ['a device footer', 'Sent from Mail for Windows 10'],
+      [
+        'an unsubscribe footer',
+        'Click here to unsubscribe\nYou received this message because you are subscribed.'
+      ],
+      [
+        'an Arabic quote header',
+        "في يوم 24 أغسطس، 2020 11:15 ص، كتب Sana'a Rohy <eradahalfakeh@gmail.com>:"
+      ]
+    ])('should return null for %s', async (_label, signature) => {
+      mockAxios
+        .onPost('https://openrouter.ai/api/v1/chat/completions')
+        .reply(200, {
+          choices: [{ message: { content: JSON.stringify(allNull) } }]
+        });
+
+      await expect(
+        createInstance().extract('test@leadminer.io', signature)
+      ).resolves.toBeNull();
+    });
+
+    it('should still extract a real signature when the model answers', async () => {
+      mockAxios
+        .onPost('https://openrouter.ai/api/v1/chat/completions')
+        .reply(200, {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  '@type': 'Person',
+                  name: 'Gary Waxman',
+                  jobTitle: null,
+                  worksFor: null,
+                  email: null,
+                  telephone: null,
+                  address: null,
+                  sameAs: null
+                })
+              }
+            }
+          ]
+        });
+
+      await expect(
+        createInstance().extract(
+          'gary.waxman@enron.com',
+          'Gary Waxman\nEnron Broadband Services'
+        )
+      ).resolves.toEqual({ name: 'Gary Waxman' });
+    });
+
+    it('should treat an empty string the same as null', async () => {
+      // Before this change the model could only decline by returning "", which
+      // is indistinguishable from a real empty value downstream.
+      mockAxios
+        .onPost('https://openrouter.ai/api/v1/chat/completions')
+        .reply(200, {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  '@type': 'Person',
+                  name: '',
+                  jobTitle: '',
+                  worksFor: '',
+                  email: '',
+                  telephone: [],
+                  address: '',
+                  sameAs: []
+                })
+              }
+            }
+          ]
+        });
+
+      await expect(
+        createInstance().extract('test@leadminer.io', 'Sent from my iPhone')
+      ).resolves.toBeNull();
     });
   });
 

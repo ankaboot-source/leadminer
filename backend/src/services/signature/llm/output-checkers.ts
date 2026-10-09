@@ -125,5 +125,13 @@ export function removeFalsePositives(
     }
   }
 
-  return Object.keys(cleaned).length ? (cleaned as PersonLD) : null;
+  // Count keys with a value, not keys. `cleanOutput` sets every field, and an
+  // absent one is `undefined` rather than missing, so `Object.keys().length`
+  // was always non-zero: a model that declines by answering every field null
+  // produced an object of undefined values instead of no signature at all.
+  const present = Object.entries(cleaned).filter(
+    ([, value]) => value !== undefined && value !== null
+  );
+
+  return present.length ? (cleaned as PersonLD) : null;
 }
