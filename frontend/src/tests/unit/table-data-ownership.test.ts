@@ -1,4 +1,4 @@
-import { defineComponent, nextTick, reactive } from 'vue';
+import { defineComponent, nextTick, reactive, ref, watchEffect } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +14,7 @@ const contactsStore = {
   contactCount: 0,
   visibleColumns: [] as string[],
   getLocationsToNormalize: vi.fn(() => [] as string[]),
+  setTableOrigin: vi.fn(),
   initializeVisibleColumns: vi.fn(),
 };
 
@@ -63,9 +64,15 @@ const ContactsHarness = defineComponent({
   template: '<div />',
 });
 
+const loadingRef = ref(false);
+
 const MiningHarness = defineComponent({
   setup() {
-    return useMiningTableData();
+    const { loading } = useMiningTableData();
+    watchEffect(() => {
+      loadingRef.value = loading.value;
+    });
+    return {};
   },
   template: '<div />',
 });
@@ -86,6 +93,19 @@ describe('useContactsTableData', () => {
     expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledTimes(1);
     wrapper.unmount();
     expect(contactsStore.$reset).toHaveBeenCalled();
+  });
+
+  it('claims its origin before subscribing, so the channel is built for it', async () => {
+    mount(ContactsHarness);
+    await flushPromises();
+
+    expect(contactsStore.setTableOrigin).toHaveBeenCalledWith('contacts');
+    const originOrder =
+      contactsStore.setTableOrigin.mock.invocationCallOrder[0] ?? 0;
+    const subscribeOrder =
+      contactsStore.subscribeToRealtimeUpdates.mock.invocationCallOrder[0] ?? 0;
+    expect(originOrder).toBeGreaterThan(0);
+    expect(subscribeOrder).toBeGreaterThan(originOrder);
   });
 
   it('applies default columns synchronously at mount, before the load', () => {
@@ -173,14 +193,51 @@ describe('useMiningTableData', () => {
     expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
   });
 
-  it('drops the streamed list once mining completes', async () => {
+  it('keeps the list on screen until the redirect unmounts the page', async () => {
+    // Resetting on completion blanks the table between the run finishing and
+    // the redirect to /contacts, which reads as a data loss.
     const wrapper = mount(MiningHarness);
     await flushPromises();
     expect(contactsStore.$reset).not.toHaveBeenCalled();
 
     leadminerStore.miningCompleted = true;
+    leadminerStore.activeMiningTask = undefined;
     await flushPromises();
+    expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
+    expect(contactsStore.$reset).not.toHaveBeenCalled();
+
+    wrapper.unmount();
     expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('flags loading while the mined persons are recovered', async () => {
+    let resolveBackfill: (() => void) | undefined;
+    contactsStore.loadMinedPersons.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveBackfill = resolve;
+        }),
+    );
+
+    const wrapper = mount(MiningHarness);
+    await nextTick();
+
+    expect(loadingRef.value).toBe(true);
+
+    resolveBackfill?.();
+    await flushPromises();
+    expect(loadingRef.value).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it('does not flag loading when contacts are already present', async () => {
+    contactsStore.contactCount = 42;
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
+
+    expect(loadingRef.value).toBe(false);
+    expect(contactsStore.loadMinedPersons).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });

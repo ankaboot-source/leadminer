@@ -44,6 +44,33 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   const contactCount = computed(() => contactsList.value?.length);
 
+  /**
+   * Records which table is mounted. Read on every person event (see
+   * `streamsMiningInserts`), so each page claims its origin before it
+   * subscribes.
+   */
+  function setTableOrigin(origin: TableOrigin) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    tableContext.value = { userId, origin };
+  }
+
+  /**
+   * In-flight persons are a /mine concern: that table lists rows as they land.
+   * /contacts is the refined view (refine_persons runs at the end of a run), so
+   * it must never apply raw person INSERTs — otherwise it lists contacts that
+   * are still being mined.
+   *
+   * Checked per event rather than per subscription: the channel outlives a
+   * navigation between the two tables, so its filters are not rebuilt when the
+   * mounted table changes.
+   */
+  function streamsMiningInserts() {
+    return Boolean(
+      $leadminerStore.activeMiningTask && tableContext.value?.origin === 'mine',
+    );
+  }
+
   let realtimeChannel: RealtimeChannel | null = null;
   let realtimeChannelUserId: string | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -321,6 +348,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     switch (action.kind) {
       case 'stream':
+        if (!streamsMiningInserts()) return;
         if (action.row.user_id && action.row.user_id !== userId) return;
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
@@ -573,6 +601,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     getLocationsToNormalize,
     updateContactsCache,
     setSkipOrgLookup,
+    setTableOrigin,
     clearReconcileTimer,
     collectRealtimePersonIds,
   };
