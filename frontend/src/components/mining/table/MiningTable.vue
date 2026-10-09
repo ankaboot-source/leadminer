@@ -1416,26 +1416,31 @@ function onSelectColumnsChange() {
 const MIN_TABLE_BODY_HEIGHT = 160;
 
 const TableRef = ref();
-// Offset of the table root, measured from the live layout instead of a snapshot
-// taken at setup. The old snapshot only produced a pixel height when the
+// Offset of the scrollable body, measured from the live layout instead of a
+// snapshot taken at setup. The old snapshot only produced a pixel height when the
 // viewport happened to change between setup and mount, so on a normal visit the
 // table stayed unbounded and scrolling ran to the end of the page.
-const tableTop = ref(0);
-// Space the table needs below its scrollable body. Measured rather than
-// hardcoded: the paginator carries page links, a rows-per-page dropdown and a
-// report, and wraps onto extra lines on narrow viewports, so any fixed value is
-// wrong on some screen size.
-const tableChromeHeight = ref(0);
+//
+// Measured from the body itself rather than the table root, so the toolbar
+// above it is accounted for without having to know its height.
+const tableBodyTop = ref(0);
+// Space below the body. Measured rather than hardcoded: the paginator carries
+// page links, a rows-per-page dropdown and a report, and wraps onto extra lines
+// on narrow viewports, so any fixed value is wrong on some screen size.
+const paginatorHeight = ref(0);
 let tableResizeObserver: ResizeObserver | null = null;
 
-function measureTableTop() {
+function measureTableBody() {
   const root = TableRef.value?.$el;
   if (!root) return;
+  const body = root.querySelector('.p-datatable-table-container');
   // Adding scrollY keeps the measurement stable if the document itself scrolls.
-  tableTop.value = root.getBoundingClientRect().top + window.scrollY;
+  tableBodyTop.value = body
+    ? body.getBoundingClientRect().top + window.scrollY
+    : 0;
 
   const paginator = root.querySelector('.p-paginator');
-  tableChromeHeight.value = paginator
+  paginatorHeight.value = paginator
     ? paginator.getBoundingClientRect().height
     : 0;
 }
@@ -1447,7 +1452,7 @@ const isTablePositioned = ref(false);
 const scrollHeightTable = computed(() => {
   if (isFullscreen.value) return '';
   const available =
-    $screenStore.height - tableTop.value - tableChromeHeight.value;
+    $screenStore.height - tableBodyTop.value - paginatorHeight.value;
   return available > MIN_TABLE_BODY_HEIGHT ? `${available}px` : 'flex';
 });
 
@@ -1456,7 +1461,7 @@ const stopShowTableFirstTimeWatcher = watch(
   () => {
     if (contactsLength.value !== undefined && contactsLength.value > 0) {
       isTablePositioned.value = true;
-      measureTableTop();
+      measureTableBody();
       try {
         stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
       } catch (error) {
@@ -1472,8 +1477,8 @@ const stopShowTableFirstTimeWatcher = watch(
 
 onMounted(() => {
   $screenStore.init();
-  measureTableTop();
-  tableResizeObserver = new ResizeObserver(measureTableTop);
+  measureTableBody();
+  tableResizeObserver = new ResizeObserver(measureTableBody);
   const root = TableRef.value?.$el;
   if (root) {
     tableResizeObserver.observe(root);
