@@ -15,7 +15,13 @@ export class SignatureTask extends Task {
     super({
       id: config.id ?? TaskId.Signature,
       type: TaskType.Enrich,
-      category: TaskCategory.Enriching,
+      // Signature extraction is a mining phase, not a user-initiated
+      // enrichment: it runs inside the mining pipeline, mines a fixed set of
+      // already-known contacts and enriches nothing. Filing it under
+      // 'enriching' made the frontend enrichment store adopt it as the user's
+      // running enrichment task (it filters on category alone), which spun the
+      // Enrich button for the whole mining run.
+      category: TaskCategory.Mining,
       miningId: config.miningId,
       userId: config.userId,
       streams: config.streams,
