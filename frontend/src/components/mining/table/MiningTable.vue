@@ -67,7 +67,7 @@
       </div>
     </template>
     <template #loading>
-      <TableSkeleton v-if="tablePosTop === 0" />
+      <TableSkeleton v-if="!isTablePositioned" />
       <div v-else class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
@@ -1420,73 +1420,89 @@ function onSelectColumnsChange() {
 }
 
 /* Table dynamic Height */
+// Below this the body stops being usable, so fall back to the flex layout and
+// let the page scroll rather than collapsing rows into nothing. Roughly a few
+// rows at the 48px row height set in the stylesheet below.
+const MIN_TABLE_BODY_HEIGHT = 160;
+
 const TableRef = ref();
-const tablePosTop = ref(0);
+// Offset of the scrollable body, measured from the live layout instead of a
+// snapshot taken at setup. The old snapshot only produced a pixel height when the
+// viewport happened to change between setup and mount, so on a normal visit the
+// table stayed unbounded and scrolling ran to the end of the page.
+//
+// Measured from the body itself rather than the table root, so the toolbar
+// above it is accounted for without having to know its height.
+const tableBodyTop = ref(0);
+// Space below the body. Measured rather than hardcoded: the paginator carries
+// page links, a rows-per-page dropdown and a report, and wraps onto extra lines
+// on narrow viewports, so any fixed value is wrong on some screen size.
+const paginatorHeight = ref(0);
+let tableResizeObserver: ResizeObserver | null = null;
 
-const tableHeight = ref('flex');
-const scrollHeightTable = computed(() =>
-  !isFullscreen.value ? tableHeight.value : '',
-);
-const scrollHeight = ref($screenStore.height);
+function measureTableBody() {
+  const root = TableRef.value?.$el;
+  if (!root) return;
+  const body = root.querySelector('.p-datatable-table-container');
+  // Adding scrollY keeps the measurement stable if the document itself scrolls.
+  tableBodyTop.value = body
+    ? body.getBoundingClientRect().top + window.scrollY
+    : 0;
 
-function observeTop() {
-  const stopWatch = watch(
-    () => TableRef.value,
-    (newValue) => {
-      if (newValue) {
-        const resizeObserver = new ResizeObserver(() => {
-          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
-        });
-        resizeObserver.observe(newValue.$el);
-        try {
-          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
-        }
-      }
-    },
-    { immediate: true },
-  );
+  const paginator = root.querySelector('.p-paginator');
+  paginatorHeight.value = paginator
+    ? paginator.getBoundingClientRect().height
+    : 0;
 }
 
-const isExceedingScreenHeight = computed(
-  () => scrollHeight.value !== $screenStore.height,
-);
+// The header and paginator only settle once rows exist, so the skeleton stays
+// up until then.
+const isTablePositioned = ref(false);
+
+const scrollHeightTable = computed(() => {
+  if (isFullscreen.value) return '';
+  const available =
+    $screenStore.height - tableBodyTop.value - paginatorHeight.value;
+  return available > MIN_TABLE_BODY_HEIGHT ? `${available}px` : 'flex';
+});
+
 const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
-    if (contactsLength.value !== undefined) {
-      if (contactsLength.value > 0) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = isExceedingScreenHeight.value
-            ? `${$screenStore.height - tablePosTop.value - 120}px`
-            : 'flex';
-        });
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-        } catch (error) {
-          if (!(error instanceof ReferenceError)) {
-            throw error;
-          }
-          /* empty */
+    if (contactsLength.value !== undefined && contactsLength.value > 0) {
+      isTablePositioned.value = true;
+      measureTableBody();
+      try {
+        stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+      } catch (error) {
+        if (!(error instanceof ReferenceError)) {
+          throw error;
         }
+        /* empty */
       }
     }
   },
   { deep: true, immediate: true },
 );
-const _scrollHeightObserver = ref<ResizeObserver | null>(null);
 
 onMounted(() => {
   $screenStore.init();
+  measureTableBody();
+  tableResizeObserver = new ResizeObserver(measureTableBody);
+  const root = TableRef.value?.$el;
+  if (root) {
+    tableResizeObserver.observe(root);
+    // The paginator wraps onto more lines as the viewport narrows, so its
+    // height has to be observed separately to keep the body in step.
+    const paginator = root.querySelector('.p-paginator');
+    if (paginator) tableResizeObserver.observe(paginator);
+  }
 });
 
 onUnmounted(() => {
   $screenStore.destroy();
+  tableResizeObserver?.disconnect();
+  tableResizeObserver = null;
 });
 
 function getTemperatureStyle(temp: number | null) {

@@ -19,6 +19,7 @@ import {
   type PassiveProgress,
 } from '~/utils/passiveProgress';
 import { getSelectedFolderKeys } from '@/utils/selected-folders';
+import { normalizePassiveMinings } from '@/utils/passiveMiningState';
 import { startMiningNotification } from '~/utils/extras';
 import {
   type MiningSource,
@@ -838,11 +839,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         passive: Array<MiningTaskGroup | undefined>;
       }>(`/imap/mine/${userId}/`);
 
-      if (!response) return 1;
+      // The endpoint answers 204 when nothing is running, so an empty response
+      // is the authoritative "no run" signal. Falling through without clearing
+      // left the last run's passive group on screen indefinitely.
+      passiveMinings.value = normalizePassiveMinings(response ?? undefined);
 
-      passiveMinings.value = (response.passive || []).filter(
-        (g): g is MiningTaskGroup => g !== undefined,
-      );
+      if (!response) return 1;
 
       if (!response.active || response.active.length === 0) {
         return 1;
