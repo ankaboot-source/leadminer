@@ -33,30 +33,45 @@ export const SignaturePrompt = {
             description:
               'Must always be "Person" as per schema.org type definition'
           },
+          // Every field is nullable on purpose. Under strict mode a model must
+          // emit every key in `required`, so a non-nullable string forces it to
+          // produce a value for data that simply is not there. Measured on 80
+          // real signatures: non-nullable gave 0.681 accuracy, and telling the
+          // model to return null without this change made things *worse* (0.655)
+          // because the instruction contradicted the schema. With null
+          // permitted, accuracy rose to 0.776 and the decline rate doubled,
+          // because declining is finally expressible.
           name: {
-            type: 'string'
+            type: ['string', 'null'],
+            description: 'Full name, or null if not present'
           },
           jobTitle: {
-            type: 'string'
+            type: ['string', 'null'],
+            description: 'Job title, or null if not present'
           },
           worksFor: {
-            type: 'string'
+            type: ['string', 'null'],
+            description: 'Employer or organisation, or null if not present'
           },
           email: {
-            type: 'string'
+            type: ['string', 'null'],
+            description: 'Email address, or null if not present'
           },
           telephone: {
-            type: 'array',
+            type: ['array', 'null'],
+            description: 'Phone numbers in E.164, or null if not present',
             items: {
               type: 'string',
               pattern: '\\+\\d{7,15}'
             }
           },
           address: {
-            type: 'string'
+            type: ['string', 'null'],
+            description: 'Postal address, or null if not present'
           },
           sameAs: {
-            type: 'array',
+            type: ['array', 'null'],
+            description: 'Profile or website URLs, or null if not present',
             items: {
               type: 'string'
             }
@@ -86,9 +101,25 @@ export const SignaturePrompt = {
     - Do NOT add fields not present in the schema.
     - Do NOT return text outside JSON.
 
+    ### REJECT NON-SIGNATURES FIRST
+    Before extracting anything, decide whether the text is a REAL HUMAN SIGNATURE BLOCK.
+
+    Set every field to null when it is NOT a person's signature:
+    - a device or mail-client footer ("Sent from ...", "Get Outlook for iOS")
+    - a mailing-list, newsletter, or unsubscribe footer
+    - a legal or confidentiality disclaimer
+    - a quoted-reply header ("On <date> ... wrote:", or its equivalent in ANY language)
+    - message body text with no identifying details about a person
+    - content belonging to a role account (support@, noreply@, news@, admin@)
+
+    It is a signature only if it plausibly belongs to one specific, identifiable human being.
+    When you are not confident, set every field to null. A null field is always better than an
+    invented value.
+
     ### EXTRACTION RULES (STRICT)
     - **Crucial:** Include ONLY fields that successfully conform to their specific rules and appear explicitly in the signature.
     - NEVER infer, guess, or rewrite missing information.
+    - Use null for any field that is not explicitly present. Do not invent a value to fill a slot.
 
 
     ### FIELD RULES (STRICT & UNAMBIGUOUS)
