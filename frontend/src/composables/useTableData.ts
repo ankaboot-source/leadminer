@@ -3,6 +3,7 @@ import { useContactsStore } from '~/stores/contacts';
 import { useFiltersStore } from '~/stores/filters';
 import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';
+import { shouldPreserveContactsOnUnmount } from '~/utils/mining-table-actions';
 import type { TableOrigin } from '~/utils/table-preferences';
 
 const MINING_ID_PARAM = 'mining_id';
@@ -104,9 +105,9 @@ export function useContactsTableData() {
 }
 
 /**
- * Owns the /mine page lifecycle: subscribes to the realtime stream only while
- * a mining task is active and stops it as soon as mining completes. It never
- * triggers a full contacts load.
+ * Owns the /mine page lifecycle: backfills and subscribes to the realtime
+ * stream while a mining task is active, and tears both down as soon as mining
+ * completes. It never triggers a full contacts load — `/contacts` owns that.
  */
 export function useMiningTableData() {
   const contactsStore = useContactsStore();
@@ -114,6 +115,21 @@ export function useMiningTableData() {
   const leadminerStore = useLeadminerStore();
   let subscribed = false;
   let stopStateWatch: (() => void) | undefined;
+
+  /**
+   * Repopulates the list after a remount (navigation back to /mine, or a hard
+   * reload mid-run). The realtime channel only delivers events that happen
+   * after it attaches, so everything mined while the table was gone is missing
+   * until we re-read the run's persons.
+   */
+  async function backfillMiningContacts(miningId: string) {
+    if (contactsStore.contactCount) return;
+    try {
+      await contactsStore.loadMinedPersons(miningId);
+    } catch (error) {
+      console.error('Failed to backfill mining contacts', error);
+    }
+  }
 
   onMounted(() => {
     filtersStore.initializeTableFilters('mine');
@@ -131,12 +147,17 @@ export function useMiningTableData() {
           if (!subscribed) return;
           subscribed = false;
           await contactsStore.unsubscribeFromRealtimeUpdates();
+          // The run is over: streamed rows are now stale and /contacts does a
+          // full reload, so drop them. Guarded on `subscribed` so mounting
+          // /mine without a run never wipes a list loaded from /contacts.
+          contactsStore.$reset();
           return;
         }
 
         if (subscribed) return;
         subscribed = true;
         try {
+          await backfillMiningContacts(leadminerStore.miningTask?.miningId ?? '');
           contactsStore.subscribeToRealtimeUpdates();
         } catch (error) {
           subscribed = false;
@@ -149,6 +170,15 @@ export function useMiningTableData() {
 
   onBeforeUnmount(() => {
     stopStateWatch?.();
+    // Mid-run the store holds the only copy of the streamed list, and this
+    // composable never does a full load, so resetting here is what leaves
+    // /mine empty when the user navigates away and back. Keep the list (and
+    // its realtime channel) until the run completes.
+    if (shouldPreserveContactsOnUnmount(
+      Boolean(leadminerStore.activeMiningTask),
+    )) {
+      return;
+    }
     contactsStore.$reset();
   });
 }

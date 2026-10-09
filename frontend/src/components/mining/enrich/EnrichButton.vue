@@ -96,6 +96,8 @@ const props = defineProps<{
   bordered?: boolean;
   skipDialog?: boolean;
   source?: 'stepper' | 'datatable' | 'contact';
+  /** Set by the host to lock the action, e.g. while a mining run is active. */
+  disabled?: boolean;
 }>();
 
 const $toast = useToast();
@@ -182,10 +184,10 @@ onMounted(async () => {
   // showing the loader instead of silently losing the running enrichment.
   await $enrichmentStore.init();
 
-  if (startOnMounted) {
+  if (startOnMounted && !isEnrichDisabled.value) {
     await startEnrichment(true);
   }
-  if (getParam(ENRICH_PARAM)) {
+  if (getParam(ENRICH_PARAM) && !isEnrichDisabled.value) {
     openEnrichmentConfirmationDialog();
     removeQueryParam(ENRICH_PARAM);
   }
@@ -213,6 +215,7 @@ const enrichTooltip = computed(() => {
 
 const isEnrichDisabled = computed(
   () =>
+    Boolean(props.disabled) ||
     $enrichmentStore.isActive ||
     (!enrichAllContacts.value && !contactsToEnrich.value?.length) ||
     (enrichAllContacts.value && !$contactsStore.selectedContactsCount),

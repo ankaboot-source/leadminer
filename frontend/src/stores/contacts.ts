@@ -113,6 +113,40 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
+   * Seeds the cache with the raw persons mined by a run, keyed exactly like the
+   * realtime INSERT stream does.
+   *
+   * `get_contacts_table` only surfaces refined contacts, and refinement runs
+   * once at the end of the pipeline, so a full reload mid-run drops everything
+   * mined so far. Reading `persons` by `mining_id` returns the same rows the
+   * stream delivers, which lets `/mine` rebuild its list after a navigation or
+   * a hard reload without waiting for completion.
+   */
+  async function loadMinedPersons(miningId: string) {
+    const userId = getCurrentUserId();
+    if (!userId || !miningId) return;
+
+    const { data, error } = await $supabase
+      .schema('private')
+      .from('persons')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('mining_id', miningId);
+
+    if (error) throw error;
+
+    const rows = (data ?? []) as unknown as RealtimePersonRow[];
+    for (const row of rows) {
+      // eslint-disable-next-line no-await-in-loop
+      await updateContactsCache(row as unknown as Contact);
+    }
+    if (rows.length) {
+      updateContactList.value = true;
+      syncContactsList();
+    }
+  }
+
+  /**
    * Loads contacts from db and restarts SyncInterval.
    */
   async function reloadContacts() {
@@ -527,6 +561,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     $reset,
     loadContacts,
     reloadContacts,
+    loadMinedPersons,
     refineContacts,
     subscribeToRealtimeUpdates,
     unsubscribeFromRealtimeUpdates,

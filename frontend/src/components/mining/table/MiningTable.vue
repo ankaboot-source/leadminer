@@ -80,6 +80,7 @@
             source="datatable"
             :contacts-to-enrich="implicitlySelectedContacts"
             :enrich-all-contacts="$contactsStore.selectedIds === undefined"
+            :disabled="isMiningActive"
           />
         </div>
 
@@ -995,6 +996,7 @@ import {
   buildColumnVisibility,
   toStateClass,
 } from '~/utils/mining-table-performance';
+import { resolveMiningActionsDisabled } from '~/utils/mining-table-actions';
 import { useContactVerification } from '~/composables/useContactVerification';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
@@ -1296,11 +1298,19 @@ watch(implicitlySelectedContactsLength, () => {
 
 /* *** Export CSV *** */
 
-const isExportDisabled = computed(
-  () =>
-    contactsLength.value === 0 ||
-    $leadminerStore.loadingStatusDns ||
-    !implicitlySelectedContactsLength.value,
+const isMiningActive = computed(() => Boolean($leadminerStore.activeMiningTask));
+
+/**
+ * Gates every mutating/outbound header action at once: Export, Send email
+ * campaign, Send SMS campaign and Remove all derive from this.
+ */
+const isExportDisabled = computed(() =>
+  resolveMiningActionsDisabled({
+    miningActive: isMiningActive.value,
+    contactsCount: contactsLength.value ?? 0,
+    selectedCount: implicitlySelectedContactsLength.value,
+    connecting: $leadminerStore.loadingStatusDns,
+  }),
 );
 
 const sendCampaignDialogVisible = ref(false);
