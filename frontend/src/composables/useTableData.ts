@@ -157,7 +157,9 @@ export function useMiningTableData() {
         if (subscribed) return;
         subscribed = true;
         try {
-          await backfillMiningContacts(leadminerStore.miningTask?.miningId ?? '');
+          await backfillMiningContacts(
+            leadminerStore.miningTask?.miningId ?? '',
+          );
           contactsStore.subscribeToRealtimeUpdates();
         } catch (error) {
           subscribed = false;
@@ -174,9 +176,9 @@ export function useMiningTableData() {
     // composable never does a full load, so resetting here is what leaves
     // /mine empty when the user navigates away and back. Keep the list (and
     // its realtime channel) until the run completes.
-    if (shouldPreserveContactsOnUnmount(
-      Boolean(leadminerStore.activeMiningTask),
-    )) {
+    if (
+      shouldPreserveContactsOnUnmount(Boolean(leadminerStore.activeMiningTask))
+    ) {
       return;
     }
     contactsStore.$reset();

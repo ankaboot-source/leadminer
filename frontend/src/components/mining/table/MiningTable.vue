@@ -1298,7 +1298,9 @@ watch(implicitlySelectedContactsLength, () => {
 
 /* *** Export CSV *** */
 
-const isMiningActive = computed(() => Boolean($leadminerStore.activeMiningTask));
+const isMiningActive = computed(() =>
+  Boolean($leadminerStore.activeMiningTask),
+);
 
 /**
  * Gates every mutating/outbound header action at once: Export, Send email

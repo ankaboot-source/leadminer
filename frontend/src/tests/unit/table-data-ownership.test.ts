@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const contactsStore = {
   reloadContacts: vi.fn(),
-  loadMinedPersons: vi.fn().mockResolvedValue(undefined),
+  loadMinedPersons: vi.fn(async () => {}),
   hasPersons: vi.fn().mockResolvedValue(false),
   refineContacts: vi.fn(),
   subscribeToRealtimeUpdates: vi.fn(),
