@@ -127,7 +127,10 @@ async function handleFirstTimeSignIn() {
     // showing the "choose a mining source" empty state switch to the
     // existing-source dropdown.
     try {
-      await useLeadminerStore().fetchMiningSources({ silent: true });
+      // Through the latch, not fetchMiningSources directly: this can run while
+      // the page is already loading sources, and a parallel load made
+      // mining_sources plus get_mining_source_overview fire twice on /mine.
+      await useLeadminerStore().ensureMiningSourcesLoaded({ refresh: true });
     } catch (refreshError) {
       // eslint-disable-next-line no-console
       console.warn(
