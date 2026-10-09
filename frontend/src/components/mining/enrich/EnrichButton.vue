@@ -184,10 +184,14 @@ onMounted(async () => {
   // showing the loader instead of silently losing the running enrichment.
   await $enrichmentStore.init();
 
-  if (startOnMounted && !isEnrichDisabled.value) {
+  // Gate the auto-start paths on `disabled` (i.e. an active mining run) only,
+  // not on `isEnrichDisabled`: the mining-completion email deep-links to
+  // /contacts?enrich, and that computed is still true on mount while contacts
+  // are loading, which would silently swallow the link.
+  if (startOnMounted && !props.disabled) {
     await startEnrichment(true);
   }
-  if (getParam(ENRICH_PARAM) && !isEnrichDisabled.value) {
+  if (getParam(ENRICH_PARAM) && !props.disabled) {
     openEnrichmentConfirmationDialog();
     removeQueryParam(ENRICH_PARAM);
   }
