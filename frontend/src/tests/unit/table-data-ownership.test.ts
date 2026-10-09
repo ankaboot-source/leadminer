@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const contactsStore = {
   reloadContacts: vi.fn(),
+  loadMinedPersons: vi.fn(() => Promise.resolve()),
   hasPersons: vi.fn().mockResolvedValue(false),
   refineContacts: vi.fn(),
   subscribeToRealtimeUpdates: vi.fn(),
@@ -24,6 +25,7 @@ const filtersStore = {
 const leadminerStore = reactive({
   activeMiningTask: undefined as Record<string, unknown> | undefined,
   miningCompleted: false,
+  miningTask: undefined as { miningId: string } | undefined,
 });
 
 vi.mock('~/stores/contacts', () => ({
@@ -101,11 +103,13 @@ describe('useMiningTableData', () => {
     vi.clearAllMocks();
     leadminerStore.activeMiningTask = { id: 'mining-1' };
     leadminerStore.miningCompleted = false;
+    leadminerStore.miningTask = { miningId: 'mining-1' };
+    contactsStore.contactCount = 0;
   });
 
   it('subscribes mine realtime without any full load', async () => {
-    mount(MiningHarness);
-    await nextTick();
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
 
     expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalledTimes(1);
     expect(contactsStore.reloadContacts).not.toHaveBeenCalled();
@@ -113,17 +117,81 @@ describe('useMiningTableData', () => {
     expect(contactsStore.hasPersons).not.toHaveBeenCalled();
 
     leadminerStore.miningCompleted = true;
-    await nextTick();
+    await flushPromises();
     expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
+
+    wrapper.unmount();
   });
 
   it('initializes mine columns at mount without loading contacts', async () => {
-    mount(MiningHarness);
+    const wrapper = mount(MiningHarness);
     await nextTick();
 
     expect(contactsStore.initializeVisibleColumns).toHaveBeenCalledWith(
       getDefaultVisibleColumns('mine'),
       'mine',
     );
+
+    wrapper.unmount();
+  });
+
+  it('backfills the run persons when the list is empty on mount', async () => {
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
+
+    expect(contactsStore.loadMinedPersons).toHaveBeenCalledWith('mining-1');
+    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it('skips the backfill when contacts are already loaded', async () => {
+    contactsStore.contactCount = 42;
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
+
+    expect(contactsStore.loadMinedPersons).not.toHaveBeenCalled();
+    expect(contactsStore.subscribeToRealtimeUpdates).toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it('does not reset the store on unmount while mining is active', async () => {
+    const wrapper = mount(MiningHarness);
+    await nextTick();
+
+    wrapper.unmount();
+    expect(contactsStore.$reset).not.toHaveBeenCalled();
+  });
+
+  it('resets the store on unmount when no run is active', async () => {
+    leadminerStore.activeMiningTask = undefined;
+    const wrapper = mount(MiningHarness);
+    await nextTick();
+
+    wrapper.unmount();
+    expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the streamed list once mining completes', async () => {
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
+    expect(contactsStore.$reset).not.toHaveBeenCalled();
+
+    leadminerStore.miningCompleted = true;
+    await flushPromises();
+    expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
+
+    wrapper.unmount();
+  });
+
+  it('does not wipe a contacts list when mounted with no run', async () => {
+    leadminerStore.activeMiningTask = undefined;
+    const wrapper = mount(MiningHarness);
+    await flushPromises();
+
+    expect(contactsStore.$reset).not.toHaveBeenCalled();
+
+    wrapper.unmount();
   });
 });
