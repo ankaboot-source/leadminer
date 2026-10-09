@@ -1410,26 +1410,34 @@ function onSelectColumnsChange() {
 }
 
 /* Table dynamic Height */
-// Chrome reserved below the scrollable body (paginator + page padding).
-const TABLE_CHROME_HEIGHT = 120;
-// Below this the body stops being usable; fall back to the flex layout and let
-// the page scroll rather than collapsing rows into nothing.
+// Below this the body stops being usable, so fall back to the flex layout and
+// let the page scroll rather than collapsing rows into nothing. Roughly a few
+// rows at the 48px row height set in the stylesheet below.
 const MIN_TABLE_BODY_HEIGHT = 160;
 
 const TableRef = ref();
-// Absolute offset of the table root. Measured from the live layout instead of a
-// snapshot taken at setup: the old snapshot-based check only produced a pixel
-// height when the viewport happened to change between setup and mount, so on a
-// normal visit it stayed 'flex' and the table grew to full row height, turning
-// the inner scroll into a page scroll.
+// Offset of the table root, measured from the live layout instead of a snapshot
+// taken at setup. The old snapshot only produced a pixel height when the
+// viewport happened to change between setup and mount, so on a normal visit the
+// table stayed unbounded and scrolling ran to the end of the page.
 const tableTop = ref(0);
+// Space the table needs below its scrollable body. Measured rather than
+// hardcoded: the paginator carries page links, a rows-per-page dropdown and a
+// report, and wraps onto extra lines on narrow viewports, so any fixed value is
+// wrong on some screen size.
+const tableChromeHeight = ref(0);
 let tableResizeObserver: ResizeObserver | null = null;
 
 function measureTableTop() {
-  const element = TableRef.value?.$el;
-  if (!element) return;
+  const root = TableRef.value?.$el;
+  if (!root) return;
   // Adding scrollY keeps the measurement stable if the document itself scrolls.
-  tableTop.value = element.getBoundingClientRect().top + window.scrollY;
+  tableTop.value = root.getBoundingClientRect().top + window.scrollY;
+
+  const paginator = root.querySelector('.p-paginator');
+  tableChromeHeight.value = paginator
+    ? paginator.getBoundingClientRect().height
+    : 0;
 }
 
 // The header and paginator only settle once rows exist, so the skeleton stays
@@ -1438,7 +1446,8 @@ const isTablePositioned = ref(false);
 
 const scrollHeightTable = computed(() => {
   if (isFullscreen.value) return '';
-  const available = $screenStore.height - tableTop.value - TABLE_CHROME_HEIGHT;
+  const available =
+    $screenStore.height - tableTop.value - tableChromeHeight.value;
   return available > MIN_TABLE_BODY_HEIGHT ? `${available}px` : 'flex';
 });
 
@@ -1465,8 +1474,13 @@ onMounted(() => {
   $screenStore.init();
   measureTableTop();
   tableResizeObserver = new ResizeObserver(measureTableTop);
-  if (TableRef.value?.$el) {
-    tableResizeObserver.observe(TableRef.value.$el);
+  const root = TableRef.value?.$el;
+  if (root) {
+    tableResizeObserver.observe(root);
+    // The paginator wraps onto more lines as the viewport narrows, so its
+    // height has to be observed separately to keep the body in step.
+    const paginator = root.querySelector('.p-paginator');
+    if (paginator) tableResizeObserver.observe(paginator);
   }
 });
 
