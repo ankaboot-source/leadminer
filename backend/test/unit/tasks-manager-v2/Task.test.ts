@@ -343,6 +343,24 @@ describe('SignatureTask', () => {
     expect(sig.type).toBe(TaskType.Enrich);
   });
 
+  it('should be categorized as mining, not enriching', () => {
+    // The frontend enrichment store adopts any running task with
+    // category='enriching'. Filing signature extraction there made the Enrich
+    // button spin for the whole mining run.
+    const sig = new SignatureTask({
+      miningId: 'test',
+      userId: 'test-user',
+      streams: {
+        role: 'signature' as const,
+        input: [{ streamName: 'email-signature' }],
+        output: []
+      }
+    });
+
+    expect(sig.category).toBe(TaskCategory.Mining);
+    expect(sig.category).not.toBe(TaskCategory.Enriching);
+  });
+
   it('should track signatures via onMessage', () => {
     const sig = new SignatureTask({
       miningId: 'test',
