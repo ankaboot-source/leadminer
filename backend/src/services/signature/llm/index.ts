@@ -18,79 +18,89 @@ import {
 import { LLMModelType } from './types';
 import { errorMeta } from '../../../utils/errors';
 
-export const SignaturePrompt = {
-  response_format: {
-    type: 'json_schema',
-    json_schema: {
-      name: 'parsed_email_signature',
-      strict: true,
-      schema: {
-        type: 'object',
-        properties: {
-          '@type': {
-            type: 'string',
-            const: 'Person',
-            description:
-              'Must always be "Person" as per schema.org type definition'
-          },
-          // Every field is nullable on purpose. Under strict mode a model must
-          // emit every key in `required`, so a non-nullable string forces it to
-          // produce a value for data that simply is not there. Measured on 80
-          // real signatures: non-nullable gave 0.681 accuracy, and telling the
-          // model to return null without this change made things *worse* (0.655)
-          // because the instruction contradicted the schema. With null
-          // permitted, accuracy rose to 0.776 and the decline rate doubled,
-          // because declining is finally expressible.
-          name: {
-            type: ['string', 'null'],
-            description: 'Full name, or null if not present'
-          },
-          jobTitle: {
-            type: ['string', 'null'],
-            description: 'Job title, or null if not present'
-          },
-          worksFor: {
-            type: ['string', 'null'],
-            description: 'Employer or organisation, or null if not present'
-          },
-          email: {
-            type: ['string', 'null'],
-            description: 'Email address, or null if not present'
-          },
-          telephone: {
-            type: ['array', 'null'],
-            description: 'Phone numbers in E.164, or null if not present',
-            items: {
-              type: 'string',
-              pattern: '\\+\\d{7,15}'
-            }
-          },
-          address: {
-            type: ['string', 'null'],
-            description: 'Postal address, or null if not present'
-          },
-          sameAs: {
-            type: ['array', 'null'],
-            description: 'Profile or website URLs, or null if not present',
-            items: {
-              type: 'string'
-            }
-          }
-        },
-        required: [
-          '@type',
-          'name',
-          'jobTitle',
-          'worksFor',
-          'email',
-          'telephone',
-          'address',
-          'sameAs'
-        ],
-        additionalProperties: false
+/**
+ * The contract the model is asked to satisfy. It is intentionally NOT sent as
+ * `response_format.json_schema`: structured outputs are not honoured by the
+ * ZDR-routed endpoints OpenRouter selects (see `response_format` below). The
+ * shape is kept here as the single source of truth for the expected output and
+ * for the unit tests.
+ */
+export const SIGNATURE_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    '@type': {
+      type: 'string',
+      const: 'Person',
+      description: 'Must always be "Person" as per schema.org type definition'
+    },
+    // Every field is nullable on purpose. Under strict mode a model must
+    // emit every key in `required`, so a non-nullable string forces it to
+    // produce a value for data that simply is not there. Measured on 80
+    // real signatures: non-nullable gave 0.681 accuracy, and telling the
+    // model to return null without this change made things *worse* (0.655)
+    // because the instruction contradicted the schema. With null
+    // permitted, accuracy rose to 0.776 and the decline rate doubled,
+    // because declining is finally expressible.
+    name: {
+      type: ['string', 'null'],
+      description: 'Full name, or null if not present'
+    },
+    jobTitle: {
+      type: ['string', 'null'],
+      description: 'Job title, or null if not present'
+    },
+    worksFor: {
+      type: ['string', 'null'],
+      description: 'Employer or organisation, or null if not present'
+    },
+    email: {
+      type: ['string', 'null'],
+      description: 'Email address, or null if not present'
+    },
+    telephone: {
+      type: ['array', 'null'],
+      description: 'Phone numbers in E.164, or null if not present',
+      items: {
+        type: 'string',
+        pattern: '\\+\\d{7,15}'
+      }
+    },
+    address: {
+      type: ['string', 'null'],
+      description: 'Postal address, or null if not present'
+    },
+    sameAs: {
+      type: ['array', 'null'],
+      description: 'Profile or website URLs, or null if not present',
+      items: {
+        type: 'string'
       }
     }
   },
+  required: [
+    '@type',
+    'name',
+    'jobTitle',
+    'worksFor',
+    'email',
+    'telephone',
+    'address',
+    'sameAs'
+  ],
+  additionalProperties: false
+};
+
+export const SignaturePrompt = {
+  // `json_schema` (structured outputs) is not honoured by the ZDR-routed
+  // endpoints OpenRouter selects: measured live, `json_schema` returned an
+  // empty object `{}` for every request against
+  // mistralai/ministral-14b-2512, `null` against google/gemini-2.5-flash, and an
+  // outright provider error against anthropic/claude-sonnet-4.5 and
+  // openai/gpt-4o-mini. `json_object` returns a complete, schema-shaped object
+  // on all four. `removeFalsePositives` then drops any field that is not
+  // literally present in the signature, so the response format only has to be
+  // parseable JSON, not schema-enforced.
+  response_format: { type: 'json_object' },
   buildUserPrompt: (email: string, signature: string) =>
     `
     You are a deterministic structured-data extraction engine specialized in parsing email signatures.
@@ -142,10 +152,12 @@ export const SignaturePrompt = {
     - Accept: only the explicit, formal position.
     - Strictly Exclude: Locational/Qualifying Phrases, text following prepositions (de, du, au, en).
     - reject: Slogans, descriptions, certifications (e.g., PhD, MBA).
+    - IMPORTANT: the role is often glued to the company with no space before "at" (e.g. "CFOatHolberton", "Software Engineer and Education LeadatHolberton"). Split at the "at" and take the part before it as the jobTitle, even though the literal role is not a standalone token in the signature.
 
     **worksFor**
     - The name of the company, organization, or government body.
     - Strictly Reject: Divisions, departments (e.g., "Sales Division"), addresses, cities, names of publications, or titles that are not formal organization names.
+    - IMPORTANT: the company is often glued to the role with no space before "at" (e.g. "CFOatHolberton" = role "CFO" at company "Holberton"). Split at the "at" and take the part after it as the worksFor, even though the literal company name is not a standalone token in the signature.
 
     **address**
     - Can be extracted from one line or multiple lines.
@@ -161,7 +173,7 @@ export const SignaturePrompt = {
     Return ONLY the JSON defined by the JSON schema, no comments or explanation.
 
 
-    Given the following signature text from an email address with the domain ${email.split('@').pop}, extract explicitly present fields into the JSON format.
+    Given the following signature text from an email address with the domain ${String(email).split('@').pop()}, extract explicitly present fields into the JSON format.
 
     Signature:
     ---
