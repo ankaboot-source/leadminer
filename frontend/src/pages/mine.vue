@@ -23,7 +23,7 @@
       :show-table="showTable"
       origin="mine"
       :contacts="$contactsStore.contactsList"
-      :loading="false"
+      :loading="loading"
     />
   </div>
 </template>
@@ -34,7 +34,7 @@ import { useMiningTableData } from '~/composables/useTableData';
 const $leadminer = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
-useMiningTableData();
+const { loading } = useMiningTableData();
 const showTable = computed(
   () =>
     $leadminer.activeMiningTask ||

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  resolveMiningActionsDisabled,
-  shouldPreserveContactsOnUnmount,
-} from '@/utils/mining-table-actions';
+import { resolveMiningActionsDisabled } from '@/utils/mining-table-actions';
 
 const base = {
   miningActive: false,
@@ -52,15 +49,5 @@ describe('resolveMiningActionsDisabled', () => {
         connecting: false,
       }),
     ).toBe(true);
-  });
-});
-
-describe('shouldPreserveContactsOnUnmount', () => {
-  it('preserves the list mid-run so returning to /mine is not empty', () => {
-    expect(shouldPreserveContactsOnUnmount(true)).toBe(true);
-  });
-
-  it('allows the reset once no run is active', () => {
-    expect(shouldPreserveContactsOnUnmount(false)).toBe(false);
   });
 });

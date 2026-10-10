@@ -8,7 +8,7 @@ const contactsStore = {
   hasPersons: vi.fn().mockResolvedValue(false),
   refineContacts: vi.fn(),
   subscribeToRealtimeUpdates: vi.fn(),
-  unsubscribeFromRealtimeUpdates: vi.fn(),
+  unsubscribeFromRealtimeUpdates: vi.fn(() => Promise.resolve()),
   $reset: vi.fn(),
   contactsList: undefined,
   contactCount: 0,
@@ -156,33 +156,30 @@ describe('useMiningTableData', () => {
     wrapper.unmount();
   });
 
-  it('does not reset the store on unmount while mining is active', async () => {
+  it('resets the store on unmount and drops the person stream', async () => {
+    // The list is rebuilt from the run's persons on the next mount, and
+    // /contacts must never inherit the in-flight person stream.
     const wrapper = mount(MiningHarness);
-    await nextTick();
-
-    wrapper.unmount();
-    expect(contactsStore.$reset).not.toHaveBeenCalled();
-  });
-
-  it('resets the store on unmount when no run is active', async () => {
-    leadminerStore.activeMiningTask = undefined;
-    const wrapper = mount(MiningHarness);
-    await nextTick();
+    await flushPromises();
 
     wrapper.unmount();
     expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
+    expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
   });
 
-  it('drops the streamed list once mining completes', async () => {
+  it('keeps the list on screen until the redirect unmounts the page', async () => {
     const wrapper = mount(MiningHarness);
     await flushPromises();
     expect(contactsStore.$reset).not.toHaveBeenCalled();
 
     leadminerStore.miningCompleted = true;
+    leadminerStore.activeMiningTask = undefined;
     await flushPromises();
-    expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
+    expect(contactsStore.unsubscribeFromRealtimeUpdates).toHaveBeenCalled();
+    expect(contactsStore.$reset).not.toHaveBeenCalled();
 
     wrapper.unmount();
+    expect(contactsStore.$reset).toHaveBeenCalledTimes(1);
   });
 
   it('does not wipe a contacts list when mounted with no run', async () => {
