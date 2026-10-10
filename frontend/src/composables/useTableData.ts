@@ -182,4 +182,6 @@ export function useMiningTableData() {
     // no reason to hold it in memory while unmounted.
     contactsStore.$reset();
   });
+
+  return { loading };
 }
