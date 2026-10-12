@@ -300,6 +300,7 @@
           />
           <EnrichButton
             source="contact"
+            :origin="origin"
             :contacts-to-enrich="[contact]"
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
@@ -361,7 +362,8 @@ import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
-import { useContactsStore } from '~/stores/contacts';
+import { useContactTableStore } from '~/composables/useContactTableStore';
+import type { TableOrigin } from '~/utils/table-preferences';
 
 import {
   getConsentColor,
@@ -404,7 +406,15 @@ const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $screenStore = useScreenStore();
-const $contactsStore = useContactsStore();
+/**
+ * Which table opened the sidebar. Defaults to `contacts` so existing callers
+ * without the prop keep today's behaviour; `MiningTable.vue` passes its own
+ * origin so cache writes and deletions land in the owning store.
+ */
+const props = withDefaults(defineProps<{ origin?: TableOrigin }>(), {
+  origin: 'contacts',
+});
+const $contactsStore = useContactTableStore(props.origin);
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -764,7 +774,7 @@ function getConsentTooltip(data: Contact) {
 async function removeContact() {
   isRemovingContact.value = true;
   try {
-    await removeContactsFromDatabase([contact.value.id]);
+    await removeContactsFromDatabase([contact.value.id], props.origin);
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');

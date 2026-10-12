@@ -63,6 +63,7 @@ vi.mock('~/stores/leadminer', () => ({
 
 import { useContactsStore } from '@/stores/contacts';
 import { useMiningStore } from '@/stores/mining';
+import { REALTIME_EVENT_POLICIES } from '@/utils/contacts-realtime';
 
 type TableStore = ReturnType<typeof useContactsStore>;
 
@@ -89,6 +90,17 @@ afterEach(() => {
 });
 
 describe('contact table realtime separation', () => {
+  it('never subscribes the contacts policy to INSERT', () => {
+    // Direct unit pin on the policy table: the channel-level tests below
+    // assert behaviour, but this guards the declaration itself so a future
+    // edit cannot quietly re-add INSERT to the contacts origin.
+    expect(REALTIME_EVENT_POLICIES.contacts).not.toContain('INSERT');
+    expect([...REALTIME_EVENT_POLICIES.contacts].sort()).toEqual([
+      'DELETE',
+      'UPDATE',
+    ]);
+  });
+
   it('subscribes the contacts channel to UPDATE + DELETE only', () => {
     leadminerStore.activeMiningTask = undefined;
     const store = useContactsStore();

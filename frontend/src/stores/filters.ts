@@ -18,6 +18,7 @@ import {
   parseStoredFilters,
   type TableOrigin,
 } from '~/utils/table-preferences';
+import { useContactTableStore } from '~/composables/useContactTableStore';
 
 type TogglesType = {
   valid: boolean;
@@ -125,10 +126,14 @@ function onLocationToggle(toggle?: boolean) {
     locationToggle.value = toggle;
     filters.value.location.constraints[1] = createConstraint(NOT_EMPTY, toggle);
     if (!toggle) return;
-    const $contactsStore = useContactsStore();
+    // Resolve the owning table lazily: the filters store is shared by both
+    // pages, so the location column must appear on the table the user is
+    // actually looking at.
+    const origin = tableContext.value?.origin ?? 'contacts';
+    const $tableStore = useContactTableStore(origin);
     // make column visible
-    if (!$contactsStore.visibleColumns.includes('location')) {
-      $contactsStore.visibleColumns.push('location');
+    if (!$tableStore.visibleColumns.includes('location')) {
+      $tableStore.visibleColumns.push('location');
     }
   }
 }
@@ -312,8 +317,6 @@ function initializeTableFilters(origin: TableOrigin) {
 }
 
 function registerFiltersAndStartWatchers() {
-  const $contactsStore = useContactsStore();
-
   // Filter registration
   FilterService.register(ANY_SELECTED, (value, filter) =>
     !filter ? true : filter.some((item: string) => value.includes(item)),
@@ -349,8 +352,11 @@ function registerFiltersAndStartWatchers() {
     if (searchValue.includes(searchTerm)) return true;
 
     // Check normalized display name
-    const displayName = $contactsStore.combinedLocations
-      ?.find((data) => data.location === value)
+    // Resolved inside the callback (not once at setup): the filters store is
+    // shared, so each page's rows must look up its own table's locations.
+    const origin = tableContext.value?.origin ?? 'contacts';
+    const displayName = useContactTableStore(origin)
+      .combinedLocations?.find((data) => data.location === value)
       ?.display_name?.toLowerCase();
 
     return displayName?.includes(searchTerm) ?? false;

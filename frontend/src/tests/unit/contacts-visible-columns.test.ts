@@ -47,7 +47,7 @@ beforeEach(() => {
 describe('initializeVisibleColumns', () => {
   it('shows the declared defaults when nothing is stored', () => {
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS);
 
     expect(store.visibleColumns).toEqual(CONTACTS_DEFAULTS);
   });
@@ -56,7 +56,7 @@ describe('initializeVisibleColumns', () => {
     localStorage.setItem(columnsKey, '[]');
 
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS);
 
     expect(store.visibleColumns).toEqual(CONTACTS_DEFAULTS);
   });
@@ -65,7 +65,7 @@ describe('initializeVisibleColumns', () => {
     localStorage.setItem(columnsKey, JSON.stringify(['contacts', 'telephone']));
 
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS);
 
     expect(store.visibleColumns).toEqual(['contacts', 'telephone', 'name']);
   });
@@ -74,7 +74,7 @@ describe('initializeVisibleColumns', () => {
     localStorage.setItem(columnsKey, JSON.stringify(['contacts']));
 
     const store = useContactsStore();
-    store.initializeVisibleColumns(CONTACTS_DEFAULTS, 'contacts');
+    store.initializeVisibleColumns(CONTACTS_DEFAULTS);
 
     // Only the user picks extra fields; the store never adds them on its own.
     expect(store.visibleColumns).toEqual(['contacts', 'name']);

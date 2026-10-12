@@ -44,6 +44,8 @@
 </template>
 
 <script setup lang="ts">
+import type { TableOrigin } from '~/utils/table-preferences';
+
 const $toast = useToast();
 const { t } = useI18n({
   useScope: 'local',
@@ -54,9 +56,12 @@ const props = defineProps<{
   contactsToDeleteLength: number;
   isRemoveDisabled: boolean;
   deselectContacts: () => void;
+  /** Owning table; the deletion must prune the store the rows came from. */
+  origin?: TableOrigin;
 }>();
 
 const { deselectContacts } = props;
+const origin = props.origin ?? 'contacts';
 
 const contactsToDelete = computed(() => props.contactsToDelete);
 const contactsToDeleteLength = computed(() => props.contactsToDeleteLength);
@@ -77,7 +82,7 @@ function closeWarning() {
 async function removeContacts() {
   isRemovingContacts.value = true;
   try {
-    await removeContactsFromDatabase(contactsToDelete.value);
+    await removeContactsFromDatabase(contactsToDelete.value, origin);
     $toast.add({
       severity: 'success',
       summary: t('contacts_removed', contactsToDeleteLength.value),

@@ -1,5 +1,6 @@
 import type { Contact } from '~/types/contact';
 import type { Organization } from '~/types/organization';
+import type { TableOrigin } from '~/utils/table-preferences';
 
 export function convertDates(data: Contact[]) {
   return [...data].map((d) => {
@@ -281,8 +282,15 @@ export function isValidURL(url: string) {
   return URL.canParse(url);
 }
 
+/**
+ * Deletes contacts server-side, then drops them from the owning table's
+ * cache. The store must match the caller's `origin`: each table owns an
+ * independent cache, so pruning the contacts store for a `/mine` deletion
+ * would leave the deleted rows on screen (and vice versa).
+ */
 export async function removeContactsFromDatabase(
   ids?: string[],
+  origin: TableOrigin = 'contacts',
 ): Promise<void> {
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
@@ -293,7 +301,7 @@ export async function removeContactsFromDatabase(
     });
   if (error) throw error;
 
-  useContactsStore().removeOldContacts(ids);
+  useContactTableStore(origin).removeOldContacts(ids);
 }
 
 export function callPhoneNumber(phone: string) {

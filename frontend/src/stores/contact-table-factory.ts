@@ -12,7 +12,6 @@ import { convertDates } from '~/utils/contacts';
 import {
   applyReconciledContacts,
   buildPersonChangeFilters,
-  collectRealtimePersonIds,
   getContactKey,
   resolveRealtimeAction,
   type RealtimeAction,
@@ -131,8 +130,23 @@ export function createContactTableSetup(origin: TableOrigin) {
    * mined so far. Reading `persons` by `mining_id` returns the same rows the
    * stream delivers, which lets `/mine` rebuild its list after a navigation or
    * a hard reload without waiting for completion.
+   *
+   * Only meaningful for the `mine` origin. Kept on the shared surface (rather
+   * than hidden from the contacts store) so both stores stay structurally
+   * identical; on `contacts` it is a deliberate no-op — throwing here could
+   * break a caller that touches both tables in an edge case, while silently
+   * backfilling raw persons into `/contacts` would reintroduce the mid-run
+   * leak this split exists to prevent.
    */
   async function loadMinedPersons(miningId: string) {
+    if (origin !== 'mine') {
+      if (import.meta.dev) {
+        console.warn(
+          `[contact-table:${origin}] loadMinedPersons is a mine-only backfill; ignoring call.`,
+        );
+      }
+      return;
+    }
     const userId = getCurrentUserId();
     if (!userId || !miningId) return;
 
@@ -354,12 +368,17 @@ export function createContactTableSetup(origin: TableOrigin) {
   }
 
   /**
-   * Build the table's realtime channel for a user. The subscribed events are
-   * fixed at subscribe time from the table origin: UPDATE + DELETE for
-   * `contacts`, plus INSERT for `mine`.
+   * Build the table's realtime channel for a user. The topic is origin-scoped
+   * (`contacts-table-<origin>-<userId>`) because `RealtimeClient.channel()`
+   * returns the EXISTING channel when the topic matches instead of creating a
+   * second one: a shared topic would hand `/mine` the contacts store's channel
+   * object — already bound to UPDATE+DELETE — and stack its INSERT handler on
+   * top, reintroducing the mid-run leak through the topic key. The subscribed
+   * events are fixed at subscribe time from the table origin: UPDATE + DELETE
+   * for `contacts`, plus INSERT for `mine`.
    */
   function createContactsRealtimeChannel(userId: string) {
-    const channel = $supabase.channel(`contacts-table-${userId}`);
+    const channel = $supabase.channel(`contacts-table-${origin}-${userId}`);
 
     for (const filter of buildPersonChangeFilters(origin)) {
       channel.on('postgres_changes', filter, handlePersonRealtimeEvent);
@@ -369,17 +388,20 @@ export function createContactTableSetup(origin: TableOrigin) {
   }
 
   /**
-   * Subscribes to real-time updates for contacts.
+   * Subscribes to real-time updates for contacts. The user-change teardown
+   * runs before the null guard so a logout-without-reload still drops the
+   * previous user's channel instead of leaving it subscribed.
    */
   function subscribeToRealtimeUpdates() {
     const userId = getCurrentUserId();
-    if (!userId) return;
 
     if (realtimeChannel && realtimeChannelUserId !== userId) {
       $supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
       realtimeChannelUserId = null;
     }
+
+    if (!userId) return;
 
     if (realtimeChannel) return;
 
@@ -444,15 +466,7 @@ export function createContactTableSetup(origin: TableOrigin) {
     return columns.includes('name') ? columns : [...columns, 'name'];
   }
 
-  function initializeVisibleColumns(
-    defaultColumns: string[],
-    /**
-     * Accepted for call-site compatibility only. The persisted key always
-     * comes from the factory's captured `origin`, so the two tables can
-     * never disagree about (or overwrite) each other's localStorage entry.
-     */
-    _origin: TableOrigin,
-  ) {
+  function initializeVisibleColumns(defaultColumns: string[]) {
     const userId = getCurrentUserId();
     if (!userId || !import.meta.client) {
       visibleColumns.value = ensureNameColumn(
@@ -566,6 +580,5 @@ export function createContactTableSetup(origin: TableOrigin) {
     updateContactsCache,
     setSkipOrgLookup,
     clearReconcileTimer,
-    collectRealtimePersonIds,
   };
 }

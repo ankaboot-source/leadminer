@@ -1,5 +1,8 @@
 <template>
-  <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
+  <ContactInformationSidebar
+    v-model:show="$contactInformationSidebar.status"
+    :origin="origin"
+  />
   <CampaignComposerDialog
     v-model:visible="sendCampaignDialogVisible"
     :selected-contacts="implicitlySelectedContacts"
@@ -78,6 +81,7 @@
         <div>
           <EnrichButton
             source="datatable"
+            :origin="origin"
             :contacts-to-enrich="implicitlySelectedContacts"
             :enrich-all-contacts="$contactsStore.selectedIds === undefined"
             :disabled="isMiningActive"
@@ -125,6 +129,7 @@
           "
         >
           <RemoveContactButton
+            :origin="origin"
             :contacts-to-delete="contactsToDelete"
             :contacts-to-delete-length="selectedContactsLength"
             :is-remove-disabled="isExportDisabled || !selectedContactsLength"
@@ -979,7 +984,7 @@ import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
-import { useContactsStore } from '~/stores/contacts';
+import { useContactTableStore } from '~/composables/useContactTableStore';
 import {
   consentStatuses,
   getConsentColor,
@@ -1043,7 +1048,13 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
-const $contactsStore = useContactsStore();
+/**
+ * The table store follows the page origin: `/mine` streams the live
+ * extraction through the mining store while `/contacts` reconciles refined
+ * contacts. A single hardcoded store here would reintroduce the mid-run leak
+ * where `/contacts` displayed `/mine` rows.
+ */
+const $contactsStore = useContactTableStore(props.origin);
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $toast = useToast();
