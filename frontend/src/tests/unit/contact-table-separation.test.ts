@@ -25,9 +25,7 @@ const fakeChannel = {
   unsubscribe: vi.fn(() => Promise.resolve()),
 };
 
-const supabaseRpc = vi.fn(() =>
-  Promise.resolve({ data: [], error: null }),
-);
+const supabaseRpc = vi.fn(() => Promise.resolve({ data: [], error: null }));
 
 const supabaseClient = {
   channel: vi.fn(() => fakeChannel),
