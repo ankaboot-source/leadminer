@@ -85,6 +85,9 @@ export function createContactTableSetup(origin: TableOrigin) {
 
   /**
    * Clears the sync interval.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * it in afterEach); no production call site uses it directly.
    */
   function clearSyncInterval() {
     if (syncIntervalId) {
@@ -95,6 +98,9 @@ export function createContactTableSetup(origin: TableOrigin) {
 
   /**
    * Starts the sync interval to periodically apply cached contacts.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * its counterpart in afterEach); no production call site uses it directly.
    */
   function startSyncInterval() {
     clearSyncInterval();
@@ -244,6 +250,12 @@ export function createContactTableSetup(origin: TableOrigin) {
     );
   }
 
+  /**
+   * Clears the pending reconcile timer.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * it in afterEach); no production call site uses it directly.
+   */
   function clearReconcileTimer() {
     if (reconcileTimer) {
       clearTimeout(reconcileTimer);
@@ -334,7 +346,10 @@ export function createContactTableSetup(origin: TableOrigin) {
    * must never stream, or mid-run mining rows would bypass the
    * refined-persons gate and appear on `/contacts`.
    *
-   * Returns the resolved action so the origin policy stays observable.
+   * Internal to the realtime channel binding below: tests observe it through
+   * the subscribed channel handlers, never through this return value, so a
+   * future change that returns the right value without doing the work cannot
+   * pass.
    */
   function handlePersonRealtimeEvent(
     payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
@@ -565,13 +580,11 @@ export function createContactTableSetup(origin: TableOrigin) {
     initializeVisibleColumns,
     combinedLocations,
     $reset,
-    loadContacts,
     reloadContacts,
     loadMinedPersons,
     refineContacts,
     subscribeToRealtimeUpdates,
     unsubscribeFromRealtimeUpdates,
-    handlePersonRealtimeEvent,
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,

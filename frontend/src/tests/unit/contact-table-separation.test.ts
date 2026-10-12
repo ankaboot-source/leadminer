@@ -25,9 +25,14 @@ const fakeChannel = {
   unsubscribe: vi.fn(() => Promise.resolve()),
 };
 
+const supabaseRpc = vi.fn(() =>
+  Promise.resolve({ data: [], error: null }),
+);
+
 const supabaseClient = {
   channel: vi.fn(() => fakeChannel),
   removeChannel: vi.fn(() => Promise.resolve()),
+  schema: vi.fn(() => ({ rpc: supabaseRpc })),
 };
 
 // The contact-table stores rely on Nuxt auto-imports that resolve to these
@@ -87,6 +92,7 @@ afterEach(() => {
     store.clearSyncInterval();
   }
   liveStores.length = 0;
+  vi.useRealTimers();
 });
 
 describe('contact table realtime separation', () => {
@@ -131,35 +137,68 @@ describe('contact table realtime separation', () => {
     expect(subscribedEvents()).toContain('INSERT');
   });
 
-  it('never produces a stream action for an INSERT payload in contacts', () => {
+  it('reconciles a person change on contacts without streaming it', async () => {
     // The contacts policy reconciles through get_contacts_view_by_ids; only
     // the mine table streams raw person rows straight into its cache.
+    // Driven through the subscribed UPDATE binding (the handler itself is
+    // private): observable state must show the reconcile ran and nothing
+    // streamed in.
+    vi.useFakeTimers();
     leadminerStore.activeMiningTask = { id: 'mining-1' };
     const store = useContactsStore();
     liveStores.push(store);
     store.subscribeToRealtimeUpdates();
 
-    const action = store.handlePersonRealtimeEvent({
-      eventType: 'INSERT',
+    const updateBinding = capturedBindings.find(
+      (binding) => binding.filter.event === 'UPDATE',
+    );
+    if (!updateBinding) {
+      throw new Error('expected an UPDATE binding on the contacts channel');
+    }
+    updateBinding.handler({
+      eventType: 'UPDATE',
       new: { id: 'p1', user_id: 'user-1', name: 'Mined mid-run' },
-      old: null,
+      old: { id: 'p1', user_id: 'user-1', name: 'Mined mid-run' },
     });
+    await vi.advanceTimersByTimeAsync(1000);
 
-    expect(action.kind).not.toBe('stream');
-    expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
+    // Nothing streamed into the list ...
+    expect(store.contactsList).toBeUndefined();
+    // ... and the debounced reconcile actually issued its RPC.
+    expect(supabaseRpc).toHaveBeenCalledWith('get_contacts_view_by_ids', {
+      p_user_id: 'user-1',
+      p_person_ids: ['p1'],
+    });
   });
 
-  it('streams an INSERT payload straight into the mine table', () => {
+  it('streams an INSERT payload straight into the mine list', async () => {
+    // Driven through the subscribed INSERT binding (the handler itself is
+    // private): the row must be observable in the list, not just reported
+    // by a return value.
+    vi.useFakeTimers();
     const store = useMiningTableStore() as unknown as TableStore;
     liveStores.push(store);
     store.subscribeToRealtimeUpdates();
 
-    const action = store.handlePersonRealtimeEvent({
+    const insertBinding = capturedBindings.find(
+      (binding) => binding.filter.event === 'INSERT',
+    );
+    if (!insertBinding) {
+      throw new Error('expected an INSERT binding on the mine channel');
+    }
+    insertBinding.handler({
       eventType: 'INSERT',
       new: { id: 'p1', user_id: 'user-1', name: 'Mined mid-run' },
       old: null,
     });
+    // The stream lands in the cache first; the sync interval applies it to
+    // the list.
+    await vi.advanceTimersByTimeAsync(2500);
 
-    expect(action.kind).toBe('stream');
+    expect(store.contactsList).toHaveLength(1);
+    expect(store.contactsList?.[0]).toMatchObject({
+      id: 'p1',
+      name: 'Mined mid-run',
+    });
   });
 });
