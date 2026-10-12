@@ -49,7 +49,7 @@ vi.mock(
 vi.stubGlobal('useSupabaseUser', () => supabaseUser);
 vi.stubGlobal('useSupabaseClient', () => supabaseClient);
 // updateContactsCache resolves org names through this Nuxt auto-import.
-vi.stubGlobal('getOrganizationName', async (org: unknown) => org);
+vi.stubGlobal('getOrganizationName', (org: unknown) => Promise.resolve(org));
 
 // A mining run is in flight globally: the contacts table must ignore that
 // fact and keep its UPDATE+DELETE-only subscription.

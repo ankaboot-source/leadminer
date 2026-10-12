@@ -38,7 +38,7 @@ vi.mock(
 
 vi.stubGlobal('useSupabaseUser', () => supabaseUser);
 vi.stubGlobal('useSupabaseClient', () => supabaseClient);
-vi.stubGlobal('getOrganizationName', async (org: unknown) => org);
+vi.stubGlobal('getOrganizationName', (org: unknown) => Promise.resolve(org));
 
 vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => ({ activeMiningTask: undefined }),
