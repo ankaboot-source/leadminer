@@ -107,13 +107,13 @@ describe('applyReconciledContacts', () => {
 });
 
 describe('resolveRealtimeAction', () => {
-  it('streams a raw INSERT row while mining is active', () => {
+  it('streams a raw INSERT row in the mine table', () => {
     const action = resolveRealtimeAction(
       {
         eventType: 'INSERT',
         new: { id: 'p1', name: 'Mined', email: 'm@x.com' },
       },
-      { activeMining: true },
+      'mine',
     );
     expect(action.kind).toBe('stream');
     if (action.kind === 'stream') {
@@ -121,69 +121,69 @@ describe('resolveRealtimeAction', () => {
     }
   });
 
-  it('streams a raw UPDATE row while mining is active', () => {
+  it('streams a raw UPDATE row in the mine table', () => {
     const action = resolveRealtimeAction(
       {
         eventType: 'UPDATE',
         old: { id: 'p1' },
         new: { id: 'p1', name: 'NewName' },
       },
-      { activeMining: true },
+      'mine',
     );
     expect(action.kind).toBe('stream');
   });
 
-  it('removes by person id on DELETE while mining is active', () => {
+  it('removes by person id on DELETE in the mine table', () => {
     const action = resolveRealtimeAction(
       { eventType: 'DELETE', old: { id: 'p1' } },
-      { activeMining: true },
+      'mine',
     );
     expect(action).toEqual({ kind: 'remove', id: 'p1' });
   });
 
-  it('returns none for a mining DELETE without an old id', () => {
+  it('returns none for a mine DELETE without an old id', () => {
     const action = resolveRealtimeAction(
       { eventType: 'DELETE', old: null },
-      { activeMining: true },
+      'mine',
     );
     expect(action.kind).toBe('none');
   });
 
-  it('buffers person ids for merged reconcile outside mining', () => {
+  it('buffers person ids for merged reconcile on INSERT in contacts', () => {
     const action = resolveRealtimeAction(
       { eventType: 'INSERT', new: { id: 'p1' } },
-      { activeMining: false },
+      'contacts',
     );
     expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
   });
 
-  it('reconciles old+new ids on UPDATE outside mining', () => {
+  it('reconciles old+new ids on UPDATE in contacts', () => {
     const action = resolveRealtimeAction(
       { eventType: 'UPDATE', old: { id: 'old' }, new: { id: 'new' } },
-      { activeMining: false },
+      'contacts',
     );
     expect(action).toEqual({ kind: 'reconcile', personIds: ['old', 'new'] });
   });
 
-  it('reconciles the old id on DELETE outside mining', () => {
+  it('reconciles the old id on DELETE in contacts', () => {
     const action = resolveRealtimeAction(
       { eventType: 'DELETE', old: { id: 'p1' } },
-      { activeMining: false },
+      'contacts',
     );
     expect(action).toEqual({ kind: 'reconcile', personIds: ['p1'] });
   });
 });
 
 describe('buildPersonChangeFilters', () => {
-  it('always includes UPDATE + DELETE and excludes INSERT when not mining', () => {
-    const filters = buildPersonChangeFilters(false);
+  it('subscribes the contacts table to UPDATE + DELETE only', () => {
+    const filters = buildPersonChangeFilters('contacts');
     expect(filters).toHaveLength(2);
     expect(filters.map((f) => f.event).sort()).toEqual(['DELETE', 'UPDATE']);
     expect(filters.every((f) => f.schema === 'private')).toBe(true);
   });
 
-  it('adds the INSERT filter while a foreground mining is active', () => {
-    const filters = buildPersonChangeFilters(true);
+  it('adds the INSERT filter for the mine table', () => {
+    const filters = buildPersonChangeFilters('mine');
     expect(filters.map((f) => f.event).sort()).toEqual([
       'DELETE',
       'INSERT',

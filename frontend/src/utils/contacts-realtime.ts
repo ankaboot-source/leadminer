@@ -1,4 +1,5 @@
 import type { Contact } from '@/types/contact';
+import type { TableOrigin } from './table-preferences';
 
 export type RealtimePersonRow = {
   id?: string;
@@ -90,12 +91,14 @@ export function applyReconciledContacts(
 }
 
 /**
- * Decide how the contacts store should react to a realtime person event.
+ * Decide how a contact table should react to a realtime person event.
  *
- * - During active mining: stream raw person rows (keyed by person id) so newly
- *   mined people and updates appear live. The mine lifecycle stops this stream
- *   when mining completes; /contacts owns the subsequent full load.
- * - Outside mining: buffer person ids for the debounced merged reconcile.
+ * The policy derives from the table origin, never from global mining state:
+ * - `mine` streams raw person rows (keyed by person id) so newly mined people
+ *   and updates appear live. The mine lifecycle stops this stream when mining
+ *   completes; /contacts owns the subsequent full load.
+ * - `contacts` always buffers person ids for the debounced merged reconcile,
+ *   so an in-flight mining can never leak raw rows into /contacts.
  *
  * Returns a discriminated action the store dispatches.
  */
@@ -112,27 +115,33 @@ export type PersonChangeFilter = {
 };
 
 /**
- * Filters for the contacts realtime channel. UPDATE + DELETE are always
- * subscribed; INSERT only while a foreground mining is streaming new contacts,
- * so background mining never floods the client (new rows appear on reload).
+ * The postgres_changes events each table origin subscribes to. `contacts`
+ * stays on UPDATE + DELETE so INSERTs share no channel with the debounced
+ * reconcile; `mine` adds INSERT to stream the running extraction.
+ */
+export const REALTIME_EVENT_POLICIES: Record<
+  TableOrigin,
+  PersonChangeFilter['event'][]
+> = {
+  contacts: ['UPDATE', 'DELETE'],
+  mine: ['INSERT', 'UPDATE', 'DELETE'],
+};
+
+/**
+ * Filters for a table's realtime channel, fixed at subscribe time.
  *
  * Rows are scoped by the table's RLS policy, so no server-side `user_id`
  * filter is set (Realtime's postgres_changes filters drop all rows when
  * combined with RLS on the private schema).
  */
 export function buildPersonChangeFilters(
-  includeInsert: boolean,
+  origin: TableOrigin,
 ): PersonChangeFilter[] {
   const base = {
     schema: 'private' as const,
     table: 'persons' as const,
   };
-  const filters: PersonChangeFilter[] = [
-    { ...base, event: 'UPDATE' },
-    { ...base, event: 'DELETE' },
-  ];
-  if (includeInsert) filters.push({ ...base, event: 'INSERT' });
-  return filters;
+  return REALTIME_EVENT_POLICIES[origin].map((event) => ({ ...base, event }));
 }
 
 export function resolveRealtimeAction(
@@ -141,9 +150,9 @@ export function resolveRealtimeAction(
     new?: RealtimePersonRow | null;
     old?: RealtimePersonRow | null;
   },
-  opts: { activeMining: boolean },
+  origin: TableOrigin,
 ): RealtimeAction {
-  if (opts.activeMining) {
+  if (origin === 'mine') {
     if (payload.eventType === 'DELETE' && payload.old?.id) {
       return { kind: 'remove', id: payload.old.id };
     }
