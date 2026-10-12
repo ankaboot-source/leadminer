@@ -115,6 +115,9 @@ export function createContactTableSetup(origin: TableOrigin) {
 
   /**
    * Load contacts from database to store.
+   *
+   * --- Concern: data loading (with loadMinedPersons, reloadContacts and
+   * refineContacts below). Reads only; subscriptions live under "realtime".
    */
   async function loadContacts(userId = getCurrentUserId()) {
     if (!userId) return [];
@@ -206,6 +209,14 @@ export function createContactTableSetup(origin: TableOrigin) {
     if (error) throw error;
   }
 
+  /**
+   * Merges one contact row into the cache.
+   *
+   * --- Concern: cache bookkeeping (with syncContactsList above and
+   * removeContactsByKeys below; removeOldContacts and
+   * getLocationsToNormalize further down belong here too). Owns the
+   * cache-map <-> contactsList sync, never the network.
+   */
   async function updateContactsCache(
     newContact: Contact,
     keepPosition = false,
@@ -252,6 +263,10 @@ export function createContactTableSetup(origin: TableOrigin) {
 
   /**
    * Clears the pending reconcile timer.
+   *
+   * --- Concern: realtime (with the sync interval above and schedule /
+   * flush / channel handlers below). Every policy here derives from the
+   * captured origin, never from global mining state.
    *
    * Kept on the public surface as the test-teardown seam (unit tests call
    * it in afterEach); no production call site uses it directly.
@@ -477,6 +492,11 @@ export function createContactTableSetup(origin: TableOrigin) {
     return [...new Set(locations)];
   }
 
+  /**
+   * --- Concern: column preferences (this function through the
+   * visibleColumns watcher and combinedLocations below). Per-origin visible
+   * columns persisted to localStorage; no contact data flows here.
+   */
   function ensureNameColumn(columns: string[]): string[] {
     return columns.includes('name') ? columns : [...columns, 'name'];
   }

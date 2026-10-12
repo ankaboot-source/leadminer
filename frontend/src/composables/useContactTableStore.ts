@@ -5,6 +5,10 @@ import type { TableOrigin } from '~/utils/table-preferences';
 /**
  * Resolves the contact-table store for a table origin.
  *
+ * Kept in its own file on purpose: stores/contacts.ts imports
+ * contact-table-factory.ts, so defining this resolver inside the factory
+ * would create a circular import.
+ *
  * `/contacts` and `/mine` render through the same `MiningTable.vue` but own
  * independent channels and caches: `contacts` reconciles refined contacts
  * (never streams INSERTs), while `mine` streams the live extraction. Reading
