@@ -46,7 +46,7 @@ vi.mock('~/stores/leadminer', () => ({
 
 import { useContactTableStore } from '@/composables/useContactTableStore';
 import { useContactsStore } from '@/stores/contacts';
-import { useMiningStore } from '@/stores/mining';
+import { useMiningTableStore } from '@/stores/mining-table';
 
 type TableStore = ReturnType<typeof useContactsStore>;
 
@@ -73,7 +73,7 @@ describe('useContactTableStore', () => {
   });
 
   it("resolves 'mine' to the mining store", () => {
-    expect(useContactTableStore('mine').$id).toBe('mining-store');
+    expect(useContactTableStore('mine').$id).toBe('mining-table-store');
   });
 });
 
@@ -85,7 +85,7 @@ describe('realtime channel topic separation', () => {
     // UPDATE+DELETE) and stack its INSERT handler on top — the exact mid-run
     // leak through the topic key.
     const contacts = useContactsStore();
-    const mining = useMiningStore() as unknown as TableStore;
+    const mining = useMiningTableStore() as unknown as TableStore;
     liveStores.push(contacts, mining);
 
     contacts.subscribeToRealtimeUpdates();

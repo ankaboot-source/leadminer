@@ -32,7 +32,7 @@
 import { useMiningTableData } from '~/composables/useTableData';
 
 const $leadminer = useLeadminerStore();
-const $miningStore = useMiningStore();
+const $miningStore = useMiningTableStore();
 const $stepper = useMiningStepper();
 const { loading } = useMiningTableData();
 const showTable = computed(

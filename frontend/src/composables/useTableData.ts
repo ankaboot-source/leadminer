@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useContactsStore } from '~/stores/contacts';
-import { useMiningStore } from '~/stores/mining';
+import { useMiningTableStore } from '~/stores/mining-table';
 import { useFiltersStore } from '~/stores/filters';
 import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';
@@ -109,7 +109,7 @@ export function useContactsTableData() {
  * completes. It never triggers a full contacts load — `/contacts` owns that.
  */
 export function useMiningTableData() {
-  const miningStore = useMiningStore();
+  const miningStore = useMiningTableStore();
   const filtersStore = useFiltersStore();
   const leadminerStore = useLeadminerStore();
   const loading = ref(false);

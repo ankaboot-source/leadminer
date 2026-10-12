@@ -8,6 +8,6 @@ import { createContactTableSetup } from './contact-table-factory';
  * the contacts store so `MiningTable.vue` keeps a single public surface, but
  * the two stores hold fully independent channels and caches.
  */
-export const useMiningStore = defineStore('mining-store', () =>
+export const useMiningTableStore = defineStore('mining-table-store', () =>
   createContactTableSetup('mine'),
 );

@@ -37,7 +37,7 @@ import {
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
 import { useContactsStore } from './contacts';
-import { useMiningStore } from './mining';
+import { useMiningTableStore } from './mining-table';
 import { useEnrichmentStore } from './enrichment';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
@@ -49,7 +49,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const supabase = useSupabaseClient();
   const config = useRuntimeConfig();
   const $contactsStore = useContactsStore();
-  const $miningStore = useMiningStore();
+  const $miningStore = useMiningTableStore();
   const $enrichmentStore = useEnrichmentStore();
 
   const activeMiningSource = ref<MiningSource | undefined>();

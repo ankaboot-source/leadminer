@@ -37,8 +37,8 @@ vi.mock('~/stores/contacts', () => ({
   useContactsStore: () => contactsStore,
 }));
 
-vi.mock('~/stores/mining', () => ({
-  useMiningStore: () => miningStore,
+vi.mock('~/stores/mining-table', () => ({
+  useMiningTableStore: () => miningStore,
 }));
 
 vi.mock('~/stores/filters', () => ({

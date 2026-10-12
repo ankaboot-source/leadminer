@@ -62,7 +62,7 @@ vi.mock('~/stores/leadminer', () => ({
 }));
 
 import { useContactsStore } from '@/stores/contacts';
-import { useMiningStore } from '@/stores/mining';
+import { useMiningTableStore } from '@/stores/mining-table';
 import { REALTIME_EVENT_POLICIES } from '@/utils/contacts-realtime';
 
 type TableStore = ReturnType<typeof useContactsStore>;
@@ -124,7 +124,7 @@ describe('contact table realtime separation', () => {
   });
 
   it('subscribes the mine channel with INSERT while a run streams', () => {
-    const store = useMiningStore() as unknown as TableStore;
+    const store = useMiningTableStore() as unknown as TableStore;
     liveStores.push(store);
     store.subscribeToRealtimeUpdates();
 
@@ -150,7 +150,7 @@ describe('contact table realtime separation', () => {
   });
 
   it('streams an INSERT payload straight into the mine table', () => {
-    const store = useMiningStore() as unknown as TableStore;
+    const store = useMiningTableStore() as unknown as TableStore;
     liveStores.push(store);
     store.subscribeToRealtimeUpdates();
 

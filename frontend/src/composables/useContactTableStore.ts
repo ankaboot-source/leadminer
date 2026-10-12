@@ -1,5 +1,5 @@
 import { useContactsStore } from '~/stores/contacts';
-import { useMiningStore } from '~/stores/mining';
+import { useMiningTableStore } from '~/stores/mining-table';
 import type { TableOrigin } from '~/utils/table-preferences';
 
 /**
@@ -13,5 +13,5 @@ import type { TableOrigin } from '~/utils/table-preferences';
  * instead of importing one store directly.
  */
 export function useContactTableStore(origin: TableOrigin) {
-  return origin === 'mine' ? useMiningStore() : useContactsStore();
+  return origin === 'mine' ? useMiningTableStore() : useContactsStore();
 }
