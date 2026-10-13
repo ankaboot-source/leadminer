@@ -3,7 +3,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import { defineStore } from 'pinia';
+import { defineStore, getActivePinia } from 'pinia';
 import {
   buildTableStorageKey,
   sanitizeVisibleColumns,
@@ -19,9 +19,38 @@ import {
   type RealtimePersonRow,
 } from '~/utils/contact-table-realtime';
 import Normalizer from '~/utils/normalizer';
+import {
+  isEnrichedContact,
+  shouldPrioritizeEnrichedContacts,
+} from '~/utils/enriched-contacts';
 
 const REALTIME_DEBOUNCE_MS = 700;
 const REALTIME_RECONCILE_MAX_RETRIES = 3;
+
+/**
+ * Reads the current table filters snapshot without a static import of the
+ * filters store (which already imports this module — a top-level reverse
+ * import would close a cycle). Pinia setup stores expose their unwrapped state
+ * under `pinia.state.value[storeId]`, so the `filters` store (id `'filters'`)
+ * is reachable by id alone. Returns `undefined` when the filters store has
+ * not been instantiated yet — the predicate treats that as "no filters".
+ */
+function readFiltersSnapshot(): Record<string, unknown> | undefined {
+  try {
+    const pinia = getActivePinia();
+    const snapshot = (
+      pinia?.state as unknown as {
+        value?: Record<string, { filters?: unknown }>;
+      }
+    )?.value?.['filters']?.filters;
+    if (snapshot && typeof snapshot === 'object') {
+      return snapshot as Record<string, unknown>;
+    }
+  } catch {
+    /* no active pinia (e.g. isolated unit test) — treated as no filters */
+  }
+  return undefined;
+}
 
 /**
  * Shared setup body for the two independent contact tables.
@@ -69,15 +98,27 @@ export function createContactTableSetup(origin: TableOrigin) {
 
   /**
    * Applies cached contacts to the main contacts list.
+   *
+   * When the user has no meaningful filters applied (only the two
+   * hide-toggles), enriched contacts float to the top via a stable partition:
+   * `Array.prototype.sort` is spec-stable, so enriched rows move up while the
+   * relative order inside each group is preserved — the DB's
+   * `temperature DESC NULLS LAST` ordering survives within both groups. No
+   * re-sort on temperature happens here. With any other filter active, today's
+   * behaviour is preserved exactly (no reorder).
    */
   function syncContactsList() {
     if (!contactsCacheMap.size || !updateContactList.value) return;
 
     let synced: Contact[];
     try {
-      synced = convertDates(
-        structuredClone([...contactsCacheMap.values()].reverse()),
-      );
+      const rows = [...contactsCacheMap.values()].reverse();
+      if (shouldPrioritizeEnrichedContacts(readFiltersSnapshot())) {
+        rows.sort(
+          (a, b) => Number(isEnrichedContact(b)) - Number(isEnrichedContact(a)),
+        );
+      }
+      synced = convertDates(structuredClone(rows));
     } catch {
       console.warn('Failed to clone contacts cache, retrying on next interval');
       return;
