@@ -506,7 +506,7 @@ async function confirmDelete() {
     });
 
     closeDeleteDialog();
-    await $leadminer.fetchMiningSources();
+    await $leadminer.fetchMiningSources({ includeOverview: true });
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -778,12 +778,15 @@ async function reconnectExpiredSource(source: MiningSource) {
 // Passive mining runs on a server-side cron, so its status only changes
 // through fetches — without polling, the status row goes stale for anyone
 // who leaves this page open (the exact case: "did last night's run fire?").
-// Silent: no spinner churn, no sender-options refetch. Stopped on unmount.
+// Silent: no spinner churn. Stopped on unmount.
 const passiveStatusPoll = setInterval(async () => {
   if (document.visibilityState !== 'visible') return;
   try {
     await Promise.all([
-      $leadminer.fetchMiningSources({ silent: true }),
+      $leadminer.fetchMiningSources({
+        silent: true,
+        includeOverview: true,
+      }),
       $leadminer.getCurrentRunningMining(),
     ]);
     // Keep one progress stream per in-progress passive run so the counters
@@ -801,7 +804,11 @@ onUnmounted(() => {
 onMounted(async () => {
   // Always re-fetch on mount: passive-mining health only changes server-side,
   // so a missed realtime/poll update must not survive a navigation here.
-  await $leadminer.ensureMiningSourcesLoaded({ refresh: true });
+  // includeOverview: this page renders the per-source stats.
+  await $leadminer.ensureMiningSourcesLoaded({
+    refresh: true,
+    includeOverview: true,
+  });
 
   // Refresh the active-mining state so an in-progress run shows under its
   // source even when the app bootstrap ran before this mining started.
