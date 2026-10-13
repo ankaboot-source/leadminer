@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import type { TableOrigin } from '~/utils/table-preferences';
+import { removeContactsFromDatabase } from '~/stores/contact-table';
 
 const $toast = useToast();
 const { t } = useI18n({

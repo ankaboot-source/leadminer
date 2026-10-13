@@ -51,7 +51,7 @@ describe('mining table origin plumbing', () => {
     const sidebar = readFrontendSource(
       'src/components/mining/ContactInformationSidebar.vue',
     );
-    const contactsUtils = readFrontendSource('src/utils/contacts.ts');
+    const contactTableStore = readFrontendSource('src/stores/contact-table.ts');
 
     expect(removeButton).toContain('origin: TableOrigin;');
     expect(removeButton).not.toContain('origin?:');
@@ -65,8 +65,8 @@ describe('mining table origin plumbing', () => {
     expect(sidebar).not.toContain('origin?:');
     expect(sidebar).not.toContain("origin: 'contacts'");
 
-    expect(contactsUtils).toMatch(/origin: TableOrigin,/);
-    expect(contactsUtils).not.toContain("origin: TableOrigin = 'contacts'");
+    expect(contactTableStore).toMatch(/origin: TableOrigin,/);
+    expect(contactTableStore).not.toContain("origin: TableOrigin = 'contacts'");
   });
 });
 
@@ -109,7 +109,7 @@ vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => ({ activeMiningTask: undefined }),
 }));
 
-import { useMiningTableStore } from '@/stores/mining-table';
+import { useMiningTableStore } from '@/stores/contact-table';
 
 describe('mine backfill stays light', () => {
   beforeEach(() => {

@@ -33,11 +33,8 @@ const leadminerStore = reactive({
   miningTask: undefined as { miningId: string } | undefined,
 });
 
-vi.mock('~/stores/contacts', () => ({
+vi.mock('~/stores/contact-table', () => ({
   useContactsStore: () => contactsStore,
-}));
-
-vi.mock('~/stores/mining-table', () => ({
   useMiningTableStore: () => miningStore,
 }));
 

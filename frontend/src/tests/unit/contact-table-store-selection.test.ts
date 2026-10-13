@@ -44,9 +44,11 @@ vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => ({ activeMiningTask: undefined }),
 }));
 
-import { useContactTableStore } from '@/composables/useContactTableStore';
-import { useContactsStore } from '@/stores/contacts';
-import { useMiningTableStore } from '@/stores/mining-table';
+import {
+  useContactsStore,
+  useContactTableStore,
+  useMiningTableStore,
+} from '@/stores/contact-table';
 
 type TableStore = ReturnType<typeof useContactsStore>;
 

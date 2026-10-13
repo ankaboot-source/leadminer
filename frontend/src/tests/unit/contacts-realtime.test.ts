@@ -5,7 +5,7 @@ import {
   collectRealtimePersonIds,
   getContactKey,
   resolveRealtimeAction,
-} from '@/utils/contacts-realtime';
+} from '@/utils/contact-table-realtime';
 import type { Contact } from '@/types/contact';
 
 function contact(

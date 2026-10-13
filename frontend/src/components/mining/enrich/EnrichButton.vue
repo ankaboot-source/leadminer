@@ -84,7 +84,7 @@ import {
 } from '@/utils/credits';
 import EnrichGdprSidebar from './EnrichGdprSidebar.vue';
 import { useEnrichmentStore } from '~/stores/enrichment';
-import { useContactTableStore } from '~/composables/useContactTableStore';
+import { useContactTableStore } from '~/stores/contact-table';
 import type { TableOrigin } from '~/utils/table-preferences';
 
 const { t } = useI18n({

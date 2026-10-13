@@ -27,7 +27,7 @@ vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => ({ activeMiningTask: undefined }),
 }));
 
-import { useContactsStore } from '@/stores/contacts';
+import { useContactsStore } from '@/stores/contact-table';
 
 const CONTACTS_DEFAULTS = [
   'contacts',

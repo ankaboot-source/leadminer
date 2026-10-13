@@ -18,7 +18,7 @@ import {
   parseStoredFilters,
   type TableOrigin,
 } from '~/utils/table-preferences';
-import { useContactTableStore } from '~/composables/useContactTableStore';
+import { useContactTableStore } from '~/stores/contact-table';
 
 type TogglesType = {
   valid: boolean;

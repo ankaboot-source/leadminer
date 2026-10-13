@@ -987,7 +987,7 @@ import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
-import { useContactTableStore } from '~/composables/useContactTableStore';
+import { useContactTableStore } from '~/stores/contact-table';
 import {
   consentStatuses,
   getConsentColor,

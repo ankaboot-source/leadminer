@@ -362,7 +362,10 @@ import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
-import { useContactTableStore } from '~/composables/useContactTableStore';
+import {
+  removeContactsFromDatabase,
+  useContactTableStore,
+} from '~/stores/contact-table';
 import type { TableOrigin } from '~/utils/table-preferences';
 
 import {
@@ -373,7 +376,6 @@ import {
   getTagColor,
   getTagLabel,
   isValidURL,
-  removeContactsFromDatabase,
   shouldSkipEnrichDialog,
   tags as predefinedTags,
 } from '@/utils/contacts';

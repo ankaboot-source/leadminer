@@ -1,6 +1,5 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useContactsStore } from '~/stores/contacts';
-import { useMiningTableStore } from '~/stores/mining-table';
+import { useContactsStore, useMiningTableStore } from '~/stores/contact-table';
 import { useFiltersStore } from '~/stores/filters';
 import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';

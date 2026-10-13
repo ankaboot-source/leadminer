@@ -3,6 +3,7 @@ import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
+import { defineStore } from 'pinia';
 import {
   buildTableStorageKey,
   sanitizeVisibleColumns,
@@ -16,7 +17,7 @@ import {
   resolveRealtimeAction,
   type RealtimeAction,
   type RealtimePersonRow,
-} from '~/utils/contacts-realtime';
+} from '~/utils/contact-table-realtime';
 import Normalizer from '~/utils/normalizer';
 
 const REALTIME_DEBOUNCE_MS = 700;
@@ -612,4 +613,69 @@ export function createContactTableSetup(origin: TableOrigin) {
     updateContactsCache,
     clearReconcileTimer,
   };
+}
+
+/**
+ * The `/contacts` table: refined contacts only. Its realtime policy
+ * (UPDATE + DELETE → debounced reconcile, never INSERT streaming) comes from
+ * the `'contacts'` origin captured below, so an in-flight mining can no
+ * longer leak raw `persons` rows into this view.
+ *
+ * The store ID stays `'contacts-store'` — existing tests and call sites
+ * reference it.
+ */
+export const useContactsStore = defineStore('contacts-store', () =>
+  createContactTableSetup('contacts'),
+);
+
+/**
+ * The `/mine` table: the live view of a running extraction. Its realtime
+ * policy (INSERT + UPDATE streaming straight into the cache) comes from the
+ * `'mine'` origin captured below. It shares the contact-table setup body with
+ * the contacts store so `MiningTable.vue` keeps a single public surface, but
+ * the two stores hold fully independent channels and caches.
+ */
+export const useMiningTableStore = defineStore('mining-table-store', () =>
+  createContactTableSetup('mine'),
+);
+
+/**
+ * Resolves the contact-table store for a table origin.
+ *
+ * Lives here alongside the stores it resolves: `removeContactsFromDatabase`
+ * used to live in `utils/contacts.ts`, which closed an import loop back into
+ * the stores — moving it here broke the cycle, so no separate file is needed
+ * to dodge a circular import.
+ *
+ * `/contacts` and `/mine` render through the same `MiningTable.vue` but own
+ * independent channels and caches: `contacts` reconciles refined contacts
+ * (never streams INSERTs), while `mine` streams the live extraction. Reading
+ * the wrong store reintroduces the mid-run leak where `/contacts` displayed
+ * `/mine` rows, so every shared call site resolves its store from `origin`
+ * instead of importing one store directly.
+ */
+export function useContactTableStore(origin: TableOrigin) {
+  return origin === 'mine' ? useMiningTableStore() : useContactsStore();
+}
+
+/**
+ * Deletes contacts server-side, then drops them from the owning table's
+ * cache. The store must match the caller's `origin`: each table owns an
+ * independent cache, so pruning the contacts store for a `/mine` deletion
+ * would leave the deleted rows on screen (and vice versa).
+ */
+export async function removeContactsFromDatabase(
+  ids?: string[],
+  origin: TableOrigin,
+): Promise<void> {
+  const $supabaseClient = useSupabaseClient();
+  const { error } = await $supabaseClient
+    .schema('private')
+    .rpc('delete_contacts', {
+      p_ids: ids ?? [],
+      p_delete_all: ids === undefined,
+    });
+  if (error) throw error;
+
+  useContactTableStore(origin).removeOldContacts(ids);
 }

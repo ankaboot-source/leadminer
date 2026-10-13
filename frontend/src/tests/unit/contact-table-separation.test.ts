@@ -64,9 +64,8 @@ vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => leadminerStore,
 }));
 
-import { useContactsStore } from '@/stores/contacts';
-import { useMiningTableStore } from '@/stores/mining-table';
-import { REALTIME_EVENT_POLICIES } from '@/utils/contacts-realtime';
+import { useContactsStore, useMiningTableStore } from '@/stores/contact-table';
+import { REALTIME_EVENT_POLICIES } from '@/utils/contact-table-realtime';
 
 type TableStore = ReturnType<typeof useContactsStore>;
 
