@@ -111,7 +111,7 @@ const $enrichmentStore = useEnrichmentStore();
  * tracks its own selection, so hardcoding one store would disable (or enable)
  * bulk enrich on the wrong page.
  */
-const $contactsStore = useContactTableStore(props.origin ?? 'contacts');
+const $contactTableStore = useContactTableStore(props.origin ?? 'contacts');
 const dialogVisible = ref(false);
 
 const { startOnMounted, bordered } = props;
@@ -231,7 +231,7 @@ const isEnrichDisabled = computed(
     Boolean(props.disabled) ||
     $enrichmentStore.isActive ||
     (!enrichAllContacts.value && !contactsToEnrich.value?.length) ||
-    (enrichAllContacts.value && !$contactsStore.selectedContactsCount),
+    (enrichAllContacts.value && !$contactTableStore.selectedContactsCount),
 );
 </script>
 <i18n lang="json">

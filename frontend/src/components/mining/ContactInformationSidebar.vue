@@ -414,7 +414,7 @@ const $screenStore = useScreenStore();
 const props = withDefaults(defineProps<{ origin?: TableOrigin }>(), {
   origin: 'contacts',
 });
-const $contactsStore = useContactTableStore(props.origin);
+const $contactTableStore = useContactTableStore(props.origin);
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -732,7 +732,7 @@ async function saveContactInformations() {
     if (contactToUpdate.user_tags !== undefined) {
       contact.value.user_tags = contactToUpdate.user_tags;
     }
-    await $contactsStore.updateContactsCache(toRaw(contact.value), true);
+    await $contactTableStore.updateContactsCache(toRaw(contact.value), true);
     editingContact.value = false;
     showNotification('success', t('contact_saved'), '');
   } catch (error) {
