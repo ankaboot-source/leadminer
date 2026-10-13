@@ -773,7 +773,7 @@ function getConsentTooltip(data: Contact) {
 async function removeContact() {
   isRemovingContact.value = true;
   try {
-    await removeContactsFromDatabase([contact.value.id], props.origin);
+    await removeContactsFromDatabase(props.origin, [contact.value.id]);
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');

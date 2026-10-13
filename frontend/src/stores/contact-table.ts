@@ -665,8 +665,8 @@ export function useContactTableStore(origin: TableOrigin) {
  * would leave the deleted rows on screen (and vice versa).
  */
 export async function removeContactsFromDatabase(
-  ids?: string[],
   origin: TableOrigin,
+  ids?: string[],
 ): Promise<void> {
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient

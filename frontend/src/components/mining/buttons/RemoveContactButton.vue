@@ -82,7 +82,7 @@ function closeWarning() {
 async function removeContacts() {
   isRemovingContacts.value = true;
   try {
-    await removeContactsFromDatabase(contactsToDelete.value, origin);
+    await removeContactsFromDatabase(origin, contactsToDelete.value);
     $toast.add({
       severity: 'success',
       summary: t('contacts_removed', contactsToDeleteLength.value),
