@@ -297,9 +297,18 @@ function initializeTableFilters(origin: TableOrigin) {
     );
 
     if (restoredFilters) {
+      // Drop keys that are no longer in DEFAULT_FILTERS: a filter removed in
+      // an earlier version may still sit in a user's localStorage, and
+      // re-injecting it would silently disable features that fail closed on
+      // unknown keys (e.g. the enriched-first sort gate).
+      const knownRestoredFilters = Object.fromEntries(
+        Object.entries(restoredFilters).filter(
+          ([storedKey]) => storedKey in DEFAULT_FILTERS,
+        ),
+      );
       filters.value = {
         ...structuredClone(DEFAULT_FILTERS),
-        ...restoredFilters,
+        ...knownRestoredFilters,
       };
       syncTogglesWithFilters();
     }

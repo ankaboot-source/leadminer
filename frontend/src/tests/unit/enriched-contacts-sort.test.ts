@@ -63,7 +63,9 @@ vi.stubGlobal('useSupabaseClient', () => supabaseClient);
 vi.stubGlobal('getOrganizationName', (org: unknown) => Promise.resolve(org));
 
 import { useMiningTableStore } from '@/stores/contact-table';
+import { useFiltersStore } from '@/stores/filters';
 import { DEFAULT_FILTERS } from '@/utils/filters-defaults';
+import { buildTableStorageKey } from '@/utils/table-preferences';
 import {
   isEnrichedContact,
   partitionEnrichedFirst,
@@ -424,5 +426,81 @@ describe('mining table applies the enriched-first partition at the view layer', 
     expect(contactTableStore).not.toContain('shouldPrioritizeEnrichedContacts');
     expect(contactTableStore).not.toContain('isEnrichedContact');
     expect(contactTableStore).not.toContain('getActivePinia');
+  });
+});
+
+describe('real filters store feeds the enriched-first gate', () => {
+  // Hand-built objects alone cannot catch state that only exists through the
+  // store's restore path (e.g. stale localStorage keys), so these pin the
+  // feature end-to-end against a real, fully-initialised filters store.
+  const filtersKey = buildTableStorageKey('filters', 'user-1', 'contacts');
+
+  function freshFiltersStore(seed?: unknown) {
+    localStorage.clear();
+    if (seed !== undefined) {
+      localStorage.setItem(filtersKey, JSON.stringify(seed));
+    }
+    supabaseUser.value = { id: 'user-1' };
+    const store = useFiltersStore();
+    // The filters store keeps module-level refs shared across pinia
+    // instances, so reset explicitly for deterministic state per test.
+    store.$reset();
+    store.searchContactModel = '';
+    return store;
+  }
+
+  it('prioritizes enriched contacts with a freshly initialised store', () => {
+    const store = freshFiltersStore();
+    store.initializeTableFilters('contacts');
+
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(true);
+  });
+
+  it('still prioritizes with only the two hide-toggles applied', () => {
+    const store = freshFiltersStore();
+    store.initializeTableFilters('contacts');
+    store.onValidToggle(true);
+    store.onHideUnsubscribedToggle(true);
+
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(true);
+  });
+
+  it('prunes stored keys removed from DEFAULT_FILTERS instead of failing the gate', () => {
+    // A filter key removed in an earlier version may still sit in a real
+    // user's localStorage; restore must drop it rather than let the
+    // fail-closed predicate silently disable the sort for that user.
+    const defaults = structuredClone(DEFAULT_FILTERS) as Record<
+      string,
+      { value: unknown }
+    >;
+    defaults.status.value = ['VALID', 'UNKNOWN', null];
+    const stored = {
+      ...defaults,
+      some_removed_filter: {
+        value: 'stale selection',
+        matchMode: 'CONTAINS',
+      },
+    };
+    const store = freshFiltersStore({ filters: stored });
+    store.initializeTableFilters('contacts');
+
+    expect(store.filters).not.toHaveProperty('some_removed_filter');
+    // Known keys still restore through the same pruned path ...
+    expect(
+      (store.filters.status as unknown as { value: unknown }).value,
+    ).toEqual(['VALID', 'UNKNOWN', null]);
+    // ... and the toggle sync still picks them up.
+    expect(store.validToggle).toBe(true);
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(true);
+  });
+
+  it('rejects a genuine active filter (global search term)', () => {
+    const store = freshFiltersStore();
+    store.initializeTableFilters('contacts');
+    store.filters.global.value = 'typed query';
+
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(
+      false,
+    );
   });
 });
