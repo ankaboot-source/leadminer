@@ -158,7 +158,11 @@ describe('contact table realtime separation', () => {
       new: { id: 'p1', user_id: 'user-1', name: 'Mined mid-run' },
       old: { id: 'p1', user_id: 'user-1', name: 'Mined mid-run' },
     });
-    await vi.advanceTimersByTimeAsync(1000);
+    // Advance past BOTH the 700ms reconcile debounce AND the 2s cache-flush
+    // interval: the reconcile only lands in contactsList on flush, so stopping
+    // short of the interval would let a handler that streams into the cache
+    // pass while looking reconciled. Keep this above the sync interval.
+    await vi.advanceTimersByTimeAsync(2500);
 
     // Nothing streamed into the list ...
     expect(store.contactsList).toBeUndefined();
