@@ -407,13 +407,10 @@ const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $screenStore = useScreenStore();
 /**
- * Which table opened the sidebar. Defaults to `contacts` so existing callers
- * without the prop keep today's behaviour; `MiningTable.vue` passes its own
- * origin so cache writes and deletions land in the owning store.
+ * Which table opened the sidebar. Required so cache writes and deletions land
+ * in the owning store; `MiningTable.vue` passes its own origin.
  */
-const props = withDefaults(defineProps<{ origin?: TableOrigin }>(), {
-  origin: 'contacts',
-});
+const props = defineProps<{ origin: TableOrigin }>();
 const $contactTableStore = useContactTableStore(props.origin);
 
 function getCurrentUserId() {

@@ -57,11 +57,10 @@ const props = defineProps<{
   isRemoveDisabled: boolean;
   deselectContacts: () => void;
   /** Owning table; the deletion must prune the store the rows came from. */
-  origin?: TableOrigin;
+  origin: TableOrigin;
 }>();
 
-const { deselectContacts } = props;
-const origin = props.origin ?? 'contacts';
+const { deselectContacts, origin } = props;
 
 const contactsToDelete = computed(() => props.contactsToDelete);
 const contactsToDeleteLength = computed(() => props.contactsToDeleteLength);

@@ -290,7 +290,7 @@ export function isValidURL(url: string) {
  */
 export async function removeContactsFromDatabase(
   ids?: string[],
-  origin: TableOrigin = 'contacts',
+  origin: TableOrigin,
 ): Promise<void> {
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient

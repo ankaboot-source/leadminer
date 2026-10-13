@@ -101,7 +101,7 @@ const props = defineProps<{
   /** Set by the host to lock the action, e.g. while a mining run is active. */
   disabled?: boolean;
   /** Owning table; selects which store's selection count gates bulk enrich. */
-  origin?: TableOrigin;
+  origin: TableOrigin;
 }>();
 
 const $toast = useToast();
@@ -111,7 +111,7 @@ const $enrichmentStore = useEnrichmentStore();
  * tracks its own selection, so hardcoding one store would disable (or enable)
  * bulk enrich on the wrong page.
  */
-const $contactTableStore = useContactTableStore(props.origin ?? 'contacts');
+const $contactTableStore = useContactTableStore(props.origin);
 const dialogVisible = ref(false);
 
 const { startOnMounted, bordered } = props;
