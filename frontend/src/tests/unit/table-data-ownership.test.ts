@@ -105,6 +105,77 @@ describe('useContactsTableData', () => {
       getDefaultVisibleColumns('contacts'),
     );
   });
+
+  it('skips the refine fallback while a mining run is active', async () => {
+    leadminerStore.activeMiningTask = { id: 'mining-1' };
+    leadminerStore.miningCompleted = false;
+    contactsStore.contactCount = 0;
+    contactsStore.hasPersons.mockResolvedValue(true);
+
+    const wrapper = mount(ContactsHarness);
+    await flushPromises();
+
+    // Guard short-circuits before the persons RPC: refining a partial
+    // dataset mid-run would produce false/partial results (the backend
+    // refines once at pipeline completion instead).
+    expect(contactsStore.hasPersons).not.toHaveBeenCalled();
+    expect(contactsStore.refineContacts).not.toHaveBeenCalled();
+    expect(contactsStore.reloadContacts).toHaveBeenCalledTimes(1);
+
+    wrapper.unmount();
+    leadminerStore.activeMiningTask = undefined;
+    contactsStore.hasPersons.mockResolvedValue(false);
+  });
+
+  it('keeps the refine fallback when idle with persons but no contacts', async () => {
+    leadminerStore.activeMiningTask = undefined;
+    leadminerStore.miningCompleted = false;
+    contactsStore.contactCount = 0;
+    contactsStore.hasPersons.mockResolvedValue(true);
+
+    const wrapper = mount(ContactsHarness);
+    await flushPromises();
+
+    expect(contactsStore.refineContacts).toHaveBeenCalledTimes(1);
+    expect(contactsStore.reloadContacts).toHaveBeenCalledTimes(2);
+
+    wrapper.unmount();
+    contactsStore.hasPersons.mockResolvedValue(false);
+  });
+
+  it('reloads once when mining completes while mounted', async () => {
+    leadminerStore.activeMiningTask = { id: 'mining-1' };
+    leadminerStore.miningCompleted = false;
+    contactsStore.contactCount = 0;
+    contactsStore.hasPersons.mockResolvedValue(true);
+
+    const wrapper = mount(ContactsHarness);
+    await flushPromises();
+    const callsAfterMount = contactsStore.reloadContacts.mock.calls.length;
+
+    // A same-route navigateTo('/contacts') on completion does not remount
+    // the page, so the watcher reloads instead of initialize().
+    leadminerStore.miningCompleted = true;
+    await flushPromises();
+    const callsAfterCompletion = contactsStore.reloadContacts.mock.calls.length;
+    expect(callsAfterCompletion).toBeGreaterThan(callsAfterMount);
+    expect(contactsStore.refineContacts).not.toHaveBeenCalled();
+
+    // A second flip must not reload again: remounts re-run initialize(),
+    // so a further reload here would only double-fetch.
+    leadminerStore.miningCompleted = false;
+    await flushPromises();
+    leadminerStore.miningCompleted = true;
+    await flushPromises();
+    expect(contactsStore.reloadContacts.mock.calls.length).toBe(
+      callsAfterCompletion,
+    );
+
+    wrapper.unmount();
+    leadminerStore.activeMiningTask = undefined;
+    leadminerStore.miningCompleted = false;
+    contactsStore.hasPersons.mockResolvedValue(false);
+  });
 });
 
 describe('useMiningTableData', () => {
