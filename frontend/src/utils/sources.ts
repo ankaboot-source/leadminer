@@ -37,7 +37,15 @@ export function updateMiningSourcesValidityFromUnavailable(
   }));
 }
 
-export async function getMiningSources(): Promise<MiningSource[]> {
+/**
+ * List-only fetch: the mining_sources rows WITHOUT the per-source stats
+ * RPC. Used by pages that only need the source list (/mine, dialogs).
+ *
+ * Narrow select: only the columns the app reads (id, email, type,
+ * passive_mining, config). Verified no other column (credentials bytea,
+ * user_id, created_at, config_revision) is read anywhere in frontend/src.
+ */
+export async function getMiningSourcesList(): Promise<MiningSource[]> {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
 
@@ -45,59 +53,82 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw new Error('User not authenticated');
   }
 
-  const userId = user.value.id || (user.value as { sub?: string } | null)?.sub;
-
   const { data: rawSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
-    .select('*');
+    .select('id, email, type, passive_mining, config');
 
   if (error) {
     console.error('Error fetching mining sources:', error.message);
     throw error;
   }
 
-  const miningSources = (rawSources ?? []) as MiningSource[];
+  return (rawSources ?? []) as MiningSource[];
+}
 
-  let overviewData: MiningSourceOverview[] | null = null;
-  let overviewError: Error | null = null;
+/**
+ * Overview-only fetch: the per-source stats RPC (total contacts, last
+ * mining date). Only /sources renders these; every other consumer uses
+ * the list-only fetch above.
+ */
+export async function getMiningSourceOverview(): Promise<
+  Map<string, MiningSourceOverview>
+> {
+  const supabase = useSupabaseClient();
+  const user = useSupabaseUser();
+  const overviewMap = new Map<string, MiningSourceOverview>();
 
-  if (userId) {
-    const overviewResponse = await supabase
-      .schema('private')
-      .rpc('get_mining_source_overview', { p_user_id: userId });
-
-    overviewData = (overviewResponse.data as MiningSourceOverview[]) ?? null;
-    overviewError = overviewResponse.error;
+  const userId = user.value?.id || (user.value as { sub?: string } | null)?.sub;
+  if (!userId) {
+    return overviewMap;
   }
+
+  const { data: overviewData, error: overviewError } = await supabase
+    .schema('private')
+    .rpc('get_mining_source_overview', { p_user_id: userId });
 
   if (overviewError) {
     console.error(
       'Error fetching mining source overview:',
       overviewError.message,
     );
+    return overviewMap;
   }
 
-  const overviewMap = new Map<string, MiningSourceOverview>();
-  if (overviewData) {
-    for (const row of overviewData as MiningSourceOverview[]) {
-      overviewMap.set(row.source_email, row);
-    }
+  for (const row of (overviewData as MiningSourceOverview[] | null) ?? []) {
+    overviewMap.set(row.source_email, row);
   }
 
-  const sourcesWithStats: MiningSource[] = (miningSources || []).map(
-    (source) => {
-      const overview = overviewMap.get(source.email);
-      return {
-        ...source,
-        totalContacts: overview?.total_contacts ?? 0,
-        totalFromLastMining: overview?.total_from_last_mining ?? 0,
-        lastMiningDate: overview?.last_mining_date ?? undefined,
-      };
-    },
-  );
+  return overviewMap;
+}
 
-  return sourcesWithStats;
+function applyOverviewToSources(
+  miningSources: MiningSource[],
+  overviewMap: Map<string, MiningSourceOverview>,
+): MiningSource[] {
+  return (miningSources || []).map((source) => {
+    const overview = overviewMap.get(source.email);
+    return {
+      ...source,
+      totalContacts: overview?.total_contacts ?? 0,
+      totalFromLastMining: overview?.total_from_last_mining ?? 0,
+      lastMiningDate: overview?.last_mining_date ?? undefined,
+    };
+  });
+}
+
+/**
+ * Combined fetch: source list + overview stats. Prefer
+ * getMiningSourcesList() unless the caller renders the stats (only
+ * /sources does).
+ */
+export async function getMiningSources(): Promise<MiningSource[]> {
+  const [miningSources, overviewMap] = await Promise.all([
+    getMiningSourcesList(),
+    getMiningSourceOverview(),
+  ]);
+
+  return applyOverviewToSources(miningSources, overviewMap);
 }
 
 /**

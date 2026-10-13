@@ -4,6 +4,7 @@ import { ref } from 'vue';
 
 import {
   getMiningSources,
+  getMiningSourcesList,
   updateMiningSourcesValidity,
   updateMiningSourcesValidityFromUnavailable,
 } from '@/utils/sources';
@@ -234,19 +235,26 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   /**
    * Retrieves mining sources.
+   *
+   * List-only by default (no get_mining_source_overview RPC): only /sources
+   * renders the overview stats, so pass `includeOverview: true` there.
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
-  async function fetchMiningSources(options: { silent?: boolean } = {}) {
-    const { silent = false } = options;
+  async function fetchMiningSources(
+    options: { silent?: boolean; includeOverview?: boolean } = {},
+  ) {
+    const { silent = false, includeOverview = false } = options;
 
     // Silent mode is for background refreshes (e.g. passive-status polling):
-    // no loading flag (watchers react to it) and no sender-options fetch.
+    // no loading flag (watchers react to it).
     if (!silent) {
       isLoadingMiningSources.value = true;
     }
 
     try {
-      const sources = await getMiningSources();
+      const sources = includeOverview
+        ? await getMiningSources()
+        : await getMiningSourcesList();
 
       const previousValidityMap = new Map(
         miningSources.value.map((s) => [s.email.toLowerCase(), s.isValid]),
@@ -256,10 +264,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         ...source,
         isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
       }));
-
-      if (!silent) {
-        fetchSenderOptionsInBackground();
-      }
     } finally {
       if (!silent) {
         isLoadingMiningSources.value = false;
@@ -279,7 +283,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    */
   async function ensureMiningSourcesLoaded({
     refresh = false,
-  }: { refresh?: boolean } = {}) {
+    includeOverview = false,
+  }: { refresh?: boolean; includeOverview?: boolean } = {}) {
     if (isLoadingMiningSources.value) {
       return;
     }
@@ -288,7 +293,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (!refresh) return;
 
       try {
-        await fetchMiningSources({ silent: true });
+        await fetchMiningSources({ silent: true, includeOverview });
       } catch (error) {
         console.warn('[mining] failed to refresh mining sources', error);
       }
@@ -296,7 +301,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
 
     try {
-      await fetchMiningSources();
+      await fetchMiningSources({ includeOverview });
       hasLoadedMiningSources.value = true;
     } catch (error) {
       // Leave hasLoadedMiningSources=false so the next consumer retries.
@@ -304,6 +309,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
+  /**
+   * Lazy sender-validity refresh. Called explicitly when the sender UI is
+   * opened (CampaignComposerDialog loads sender options on open and updates
+   * validity itself) — never on page mount, so /mine no longer fires a
+   * sender-options request (and its 503 console warning) on every load.
+   */
   async function fetchSenderOptionsInBackground() {
     try {
       const controller = new AbortController();
@@ -989,6 +1000,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchInbox,
     fetchMiningSources,
     ensureMiningSourcesLoaded,
+    fetchSenderOptionsInBackground,
     getMiningSourceByEmail,
     getCurrentRunningMining,
     startMining,

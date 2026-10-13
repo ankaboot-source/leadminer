@@ -15,10 +15,14 @@ import type { Profile } from '~/types/profile';
  * @throws An error if fetching the profile fails.
  */
 async function getCurrentUserProfile(client: SupabaseClient) {
+  // Narrow select: only the columns the app reads (user_id, email,
+  // full_name, gdpr_details.hasAcceptedEnriching). Verified no other
+  // profile column (credits, smsgate_*, simple_sms_gateway_*) is read
+  // anywhere in frontend/src. Realtime payloads still deliver full rows.
   const { data, error } = await client
     .schema('private')
     .from('profiles')
-    .select('*')
+    .select('user_id, email, full_name, gdpr_details')
     .single<Profile>();
 
   if (error) throw error;
@@ -181,7 +185,6 @@ export default defineNuxtPlugin({
         if (!auth) return;
 
         $currentProfile.value = await getCurrentUserProfile($supabaseClient);
-        await handleFirstTimeSignIn();
         const userId =
           $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
         if (!userId) return;
@@ -191,8 +194,21 @@ export default defineNuxtPlugin({
       });
     }
 
-    $supabaseClient.auth.onAuthStateChange((_, session) => {
+    $supabaseClient.auth.onAuthStateChange((event, session) => {
       authenticated.value = session !== null;
+
+      // handleFirstTimeSignIn runs auth.getUser() plus writes (first-time
+      // flag, email-template language, OAuth source creation). It must run
+      // only for a genuine sign-in, not when the session is restored from
+      // storage (INITIAL_SESSION) or refreshed (TOKEN_REFRESHED) on every
+      // page load. The profile fetch and realtime channel in the watcher
+      // above already cover those cases.
+      if (event === 'SIGNED_IN' && session) {
+        handleFirstTimeSignIn().catch((error: unknown) => {
+          // eslint-disable-next-line no-console
+          console.error('[auth] First-time sign-in handling failed:', error);
+        });
+      }
     });
   },
 });
