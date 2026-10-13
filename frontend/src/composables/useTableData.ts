@@ -39,9 +39,28 @@ function removeMiningIdParam() {
 export function useContactsTableData() {
   const contactsStore = useContactsStore();
   const filtersStore = useFiltersStore();
+  const leadminerStore = useLeadminerStore();
   const loading = ref(true);
   let initialized = false;
   let disposed = false;
+  let completionReloaded = false;
+
+  // A same-route navigateTo('/contacts') on completion does not remount the
+  // page, so reload here when the run finishes while /contacts is open.
+  // Idempotent: fires at most once per mount; a remount re-runs initialize()
+  // instead, so a second reload would only double-fetch.
+  const stopCompletionWatch = watch(
+    () => leadminerStore.miningCompleted,
+    async (completed) => {
+      if (!completed || disposed || completionReloaded) return;
+      completionReloaded = true;
+      try {
+        await contactsStore.reloadContacts();
+      } catch (error) {
+        console.error('Failed to reload contacts after mining', error);
+      }
+    },
+  );
 
   async function initialize() {
     if (initialized) return;
@@ -57,7 +76,16 @@ export function useContactsTableData() {
       await contactsStore.reloadContacts();
       if (disposed) return;
 
-      if (!contactsStore.contactCount && (await contactsStore.hasPersons())) {
+      // Refine fallback for stale empty tables (persons but no refined
+      // contacts). Skipped while a run is active: the backend refines once at
+      // pipeline completion, and refining a partial dataset here would produce
+      // false/partial results. /contacts reloads via the completion watcher
+      // below instead.
+      if (
+        !contactsStore.contactCount &&
+        !leadminerStore.activeMiningTask &&
+        (await contactsStore.hasPersons())
+      ) {
         await contactsStore.refineContacts();
         if (disposed) return;
         await contactsStore.reloadContacts();
@@ -96,6 +124,7 @@ export function useContactsTableData() {
   onMounted(initialize);
   onBeforeUnmount(() => {
     disposed = true;
+    stopCompletionWatch();
     contactsStore.$reset();
   });
 
