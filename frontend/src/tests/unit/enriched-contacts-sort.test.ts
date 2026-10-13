@@ -174,7 +174,7 @@ describe('shouldPrioritizeEnrichedContacts', () => {
     // The view-layer caller always holds a real filters object, so nullish
     // only ever means something is off — and a sort that silently applies
     // when it should not is worse than one that silently does not.
-    expect(shouldPrioritizeEnrichedContacts(undefined)).toBe(false);
+    expect(shouldPrioritizeEnrichedContacts()).toBe(false);
     expect(shouldPrioritizeEnrichedContacts(null as never)).toBe(false);
   });
 
