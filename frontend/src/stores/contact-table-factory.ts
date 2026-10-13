@@ -45,7 +45,11 @@ export function createContactTableSetup(origin: TableOrigin) {
   const selectedIds = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
   const visibleColumns = ref(['contacts']);
-  const skipOrgLookup = ref(false);
+  // `works_for` is not a mine-table column (MiningTable.vue excludes it from
+  // both the render and the column picker on the mine origin), so resolving
+  // org UUIDs there is pure waste on the hot streaming path. The contacts
+  // table does render it, so only that origin pays for the lookup.
+  const resolvesOrgNames = origin === 'contacts';
 
   const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(
     null,
@@ -229,7 +233,7 @@ export function createContactTableSetup(origin: TableOrigin) {
       ? { ...existingContact, ...clean }
       : clean;
 
-    if (!skipOrgLookup.value) {
+    if (resolvesOrgNames) {
       updatedContact.works_for = await getOrganizationName(
         updatedContact.works_for,
       );
@@ -584,11 +588,6 @@ export function createContactTableSetup(origin: TableOrigin) {
     contactsList.value = undefined;
     selectedIds.value = undefined;
     selectedContactsCount.value = 0;
-    skipOrgLookup.value = false;
-  }
-
-  function setSkipOrgLookup(value: boolean) {
-    skipOrgLookup.value = value;
   }
 
   return {
@@ -611,7 +610,6 @@ export function createContactTableSetup(origin: TableOrigin) {
     hasPersons,
     getLocationsToNormalize,
     updateContactsCache,
-    setSkipOrgLookup,
     clearReconcileTimer,
   };
 }

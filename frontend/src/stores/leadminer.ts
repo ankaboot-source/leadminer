@@ -36,7 +36,6 @@ import {
 } from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
-import { useMiningTableStore } from './mining-table';
 import { useEnrichmentStore } from './enrichment';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
@@ -47,7 +46,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const $stepper = useMiningStepper();
   const supabase = useSupabaseClient();
   const config = useRuntimeConfig();
-  const $miningStore = useMiningTableStore();
   const $enrichmentStore = useEnrichmentStore();
 
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -509,12 +507,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         if (!isCurrentRun()) return;
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
-        // The mine table streams raw persons rows whose works_for is an
-        // org UUID the mine view never renders, so skip the per-row org
-        // lookup while a run is live. The contacts table needs no guard:
-        // every row it holds comes from get_contacts_table, which already
-        // returns the org display name.
-        $miningStore.setSkipOrgLookup(false);
         // The passive-mining prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
@@ -752,7 +744,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         token,
       );
       miningStartedAt.value = performance.now();
-      $miningStore.setSkipOrgLookup(true);
       startMiningNotification($toast, t, config.public.DATA_PRIVACY_URL);
     } catch (err) {
       sse.closeConnection();
@@ -779,7 +770,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       if (endEntireTask) {
         miningTask.value = undefined;
-        $miningStore.setSkipOrgLookup(false);
         fetchingFinished.value = true;
         cleaningFinished.value = true;
         signatureExtractionFinished.value = true;
@@ -878,7 +868,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningType.value = mType;
-      $miningStore.setSkipOrgLookup(true);
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );
