@@ -300,6 +300,7 @@
           />
           <EnrichButton
             source="contact"
+            :origin="origin"
             :contacts-to-enrich="[contact]"
             :enrich-all-contacts="false"
             :skip-dialog="skipDialog"
@@ -361,7 +362,11 @@ import NormalizedLocation from '@/components/icons/NormalizedLocation.vue';
 import SocialLinksAndPhones from '@/components/icons/SocialLinksAndPhones.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
-import { useContactsStore } from '~/stores/contacts';
+import {
+  removeContactsFromDatabase,
+  useContactTableStore,
+} from '~/stores/contact-table';
+import type { TableOrigin } from '~/utils/table-preferences';
 
 import {
   getConsentColor,
@@ -371,7 +376,6 @@ import {
   getTagColor,
   getTagLabel,
   isValidURL,
-  removeContactsFromDatabase,
   shouldSkipEnrichDialog,
   tags as predefinedTags,
 } from '@/utils/contacts';
@@ -404,7 +408,12 @@ const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $screenStore = useScreenStore();
-const $contactsStore = useContactsStore();
+/**
+ * Which table opened the sidebar. Required so cache writes and deletions land
+ * in the owning store; `MiningTable.vue` passes its own origin.
+ */
+const props = defineProps<{ origin: TableOrigin }>();
+const $contactTableStore = useContactTableStore(props.origin);
 
 function getCurrentUserId() {
   return $user.value?.id || ($user.value as { sub?: string } | null)?.sub;
@@ -722,7 +731,7 @@ async function saveContactInformations() {
     if (contactToUpdate.user_tags !== undefined) {
       contact.value.user_tags = contactToUpdate.user_tags;
     }
-    await $contactsStore.updateContactsCache(toRaw(contact.value), true);
+    await $contactTableStore.updateContactsCache(toRaw(contact.value), true);
     editingContact.value = false;
     showNotification('success', t('contact_saved'), '');
   } catch (error) {
@@ -764,7 +773,7 @@ function getConsentTooltip(data: Contact) {
 async function removeContact() {
   isRemovingContact.value = true;
   try {
-    await removeContactsFromDatabase([contact.value.id]);
+    await removeContactsFromDatabase(props.origin, [contact.value.id]);
     showRemoveConfirmationDialog.value = false;
     $contactInformationSidebar.$reset();
     showNotification('success', t('contact_removed'), '');

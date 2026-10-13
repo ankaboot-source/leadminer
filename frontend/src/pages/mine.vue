@@ -22,7 +22,7 @@
     <MiningTable
       :show-table="showTable"
       origin="mine"
-      :contacts="$contactsStore.contactsList"
+      :contacts="$miningTableStore.contactsList"
       :loading="loading"
     />
   </div>
@@ -32,7 +32,7 @@
 import { useMiningTableData } from '~/composables/useTableData';
 
 const $leadminer = useLeadminerStore();
-const $contactsStore = useContactsStore();
+const $miningTableStore = useMiningTableStore();
 const $stepper = useMiningStepper();
 const { loading } = useMiningTableData();
 const showTable = computed(

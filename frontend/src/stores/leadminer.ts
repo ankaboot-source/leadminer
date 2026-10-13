@@ -36,7 +36,6 @@ import {
 } from '../utils/watermarks';
 import { MiningRunMode } from '~/types/enums';
 import { sse } from '../utils/sse';
-import { useContactsStore } from './contacts';
 import { useEnrichmentStore } from './enrichment';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
@@ -47,7 +46,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const $stepper = useMiningStepper();
   const supabase = useSupabaseClient();
   const config = useRuntimeConfig();
-  const $contactsStore = useContactsStore();
   const $enrichmentStore = useEnrichmentStore();
 
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -509,7 +507,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         if (!isCurrentRun()) return;
         console.info('Mining marked as completed.');
         miningCompleted.value = true;
-        $contactsStore.setSkipOrgLookup(false);
         // The passive-mining prompt is owned by the extraction
         // completion paths (see maybeOpenPassiveMiningDialog); do not reopen
         // it when the whole pipeline completes.
@@ -747,7 +744,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         token,
       );
       miningStartedAt.value = performance.now();
-      $contactsStore.setSkipOrgLookup(true);
       startMiningNotification($toast, t, config.public.DATA_PRIVACY_URL);
     } catch (err) {
       sse.closeConnection();
@@ -774,7 +770,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       if (endEntireTask) {
         miningTask.value = undefined;
-        $contactsStore.setSkipOrgLookup(false);
         fetchingFinished.value = true;
         cleaningFinished.value = true;
         signatureExtractionFinished.value = true;
@@ -873,7 +868,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningType.value = mType;
-      $contactsStore.setSkipOrgLookup(true);
       activeMiningSource.value = miningSources.value.find(
         ({ email }) => email === task.miningSource.source,
       );

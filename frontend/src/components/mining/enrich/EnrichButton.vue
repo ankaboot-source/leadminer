@@ -84,6 +84,8 @@ import {
 } from '@/utils/credits';
 import EnrichGdprSidebar from './EnrichGdprSidebar.vue';
 import { useEnrichmentStore } from '~/stores/enrichment';
+import { useContactTableStore } from '~/stores/contact-table';
+import type { TableOrigin } from '~/utils/table-preferences';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -98,11 +100,18 @@ const props = defineProps<{
   source?: 'stepper' | 'datatable' | 'contact';
   /** Set by the host to lock the action, e.g. while a mining run is active. */
   disabled?: boolean;
+  /** Owning table; selects which store's selection count gates bulk enrich. */
+  origin: TableOrigin;
 }>();
 
 const $toast = useToast();
 const $enrichmentStore = useEnrichmentStore();
-const $contactsStore = useContactsStore();
+/**
+ * The enrich-all gate reads the owning table's selection count: each table
+ * tracks its own selection, so hardcoding one store would disable (or enable)
+ * bulk enrich on the wrong page.
+ */
+const $contactTableStore = useContactTableStore(props.origin);
 const dialogVisible = ref(false);
 
 const { startOnMounted, bordered } = props;
@@ -222,7 +231,7 @@ const isEnrichDisabled = computed(
     Boolean(props.disabled) ||
     $enrichmentStore.isActive ||
     (!enrichAllContacts.value && !contactsToEnrich.value?.length) ||
-    (enrichAllContacts.value && !$contactsStore.selectedContactsCount),
+    (enrichAllContacts.value && !$contactTableStore.selectedContactsCount),
 );
 </script>
 <i18n lang="json">

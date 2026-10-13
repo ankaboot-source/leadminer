@@ -13,21 +13,31 @@ import { convertDates } from '~/utils/contacts';
 import {
   applyReconciledContacts,
   buildPersonChangeFilters,
-  collectRealtimePersonIds,
   getContactKey,
   resolveRealtimeAction,
+  type RealtimeAction,
   type RealtimePersonRow,
-} from '~/utils/contacts-realtime';
+} from '~/utils/contact-table-realtime';
 import Normalizer from '~/utils/normalizer';
-import { useLeadminerStore } from './leadminer';
 
 const REALTIME_DEBOUNCE_MS = 700;
 const REALTIME_RECONCILE_MAX_RETRIES = 3;
 
-export const useContactsStore = defineStore('contacts-store', () => {
+/**
+ * Shared setup body for the two independent contact tables.
+ *
+ * `/contacts` (`origin: 'contacts'`) and `/mine` (`origin: 'mine'`) render
+ * the same columns through the shared `MiningTable.vue`, so both stores expose
+ * the identical public surface built here. The tables stay independent because
+ * every piece of realtime policy derives from the captured `origin` — never
+ * from global mining state. That global read is what used to leak `/mine`
+ * rows into `/contacts` mid-run: one store armed an INSERT listener whenever
+ * any mining ran and streamed raw `persons` rows past the refined-contacts
+ * gate.
+ */
+export function createContactTableSetup(origin: TableOrigin) {
   const $user = useSupabaseUser();
   const $supabase = useSupabaseClient();
-  const $leadminerStore = useLeadminerStore();
 
   const updateContactList = ref<boolean>(false);
   const contactsCacheMap = new Map<string, Contact>();
@@ -36,7 +46,11 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const selectedIds = ref<string[] | undefined>();
   const selectedContactsCount = ref<number>(0);
   const visibleColumns = ref(['contacts']);
-  const skipOrgLookup = ref(false);
+  // `works_for` is not a mine-table column (MiningTable.vue excludes it from
+  // both the render and the column picker on the mine origin), so resolving
+  // org UUIDs there is pure waste on the hot streaming path. The contacts
+  // table does render it, so only that origin pays for the lookup.
+  const resolvesOrgNames = origin === 'contacts';
 
   const tableContext = ref<{ userId: string; origin: TableOrigin } | null>(
     null,
@@ -76,6 +90,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   /**
    * Clears the sync interval.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * it in afterEach); no production call site uses it directly.
    */
   function clearSyncInterval() {
     if (syncIntervalId) {
@@ -86,6 +103,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   /**
    * Starts the sync interval to periodically apply cached contacts.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * its counterpart in afterEach); no production call site uses it directly.
    */
   function startSyncInterval() {
     clearSyncInterval();
@@ -100,6 +120,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   /**
    * Load contacts from database to store.
+   *
+   * --- Concern: data loading (with loadMinedPersons, reloadContacts and
+   * refineContacts below). Reads only; subscriptions live under "realtime".
    */
   async function loadContacts(userId = getCurrentUserId()) {
     if (!userId) return [];
@@ -121,8 +144,23 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * mined so far. Reading `persons` by `mining_id` returns the same rows the
    * stream delivers, which lets `/mine` rebuild its list after a navigation or
    * a hard reload without waiting for completion.
+   *
+   * Only meaningful for the `mine` origin. Kept on the shared surface (rather
+   * than hidden from the contacts store) so both stores stay structurally
+   * identical; on `contacts` it is a deliberate no-op — throwing here could
+   * break a caller that touches both tables in an edge case, while silently
+   * backfilling raw persons into `/contacts` would reintroduce the mid-run
+   * leak this split exists to prevent.
    */
   async function loadMinedPersons(miningId: string) {
+    if (origin !== 'mine') {
+      if (import.meta.dev) {
+        console.warn(
+          `[contact-table:${origin}] loadMinedPersons is a mine-only backfill; ignoring call.`,
+        );
+      }
+      return;
+    }
     const userId = getCurrentUserId();
     if (!userId || !miningId) return;
 
@@ -137,7 +175,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     const rows = (data ?? []) as unknown as RealtimePersonRow[];
     for (const row of rows) {
-      // eslint-disable-next-line no-await-in-loop
       await updateContactsCache(row as unknown as Contact);
     }
     if (rows.length) {
@@ -177,6 +214,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (error) throw error;
   }
 
+  /**
+   * Merges one contact row into the cache.
+   *
+   * --- Concern: cache bookkeeping (with syncContactsList above and
+   * removeContactsByKeys below; removeOldContacts and
+   * getLocationsToNormalize further down belong here too). Owns the
+   * cache-map <-> contactsList sync, never the network.
+   */
   async function updateContactsCache(
     newContact: Contact,
     keepPosition = false,
@@ -189,7 +234,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       ? { ...existingContact, ...clean }
       : clean;
 
-    if (!skipOrgLookup.value) {
+    if (resolvesOrgNames) {
       updatedContact.works_for = await getOrganizationName(
         updatedContact.works_for,
       );
@@ -221,6 +266,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
     );
   }
 
+  /**
+   * Clears the pending reconcile timer.
+   *
+   * --- Concern: realtime (with the sync interval above and schedule /
+   * flush / channel handlers below). Every policy here derives from the
+   * captured origin, never from global mining state.
+   *
+   * Kept on the public surface as the test-teardown seam (unit tests call
+   * it in afterEach); no production call site uses it directly.
+   */
   function clearReconcileTimer() {
     if (reconcileTimer) {
       clearTimeout(reconcileTimer);
@@ -244,7 +299,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const userId = getCurrentUserId();
     try {
       if (!userId) return;
-      if ($leadminerStore.activeMiningTask) return;
 
       const ids = [...pendingReconcilePersonIds];
       if (ids.length === 0) return;
@@ -306,52 +360,62 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
-   * Handle one person realtime event. UPDATE + DELETE always apply; INSERT
-   * arrives only while a foreground mining runs (see syncRealtimeInsertListener).
+   * Handle one person realtime event. The action derives from the table
+   * origin captured by the factory: `mine` streams raw rows live, while
+   * `contacts` only ever reconciles through `get_contacts_view_by_ids` — it
+   * must never stream, or mid-run mining rows would bypass the
+   * refined-persons gate and appear on `/contacts`.
+   *
+   * Internal to the realtime channel binding below: tests observe it through
+   * the subscribed channel handlers, never through this return value, so a
+   * future change that returns the right value without doing the work cannot
+   * pass.
    */
   function handlePersonRealtimeEvent(
     payload: RealtimePostgresChangesPayload<RealtimePersonRow>,
-  ) {
+  ): RealtimeAction {
     const userId = getCurrentUserId();
-    if (!userId) return;
+    if (!userId) return { kind: 'none' };
 
-    const action = resolveRealtimeAction(payload, {
-      activeMining: $leadminerStore.activeMiningTask,
-    });
+    const action = resolveRealtimeAction(payload, origin);
 
     switch (action.kind) {
       case 'stream':
-        if (action.row.user_id && action.row.user_id !== userId) return;
+        if (action.row.user_id && action.row.user_id !== userId) return action;
         updateContactsCache(action.row as unknown as Contact);
         updateContactList.value = true;
-        return;
+        return action;
       case 'remove':
         removeOldContacts([action.id]);
         updateContactList.value = true;
-        return;
+        return action;
       case 'reconcile':
         for (const id of action.personIds) {
           pendingReconcilePersonIds.add(id);
         }
         scheduleReconcile();
-        return;
+        return action;
       case 'none':
-        return;
+        return action;
       default:
-        return;
+        return action;
     }
   }
 
   /**
-   * Build the contacts channel for a user. Filters are fixed at subscribe time,
-   * so the INSERT listener is included only when a mining is active.
+   * Build the table's realtime channel for a user. The topic is origin-scoped
+   * (`contacts-table-<origin>-<userId>`) because `RealtimeClient.channel()`
+   * returns the EXISTING channel when the topic matches instead of creating a
+   * second one: a shared topic would hand `/mine` the contacts store's channel
+   * object — already bound to UPDATE+DELETE — and stack its INSERT handler on
+   * top, reintroducing the mid-run leak through the topic key. The subscribed
+   * events are fixed at subscribe time from the table origin: UPDATE + DELETE
+   * for `contacts`, plus INSERT for `mine`.
    */
   function createContactsRealtimeChannel(userId: string) {
-    const channel = $supabase.channel(`contacts-table-${userId}`);
+    const channel = $supabase.channel(`contacts-table-${origin}-${userId}`);
 
-    for (const filter of buildPersonChangeFilters(
-      $leadminerStore.activeMiningTask,
-    )) {
+    for (const filter of buildPersonChangeFilters(origin)) {
       channel.on('postgres_changes', filter, handlePersonRealtimeEvent);
     }
 
@@ -359,32 +423,20 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   /**
-   * Rebuild the channel when mining state flips, to toggle the INSERT
-   * listener at the server side.
-   */
-  function syncRealtimeInsertListener() {
-    if (!realtimeChannel || !realtimeChannelUserId) return;
-    const userId = realtimeChannelUserId;
-
-    $supabase.removeChannel(realtimeChannel);
-    realtimeChannel = null;
-
-    realtimeChannel = createContactsRealtimeChannel(userId);
-    realtimeChannel.subscribe();
-  }
-
-  /**
-   * Subscribes to real-time updates for contacts.
+   * Subscribes to real-time updates for contacts. The user-change teardown
+   * runs before the null guard so a logout-without-reload still drops the
+   * previous user's channel instead of leaving it subscribed.
    */
   function subscribeToRealtimeUpdates() {
     const userId = getCurrentUserId();
-    if (!userId) return;
 
     if (realtimeChannel && realtimeChannelUserId !== userId) {
       $supabase.removeChannel(realtimeChannel);
       realtimeChannel = null;
       realtimeChannelUserId = null;
     }
+
+    if (!userId) return;
 
     if (realtimeChannel) return;
 
@@ -445,14 +497,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
     return [...new Set(locations)];
   }
 
+  /**
+   * --- Concern: column preferences (this function through the
+   * visibleColumns watcher and combinedLocations below). Per-origin visible
+   * columns persisted to localStorage; no contact data flows here.
+   */
   function ensureNameColumn(columns: string[]): string[] {
     return columns.includes('name') ? columns : [...columns, 'name'];
   }
 
-  function initializeVisibleColumns(
-    defaultColumns: string[],
-    origin: TableOrigin,
-  ) {
+  function initializeVisibleColumns(defaultColumns: string[]) {
     const userId = getCurrentUserId();
     if (!userId || !import.meta.client) {
       visibleColumns.value = ensureNameColumn(
@@ -494,8 +548,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
       return;
     }
 
-    const { userId, origin } = tableContext.value;
-    const key = buildTableStorageKey('columns', userId, origin);
+    const { userId, origin: storedOrigin } = tableContext.value;
+    const key = buildTableStorageKey('columns', userId, storedOrigin);
     localStorage.setItem(key, JSON.stringify(visibleColumns.value));
   }
 
@@ -512,15 +566,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     { deep: true },
   );
 
-  watch(
-    () => $leadminerStore.activeMiningTask,
-    () => {
-      // Flip the server-side postgres_changes filter between UPDATE+DELETE-only
-      // and +INSERT when a foreground mining starts/stops.
-      syncRealtimeInsertListener();
-    },
-  );
-
   const combinedLocations = computed(() => {
     return contactsList.value
       ?.filter(
@@ -534,7 +579,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   });
 
   /**
-   * Resets the store.
+   * Resets the store: drops its own realtime channel and cache so the other
+   * table never inherits this table's subscription or rows on navigation.
    */
   function $reset() {
     unsubscribeFromRealtimeUpdates();
@@ -543,11 +589,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contactsList.value = undefined;
     selectedIds.value = undefined;
     selectedContactsCount.value = 0;
-    skipOrgLookup.value = false;
-  }
-
-  function setSkipOrgLookup(value: boolean) {
-    skipOrgLookup.value = value;
   }
 
   return {
@@ -559,21 +600,82 @@ export const useContactsStore = defineStore('contacts-store', () => {
     initializeVisibleColumns,
     combinedLocations,
     $reset,
-    loadContacts,
     reloadContacts,
     loadMinedPersons,
     refineContacts,
     subscribeToRealtimeUpdates,
     unsubscribeFromRealtimeUpdates,
-    syncRealtimeInsertListener,
     startSyncInterval,
     clearSyncInterval,
     removeOldContacts,
     hasPersons,
     getLocationsToNormalize,
     updateContactsCache,
-    setSkipOrgLookup,
     clearReconcileTimer,
-    collectRealtimePersonIds,
   };
-});
+}
+
+/**
+ * The `/contacts` table: refined contacts only. Its realtime policy
+ * (UPDATE + DELETE → debounced reconcile, never INSERT streaming) comes from
+ * the `'contacts'` origin captured below, so an in-flight mining can no
+ * longer leak raw `persons` rows into this view.
+ *
+ * The store ID stays `'contacts-store'` — existing tests and call sites
+ * reference it.
+ */
+export const useContactsStore = defineStore('contacts-store', () =>
+  createContactTableSetup('contacts'),
+);
+
+/**
+ * The `/mine` table: the live view of a running extraction. Its realtime
+ * policy (INSERT + UPDATE streaming straight into the cache) comes from the
+ * `'mine'` origin captured below. It shares the contact-table setup body with
+ * the contacts store so `MiningTable.vue` keeps a single public surface, but
+ * the two stores hold fully independent channels and caches.
+ */
+export const useMiningTableStore = defineStore('mining-table-store', () =>
+  createContactTableSetup('mine'),
+);
+
+/**
+ * Resolves the contact-table store for a table origin.
+ *
+ * Lives here alongside the stores it resolves: `removeContactsFromDatabase`
+ * used to live in `utils/contacts.ts`, which closed an import loop back into
+ * the stores — moving it here broke the cycle, so no separate file is needed
+ * to dodge a circular import.
+ *
+ * `/contacts` and `/mine` render through the same `MiningTable.vue` but own
+ * independent channels and caches: `contacts` reconciles refined contacts
+ * (never streams INSERTs), while `mine` streams the live extraction. Reading
+ * the wrong store reintroduces the mid-run leak where `/contacts` displayed
+ * `/mine` rows, so every shared call site resolves its store from `origin`
+ * instead of importing one store directly.
+ */
+export function useContactTableStore(origin: TableOrigin) {
+  return origin === 'mine' ? useMiningTableStore() : useContactsStore();
+}
+
+/**
+ * Deletes contacts server-side, then drops them from the owning table's
+ * cache. The store must match the caller's `origin`: each table owns an
+ * independent cache, so pruning the contacts store for a `/mine` deletion
+ * would leave the deleted rows on screen (and vice versa).
+ */
+export async function removeContactsFromDatabase(
+  origin: TableOrigin,
+  ids?: string[],
+): Promise<void> {
+  const $supabaseClient = useSupabaseClient();
+  const { error } = await $supabaseClient
+    .schema('private')
+    .rpc('delete_contacts', {
+      p_ids: ids ?? [],
+      p_delete_all: ids === undefined,
+    });
+  if (error) throw error;
+
+  useContactTableStore(origin).removeOldContacts(ids);
+}

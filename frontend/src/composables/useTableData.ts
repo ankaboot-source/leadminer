@@ -1,5 +1,5 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useContactsStore } from '~/stores/contacts';
+import { useContactsStore, useMiningTableStore } from '~/stores/contact-table';
 import { useFiltersStore } from '~/stores/filters';
 import { useLeadminerStore } from '~/stores/leadminer';
 import Normalizer from '~/utils/normalizer';
@@ -74,7 +74,6 @@ export function useContactsTableData() {
       if (!disposed) {
         contactsStore.initializeVisibleColumns(
           getDefaultVisibleColumns('contacts'),
-          'contacts',
         );
 
         const miningId = getMiningIdParam();
@@ -109,7 +108,7 @@ export function useContactsTableData() {
  * completes. It never triggers a full contacts load — `/contacts` owns that.
  */
 export function useMiningTableData() {
-  const contactsStore = useContactsStore();
+  const miningStore = useMiningTableStore();
   const filtersStore = useFiltersStore();
   const leadminerStore = useLeadminerStore();
   const loading = ref(false);
@@ -122,10 +121,10 @@ export function useMiningTableData() {
    * /mine would otherwise show an empty table until the next row arrives.
    */
   async function backfillMiningContacts(miningId: string) {
-    if (contactsStore.contactCount) return;
+    if (miningStore.contactCount) return;
     loading.value = true;
     try {
-      await contactsStore.loadMinedPersons(miningId);
+      await miningStore.loadMinedPersons(miningId);
     } catch (error) {
       console.error('Failed to backfill mining contacts', error);
     } finally {
@@ -135,10 +134,7 @@ export function useMiningTableData() {
 
   onMounted(() => {
     filtersStore.initializeTableFilters('mine');
-    contactsStore.initializeVisibleColumns(
-      getDefaultVisibleColumns('mine'),
-      'mine',
-    );
+    miningStore.initializeVisibleColumns(getDefaultVisibleColumns('mine'));
     stopStateWatch = watch(
       [
         () => Boolean(leadminerStore.activeMiningTask),
@@ -148,7 +144,7 @@ export function useMiningTableData() {
         if (completed || !active) {
           if (!subscribed) return;
           subscribed = false;
-          await contactsStore.unsubscribeFromRealtimeUpdates();
+          await miningStore.unsubscribeFromRealtimeUpdates();
           // No $reset(): the list stays on screen until the redirect to
           // /contacts unmounts this page, so it does not blank out in between.
           return;
@@ -160,7 +156,7 @@ export function useMiningTableData() {
           await backfillMiningContacts(
             leadminerStore.miningTask?.miningId ?? '',
           );
-          contactsStore.subscribeToRealtimeUpdates();
+          miningStore.subscribeToRealtimeUpdates();
         } catch (error) {
           subscribed = false;
           console.error('Failed to subscribe to mining realtime', error);
@@ -175,12 +171,12 @@ export function useMiningTableData() {
     // /contacts owns its own subscription and reloads from
     // get_contacts_table, so drop ours here: leaving the person stream
     // attached would push in-flight rows into /contacts.
-    contactsStore.unsubscribeFromRealtimeUpdates().catch((error) => {
+    miningStore.unsubscribeFromRealtimeUpdates().catch((error) => {
       console.error('Failed to unsubscribe from mining realtime', error);
     });
     // This page's list is rebuilt from the run's persons on mount, so there is
     // no reason to hold it in memory while unmounted.
-    contactsStore.$reset();
+    miningStore.$reset();
   });
 
   return { loading };

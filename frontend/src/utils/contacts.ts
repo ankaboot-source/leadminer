@@ -281,21 +281,6 @@ export function isValidURL(url: string) {
   return URL.canParse(url);
 }
 
-export async function removeContactsFromDatabase(
-  ids?: string[],
-): Promise<void> {
-  const $supabaseClient = useSupabaseClient();
-  const { error } = await $supabaseClient
-    .schema('private')
-    .rpc('delete_contacts', {
-      p_ids: ids ?? [],
-      p_delete_all: ids === undefined,
-    });
-  if (error) throw error;
-
-  useContactsStore().removeOldContacts(ids);
-}
-
 export function callPhoneNumber(phone: string) {
   window.location.href = `tel:${phone}`;
 }

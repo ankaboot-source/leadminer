@@ -1,5 +1,8 @@
 <template>
-  <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
+  <ContactInformationSidebar
+    v-model:show="$contactInformationSidebar.status"
+    :origin="origin"
+  />
   <CampaignComposerDialog
     v-model:visible="sendCampaignDialogVisible"
     :selected-contacts="implicitlySelectedContacts"
@@ -78,8 +81,9 @@
         <div>
           <EnrichButton
             source="datatable"
+            :origin="origin"
             :contacts-to-enrich="implicitlySelectedContacts"
-            :enrich-all-contacts="$contactsStore.selectedIds === undefined"
+            :enrich-all-contacts="$contactTableStore.selectedIds === undefined"
             :disabled="isMiningActive"
           />
         </div>
@@ -125,6 +129,7 @@
           "
         >
           <RemoveContactButton
+            :origin="origin"
             :contacts-to-delete="contactsToDelete"
             :contacts-to-delete-length="selectedContactsLength"
             :is-remove-disabled="isExportDisabled || !selectedContactsLength"
@@ -262,7 +267,7 @@
                 <Divider class="my-0" />
                 <li>
                   <MultiSelect
-                    v-model="$contactsStore.visibleColumns"
+                    v-model="$contactTableStore.visibleColumns"
                     :options="visibleColumnsOptions"
                     :option-disabled="disabledColumns"
                     option-label="label"
@@ -270,7 +275,10 @@
                     fluid
                     option-value="value"
                     :selected-items-label="
-                      t('visible_columns', $contactsStore.visibleColumns.length)
+                      t(
+                        'visible_columns',
+                        $contactTableStore.visibleColumns.length,
+                      )
                     "
                     :max-selected-labels="0"
                     @change="onSelectColumnsChange"
@@ -979,7 +987,7 @@ import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { getContactIdentifier } from '@/types/contact';
 import NormalizedLocation from '~/components/icons/NormalizedLocation.vue';
-import { useContactsStore } from '~/stores/contacts';
+import { useContactTableStore } from '~/stores/contact-table';
 import {
   consentStatuses,
   getConsentColor,
@@ -1043,7 +1051,13 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
-const $contactsStore = useContactsStore();
+/**
+ * The table store follows the page origin: `/mine` streams the live
+ * extraction through the mining store while `/contacts` reconciles refined
+ * contacts. A single hardcoded store here would reintroduce the mid-run leak
+ * where `/contacts` displayed `/mine` rows.
+ */
+const $contactTableStore = useContactTableStore(props.origin);
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 const $toast = useToast();
@@ -1059,11 +1073,11 @@ async function refreshStatus(email: string, event: Event) {
   refreshingEmails.value.add(email);
   try {
     const { status } = await verifyEmailStatus(email);
-    const { contactsList } = $contactsStore;
+    const { contactsList } = $contactTableStore;
     const index = contactsList.findIndex((c) => c.email === email);
     if (index !== -1) {
       contactsList[index] = { ...contactsList[index], status };
-      $contactsStore.contactsList = [...contactsList];
+      $contactTableStore.contactsList = [...contactsList];
     }
   } catch {
     $toast.add({
@@ -1078,9 +1092,9 @@ async function refreshStatus(email: string, event: Event) {
 
 const contactsLength = computed(() => contacts.value?.length);
 const visibleColumns = computed({
-  get: () => $contactsStore.visibleColumns,
+  get: () => $contactTableStore.visibleColumns,
   set: (value: string[]) => {
-    $contactsStore.visibleColumns = value;
+    $contactTableStore.visibleColumns = value;
   },
 });
 
@@ -1277,11 +1291,11 @@ const contactsToDelete = computed<string[] | undefined>(() =>
 );
 
 const updateSelectedIds = useDebounceFn((ids: string[] | undefined) => {
-  $contactsStore.selectedIds = ids;
+  $contactTableStore.selectedIds = ids;
 }, 120);
 
 const updateSelectedContactsCount = useDebounceFn((count: number) => {
-  $contactsStore.selectedContactsCount = count;
+  $contactTableStore.selectedContactsCount = count;
 }, 120);
 
 watch(
