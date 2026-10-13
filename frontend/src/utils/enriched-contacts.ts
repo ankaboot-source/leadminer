@@ -22,6 +22,26 @@ export function isEnrichedContact(
   return Boolean(contact.job_title) || Boolean(contact.works_for);
 }
 
+/**
+ * Stable partition: enriched rows first, everything else after, with the
+ * relative order inside each group preserved (no re-sort — the DB's
+ * `temperature DESC NULLS LAST` ordering survives within both groups).
+ *
+ * Returns a NEW array and never mutates `rows`: callers pass view-layer
+ * slices that may alias a props array, so an in-place `sort` here would
+ * mutate parent state.
+ */
+export function partitionEnrichedFirst<
+  T extends Pick<Contact, 'job_title' | 'works_for'>,
+>(rows: readonly T[]): T[] {
+  const enriched: T[] = [];
+  const plain: T[] = [];
+  for (const row of rows) {
+    (isEnrichedContact(row) ? enriched : plain).push(row);
+  }
+  return [...enriched, ...plain];
+}
+
 /** `status.value` written by the "Hide unreachable contacts" toggle. */
 const HIDE_UNREACHABLE_STATUSES: ReadonlyArray<string | null> = [
   'VALID',
@@ -71,15 +91,27 @@ function readFilterValue(entry: unknown): unknown {
  * `consent_status`), which may each sit at either their default or their
  * hide-toggle value.
  *
- * A missing / nullish filters snapshot (no filters store yet, e.g. unit tests
- * driving the table store alone) means "no filters", so this returns true.
+ * Fail-closed: a missing / nullish snapshot means "unknown", not "no
+ * filters", so this returns false. The only caller always holds a real
+ * filters object (`MiningTable.vue` reads `$filtersStore.filters` directly),
+ * so nullish only ever means something is off — and a sort that silently
+ * applies when it should not is worse than one that silently does not.
+ *
+ * Also fail-closed on filter keys outside `DEFAULT_FILTERS`: a new UI filter
+ * key the predicate does not know about may carry a real selection, and the
+ * per-key loop below cannot see it — treating it as "no filters" would apply
+ * the sort over filtered results.
  */
 export function shouldPrioritizeEnrichedContacts(
   filtersValue: Record<string, unknown> | null | undefined,
 ): boolean {
-  if (!filtersValue || typeof filtersValue !== 'object') return true;
+  if (!filtersValue || typeof filtersValue !== 'object') return false;
 
   const defaults = DEFAULT_FILTERS as Record<string, unknown>;
+
+  for (const key of Object.keys(filtersValue)) {
+    if (!(key in defaults)) return false;
+  }
 
   for (const key of Object.keys(defaults)) {
     if (key === 'status' || key === 'consent_status') continue;
