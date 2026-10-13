@@ -62,7 +62,7 @@
     <template #footer>
       <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
         <Button
-          :label="t('common.cancel')"
+          :label="$t('common.cancel')"
           severity="secondary"
           class="w-full sm:w-auto order-3 sm:order-1"
           @click="closeGoogleExportConfirmationDialog"
@@ -163,7 +163,12 @@ const { $api } = useNuxtApp();
 const $consentSidebar = useMiningConsentSidebar();
 const $profile = useSupabaseUserProfile();
 const $screenStore = useScreenStore();
-const { t } = useI18n();
+const { t } = useI18n({
+  useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
 
 const selectedExportType = ref<ExportTypes>(ExportTypes.CSV);
 
@@ -475,6 +480,8 @@ const mobileExportItems = computed(() => [
     "select_google_account_placeholder": "Select a Google account",
     "continue": "Continue",
     "cancel": "Cancel",
+    "select_at_least_one_contact": "Select at least one contact to {action}",
+    "error_verifying_export_csv": "Error when verifying export CSV",
     "view_in_google_contacts": "View in Google Contacts"
   },
   "fr": {
@@ -496,6 +503,8 @@ const mobileExportItems = computed(() => [
     "select_google_account_placeholder": "Sélectionnez un compte Google",
     "continue": "Continuer",
     "cancel": "Annuler",
+    "select_at_least_one_contact": "Sélectionnez au moins un contact pour {action}",
+    "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
     "view_in_google_contacts": "Voir dans Google Contacts"
   }
 }
