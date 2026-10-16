@@ -41,9 +41,9 @@ export function updateMiningSourcesValidityFromUnavailable(
  * List-only fetch: the mining_sources rows WITHOUT the per-source stats
  * RPC. Used by pages that only need the source list (/mine, dialogs).
  *
- * Narrow select: only the columns the app reads (id, email, type,
- * passive_mining, config). Verified no other column (credentials bytea,
- * user_id, created_at, config_revision) is read anywhere in frontend/src.
+ * Keep the select('*'): leadminer-commercial is merged into this repo at
+ * deploy time and may read mining_sources columns this file cannot know
+ * about. Narrowing here silently drops those columns for commercial code.
  */
 export async function getMiningSourcesList(): Promise<MiningSource[]> {
   const supabase = useSupabaseClient();
@@ -56,7 +56,7 @@ export async function getMiningSourcesList(): Promise<MiningSource[]> {
   const { data: rawSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
-    .select('id, email, type, passive_mining, config');
+    .select('*');
 
   if (error) {
     console.error('Error fetching mining sources:', error.message);
