@@ -12,7 +12,7 @@
   <SplitButton
     v-tooltip.top="
       $leadminerStore.activeMiningTask
-        ? t('mining.mining_in_progress')
+        ? $t('mining.mining_in_progress')
         : isSendByEmailDisabled &&
           isSendBySmsDisabled &&
           t('select_at_least_one_contact', {
@@ -54,7 +54,12 @@ const props = defineProps<{
 
 const $leadminerStore = useLeadminerStore();
 const $screenStore = useScreenStore();
-const { t } = useI18n();
+const { t } = useI18n({
+  useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
 
 const sendCampaignDialogVisible = ref(false);
 const sendSmsCampaignDialogVisible = ref(false);
