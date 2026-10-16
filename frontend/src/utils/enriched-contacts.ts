@@ -1,5 +1,5 @@
 import type { Contact } from '@/types/contact';
-import { DEFAULT_FILTERS } from '~/utils/filters-defaults';
+import { DEFAULT_FILTERS, NOT_EMPTY } from '~/utils/filters-defaults';
 
 /**
  * Whether a contact row carries enrichment output.
@@ -47,12 +47,21 @@ export function isEnrichedContact(
 ): boolean {
   if (!contact) return false;
   if (
-    Boolean(contact.job_title) ||
-    Boolean(contact.works_for) ||
-    (typeof contact.location === 'string' && contact.location.trim().length > 0)
-  )
+    hasText(contact.job_title) ||
+    hasText(contact.works_for) ||
+    hasText(contact.location)
+  ) {
     return true;
+  }
   return hasListSignal(contact.same_as) || hasListSignal(contact.telephone);
+}
+
+/**
+ * Non-empty after trimming, so a CSV import with blank-but-not-empty values
+ * (`"   "`) does not count as enrichment.
+ */
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 /**
@@ -139,6 +148,78 @@ function readFilterValue(entry: unknown): unknown {
 }
 
 /**
+ * A constraint that filters nothing: a null/undefined value, or PrimeVue's
+ * `NOT_EMPTY` match mode with `filter === false`. The location toggle appends
+ * such a constraint when switched off and never removes it, so the gate must
+ * ignore it to still see the default state.
+ */
+function isNoOpConstraint(constraint: unknown): boolean {
+  if (constraint === null || typeof constraint !== 'object') return false;
+  const { value, matchMode } = constraint as {
+    value?: unknown;
+    matchMode?: unknown;
+  };
+  if (value === null || value === undefined) return true;
+  return matchMode === NOT_EMPTY && value === false;
+}
+
+/**
+ * Canonical form of an operator filter for the default comparison: no-op
+ * constraints dropped from both sides. Without this, a default entry
+ * (`[{ value: null }]`) could never compare equal to one whose constraints
+ * have all been neutralised.
+ */
+function canonicalizeEntry(entry: unknown): unknown {
+  if (entry === null || typeof entry !== 'object') return entry;
+  const record = entry as Record<string, unknown>;
+  if (!Array.isArray(record.constraints)) return entry;
+  return {
+    ...record,
+    constraints: record.constraints.filter(
+      (constraint) => !isNoOpConstraint(constraint),
+    ),
+  };
+}
+
+/**
+ * The search box writes `''` into `filters.global.value` when cleared, while
+ * `DEFAULT_FILTERS.global.value` is `null`. PrimeVue's GLOBAL_SEARCH matcher
+ * treats `''` as "no filter", so an emptied box is the default state and must
+ * compare equal here — otherwise clearing the box would disable the sort for
+ * the rest of the session.
+ */
+function globalSearchMatchesDefault(
+  current: unknown,
+  expected: unknown,
+): boolean {
+  if (
+    current === null ||
+    typeof current !== 'object' ||
+    readFilterValue(current) !== ''
+  ) {
+    return JSON.stringify(current) === JSON.stringify(expected);
+  }
+  return (
+    JSON.stringify({
+      ...(current as Record<string, unknown>),
+      value: readFilterValue(expected),
+    }) === JSON.stringify(expected)
+  );
+}
+
+function entryMatchesDefault(
+  key: string,
+  current: unknown,
+  expected: unknown,
+): boolean {
+  if (key === 'global') return globalSearchMatchesDefault(current, expected);
+  return (
+    JSON.stringify(canonicalizeEntry(current)) ===
+    JSON.stringify(canonicalizeEntry(expected))
+  );
+}
+
+/**
  * True when the user has no meaningful filters applied — every
  * `DEFAULT_FILTERS` entry is at its default, except the two hide-toggles
  * ("Hide unreachable contacts" → `status`, "Hide unsubscribed contacts" →
@@ -171,7 +252,7 @@ export function shouldPrioritizeEnrichedContacts(
     if (key === 'status' || key === 'consent_status') continue;
     const current = (filtersValue as Record<string, unknown>)[key];
     if (current === undefined) continue;
-    if (JSON.stringify(current) !== JSON.stringify(defaults[key])) {
+    if (!entryMatchesDefault(key, current, defaults[key])) {
       return false;
     }
   }

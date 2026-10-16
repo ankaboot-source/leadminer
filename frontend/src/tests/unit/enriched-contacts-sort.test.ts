@@ -503,4 +503,32 @@ describe('real filters store feeds the enriched-first gate', () => {
       false,
     );
   });
+
+  it('re-enables the sort after the search box is cleared', () => {
+    const store = freshFiltersStore();
+    store.initializeTableFilters('contacts');
+    store.filters.global.value = 'typed query';
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(
+      false,
+    );
+
+    // The box writes '' on clear while the default is null; PrimeVue treats
+    // '' as "no filter", so the gate must normalise it back to the default.
+    store.filters.global.value = '';
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(true);
+  });
+
+  it('re-enables the sort after the location toggle is switched back off', () => {
+    const store = freshFiltersStore();
+    store.initializeTableFilters('contacts');
+    store.onLocationToggle(true);
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(
+      false,
+    );
+
+    // Switching off leaves a no-op NOT_EMPTY constraint behind; the gate must
+    // ignore it rather than treat it as an active filter forever.
+    store.onLocationToggle(false);
+    expect(shouldPrioritizeEnrichedContacts(store.filters as never)).toBe(true);
+  });
 });
