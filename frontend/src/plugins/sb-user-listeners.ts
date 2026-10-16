@@ -15,14 +15,14 @@ import type { Profile } from '~/types/profile';
  * @throws An error if fetching the profile fails.
  */
 async function getCurrentUserProfile(client: SupabaseClient) {
-  // Narrow select: only the columns the app reads (user_id, email,
-  // full_name, gdpr_details.hasAcceptedEnriching). Verified no other
-  // profile column (credits, smsgate_*, simple_sms_gateway_*) is read
-  // anywhere in frontend/src. Realtime payloads still deliver full rows.
+  // Keep this select('*'). leadminer-commercial is merged into this repo at
+  // deploy time and reads profile columns this file cannot know about (e.g.
+  // `credits` for the enrich billing gate). Narrowing here silently returns
+  // undefined for those columns, which breaks commercial credit checks.
   const { data, error } = await client
     .schema('private')
     .from('profiles')
-    .select('user_id, email, full_name, gdpr_details')
+    .select('*')
     .single<Profile>();
 
   if (error) throw error;
