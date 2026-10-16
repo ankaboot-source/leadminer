@@ -1005,6 +1005,10 @@ import {
   toStateClass,
 } from '~/utils/mining-table-performance';
 import { resolveMiningActionsDisabled } from '~/utils/mining-table-actions';
+import {
+  partitionEnrichedFirst,
+  shouldPrioritizeEnrichedContacts,
+} from '~/utils/enriched-contacts';
 import { useContactVerification } from '~/composables/useContactVerification';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
@@ -1162,9 +1166,17 @@ const columnVisibility = computed(() =>
 );
 const jobDetailsFields = ['job_title', 'works_for'];
 const toggleJobDetailsTooltip = `${t('toggle_job_details_tooltip')} (${jobDetailsFields.map((field) => $t(`contact.${field}`)).join(', ')})`;
-const tableRows = computed(() =>
-  hardFilter.value ? jobDetailsContacts.value : (contacts.value ?? []),
-);
+const tableRows = computed(() => {
+  const rows = hardFilter.value
+    ? jobDetailsContacts.value
+    : (contacts.value ?? []);
+  // With no meaningful filters, enriched contacts float above plain ones via
+  // a stable partition (DB temperature order survives within each group).
+  // Any real filter active → today's order is preserved exactly (no reorder).
+  return shouldPrioritizeEnrichedContacts($filtersStore.filters)
+    ? partitionEnrichedFirst(rows)
+    : rows;
+});
 
 /* *** Settings *** */
 const settingsPanel = ref();
