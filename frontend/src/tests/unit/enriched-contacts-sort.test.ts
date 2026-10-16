@@ -135,6 +135,99 @@ describe('isEnrichedContact', () => {
     ).toBe(false);
     expect(isEnrichedContact(makeContact('a') as never)).toBe(false);
   });
+
+  it('treats same_as alone as enriched (signature-extraction output)', () => {
+    expect(
+      isEnrichedContact(
+        makeContact('a', {
+          same_as: ['https://linkedin.com/in/someone'],
+        }) as never,
+      ),
+    ).toBe(true);
+  });
+
+  it('treats the joined-string form of same_as as enriched', () => {
+    expect(
+      isEnrichedContact(
+        makeContact('a', {
+          same_as: 'https://linkedin.com/in/a,https://x.com/b',
+        }) as never,
+      ),
+    ).toBe(true);
+  });
+
+  it('treats telephone alone as enriched (signature-extraction output)', () => {
+    expect(
+      isEnrichedContact(
+        makeContact('a', { telephone: ['+1-555-0100'] }) as never,
+      ),
+    ).toBe(true);
+  });
+
+  it('treats location alone as enriched', () => {
+    expect(
+      isEnrichedContact(makeContact('a', { location: 'Berlin, DE' }) as never),
+    ).toBe(true);
+  });
+
+  it('does not treat empty location as enriched', () => {
+    expect(isEnrichedContact(makeContact('a', { location: '' }) as never)).toBe(
+      false,
+    );
+    expect(
+      isEnrichedContact(makeContact('a', { location: '  ' }) as never),
+    ).toBe(false);
+    expect(
+      isEnrichedContact(makeContact('a', { location: null }) as never),
+    ).toBe(false);
+  });
+
+  it('does not treat a contact with all enrichment signals empty as enriched', () => {
+    expect(
+      isEnrichedContact(
+        makeContact('a', {
+          job_title: null,
+          works_for: null,
+          location: '',
+          same_as: [],
+          telephone: '',
+        }) as never,
+      ),
+    ).toBe(false);
+  });
+
+  it('does not treat empty same_as as enriched', () => {
+    expect(isEnrichedContact(makeContact('a', { same_as: [] }) as never)).toBe(
+      false,
+    );
+    expect(isEnrichedContact(makeContact('a', { same_as: '' }) as never)).toBe(
+      false,
+    );
+    expect(
+      isEnrichedContact(makeContact('a', { same_as: '  ' }) as never),
+    ).toBe(false);
+  });
+
+  it('does not treat empty telephone as enriched', () => {
+    expect(
+      isEnrichedContact(makeContact('a', { telephone: [] }) as never),
+    ).toBe(false);
+    expect(
+      isEnrichedContact(makeContact('a', { telephone: '' }) as never),
+    ).toBe(false);
+  });
+
+  it('does not treat a joined empty telephone string as enriched', () => {
+    expect(
+      isEnrichedContact(makeContact('a', { telephone: '' }) as never),
+    ).toBe(false);
+    expect(
+      isEnrichedContact(makeContact('a', { telephone: ',' }) as never),
+    ).toBe(false);
+    expect(
+      isEnrichedContact(makeContact('a', { telephone: ' ,  ,' }) as never),
+    ).toBe(false);
+  });
 });
 
 describe('shouldPrioritizeEnrichedContacts', () => {
