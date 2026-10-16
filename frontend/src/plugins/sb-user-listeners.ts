@@ -1,6 +1,7 @@
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
+  Session,
   SupabaseClient,
 } from '@supabase/supabase-js';
 import { useSupabaseUserProfile } from '~/composables/useSupabaseUserProfile';
@@ -88,9 +89,11 @@ async function updateFirstTimeSignIn() {
 }
 
 /**
- * Handles first-time sign-in logic.
+ * Handles first-time sign-in logic. Idempotent: it also runs on
+ * INITIAL_SESSION (every reload), so each operation only writes when it would
+ * actually change something.
  */
-async function handleFirstTimeSignIn() {
+async function handleFirstTimeSignIn(session: Session) {
   const {
     data: { user },
     error,
@@ -98,11 +101,12 @@ async function handleFirstTimeSignIn() {
 
   if (!user || error) throw new Error('Failed to fetch user data.');
 
-  const $session = useSupabaseSession();
-
   const provider = user.app_metadata?.provider;
-  const providerToken = $session.value?.provider_token;
-  const providerRefreshToken = $session.value?.provider_refresh_token;
+  // Read the provider tokens from the session passed to onAuthStateChange.
+  // useSupabaseSession() can lag a tick, so it could still read null right
+  // after SIGNED_IN and skip the OAuth source with no later retry.
+  const providerToken = session.provider_token;
+  const providerRefreshToken = session.provider_refresh_token;
   const firstTimeSignin = user.user_metadata.first_time_signin;
   const emailTemplate = user.user_metadata.EmailTemplate;
   const language = navigator.language.split('-')[0];
@@ -119,28 +123,39 @@ async function handleFirstTimeSignIn() {
     providerToken &&
     providerRefreshToken
   ) {
-    await addMiningSourceFromProviderToken(
-      provider,
-      providerToken,
-      providerRefreshToken,
+    const $leadminerStore = useLeadminerStore();
+
+    // Load the list first so the existence check below is not skipped on a
+    // fresh reload (INITIAL_SESSION), which would re-POST on every page load.
+    await $leadminerStore.ensureMiningSourcesLoaded();
+
+    const userEmail = user.email?.toLowerCase();
+    const alreadyExists = $leadminerStore.miningSources.some(
+      (source) =>
+        source.email?.toLowerCase() === userEmail && source.type === provider,
     );
 
-    // The source row was just created. Some views (e.g. /mine) may have
-    // already fetched an empty source list before this POST resolved, and
-    // the store latches that result for the session. Refresh it so panels
-    // showing the "choose a mining source" empty state switch to the
-    // existing-source dropdown.
-    try {
-      // Through the latch, not fetchMiningSources directly: this can run while
-      // the page is already loading sources, and a parallel load made
-      // mining_sources plus get_mining_source_overview fire twice on /mine.
-      await useLeadminerStore().ensureMiningSourcesLoaded({ refresh: true });
-    } catch (refreshError) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[auth] Failed to refresh mining sources after sign-in',
-        refreshError,
+    if (!alreadyExists) {
+      await addMiningSourceFromProviderToken(
+        provider,
+        providerToken,
+        providerRefreshToken,
       );
+
+      // The row was just created. Some views (e.g. /mine) may have already
+      // fetched an empty source list before this POST resolved, and the store
+      // latches that result for the session. Refresh it so panels showing the
+      // "choose a mining source" empty state switch to the existing-source
+      // dropdown.
+      try {
+        await $leadminerStore.ensureMiningSourcesLoaded({ refresh: true });
+      } catch (refreshError) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[auth] Failed to refresh mining sources after sign-in',
+          refreshError,
+        );
+      }
     }
   }
 
@@ -197,14 +212,12 @@ export default defineNuxtPlugin({
     $supabaseClient.auth.onAuthStateChange((event, session) => {
       authenticated.value = session !== null;
 
-      // handleFirstTimeSignIn runs auth.getUser() plus writes (first-time
-      // flag, email-template language, OAuth source creation). It must run
-      // only for a genuine sign-in, not when the session is restored from
-      // storage (INITIAL_SESSION) or refreshed (TOKEN_REFRESHED) on every
-      // page load. The profile fetch and realtime channel in the watcher
-      // above already cover those cases.
-      if (event === 'SIGNED_IN' && session) {
-        handleFirstTimeSignIn().catch((error: unknown) => {
+      // INITIAL_SESSION is the reload path (EmailAuth reloadNuxtApp after
+      // password sign-in, OAuth landing): supabase-js restores from storage
+      // and no SIGNED_IN fires. Run for both; handleFirstTimeSignIn is
+      // idempotent so nothing is written twice.
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        handleFirstTimeSignIn(session).catch((error: unknown) => {
           // eslint-disable-next-line no-console
           console.error('[auth] First-time sign-in handling failed:', error);
         });

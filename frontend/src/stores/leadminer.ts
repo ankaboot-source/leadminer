@@ -6,9 +6,7 @@ import {
   getMiningSources,
   getMiningSourcesList,
   updateMiningSourcesValidity,
-  updateMiningSourcesValidityFromUnavailable,
 } from '@/utils/sources';
-import { extractUnavailableSenderEmails } from '@/utils/senderOptions';
 import {
   type MiningSourceConfigFlags,
   deriveSourceConfig,
@@ -40,7 +38,7 @@ import { sse } from '../utils/sse';
 import { useEnrichmentStore } from './enrichment';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
-  const { $api, $saasEdgeFunctions, $i18n } = useNuxtApp();
+  const { $api, $i18n } = useNuxtApp();
   const { t, getBrowserLocale } = $i18n;
   const language = getBrowserLocale() || 'en';
   const $toast = useToast();
@@ -119,10 +117,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const passiveMiningDialog = ref(false);
   const passiveMiningDialogShown = ref(false);
-  // resolveSenderOptions does per-source verifyTransport (SMTP/OAuth + token
-  // refresh) plus a DB call. With several sources it can easily take 5-10s,
-  // and a previous 3s cap caused false "preserving previous validity" warnings.
-  const SENDER_OPTIONS_TIMEOUT_MS = 10_000;
 
   const miningStartedAndFinished = computed(() =>
     Boolean(miningStartedAt.value && miningCompleted.value),
@@ -233,6 +227,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     return miningSources.value.find((source) => source.email === email);
   }
 
+  // Tracks the in-flight non-silent source load so concurrent callers can
+  // await it instead of being dropped by the isLoadingMiningSources guard.
+  let miningSourcesLoadPromise: Promise<void> | null = null;
+  // Whether that in-flight load fetches the per-source overview stats. A
+  // queued overview request is a no-op when the running load already has them.
+  let miningSourcesLoadIncludesOverview = false;
+
   /**
    * Retrieves mining sources.
    *
@@ -245,13 +246,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   ) {
     const { silent = false, includeOverview = false } = options;
 
-    // Silent mode is for background refreshes (e.g. passive-status polling):
-    // no loading flag (watchers react to it).
-    if (!silent) {
-      isLoadingMiningSources.value = true;
-    }
-
-    try {
+    const load = async () => {
       const sources = includeOverview
         ? await getMiningSources()
         : await getMiningSourcesList();
@@ -259,13 +254,54 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const previousValidityMap = new Map(
         miningSources.value.map((s) => [s.email.toLowerCase(), s.isValid]),
       );
+      // Overview stats only arrive with `includeOverview`. A list-only refresh
+      // must carry the previously-loaded values forward, or the shared
+      // miningSources array loses totalContacts / totalFromLastMining /
+      // lastMiningDate and /sources flickers to 0 until the next poll.
+      const previousSourcesMap = new Map(
+        miningSources.value.map((s) => [s.email.toLowerCase(), s]),
+      );
 
-      miningSources.value = sources.map((source) => ({
-        ...source,
-        isValid: previousValidityMap.get(source.email.toLowerCase()) ?? true,
-      }));
+      miningSources.value = sources.map((source) => {
+        const key = source.email.toLowerCase();
+        const merged: MiningSource = {
+          ...source,
+          isValid: previousValidityMap.get(key) ?? true,
+        };
+
+        if (!includeOverview) {
+          const previous = previousSourcesMap.get(key);
+          if (previous) {
+            merged.totalContacts = previous.totalContacts;
+            merged.totalFromLastMining = previous.totalFromLastMining;
+            merged.lastMiningDate = previous.lastMiningDate;
+          }
+        }
+
+        return merged;
+      });
+    };
+
+    // Silent mode is for background refreshes (e.g. passive-status polling):
+    // no loading flag (watchers react to it).
+    if (silent) {
+      await load();
+      return;
+    }
+
+    isLoadingMiningSources.value = true;
+    miningSourcesLoadIncludesOverview = includeOverview;
+    // Publish the in-flight promise so ensureMiningSourcesLoaded can await it
+    // and upgrade a concurrent list-only load with the overview stats instead
+    // of dropping the request.
+    const promise = load();
+    miningSourcesLoadPromise = promise;
+    try {
+      await promise;
     } finally {
-      if (!silent) {
+      if (miningSourcesLoadPromise === promise) {
+        miningSourcesLoadPromise = null;
+        miningSourcesLoadIncludesOverview = false;
         isLoadingMiningSources.value = false;
       }
     }
@@ -286,6 +322,21 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     includeOverview = false,
   }: { refresh?: boolean; includeOverview?: boolean } = {}) {
     if (isLoadingMiningSources.value) {
+      // A load is already running. Await it rather than dropping the caller,
+      // then fetch the overview stats if this caller needs them and the
+      // running list-only load did not fetch them.
+      const running = miningSourcesLoadPromise;
+      const runningIncludesOverview = miningSourcesLoadIncludesOverview;
+      if (running) {
+        await running.catch(() => {});
+      }
+      if (includeOverview && !runningIncludesOverview) {
+        try {
+          await fetchMiningSources({ silent: true, includeOverview: true });
+        } catch (error) {
+          console.warn('[mining] failed to refresh mining sources', error);
+        }
+      }
       return;
     }
 
@@ -306,47 +357,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     } catch (error) {
       // Leave hasLoadedMiningSources=false so the next consumer retries.
       console.warn('[mining] failed to load mining sources', error);
-    }
-  }
-
-  /**
-   * Lazy sender-validity refresh. Called explicitly when the sender UI is
-   * opened (CampaignComposerDialog loads sender options on open and updates
-   * validity itself) — never on page mount, so /mine no longer fires a
-   * sender-options request (and its 503 console warning) on every load.
-   */
-  async function fetchSenderOptionsInBackground() {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        SENDER_OPTIONS_TIMEOUT_MS,
-      );
-
-      const senderOptionsData = (await $saasEdgeFunctions(
-        'email-campaigns/campaigns/sender-options',
-        { method: 'POST', signal: controller.signal },
-      )) as {
-        options?: { email: string; available: boolean }[];
-      };
-
-      clearTimeout(timeoutId);
-
-      const allOptions = (senderOptionsData.options || []).map((option) => ({
-        email: option.email,
-        available: option.available,
-      }));
-      const unavailableEmails = extractUnavailableSenderEmails(allOptions);
-
-      miningSources.value = updateMiningSourcesValidityFromUnavailable(
-        miningSources.value,
-        unavailableEmails,
-      );
-    } catch (error) {
-      console.warn(
-        'Failed to fetch sender-options, preserving previous validity:',
-        error,
-      );
     }
   }
 
@@ -1000,7 +1010,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchInbox,
     fetchMiningSources,
     ensureMiningSourcesLoaded,
-    fetchSenderOptionsInBackground,
     getMiningSourceByEmail,
     getCurrentRunningMining,
     startMining,

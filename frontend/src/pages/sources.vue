@@ -804,7 +804,6 @@ onUnmounted(() => {
 onMounted(async () => {
   // Always re-fetch on mount: passive-mining health only changes server-side,
   // so a missed realtime/poll update must not survive a navigation here.
-  // includeOverview: this page renders the per-source stats.
   await $leadminer.ensureMiningSourcesLoaded({
     refresh: true,
     includeOverview: true,
