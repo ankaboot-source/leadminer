@@ -328,7 +328,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const running = miningSourcesLoadPromise;
       const runningIncludesOverview = miningSourcesLoadIncludesOverview;
       if (running) {
-        await running.catch(() => {});
+        await running.catch(() => undefined);
       }
       if (includeOverview && !runningIncludesOverview) {
         try {

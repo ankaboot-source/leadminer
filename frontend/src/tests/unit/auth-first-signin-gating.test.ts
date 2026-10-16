@@ -22,7 +22,7 @@ interface TestSession {
   provider_refresh_token?: string | null;
 }
 
-const h = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   updateUser: vi.fn(),
   saasEdgeFunctions: vi.fn(),
@@ -37,10 +37,10 @@ const h = vi.hoisted(() => ({
 // defineNuxtPlugin / useNuxtApp are auto-imported from #app/nuxt.
 vi.mock('#app/nuxt', () => ({
   defineNuxtPlugin: (config: { setup: () => void }) => {
-    h.pluginSetup = config.setup;
+    mocks.pluginSetup = config.setup;
     return config;
   },
-  useNuxtApp: () => ({ $saasEdgeFunctions: h.saasEdgeFunctions }),
+  useNuxtApp: () => ({ $saasEdgeFunctions: mocks.saasEdgeFunctions }),
 }));
 
 vi.mock('~/composables/useSupabaseUserProfile', () => ({
@@ -49,12 +49,14 @@ vi.mock('~/composables/useSupabaseUserProfile', () => ({
 
 vi.mock('~/stores/leadminer', () => ({
   useLeadminerStore: () => ({
-    ensureMiningSourcesLoaded: h.ensureMiningSourcesLoaded,
+    ensureMiningSourcesLoaded: mocks.ensureMiningSourcesLoaded,
     get miningSources() {
-      return h.storeSources;
+      return mocks.storeSources;
     },
     getMiningSourceByEmail: (email: string) =>
-      h.storeSources.find((s) => s.email.toLowerCase() === email.toLowerCase()),
+      mocks.storeSources.find(
+        (s) => s.email.toLowerCase() === email.toLowerCase(),
+      ),
   }),
 }));
 
@@ -71,22 +73,22 @@ vi.mock(
     useSupabaseClient: () => ({
       auth: {
         onAuthStateChange: (cb: (event: string, session: unknown) => void) => {
-          h.authStateCallback = cb;
+          mocks.authStateCallback = cb;
         },
-        getUser: h.getUser,
-        updateUser: h.updateUser,
+        getUser: mocks.getUser,
+        updateUser: mocks.updateUser,
       },
       // The plugin's authenticated watcher fetches the profile and subscribes
       // a realtime channel on every signed-in event; keep those inert.
       schema: () => ({
         from: () => ({
           select: () => ({
-            single: async () => ({ data: { id: 'user-1' }, error: null }),
+            single: () => ({ data: { id: 'user-1' }, error: null }),
           }),
         }),
       }),
-      channel: () => ({ on: () => ({ subscribe: () => {} }) }),
-      removeChannel: async () => {},
+      channel: () => ({ on: () => ({ subscribe: () => undefined }) }),
+      removeChannel: () => undefined,
     }),
   }),
 );
@@ -107,7 +109,7 @@ vi.mock(
 vi.stubGlobal('ref', ref);
 // The plugin registers a profile-realtime watcher behind import.meta.client;
 // a no-op keeps it from touching the partial client mock.
-vi.stubGlobal('watch', () => {});
+vi.stubGlobal('watch', () => undefined);
 
 // Mirror every mocked module as a global too: depending on the transform pass,
 // Nuxt auto-imports either resolve to injected imports (covered by the
@@ -117,20 +119,20 @@ vi.stubGlobal('useSupabaseUser', () => ({ value: { id: 'user-1' } }));
 vi.stubGlobal('useSupabaseClient', () => ({
   auth: {
     onAuthStateChange: (cb: (event: string, session: unknown) => void) => {
-      h.authStateCallback = cb;
+      mocks.authStateCallback = cb;
     },
-    getUser: h.getUser,
-    updateUser: h.updateUser,
+    getUser: mocks.getUser,
+    updateUser: mocks.updateUser,
   },
   schema: () => ({
     from: () => ({
       select: () => ({
-        single: async () => ({ data: { id: 'user-1' }, error: null }),
+        single: () => ({ data: { id: 'user-1' }, error: null }),
       }),
     }),
   }),
-  channel: () => ({ on: () => ({ subscribe: () => {} }) }),
-  removeChannel: async () => {},
+  channel: () => ({ on: () => ({ subscribe: () => undefined }) }),
+  removeChannel: () => undefined,
 }));
 vi.stubGlobal('useSupabaseSession', () => {
   throw new Error(
@@ -138,10 +140,10 @@ vi.stubGlobal('useSupabaseSession', () => {
   );
 });
 vi.stubGlobal('useNuxtApp', () => ({
-  $saasEdgeFunctions: h.saasEdgeFunctions,
+  $saasEdgeFunctions: mocks.saasEdgeFunctions,
 }));
 vi.stubGlobal('defineNuxtPlugin', (config: { setup: () => void }) => {
-  h.pluginSetup = config.setup;
+  mocks.pluginSetup = config.setup;
   return config;
 });
 
@@ -161,7 +163,7 @@ function mockUser(
     emailTemplateLanguage,
   } = overrides;
 
-  h.getUser.mockResolvedValue({
+  mocks.getUser.mockResolvedValue({
     data: {
       user: {
         id: 'user-1',
@@ -182,23 +184,27 @@ function mockUser(
 }
 
 function registerListener() {
-  h.authStateCallback = undefined;
-  h.pluginSetup?.();
+  mocks.authStateCallback = undefined;
+  mocks.pluginSetup?.();
 }
 
 function emit(event: AuthEvent, session: TestSession | null = {}) {
-  h.authStateCallback?.(event, session);
+  mocks.authStateCallback?.(event, session);
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
-  h.authStateCallback = undefined;
-  h.storeSources = [];
-  h.getUser.mockReset();
-  h.updateUser.mockReset().mockResolvedValue({ error: null });
-  h.saasEdgeFunctions.mockReset().mockResolvedValue(undefined);
-  h.ensureMiningSourcesLoaded.mockReset().mockResolvedValue(undefined);
+  mocks.authStateCallback = undefined;
+  mocks.storeSources = [];
+  mocks.getUser.mockReset();
+  mocks.updateUser.mockReset().mockResolvedValue({ error: null });
+  mocks.saasEdgeFunctions
+    .mockReset()
+    .mockImplementation(() => Promise.resolve());
+  mocks.ensureMiningSourcesLoaded
+    .mockReset()
+    .mockImplementation(() => Promise.resolve());
 });
 
 describe('sb-user-listeners first-sign-in side effects', () => {
@@ -212,11 +218,11 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     });
 
     await vi.waitFor(() =>
-      expect(h.updateUser).toHaveBeenCalledWith({
+      expect(mocks.updateUser).toHaveBeenCalledWith({
         data: { first_time_signin: true },
       }),
     );
-    expect(h.saasEdgeFunctions).not.toHaveBeenCalled();
+    expect(mocks.saasEdgeFunctions).not.toHaveBeenCalled();
   });
 
   it('runs first-time work on SIGNED_IN', async () => {
@@ -229,7 +235,7 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     });
 
     await vi.waitFor(() =>
-      expect(h.updateUser).toHaveBeenCalledWith({
+      expect(mocks.updateUser).toHaveBeenCalledWith({
         data: { first_time_signin: true },
       }),
     );
@@ -243,9 +249,9 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     emit('USER_UPDATED');
     await flush();
 
-    expect(h.getUser).not.toHaveBeenCalled();
-    expect(h.updateUser).not.toHaveBeenCalled();
-    expect(h.saasEdgeFunctions).not.toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.saasEdgeFunctions).not.toHaveBeenCalled();
   });
 
   it('is idempotent: no write when first_time_signin is already set', async () => {
@@ -255,7 +261,7 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     emit('INITIAL_SESSION');
     await flush();
 
-    expect(h.updateUser).not.toHaveBeenCalled();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
   });
 
   it('creates the OAuth source once from the session provider tokens', async () => {
@@ -267,28 +273,28 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     registerListener();
 
     emit('SIGNED_IN', {
-      provider_token: 'access-token',
-      provider_refresh_token: 'refresh-token',
+      provider_token: 'oauth-access-fixture',
+      provider_refresh_token: 'oauth-refresh-fixture',
     });
 
     await vi.waitFor(() =>
-      expect(h.saasEdgeFunctions).toHaveBeenCalledWith(
+      expect(mocks.saasEdgeFunctions).toHaveBeenCalledWith(
         'mining-sources',
         expect.objectContaining({
           method: 'POST',
           body: expect.objectContaining({
             provider: 'google',
-            provider_token: 'access-token',
-            provider_refresh_token: 'refresh-token',
+            provider_token: 'oauth-access-fixture',
+            provider_refresh_token: 'oauth-refresh-fixture',
           }),
         }),
       ),
     );
-    expect(h.saasEdgeFunctions).toHaveBeenCalledTimes(1);
+    expect(mocks.saasEdgeFunctions).toHaveBeenCalledTimes(1);
   });
 
   it('skips the OAuth POST when the source already exists', async () => {
-    h.storeSources = [{ email: 'user@example.com', type: 'google' }];
+    mocks.storeSources = [{ email: 'user@example.com', type: 'google' }];
     mockUser({
       provider: 'google',
       firstTimeSignin: true,
@@ -297,12 +303,12 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     registerListener();
 
     emit('SIGNED_IN', {
-      provider_token: 'access-token',
-      provider_refresh_token: 'refresh-token',
+      provider_token: 'oauth-access-fixture',
+      provider_refresh_token: 'oauth-refresh-fixture',
     });
     await flush();
 
-    expect(h.saasEdgeFunctions).not.toHaveBeenCalled();
+    expect(mocks.saasEdgeFunctions).not.toHaveBeenCalled();
   });
 
   it('initialises the email-template language only when it differs', async () => {
@@ -311,18 +317,18 @@ describe('sb-user-listeners first-sign-in side effects', () => {
 
     emit('INITIAL_SESSION');
     await vi.waitFor(() =>
-      expect(h.saasEdgeFunctions).toHaveBeenCalledWith(
+      expect(mocks.saasEdgeFunctions).toHaveBeenCalledWith(
         'email-templates',
         expect.objectContaining({ body: { language: 'en' } }),
       ),
     );
 
-    h.saasEdgeFunctions.mockClear();
+    mocks.saasEdgeFunctions.mockClear();
     mockUser({ firstTimeSignin: true, emailTemplateLanguage: 'en' });
     registerListener();
     emit('INITIAL_SESSION');
     await flush();
 
-    expect(h.saasEdgeFunctions).not.toHaveBeenCalled();
+    expect(mocks.saasEdgeFunctions).not.toHaveBeenCalled();
   });
 });
