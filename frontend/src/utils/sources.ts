@@ -37,7 +37,11 @@ export function updateMiningSourcesValidityFromUnavailable(
   }));
 }
 
-export async function getMiningSources(): Promise<MiningSource[]> {
+/**
+ * List-only fetch: the mining_sources rows WITHOUT the per-source stats RPC.
+ * Used by pages that only need the source list (/mine, dialogs).
+ */
+export async function getMiningSourcesList(): Promise<MiningSource[]> {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
 
@@ -45,8 +49,9 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw new Error('User not authenticated');
   }
 
-  const userId = user.value.id || (user.value as { sub?: string } | null)?.sub;
-
+  // Keep this select('*'). leadminer-commercial is merged into this repo at
+  // deploy time and may read mining_sources columns this file cannot know
+  // about. Narrowing here silently drops those columns for commercial code.
   const { data: rawSources, error } = await supabase
     .schema('private')
     .from('mining_sources')
@@ -57,47 +62,71 @@ export async function getMiningSources(): Promise<MiningSource[]> {
     throw error;
   }
 
-  const miningSources = (rawSources ?? []) as MiningSource[];
+  return (rawSources ?? []) as MiningSource[];
+}
 
-  let overviewData: MiningSourceOverview[] | null = null;
-  let overviewError: Error | null = null;
+/**
+ * Overview-only fetch: the per-source stats RPC (total contacts, last mining
+ * date). Only /sources renders these.
+ */
+export async function getMiningSourceOverview(): Promise<
+  Map<string, MiningSourceOverview>
+> {
+  const supabase = useSupabaseClient();
+  const user = useSupabaseUser();
+  const overviewMap = new Map<string, MiningSourceOverview>();
 
-  if (userId) {
-    const overviewResponse = await supabase
-      .schema('private')
-      .rpc('get_mining_source_overview', { p_user_id: userId });
-
-    overviewData = (overviewResponse.data as MiningSourceOverview[]) ?? null;
-    overviewError = overviewResponse.error;
+  const userId = user.value?.id || (user.value as { sub?: string } | null)?.sub;
+  if (!userId) {
+    return overviewMap;
   }
+
+  const { data: overviewData, error: overviewError } = await supabase
+    .schema('private')
+    .rpc('get_mining_source_overview', { p_user_id: userId });
 
   if (overviewError) {
     console.error(
       'Error fetching mining source overview:',
       overviewError.message,
     );
+    return overviewMap;
   }
 
-  const overviewMap = new Map<string, MiningSourceOverview>();
-  if (overviewData) {
-    for (const row of overviewData as MiningSourceOverview[]) {
-      overviewMap.set(row.source_email, row);
-    }
+  for (const row of (overviewData as MiningSourceOverview[] | null) ?? []) {
+    overviewMap.set(row.source_email, row);
   }
 
-  const sourcesWithStats: MiningSource[] = (miningSources || []).map(
-    (source) => {
-      const overview = overviewMap.get(source.email);
-      return {
-        ...source,
-        totalContacts: overview?.total_contacts ?? 0,
-        totalFromLastMining: overview?.total_from_last_mining ?? 0,
-        lastMiningDate: overview?.last_mining_date ?? undefined,
-      };
-    },
-  );
+  return overviewMap;
+}
 
-  return sourcesWithStats;
+function applyOverviewToSources(
+  miningSources: MiningSource[],
+  overviewMap: Map<string, MiningSourceOverview>,
+): MiningSource[] {
+  return (miningSources || []).map((source) => {
+    const overview = overviewMap.get(source.email);
+    return {
+      ...source,
+      totalContacts: overview?.total_contacts ?? 0,
+      totalFromLastMining: overview?.total_from_last_mining ?? 0,
+      lastMiningDate: overview?.last_mining_date ?? undefined,
+    };
+  });
+}
+
+/**
+ * Combined fetch: source list + overview stats. Prefer
+ * getMiningSourcesList() unless the caller renders the stats (only /sources).
+ */
+export async function getMiningSources(): Promise<MiningSource[]> {
+  // Sequential on purpose: fetch the list first so a list failure
+  // short-circuits before the overview RPC fires (Promise.all would run both
+  // regardless and waste the RPC when the list throws).
+  const miningSources = await getMiningSourcesList();
+  const overviewMap = await getMiningSourceOverview();
+
+  return applyOverviewToSources(miningSources, overviewMap);
 }
 
 /**
@@ -128,6 +157,9 @@ export async function updateMiningSourceConfig(
 
 async function findSourceByEmail(email: string, type: string) {
   const supabase = useSupabaseClient();
+  // Narrow select is safe here (unlike the list fetch): this is a local
+  // lookup helper for the config PATCH; the row is never stored in the shared
+  // miningSources array, so dropping commercial-only columns is harmless.
   const { data, error } = await supabase
     .schema('private')
     .from('mining_sources')
