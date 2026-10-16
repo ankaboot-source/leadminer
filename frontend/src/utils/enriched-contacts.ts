@@ -4,22 +4,73 @@ import { DEFAULT_FILTERS } from '~/utils/filters-defaults';
 /**
  * Whether a contact row carries enrichment output.
  *
- * The enrichment step writes these fields onto `private.persons` during the
- * run, before refinement (`backend/src/db/supabase/enrichments.ts`). `status`
- * is deliberately NOT used here: it is email-verification status and nearly
- * every verified contact has it, so it would match almost everything.
- * `temperature` is not used either: refined rows only exist after
- * `refine_persons` runs at mining completion, so every streamed `/mine` row
- * would have `temperature = null` and the sort would never fire mid-run.
+ * TWO enrichment paths write onto `private.persons` during the run, before
+ * refinement:
+ * - contact enrichment (`backend/src/db/supabase/enrichments.ts`), and
+ * - email signature extraction
+ *   (`backend/src/workers/email-signature/handler.ts`).
+ * Both write `job_title` and `works_for`; signature extraction additionally
+ * writes `same_as`, `telephone`, and `location`, so those three count here as
+ * well — a signature-enriched row with no job title or company must still
+ * float up. The five signals are therefore `job_title`, `works_for`,
+ * `location`, `telephone`, and `same_as`.
+ *
+ * `location` is a weaker signal than the others: CSV/PostgreSQL imports map a
+ * "Location" column onto it (`ImportPostgreSQLDialog.vue`), so it can arrive
+ * without any enrichment. It is included anyway per explicit instruction.
+ *
+ * `status` is deliberately NOT used here: it is email-verification status
+ * and nearly every verified contact has it, so it would match almost
+ * everything. `temperature` is not used either: refined rows only exist
+ * after `refine_persons` runs at mining completion, so every streamed
+ * `/mine` row would have `temperature = null` and the sort would never fire
+ * mid-run. `name`, `given_name`, `family_name`, `alternate_name`
+ * and `image` are not used either: the mining source itself frequently
+ * populates them on raw, never-enriched persons, so they would match almost
+ * every row and defeat the sort.
+ *
+ * `same_as` / `telephone` accept the string form some rows carry (the
+ * signature worker writes `(contact.same_as ?? []).join(',')`): a joined
+ * empty string does not count.
  *
  * On the mine origin `works_for` stays a raw org UUID (org-name resolution is
  * skipped there) — non-null is still a valid signal.
  */
 export function isEnrichedContact(
-  contact: Pick<Contact, 'job_title' | 'works_for'> | null | undefined,
+  contact:
+    | Pick<
+        Contact,
+        'job_title' | 'works_for' | 'location' | 'same_as' | 'telephone'
+      >
+    | null
+    | undefined,
 ): boolean {
   if (!contact) return false;
-  return Boolean(contact.job_title) || Boolean(contact.works_for);
+  if (
+    Boolean(contact.job_title) ||
+    Boolean(contact.works_for) ||
+    (typeof contact.location === 'string' && contact.location.trim().length > 0)
+  )
+    return true;
+  return hasListSignal(contact.same_as) || hasListSignal(contact.telephone);
+}
+
+/**
+ * Non-empty check for `same_as` / `telephone`, tolerating both the array
+ * form (`string[] | null` on the `Contact` type) and the joined-string form
+ * some rows carry. Empty arrays, blank strings, and joined empty strings
+ * ("" or only commas/whitespace) do not count.
+ */
+function hasListSignal(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some((entry) =>
+      typeof entry === 'string' ? entry.trim().length > 0 : Boolean(entry),
+    );
+  }
+  if (typeof value === 'string') {
+    return value.split(',').some((part) => part.trim().length > 0);
+  }
+  return false;
 }
 
 /**
@@ -32,7 +83,10 @@ export function isEnrichedContact(
  * mutate parent state.
  */
 export function partitionEnrichedFirst<
-  T extends Pick<Contact, 'job_title' | 'works_for'>,
+  T extends Pick<
+    Contact,
+    'job_title' | 'works_for' | 'location' | 'same_as' | 'telephone'
+  >,
 >(rows: readonly T[]): T[] {
   const enriched: T[] = [];
   const plain: T[] = [];
