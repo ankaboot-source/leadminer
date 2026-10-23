@@ -1,4 +1,4 @@
-FROM node:lts-alpine as build-stage
+FROM node:24-alpine as build-stage
 
 ARG SERVER_ENDPOINT
 ARG SUPABASE_PROJECT_URL
