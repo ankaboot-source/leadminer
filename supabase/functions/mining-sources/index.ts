@@ -93,6 +93,36 @@ async function authMiddleware(c: Context, next: () => Promise<void>) {
   return next();
 }
 
+/**
+ * Fresh credentials were just stored, so any recorded auth failure is stale.
+ * Clears the flag and the notification marker through the canonical writer, so
+ * the UI stops showing "credentials expired" and a later failure notifies
+ * again. Non-fatal: the credential write has already succeeded.
+ */
+async function clearReauthFlag(
+  sourceId: string,
+  logContext: string,
+  userId: string,
+): Promise<void> {
+  try {
+    await applySourceConfig(sourceId, {
+      health: {
+        state: SourceHealthState.Active,
+        last_error: null,
+        notified_at: null,
+      },
+    });
+    logger.info(`Cleared stale re-auth flag ${logContext}`, { userId });
+  } catch (healthError) {
+    logger.warn(`Failed to clear re-auth flag ${logContext}`, {
+      error:
+        healthError instanceof Error
+          ? healthError.message
+          : String(healthError),
+    });
+  }
+}
+
 app.post("/", authMiddleware, async (c: Context) => {
   const body = await c.req.json().catch(() => ({}));
   const parsed = createSchema.safeParse(body);
@@ -127,6 +157,24 @@ app.post("/", authMiddleware, async (c: Context) => {
   if (rpcError) {
     logger.error("Failed to upsert mining source", { error: rpcError.message });
     return c.json({ error: rpcError.message }, 500);
+  }
+
+  // Fresh tokens were just stored, so any auth-failure flag is stale. Without
+  // this, signing in again leaves the source showing "credentials expired".
+  const { data: sourceData, error: sourceError } = await admin
+    .schema("private")
+    .from("mining_sources")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("email", user.email)
+    .single();
+
+  if (sourceError || !sourceData) {
+    logger.warn("Failed to get mining source ID after sign-in credentials", {
+      error: sourceError?.message,
+    });
+  } else {
+    await clearReauthFlag(sourceData.id, "after sign-in credentials", user.id);
   }
 
   return c.json({ success: true });
@@ -237,22 +285,11 @@ app.get("/oauth/callback/:provider", async (c: Context) => {
     } else {
       // Fresh credentials were just stored: clear any stale auth-failure flag
       // so the UI stops showing "connection lost" for a source that now works.
-      // Canonical writer (read-merge-CAS-write); unconditional and idempotent.
-      try {
-        await applySourceConfig(sourceData.id, {
-          health: { state: SourceHealthState.Active, last_error: null },
-        });
-        logger.info("Cleared stale re-auth flag after OAuth reconnect", {
-          userId,
-        });
-      } catch (healthError) {
-        // Non-fatal: the reconnect itself succeeded; the flag clears on next use.
-        logger.warn("Failed to clear re-auth flag after OAuth reconnect", {
-          error: healthError instanceof Error
-            ? healthError.message
-            : String(healthError),
-        });
-      }
+      await clearReauthFlag(
+        sourceData.id,
+        "after OAuth reconnect",
+        userId,
+      );
 
       const { error: smtpError } = await admin
         .schema("private")
