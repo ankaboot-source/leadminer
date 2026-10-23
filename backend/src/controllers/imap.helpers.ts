@@ -101,12 +101,14 @@ export function generateErrorObjectFromImapError(error: any) {
         errorMessage.status,
         errorMessage.fields
       )
-    : new ImapAuthError(error.message, 500, [
-        'host',
-        'port',
-        'username',
-        'password'
-      ]);
+    : new ImapAuthError(
+        error.message,
+        // Preserve a caller-supplied status. An OAuth re-auth failure arrives
+        // here as 401 (see MiningSourceService.getSourcesForUser); flattening
+        // it to 500 hid the re-auth signal from callers like passive-mining.
+        error.status ?? 500,
+        ['host', 'port', 'username', 'password']
+      );
 }
 
 /**

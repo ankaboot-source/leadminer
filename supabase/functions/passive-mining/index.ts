@@ -2,8 +2,8 @@ import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
 import {
-  isCredentialFailure,
-  shouldNotifyCredentialFailure,
+  isReauthFailure,
+  shouldNotifyStuckReauth,
 } from "./credential-failure.ts";
 import {
   type MiningSourceConfigV1,
@@ -98,6 +98,17 @@ async function notifyCredentialFailure(
   }
 }
 
+/**
+ * Emails the user and records that we did, so a source left flagged for
+ * re-auth is not reported again on every run.
+ */
+async function notifyReauthOnce(miningSource: MiningSource): Promise<void> {
+  await notifyCredentialFailure(miningSource.user_id, miningSource.email);
+  await patchSourceConfig(miningSource.id, {
+    health: { notified_at: new Date().toISOString() },
+  });
+}
+
 // Bound backend error text: validation failures echo request input, so never
 // propagate unbounded response bodies into logs or stored run history.
 const MAX_ERROR_DETAIL_LENGTH = 300;
@@ -139,6 +150,17 @@ app.post("/", async (c: Context) => {
     const miningSources = await getMiningSources();
     console.log(`Found ${miningSources.length} mining sources`);
     for (const miningSource of miningSources) {
+      const health = miningSource.parsedConfig?.health;
+
+      // A source already flagged for re-auth cannot be mined. Tell the user
+      // once — these are skipped for good, so this is the only chance.
+      if (health?.state === SourceHealthState.NeedsReauth) {
+        if (shouldNotifyStuckReauth(health.state, health.notified_at)) {
+          await notifyReauthOnce(miningSource);
+        }
+        continue;
+      }
+
       try {
         await recordRunStart(miningSource.id);
         await startMiningEmail(miningSource);
@@ -153,26 +175,10 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.id}:`,
           errorMessage,
         );
-        const credentialFailure = isCredentialFailure(
-          error,
-          miningSource.type,
-        );
-        const healthTransition = await recordRunFailure(
-          miningSource.id,
-          errorMessage,
-          credentialFailure,
-        );
-        if (
-          shouldNotifyCredentialFailure({
-            previousState: healthTransition?.previousHealthState,
-            credentialFailure,
-            healthPersisted: healthTransition !== null,
-          })
-        ) {
-          await notifyCredentialFailure(
-            miningSource.user_id,
-            miningSource.email,
-          );
+        const needsReauth = isReauthFailure(error);
+        await recordRunFailure(miningSource.id, errorMessage, needsReauth);
+        if (needsReauth) {
+          await notifyReauthOnce(miningSource);
         }
       }
     }
@@ -190,14 +196,12 @@ app.post("/", async (c: Context) => {
 Deno.serve((req) => app.fetch(req));
 
 async function getMiningSources() {
-  // Sources enabled for continuous mining that aren't awaiting re-auth.
+  // Every passive source, including ones already flagged for re-auth. The
+  // flagged ones are not mined (see the run loop) but they still need their
+  // one-time "reconnect" email. `type` is used for the reauth classification.
   //
-  // We fetch broadly (any passive source) and do the re-auth filter in code:
-  // PostgREST jsonb filters are fragile here while config migrates from the
-  // legacy `needs_reauth` shape to `health.state` (a `not.eq` on an absent
-  // key evaluates to NULL and drops valid rows). The in-code filter below
-  // covers both shapes. `type` is needed for the OAuth-401 classification
-  // (#2880) in the error path.
+  // Filtering is done in code rather than in PostgREST: a jsonb `not.eq` on an
+  // absent key evaluates to NULL and silently drops valid rows.
   const { data, error } = await supabase
     .schema("private")
     .from("mining_sources")
@@ -209,22 +213,10 @@ async function getMiningSources() {
     throw error;
   }
 
-  return (data ?? [])
-    .filter((source) => {
-      const config = parseConfig(source.config);
-      const healthState = config.health?.state;
-      // Legacy fallback: an explicit needs_reauth:true (old shape) also skips.
-      const legacyNeedsReauth =
-        (source.config as Record<string, unknown> | undefined)?.needs_reauth ===
-          true;
-      return (
-        healthState !== SourceHealthState.NeedsReauth && !legacyNeedsReauth
-      );
-    })
-    .map((source) => ({
-      ...source,
-      parsedConfig: parseConfig(source.config),
-    }));
+  return (data ?? []).map((source) => ({
+    ...source,
+    parsedConfig: parseConfig(source.config),
+  }));
 }
 
 async function getBoxes(miningSource: MiningSource) {

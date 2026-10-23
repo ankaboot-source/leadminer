@@ -28,6 +28,9 @@ export const SOURCE_HEALTH_SCHEMA = z.object({
   state: z.nativeEnum(SourceHealthState).optional(),
   last_error: z.array(z.string()).nullable().optional(),
   last_run_at: z.string().nullable().optional(),
+  // Set once the user has been emailed that the source needs reconnecting, so
+  // the runner does not repeat the email on every run.
+  notified_at: z.string().nullable().optional(),
 });
 export type SourceHealth = z.infer<typeof SOURCE_HEALTH_SCHEMA>;
 

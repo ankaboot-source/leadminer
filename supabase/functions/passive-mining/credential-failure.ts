@@ -1,40 +1,25 @@
-import { isPermanentOAuthError } from "../fetch-mining-source/oauth-handler/index.ts";
 import { SourceHealthState } from "../_shared/enums.ts";
 
-type NotificationState = SourceHealthState | undefined;
-
-export function isCredentialFailure(
-  error: unknown,
-  sourceType?: string,
-): boolean {
-  const status = typeof error === "object" && error !== null
-    ? (error as { status?: unknown }).status
-    : undefined;
-  const isAuthStatus = status === 401 || status === 403;
-
-  if (sourceType === "imap") return isAuthStatus;
-  if (sourceType !== "google" && sourceType !== "azure") return false;
-  if (isPermanentOAuthError(error)) return true;
-
-  const message = typeof error === "object" && error !== null
-    ? (error as { message?: unknown }).message
-    : undefined;
-  return isAuthStatus && typeof message === "string" &&
-    /re-?auth|reconnect/i.test(message);
+/**
+ * A 401/403 from the backend means the credentials are dead and the user has
+ * to reconnect. Any other status is an ordinary run failure.
+ */
+export function isReauthFailure(error?: unknown): boolean {
+  const status =
+    typeof error === "object" && error !== null
+      ? (error as { status?: unknown }).status
+      : undefined;
+  return status === 401 || status === 403;
 }
 
-export function shouldNotifyCredentialFailure({
-  previousState,
-  credentialFailure,
-  healthPersisted,
-}: {
-  previousState: NotificationState;
-  credentialFailure: boolean;
-  healthPersisted: boolean;
-}): boolean {
-  return (
-    previousState !== SourceHealthState.NeedsReauth &&
-    credentialFailure &&
-    healthPersisted
-  );
+/**
+ * True when a source is already flagged for re-auth but has not been emailed
+ * about it yet. The runner skips flagged sources, so this is the only chance
+ * to tell the user about one that was flagged before they could be notified.
+ */
+export function shouldNotifyStuckReauth(
+  state?: unknown,
+  notifiedAt?: unknown,
+): boolean {
+  return state === SourceHealthState.NeedsReauth && !notifiedAt;
 }
