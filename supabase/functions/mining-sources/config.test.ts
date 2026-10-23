@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { mergeConfig } from "./config.ts";
+import { configureSourceSchema } from "./schemas.ts";
 
 Deno.test("mergeConfig merges mining_flags and preserves unknown keys", () => {
   const result = mergeConfig(
@@ -39,6 +40,23 @@ Deno.test("mergeConfig merges health fields", () => {
     last_run_at: "t0",
     last_error: ["boom"],
   });
+});
+
+Deno.test("mergeConfig keeps notified_at alongside a state update", () => {
+  const result = mergeConfig(
+    { version: 1, health: { notified_at: "t1" } },
+    { health: { state: "needs_reauth" } },
+  );
+  assertEquals(result.health, { notified_at: "t1", state: "needs_reauth" });
+});
+
+Deno.test("configureSourceSchema accepts the notified_at marker", () => {
+  const parsed = configureSourceSchema.safeParse({
+    health: { state: "needs_reauth", notified_at: "2026-10-23T02:00:00.000Z" },
+  });
+
+  assert(parsed.success);
+  assertEquals(parsed.data.health?.notified_at, "2026-10-23T02:00:00.000Z");
 });
 
 Deno.test("mergeConfig applies monotonic per-folder cursors", () => {

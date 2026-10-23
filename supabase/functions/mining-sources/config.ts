@@ -33,6 +33,7 @@ export interface ConfigureSourceParams {
     state?: SourceHealthState;
     last_error?: string[] | null;
     last_run_at?: string | null;
+    notified_at?: string | null;
   };
   /** Internal (service role): completion watermark. */
   mining?: {
