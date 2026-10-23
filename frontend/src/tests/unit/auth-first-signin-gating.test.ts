@@ -27,7 +27,11 @@ const mocks = vi.hoisted(() => ({
   updateUser: vi.fn(),
   saasEdgeFunctions: vi.fn(),
   ensureMiningSourcesLoaded: vi.fn(),
-  storeSources: [] as Array<{ email: string; type: string }>,
+  storeSources: [] as Array<{
+    email: string;
+    type: string;
+    config?: Record<string, unknown>;
+  }>,
   authStateCallback: undefined as
     | ((event: string, session: unknown) => void)
     | undefined,
@@ -293,7 +297,7 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     expect(mocks.saasEdgeFunctions).toHaveBeenCalledTimes(1);
   });
 
-  it('skips the OAuth POST when the source already exists', async () => {
+  it('skips the OAuth POST when the existing source is healthy', async () => {
     mocks.storeSources = [{ email: 'user@example.com', type: 'google' }];
     mockUser({
       provider: 'google',
@@ -309,6 +313,41 @@ describe('sb-user-listeners first-sign-in side effects', () => {
     await flush();
 
     expect(mocks.saasEdgeFunctions).not.toHaveBeenCalled();
+  });
+
+  it('re-posts the OAuth source when the existing one needs re-auth', async () => {
+    mocks.storeSources = [
+      {
+        email: 'user@example.com',
+        type: 'google',
+        config: { health: { state: 'needs_reauth' } },
+      },
+    ];
+    mockUser({
+      provider: 'google',
+      firstTimeSignin: true,
+      emailTemplateLanguage: 'en',
+    });
+    registerListener();
+
+    emit('SIGNED_IN', {
+      provider_token: 'oauth-access-fixture',
+      provider_refresh_token: 'oauth-refresh-fixture',
+    });
+
+    await vi.waitFor(() =>
+      expect(mocks.saasEdgeFunctions).toHaveBeenCalledWith(
+        'mining-sources',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.objectContaining({
+            provider: 'google',
+            provider_token: 'oauth-access-fixture',
+            provider_refresh_token: 'oauth-refresh-fixture',
+          }),
+        }),
+      ),
+    );
   });
 
   it('initialises the email-template language only when it differs', async () => {

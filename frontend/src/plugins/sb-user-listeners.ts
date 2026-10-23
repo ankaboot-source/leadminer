@@ -6,6 +6,8 @@ import type {
 } from '@supabase/supabase-js';
 import { useSupabaseUserProfile } from '~/composables/useSupabaseUserProfile';
 import { useLeadminerStore } from '~/stores/leadminer';
+import { deriveSourceState } from '~/utils/miningSourceConfig';
+import { SourceHealthState } from '~/types/enums';
 import type { Profile } from '~/types/profile';
 
 /**
@@ -130,12 +132,21 @@ async function handleFirstTimeSignIn(session: Session) {
     await $leadminerStore.ensureMiningSourcesLoaded();
 
     const userEmail = user.email?.toLowerCase();
-    const alreadyExists = $leadminerStore.miningSources.some(
+    const existingSource = $leadminerStore.miningSources.find(
       (source) =>
         source.email?.toLowerCase() === userEmail && source.type === provider,
     );
 
-    if (!alreadyExists) {
+    // Signing in again re-authorises the account, so it is the natural place to
+    // repair a broken source: without this the card keeps showing "credentials
+    // expired" until the user finds the Reconnect button. Healthy sources are
+    // left untouched so a normal sign-in does not rewrite their credentials.
+    const needsReauth = existingSource
+      ? deriveSourceState(existingSource).state ===
+        SourceHealthState.NeedsReauth
+      : false;
+
+    if (!existingSource || needsReauth) {
       await addMiningSourceFromProviderToken(
         provider,
         providerToken,

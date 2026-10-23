@@ -288,5 +288,45 @@ Deno.test(
       .health as Record<string, unknown>;
     assertEquals(health.state, "active");
     assertEquals(health.last_error, null);
+    assertEquals(health.notified_at, null);
+  },
+);
+
+Deno.test(
+  "POST / clears a stale needs_reauth flag after sign-in credentials",
+  { sanitizeResources: false, sanitizeOps: false },
+  async () => {
+    capturedUpsert = undefined;
+    capturedConfigUpdate = undefined;
+
+    const res = await handler(
+      new Request("http://127.0.0.1:8000/mining-sources", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer user-jwt-from-gotrue",
+        },
+        body: JSON.stringify({
+          provider: "google",
+          // skipcq: SCT-A000 - fake test credential, not a real secret
+          provider_token: "handoff-access-token",
+          // skipcq: SCT-A000 - fake test credential, not a real secret
+          provider_refresh_token: "handoff-refresh-token",
+        }),
+      }),
+    );
+
+    assertEquals(res.status, 200);
+    await res.body?.cancel();
+
+    // Signing in again hands over fresh tokens: the canonical writer must
+    // reset the flag, otherwise the source shows "expired" forever.
+    const update = capturedConfigUpdate as Record<string, unknown> | undefined;
+    assert(update, "no config update was issued after sign-in credentials");
+    const health = (update.config as Record<string, unknown>)
+      .health as Record<string, unknown>;
+    assertEquals(health.state, "active");
+    assertEquals(health.last_error, null);
+    assertEquals(health.notified_at, null);
   },
 );
