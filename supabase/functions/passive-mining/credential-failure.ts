@@ -18,8 +18,8 @@ export function isReauthFailure(error?: unknown): boolean {
  * to tell the user about one that was flagged before they could be notified.
  */
 export function shouldNotifyStuckReauth(
-  state: unknown,
-  notifiedAt: unknown,
+  state?: unknown,
+  notifiedAt?: unknown,
 ): boolean {
   return state === SourceHealthState.NeedsReauth && !notifiedAt;
 }

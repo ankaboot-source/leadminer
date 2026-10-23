@@ -20,7 +20,7 @@ Deno.test("other statuses are not reauth failures", () => {
 
 Deno.test("a flagged source is notified once", () => {
   assertEquals(
-    shouldNotifyStuckReauth(SourceHealthState.NeedsReauth, undefined),
+    shouldNotifyStuckReauth(SourceHealthState.NeedsReauth),
     true,
   );
   assertEquals(
@@ -33,13 +33,7 @@ Deno.test("a flagged source is notified once", () => {
 });
 
 Deno.test("only flagged sources use the stuck-notification path", () => {
-  assertEquals(
-    shouldNotifyStuckReauth(SourceHealthState.Active, undefined),
-    false,
-  );
-  assertEquals(
-    shouldNotifyStuckReauth(SourceHealthState.Error, undefined),
-    false,
-  );
-  assertEquals(shouldNotifyStuckReauth(undefined, undefined), false);
+  assertEquals(shouldNotifyStuckReauth(SourceHealthState.Active), false);
+  assertEquals(shouldNotifyStuckReauth(SourceHealthState.Error), false);
+  assertEquals(shouldNotifyStuckReauth(), false);
 });
