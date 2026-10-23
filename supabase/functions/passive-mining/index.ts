@@ -1,10 +1,7 @@
 import { Context, Hono } from "npm:hono@4.7.4";
 import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { getFolders } from "./boxes.ts";
-import {
-  isCredentialFailure,
-  shouldNotifyCredentialFailure,
-} from "./credential-failure.ts";
+import { isReauthFailure } from "./credential-failure.ts";
 import {
   type MiningSourceConfigV1,
   parseConfig,
@@ -153,22 +150,9 @@ app.post("/", async (c: Context) => {
           `Error starting mining for source ${miningSource.id}:`,
           errorMessage,
         );
-        const credentialFailure = isCredentialFailure(
-          error,
-          miningSource.type,
-        );
-        const healthTransition = await recordRunFailure(
-          miningSource.id,
-          errorMessage,
-          credentialFailure,
-        );
-        if (
-          shouldNotifyCredentialFailure({
-            previousState: healthTransition?.previousHealthState,
-            credentialFailure,
-            healthPersisted: healthTransition !== null,
-          })
-        ) {
+        const needsReauth = isReauthFailure(error);
+        await recordRunFailure(miningSource.id, errorMessage, needsReauth);
+        if (needsReauth) {
           await notifyCredentialFailure(
             miningSource.user_id,
             miningSource.email,
