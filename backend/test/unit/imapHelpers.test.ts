@@ -91,6 +91,20 @@ describe('generateErrorObjectFromImapError', () => {
     }
   );
 
+  it('preserves a caller-supplied status instead of defaulting to 500', () => {
+    const reauthError = Object.assign(
+      new Error(
+        'Failed to fetch mining sources: Edge Function returned a non-2xx status code'
+      ),
+      { status: 401 }
+    );
+
+    const result = generateErrorObjectFromImapError(reauthError);
+
+    expect(result).toBeInstanceOf(ImapAuthError);
+    expect(result.status).toEqual(401);
+  });
+
   it('should not throw when error.response is an object (AxiosError)', () => {
     const axiosError = {
       message: 'Request failed with status code 500',
