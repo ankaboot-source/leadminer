@@ -1,5 +1,5 @@
 # Build
-FROM node:lts-alpine as build-stage
+FROM node:24-alpine as build-stage
 
 WORKDIR /leadminer-api
 
@@ -12,7 +12,7 @@ RUN npm run update-providers
 RUN npm run build
 
 # Run
-FROM node:lts-alpine as app-stage
+FROM node:24-alpine as app-stage
 
 WORKDIR /leadminer-api
 

@@ -1,5 +1,5 @@
 # Build
-FROM node:lts-alpine as build-stage
+FROM node:24-alpine as build-stage
 
 WORKDIR /leadminer-worker
 
@@ -11,7 +11,7 @@ RUN npm install
 RUN npm run build
 
 # Run
-FROM node:lts-alpine
+FROM node:24-alpine
 WORKDIR /leadminer-worker
 COPY --chown=node:node package*.json ./
 RUN npm install --omit-dev
