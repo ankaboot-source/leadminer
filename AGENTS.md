@@ -275,7 +275,7 @@ logger.error("Operation failed", { error: error.message });
 
 ## Additional Notes
 
-- Node.js >= 20.0.0 required
+- Node.js >= 24.0.0 required
 - Bun >= 1.1.0 required for emails-fetcher
 - Docker and Docker Compose required for local dev
 
