@@ -1,6 +1,5 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/ankaboot-source/leadminer/badge.svg?targetFile=package.json)](https://snyk.io/test/github/ankaboot-source/leadminer?targetFile=package.json)
 [![Maintainability](https://qlty.sh/badges/a42a3f7d-f1a1-4cf3-92aa-c14c33cea8a2/maintainability.svg)](https://qlty.sh/gh/ankaboot-source/projects/leadminer)
-[![Mozilla Observatory Score](https://img.shields.io/badge/Web%20Security-A%2B-2ea44f)](https://developer.mozilla.org/en-US/observatory/analyze?host=App.leadminer.io)
 [![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=false&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/)
 
 <div>
@@ -15,6 +14,14 @@
 
   </div>
 </div>
+
+## 🚀 New to the project?
+
+Start with these three, in order:
+
+- [How to run locally](#-how-to-run-locally) below — gets you a working stack from a clean clone.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — branch, commit and PR conventions, and the pre-commit checks.
+- [`AGENTS.md`](AGENTS.md) — the commands, conventions and CI checks this repository uses.
 
 ## ✨ Features
 
@@ -147,7 +154,7 @@ External services for email verification and LLM-based signature extraction.
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 - **[OpenRouter](https://openrouter.ai/):** Used for LLM-powered email signature extraction.  
-   Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
+  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
 
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
