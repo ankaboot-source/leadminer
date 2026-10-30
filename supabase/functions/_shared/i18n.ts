@@ -1,4 +1,5 @@
 import i18next from "npm:i18next@23.11.5";
+import type { Resource } from "npm:i18next@23.11.5";
 
 let i18nInstance: typeof i18next | null = null;
 
@@ -11,7 +12,8 @@ export async function initI18n(
     await i18nInstance.init({
       lng: locale,
       fallbackLng: "en",
-      resources,
+      // Callers pass plain JSON imports; narrow to i18next's Resource shape.
+      resources: resources as unknown as Resource,
       interpolation: {
         escapeValue: false,
       },
