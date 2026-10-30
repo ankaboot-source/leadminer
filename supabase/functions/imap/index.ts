@@ -35,7 +35,16 @@ export function sanitizeImapInput(input: string): string {
  * Returns the user or a 401 Response if unauthorized.
  */
 async function validateAuthAndGetUser(authorization: string | null) {
-  const client = createSupabaseClient(authorization ?? "");
+  // `auth.getUser()` throws ("This endpoint requires a valid Bearer token")
+  // when the header is missing, which would surface as a 500. Reject first.
+  if (!authorization?.replace(/^Bearer\s+/i, "").trim()) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401,
+    });
+  }
+
+  const client = createSupabaseClient(authorization);
   const {
     data: { user },
     error,
