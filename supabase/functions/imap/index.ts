@@ -91,6 +91,15 @@ async function handleBoxes(req: Request): Promise<Response> {
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+  // Deny anonymous calls here: `auth.getUser()` with an empty Authorization
+  // header throws instead of returning a 401, which would surface as a 500.
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401,
+    });
+  }
+
   let body: { email?: unknown; userId?: unknown };
   try {
     body = await req.json();
