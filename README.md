@@ -16,6 +16,10 @@
   </div>
 </div>
 
+## Documentation
+
+The platform documentation starts at [docs/README.md](docs/README.md). The most-used entry points are the [platform overview](docs/platform/overview.md) for architecture and the [newcomer guide](docs/onboarding/newcomer-guide.md) for a guided local setup.
+
 ## ✨ Features
 
 - ⛏️📧 Extract contacts from your mailbox
@@ -147,7 +151,7 @@ External services for email verification and LLM-based signature extraction.
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
 - **[OpenRouter](https://openrouter.ai/):** Used for LLM-powered email signature extraction.  
-   Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
+  Add your API key as `SIGNATURE_OPENROUTER_API_KEY` in the `.env` file.
 
   > Refer to [./backend/.env.dev](./backend/.env.dev) for guidance.
 
