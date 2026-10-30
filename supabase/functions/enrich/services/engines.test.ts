@@ -392,8 +392,12 @@ Deno.test({
       assertEquals(result.data[0].givenName, "Jane");
       assertEquals(result.data[0].organization, "Acme");
       assertEquals(result.data[0].location, "Paris, IDF, France");
+      // Exact membership, not a substring match: CodeQL flags
+      // `includes("https://host")` as incomplete URL sanitization.
       assert(
-        result.data[0].sameAs?.includes("https://github.com/jane"),
+        (result.data[0].sameAs ?? []).some(
+          (url) => url === "https://github.com/jane",
+        ),
         "expected GitHub profile URL",
       );
       assertNoPii(calls, ["pii@example.com", "Jane Doe"]);
