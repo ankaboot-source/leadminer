@@ -391,13 +391,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       boxes.value = [];
       selectedBoxes.value = [];
 
-      const { data } = await $api<{
+      const { data } = await supabase.functions.invoke<{
         data: { message: string; folders: BoxNode[] };
-      }>('/imap/boxes', {
-        method: 'POST',
-        body: {
-          ...activeMiningSource.value,
-        },
+      }>('imap/boxes', {
+        body: { email: activeMiningSource.value.email },
       });
 
       const { folders } = data || {};

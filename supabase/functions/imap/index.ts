@@ -71,6 +71,92 @@ function extractEmailFromRequest(req: Request) {
 }
 
 /**
+ * Handles `POST /boxes`: lists the IMAP folder tree for an authenticated user.
+ *
+ * The IMAP connection itself is made by the emails-fetcher microservice, which
+ * resolves credentials from the mining source row. Two callers exist:
+ * - the browser, with a user JWT (user id taken from the token);
+ * - the `passive-mining` cron, with the service role key plus an explicit
+ *   `userId` (the cron acts on behalf of every user).
+ */
+async function handleBoxes(req: Request): Promise<Response> {
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 405,
+    });
+  }
+
+  const authHeader = req.headers.get("authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  let body: { email?: unknown; userId?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+  }
+
+  const parsedEmail = emailSchema.safeParse(body.email);
+  if (!parsedEmail.success) {
+    return new Response(JSON.stringify({ error: "Invalid email" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+  }
+
+  let userId: string;
+  if (serviceRoleKey && token === serviceRoleKey) {
+    if (typeof body.userId !== "string" || body.userId.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "userId is required for service-role calls" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
+    }
+    userId = body.userId;
+  } else {
+    const user = await validateAuthAndGetUser(authHeader);
+    if (user instanceof Response) return user;
+    userId = user.id;
+  }
+
+  const emailsFetcherUrl = Deno.env.get("EMAILS_FETCHER_URL");
+  if (!emailsFetcherUrl) {
+    Logger.error("EMAILS_FETCHER_URL is not configured");
+    return new Response(
+      JSON.stringify({ error: "IMAP folder listing is not configured" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      },
+    );
+  }
+
+  const response = await fetch(`${emailsFetcherUrl}/api/imap/boxes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      email: sanitizeImapInput(parsedEmail.data),
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  return new Response(JSON.stringify(payload), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: response.status,
+  });
+}
+
+/**
  * Handles incoming requests, ensuring authentication and processing IMAP detection.
  */
 Deno.serve(async (req: Request) => {
@@ -79,6 +165,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    if (new URL(req.url).pathname.endsWith("/boxes")) {
+      return await handleBoxes(req);
+    }
+
     const user = await validateAuthAndGetUser(req.headers.get("authorization"));
 
     if (user instanceof Response) return user;

@@ -33,7 +33,7 @@ export type EnrichmentStartOutcome =
  * - Emits terminal notifications once per task, even if the button unmounted.
  */
 export const useEnrichmentStore = defineStore('enrichment-store', () => {
-  const { $api, $i18n } = useNuxtApp();
+  const { $saasEdgeFunctions, $i18n } = useNuxtApp();
   const { t } = $i18n;
   const $supabase = useSupabaseClient();
   const $user = useSupabaseUser();
@@ -179,16 +179,21 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
   }
 
   async function start(
-    url: string,
+    path: string,
     body: Record<string, unknown>,
   ): Promise<EnrichmentStartOutcome> {
     isStarting.value = true;
     try {
-      const response = await $api.raw<EnrichContactResponse>(url, {
-        method: 'POST',
-        body,
-        ignoreResponseError: true,
-      });
+      // Edge functions are reached through the SaaS functions gateway, not the
+      // legacy backend API prefix this store used before the cutover.
+      const response = await $saasEdgeFunctions.raw<EnrichContactResponse>(
+        path,
+        {
+          method: 'POST',
+          body,
+          ignoreResponseError: true,
+        },
+      );
       const data = response._data;
 
       if (response.status === 402 && data?.total && data?.available) {
@@ -225,7 +230,7 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
     updateEmptyFieldsOnly: boolean,
     contact: Partial<Contact>,
   ) {
-    return start('/enrich/person/', {
+    return start('enrich/person', {
       updateEmptyFieldsOnly,
       enrichAllContacts: false,
       contact,
@@ -237,7 +242,7 @@ export const useEnrichmentStore = defineStore('enrichment-store', () => {
     enrichAll: boolean,
     contacts?: Partial<Contact>[],
   ) {
-    return start('/enrich/person/bulk', {
+    return start('enrich/person/bulk', {
       updateEmptyFieldsOnly,
       enrichAllContacts: enrichAll,
       contacts: enrichAll ? undefined : contacts,
