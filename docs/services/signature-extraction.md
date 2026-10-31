@@ -58,3 +58,7 @@ The LLM is throttled to 15 requests/minute while every configured model is a fre
 ## Cost or quota
 
 There is no `EMAILS_QUOTA_*` setting for signatures. The regex path is free and local. The LLM path is metered by OpenRouter and rate-limited, which is why the cache and the regex fallback exist.
+
+## See also
+
+[enrichment.md](enrichment.md), [email-verification.md](email-verification.md), [../mining-pipeline.md](../mining-pipeline.md).

@@ -55,3 +55,7 @@ TheDig also exposes a bulk endpoint, but this build registers it as synchronous 
 ## Cost or quota
 
 This codebase exposes no `EMAILS_QUOTA_*` setting for enrichment. Each provider lookup is metered by the provider itself, and the cache is the main way the product avoids paying twice for the same email. TheDig is the only path where you can replace a metered lookup with your own infrastructure.
+
+## See also
+
+[email-verification.md](email-verification.md), [signature-extraction.md](signature-extraction.md), [../mining-pipeline.md](../mining-pipeline.md).

@@ -58,3 +58,7 @@ The worker only persists a result when `result.status` is truthy (`emailVerifica
 ## Cost or quota
 
 The `EMAILS_QUOTA_*` values cap how many addresses one verifier receives in a batch (`partitionEmailsByQuota` in `EmailStatusVerifierFactory.ts`). They are per-batch limits, not global monthly counters; the last registered verifier receives all remaining addresses even beyond its quota. The comments in `backend/.env.dev:87` describe the defaults as approximate capacity in a ten-minute window. Every check is also a metered call to a third-party service.
+
+## See also
+
+[enrichment.md](enrichment.md), [signature-extraction.md](signature-extraction.md), [../mining-pipeline.md](../mining-pipeline.md).
