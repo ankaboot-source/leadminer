@@ -17,7 +17,7 @@
 
 ## 🚀 New to the project?
 
-Start with these three, in order:
+Start with these, in order:
 
 - [How to run locally](#-how-to-run-locally) below — gets you a working stack from a clean clone.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — branch, commit and PR conventions, and the pre-commit checks.
@@ -50,7 +50,8 @@ Start with these three, in order:
 
 ## 📦 How to run locally?
 
-This section describes the recommended local setup only.
+This section describes the recommended local setup only. It is the canonical
+startup sequence: other documents link here instead of repeating the steps.
 
 > Note: this project integrates with third-party services for email cleaning and enrichment. You can run locally with mocks first, then plug real providers later.
 
@@ -125,7 +126,8 @@ docker-compose -f docker-compose.dev.yml up -d
   5. Start all services:
 </strong>
 
-Start frontend, backend, workers, micro-service fetcher, and Supabase edge functions:
+`run.sh` starts the frontend, backend, workers, both micro-services, and Supabase
+edge functions in parallel:
 
 ```sh
 npm run dev:all
@@ -183,4 +185,4 @@ Please note that this app is provided for free and without any guarantee or offi
 
 ## 📜 License
 
-This software is [dual-licensed](DUAL-LICENSE.md) under [GNU AGPL v3](LICENSE).
+This software is dual-licensed: the open source version is under the [GNU AGPL v3](LICENSE), and a commercial license is available from Ankaboot. See [DUAL-LICENSE.md](DUAL-LICENSE.md).
