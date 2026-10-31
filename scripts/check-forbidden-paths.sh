@@ -5,7 +5,7 @@
 
 set -e
 
-FORBIDDEN_PATTERNS='^(docs/plans/|\.opencode/|\.agents/|skills-lock\.json$)'
+FORBIDDEN_PATTERNS='^(docs/plans/|\.opencode/|\.agents/|skills-lock\.json$|frontend/docs/implementation-notes/)'
 
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 

@@ -1,6 +1,8 @@
-**This software is under dual-licensing : AGPL and commercial. Please reach Ankaboot (the vendor) to get a commercial license.**
+# Dual licensing
 
-# Whats is dual licensing?
+**This software is dual-licensed: the open source version is under the GNU AGPL v3, and a commercial license is available from Ankaboot (the vendor).**
+
+## What is dual licensing?
 
 Dual licensing enables the open source community to continuously enhance its code while still being able to fund the development of the software from its commercial license. With dual licensing, the licensor can concurrently take advantage of the benefits of both proprietary and open source licenses by distributing software to licensees under both of these models.
 
