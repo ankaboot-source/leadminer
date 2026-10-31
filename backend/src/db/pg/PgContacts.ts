@@ -9,7 +9,6 @@ import {
   ContactFrontend,
   EmailExtractionResult,
   EmailStatus,
-  ExportService,
   ExtractionResult,
   FileExtractionResult,
   GoogleContactsExtractionResult,
@@ -108,9 +107,6 @@ export default class PgContacts implements Contacts {
     SET status = u.status
     FROM unnest($1::uuid[], $2::text[]) AS u(id, status)
     WHERE p.id = u.id AND p.user_id = $3::uuid AND p.status IS NULL`;
-
-  private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO private.engagement (user_id, person_id, engagement_type, service) VALUES %L ON  CONFLICT (person_id, user_id, engagement_type, service) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -796,22 +792,6 @@ LIMIT 1;
         error: (error as Error)?.message
       });
       return [];
-    }
-  }
-
-  async registerExportedContacts(
-    personIds: string[],
-    service: ExportService,
-    userId: string
-  ): Promise<void> {
-    try {
-      const values = personIds.map((id) => [userId, id, 'EXPORT', service]);
-      await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
-    } catch (error) {
-      this.logger.error('registerExportedContacts', {
-        error: (error as Error)?.message
-      });
-      throw error;
     }
   }
 

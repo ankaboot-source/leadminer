@@ -159,7 +159,7 @@ const disableExport = defineModel<boolean>('disableExport', {
 });
 
 const $toast = useToast();
-const { $api } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
 const $consentSidebar = useMiningConsentSidebar();
 const $profile = useSupabaseUserProfile();
 const $screenStore = useScreenStore();
@@ -182,19 +182,19 @@ const EXPORT_CONFIG: Record<
   }
 > = {
   [ExportTypes.CSV]: {
-    endpoint: '/contacts/export/csv',
+    endpoint: 'export-contacts/csv',
     extension: 'csv',
     mimeType: 'text/csv;charset=utf-8;',
     successSummaryKey: 'export_csv',
   },
   [ExportTypes.VCARD]: {
-    endpoint: '/contacts/export/vcard',
+    endpoint: 'export-contacts/vcard',
     extension: 'vcf',
     mimeType: 'text/vcard;charset=utf-8;',
     successSummaryKey: 'export_vcard',
   },
   [ExportTypes.GOOGLE_CONTACTS]: {
-    endpoint: '/contacts/export/google_contacts',
+    endpoint: 'export-contacts/google_contacts',
     successSummaryKey: 'export_google_contacts',
   },
 };
@@ -314,7 +314,7 @@ async function exportToGoogle(type: ExportTypes) {
 
 async function exportTable(
   type: ExportTypes,
-  partialExport = false,
+  _partialExport = false,
   emptyFieldsOnly = false,
 ) {
   activeExport.value = true;
@@ -322,17 +322,20 @@ async function exportTable(
   const config = EXPORT_CONFIG[type];
 
   try {
-    await $api(config.endpoint, {
+    await $saasEdgeFunctions(config.endpoint, {
       method: 'POST',
       body: {
         exportType: type,
-        partialExport,
         ids: contactsToTreat.value,
         exportAllContacts: contactsToTreat.value === undefined,
         updateEmptyFieldsOnly: emptyFieldsOnly,
-        targetEmail:
+        // The edge function resolves OAuth credentials itself; it needs the
+        // mining source id, not the account email the old backend accepted.
+        miningSourceId:
           type === ExportTypes.GOOGLE_CONTACTS
-            ? selectedGoogleAccount.value
+            ? googleMiningSources.value.find(
+                (source) => source.email === selectedGoogleAccount.value,
+              )?.id
             : undefined,
       },
       onResponse({ response }) {
