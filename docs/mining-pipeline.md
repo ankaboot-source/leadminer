@@ -2,16 +2,38 @@
 
 A mining run turns a mailbox, a file, or a PST archive into contacts. The work is split into stages that pass messages through Redis streams. Every stage is a `Task` inside one `Pipeline`, and a run has one `miningId` that ties its streams, task rows, and progress events together.
 
-## The pipeline in one picture
+## The task graph and its streams
 
 ```mermaid
 flowchart LR
-  F[Fetch] --> E[Extract]
-  E --> C[Clean]
-  F --> S[Signature]
+  subgraph api["API process — orchestrator"]
+    ME[MiningEngine] --> P[Pipeline]
+    P --> FT["FetchTask<br/>producer, no role"]
+    P --> ET["ExtractTask<br/>role: extract"]
+    P --> CT["CleanTask<br/>role: clean"]
+    P --> ST["SignatureTask<br/>role: signature"]
+  end
+
+  subgraph workers["Worker processes"]
+    FX["emails-fetcher"]
+    MC["MessagesConsumer"]
+    VC["EmailsVerificationConsumer"]
+    SC["EmailSignatureConsumer"]
+  end
+
+  FT -- "messages_stream-&lt;miningId&gt;" --> ET
+  ET -- "emails_stream-&lt;miningId&gt;" --> CT
+  FT -- "REDIS_SIGNATURE_STREAM_NAME" --> ST
+
+  ET -. "role: extract" .-> MC
+  CT -. "role: clean" .-> VC
+  ST -. "role: signature" .-> SC
+  FT -. "POST /api/imap/fetch/start" .-> FX
 ```
 
-`Clean` is optional and only runs when cleaning is enabled and an email verifier is configured. `Signature` is optional and only runs when body fetching and signature extraction are enabled. `Fetch` writes to both downstream stages: messages go to `Extract`, and email bodies go to `Signature`.
+Solid edges are Redis streams: the upstream task's producer writes them and the downstream task's consumer group reads them (`backend/src/services/tasks-manager-v2/factories.ts:94`). Dotted edges are the control-plane role filter — the task publishes `REGISTER` with its `role`, and only the matching consumer process picks it up (`backend/src/services/tasks-manager-v2/tasks/Task.ts:106`). The orchestration objects live in the API process; the consumers live in separate processes, which is why the announcement goes through Redis pub/sub instead of a direct call.
+
+`Clean` is optional and only runs when cleaning is enabled and an email verifier is configured. `Signature` is optional and only runs when body fetching and signature extraction are enabled. `Fetch` writes to both downstream stages: messages go to `Extract`, and email bodies go to `Signature`. `FetchTask` is the only task without a `role`: it drives the fetcher over HTTP rather than consuming a stream.
 
 ## Run shapes
 
@@ -39,7 +61,7 @@ The factory also wires progress links. For example, `CleanTask` inherits its tot
 
 1. `Pipeline.start` calls `createConsumerGroups`, then `Task.start` for every task in order.
 2. `Task.start` inserts a row into `private.tasks` and, when the task has streams, publishes a `REGISTER` command with its input and output streams.
-3. The relevant worker receives `REGISTER`, adds the stream to its active set, and starts consuming.
+3. The extract and clean workers receive `REGISTER` and add the stream to their active sets; the signature worker always consumes its shared stream and only logs the command.
 4. Progress messages update the task's `progress.processed` and `progress.total`.
 5. `Pipeline.checkCompletion` stops tasks whose `isComplete()` returns true and records the run through the `mining-completion` edge function.
 6. When every task is stopped, `Pipeline.complete` deletes the consumer groups and streams and sends a final `mining-completed` or `mining-failed` SSE event.
@@ -103,12 +125,34 @@ Each worker boots the same way: subscribe to `REDIS_PUBSUB_COMMUNICATION_CHANNEL
 
 ## Progress and cancellation
 
-Progress is pushed, not polled.
+Progress is pushed, not polled. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel — for example `createdContacts` from the extraction handler (`backend/src/workers/email-message/emailMessageHandlers.ts:102`). `MiningEngine`, subscribed in `submit`, hands it to `Pipeline.onMessage` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:47`, `backend/src/services/tasks-manager-v2/Pipeline.ts:145`).
 
-1. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel. For example, the extraction worker publishes `createdContacts` and `extracted` counts (`backend/src/workers/email-message/emailMessageHandlers.ts`).
-2. `MiningEngine` receives the message and calls `Pipeline.onMessage`.
-3. `Pipeline.onMessage` updates the relevant `Task` and emits an SSE event through its `RealtimeSSE` broadcaster (`Pipeline.ts` lines 77–86 and 145–162).
-4. The browser opened `GET /api/imap/mine/:type/:id/progress/` when the run started. `frontend/src/utils/sse.ts` maps event names back to UI counters.
+```mermaid
+sequenceDiagram
+  participant MC as MessagesConsumer
+  participant R as Redis
+  participant ME as MiningEngine
+  participant P as Pipeline
+  participant ET as ExtractTask
+  participant CT as CleanTask
+  participant SSE as RealtimeSSE
+  participant Br as browser
+
+  MC->>R: PUBLISH miningId<br/>ProgressMessage {progressType: "createdContacts", count: 42}
+  R-->>ME: message on the miningId channel
+  ME->>P: onMessage(json)
+  P->>ET: onMessage(msg)
+  Note over P,CT: onMessage runs on every task
+  ET->>ET: addCreatedContacts(42)
+  P->>P: propagateProgress()
+  Note over P,CT: ExtractTask.isComplete()<br/>CleanTask.upstreamDone = true<br/>CleanTask.progress.total = getProgressMap()["createdContacts"] = 42
+  P->>CT: progress.total = 42
+  P->>SSE: sendSSE(42, "createdContacts-&#60;miningId&#62;")
+  SSE-->>Br: SSE event on GET /api/imap/mine/:type/:id/progress/
+  P->>P: checkCompletion()
+```
+
+`Pipeline.onMessage` calls `task.onMessage` on every task, then `propagateProgress`, then `checkCompletion` (`backend/src/services/tasks-manager-v2/Pipeline.ts:158`, `:164`, `:194`). `propagateProgress` fires when every upstream task reports `isComplete()`; it copies `totalFrom` from the upstream progress map, or sums upstream `processed` when no `totalFrom` is set, unless the link has `skipTotal` (`backend/src/services/tasks-manager-v2/Pipeline.ts:173`). The `Clean → Extract` link uses `totalFrom: 'createdContacts'`, and `Signature → Fetch` uses `skipTotal` (`backend/src/services/tasks-manager-v2/factories.ts:173`, `:181`). Events reach the browser through `RealtimeSSE`; `frontend/src/utils/sse.ts` maps event names back to UI counters.
 
 | Event suffix                                         | Emitted by                | Meaning                             |
 | ---------------------------------------------------- | ------------------------- | ----------------------------------- |

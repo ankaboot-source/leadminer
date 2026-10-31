@@ -29,22 +29,83 @@ Port defaults come from `.env.docker` and the compose files; the local Supabase 
 
 ## How the pieces talk
 
+### System context
+
 ```mermaid
 flowchart LR
-  B[Browser] --> F[Frontend]
-  F --> A[Backend API]
-  A --> R[(Redis)]
-  R --> W1[Extraction worker]
-  R --> W2[Verification worker]
-  R --> W3[Signature worker]
-  A --> X[emails-fetcher]
+  B[Browser] --> F[Frontend<br/>Nuxt + SSE client]
+  F --> A["Backend API<br/>Express — MiningEngine + Pipeline"]
+  A --> R[(Redis<br/>streams + pub/sub)]
+  A --> P[(Postgres / Supabase)]
+  A --> X["emails-fetcher<br/>Bun + IMAP"]
   X --> R
   A --> E[Supabase edge functions]
-  W1 --> P[(Postgres)]
-  W2 --> P
-  W3 --> P
-  A --> P
+  W["Worker processes<br/>Messages / Verification / Signature"] <--> R
+  W --> P
 ```
+
+The API process owns the orchestrator; the three workers are separate processes that only reach it through Redis. The rest of this section is the protocol between them.
+
+### How a mining run is coordinated
+
+```mermaid
+sequenceDiagram
+  participant Br as browser
+  participant API as API
+  participant ME as MiningEngine
+  participant P as Pipeline
+  participant T as Task
+  participant R as Redis
+  participant MC as MessagesConsumer
+  participant SSE as RealtimeSSE
+
+  Note over P,R: 1. Register — control plane
+  API->>ME: submit(pipeline)
+  ME->>R: SUBSCRIBE miningId
+  ME->>P: start()
+  P->>P: createConsumerGroups()<br/>xgroup CREATE ... $
+  P->>T: start(tasksResolver, redisPublisher)<br/>for each task
+  T->>R: PUBLISH stream-management<br/>REGISTER {role, streams}
+  R-->>MC: message on stream-management
+  MC->>MC: role !== "extract" ? return
+  MC->>MC: activeStreams.set(input)<br/>new RedisStreamProducer(output)
+
+  Note over MC,R: 2. Consume and report — data + progress planes
+  MC->>R: XREADGROUP GROUP ... NOACK<br/>STREAMS messages_stream-&#60;miningId&#62; &#62;
+  R-->>MC: batch of stream entries
+  MC->>R: PUBLISH miningId<br/>ProgressMessage {progressType, count}
+  R-->>ME: message on miningId
+  ME->>P: onMessage(json)
+  P->>T: onMessage(msg) on every task
+  P->>P: propagateProgress()<br/>checkCompletion()
+  P->>SSE: sendSSE(value, "&#60;progressType&#62;-&#60;miningId&#62;")
+  SSE-->>Br: SSE event
+
+  Note over Br,MC: 3. Cancel
+  Br->>API: POST /api/imap/mine/:type/:userId/:id
+  API->>ME: terminate(miningId, processIds)
+  ME->>P: cancel(processIds)
+  P->>T: stop(true, ...)
+  T->>R: PUBLISH stream-management<br/>DELETE {role, streams}
+  R-->>MC: message on stream-management
+  MC->>MC: activeStreams.delete(input)
+```
+
+A run uses three planes, all on the same Redis:
+
+- **Control plane.** `Task.start()` publishes a `StreamCommand` on `REDIS_PUBSUB_COMMUNICATION_CHANNEL` (`stream-management` by default) and `Task.stop()` publishes its `DELETE` form (`backend/src/services/tasks-manager-v2/tasks/Task.ts:106`, `backend/src/services/tasks-manager-v2/tasks/Task.ts:140`). The payload is `{ miningId, role, command, streams: { input, output } }` (`backend/src/services/tasks-manager-v2/types.ts:47`). `StreamRole` is only `extract | clean | signature`: `fetch` and `google-contacts-fetch` are producers, not stream consumers, so they never register (`backend/src/services/tasks-manager-v2/types.ts:13`). Each worker subscribes to that one channel and filters on `role` — `MessagesConsumer` returns unless the role is `extract` (`backend/src/workers/email-message/MessagesConsumer.ts:41`), the verification consumer unless `clean` (`backend/src/workers/email-verification/EmailsVerificationConsumer.ts:30`), the signature consumer unless `signature` (`backend/src/workers/email-signature/consumer.ts:30`). On `REGISTER`, `MessagesConsumer` and `EmailsVerificationConsumer` add the input stream to an active set; `MessagesConsumer` also creates a `RedisStreamProducer` for the declared output stream (`backend/src/workers/email-message/MessagesConsumer.ts:47`, `backend/src/workers/email-verification/EmailsVerificationConsumer.ts:37`). The signature worker consumes its shared stream continuously and only logs the command (`backend/src/workers/email-signature/consumer.ts:34`). On `DELETE` the extract and clean workers drop the stream.
+- **Data plane.** `Pipeline.createConsumerGroups()` creates the extraction and cleaning consumer groups at `$` before any task starts (`backend/src/services/tasks-manager-v2/Pipeline.ts:116`); the signature worker creates its own group at boot (`backend/src/emailSignatureWorker.ts:99`). Consumers read with `xreadgroup ... NOACK` and trim what they consumed with `xtrim MINID`, so a stream is a work queue rather than a replay log (`backend/src/utils/streams/redis/RedisMultipleStreamsConsumer.ts:24`, `:51`). `Fetch` only produces, so it has no consumer group.
+- **Progress plane.** A worker publishes a `ProgressMessage` to the run's `miningId` channel (`backend/src/services/tasks-manager-v2/types.ts:34`). `MiningEngine.submit` subscribes to that channel and routes each message to `Pipeline.onMessage` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:47`), which calls `task.onMessage(msg)` on every task, then `propagateProgress()` and `checkCompletion()` (`backend/src/services/tasks-manager-v2/Pipeline.ts:145`, `:164`, `:194`). SSE events leave through `RealtimeSSE.sendSSE` to the browser's progress connection (`backend/src/utils/helpers/sseHelpers.ts:39`).
+
+Cancellation walks the same control plane in reverse: `POST /api/imap/mine/:type/:userId/:id` → `MiningEngine.terminate` → `Pipeline.cancel` → `Task.stop()` publishes `DELETE`, and `FetchTask.stop` separately calls the fetcher's `DELETE /api/imap/fetch/stop` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:75`, `backend/src/services/tasks-manager-v2/Pipeline.ts:403`, `backend/src/services/tasks-manager-v2/tasks/FetchTask.ts:92`).
+
+| Redis channel / stream               | Mechanism                     | Who writes                                | Who reads                                   | Payload                                                                                            |
+| ------------------------------------ | ----------------------------- | ----------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `REDIS_PUBSUB_COMMUNICATION_CHANNEL` | Pub/sub (`stream-management`) | `Task.start` / `Task.stop`                | Every worker subscriber, filtered by `role` | `StreamCommand`: `{ miningId, role, command: "REGISTER" \| "DELETE", streams: { input, output } }` |
+| `messages_stream-<miningId>`         | Stream + consumer group       | `emails-fetcher` (started by `FetchTask`) | `MessagesConsumer` (`ExtractTask`)          | `EmailMessageData`                                                                                 |
+| `emails_stream-<miningId>`           | Stream + consumer group       | `MessagesConsumer` output producer        | `EmailsVerificationConsumer` (`CleanTask`)  | `EmailVerificationData`                                                                            |
+| `REDIS_SIGNATURE_STREAM_NAME`        | Stream + consumer group       | `emails-fetcher` when body fetch is on    | `EmailSignatureConsumer` (`SignatureTask`)  | `EmailData`                                                                                        |
+| `miningId`                           | Pub/sub (one channel per run) | Workers and the fetcher                   | `MiningEngine`                              | `ProgressMessage`: `{ miningId, progressType, count, isCompleted?, isCanceled? }`                  |
 
 Two HTTP hops matter. The API calls the fetcher (`backend/src/services/email-fetching/index.ts` → `POST /api/imap/fetch/start`), and the API calls edge functions through `supabaseClient.functions.invoke` (`backend/src/db/completion.ts`, `backend/src/controllers/mining.controller.ts`).
 
