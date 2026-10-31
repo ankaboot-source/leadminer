@@ -18,8 +18,7 @@
     "lint:fix": "eslint --fix src test",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier --write .",
-    "update-providers": "ts-node src/fetchProviders.ts",
-    "start:postgresql-worker": "node dist/workers/postgresql-import/index.js"
+    "update-providers": "ts-node src/fetchProviders.ts"
   },
   "keywords": [
     "nodejs",
