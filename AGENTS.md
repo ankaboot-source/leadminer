@@ -284,9 +284,13 @@ logger.error("Operation failed", { error: error.message });
 Pull requests run `ci-pr.yml`, path-filtered to the area you touched. The backend job
 runs unit tests, lint and formatting. The frontend job runs lint and formatting only: the
 Vitest suite under `frontend/src/tests/` is not wired into CI, and that job writes a
-placeholder coverage file. Run it yourself with `npm run test --prefix ./frontend`. Pushes to
-`main` run `ci.yml`. Nothing in this repository deploys itself; run the stack locally as
-described in README.md.
+placeholder coverage file. Run it yourself with
+`npm run test --prefix ./frontend -- --run` (bare `vitest` is watch mode). Pushes to `main`
+run `ci.yml`.
+
+Application code is never deployed automatically, but two workflows do publish on push to
+`main`: `push-supabase-functions.yml` and `push-supabase-migrations.yml`. Run the stack
+locally as described in README.md.
 
 Database changes go in `supabase/migrations/` as new timestamped files. Never edit a
 migration that has already shipped: apply forward with a new file.
