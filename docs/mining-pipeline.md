@@ -125,7 +125,7 @@ Each worker boots the same way: subscribe to `REDIS_PUBSUB_COMMUNICATION_CHANNEL
 
 ## Progress and cancellation
 
-Progress is pushed, not polled. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel — for example `createdContacts` from the extraction handler (`backend/src/workers/email-message/emailMessageHandlers.ts:102`). `MiningEngine`, subscribed in `submit`, hands it to `Pipeline.onMessage` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:47`, `backend/src/services/tasks-manager-v2/Pipeline.ts:145`).
+Progress is pushed, not polled. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel — for example `createdContacts` from the extraction handler (`backend/src/workers/email-message/emailMessageHandlers.ts:108`). `MiningEngine`, subscribed in `submit`, hands it to `Pipeline.onMessage` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:47`, `backend/src/services/tasks-manager-v2/Pipeline.ts:145`).
 
 ```mermaid
 sequenceDiagram
@@ -152,7 +152,7 @@ sequenceDiagram
   P->>P: checkCompletion()
 ```
 
-`Pipeline.onMessage` calls `task.onMessage` on every task, then `propagateProgress`, then `checkCompletion` (`backend/src/services/tasks-manager-v2/Pipeline.ts:158`, `:164`, `:194`). `propagateProgress` fires when every upstream task reports `isComplete()`; it copies `totalFrom` from the upstream progress map, or sums upstream `processed` when no `totalFrom` is set, unless the link has `skipTotal` (`backend/src/services/tasks-manager-v2/Pipeline.ts:173`). The `Clean → Extract` link uses `totalFrom: 'createdContacts'`, and `Signature → Fetch` uses `skipTotal` (`backend/src/services/tasks-manager-v2/factories.ts:173`, `:181`). Events reach the browser through `RealtimeSSE`; `frontend/src/utils/sse.ts` maps event names back to UI counters.
+`Pipeline.onMessage` calls `task.onMessage` on every task, then `propagateProgress`, then `checkCompletion` (`backend/src/services/tasks-manager-v2/Pipeline.ts:158`, `:164`, `:194`). `propagateProgress` fires when every upstream task reports `isComplete()`; it copies `totalFrom` from the upstream progress map, or sums upstream `processed` when no `totalFrom` is set, unless the link has `skipTotal` (`backend/src/services/tasks-manager-v2/Pipeline.ts:173`). The `Clean → Extract` link uses `totalFrom: 'createdContacts'`, and `Signature → Fetch` uses `skipTotal` (`backend/src/services/tasks-manager-v2/factories.ts:175`, `:181`). Events reach the browser through `RealtimeSSE`; `frontend/src/utils/sse.ts` maps event names back to UI counters.
 
 | Event suffix                                         | Emitted by                | Meaning                             |
 | ---------------------------------------------------- | ------------------------- | ----------------------------------- |

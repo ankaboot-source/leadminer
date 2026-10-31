@@ -51,7 +51,7 @@ Provider keys are in `backend/src/config/schema.ts`:
 - MailerCheck: `MAILERCHECK_API_KEY`.
 - ZeroBounce: `ZEROBOUNCE_API_KEY`.
 - Quotas: `EMAILS_QUOTA_REACHER`, `EMAILS_QUOTA_MAILERCHECK`, `EMAILS_QUOTA_ZEROBOUNCE`.
-- Reacher throughput: `REACHER_RATE_LIMITER_REQUESTS` and `REACHER_RATE_LIMITER_INTERVAL` set the Redis-backed token bucket shared by worker processes.
+- Reacher throughput: `REACHER_RATE_LIMITER_REQUESTS` and `REACHER_RATE_LIMITER_INTERVAL` set the Redis-backed token bucket shared by worker processes. The interval is in **seconds**, not milliseconds.
 
 `.env.dev` uses a public Reacher mock at `https://stoplight.io/mocks/reacher/backend/68673`. There is no in-repo email-verification mock.
 

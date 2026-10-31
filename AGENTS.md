@@ -269,7 +269,8 @@ logger.error("Operation failed", { error: error.message });
 ## Environment Variables
 
 - All services read from `.env` files
-- Use `.env.dev` as template (copied by `npm run dev:generate-env`)
+- Use `.env.dev` as template (copied by `npm run dev:generate-env`). The frontend has
+  no `.env.dev`; `generate_env.sh` falls back to `frontend/.env.example`.
 - **Important**: Set `SUPABASE_PROJECT_URL` to your public Supabase URL for self-hosted deployments
 
 ## Additional Notes
@@ -281,8 +282,9 @@ logger.error("Operation failed", { error: error.message });
 ## CI
 
 Pull requests run `ci-pr.yml`, path-filtered to the area you touched. The backend job
-runs unit tests, lint and formatting. The frontend job runs lint and formatting only —
-there is no frontend test suite yet, and its coverage report is a placeholder. Pushes to
+runs unit tests, lint and formatting. The frontend job runs lint and formatting only: the
+Vitest suite under `frontend/src/tests/` is not wired into CI, and that job writes a
+placeholder coverage file. Run it yourself with `npm run test --prefix ./frontend`. Pushes to
 `main` run `ci.yml`. Nothing in this repository deploys itself; run the stack locally as
 described in README.md.
 
