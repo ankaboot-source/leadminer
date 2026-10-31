@@ -69,9 +69,9 @@ function createSpyLogger() {
   const errors: Array<{ message: string; context?: Record<string, unknown> }> =
     [];
   const logger = {
-    debug: () => {},
-    info: () => {},
-    warn: () => {},
+    debug: () => undefined,
+    info: () => undefined,
+    warn: () => undefined,
     error: (message: string, context?: Record<string, unknown>) => {
       errors.push({ message, context });
     },

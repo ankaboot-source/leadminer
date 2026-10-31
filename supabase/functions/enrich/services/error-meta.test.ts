@@ -4,6 +4,9 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { errorMeta } from "./error-meta.ts";
 
+// `undefined` as an explicit argument is flagged as redundant.
+const NOT_DEFINED = undefined;
+
 Deno.test("errorMeta: serializes an Error without carrying arbitrary values", () => {
   const error = Object.assign(new Error("boom"), {
     code: "E_PROVIDER",
@@ -43,7 +46,7 @@ Deno.test("errorMeta: handles null and undefined", () => {
     name: "UnknownError",
     message: "null",
   });
-  assertEquals(errorMeta(undefined), {
+  assertEquals(errorMeta(NOT_DEFINED), {
     name: "UnknownError",
     message: "undefined",
   });

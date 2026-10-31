@@ -177,22 +177,22 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   fn: async () => {
-    const a = new TokenBucketRateLimiter("shared-key", "read", {
+    const first = new TokenBucketRateLimiter("shared-key", "read", {
       requests: 1,
       intervalSeconds: 1,
     });
-    const b = new TokenBucketRateLimiter("shared-key", "read", {
+    const second = new TokenBucketRateLimiter("shared-key", "read", {
       requests: 1,
       intervalSeconds: 1,
     });
 
-    assertEquals(await a.removeTokensSafe(1), true);
+    assertEquals(await first.removeTokensSafe(1), true);
 
-    // `b` must observe the token `a` just consumed. Without a shared
+    // `second` must observe the token `first` just consumed. Without a shared
     // base-limiter instance, a second in-memory bucket would grant the
     // token immediately and in-memory throttling would be a no-op.
     const start = performance.now();
-    assertEquals(await b.removeTokensSafe(1), true);
+    assertEquals(await second.removeTokensSafe(1), true);
     const elapsedMs = performance.now() - start;
     assert(
       elapsedMs >= 500,
@@ -207,16 +207,16 @@ Deno.test({
   sanitizeOps: false,
   sanitizeResources: false,
   fn: async () => {
-    const a = new TokenBucketRateLimiter("user-a", "read", {
+    const first = new TokenBucketRateLimiter("user-a", "read", {
       requests: 1,
       intervalSeconds: 60,
     });
-    const b = new TokenBucketRateLimiter("user-b", "read", {
+    const second = new TokenBucketRateLimiter("user-b", "read", {
       requests: 1,
       intervalSeconds: 60,
     });
     assertEquals(await a.removeTokensSafe(1), true);
-    // `a` is now exhausted, but `b` is independent.
+    // `first` is now exhausted, but `second` is independent.
     assertEquals(await b.removeTokensSafe(1), true);
   },
 });

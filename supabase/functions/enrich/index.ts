@@ -5,9 +5,7 @@ import { createSupabaseAdmin } from "../_shared/supabase.ts";
 import { initI18n, t, getUserLocale } from "./i18n.ts";
 import { errorMeta } from "./services/error-meta.ts";
 import {
-  enrichAsync,
   enrichSync,
-  parseResult,
   type Person,
   type EngineResponse,
 } from "./services/engines.ts";
@@ -394,6 +392,31 @@ app.post("/person/bulk", mixedAuth, async (c: Context) => {
   } satisfies ModalResponse);
 });
 
+/**
+ * Find the result entry that owns the webhook token.
+ *
+ * The webhook is unauthenticated at the gateway (`verify_jwt = false`) and
+ * authenticates only with the per-task token stored in the task details, so
+ * comparing tokens with `===` would leak them through timing. Every candidate
+ * is compared, so the work done does not depend on where the match is.
+ */
+async function findResultIndexByToken(
+  results: Array<{ token?: string }>,
+  token: string,
+): Promise<number> {
+  let matchedIndex = -1;
+
+  for (let index = 0; index < results.length; index++) {
+    const candidate = results[index].token;
+    if (!candidate) continue;
+    if (await timingSafeStringEqual(candidate, token)) {
+      matchedIndex = index;
+    }
+  }
+
+  return matchedIndex;
+}
+
 app.post("/webhook/:id", async (c) => {
   const paramsParsed = webhookParamsSchema.safeParse(c.req.param());
   if (!paramsParsed.success) {
@@ -429,8 +452,8 @@ app.post("/webhook/:id", async (c) => {
     raw_data?: unknown[];
   }>;
 
-  const resultEntry = existingResults.find((r) => r.token === token);
-  if (!resultEntry) {
+  const matchedIndex = await findResultIndexByToken(existingResults, token);
+  if (matchedIndex === -1) {
     logger.warn("Webhook: invalid token", { taskId: id });
     return c.json({ error: "Invalid token" }, 403);
   }
@@ -443,8 +466,8 @@ app.post("/webhook/:id", async (c) => {
 
   const parsedResults = results || [];
 
-  const updatedResults = existingResults.map((r) => {
-    if (r.token === token) {
+  const updatedResults = existingResults.map((r, index) => {
+    if (index === matchedIndex) {
       return {
         ...r,
         data: parsedResults,
