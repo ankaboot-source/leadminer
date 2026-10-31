@@ -4,6 +4,8 @@ A mining run turns a mailbox, a file, or a PST archive into contacts. The work i
 
 ## The task graph and its streams
 
+**The task graph.** Tasks are orchestration objects in the API process; consumers are separate worker processes, and every edge between them crosses Redis.
+
 ```mermaid
 flowchart LR
   subgraph api["API process — orchestrator"]
@@ -13,14 +15,12 @@ flowchart LR
     P --> CT["CleanTask<br/>role: clean"]
     P --> ST["SignatureTask<br/>role: signature"]
   end
-
   subgraph workers["Worker processes"]
     FX["emails-fetcher"]
     MC["MessagesConsumer"]
     VC["EmailsVerificationConsumer"]
     SC["EmailSignatureConsumer"]
   end
-
   FT -- "messages_stream-&lt;miningId&gt;" --> ET
   ET -- "emails_stream-&lt;miningId&gt;" --> CT
   FT -- "REDIS_SIGNATURE_STREAM_NAME" --> ST
@@ -31,31 +31,15 @@ flowchart LR
   FT -. "POST /api/imap/fetch/start" .-> FX
 ```
 
-Solid edges are Redis streams: the upstream task's producer writes them and the downstream task's consumer group reads them (`backend/src/services/tasks-manager-v2/factories.ts:94`). Dotted edges are the control-plane role filter — the task publishes `REGISTER` with its `role`, and only the matching consumer process picks it up (`backend/src/services/tasks-manager-v2/tasks/Task.ts:106`). The orchestration objects live in the API process; the consumers live in separate processes, which is why the announcement goes through Redis pub/sub instead of a direct call.
+What to take from it: solid edges are Redis streams; dotted edges are the role filter published by `Task.start` (`Task.ts:106`); boxes are process boundaries, and `FetchTask` is the only task without a role because it drives the fetcher over HTTP.
 
-`Clean` is optional and only runs when cleaning is enabled and an email verifier is configured. `Signature` is optional and only runs when body fetching and signature extraction are enabled. `Fetch` writes to both downstream stages: messages go to `Extract`, and email bodies go to `Signature`. `FetchTask` is the only task without a `role`: it drives the fetcher over HTTP rather than consuming a stream.
-
-## Run shapes
-
-The factories in `backend/src/services/tasks-manager-v2/factories.ts` assemble different task sets depending on the source.
+## Which tasks run for which source
 
 | Source | Tasks                                                                                                                                       |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | IMAP   | `Fetch` → `Extract` → optional `Clean`; optional `Signature` in parallel. Add `GoogleContactsFetch` when Google Contacts sync is requested. |
 | File   | `Extract` → optional `Clean`.                                                                                                               |
 | PST    | `Fetch` → `Extract` → optional `Clean`; optional `Signature` in parallel.                                                                   |
-
-`Clean` is skipped unless `cleaningEnabled` is true and `hasEmailVerificationConfigured(ENV)` passes. `Signature` is skipped unless `fetchEmailBody` is true and the run has mailboxes.
-
-## Tasks, not jobs
-
-`backend/src/services/tasks-manager-v2/` is the orchestration layer.
-
-- `MiningEngine` owns the live pipelines. It subscribes to each run's `miningId` pub/sub channel and routes messages to the right `Pipeline` (`MiningEngine.ts`).
-- `Pipeline` owns an ordered `Map<string, Task>`, creates the Redis consumer groups, tracks progress links between stages, and forwards progress to SSE (`Pipeline.ts`).
-- `Task` is the base unit. It owns the task row in `private.tasks` and, when the task has streams, publishes `REGISTER` and `DELETE` commands to `REDIS_PUBSUB_COMMUNICATION_CHANNEL` (`tasks/Task.ts`).
-
-The factory also wires progress links. For example, `CleanTask` inherits its total from the Extract task's `createdContacts` count, and `SignatureTask` runs without a total until the fetcher reports one (`factories.ts` lines 173–183).
 
 ## Task lifecycle
 
@@ -68,43 +52,18 @@ The factory also wires progress links. For example, `CleanTask` inherits its tot
 
 ## Each stage
 
-### Fetch
+**Stages and their streams.** Fetch produces; the other stages consume one stream each, write Postgres, and run in a different process. The gate column explains why a stage may be absent from a run.
 
-- **What it does:** Connects to IMAP (or reads a PST) and streams messages into Redis.
-- **Reads:** Mailbox folders and credentials from `private.mining_sources`.
-- **Writes:** `messages_stream-<miningId>` and, when enabled, `REDIS_SIGNATURE_STREAM_NAME`. Also emits progress to the `miningId` pub/sub channel.
-- **Runs in:** `micro-services/emails-fetcher`, started by `FetchTask.start` through `EmailFetcherClient` (`backend/src/services/email-fetching/index.ts`).
-- **Stream:** `messages_stream-<miningId>` is built in `backend/src/services/tasks-manager-v2/factories.ts`. Fetch is a producer, so it has no consumer group.
-
-### Extract
-
-- **What it does:** Parses each message, extracts people, organizations, and tags, and upserts them into Postgres.
-- **Reads:** `messages_stream-<miningId>`.
-- **Writes:** `private.messages`, `private.persons`, `private.pointsofcontact` through `PgContacts` (`backend/src/db/pg/PgContacts.ts`). If cleaning is enabled, it also writes `emails_stream-<miningId>`.
-- **Runs in:** `backend/src/messageWorker.ts` through `MessagesConsumer` (`backend/src/workers/email-message/MessagesConsumer.ts`).
-- **Stream and group:** `messages_stream-<miningId>`, consumer group `REDIS_EXTRACTING_STREAM_CONSUMER_GROUP`, batch `REDIS_CONSUMER_BATCH_SIZE`.
-
-### Clean (optional)
-
-- **What it does:** Verifies email deliverability and stores the result on the contact.
-- **Reads:** `emails_stream-<miningId>`.
-- **Writes:** `private.email_status` and contact tags/reachability.
-- **Runs in:** `backend/src/emailVerificationWorker.ts` through `EmailVerificationConsumer` (`backend/src/workers/email-verification/EmailsVerificationConsumer.ts`).
-- **Stream and group:** `emails_stream-<miningId>`, consumer group `REDIS_CLEANING_STREAM_CONSUMER_GROUP`, batch `REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE`.
-- **Gate:** `createImapMining` only adds this task when `cleaningEnabled` is true and `hasEmailVerificationConfigured(ENV)` is true (`factories.ts` lines 116–134).
-
-### Signature (optional)
-
-- **What it does:** Extracts signatures from message bodies and stores them per person.
-- **Reads:** `REDIS_SIGNATURE_STREAM_NAME`.
-- **Writes:** `private.signatures` through `upsertSignaturesDB` (`backend/src/workers/email-signature/utils.ts`).
-- **Runs in:** `backend/src/emailSignatureWorker.ts` through `EmailSignatureConsumer` (`backend/src/workers/email-signature/consumer.ts`).
-- **Stream and group:** `REDIS_SIGNATURE_STREAM_NAME`, consumer group `REDIS_SIGNATURE_STREAM_CONSUMER_GROUP`, batch `REDIS_EMAIL_SIGNATURE_CONSUMER_BATCH_SIZE`.
-- **Gate:** `createImapMining` only adds this task when `fetchEmailBody` is true and the run has mailboxes (`factories.ts` lines 136–149).
+| Stage         | Does                                               | Reads                         | Writes                                                                                                      | Runs in                                                                                   | Gate                                                        |
+| ------------- | -------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Fetch**     | Connects to IMAP or reads a PST                    | `private.mining_sources`      | `messages_stream-<miningId>`, `REDIS_SIGNATURE_STREAM_NAME`; progress on `miningId`                         | `micro-services/emails-fetcher`, started by `FetchTask.start` (`email-fetching/index.ts`) | Always, for IMAP and PST                                    |
+| **Extract**   | Parses messages, extracts people and organizations | `messages_stream-<miningId>`  | `private.messages`, `persons`, `pointsofcontact` via `PgContacts`; `emails_stream-<miningId>` when cleaning | `backend/src/messageWorker.ts` (`MessagesConsumer`)                                       | Always                                                      |
+| **Clean**     | Verifies deliverability and tags the contact       | `emails_stream-<miningId>`    | `private.email_status`                                                                                      | `backend/src/emailVerificationWorker.ts` (`EmailsVerificationConsumer`)                   | `cleaningEnabled` and `hasEmailVerificationConfigured(ENV)` |
+| **Signature** | Extracts signatures from message bodies            | `REDIS_SIGNATURE_STREAM_NAME` | `private.signatures` via `upsertSignaturesDB`                                                               | `backend/src/emailSignatureWorker.ts` (`EmailSignatureConsumer`)                          | `fetchEmailBody` and the run has mailboxes                  |
 
 ## The Redis contract
 
-These keys are defined in `backend/src/config/schema.ts`. Defaults below come from `.env.docker`.
+Streams carry work; pub/sub carries progress and task commands. These keys are defined in `backend/src/config/schema.ts` under `/* REDIS */`. Defaults below come from `.env.docker`.
 
 | Purpose                   | Key or value                                           | Default                             |
 | ------------------------- | ------------------------------------------------------ | ----------------------------------- |
@@ -123,21 +82,14 @@ A consumer group lets several worker processes share one stream: each message go
 
 Each worker boots the same way: subscribe to `REDIS_PUBSUB_COMMUNICATION_CHANNEL`, wait for `REGISTER` commands, then loop over the active streams with `xreadgroup` (`backend/src/workers/email-message/MessagesConsumer.ts`, `backend/src/workers/email-verification/EmailsVerificationConsumer.ts`, `backend/src/workers/email-signature/consumer.ts`).
 
-## Progress and cancellation
+## Watch progress
 
-Progress is pushed, not polled. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel — for example `createdContacts` from the extraction handler (`backend/src/workers/email-message/emailMessageHandlers.ts:108`). `MiningEngine`, subscribed in `submit`, hands it to `Pipeline.onMessage` (`backend/src/services/tasks-manager-v2/MiningEngine.ts:47`, `backend/src/services/tasks-manager-v2/Pipeline.ts:145`).
+Progress is pushed, not polled. A worker publishes a JSON `ProgressMessage` to the run's `miningId` channel — for example `createdContacts` from the extraction handler (`backend/src/workers/email-message/emailMessageHandlers.ts:112`). `MiningEngine`, subscribed in `submit`, hands it to `Pipeline.onMessage` (`MiningEngine.ts:47`, `Pipeline.ts:145`).
+
+**Progress fan-out.** One worker message updates every task, then becomes one SSE event for the browser.
 
 ```mermaid
 sequenceDiagram
-  participant MC as MessagesConsumer
-  participant R as Redis
-  participant ME as MiningEngine
-  participant P as Pipeline
-  participant ET as ExtractTask
-  participant CT as CleanTask
-  participant SSE as RealtimeSSE
-  participant Br as browser
-
   MC->>R: PUBLISH miningId<br/>ProgressMessage {progressType: "createdContacts", count: 42}
   R-->>ME: message on the miningId channel
   ME->>P: onMessage(json)
@@ -152,7 +104,9 @@ sequenceDiagram
   P->>P: checkCompletion()
 ```
 
-`Pipeline.onMessage` calls `task.onMessage` on every task, then `propagateProgress`, then `checkCompletion` (`backend/src/services/tasks-manager-v2/Pipeline.ts:158`, `:164`, `:194`). `propagateProgress` fires when every upstream task reports `isComplete()`; it copies `totalFrom` from the upstream progress map, or sums upstream `processed` when no `totalFrom` is set, unless the link has `skipTotal` (`backend/src/services/tasks-manager-v2/Pipeline.ts:173`). The `Clean → Extract` link uses `totalFrom: 'createdContacts'`, and `Signature → Fetch` uses `skipTotal` (`backend/src/services/tasks-manager-v2/factories.ts:175`, `:181`). Events reach the browser through `RealtimeSSE`; `frontend/src/utils/sse.ts` maps event names back to UI counters.
+What to take from it: the browser sees a counter only after `propagateProgress` has copied or summed totals across the task graph.
+
+`Pipeline.onMessage` calls `task.onMessage` on every task, then `propagateProgress`, then `checkCompletion` (`Pipeline.ts:158`, `:164`, `:194`). `propagateProgress` fires when every upstream task reports `isComplete()`; it copies `totalFrom` from the upstream progress map, or sums upstream `processed` when no `totalFrom` is set, unless the link has `skipTotal` (`Pipeline.ts:173`). `CleanTask` uses `totalFrom: 'createdContacts'` (`factories.ts:175`), and `SignatureTask` uses `skipTotal` (`factories.ts:181`). Events reach the browser through `RealtimeSSE`; `frontend/src/utils/sse.ts` maps event names back to UI counters.
 
 | Event suffix                                         | Emitted by                | Meaning                             |
 | ---------------------------------------------------- | ------------------------- | ----------------------------------- |
@@ -164,15 +118,20 @@ sequenceDiagram
 | `signatures` / `totalSignatures`                     | `SignatureTask`           | Signatures found and expected.      |
 | `googleContactsFetchedCount` / `googleContactsTotal` | `GoogleContactsFetchTask` | Google Contacts progress.           |
 
-To stop a run, the browser calls `POST /api/imap/mine/:type/:userId/:id` with `{ processes, endEntireTask }`. The controller calls `MiningEngine.terminate`, which calls `Pipeline.cancel`. Each stopped `Task` publishes a `DELETE` command on `REDIS_PUBSUB_COMMUNICATION_CHANNEL` so workers unregister the stream, and `FetchTask.stop` calls the fetcher's `DELETE /api/imap/fetch/stop` (`backend/src/services/tasks-manager-v2/tasks/FetchTask.ts`).
+## Stop a run
+
+The browser calls `POST /api/imap/mine/:type/:userId/:id` with `{ processes, endEntireTask }`. The controller calls `MiningEngine.terminate`, which calls `Pipeline.cancel`. Three things then happen:
+
+1. Each stopped `Task` publishes a `DELETE` command on `REDIS_PUBSUB_COMMUNICATION_CHANNEL`, so workers unregister the stream.
+2. `FetchTask.stop` calls the fetcher's `DELETE /api/imap/fetch/stop` (`backend/src/services/tasks-manager-v2/tasks/FetchTask.ts`).
+
+The run then completes as described in [Task lifecycle](#task-lifecycle).
 
 ## Resuming and idempotency
 
-A re-run is safe because the code is built for at-least-once delivery.
-
-- **Message upserts:** Messages are inserted with `ON CONFLICT (message_id, user_id) DO NOTHING`, and people are upserted on `(user_id, source, email)` (`backend/src/db/pg/PgContacts.ts` lines 116–180). Re-processing the same message does not create a second row.
+- **Message upserts:** Messages are inserted with `ON CONFLICT (message_id, user_id) DO NOTHING`, and people are upserted on `(user_id, source, email)` (`backend/src/db/pg/PgContacts.ts:118`, `:128`). Re-processing the same message does not create a second row.
 - **Watermarks:** The fetcher emits a per-folder `{ uidvalidity, last_uid }` cursor at the end of a run (`micro-services/emails-fetcher/src/services/imap/watermark.ts`). `FetchTask` stores it in the task's `details.watermark`, and the `mining-completion` edge function writes it to `mining_sources.config.mining.last` (`supabase/functions/mining-completion/index.ts`).
-- **Incremental runs:** The API builds `resumeFrom` from the stored watermark and sends it to the fetcher (`backend/src/controllers/mining.controller.ts` lines 404–417). A UID-validity mismatch falls back to a full scan.
+- **Incremental runs:** The API builds `resumeFrom` from the stored watermark and sends it to the fetcher (`backend/src/controllers/mining.controller.ts:407`). A UID-validity mismatch falls back to a full scan.
 - **Read-once consumers:** `RedisMultipleStreamsConsumer` reads with `NOACK` and trims processed entries with `xtrim` (`backend/src/utils/streams/redis/RedisMultipleStreamsConsumer.ts`). The stream is a work queue, not a replay log.
 
 ## Where to look when it breaks
