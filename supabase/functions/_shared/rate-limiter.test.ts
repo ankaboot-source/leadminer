@@ -215,9 +215,9 @@ Deno.test({
       requests: 1,
       intervalSeconds: 60,
     });
-    assertEquals(await a.removeTokensSafe(1), true);
+    assertEquals(await first.removeTokensSafe(1), true);
     // `first` is now exhausted, but `second` is independent.
-    assertEquals(await b.removeTokensSafe(1), true);
+    assertEquals(await second.removeTokensSafe(1), true);
   },
 });
 
