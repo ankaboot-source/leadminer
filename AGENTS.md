@@ -280,9 +280,11 @@ logger.error("Operation failed", { error: error.message });
 
 ## CI
 
-Pull requests run `ci-pr.yml` — backend and frontend unit tests plus lint, path-filtered to
-the area you touched. Pushes to `main` run `ci.yml`. Nothing in this repository deploys
-itself; run the stack locally as described in README.md.
+Pull requests run `ci-pr.yml`, path-filtered to the area you touched. The backend job
+runs unit tests, lint and formatting. The frontend job runs lint and formatting only —
+there is no frontend test suite yet, and its coverage report is a placeholder. Pushes to
+`main` run `ci.yml`. Nothing in this repository deploys itself; run the stack locally as
+described in README.md.
 
 Database changes go in `supabase/migrations/` as new timestamped files. Never edit a
 migration that has already shipped: apply forward with a new file.

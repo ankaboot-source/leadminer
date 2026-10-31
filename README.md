@@ -21,6 +21,7 @@ Start with these three, in order:
 
 - [How to run locally](#-how-to-run-locally) below — gets you a working stack from a clean clone.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — branch, commit and PR conventions, and the pre-commit checks.
+- [`docs/`](docs/README.md) — architecture, the mining pipeline, and the services this product calls.
 - [`AGENTS.md`](AGENTS.md) — the commands, conventions and CI checks this repository uses.
 
 ## ✨ Features

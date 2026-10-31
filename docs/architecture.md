@@ -21,7 +21,7 @@ Leadminer mines contacts from email mailboxes. It fetches messages from IMAP or 
 | Email-verification worker | —                             | Consumes `emails_stream-<miningId>`, verifies deliverability, and updates contact status.                             | `run.sh` (`dev:backend-email-worker`) or `docker-compose.yml` (`leadminer-email-verification-worker`)      |
 | Signature worker          | —                             | Consumes the signature stream, extracts signatures, and writes `private.signatures`.                                  | `run.sh` (`dev:backend-email-signature-worker`) or `docker-compose.yml` (`leadminer-signature-worker`)     |
 | Emails fetcher            | `8084`                        | Standalone micro-service. Owns IMAP connections and streams fetched messages into Redis.                              | `run.sh` (`dev:micro-services-emails-fetcher`) or `docker-compose.yml` (`leadminer-email-fetcher-service`) |
-| Frontend                  | `3000` dev, `8082` compose    | Nuxt app. Starts mining, opens the progress SSE stream, and renders contacts.                                         | `run.sh` (`dev:frontend`) or `docker-compose.yml` (`leadminer-frontend`)                                   |
+| Frontend                  | `8082` (dev and compose)      | Nuxt app. Starts mining, opens the progress SSE stream, and renders contacts.                                         | `run.sh` (`dev:frontend`) or `docker-compose.yml` (`leadminer-frontend`)                                   |
 | Redis                     | `6379`                        | Streams for work; pub/sub for progress and task commands.                                                             | `docker-compose.dev.yml` or `docker-compose.yml` (`redis`)                                                 |
 | Postgres / Supabase       | `54322` local DB, `54321` API | Stores users, sources, messages, contacts, task rows, and signatures.                                                 | `npm run dev:supabase` or your self-hosted Supabase stack                                                  |
 
@@ -163,7 +163,7 @@ PST imports are uploaded to the Supabase Storage bucket `pst` (`frontend/src/com
 
 ## Running it locally
 
-1. `npm run dev:generate-env` copies the `.env.dev` templates.
+1. `npm run dev:generate-env` copies the `.env.dev` templates. The frontend has only a `.env.example`, so `generate_env.sh` falls back to it.
 2. `npm run dev:supabase` starts local Supabase.
 3. `docker-compose -f docker-compose.dev.yml up -d` starts Redis and the dev-only mocks.
 4. `npm run dev:all` (or `./run.sh`) starts the API, the three workers, the fetcher, and the frontend.
