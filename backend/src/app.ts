@@ -15,8 +15,6 @@ import errorLogger from './middleware/errorLogger';
 import notFound from './middleware/notFound';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
-import initializeEnrichmentRoutes from './routes/enrichment.routes';
-import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeSmtpSendersRoutes from './routes/smtp-senders.routes';
 import initializeStreamRouter from './routes/stream.routes';
@@ -24,7 +22,6 @@ import AuthResolver from './services/auth/AuthResolver';
 import { MiningEngine } from './services/tasks-manager-v2/MiningEngine';
 import { MiningControllerDeps } from './controllers/mining.controller';
 import Billing from './utils/billing-plugin';
-import { miningSourceService } from './db/supabase/MiningSourceService';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -59,7 +56,6 @@ export default function initializeApp(
   );
 
   app.use('/api/auth', initializeAuthRoutes());
-  app.use('/api/imap', initializeImapRoutes(authResolver, miningSourceService));
   app.use('/api/imap', initializeStreamRouter(miningEngine, authResolver));
   app.use(
     '/api/imap',
@@ -71,11 +67,7 @@ export default function initializeApp(
       miningControllerDeps
     )
   );
-  app.use(
-    '/api',
-    initializeContactsRoutes(contacts, authResolver, miningSourceService)
-  );
-  app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
+  app.use('/api', initializeContactsRoutes(contacts, authResolver));
   app.use(
     '/api',
     initializeSmtpSendersRoutes(smtpSenders, authResolver, miningSources)

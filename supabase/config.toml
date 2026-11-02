@@ -389,6 +389,30 @@ entrypoint = "./functions/sms-campaigns/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sms-campaigns/*.html" ]
 
+[functions.export-contacts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/export-contacts/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/export-contacts/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/export-contacts/*.html" ]
+
+[functions.enrich]
+enabled = true
+# The webhook route is called by enrichment providers without a user JWT;
+# it authenticates via the per-task token stored in the task details.
+verify_jwt = false
+import_map = "./functions/enrich/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/enrich/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/enrich/*.html" ]
+
 [functions.delete-user]
 enabled = true
 verify_jwt = true

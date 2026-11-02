@@ -10,6 +10,7 @@ import {
   parseConfig,
 } from "../_shared/mining-source-config.ts";
 import { SourceHealthState } from "../_shared/enums.ts";
+import { resolveCampaignBaseUrlFromEnv } from "../_shared/url.ts";
 import { resolvePassiveRunMode } from "./run-mode.ts";
 const supabase = createSupabaseAdmin();
 
@@ -132,10 +133,10 @@ async function backendError(
   })() as Record<string, unknown>;
   const detail =
     (payload?.data as Record<string, unknown> | undefined)?.message ??
-      payload?.message ??
-      payload?.error ??
-      errText ??
-      res.statusText;
+    payload?.message ??
+    payload?.error ??
+    errText ??
+    res.statusText;
   const error = new Error(
     message(res.status, truncateErrorDetail(String(detail))),
   ) as Error & {
@@ -223,18 +224,23 @@ async function getBoxes(miningSource: MiningSource) {
   console.log(
     `Fetching IMAP boxes for source ${miningSource.id} (${miningSource.type})`,
   );
-  const res = await fetch(
-    `${SERVER_ENDPOINT}/api/imap/boxes?userId=${miningSource.user_id}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        // originally its x-sb-jwt
-      },
-      body: JSON.stringify({ email: miningSource.email }),
-    },
+  // Folder listing lives in the `imap` edge function, which proxies to the
+  // emails-fetcher microservice. The cron authenticates with the service role
+  // and states the user it acts for.
+  const functionsBaseUrl = resolveCampaignBaseUrlFromEnv((key) =>
+    Deno.env.get(key),
   );
+  const res = await fetch(`${functionsBaseUrl}/functions/v1/imap/boxes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({
+      userId: miningSource.user_id,
+      email: miningSource.email,
+    }),
+  });
   console.log(`Received response for boxes of source ${miningSource.id}`);
 
   if (!res.ok) {
@@ -250,8 +256,8 @@ async function getBoxes(miningSource: MiningSource) {
 async function startMiningEmail(miningSource: MiningSource) {
   // Get default folders (saved checked boxes come from config.folders going
   // forward; getBoxes falls back to the server default set).
-  const sourceConfig = miningSource.parsedConfig ??
-    parseConfig(miningSource.config);
+  const sourceConfig =
+    miningSource.parsedConfig ?? parseConfig(miningSource.config);
   const savedFolders = sourceConfig.folders;
 
   let folders: string[];

@@ -206,10 +206,11 @@ export async function updatePassiveMining(
 export async function fetchSourceFolders(
   source: Pick<MiningSource, 'email' | 'type'>,
 ): Promise<BoxNode[]> {
-  const { $api } = useNuxtApp();
-  const { data } = await $api<{ data: { folders: BoxNode[] } }>('/imap/boxes', {
-    method: 'POST',
-    body: { email: source.email, type: source.type },
+  const supabase = useSupabaseClient();
+  const { data } = await supabase.functions.invoke<{
+    data: { folders: BoxNode[] };
+  }>('imap/boxes', {
+    body: { email: source.email },
   });
   return data?.folders ?? [];
 }
