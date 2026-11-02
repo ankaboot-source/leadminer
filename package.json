@@ -18,7 +18,6 @@
     "dev:backend-worker": "npm run dev:worker --prefix ./backend",
     "dev:backend-email-worker": "npm run dev:email-worker --prefix ./backend",
     "dev:backend-email-signature-worker": "npm run dev:email-signature-worker --prefix ./backend",
-    "dev:backend-postgresql-worker": "npm run dev:postgresql-worker --prefix ./backend",
     "dev:backend-mock-external-services": "npm run dev:mock-external-services --prefix ./backend",
     "dev:micro-services-emails-fetcher": "npm run dev --prefix ./micro-services/emails-fetcher",
     "dev:micro-services-sms-gateway-mock": "npm run dev --prefix ./micro-services/sms-gateway-mock",
